@@ -1,0 +1,906 @@
+{
+ "libro": "Kernel CAD: NURBS/B-splines (MIT 2.158J L6), RMF por doble reflexión (Wang 2008), FreeCAD Manual Part Design (van Havre), IGA (Hughes-Cottrell-Bazilevs 2005)",
+ "titulo": "Kernel CAD — NURBS, sweep RMF, loft, IGA, FreeCAD como UX de referencia",
+ "autor_como_cliente": "Patrikalakis (MIT) firma la definición dura de B-spline/NURBS (nudos, Cox-de Boor con 0/0=0, Boehm, parches recortados); Wang-Jüttler-Zheng-Liu firman el barrido sin torsión (doble reflexión O(h^4), cero thresholds, cierre de lazo repartido); van Havre firma cómo un CAD real estructura features/historia/referencias/validez (escalera Vertex→Solid, Pad siempre sólido, overshoot en booleanas, deviation 0.10/0.01 al mallar); Hughes firma el puente geometría↔análisis (círculo = racional cuadrático mínimo, h/p/k-refinement, benchmarks con solución exacta: placa con barreno R=1 L=4 Tx=10 E=1e5 nu=0.3, cilindro grueso rin=1 rout=2, obstacle course). El pliego previo (2026-07-31) ya verificó contra el binario: volume() miente sobre cáscaras rotas, BRepCheck_Analyzer disponible y sin usar, SolidClassifier disponible y negado en fea.ts:23, sweep con Frenet por default (R-18 lo prohíbe). Nada de eso ha cambiado al 2026-08-27 (grep).",
+ "capitulos": [
+  {
+   "num": 1,
+   "titulo": "MIT 2.158J Lecture 6 — B-splines uniformes/no uniformes, derivadas, interpolación, De Boor, Boehm, parches, NURBS, recorte",
+   "n_ejercicios": 8,
+   "cubierto_por_forja": "parcial",
+   "nota": "occt.ts usa GeomAPI_PointsToBSpline (extrudeSpline, sweepProfileAlong) pero el sketcher NO tiene spline (SketchEditor: line/circle/arc/ellipse/point) y no hay evaluador Cox-de Boor propio ni validador de nudos/pesos."
+  },
+  {
+   "num": 2,
+   "titulo": "Wang et al. 2008 — Rotation Minimizing Frames: doble reflexión, tangentes a 5 puntos, torus knot/PH curve, marco cerrado",
+   "n_ejercicios": 5,
+   "cubierto_por_forja": "no",
+   "nota": "sweepProfilePipeShell(occt.ts:1243) usa SetMode_1(frenet=true) por default; grep 'doble reflex|RMF' en src/ y scripts/ = 0 (solo docs). Canales de enfriamiento y roscas barren con Frenet."
+  },
+  {
+   "num": 3,
+   "titulo": "A FreeCAD Manual — Part Design/Sketcher (Lego), Part CSG (mesa), scripting (escalera topológica), mallado con deviation, Drawing",
+   "n_ejercicios": 9,
+   "cubierto_por_forja": "parcial",
+   "nota": "Extrude/pocket/hole/fillet/shell/pattern(linear|circular|mirror)/loft/sweep existen en ForgeBRepStudio.tsx:438-485; falta external geometry en croquis sobre cara, Check Geometry (BRepCheck), deviation declarada y remap de referencias."
+  },
+  {
+   "num": 4,
+   "titulo": "Hughes-Cottrell-Bazilevs 2005 — IGA: bases NURBS, h/p/k-refinement, círculo/toro exactos (Apéndice A), placa con barreno, cilindro grueso, cascarón delgado, obstacle course",
+   "n_ejercicios": 8,
+   "cubierto_por_forja": "no",
+   "nota": "Veredicto del pliego: NO adoptar IGA como arquitectura; SÍ usar sus benchmarks con solución exacta como oráculos del FEA (fea.ts voxel/tet) y sus datos de círculo/toro (A.1/A.2) como oráculos del evaluador NURBS."
+  }
+ ],
+ "n_ejercicios_catalogo": 30,
+ "ejercicios": [
+  {
+   "id": "kernel-nurbs-mit-01",
+   "cap": 1,
+   "titulo": "Base cúbica k=4, n=6 (7 puntos de control, 11 nudos) evaluada por Cox-de Boor con 0/0=0",
+   "tipo": "kernel",
+   "herramientas": "evaluador N_{i,k}(u) propio (JS) · vector de nudos abierto",
+   "oraculo": "Σ N_{i,4}(u) = 1 ±1e-12 y N ≥ 0 en 200 muestras; #nudos = n+k+1 = 11; interpola P0 y P6",
+   "respuesta_impresa": "MIT §6.2.5: n=6 → 7 control points, n+k+1 = 11 knots",
+   "fuente": "MIT L6 §6.2.5, §6.2.2",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-mit-02",
+   "cap": 1,
+   "titulo": "Continuidad por multiplicidad: cúbica con nudo interno ρ=1,2,3 → C2/C1/C0",
+   "tipo": "kernel",
+   "herramientas": "inserción de nudo (Boehm) + medición de salto en derivadas",
+   "oraculo": "salto de d²C/du² < 1e-9 con ρ=1; salto de dC/du < 1e-9 y d² discontinua con ρ=2; esquina (d¹ discontinua) con ρ=3; multiplicidad > p = rechazo (Hughes)",
+   "respuesta_impresa": "MIT §6.2.2: nudo de multiplicidad ρ → C^{k−ρ−1}",
+   "fuente": "MIT L6 §6.2.2; Hughes §2.1",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-mit-03",
+   "cap": 1,
+   "titulo": "Derivada de B-spline (ec. 6.24) y el span degenerado que explota",
+   "tipo": "kernel",
+   "herramientas": "d_i = (k−1)(P_i − P_{i−1})/(t_{i+k−1} − t_i) · validador B10",
+   "oraculo": "derivada por fórmula vs diferencia central (h=1e-6): error rel < 1e-5; con t_{i+k-1}−t_i = 1e-10·rango el validador reporta B10 ANTES de evaluar",
+   "respuesta_impresa": "",
+   "fuente": "MIT L6 §6.3 ec. 6.24",
+   "valor": 3
+  },
+  {
+   "id": "kernel-nurbs-mit-04",
+   "cap": 1,
+   "titulo": "Interpolación cúbica de N puntos por longitud de cuerda, quitando nudos u_2 y u_{N−1} (sistema bandado)",
+   "tipo": "kernel",
+   "herramientas": "GeomAPI_PointsToBSpline (occt.ts) vs implementación §6.5 propia",
+   "oraculo": "la curva pasa por los N puntos con |C(û_i) − P_i| < 1e-9; longitud de arco vs cuerda: |L_arco − Σ|P_{i+1}−P_i|| / L < 5 %",
+   "respuesta_impresa": "",
+   "fuente": "MIT L6 §6.5",
+   "valor": 3
+  },
+  {
+   "id": "kernel-nurbs-mit-05",
+   "cap": 1,
+   "titulo": "De Boor: evaluar un punto de una cúbica (k=4, l=3) y subdividir en dos polígonos",
+   "tipo": "kernel",
+   "herramientas": "algoritmo de De Boor · Boehm (P̂_i = a_i P_i + (1−a_i) P_{i−1})",
+   "oraculo": "C(u*) por De Boor = C(u*) por suma directa ±1e-12; las dos mitades reevaluadas reproducen la curva original en 100 muestras ±1e-12 (inserción exacta)",
+   "respuesta_impresa": "MIT §6.6.1 Fig 6.6: cubic (k=4, l=3); §6.6.2 polígonos izquierdo P00 P11 P22 P33 y derecho P33 P23 P13 P03",
+   "fuente": "MIT L6 §6.6.1-6.6.2",
+   "valor": 3
+  },
+  {
+   "id": "kernel-nurbs-mit-06",
+   "cap": 1,
+   "titulo": "Cuarto de círculo como racional cuadrático (pesos 1, 1/√2, 1) — el barreno que sigue siendo barreno",
+   "tipo": "kernel",
+   "herramientas": "NURBS racional grado 2 · comparación con círculo de OCCT (extrudeCircle)",
+   "oraculo": "|‖C(u)‖ − R| < 1e-12 en 1000 muestras; con todos los pesos = 1 (B-spline polinomial) el error máx de radio ≈ 2-3 % (la prueba negativa)",
+   "respuesta_impresa": "MIT §6.8.2 quarter circle x=R cos θ, y=R sin θ, 0≤θ≤π/2; Hughes A.1: pesos 1, 1/√2, 1, 1/√2…",
+   "fuente": "MIT L6 §6.8.2; Hughes §4.1 + Apéndice A.1",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-mit-07",
+   "cap": 1,
+   "titulo": "Parche B-spline bicúbico y parche recortado: lazo externo + lazo interno en (u,v)",
+   "tipo": "kernel",
+   "herramientas": "R(u,v)=ΣΣ R_ij N_i,k(u) Q_j,l(v) · cara OCCT con agujero (extrudePolygonWithHoles) · validador A6",
+   "oraculo": "área de la cara recortada = área del parche − área del lazo interno ±1e-6 (Gauss por span); A6: lazo interno dentro del externo y sin traslape",
+   "respuesta_impresa": "",
+   "fuente": "MIT L6 §6.7.2, §6.8.3",
+   "valor": 3
+  },
+  {
+   "id": "kernel-nurbs-wang-01",
+   "cap": 2,
+   "titulo": "Doble reflexión (Tabla I) sobre el torus knot: orden O(h^4) medido por la razón e_k/e_{k−1} ≈ 1/16",
+   "tipo": "benchmark",
+   "herramientas": "rmf.ts (doble reflexión, 9 líneas sin sqrt) · espina x(u)=[(0.6+0.3cos7u)cos2u, (0.6+0.3cos7u)sin2u, 0.3sin7u]",
+   "oraculo": "e_k/e_{k−1} ∈ [0.060, 0.066] para 2^7..2^11 segmentos; e(2^11) < 1e-8 (impreso: 4.97E−9); proyección/rotación dan ratio ≈ 0.25 (O(h²))",
+   "respuesta_impresa": "Wang Tabla III: 2^6 5.10E−3; 2^7 3.24E−4 (0.0636); 2^8 2.03E−5; 2^9 1.27E−6; 2^10 7.95E−8; 2^11 4.97E−9 (0.0626). Tabla IV proyección 2^11 3.52E−4, rotación 7.42E−4 (ratio ≈0.25)",
+   "fuente": "Wang 2008 §4 Tabla I, §6 Ejemplo 1 Tablas III-IV",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-wang-02",
+   "cap": 2,
+   "titulo": "Curva PH con RMF cerrado exacto (Farouki): x0=(1000,0,0) x1=(1000,2000,4000) t0=(1,5,−1) t1=(−3,2,5)",
+   "tipo": "benchmark",
+   "herramientas": "rmf.ts vs fórmula cerrada · Hermite G1 cúbico PH",
+   "oraculo": "e(2^11) < 1e-13 y ratio ≈ 1/16; rotación ≈ 1/4",
+   "respuesta_impresa": "Wang Tabla V: doble reflexión 2^6 9.29E−9 … 2^11 9.25E−15 (0.0625); rotación 2^6 1.78E−4 … 2^11 1.75E−7 (0.250)",
+   "fuente": "Wang 2008 §6 Ejemplo 2 Tabla V",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-wang-03",
+   "cap": 2,
+   "titulo": "Espina que viene como puntos: tangentes a 5 puntos O(h^5) y v1 = 13(t_i+t_{i+1}) − (t_{i−1}+t_{i+2}) para muestreo denso",
+   "tipo": "kernel",
+   "herramientas": "estimador de tangentes (interior + 2 fórmulas de frontera) · rmf.ts",
+   "oraculo": "con diferencia central de 2 puntos el orden cae a ≈0.25 (O(h²)); con 5 puntos se recupera ≈1/16; línea recta muestreada 10^4 veces: marco constante sin NaN ni 'if' de colinealidad",
+   "respuesta_impresa": "Wang ec. (17) v1 = 13(t_i + t_{i+1}) − (t_{i−1} + t_{i+2}); n ≥ 4 (≥5 puntos)",
+   "fuente": "Wang 2008 §5",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-wang-04",
+   "cap": 2,
+   "titulo": "Canal de enfriamiento en LAZO CERRADO barrido con RMF + rotación gradual α(s) para cerrar el marco",
+   "tipo": "suite",
+   "herramientas": "espina B-spline cerrada (circuito §9.3.1d del molde) · rmf.ts con cierre repartido · sweepProfilePipeShell con marcos explícitos",
+   "oraculo": "defecto angular Δα del RMF puro medido y ≠ 0; tras repartir, |r(L) − r(0)| < 1e-9 y max|α'(s)| = Δα/L; sólido válido (A0+A1+A3) y V = π r² L_arco ±2 %",
+   "respuesta_impresa": "",
+   "fuente": "Wang 2008 §7 ec. (18)-(21); pliego R-23",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-wang-05",
+   "cap": 2,
+   "titulo": "Frenet vs RMF en una espina con punto de inflexión (S de canal): la torsión espuria del tubo",
+   "tipo": "suite",
+   "herramientas": "sweepProfilePipeShell(frenet=true) vs (frenet=false) vs rmf.ts · perfil cuadrado 6×6 para VER el giro",
+   "oraculo": "ángulo de giro del perfil cuadrado entre los dos extremos: Frenet ≈ 180° (salto en κ=0), RMF < 1° ; reversibilidad: marcos de ida y vuelta coinciden ±1e-9 (R-25)",
+   "respuesta_impresa": "",
+   "fuente": "Wang 2008 §1-2 Fig. 3; pliego H4/R-18/R-25",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-freecad-01",
+   "cap": 3,
+   "titulo": "El Lego (Part Design): rectángulo 23.7×47.7 anclado al origen → Pad 14.4",
+   "tipo": "tutorial",
+   "herramientas": "croquis en XY · auto-restricciones H/V/coincidente · 2 cotas + ancla al origen · Pad",
+   "oraculo": "DOF = 0 (sketch-solver 'full'); V = 23.7·47.7·14.4 = 16,278.6 mm³ ±1e-6; Euler = 2; ShapeType = Solid",
+   "respuesta_impresa": "Manual 'Modeling for product design': 23.7mm, 47.7mm, Pad 14.4mm",
+   "fuente": "FreeCAD Manual cap. Modeling for product design",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-freecad-02",
+   "cap": 3,
+   "titulo": "El Lego: croquis sobre la cara superior + External geometry + 4 cotas de 1.8 → Pocket 12.6 (pared 1.8)",
+   "tipo": "tutorial",
+   "herramientas": "croquis sobre cara · aristas externas importadas · Pocket",
+   "oraculo": "V = 16,278.6 − (23.7−3.6)(47.7−3.6)·12.6 = 16,278.6 − 11,168.0 = 5,110.6 mm³ ±0.1; espesor mínimo medido por sonda = 1.8 mm; Solid único (A5)",
+   "respuesta_impresa": "Manual: constraints 1.8mm ×4, Pocket 12.6mm 'which will leave the upper face of our pad with a thickness of 1.8mm'",
+   "fuente": "FreeCAD Manual cap. Modeling for product design",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-freecad-03",
+   "cap": 3,
+   "titulo": "El Lego: pines Ø9.765 (r=4.8825) a 10.2 de la esquina, Pad 12.6, patrón lineal 24 mm × 3 y 36 mm × 4; barrenos r=3.6 Pocket 12.6 + patrón",
+   "tipo": "tutorial",
+   "herramientas": "Pad/Pocket + PatternOp linear (ForgeBRepStudio.tsx:472) · features, no copias",
+   "oraculo": "un solo sólido tras 4 patrones (A5); V_final = V_base + 8·π·(4.8825²−3.6²)·12.6 ±0.5 % (pin hueco); Euler-Poincaré con género G=8",
+   "respuesta_impresa": "Manual: circle radius 4.8825mm, 10.2mm from the upper corner, pad 12.6mm, linear pattern length 24mm 3 occurences / 36mm 4 occurences; pocket circle 3.6mm",
+   "fuente": "FreeCAD Manual cap. Modeling for product design",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-freecad-04",
+   "cap": 3,
+   "titulo": "La mesa (Part CSG): 4 patas Box 80×80×750 + tablero + Cut con cilindros que SOBRESALEN (face-on-face)",
+   "tipo": "tutorial",
+   "herramientas": "makeBox/makeCylinder/fuse/cut · regla R-14 overshoot",
+   "oraculo": "V = Σ patas + tablero − Σ barrenos exacto ±1e-6; con cilindro EXACTO (sin overshoot) la booleana produce falla o shell (documentar); con overshoot ≥0.1 mm: Solid único",
+   "respuesta_impresa": "Manual 'Traditional modeling - the CSG way': Box Length 80mm Width 80mm Height 75cm; posiciones x:8mm y:8mm",
+   "fuente": "FreeCAD Manual cap. Traditional modeling — the CSG way",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-freecad-05",
+   "cap": 3,
+   "titulo": "Escalera topológica por script: Wire.isClosed() → Face → extrude = Solid; Wire.extrude = Shell",
+   "tipo": "kernel",
+   "herramientas": "occt.ts extrudePolygon vs extrusión de wire abierto · validador A1/A2/A3",
+   "oraculo": "Face.extrude(0,0,10) → ShapeType Solid, volumeClosed > 0; Wire.extrude → Shell, volumeClosed = 0 exacto (y volume(onlyClosed=false) da un número plausible y FALSO)",
+   "respuesta_impresa": "Manual 'Scripting': print(W.isClosed()); F = Part.Face(W); P = F.extrude(Vector(0,0,10)); S = W.extrude(...) → hollow shell",
+   "fuente": "FreeCAD Manual cap. Python scripting; pliego H1",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-freecad-06",
+   "cap": 3,
+   "titulo": "Check Geometry: caja de 10³ con una cara quitada — Analyzer pasa, volumeClosed = 0",
+   "tipo": "kernel",
+   "herramientas": "BRepCheck_Analyzer.IsValid_2 + VolumeProperties_1(onlyClosed=true) · gate A0+A1+A3",
+   "oraculo": "caja: IsValid true, V_closed = 1000; caja sin cara: IsValid true, V_open = 800, V_closed = 0.000 → FALLA A3; el gate reporta el feature que rompió",
+   "respuesta_impresa": "",
+   "fuente": "FreeCAD Manual Part Workbench 'Check Geometry'; pliego H1/H2 (medido 2026-07-31)",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-freecad-07",
+   "cap": 3,
+   "titulo": "Mallado con deviation 0.10 vs 0.01: la degradación se declara y se audita (B2)",
+   "tipo": "kernel",
+   "herramientas": "tessellate(deflection) occt.ts:1764 · volumen B-Rep vs malla",
+   "oraculo": "cilindro r=10 h=20: |V_mesh − V_brep|/V_brep < 3·(dev/r) para dev=0.10 y dev=0.01; el número de triángulos crece ≈ 10^{1/2}·… (registrar); dev queda guardada en el artefacto STL/STEP",
+   "respuesta_impresa": "Manual 'Converting objects to meshes': deviation default 0.10, example with 0.01",
+   "fuente": "FreeCAD Manual cap. Exporting to slicers",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-freecad-08",
+   "cap": 3,
+   "titulo": "Referencias que bailan: editar el Pad base del Lego y verificar que el Pocket sigue en la cara correcta (remap)",
+   "tipo": "suite",
+   "herramientas": "IDs inmutables de sub-forma (Modified/Generated) en FilletOp.edges/ShellOp.faces · timeline",
+   "oraculo": "cambiar Pad 14.4→16.0: el Pocket mantiene pared 1.8 (no 3.4) y los 8 pines siguen en la cara superior; 0 features huérfanos",
+   "respuesta_impresa": "",
+   "fuente": "FreeCAD Manual: Name vs Label, Map Sketch; pliego §1.3 y §6.3",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-freecad-09",
+   "cap": 3,
+   "titulo": "Round-trip STEP del Lego (hornear la historia) y plano 2D (Drawing → SVG)",
+   "tipo": "tutorial",
+   "herramientas": "exportSTEP/importSTEP (occt.ts:1923/1956) · drawing.ts generateDrawing",
+   "oraculo": "V y Euler idénticos tras reimportar (±1e-6); plano con 3 vistas y cotas 23.7/47.7/14.4 legibles (juez con ojos)",
+   "respuesta_impresa": "",
+   "fuente": "FreeCAD Manual: 'Create simple copy' / STEP; Drawing Workbench",
+   "valor": 3
+  },
+  {
+   "id": "kernel-nurbs-hughes-01",
+   "cap": 4,
+   "titulo": "Círculo unitario de 4 segmentos racionales cuadráticos (Tabla A.2) y toro R=5 r=1 (A.3/A.4)",
+   "tipo": "kernel",
+   "herramientas": "evaluador NURBS de superficie (pesos w_ij) · Ξ={0,0,0,1,1,2,2,3,3,4,4,4}",
+   "oraculo": "|‖C(ξ)‖−1| < 1e-12; toro: (√(x²+y²)−5)² + z² = 1 ±1e-12 en 10^4 muestras; área = 4π²·5·1 = 197.392 ±1e-6 por Gauss sobre spans",
+   "respuesta_impresa": "Hughes Apéndice A.1 Tabla A.2: puntos (1,0),(1,1),(0,1),(−1,1),(−1,0),(−1,−1),(0,−1),(1,−1),(1,0) pesos 1,1/√2,1,1/√2,…; A.2: 'circular NURBS curve of radius 1 … around a circular path of radius 5'",
+   "fuente": "Hughes 2005 Apéndice A.1-A.2",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-hughes-02",
+   "cap": 4,
+   "titulo": "Inserción de nudo vs elevación de orden NO conmutan: k-refinement n+r vs (r+1)n − rp",
+   "tipo": "kernel",
+   "herramientas": "Boehm + elevación de grado sobre la cuadrática de Fig 6 (Ξ={0,0,0,1,2,3,4,4,5,5,5})",
+   "oraculo": "ambas rutas reproducen la curva ±1e-12; conteo de funciones base: p-refinement clásico (r+1)n − rp, k-refinement n + r; continuidad C^{p−1} vs C^{r+p−1} medida en nudos",
+   "respuesta_impresa": "Hughes §2.1.4/Fig 10",
+   "fuente": "Hughes 2005 §2.1.3-2.1.4",
+   "valor": 3
+  },
+  {
+   "id": "kernel-nurbs-hughes-03",
+   "cap": 4,
+   "titulo": "Placa infinita con barreno (R=1, L=4, Tx=10, E=1e5, nu=0.3): FEA de La Forja vs solución exacta (15)-(17)",
+   "tipo": "benchmark",
+   "herramientas": "fea.ts (voxel/tet, von Mises) · tracción exacta como Neumann en el borde · malla NURBS coarsest Ξ={0,0,0,0.5,1,1,1} H={0,0,0,1,1,1}",
+   "oraculo": "σ_xx máx en (0,R) = 3·Tx = 30 ±5 % en la malla fina; tasa de convergencia L² del esfuerzo ≥ 1 (lineal) y reportada; los cuadráticos NURBS dan 2 (impreso) — nuestro piso de Szabó medido",
+   "respuesta_impresa": "Hughes Fig 16: R=1, L=4, E=10^5, ν=0.3; Fig 21: 'applied stress is Tx = 10 and the stress concentration is σxx = 30'; §4.1 tasas 2,3,4 para cuadrático/cúbico/cuártico",
+   "fuente": "Hughes 2005 §4.1 ec. (15)-(19)",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-hughes-04",
+   "cap": 4,
+   "titulo": "Cilindro grueso rin=1 rout=2 a presión interna, deformación plana: u_r(r) exacto ec. (20)-(22)",
+   "tipo": "benchmark",
+   "herramientas": "fea.ts sobre revolvePolygon del anillo · presión P en la cara interna",
+   "oraculo": "error máx de u_r a través del espesor < 1 % (Hughes malla 1 cuadrática: ~1 %; malla 3: 0.01 %); σ_rr(rin) = −P y σ_rr(rout) = 0 ±1 %",
+   "respuesta_impresa": "Hughes §4.2: 'inner radius rin = 1, outer radius rout = 2'; errores ≈1 %, 0.1 %, 0.01 % en mallas 1-3; ec. (20) u_r = (1/E)·P rin²/(rout²−rin²)·[(1−ν)r + rout²(1+ν)/r]",
+   "fuente": "Hughes 2005 §4.2 + Apéndice A.4",
+   "valor": 5
+  },
+  {
+   "id": "kernel-nurbs-hughes-05",
+   "cap": 4,
+   "titulo": "Cascarón cilíndrico delgado (R/t = 100) con extremos fijos a presión: capa límite de Timoshenko",
+   "tipo": "benchmark",
+   "herramientas": "fea.ts (2 elementos cuadráticos en espesor según Hughes) vs solución de cascarón",
+   "oraculo": "perfil u_r(z) vs Timoshenko-Woinowsky-Krieger pp. 476-477: error L∞ < 2 % con la malla fina; la voxelización lineal NO converge (documentar el piso)",
+   "respuesta_impresa": "Hughes §4.4: 'radius to thickness ratio is 100'",
+   "fuente": "Hughes 2005 §4.4",
+   "valor": 3
+  },
+  {
+   "id": "kernel-nurbs-hughes-06",
+   "cap": 4,
+   "titulo": "Shell obstacle course: Scordelis-Lo, hemisferio pellizcado, cilindro pellizcado (Belytschko)",
+   "tipo": "benchmark",
+   "herramientas": "fea.ts vs valores de referencia de Belytschko et al. (Figs 37-39, datos en figura)",
+   "oraculo": "desplazamiento del punto de control normalizado → 1.00 ±3 % en la malla fina (valor de referencia tomado de Belytschko, no del texto)",
+   "respuesta_impresa": "",
+   "fuente": "Hughes 2005 §4.5 Figs 37-39",
+   "valor": 2
+  },
+  {
+   "id": "kernel-nurbs-hughes-07",
+   "cap": 4,
+   "titulo": "P1: cantidades de FRONTERA integradas sobre la cara NURBS exacta, no sobre el voxel (área proyectada, flujo de pared)",
+   "tipo": "suite",
+   "herramientas": "Gauss por knot span sobre la superficie OCCT · comparación con tessellate/voxel",
+   "oraculo": "área lateral del cilindro r=10 h=20 = 2π·10·20 = 1256.637 ±1e-6 por NURBS vs error ≥ 0.5 % por malla dev=0.1; tonelaje del cubo E12 con área proyectada exacta ±0.1 %",
+   "respuesta_impresa": "",
+   "fuente": "Hughes 2005 §1 (Szabó) + pliego §3.6 P1",
+   "valor": 4
+  },
+  {
+   "id": "kernel-nurbs-hughes-08",
+   "cap": 4,
+   "titulo": "El experimento acotado: placa rectangular limpia, térmico lineal, IGA cuadrático trivariado vs voxel/tet, contra analítica",
+   "tipo": "benchmark",
+   "herramientas": "parche trivariado trivial (3 vectores de nudos) · fea térmico · solución 1D/2D analítica",
+   "oraculo": "criterio de paso escrito: ≥ 5× menos DOFs para el mismo error en flujo de pared (1 %); si no, IGA se cierra por escrito",
+   "respuesta_impresa": "",
+   "fuente": "Hughes 2005 §3 + pliego §3.7 VEREDICTO",
+   "valor": 2
+  },
+  {
+   "id": "kernel-nurbs-mit-08",
+   "cap": 1,
+   "titulo": "Spline en el SKETCHER: 6 puntos a ojo → restringir tangencias → cota → extruir (perfil de leva/carcasa)",
+   "tipo": "suite",
+   "herramientas": "SketchEditor entidad 'spline' (hoy inexistente) + solver con puntos de control como variables · extrudeSpline",
+   "oraculo": "DOF del croquis = 2·N − #restricciones; volumen extruido = área (Green sobre la spline) × h ±1e-6; sólido válido A0/A1/A3",
+   "respuesta_impresa": "",
+   "fuente": "MIT L6 §6.4 (diseño con B-splines); FreeCAD Sketcher",
+   "valor": 5
+  }
+ ],
+ "features": [
+  {
+   "nombre": "Evaluador NURBS propio (Cox-de Boor 0/0=0, De Boor, Boehm, derivadas) + validador B7/B8/B9/B10 de nudos y pesos",
+   "que_hace": "Evalúa curvas/superficies racionales y audita vector de nudos (abierto, n+k+1, multiplicidad ≤ p), pesos > 0, partición de unidad y spans degenerados; base para P1 (integrar sobre la cara exacta) y para el sketcher con splines.",
+   "estado_forja": "no",
+   "donde": "grep 'deBoor|cox' en src/ solo pega src/lib/circuitos/microfisica.ts (no CAD); occt.ts usa GeomAPI_PointsToBSpline_2 (occt.ts:447,1170) sin auditar nudos/pesos",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kernel-nurbs-mit-01",
+    "kernel-nurbs-mit-02",
+    "kernel-nurbs-mit-03",
+    "kernel-nurbs-mit-05",
+    "kernel-nurbs-mit-06",
+    "kernel-nurbs-hughes-01",
+    "kernel-nurbs-hughes-02"
+   ]
+  },
+  {
+   "nombre": "RMF por doble reflexión (rmf.ts) + marcos explícitos en el sweep + cierre de lazo",
+   "que_hace": "Barrido sin torsión O(h^4) sin thresholds; tangentes a 5 puntos; rotación gradual α(s) para espinas cerradas (canales de enfriamiento); reemplaza el Frenet por default.",
+   "estado_forja": "no",
+   "donde": "occt.ts:1243-1270 sweepProfilePipeShell(frenet = true) → mk.SetMode_1(frenet); grep 'doble reflex|RMF|RotationMinim' src scripts = 0 (solo docs/forja-research)",
+   "prioridad": "P0",
+   "ejercicios": [
+    "kernel-nurbs-wang-01",
+    "kernel-nurbs-wang-02",
+    "kernel-nurbs-wang-03",
+    "kernel-nurbs-wang-04",
+    "kernel-nurbs-wang-05"
+   ]
+  },
+  {
+   "nombre": "Validador de sólido A0+A1+A3 (BRepCheck_Analyzer + ShapeType + volumeClosed) en cada feature y como gate",
+   "que_hace": "Detecta cáscara abierta, tipo no-Solid y sub-formas mal formadas después de CADA feature; guarda el resultado en el nodo de la historia; gate antes de mallar/STEP/cotizar.",
+   "estado_forja": "no",
+   "donde": "grep BRepCheck|ShapeFix en src/ = 0; VolumeProperties_1(shape, props, false, …) en occt.ts:634, 1418, 1464 (onlyClosed=false: la caja sin cara da 800, no 0)",
+   "prioridad": "P0",
+   "ejercicios": [
+    "kernel-nurbs-freecad-05",
+    "kernel-nurbs-freecad-06",
+    "kernel-nurbs-freecad-01"
+   ]
+  },
+  {
+   "nombre": "Loft entre secciones",
+   "que_hace": "BRepOffsetAPI_ThruSections; probado con V=4000 (dos cuadrados 20×20 a h=10).",
+   "estado_forja": "si",
+   "donde": "occt.ts:1080 loftSections; scripts/occt-sweep-loft-test.cjs; ForgeBRepStudio.tsx LoftOp",
+   "prioridad": "P2",
+   "ejercicios": []
+  },
+  {
+   "nombre": "Sweep de perfil por trayectoria (MakePipe / MakePipeShell)",
+   "que_hace": "Barre un perfil por spline C2 (PointsToBSpline); codo y hélice probados por volumen (V≈πr²L ±6 %).",
+   "estado_forja": "parcial",
+   "donde": "occt.ts:1199 sweepProfileAlong, :1243 sweepProfilePipeShell (marco Frenet por default = H4); thread.ts:104; occt-sweep-loft-test.cjs",
+   "prioridad": "P0",
+   "ejercicios": [
+    "kernel-nurbs-wang-05",
+    "kernel-nurbs-wang-04"
+   ]
+  },
+  {
+   "nombre": "Spline en el sketcher 2D (entidad + restricciones de tangencia + cotas)",
+   "que_hace": "Dibujar B-splines a ojo, restringirlas y acotarlas dentro del croquis (Fusion 'Fit point spline', SolidWorks 'Spline').",
+   "estado_forja": "no",
+   "donde": "SketchEditor.tsx entidades: 'line' 'circle' 'arc' 'ellipse' 'point' (grep); sketch-solver.ts sin spline",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kernel-nurbs-mit-08",
+    "kernel-nurbs-mit-04"
+   ]
+  },
+  {
+   "nombre": "Croquis sobre cara + External geometry (proyección de aristas del sólido al croquis)",
+   "que_hace": "Importar aristas de la cara como geometría de referencia (no real) para restringir contra ellas — el paso 4 del Lego.",
+   "estado_forja": "no",
+   "donde": "grep -i 'external|projectEdge' en SketchEditor.tsx = 0; el croquis sobre cara existe (onPickFace, forja-carencias-click.md) pero sin aristas importadas",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kernel-nurbs-freecad-02",
+    "kernel-nurbs-freecad-03"
+   ]
+  },
+  {
+   "nombre": "Pad/Pocket/Hole/Fillet/Chamfer/Shell/Draft/Revolve + Patrón lineal/circular/espejo de feature",
+   "que_hace": "El árbol de features de Part Design con un solo sólido por construcción.",
+   "estado_forja": "si",
+   "donde": "ForgeBRepStudio.tsx:438 OpType, :472 PatternOp mode 'linear'|'circular'|'mirror'; occt.ts extrudePolygon/drillHole/filletEdges/chamferEdges/shellSolid/draftFaces/revolvePolygon",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kernel-nurbs-freecad-01",
+    "kernel-nurbs-freecad-03"
+   ]
+  },
+  {
+   "nombre": "Overshoot automático en herramientas de corte (R-14) + escalera de tolerancia ShapeFix_ShapeTolerance (R-17)",
+   "que_hace": "cut(target, tool) extiende la herramienta max(0.1 mm, 3·tol) en traslapes coplanares/tangentes; reintento con tolerancia inflada y registro.",
+   "estado_forja": "no",
+   "donde": "occt.ts cut/fuse/common ~línea 487-515: new Cut_3(a,b).Shape() sin IsDone/try; grep ShapeFix = 0",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kernel-nurbs-freecad-04"
+   ]
+  },
+  {
+   "nombre": "Identidad inmutable de sub-formas (Modified/Generated) — naming topológico",
+   "que_hace": "FilletOp.edges / ShellOp.faces referencian IDs persistentes en vez de índices del explorer; remap al editar río arriba.",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/timeline.ts (re-emparejar por normal ≥0.85 y verticalidad, documentado en el pliego); ForgeBRepStudio usa índices",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kernel-nurbs-freecad-08"
+   ]
+  },
+  {
+   "nombre": "Deviation de teselado declarada + auditoría B2 (V_brep vs V_mesh)",
+   "que_hace": "La deflexión es entrada del análisis/export, se registra en el artefacto y se compara contra el requisito.",
+   "estado_forja": "parcial",
+   "donde": "occt.ts:1764 BRepMesh_IncrementalMesh_2 con deflexión 0.1 por default; no se registra ni se audita",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kernel-nurbs-freecad-07"
+   ]
+  },
+  {
+   "nombre": "STEP I/O + Euler-Poincaré + masa/inercia",
+   "que_hace": "Round-trip STEP AP214 vía MEMFS; topology() V−E+F; massProperties.",
+   "estado_forja": "si",
+   "donde": "occt.ts:1923 exportSTEP, :1956 importSTEP, :1400 topology, massProperties",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kernel-nurbs-freecad-09"
+   ]
+  },
+  {
+   "nombre": "Planos 2D (HLR) desde el sólido",
+   "que_hace": "Vistas ortogonales con líneas ocultas y cotas.",
+   "estado_forja": "si",
+   "donde": "src/forja/brep/drawing.ts generateDrawing",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kernel-nurbs-freecad-09"
+   ]
+  },
+  {
+   "nombre": "FEA contra benchmarks con solución exacta (placa con barreno, cilindro grueso) + clasificador SolidClassifier",
+   "que_hace": "Convierte los problemas de Hughes en oráculos del FEA voxel/tet; cambia el ray-cast (−34 % de volumen documentado) por BRepClass3d_SolidClassifier.",
+   "estado_forja": "parcial",
+   "donde": "fea.ts:23 (comentario falso: SolidClassifier sí está expuesto — pliego H3), :156 Möller-Trumbore; von Mises existe; sin benchmark analítico en scripts/",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kernel-nurbs-hughes-03",
+    "kernel-nurbs-hughes-04",
+    "kernel-nurbs-hughes-05",
+    "kernel-nurbs-hughes-06"
+   ]
+  },
+  {
+   "nombre": "P1/P2 de Hughes: integrales de frontera sobre la cara NURBS exacta + nodos de frontera P2 proyectados",
+   "que_hace": "Área proyectada, flujo de pared, volumen de cavidad por cuadratura sobre knot spans; el voxel resuelve el interior.",
+   "estado_forja": "no",
+   "donde": "grep 'isogeom' src = 0; tonelaje/área proyectada salen de tessellate",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kernel-nurbs-hughes-07",
+    "kernel-nurbs-hughes-08"
+   ]
+  }
+ ],
+ "supertickets": [
+  {
+   "slug": "kernel-nurbs-validador-solido",
+   "titulo": "El sólido se mide a sí mismo: A0+A1+A3 después de cada feature (H1/H2 del pliego)",
+   "capitulos": [
+    3
+   ],
+   "objetivo": "Que ninguna cáscara rota pase por sólido: volumeClosed() (onlyClosed=true), BRepCheck_Analyzer y ShapeType en un validate(oc, shape) → Hallazgo[] que corre tras CADA feature del Studio y como gate antes de mallar/STEP/cotizar; resultado guardado en el nodo. Evidencia: el Lego del manual construido en la suite con VIDEO + stills, y la caja-sin-cara reprobando.",
+   "ejercicios": [
+    {
+     "id": "kernel-nurbs-freecad-05",
+     "titulo": "Face.extrude = Solid; Wire.extrude = Shell",
+     "herramientas": "extrudePolygon vs wire abierto · A1/A2/A3",
+     "oraculo": "Solid: volumeClosed 1000 = volume; Shell: volumeClosed = 0.000 exacto vs volume 800 (plausible y falso)",
+     "respuesta_impresa": "Manual Scripting: W.isClosed(); F.extrude → solid; W.extrude → hollow shell"
+    },
+    {
+     "id": "kernel-nurbs-freecad-06",
+     "titulo": "Check Geometry: caja 10³ sin una cara",
+     "herramientas": "BRepCheck_Analyzer.IsValid_2 + volumeClosed",
+     "oraculo": "IsValid=true en ambas; V_closed 1000 vs 0.000 → FALLA A3 con feature_id, sub-shape y XYZ",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kernel-nurbs-freecad-01",
+     "titulo": "Lego: 23.7×47.7 anclado → Pad 14.4",
+     "herramientas": "sketch-solver (DOF=0) · Pad · validate()",
+     "oraculo": "V = 16,278.6 mm³ ±1e-6; Euler 2; A0/A1/A3 PASA guardado en el nodo",
+     "respuesta_impresa": "23.7mm, 47.7mm, Pad 14.4mm"
+    },
+    {
+     "id": "kernel-nurbs-freecad-02",
+     "titulo": "Lego: Pocket 12.6 con pared 1.8",
+     "herramientas": "croquis sobre cara · Pocket · sonda de espesor",
+     "oraculo": "V = 5,110.6 mm³ ±0.1; espesor mín 1.8; A5 un solo sólido",
+     "respuesta_impresa": "Pocket 12.6mm → thickness 1.8mm"
+    },
+    {
+     "id": "kernel-nurbs-freecad-04",
+     "titulo": "La mesa CSG: cortes con cilindros que sobresalen",
+     "herramientas": "cut con overshoot R-14 · ShapeFix_ShapeTolerance escalera",
+     "oraculo": "V exacto ±1e-6; sin overshoot documentar la falla face-on-face; con overshoot Solid único",
+     "respuesta_impresa": "Box 80mm×80mm×75cm; x:8mm y:8mm"
+    },
+    {
+     "id": "kernel-nurbs-freecad-07",
+     "titulo": "Deviation 0.10 vs 0.01 auditada",
+     "herramientas": "tessellate(dev) · B2",
+     "oraculo": "cilindro r=10 h=20: |V_mesh−V_brep|/V < 3·dev/r en ambas; dev registrada en el artefacto",
+     "respuesta_impresa": "deviation default 0.10 / 0.01"
+    }
+   ],
+   "ya_existe": [
+    "occt.ts:1400 topology() Euler",
+    "occt.ts:634/1418/1464 VolumeProperties_1(onlyClosed=false) — el bug H1",
+    "scripts/occt-brep-test.cjs (exime Euler=2 en fillets)",
+    "sketch-solver.ts:232 rankAndMovable → status full/under/over (C5 ya cumplido)",
+    "BRepCheck_Analyzer y ShapeFix_ShapeTolerance verificados en el binario (pliego 2026-07-31)"
+   ],
+   "dependencias": [],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "kernel-nurbs-rmf-canales",
+   "titulo": "El tubo que no se tuerce: RMF de doble reflexión para canales, roscas y CAM (H4)",
+   "capitulos": [
+    2
+   ],
+   "objetivo": "rmf.ts (Tabla I de Wang, 9 líneas sin sqrt, tangentes a 5 puntos, cierre de lazo con α(s)) y sweepProfilePipeShell alimentado con marcos explícitos (frenet=false como parche inmediato). Evidencia: torus knot con ratio 1/16, S con inflexión Frenet vs RMF en VIDEO, y el circuito de enfriamiento del cubo (E8b) barrido cerrado sin costura.",
+   "ejercicios": [
+    {
+     "id": "kernel-nurbs-wang-01",
+     "titulo": "Torus knot: orden O(h^4)",
+     "herramientas": "rmf.ts · x(u) de ec. (16) · h=0.01·2^−k",
+     "oraculo": "e_k/e_{k−1} ∈ [0.060,0.066] en 2^7..2^11; e(2^11) < 1e-8",
+     "respuesta_impresa": "Tabla III: 2^11 → 4.97E−9, ratio 0.062575"
+    },
+    {
+     "id": "kernel-nurbs-wang-02",
+     "titulo": "Curva PH con RMF exacto",
+     "herramientas": "rmf.ts vs Farouki · Hermite G1 PH",
+     "oraculo": "e(2^11) < 1e-13; rotación ratio ≈ 0.25",
+     "respuesta_impresa": "Tabla V: 2^11 → 9.25E−15 (0.0625) vs rotación 1.75E−7 (0.250)"
+    },
+    {
+     "id": "kernel-nurbs-wang-03",
+     "titulo": "Espina como puntos: tangentes 5 puntos y v1 de ec. (17)",
+     "herramientas": "estimador O(h^5) · recta de 10^4 muestras",
+     "oraculo": "2 puntos → ratio 0.25; 5 puntos → 1/16; recta: marco constante, cero NaN, cero 'if' de colinealidad",
+     "respuesta_impresa": "v1 = 13(t_i + t_{i+1}) − (t_{i−1} + t_{i+2}); n ≥ 4"
+    },
+    {
+     "id": "kernel-nurbs-wang-05",
+     "titulo": "S con inflexión: Frenet vs RMF con perfil cuadrado",
+     "herramientas": "sweepProfilePipeShell(frenet true/false) vs marcos rmf.ts · reversibilidad R-25",
+     "oraculo": "giro del cuadrado: Frenet ≈ 180° en κ=0, RMF < 1°; ida y vuelta ±1e-9",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kernel-nurbs-wang-04",
+     "titulo": "Circuito de enfriamiento cerrado (E8b) sin costura",
+     "herramientas": "espina B-spline cerrada · α(s) repartida · A0/A1/A3",
+     "oraculo": "Δα del RMF puro ≠ 0 medido; tras repartir |r(L)−r(0)| < 1e-9; V = πr²L_arco ±2 %",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "occt.ts:1243 sweepProfilePipeShell (SetMode_1(frenet=true))",
+    "occt.ts:1199 sweepProfileAlong (MakePipe)",
+    "scripts/occt-sweep-loft-test.cjs (codo + hélice por volumen)",
+    "thread.ts:104 usa ambos sweeps",
+    "mold/estudio-molde-datos.ts canales E8b"
+   ],
+   "dependencias": [
+    "kernel-nurbs-validador-solido"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "kernel-nurbs-evaluador-nudos",
+   "titulo": "NURBS que se auditan: evaluador propio, círculo racional exacto y validador de nudos/pesos",
+   "capitulos": [
+    1,
+    4
+   ],
+   "objetivo": "Un módulo nurbs.ts (Cox-de Boor con 0/0=0, De Boor, Boehm, derivadas ec. 6.24, superficies racionales) con validador B7-B10, probado contra los datos impresos de MIT y del Apéndice A de Hughes. Es la base para integrar sobre la cara exacta (P1) y para el sketcher con splines.",
+   "ejercicios": [
+    {
+     "id": "kernel-nurbs-mit-01",
+     "titulo": "Cúbica k=4 n=6: 11 nudos, partición de unidad",
+     "herramientas": "nurbs.ts evaluador · B7/B9",
+     "oraculo": "ΣN = 1 ±1e-12, N ≥ 0, 11 nudos, interpola extremos",
+     "respuesta_impresa": "n=6 → 7 control points, n+k+1 = 11 knots"
+    },
+    {
+     "id": "kernel-nurbs-mit-02",
+     "titulo": "Multiplicidad ρ=1,2,3 → C2/C1/C0; ρ>p rechazado",
+     "herramientas": "Boehm · salto de derivadas",
+     "oraculo": "saltos < 1e-9 donde toca; ρ=3 esquina; ρ=4 → B7 FALLA",
+     "respuesta_impresa": "C^{k−ρ−1}; 'no more than p times'"
+    },
+    {
+     "id": "kernel-nurbs-mit-05",
+     "titulo": "De Boor + subdivisión exacta",
+     "herramientas": "De Boor · Boehm",
+     "oraculo": "C(u*) ±1e-12; mitades reproducen la curva en 100 muestras",
+     "respuesta_impresa": "polígonos P00P11P22P33 / P33P23P13P03"
+    },
+    {
+     "id": "kernel-nurbs-mit-06",
+     "titulo": "Cuarto de círculo racional y la prueba negativa (pesos=1)",
+     "herramientas": "NURBS grado 2 · extrudeCircle de OCCT",
+     "oraculo": "|‖C‖−R| < 1e-12; con w=1 el error de radio ≈ 2-3 %",
+     "respuesta_impresa": "pesos 1, 1/√2, 1 (Hughes A.1)"
+    },
+    {
+     "id": "kernel-nurbs-hughes-01",
+     "titulo": "Círculo de 4 arcos y toro R=5 r=1 (Tablas A.2-A.4)",
+     "herramientas": "superficie racional · área por Gauss sobre spans",
+     "oraculo": "(√(x²+y²)−5)²+z² = 1 ±1e-12; área = 4π²·5 = 197.392 ±1e-6",
+     "respuesta_impresa": "Ξ={0,0,0,1,1,2,2,3,3,4,4,4}; puntos (1,0),(1,1),(0,1)…; radius 1 around radius 5"
+    },
+    {
+     "id": "kernel-nurbs-mit-03",
+     "titulo": "Derivada ec. 6.24 y span degenerado (B10)",
+     "herramientas": "fórmula vs diferencia central · B10",
+     "oraculo": "error rel < 1e-5; span 1e-10·rango → B10 reporta antes de evaluar",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kernel-nurbs-hughes-02",
+     "titulo": "k-refinement: n+r vs (r+1)n−rp",
+     "herramientas": "Boehm + elevación de grado",
+     "oraculo": "curva idéntica ±1e-12; conteo de bases y continuidad medidos",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "occt.ts:447/1170 GeomAPI_PointsToBSpline_2 (grado 3-8, C2, 1e-3)",
+    "occt.ts extrudeSpline / extrudeCircle",
+    "ningún evaluador NURBS propio ni validador de nudos (grep)"
+   ],
+   "dependencias": [],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "kernel-nurbs-partdesign-lego",
+   "titulo": "El Lego completo como en el manual: croquis sobre cara + aristas externas + patrones + referencias que no bailan",
+   "capitulos": [
+    3
+   ],
+   "objetivo": "Cerrar el flujo Part Design de van Havre DENTRO de ForgeBRepStudio: External geometry en el croquis sobre cara, patrón de feature (ya existe) y IDs persistentes de sub-forma para que editar el Pad no rompa el Pocket ni los pines. Lección con voz del Lego + plano 2D + STEP round-trip.",
+   "ejercicios": [
+    {
+     "id": "kernel-nurbs-freecad-02",
+     "titulo": "Croquis sobre cara + 4 cotas de 1.8 contra aristas importadas",
+     "herramientas": "External geometry · Pocket 12.6",
+     "oraculo": "V = 5,110.6 ±0.1; pared 1.8 medida; DOF=0",
+     "respuesta_impresa": "1.8mm ×4; Pocket 12.6mm"
+    },
+    {
+     "id": "kernel-nurbs-freecad-03",
+     "titulo": "Pines r=4.8825 a 10.2 + patrón 24×3 / 36×4; barrenos r=3.6",
+     "herramientas": "Pad/Pocket · PatternOp linear",
+     "oraculo": "un sólido (A5); V = V_base + 8π(4.8825²−3.6²)·12.6 ±0.5 %; Euler con G=8",
+     "respuesta_impresa": "radius 4.8825mm; 10.2mm; pattern 24mm×3, 36mm×4; circle 3.6mm"
+    },
+    {
+     "id": "kernel-nurbs-freecad-08",
+     "titulo": "Editar Pad 14.4→16.0: el Pocket y los pines siguen en su cara",
+     "herramientas": "IDs inmutables Modified/Generated · remap",
+     "oraculo": "pared sigue 1.8; 8 pines en la cara superior; 0 huérfanos",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kernel-nurbs-freecad-09",
+     "titulo": "STEP round-trip + plano con cotas 23.7/47.7/14.4",
+     "herramientas": "exportSTEP/importSTEP · drawing.ts",
+     "oraculo": "V y Euler idénticos ±1e-6; plano legible (juez con ojos)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kernel-nurbs-mit-08",
+     "titulo": "Spline en el sketcher: 6 puntos → tangencias → cota → extruir",
+     "herramientas": "entidad 'spline' + solver · extrudeSpline",
+     "oraculo": "DOF = 2N − #restricciones; V = área Green × h ±1e-6; A0/A1/A3",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "ForgeBRepStudio.tsx:438 OpType extrude/hole/fillet/chamfer/shell/draft/revolve/loft/sweep",
+    "ForgeBRepStudio.tsx:472 PatternOp linear|circular|mirror",
+    "SketchEditor.tsx line/circle/arc/ellipse/point (sin spline, sin external)",
+    "drawing.ts generateDrawing",
+    "occt.ts exportSTEP/importSTEP",
+    "forja-carencias-click.md: onPickFace ya entrega faceId + punto"
+   ],
+   "dependencias": [
+    "kernel-nurbs-validador-solido",
+    "kernel-nurbs-evaluador-nudos"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "kernel-nurbs-fea-benchmarks-hughes",
+   "titulo": "El FEA contra solución exacta: placa con barreno y cilindro grueso de Hughes como oráculos (P1/P2, no IGA)",
+   "capitulos": [
+    4
+   ],
+   "objetivo": "Usar los problemas con solución cerrada de Hughes §4.1-4.2 como vara del FEA voxel/tet de fea.ts, cambiar el clasificador ray-cast por BRepClass3d_SolidClassifier (H3) e integrar las cantidades de frontera sobre la cara NURBS exacta (P1). Cierra por escrito el tema IGA con el experimento acotado.",
+   "ejercicios": [
+    {
+     "id": "kernel-nurbs-hughes-04",
+     "titulo": "Cilindro grueso rin=1 rout=2 a presión",
+     "herramientas": "fea.ts sobre revolvePolygon · SolidClassifier",
+     "oraculo": "u_r vs ec. (20) error máx < 1 %; σ_rr(rin) = −P, σ_rr(rout) = 0 ±1 %",
+     "respuesta_impresa": "rin = 1, rout = 2; errores 1 %, 0.1 %, 0.01 % (mallas 1-3, cuadráticos)"
+    },
+    {
+     "id": "kernel-nurbs-hughes-03",
+     "titulo": "Placa con barreno R=1 L=4 Tx=10",
+     "herramientas": "fea.ts · tracción exacta (15)-(17) como Neumann",
+     "oraculo": "σ_xx(0,R) = 30 ±5 %; tasa L² del esfuerzo reportada (≥1)",
+     "respuesta_impresa": "R=1, L=4, E=10^5, ν=0.3, Tx=10, σxx=30"
+    },
+    {
+     "id": "kernel-nurbs-hughes-07",
+     "titulo": "Área proyectada/lateral sobre la cara NURBS exacta (P1)",
+     "herramientas": "Gauss por knot span · vs tessellate",
+     "oraculo": "2π·10·20 = 1256.637 ±1e-6 vs malla dev 0.1 error ≥ 0.5 %; tonelaje E12 ±0.1 %",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kernel-nurbs-hughes-05",
+     "titulo": "Cascarón delgado R/t=100 con extremos fijos",
+     "herramientas": "fea.ts · Timoshenko pp. 476-477",
+     "oraculo": "error L∞ < 2 % o documentar el piso de la voxelización",
+     "respuesta_impresa": "radius to thickness ratio is 100"
+    },
+    {
+     "id": "kernel-nurbs-hughes-08",
+     "titulo": "Experimento acotado IGA: placa limpia térmica",
+     "herramientas": "trivariado trivial · fea térmico · analítica",
+     "oraculo": "≥5× menos DOFs para 1 % en flujo de pared, o se cierra por escrito",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "fea.ts von Mises + voxel/tet (fea.ts:229)",
+    "fea.ts:23 comentario falso sobre SolidClassifier (H3 medido: IN/OUT correctos, ~0.54 ms/punto)",
+    "fea.ts:156 Möller-Trumbore ray-cast (−34 % de volumen en mold-flow-cross.cjs)",
+    "occt.ts revolvePolygon / massProperties"
+   ],
+   "dependencias": [
+    "kernel-nurbs-validador-solido",
+    "kernel-nurbs-evaluador-nudos"
+   ],
+   "esfuerzo": "L",
+   "valor": 3,
+   "sprint_sugerido": 3
+  }
+ ],
+ "brechas_vs_fusion": [
+  {
+   "brecha": "Sweep con marco de torsión mínima (Fusion 'Sweep' orientación Perpendicular/Path; SolidWorks 'Follow path' + twist control) — La Forja barre con Frenet por default (occt.ts:1247)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Wang: Frenet 'not continuously defined… undefined at an inflection point… undesirable twist'; RMF definido para toda espina C1 regular; doble reflexión O(h^4) sin thresholds",
+   "que_hace_la_competencia": "Fusion y SolidWorks orientan el perfil con marco de mínima rotación por default y exponen el giro (twist) como parámetro; Ansys SpaceClaim igual"
+  },
+  {
+   "brecha": "Validación de sólido después de cada feature (Check Geometry / 'Check' de SolidWorks / Fusion valida en cada compute)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "van Havre: escalera Vertex→Solid, isClosed antes de Face, Pad siempre sólido, Check Geometry; pliego H1: volume() da 800 en una caja sin cara",
+   "que_hace_la_competencia": "Parasolid/ACIS validan estanqueidad y reportan el feature que falló con marcador en pantalla; ningún feature entra al árbol si el cuerpo no es válido"
+  },
+  {
+   "brecha": "Spline en el sketcher (fit-point / control-point) con tangencias y cotas",
+   "prioridad": "P1",
+   "que_dice_el_libro": "MIT §6.4-6.5: diseño con polígono de control o interpolación por longitud de cuerda; soporte local (k spans)",
+   "que_hace_la_competencia": "Fusion: Fit point spline y Control point spline con curvatura combs; SolidWorks: Spline + Style spline; FreeCAD Sketcher: B-spline con nudos editables"
+  },
+  {
+   "brecha": "External geometry / proyección de aristas al croquis sobre cara",
+   "prioridad": "P1",
+   "que_dice_el_libro": "van Havre: 'The external geometry is not real… But we can use it to place constraints'; el Lego paso 4",
+   "que_hace_la_competencia": "Fusion 'Project' (P); SolidWorks 'Convert Entities'; Onshape 'Use'"
+  },
+  {
+   "brecha": "Referencias persistentes de cara/arista (naming topológico)",
+   "prioridad": "P1",
+   "que_dice_el_libro": "van Havre: Name inmutable vs Label; Map Sketch para remapear; el pliego: FilletOp.edges son índices del explorer que bailan",
+   "que_hace_la_competencia": "Parasolid + esquemas propietarios; Onshape publica su 'robust topological naming'; FreeCAD 1.0 lo resolvió con realthunder"
+  },
+  {
+   "brecha": "Overshoot automático y booleanas con fuzzy/tolerancia declarada",
+   "prioridad": "P1",
+   "que_dice_el_libro": "van Havre: 'boolean operations… oversensitive to face-on-face situations and might fail… we put ourselves on the safe side'",
+   "que_hace_la_competencia": "Fusion/SolidWorks: 'Through all' / 'To next' evitan face-on-face; Parasolid tiene tolerant modeling; OCCT nativo tiene SetFuzzyValue (no enlazado en nuestro wasm)"
+  },
+  {
+   "brecha": "FEA verificado contra casos con solución exacta (placa con barreno, cilindro grueso) y NAFEMS",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Hughes §4.1-4.2 imprime R=1 L=4 Tx=10 σxx=30, rin=1 rout=2 con errores 1 %/0.1 %/0.01 %; Szabó: el error geométrico pone piso donde más importa (frontera)",
+   "que_hace_la_competencia": "Ansys/SolidWorks Simulation publican Verification Manuals (NAFEMS LE1, LE10…) con el % de error por caso"
+  },
+  {
+   "brecha": "Deviation de teselado declarada y auditada en export/análisis",
+   "prioridad": "P2",
+   "que_dice_el_libro": "van Havre: 'some loss of quality… will unavoidably occur… make sure this loss of quality stays below your minimal requirements'; deviation 0.10 vs 0.01",
+   "que_hace_la_competencia": "Fusion/SolidWorks: STL export con deviation + angle en el diálogo y en el archivo de reporte"
+  },
+  {
+   "brecha": "Análisis isogeométrico",
+   "prioridad": "P2",
+   "que_dice_el_libro": "Hughes: superficies recortadas y parches volumétricos son problemas ABIERTOS (conclusiones); refinamiento propaga de parche a parche",
+   "que_hace_la_competencia": "Ningún CAD comercial mainstream lo ofrece en producción (LS-DYNA tiene IGA experimental); veredicto: no adoptar, sí P1/P2/P3"
+  }
+ ],
+ "archivo_md": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/kernel-nurbs.md",
+ "archivo_json": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/kernel-nurbs.json"
+}

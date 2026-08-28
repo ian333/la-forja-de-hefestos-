@@ -1,0 +1,107 @@
+{
+ "lib-bethune": {
+  "estado": "rojo",
+  "checks": "ERROR falta md o json",
+  "video": "",
+  "still": "",
+  "nota": ""
+ },
+ "lib-kazmer": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 141 (json 141 · tabla md 141) ≥ 30: OK · supertickets 16 ≥ 3: OK · features 21 · md 562 líneas",
+  "video": "",
+  "still": "",
+  "nota": "Kazmer como cliente: el molde de TU pieza, capítulo por capítulo"
+ },
+ "lib-shigley": {
+  "estado": "rojo",
+  "checks": "ERROR falta md o json",
+  "video": "",
+  "still": "",
+  "nota": ""
+ },
+ "lib-anderson": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 298 (json 298 · tabla md 298) ≥ 40: OK · supertickets 18 ≥ 3: OK · features 27 · md 789 líneas",
+  "video": "",
+  "still": "",
+  "nota": "Anderson 6e como cliente de La Forja: catálogo, features y supertickets"
+ },
+ "lib-bertin": {
+  "estado": "rojo",
+  "checks": "ERROR falta md o json",
+  "video": "",
+  "still": "",
+  "nota": ""
+ },
+ "lib-raymer": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 130 (json 130 · tabla md 130) ≥ 40: OK · supertickets 19 ≥ 3: OK · features 18 · md 739 líneas",
+  "video": "",
+  "still": "",
+  "nota": "Pliego Raymer: del croquis al avion dimensionado, dentro del CAD"
+ },
+ "lib-herath": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 115 (json 115 · tabla md 115) ≥ 30: OK · supertickets 12 ≥ 3: OK · features 22 · md 441 líneas",
+  "video": "",
+  "still": "",
+  "nota": "ROBÓTICA (Herath & St-Onge) — catálogo de ejercicios y supertickets"
+ },
+ "dom-fea-lineal": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 45 (json 0 · tabla md 45) ≥ 10: OK · supertickets 6 ≥ 1: OK · features 22 · md 231 líneas",
+  "video": "",
+  "still": "",
+  "nota": "FEA lineal verificado: el solver que se prueba contra el libro"
+ },
+ "dom-fea-nolineal": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 45 (json 0 · tabla md 45) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 21 · md 217 líneas",
+  "video": "",
+  "still": "",
+  "nota": "FEA no-lineal: plasticidad J2, grandes deformaciones, contacto, hiperelástico"
+ },
+ "dom-kernel-nurbs": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 30 (json 30 · tabla md 30) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 15 · md 181 líneas",
+  "video": "",
+  "still": "",
+  "nota": "Kernel CAD — NURBS, sweep RMF, loft, IGA, FreeCAD como UX de referencia"
+ },
+ "dom-termica-cfd": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 31 (json 0 · tabla md 31) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 18 · md 184 líneas",
+  "video": "",
+  "still": "",
+  "nota": "Pliego Térmico-CFD-CHT como cliente"
+ },
+ "dom-cam-chapa": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 39 (json 0 · tabla md 39) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 14 · md 209 líneas",
+  "video": "",
+  "still": "",
+  "nota": "CAM (G-code RS274/NGC) + chapa metalica (factor K, BA/BD, springback) + catalogo de herramienta"
+ },
+ "dom-dibujo-gdt": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 45 (json 0 · tabla md 45) ≥ 8: OK · supertickets 6 ≥ 1: OK · features 20 · md 228 líneas",
+  "video": "",
+  "still": "",
+  "nota": "El plano es un documento legal: cotas con precio, datums reales, zonas medibles"
+ },
+ "dom-moldflow-benchmarks": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 36 (json 0 · tabla md 36) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 18 · md 200 líneas",
+  "video": "",
+  "still": "",
+  "nota": "Moldflow + benchmarks de llenado como CLIENTE — el solver se demuestra contra terceros, no contra el libro"
+ },
+ "dom-generativo-fatiga-dinamica": {
+  "estado": "verde",
+  "checks": "json válido · ejercicios 48 (json 48 · tabla md 48) ≥ 8: OK · supertickets 6 ≥ 1: OK · features 16 · md 211 líneas",
+  "video": "",
+  "still": "",
+  "nota": "Generativo, fatiga y dinamica: topologia (top88), fatiga (fe-safe), modal (masa efectiva), pandeo (MIT) y multicuerpo (Schwab/Featherstone)"
+ }
+}

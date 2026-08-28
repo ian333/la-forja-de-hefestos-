@@ -1,0 +1,646 @@
+{
+ "libro": "Dominio CAM + chapa: NISTIR 6556 RS274/NGC v3 (Kramer/Proctor/Messina 2000) · KETIV AVA 'Sheet Metal Unfold Rule Equations' · DB Sheetmetals 'DIN 6935 K-factors / bending information' · NPTEL L27 (R.N. Ghosh) · Weston cap. 10 'Herramienta de corte para maquinado' (catalogo)",
+ "titulo": "CAM (G-code RS274/NGC) + chapa metalica (factor K, BA/BD, springback) + catalogo de herramienta",
+ "autor_como_cliente": "El maquinista/programador CNC y el doblador de lamina del taller LATAM. El maquinista exige un G-code que sea CONTRATO (NIST: 'any input not explicitly allowed is illegal'), un cargador de herramientas REAL (Weston: Ø/LOC/zanco/filos finitos, sin Vc ni fz en el catalogo) y un pre-flight que cubra los 3 huecos que el interprete declara no revisar (sobre-recorrido, avances excesivos, colision con fixture). El doblador exige que el desdoblado hable en Bend Deduction medida a la interseccion virtual, que la tabla K tenga el PROCESO (aire/fondo/acuñado) como clave, que todo angulo diga si es alfa o beta, y un asistente de calibracion de 5 pasos porque 'the only truly effective way of working out the correct bend allowance is to reverse engineer it'.",
+ "capitulos": [
+  {
+   "num": 1,
+   "titulo": "NISTIR 6556 — RS274/NGC v3: gramatica, grupos modales, orden de ejecucion, ciclos fijos, compensacion de radio, palpado, tabla de errores",
+   "n_ejercicios": 15,
+   "cubierto_por_forja": "parcial",
+   "nota": "Hay EMISION de G-code (facing.ts:toGcode, tap.ts G84 modal, turning.ts:toLatheGcode, laser.ts, drill.ts G83 expandido) pero CERO interprete/validador: sin lexer, sin grupos modales, sin G41/G42, sin tabla de errores, sin archivo de herramientas."
+  },
+  {
+   "num": 2,
+   "titulo": "KETIV AVA — Sheet Metal Unfold Rule Equations: BA, BD, setback, K, Lockheed, Machinery's Handbook, DIN 6935, tablas de BD",
+   "n_ejercicios": 8,
+   "cubierto_por_forja": "no",
+   "nota": "grep 'bend|factorK|springback|unfold|flatpattern' en src/forja: 0 hits (los hits de 'lamina' son la lamina de PARTICION del molde, otro concepto)."
+  },
+  {
+   "num": 3,
+   "titulo": "DB Sheetmetals / DIN 6935 — tablas K medidas en taller, K por proceso y dureza, springback, reglas DFM de lamina, calibracion",
+   "n_ejercicios": 7,
+   "cubierto_por_forja": "no",
+   "nota": "Nada de chapa en el repo."
+  },
+  {
+   "num": 4,
+   "titulo": "NPTEL L27 — deformacion plastica: flow stress, frio/caliente 0.5·Tm, workability, ejercicios de extrusion y trefilado",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "no",
+   "nota": "Teoria metalurgica; solo justifica las reglas de grano/dureza (SM-03/SM-04). Valor bajo para una suite."
+  },
+  {
+   "num": 5,
+   "titulo": "Weston cap. 10 — catalogo de herramienta de corte (fresas carburo/HSS, rimas, insertos ISO, familias especiales): Ø, LOC, largo total, zanco, filos, recubrimiento, HRC",
+   "n_ejercicios": 6,
+   "cubierto_por_forja": "parcial",
+   "nota": "tool-stress.ts (Kienzle kc11/mc, vcMin/vcMax, veredictos roza/rompe/flexion/potencia) existe y esta probado (tool-stress.test.ts) pero NO hay biblioteca de herramientas ni importador de catalogo; el unico hit de 'weston' es public/temis.json (tarjeta)."
+  }
+ ],
+ "n_ejercicios_catalogo": 39,
+ "features": [
+  {
+   "nombre": "Interprete/validador RS274/NGC (lexer 256 chars, #params 1..5399, expresiones con precedencia, grupos modales Tabla 4, orden de ejecucion Tabla 8, tabla de errores E-*/W-*)",
+   "que_hace": "Lee un programa G-code y lo RECHAZA con linea+regla (doctrina App. A.1) o lo traduce a funciones canonicas (Tabla 9) como la SAI de NIST; base para simular y para el pre-flight.",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "ejercicios": [
+    "cam-chapa-nist-01",
+    "cam-chapa-nist-02",
+    "cam-chapa-nist-03",
+    "cam-chapa-nist-04",
+    "cam-chapa-nist-11",
+    "cam-chapa-nist-12",
+    "cam-chapa-nist-13",
+    "cam-chapa-nist-15"
+   ],
+   "donde": "grep -rl 'rs274|modal|parseGcode' src/forja → solo tap.ts (comentario 'G84 MODAL'); src/forja/cam/*.ts EMITEN, no interpretan"
+  },
+  {
+   "nombre": "Archivo de herramientas NIST (POCKET/FMS/TLO/DIAM) + biblioteca de herramientas importada del catalogo Weston (Ø, LOC, largo total, zanco, filos, sustrato, recubrimiento, HRC)",
+   "que_hace": "Cargador finito de la maquina: T/D/H se validan contra el, y la seleccion por operacion (Ø ≤ 2·R_esquina, LOC ≥ profundidad, zanco no toca) sale de SKUs reales; las Vc/fz quedan VACIAS hasta que el taller las llene (el catalogo no las trae).",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "ejercicios": [
+    "cam-chapa-nist-01",
+    "cam-chapa-weston-01",
+    "cam-chapa-weston-02",
+    "cam-chapa-weston-03",
+    "cam-chapa-weston-05"
+   ],
+   "donde": "grep -rli 'weston|toolLibrary|CNMG' src public → solo public/temis.json; tool-stress.ts:Herramienta es un objeto suelto, no una biblioteca"
+  },
+  {
+   "nombre": "Compensacion de radio G41/G42/G40 (App. B): entrada 2 pre-entradas + entrada, arco insertado en esquinas convexas, teorema del circulo tangente (esquina/arco concavo → error), gouging, salida explicita",
+   "que_hace": "Genera y verifica contornos compensados en control; convierte el teorema de App. B.5.1 en el predicado DFM-01/02 sobre el B-Rep (radio de cara cilindrica concava ≥ radio de fresa).",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "ejercicios": [
+    "cam-chapa-nist-08",
+    "cam-chapa-nist-09",
+    "cam-chapa-nist-14",
+    "cam-chapa-weston-02"
+   ],
+   "donde": "occt.ts:692 ya expone cil.Radius() en enumerateFaces (el bloqueador del pliego 2026-07-31 esta resuelto); NO hay G41/G42 en ningun generador (grep 'G41|G42' src/forja/cam → 0)"
+  },
+  {
+   "nombre": "Ciclos fijos G81–G89 (movimiento preliminar, R sticky, L repeticiones, G98/G99) como SIMULADOR de movimientos, no solo emision",
+   "que_hace": "Expande cada ciclo a la lista de traversos/avances exacta de los ejemplos del manual (Example 1/2 de G81), verifica R>Z, Q>0, husillo CW antes de G84, y S=F·paso.",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "ejercicios": [
+    "cam-chapa-nist-05",
+    "cam-chapa-nist-06",
+    "cam-chapa-nist-07"
+   ],
+   "donde": "src/forja/cam/tap.ts:58 emite G84 modal + G80; drill.ts emite G83 EXPANDIDO en G0/G1; bore.ts:helicalEntry; ninguno interpreta ni valida"
+  },
+  {
+   "nombre": "Palpado G38.2 + parametros #5061–#5066 + macro de centro/diametro de barreno (Tabla 6)",
+   "que_hace": "Ejecuta programas con parametros y palpado contra una pieza simulada; devuelve centro y diametro medidos.",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "ejercicios": [
+    "cam-chapa-nist-10"
+   ],
+   "donde": "grep 'G38' src → 0"
+  },
+  {
+   "nombre": "Pre-flight de taller (Bloques A/B/C del pliego): sobre-recorrido contra envolvente de maquina (.mch), avances/velocidades contra husillo y tool-stress, colision zanco/portaherramienta vs fixture, unidades tool-file == programa",
+   "que_hace": "Los 3 huecos que NIST App. A declara NO revisar. Simulacion de remocion + envolvente + colision.",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "ejercicios": [
+    "cam-chapa-nist-11",
+    "cam-chapa-weston-03",
+    "cam-chapa-weston-06"
+   ],
+   "donde": "src/lib/machine-config.ts (parsea .mch Fusion: ejes/husillo); src/forja/cam/adaptive3d.ts:dilateByTool (heightmap); tool-stress.ts:toolStress (Kienzle); nada los une ni simula colision con fixture"
+  },
+  {
+   "nombre": "Feeds & speeds: identidades Vc/n/Vf/fz/MRR + tool-stress (Kienzle) + tabla del taller sobreescribible (el catalogo NO trae Vc/fz)",
+   "que_hace": "Calcula rpm/avance desde Vc y fz, y veredicto roza/rompe/flexion/potencia para la herramienta del catalogo; la tabla de Vc arranca vacia por material×sustrato×recubrimiento.",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "ejercicios": [
+    "cam-chapa-weston-06",
+    "cam-chapa-nist-07"
+   ],
+   "donde": "src/forja/cam/tool-stress.ts:toolStress,cutKinematics,MATERIALES (kc11/mc/vcMin/vcMax) + tool-stress.test.ts; SIN UI (ordenes/DESPUES-DE-V1.md:28 'CAM tool-stress UI')"
+  },
+  {
+   "nombre": "Chapa: desdoblado (flat pattern) con BA/BD/setback/K — ec. 6–15 KETIV; virtual sharp; alfa vs beta declarado en toda UI",
+   "que_hace": "De un solido de lamina (espesor T constante + caras cilindricas de doblez) al patron plano: L = Σ pestañas + Σ BA, o Σ virtual-sharps − Σ BD; cada numero dice de donde salio (tabla taller > K medido > regla de dedo > DIN > Lockheed).",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "ejercicios": [
+    "cam-chapa-ketiv-01",
+    "cam-chapa-ketiv-02",
+    "cam-chapa-ketiv-03",
+    "cam-chapa-ketiv-04",
+    "cam-chapa-ketiv-05",
+    "cam-chapa-ketiv-07"
+   ],
+   "donde": "grep -rliE 'bend|factorK|springback|unfold|flatpattern' src/forja → 0; occt.ts tiene shell/enumerateFaces con radio de cilindro (sustrato)"
+  },
+  {
+   "nombre": "Chapa: reglas de desdoblado alternas — DIN 6935 (K_DIN = 0.65+0.5·log10(Ri/T), V por tramos de beta), Lockheed K=0.44, Machinery's Handbook 3 materiales, e importador de tablas de Bend Deduction (5–170°, 18 espesores, 13 radios) con convencion de angulo declarada",
+   "que_hace": "Selector de regla de desdoblado + importador de tabla del taller (CSV) con interpolacion y trampa alfa/beta bloqueada.",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "cam-chapa-ketiv-04",
+    "cam-chapa-ketiv-05",
+    "cam-chapa-ketiv-06",
+    "cam-chapa-ketiv-08"
+   ],
+   "donde": "0 hits"
+  },
+  {
+   "nombre": "Chapa: base de K de taller (DB Sheetmetals: acero dulce/inox/aluminio × espesor × radio/V × proceso × hem) + lookup 3D de regla de dedo (proceso × dureza × Ri/T) + asistente de calibracion de 5 pasos (K desde tira medida, ec. 14)",
+   "que_hace": "La clave de la tabla incluye el PROCESO (Al 1.5/1.5: aire 0.4855 vs acuñado 0.55) y admite dispersion (inox 1.5/1.5 tiene 0.3801 y 0.27326); el asistente guarda K medido como dato del taller.",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "cam-chapa-din-01",
+    "cam-chapa-din-02",
+    "cam-chapa-din-03",
+    "cam-chapa-din-04",
+    "cam-chapa-din-07"
+   ],
+   "donde": "0 hits"
+  },
+  {
+   "nombre": "Chapa: DFM de lamina SM-01..SM-09 (un solo radio, Ri ≥ 1T, pestaña minima 4T+Ri, barreno a 3T+Ri, grano/dureza Rb70/Rb85, bottoming ≥1T, coining ≥0.75T) + springback por proceso (aire 5–10°, fondo poco, acuñado minimo) + tabla de dobleces con orden/tope trasero",
+   "que_hace": "Juez de doblabilidad sobre la pieza plana y cada doblez; sobre-doblado sugerido; tabla de dobleces al plano (drawing.ts).",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "cam-chapa-din-05",
+    "cam-chapa-din-06",
+    "cam-chapa-nptel-03"
+   ],
+   "donde": "0 hits; drawing.ts (planos HLR) es el sustrato para la tabla de dobleces"
+  },
+  {
+   "nombre": "Torneado: radio de esquina = radio de punta del inserto (CNMG 431 r0.4 / 432 r0.8) + G-code de torno con inserto del catalogo",
+   "que_hace": "Aplica DFM-07 al perfil de revolucion; el inserto viene del catalogo Weston.",
+   "estado_forja": "parcial",
+   "prioridad": "P2",
+   "ejercicios": [
+    "cam-chapa-weston-04"
+   ],
+   "donde": "src/forja/cam/turning.ts:TurnTool.noseR, toLatheGcode (G96/G50); sin catalogo de insertos"
+  },
+  {
+   "nombre": "Post-procesador configurable por control (dialecto, ciclos enlatados vs expandidos, G53/G54.., %/M30) leyendo machine-config .mch",
+   "que_hace": "Traduce trayectorias al dialecto de la maquina destino y valida el resultado con el interprete.",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "ejercicios": [
+    "cam-chapa-nist-12",
+    "cam-chapa-nist-13",
+    "cam-chapa-weston-05"
+   ],
+   "donde": "src/lib/machine-config.ts (cinematica); emisores sueltos en cam/*.ts sin post comun"
+  },
+  {
+   "nombre": "Metalurgia de conformado (NPTEL): frio/caliente 0.5·Tm, energia de extrusion, pasadas de trefilado",
+   "que_hace": "Calculadoras de teoria; solo justifican SM-03/SM-04.",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "ejercicios": [
+    "cam-chapa-nptel-01",
+    "cam-chapa-nptel-02",
+    "cam-chapa-nptel-03"
+   ],
+   "donde": "0 hits"
+  }
+ ],
+ "supertickets": [
+  {
+   "slug": "cam-chapa-gcode-contrato",
+   "titulo": "El G-code es un contrato: interprete RS274/NGC que lee, evalua y RECHAZA",
+   "capitulos": [
+    1
+   ],
+   "objetivo": "Un interprete `gcode.validar` / `gcode.canon` (src/forja/cam/rs274.ts) que reproduce la SAI de NIST: lexer (256 chars, espacios libres, #params 1..5399, expresiones con 3 grupos de precedencia, unarias en grados), archivo de herramientas Tabla 1, grupos modales Tabla 4, orden de ejecucion Tabla 8, reset de M2/M30 §3.6.1 y la tabla de errores E-FILE/E-LEX/E-MOV/E-ARC/E-CYC/E-CRC del pliego, con mensaje = linea + regla (App. A.1). Salida = lista de funciones canonicas Tabla 9, comparable linea a linea con la Tabla 10 del manual.",
+   "ejercicios": [
+    {
+     "id": "cam-chapa-nist-01",
+     "titulo": "Cargar el archivo de herramientas de la Tabla 1 (6 lineas, in y mm mezclados a proposito)",
+     "herramientas": "gcode.toolfile",
+     "oraculo": "6 herramientas; pocket 5: TLO 1.5 DIAM 0.25; pocket 10: DIAM −0.3 (semantica 'diferencia', compensa al OTRO lado, |0.3|); pocket 32: TLO 247.615; bolsillo repetido → gana la ultima linea; sin la linea en blanco exacta → E-TOOL-01",
+     "respuesta_impresa": "Table 1 (§2.3): 5/5/1.5/0.25 endmill · 10/10/2.4/−0.3 for testing · 21/21/173.740/0 1/2\" spot drill · 32/32/247.615/0 8.5 mm drill · 41/41/228.360/0 10 mm tap · 60/60/0/0 large chuck"
+    },
+    {
+     "id": "cam-chapa-nist-02",
+     "titulo": "El lexer no ve espacios ni mayusculas: 'g0x +0. 12 34y 7'",
+     "herramientas": "gcode.lex",
+     "oraculo": "tokens identicos a 'g0 x+0.1234 y7'; linea de 257 chars → E-LEX-02; N123456 → E-LEX-03; '(a(b))' → E-LEX-05; 'G1 X1 X2' → E-LEX-09",
+     "respuesta_impresa": "§3.3: 'g0x +0. 12 34y 7' is equivalent to 'g0 x+0.1234 y7'"
+    },
+    {
+     "id": "cam-chapa-nist-03",
+     "titulo": "La asignacion surte efecto DESPUES de leer la linea: '#3=6 G1 x#3' con #3=15",
+     "herramientas": "gcode.params",
+     "oraculo": "la maquina va a X=15 y #3 queda en 6; '#3=15 #3=6' deja #3=6 con advertencia W-09; '##2' resuelve indireccion de 2 niveles; indice 5400 → E-LEX-04",
+     "respuesta_impresa": "§3.3.5: 'the machine will move to x=15 and the value of #3 will be 6'"
+    },
+    {
+     "id": "cam-chapa-nist-04",
+     "titulo": "Expresiones y arco por radio de la sesion SAI: 'g2 x[6-[4*3/2]] r 7.01 z0.5' desde (3,1,0)",
+     "herramientas": "gcode.expr gcode.canon",
+     "oraculo": "ARC_FEED(0.0000, 1.0000, 1.5000, 7.8476, −1, 0.5000): x=0, centro (1.5, 7.8476), CW, helicoidal a z=0.5; ademas FIX[−2.8]=−3, FUP[−2.8]=−2, ATAN[1]/[1]=45, SIN[90]=1; 'asim[0.5]' → 'Unknown word starting with a'",
+     "respuesta_impresa": "Table 10 (§5.1.2): READ => g2 x[6-[4*3/2]] r 7.01 z0.5 → 6 N..... ARC_FEED(0.0000, 1.0000, 1.5000, 7.8476, -1, 0.5000)"
+    },
+    {
+     "id": "cam-chapa-nist-11",
+     "titulo": "Bateria de rechazo: 17 errores de compensacion (App. B.5) + ciclos + arcos + archivo",
+     "herramientas": "gcode.validar",
+     "oraculo": "cada programa ilegal del set (E-CRC-01..17, E-CYC-01..11, E-ARC-01..04, E-FILE-01/02, E-G53-01) devuelve exactamente 1 error con (linea, id, texto); Tablas 6, 12 y 13 del manual pasan con 0 errores (0 falsos positivos); arco por centro con |d1−d2| = 0.003 mm → E-ARC-03, con 0.001 mm pasa",
+     "respuesta_impresa": "App. B.5 lista literal de 17 errores; §3.5.3.2 tolerancia 0.0002 in / 0.002 mm"
+    },
+    {
+     "id": "cam-chapa-nist-12",
+     "titulo": "Orden de ejecucion Tabla 8: 'M8 G1 X1 M3 T2 M6 F100 S1000' en una sola linea",
+     "herramientas": "gcode.canon",
+     "oraculo": "secuencia canonica SET_FEED_RATE(100) → SET_SPINDLE_SPEED(1000) → SELECT_TOOL(2) → CHANGE_TOOL(2) → START_SPINDLE_CLOCKWISE → FLOOD_ON → STRAIGHT_FEED(1,..); 'm6 g43 h2' produce CHANGE_TOOL(2) y luego USE_TOOL_LENGTH_OFFSET(1.0000) como en la Tabla 10",
+     "respuesta_impresa": "Table 8 (§3.8) 21 pasos; Table 10 lineas 9-10: CHANGE_TOOL(2) / USE_TOOL_LENGTH_OFFSET(1.0000)"
+    },
+    {
+     "id": "cam-chapa-nist-13",
+     "titulo": "Lo que M2 hereda al siguiente programa (§3.6.1)",
+     "herramientas": "gcode.estado",
+     "oraculo": "tras M2: G54, G17, G90, G94, M48, husillo parado (M5), refrigerante apagado (M9) y modo de movimiento G1 (NO G0); coolant SIGUE durante M6 si no hubo M9; el archivo sin M2/M30 ni % → E-FILE-02",
+     "respuesta_impresa": "§3.6.1 lista de 8 cambios de M2/M30; §3.6.3 'coolant will continue to flow during the tool change'"
+    },
+    {
+     "id": "cam-chapa-nist-15",
+     "titulo": "Sistemas de coordenadas: G10 L2 P1 x3.5 y17.2, G92 acumula, G53 solo con G0/G1",
+     "herramientas": "gcode.wcs",
+     "oraculo": "parametros 5221/5222 = 3.5/17.2; G92 X7 sobre offset previo suma (A+B) y escribe 5211–5216; G92.1 pone 0, G92.2 conserva, G92.3 reaplica; 'G53 G2 ...' → E-G53-01; 5220 fuera de 1..9 → E-PARM-03",
+     "respuesta_impresa": "§3.5.5: 'G10 L2 P1 x 3.5 y 17.2 sets the origin of the first coordinate system'"
+    }
+   ],
+   "ya_existe": [
+    "Emisores sueltos: src/forja/cam/facing.ts:toGcode, tap.ts:generateTappingGcode (G84 modal + G80), turning.ts:toLatheGcode, laser.ts:laserGcode, drill.ts (G83 expandido)",
+    "scripts/cam-*-check.ts verifican estructura de G-code emitido (no lo interpretan)",
+    "src/lib/machine-config.ts parsea .mch (ejes, husillo, capacidad)"
+   ],
+   "dependencias": [],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "cam-chapa-ciclos-y-compensacion",
+   "titulo": "Ciclos fijos y compensacion de radio: los ejemplos del manual, movimiento por movimiento",
+   "capitulos": [
+    1,
+    5
+   ],
+   "objetivo": "Sobre el interprete de S1: expandir G81–G89 a la lista exacta de traversos/avances (movimiento preliminar, R sticky, L, G98/G99), sincronia S=F·paso de G84, y la compensacion G41/G42 de App. B: entrada por 2 pre-entradas + entrada (Tablas 12 y 13), arco insertado en esquinas convexas, teorema del circulo tangente (E-CRC-10/16), gouging (E-CRC-11), G40 sin salida. El teorema se aplica al B-Rep: `dfm.fresable` lee el radio de la cara cilindrica concava (occt.ts:692) y lo compara con el radio de la fresa del catalogo. Cada ejercicio con still de la trayectoria real vs programada en ForgeBRepStudio.",
+   "ejercicios": [
+    {
+     "id": "cam-chapa-nist-05",
+     "titulo": "G81 Example 1: desde (1,2,3), 'G90 G81 G98 X4 Y5 Z1.5 R2.8'",
+     "herramientas": "gcode.ciclo",
+     "oraculo": "4 movimientos: traverso XY a (4,5,3) → traverso Z a (4,5,2.8) → avance Z a (4,5,1.5) → traverso Z a (4,5,3); con G99 el ultimo retrae a 2.8",
+     "respuesta_impresa": "§3.5.16.2 Example 1: '1. a traverse parallel to the XY-plane to (4,5,3) 2. ... (4,5,2.8) 3. a feed ... (4,5,1.5) 4. a traverse ... (4,5,3)'"
+    },
+    {
+     "id": "cam-chapa-nist-06",
+     "titulo": "G81 Example 2 incremental con L3: 'G91 G81 G98 X4 Y5 Z-0.6 R1.8 L3'",
+     "herramientas": "gcode.ciclo",
+     "oraculo": "primer traverso Z a (1,2,4.8) porque old Z < clear Z; clear Z = 4.8, Z = 4.2; repeticiones en (5,7), (9,12), (13,17); L=0 → E-CYC-03; R<Z → E-CYC-08",
+     "respuesta_impresa": "§3.5.16.2 Example 2: 'the clear Z position is 4.8 (=1.8+3), and the Z position is 4.2 (=4.8-0.6)... The X position is reset to 9 (=5+4) and the Y position to 12 (=7+5)'"
+    },
+    {
+     "id": "cam-chapa-nist-07",
+     "titulo": "G84: S = F · paso — paso 2 hilos/mm, F150 → S300; y el G84 de tap.ts pasa por el validador",
+     "herramientas": "gcode.ciclo cam.tap",
+     "oraculo": "S=300; F150 S250 → advertencia de desincronia (S≠F·paso); husillo no CW antes de G84 → E-CYC-10; el G-code de generateTappingGcode (M10×1.5) cumple F = paso×S exacto y termina en G80",
+     "respuesta_impresa": "§3.5.16.5: 'if the pitch is 2 threads per millimeter... F150, then the speed should be set with the command S300, since 150 × 2 = 300'"
+    },
+    {
+     "id": "cam-chapa-nist-08",
+     "titulo": "Entrada con compensacion, metodo general: el programa de la Tabla 12 (Fig. 3)",
+     "herramientas": "gcode.crc",
+     "oraculo": "11 lineas pasan con 0 errores; arco de entrada N0030 R=1 > r_herramienta (DIAM 0.25 → r 0.125 de la Tabla 1, pocket 5); BC = 1 > r; en la esquina convexa el interprete inserta un arco de radio r (la trayectoria real tiene 1 arco mas que la programada); G40 en N0110 NO mueve la herramienta",
+     "respuesta_impresa": "Table 12 (App. B.3.1.1): N0010 G1 X1 Y5 · N0020 G41 G1 Y4 · N0030 G3 X2 Y3 I1 · N0040 G2 X3 Y2 J-1 · N0050 G1 Y-1 · N0060 G2 X2 Y-2 I-1 · N0070 G1 X-2 · N0080 G2 X-2.6 Y-0.2 J1 · N0090 G1 X1.4 Y2.8 · N0100 G2 X2 Y3 I0.6 J-0.8 · N0110 G40"
+    },
+    {
+     "id": "cam-chapa-nist-09",
+     "titulo": "Trayectoria nominal con DIAM = diferencia (Tabla 13, Fig. 5) y el metodo simple con esquina convexa",
+     "herramientas": "gcode.crc gcode.toolfile",
+     "oraculo": "Tabla 13 pasa con 0 errores; con DIAM −0.03 (Ø real 0.97 vs nominal 1.0) el interprete compensa al lado contrario con |0.03|; metodo simple 'N0010 G1 X1.5 Y4 / N0020 G41 G1 X3 Y3' pasa; si B cae dentro del circulo inicial de la herramienta → E-CRC-11 gouging",
+     "respuesta_impresa": "Table 13 (App. B.4): N0010 G1 X1.5 Y5 · N0020 G41 G1 Y4 · N0030 G3 X2 Y3.5 I0.5 · ... · N0110 G40; App. B.3.1.2: 'If B is at (1.5, 4)... N0010 G1 X1.5 Y4 / N0020 G41 G1 X3 Y3'"
+    },
+    {
+     "id": "cam-chapa-nist-14",
+     "titulo": "El teorema del circulo tangente sobre el B-Rep: cajera 60×40×15 con esquinas R3 y fresa Ø8 vs Ø6",
+     "herramientas": "dfm.fresable enumerateFaces gcode.crc",
+     "oraculo": "enumerateFaces devuelve 4 caras cilindricas concavas con R=3.000 (occt.ts:692); Ø8 (r=4 > 3) → E-CRC-10 'Concave corner with cutter radius comp' y DFM-01 rojo; Ø6 (r=3, igual) pasa; Ø6 con arco concavo R2.9 → E-CRC-16; esquina viva R=0 → inmaquinable por fresado (EDM)",
+     "respuesta_impresa": "App. B.5.1: 'it must be physically possible for a circle whose radius is half the diameter given in the tool table to be tangent to the contour at all points'"
+    },
+    {
+     "id": "cam-chapa-nist-10",
+     "titulo": "Palpar un barreno con la macro de la Tabla 6 (G38.2 + #5061/#5062)",
+     "herramientas": "gcode.probe gcode.params",
+     "oraculo": "contra un barreno simulado Ø20.000 centrado en (30.25, 41.10) con nominal (30,41) y punta r=1: #1041=30.250, #1022=41.100, #1034=20.000, #1035=0.000 (±0.001); palpado a < 0.254 mm del punto → E-PRB-01; G38.2 con G41 activo → E-CRC-03",
+     "respuesta_impresa": "Table 6 (§3.5.9.3) programa N010–N350; §3.5.9.1 error si 'the current point is less than 0.254 millimeter or 0.01 inch from the programmed point'"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/brep/occt.ts:692 cil.Radius() en enumerateFaces (radio de cara cilindrica) — el bloqueador del pliego ya cayo",
+    "src/forja/cam/tap.ts:58 G84 modal; drill.ts G83 expandido; bore.ts:helicalEntry (G2/G3 helicoidal)",
+    "scripts/cam-tap-check.ts, cam-drill-check.ts, cam-bore-check.ts"
+   ],
+   "dependencias": [
+    "cam-chapa-gcode-contrato"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "cam-chapa-desdoblado",
+   "titulo": "Chapa: el patron plano con BA, BD, K y las reglas de desdoblado del cliente",
+   "capitulos": [
+    2,
+    3
+   ],
+   "objetivo": "Modulo src/forja/chapa/ (desdoblar.ts) + comandos `chapa.desdoblar`, `chapa.regla`, `chapa.tablaBD`: de un solido de lamina B-Rep (espesor T constante detectado por pares de caras paralelas; dobleces = caras cilindricas con Ri) al patron plano y la tabla de dobleces, con las ecuaciones 6–15 de KETIV y las reglas alternas (Lockheed 0.44, Machinery's 0.35/0.407/0.452, DIN 6935 K_DIN, tabla de BD importada). Toda UI de angulo dice 'alfa (doblez)' o 'beta (apertura)'. Cada BA emitido lleva su procedencia. Evidencia: pieza en L/U modelada en ForgeBRepStudio, desdoblada, patron plano medido (oraculo = longitud total), plano con tabla de dobleces (drawing.ts).",
+   "ejercicios": [
+    {
+     "id": "cam-chapa-ketiv-01",
+     "titulo": "Angulo en L: T=2, Ri=2, alfa=90°, K=0.44 — BA por la ec. 9",
+     "herramientas": "chapa.desdoblar chapa.regla=K",
+     "oraculo": "Ln = alfa·(pi/180)·(Ri + K·T) = (pi/2)·(2 + 0.88) = 4.524 mm; con pestañas interiores L1=L2=48 → L = 100.524 mm; K fuera de 0..1 → advertencia (F5 8a), SolidWorks lo rechaza",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "cam-chapa-ketiv-02",
+     "titulo": "La misma L medida a la interseccion virtual: setback y Bend Deduction (ec. 10–12c)",
+     "herramientas": "chapa.desdoblar chapa.virtualSharp",
+     "oraculo": "SBout = tan(45°)·(2+2) = 4.000; LBD = 2·4 − 4.524 = 3.476 mm; con La=Lb=50 a virtual sharp → L = 100 − 3.476 = 96.524 mm; para alfa=120° el setback usa (Ri+T) sin tan (ec. 11c)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "cam-chapa-ketiv-04",
+     "titulo": "Lockheed: de la formula BA = alfa·(0.017453·Ri + 0.0078·T) sale el K=0.44 por defecto de Inventor",
+     "herramientas": "chapa.regla=lockheed",
+     "oraculo": "K = 0.0078·180/pi = 0.4469 ≈ 0.44; Lockheed y K=0.44 dan BA identicos (±0.01 mm) para T=2/Ri=2/90°; la UI declara el material implicito (acero rolado en frio/resorte)",
+     "respuesta_impresa": "KETIV §3.1 ec. 16c: 'K = 0.0078 * 180°/pi = 0.44'"
+    },
+    {
+     "id": "cam-chapa-ketiv-05",
+     "titulo": "Machinery's Handbook a 90°: tres familias de material, tres K",
+     "herramientas": "chapa.regla=machinerys",
+     "oraculo": "acero suave T=2/Ri=2: Ln = 0.64·2 + 1.57·2 = 4.420 mm ≡ K 0.407; laton suave 0.55·T+1.57·Ri → K 0.35; acero rolado en frio 0.71·T → K 0.452; para 45°: Ln(45)=Ln(90)·45/90",
+     "respuesta_impresa": "KETIV §3.2 ec. 17a–c: K = 0.35 · K = 0.407 · K = 0.452"
+    },
+    {
+     "id": "cam-chapa-ketiv-06",
+     "titulo": "DIN 6935: K_DIN no es K — V por tramos de beta",
+     "herramientas": "chapa.regla=din6935",
+     "oraculo": "Ri/T=1 → K_DIN = 0.65 + 0.5·log10(1) = 0.65; beta=90°, T=2, Ri=2: V = pi·(90/180)·(2 + (2/2)·0.65) − 2·(2+2) = 4.163 − 8 = −3.837 → BD 3.837 mm (≡ K 0.325 = K_DIN/2); Ri/T=6 → K_DIN=1; beta=170° → V=0",
+     "respuesta_impresa": "KETIV §3.3 ec. 21: K_DIN = 0.65 + 0.5·log10(Ri/T) si Ri/T ≤ 5; K_DIN = 1 si Ri/T > 5"
+    },
+    {
+     "id": "cam-chapa-ketiv-07",
+     "titulo": "La trampa alfa/beta: la misma pieza desdoblada con el angulo mal etiquetado",
+     "herramientas": "chapa.desdoblar",
+     "oraculo": "beta = 180° − alfa; alfa=90 y beta=90 coinciden; alfa=120° (beta=60°) leido como alfa=60° cambia BA de 6.032 a 3.016 mm en T=2/Ri=2/K=0.44 → el importador BLOQUEA una tabla sin convencion declarada",
+     "respuesta_impresa": "KETIV §2.4: 'This can lead to a lot of confusion and errors when designing and calculating flat patterns'"
+    },
+    {
+     "id": "cam-chapa-ketiv-08",
+     "titulo": "Importar una tabla de Bend Deduction del taller (5°–170°, paso 1°) y usarla antes que cualquier K",
+     "herramientas": "chapa.tablaBD",
+     "oraculo": "lookup exacto (T=2, Ri=2, 90°) devuelve el BD de la tabla; angulo intermedio interpola lineal; combinacion ausente → cae a K con procedencia 'regla de dedo' y lo dice; tabla en convencion beta (Inventor viejo) convertida sin error",
+     "respuesta_impresa": "KETIV §3.4: 'for the most accurate development of flat patterns, Bend Deduction tables, based on actual measured data, are the preferred method'"
+    },
+    {
+     "id": "cam-chapa-din-04",
+     "titulo": "Asistente de calibracion en 5 pasos: K a partir de una tira doblada y medida (ec. 14 / DB Sheetmetals)",
+     "herramientas": "chapa.calibrar",
+     "oraculo": "tira T=1.5, Ri=1.5, 90°, K sembrado 0.42 → BA 3.346, OSSB 3.000, BD = 6 − 3.346 = 2.654; con X, Y y largo plano medidos el asistente recupera K = (−Ri + BA/(pi·A/180))/T = 0.420 ± 0.005 y lo guarda como dato del taller (material, T, radio, V, proceso)",
+     "respuesta_impresa": "DB Sheetmetals: 'BendDeduction = Length X + Length Y − Total Flat Length; OutSideSetBack = Tan(BendAngle/2)·(thickness + BendRadius); BendAllowance = 2·OutSideSetBack − BendDeduction; K-Factor = (−BendRadius + BendAllowance/(pi·BendAngle/180))/thickness'"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/brep/occt.ts: shell, enumerateFaces (tipo plane/cylinder + radio), enumerateEdgesGeom — sustrato para detectar espesor y dobleces",
+    "src/forja/brep/drawing.ts: planos HLR + cotas (para la tabla de dobleces)",
+    "NADA de chapa: grep bend|factorK|unfold|flatpattern → 0"
+   ],
+   "dependencias": [],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "cam-chapa-taller-lamina",
+   "titulo": "Chapa de taller: K medido por proceso, springback y las reglas de 'esto no se dobla'",
+   "capitulos": [
+    3,
+    4
+   ],
+   "objetivo": "Base de datos de K del taller (DB Sheetmetals: acero dulce/inox/aluminio × T × radio/V × proceso aire/fondo/acuñado × hem) como datos versionados (public/chapa/k-taller.json), lookup 3D de regla de dedo (proceso × dureza × Ri/T), springback esperado por proceso, y el juez DFM SM-01..SM-09 (`chapa.dfm`) que pinta rojo sobre la pieza plana y sobre cada doblez, con la fisica del grano (NPTEL) como explicacion. Evidencia: pieza con pestaña corta y barreno pegado al doblez → rojo con la regla citada; misma pieza corregida → verde.",
+   "ejercicios": [
+    {
+     "id": "cam-chapa-din-01",
+     "titulo": "Acero dulce 1.5 mm: el mismo espesor, dos V, dos K",
+     "herramientas": "chapa.kTaller",
+     "oraculo": "lookup (acero dulce, T=1.5, R=1.3, V8) → K=0.415; (T=1.5, R=1.5, V10) → 0.3794; BA a 90°: (pi/2)·(1.3+0.6225)=3.020 mm vs (pi/2)·(1.5+0.569)=3.250 mm; T=10/R=8 → 0.675 (K>0.5 por radio real menor al nominal, F4 lo explica)",
+     "respuesta_impresa": "DB Sheetmetals tabla mild steel: 1.5 mm / 1.3 mm (V 8) → 0.415 · 1.5 mm / 1.5 mm (V 10) → 0.3794 · 10.0 / 8.0 → 0.675"
+    },
+    {
+     "id": "cam-chapa-din-02",
+     "titulo": "Aluminio 1.5/1.5: aire vs acuñado — el proceso es parte de la clave",
+     "herramientas": "chapa.kTaller",
+     "oraculo": "air bend K=0.4855 → BA 3.500 mm; coin bend K=0.55 → BA 3.652 mm; diferencia 0.152 mm POR doblez (4 dobleces = 0.61 mm de error si se ignora el proceso); inox 1.5/1.5 devuelve DOS valores (0.3801, 0.27326) y la UI muestra la dispersion, no promedia en silencio",
+     "respuesta_impresa": "DB Sheetmetals tabla aluminio: Air Bend 1.5/1.5 → 0.4855 · Coin Bend 1.5/1.5 → 0.55; inox 1.5/1.5 → 0.3801 y 0.27326"
+    },
+    {
+     "id": "cam-chapa-din-03",
+     "titulo": "Regla de dedo 3D: proceso × dureza × Ri/T",
+     "herramientas": "chapa.kRegla",
+     "oraculo": "(aire, suave, Ri≤T) → 0.33; (aire, duro, T<Ri≤3T) → 0.45; (fondo, medio, Ri≤T) → 0.44; (acuñado, suave, T<Ri≤3T) → 0.44; Ri>3T → 0.50 en los 9 casos; procedencia = 'regla de dedo F4'",
+     "respuesta_impresa": "DB Sheetmetals tres tablas (air/bottoming/coining): 0.33/0.38/0.40 · 0.40/0.43/0.45 · 0.50/0.50/0.50 (aire); 0.42/0.44/0.46 · 0.46/0.47/0.48 · 0.50 (fondo); 0.38/0.41/0.44 · 0.44/0.46/0.47 · 0.50 (acuñado)"
+    },
+    {
+     "id": "cam-chapa-din-05",
+     "titulo": "El juez DFM de lamina: pestaña minima, barreno al doblez, radio minimo",
+     "herramientas": "chapa.dfm",
+     "oraculo": "T=2, Ri=2: pestaña minima = 4T+Ri = 10 mm (pestaña de 8 → SM-05 ROJO 'seguridad: slippage'); barreno a 6 mm del doblez < 3T+Ri = 8 → SM-06 rojo con sugerencia 'extender la ranura mas alla de la linea de doblez'; Ri=1.5 < 1T → SM-02 rojo; dos radios distintos en la pieza → SM-01 amarillo",
+     "respuesta_impresa": "DB Sheetmetals: 'Min Flange Width = 4 x Thickness + Bend radius'; 'D = 3 x Thickness + Bend radius'"
+    },
+    {
+     "id": "cam-chapa-din-06",
+     "titulo": "Springback y fuerza por proceso: aire 5–10°, fondo +50–60 %, acuñado hasta 0.75T",
+     "herramientas": "chapa.springback",
+     "oraculo": "doblez a 90° al aire → sobre-doblado sugerido 95°–100° (rango, no numero unico); fondo: Ri < 1T → rechazado; acuñado: Ri=0.75T aceptado, 0.7T rechazado; fuerza relativa fondo = 1.5–1.6× aire; U-die: pad = 30 % de la fuerza",
+     "respuesta_impresa": "DB Sheetmetals: 'The spring back will usually range from 5 to 10 degrees'; 'Bottom bending requires considerably more force (about 50%~60% more) than air bending'; U die pad 'about 30% of the bending force'"
+    },
+    {
+     "id": "cam-chapa-din-07",
+     "titulo": "Dobladillo (hem): K=0.625 y el radio que no es radio",
+     "herramientas": "chapa.desdoblar chapa.kTaller",
+     "oraculo": "hem en acero dulce 0.7/1.2/1.5 mm usa K=0.625 (no el K normal 0.509/0.455/0.415); un hem a 180° con Ri = 0.5·T desdobla con BA = pi·(Ri + 0.625·T); UI etiqueta 'hem' como proceso distinto",
+     "respuesta_impresa": "DB Sheetmetals columna 'K hem' = 0.625 para 0.7, 1.2, 1.5 mm acero dulce y 1.2 mm inox"
+    },
+    {
+     "id": "cam-chapa-ketiv-03",
+     "titulo": "K desde la medicion (ec. 14): la pieza real manda sobre la tabla",
+     "herramientas": "chapa.calibrar chapa.kTaller",
+     "oraculo": "con LBD medido 3.30 mm en T=2/Ri=2/90°: K = [(180/(90·pi))·(2·4 − 3.30) − 2]/2 = (2.992 − 2)/2 = 0.496; el valor medido sobreescribe la regla de dedo (0.46 fondo) y queda con fecha/material/V en k-taller.json",
+     "respuesta_impresa": "KETIV ec. 14: K = [(180°/(alfa·pi))·(2·LSetBack − LBD) − Ri]/T"
+    },
+    {
+     "id": "cam-chapa-nptel-03",
+     "titulo": "Por que existe la regla del grano: frio/caliente a 0.5·Tm y la prohibicion Rb70/Rb85",
+     "herramientas": "chapa.dfm chapa.material",
+     "oraculo": "clasificador: Pb (Tm 600 K) a 293 K → 0.49·Tm → 'caliente'; W (Tm 3695 K) a 1273 K → 0.34·Tm → 'frio'; acero rolado en frio Rb 75 doblado PARALELO al grano → SM-04 amarillo 'no recomendado'; Rb 90 → rojo 'no se dobla'; hot rolled paralelo → pasa",
+     "respuesta_impresa": "NPTEL: 're-crystallization temperature of a metal is around 0.5 times the melting point in degree Kelvin'; DB Sheetmetals: 'not recommended for cold rolled steel > Rb 70. And no bending is acceptable for cold rolled steel > Rb 85'"
+    }
+   ],
+   "ya_existe": [
+    "NADA de chapa en src/forja (verificado por grep)",
+    "src/forja/cam/tool-stress.ts:MATERIALES es el patron de 'tabla de material versionada' a copiar"
+   ],
+   "dependencias": [
+    "cam-chapa-desdoblado"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "cam-chapa-cargador-weston",
+   "titulo": "El cargador real: catalogo Weston → biblioteca de herramientas → seleccion por geometria → tool file NIST → tool-stress",
+   "capitulos": [
+    5,
+    1
+   ],
+   "objetivo": "Importar el cap. 10 de Weston a public/cam/herramientas-weston.json (SKU, tipo, Ø, LOC, largo total, zanco, filos, helice, sustrato, recubrimiento, HRC tope, familia especial, radio de punta r de insertos ISO). Selector `cam.herramienta` por operacion: Ø ≤ 2·R_esquina (DFM-03), LOC ≥ profundidad (DFM-04, LOC/Ø 1.5–3 estandar, 3.6 largo, 4.8 extra largo), zanco vs acceso (DFM-06), inserto r = radio de esquina en torno (DFM-07). Exporta el archivo de herramientas de NIST (Tabla 1) con unidades declaradas y alimenta tool-stress.ts (Kienzle) para el veredicto. La tabla Vc/fz arranca VACIA (el catalogo no la trae) y se exige que el taller la llene. Evidencia: cajera del molde del cubo (E1–E12) → SKU elegido con razon, tool file, veredicto tool-stress.",
+   "ejercicios": [
+    {
+     "id": "cam-chapa-weston-01",
+     "titulo": "Importar la tabla de carburo estandar ST-1-305 (fraccional) y ST-1-308 (metrico)",
+     "herramientas": "cam.catalogo",
+     "oraculo": "ST-1-305-015: Ø1/4\", zanco 1/4\", LOC 3/4\", total 2-1/2\" → LOC/Ø = 3.0; ST-1-305-035: Ø1/2\" LOC 1\" → 2.0; ST-1-308-070: Ø10 mm, zanco 10, LOC 22 mm → 2.2; conteo de SKUs importados = filas del PDF (auditado a mano por tabla); Ø minimo del catalogo = 1/16\" (1.588 mm) / 4 mm metrico",
+     "respuesta_impresa": "Weston cap. 10 tabla carburo estandar: ST-1-305-015 1/4\" 1/4\" 3/4\" 2-1/2\" · ST-1-305-035 1/2\" 1/2\" 1\" 3\" · ST-1-308-070 10 mm 10 mm 22 mm"
+    },
+    {
+     "id": "cam-chapa-weston-02",
+     "titulo": "Seleccion por esquina y profundidad: cajera con R esquina 5 mm y 30 mm de profundidad",
+     "herramientas": "cam.herramienta dfm.fresable",
+     "oraculo": "Ø max = 2·5 = 10 mm; ST-1-308-070 (LOC 22) < 30 → rechazado por DFM-04; se busca serie larga/extra larga AlTiN (LOC/Ø hasta 3.6/4.8 → 36/48 mm) → aceptada; esquina R=0.5 mm → Ø 1 mm no existe en estandar → 'EDM' con bandera; el selector nunca inventa un SKU",
+     "respuesta_impresa": "Weston: serie largo AlTiN 5/8\" LOC 2-1/4\" (3.6×Ø); extra largo 5/8\" LOC 3\" (4.8×Ø)"
+    },
+    {
+     "id": "cam-chapa-weston-03",
+     "titulo": "El zanco manda el acceso: ST-1-222-009 (Ø9 corte, zanco 10)",
+     "herramientas": "cam.herramienta dfm.acceso",
+     "oraculo": "ranura de 9.5 mm de ancho y 25 mm de profundo: el corte cabe (9 < 9.5) pero el zanco (10) toca las paredes cuando la profundidad supera el LOC → DFM-06 rojo con la cota exacta de profundidad donde choca; con Ø9 zanco 9 pasa",
+     "respuesta_impresa": "Weston columna Zanco: ST-1-222-009 Ø 9 mm, zanco 10 mm"
+    },
+    {
+     "id": "cam-chapa-weston-04",
+     "titulo": "Torno: el radio de esquina interna es el radio de punta del inserto (CNMG 431 / 432)",
+     "herramientas": "cam.inserto turning",
+     "oraculo": "perfil con hombro de radio 0.6 mm: CNMG 432 (r=0.8) → rechazado, 431 (r=0.4) → acepta; turning.ts:TurnTool.noseR se llena desde el catalogo y turnProfileFinish deja el radio r en el hombro (medible en el perfil resultante)",
+     "respuesta_impresa": "Weston tabla de insertos: CNMG 431 r 0.4 mm · CNMG 432 r 0.8 mm"
+    },
+    {
+     "id": "cam-chapa-weston-05",
+     "titulo": "Exportar el archivo de herramientas NIST desde la biblioteca, con la trampa de unidades cerrada",
+     "herramientas": "cam.catalogo gcode.toolfile",
+     "oraculo": "tool file generado con 4 SKUs pasa el parser de S1 (E-TOOL-01 = 0); biblioteca en mm + programa en G20 → W-06 y el pre-flight lo marca; POCKET unico garantizado; DIAM con la semantica 'borde de material' (positivo) salvo que la operacion sea trayectoria nominal",
+     "respuesta_impresa": "NIST §2.3: 'the user must be sure the units used for a tool in the file are the same as the units in effect'"
+    },
+    {
+     "id": "cam-chapa-weston-06",
+     "titulo": "Veredicto tool-stress con la herramienta del catalogo y la tabla Vc vacia",
+     "herramientas": "cam.herramienta tool-stress",
+     "oraculo": "ST-1-305-015 (Ø6.35, LOC 19.05, 4 filos) en acero-1045 (kc11 1680, mc 0.26) con ap=19, ae=3, fz=0.05 → toolStress devuelve veredicto (roza/rompe/flexion/potencia) y la deflexion en voladizo; sin Vc del taller para (1045, carburo, AlTiN) el sistema NO propone rpm: pide el dato (M6/M7 del pliego); con Vc capturada calcula n = 1000·Vc/(pi·D) y Vf = n·z·fz exactos",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/cam/tool-stress.ts:toolStress, cutKinematics, MATERIALES (kc11/mc/vcMin/vcMax) + tool-stress.test.ts",
+    "src/forja/cam/turning.ts:TurnTool.noseR, turnProfileFinish",
+    "src/forja/brep/occt.ts:enumerateFaces con radio de cilindro (para DFM-03/04)",
+    "Catalogo Weston SOLO como PDF + tarjeta en public/temis.json; ver tambien memoria 'Catalogo Weston 942 SKUs DIN'"
+   ],
+   "dependencias": [
+    "cam-chapa-gcode-contrato"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 2
+  }
+ ],
+ "brechas_vs_fusion": [
+  {
+   "brecha": "Entorno de chapa completo (Fusion Sheet Metal / SolidWorks Sheet Metal / Inventor): flange, hem, relief, K por regla, tabla de dobleces, flat pattern, DXF del patron",
+   "prioridad": "P0",
+   "que_dice_el_libro": "KETIV ec. 6–15 + DIN 6935 + tablas BD; DB Sheetmetals: K por proceso, DFM SM-01..09, calibracion",
+   "que_hace_la_competencia": "SolidWorks: bend tables xls, K-factor/BA/BD por doblez, flat pattern con bend lines y bend table en el plano; Inventor: Unfold Rules (K, Lockheed, DIN, tabla BD) exactamente las del PDF de KETIV; Fusion: Sheet Metal Rules por material/espesor"
+  },
+  {
+   "brecha": "Biblioteca de herramientas con datos de corte y cargador por maquina (Fusion Tool Library ISO 13399, SolidCAM, Mastercam)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Weston: SKU con Ø/LOC/zanco/filos/recubrimiento/HRC (sin Vc/fz); NIST Tabla 1: POCKET/FMS/TLO/DIAM",
+   "que_hace_la_competencia": "Fusion: biblioteca por fabricante con presets de Vc/fz por material, holder + zanco para colision; tool file exportado por el post"
+  },
+  {
+   "brecha": "Interprete/backplot y validacion de G-code (Fusion Simulate + LinuxCNC/NCSIMUL/Vericut)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "NIST: 'any input not explicitly allowed is illegal'; 17 errores de CRC; 3 huecos declarados (sobre-recorrido, avances, fixture)",
+   "que_hace_la_competencia": "Fusion simula la trayectoria (no el G-code); Vericut/NCSIMUL interpretan el G-code real con cinematica y detectan colision/sobre-recorrido"
+  },
+  {
+   "brecha": "Compensacion de radio en control (G41/G42 'in control' / 'wear') con lead-in/out automaticos",
+   "prioridad": "P1",
+   "que_dice_el_libro": "NIST App. B: 2 pre-entradas + entrada, arco en esquinas convexas, G40 sin salida",
+   "que_hace_la_competencia": "Fusion Contour: compensation type in computer/in control/wear, lead-in radius/linear con validacion de que el radio > r_herramienta"
+  },
+  {
+   "brecha": "Post-procesador configurable por control (.cps de Fusion, Mastercam posts) con ciclos enlatados vs expandidos",
+   "prioridad": "P1",
+   "que_dice_el_libro": "NIST Tabla 8 orden de ejecucion, reset M2/M30, G53/G54..G59.3, %",
+   "que_hace_la_competencia": "Fusion: >300 posts JS; opciones useG28, useCycles, sequenceNumbers, safeStartAllOperations"
+  },
+  {
+   "brecha": "Pre-flight de sobre-recorrido y colision con fixture/portaherramienta",
+   "prioridad": "P1",
+   "que_dice_el_libro": "NIST App. A: el interprete NO revisa 'axis overtravel', 'excessively high feeds or speeds', 'machining a fixture'",
+   "que_hace_la_competencia": "Fusion Simulate con machine + fixture + holder detecta colision y sobre-recorrido; Vericut lo hace sobre el G-code postprocesado"
+  },
+  {
+   "brecha": "DFM de chapa (SolidWorks DFMXpress / DFMPro): pestaña minima, barreno al doblez, radio minimo, grano",
+   "prioridad": "P1",
+   "que_dice_el_libro": "DB Sheetmetals SM-01..SM-09 con formulas 4T+Ri y 3T+Ri; Rb70/Rb85",
+   "que_hace_la_competencia": "DFMPro: reglas parametrizables de chapa con reporte rojo/verde por feature"
+  },
+  {
+   "brecha": "Palpado/inspeccion en maquina (Fusion Inspect, Renishaw macros, G38.2)",
+   "prioridad": "P2",
+   "que_dice_el_libro": "NIST §3.5.9 + Tabla 6 macro de centro/diametro de barreno",
+   "que_hace_la_competencia": "Fusion Inspect Surface / WCS probe genera ciclos de palpado y compara con el modelo"
+  },
+  {
+   "brecha": "Nesting de chapa/laser (Fusion Arrange/Nest, SigmaNEST)",
+   "prioridad": "P2",
+   "que_dice_el_libro": "(no esta en estas fuentes; PLAN-3-cam P3 lo cubre con SVGnest)",
+   "que_hace_la_competencia": "Nesting con NFP, kerf, remanentes, orden de corte interior→exterior"
+  }
+ ],
+ "archivo_md": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/cam-chapa.md",
+ "archivo_json": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/cam-chapa.json"
+}

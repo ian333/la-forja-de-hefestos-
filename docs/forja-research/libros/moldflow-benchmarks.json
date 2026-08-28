@@ -1,0 +1,1003 @@
+{
+ "libro": "Validación del solver de inyección: Moldflow Solver-API Validation Report (P2_42) + ~30 benchmarks/tesis de llenado reales (/home/ian/benchmarks-llenado) + recibos previos (VALIDACION-INDUSTRIA.md, pliego-moldflow-nafems.md)",
+ "titulo": "Moldflow + benchmarks de llenado como CLIENTE — el solver se demuestra contra terceros, no contra el libro",
+ "autor_como_cliente": "El cliente es triple: (a) Autodesk Moldflow (P2_42) dicta el contrato de material (Cross-WLF con D3 en dos sitios, Tait 2 dominios b5+4m+4s, Nakamura con Y=ln(1/(1-θ)), Arrhenius/ICTAC, Folgar-Tucker con f=1-27·det A) y el contrato de control (switchover por %vol/posición/presión/fuerza de cierre/tiempo; lag de máquina Q'=½(Qprev+Qcur); AreValid→retroceder paso). (b) Los autores de V&V (Pedro 2020 openInjMoldSim, NAFEMS/ASME V&V20) dictan CÓMO se demuestra: convergencia con Richardson SIN mirar la referencia (<1% contra ti, <3-5% contra el mundo), target extraction nombrado (nunca 'el máximo'), reportar la corrida real no el límite extrapolado. (c) Los experimentalistas (Guerrier-Tosello molde de vidrio DTU, Wilczyński desbalance, Kennedy/Luye placa ISO, patentes de espiral, hojas SABIC/Toray) dictan los NÚMEROS MEDIDOS contra los que se firma: tiempos A–E ±5-10 % ABS, espiral 552/635/730 mm, hesitación 2.5 % promedio, Im=−35..+12 %, contracción 0.8 %. La vara de la industria: ≤5 % declarado; los comerciales también sobrepredicen presión y espiral.",
+ "capitulos": [
+  {
+   "num": 1,
+   "titulo": "P2_42 — Moldflow Insight 2021 Solver API Validation Report (contratos de material y control)",
+   "n_ejercicios": 6,
+   "cubierto_por_forja": "parcial",
+   "nota": "Cross-WLF existe en filling.ts (CrossWLF/eta0CrossWLF/viscosityCrossWLF) pero el solver FAN corre η_eff power-law + freno WLF; Tait existe en shrinkage.ts desacoplado del llenado; Nakamura/degradación/Folgar-Tucker/lag de máquina: no existen."
+  },
+  {
+   "num": 2,
+   "titulo": "Pedro et al. 2020 (Fluids 5:84) — V&V de openInjMoldSim: tubo Poiseuille, cavidad con inserto, probeta vs Moldex3D",
+   "n_ejercicios": 6,
+   "cubierto_por_forja": "parcial",
+   "nota": "GCI/Richardson existe (scripts/verif-gci-test.cjs) pero solo sobre el FEA del acero, no sobre el solver de llenado; no hay caso Poiseuille ni tSO analítico."
+  },
+  {
+   "num": 3,
+   "titulo": "Guerrier & Tosello 2017 — molde de vidrio DTU, cámara 500 fps, ABS y HVPC (tiempos A–E medidos)",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "no",
+   "nota": "La geometría 18×45×2 mm con puente de 0.5 mm es la placa de hesitación canónica; fan.ts tiene thicknessMm por vóxel + piel erf, así que el fenómeno PUEDE emerger, pero no hay caso ni oráculo."
+  },
+  {
+   "num": 4,
+   "titulo": "Polymers 2020 — hesitación de flujo en pared delgada (escalones 1.5→0.5 mm, DTU)",
+   "n_ejercicios": 2,
+   "cubierto_por_forja": "no",
+   "nota": "Oráculo publicado: tiempos con desviación promedio 2.5 %, máximo 10 %; σ de medición 0.3 mm. grep hesitat en src/forja/mold = 0."
+  },
+  {
+   "num": 5,
+   "titulo": "Wilczyński & Narowski 2019 (Polymers 11:639) — desbalance de llenado en H-8 geométricamente balanceado, Cross-WLF paramétrico",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "parcial",
+   "nota": "feed-layouts.ts calcula DESBALANCE geométrico 1D (V̇ por cavidad); el desbalance por CORTE (capa caliente que gira en la rama) exige perfil térmico en la sección del canal — no existe."
+  },
+  {
+   "num": 6,
+   "titulo": "Kennedy 2008 (tesis TU/e) — placa ISO 60×60×3 de iPP (Luye): presión de empaque, T de transición, contracción 0.8 %, CRIMS",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "parcial",
+   "nota": "shrinkage.ts (Tait doble dominio, Eq 10.2-10.6) y warpage.ts (Eq 10.17-18) existen; no hay fase de EMPAQUE con decaimiento de presión ni corrección CRIMS."
+  },
+  {
+   "num": 7,
+   "titulo": "Bayer — Part and Mold Design (manual): límites de γ̇ en compuerta (Tabla 7-1), viga I ejemplo resuelto, contracción vs espesor",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "parcial",
+   "nota": "filling.ts tiene γ̇ newtoniano/power-law y gating.ts compuertas; falta la tabla de límites por familia y el check 'γ̇ compuerta ≤ límite'."
+  },
+  {
+   "num": 8,
+   "titulo": "Espiral de flujo — US11230635 Tabla 6, US11976138 (canal 12.7×3.175), ASTM D3123, ficha SABIC BDT5510, Toyolac Fig. 8",
+   "n_ejercicios": 4,
+   "cubierto_por_forja": "si",
+   "nota": "campoEspiral/espiralN2Corrida (estudio-molde-datos.ts) + scripts/validacion-industria.cjs: 640/730/826 vs 552/635/730 mm, cocientes ±5 %. Falta Toyolac (digitalizar Fig. 8) y bajar el sesgo +13 %."
+  },
+  {
+   "num": 9,
+   "titulo": "Reología: identificación Cross-WLF (Kim & Park 2018, Ultramid B3K6 vs Moldflow) y comparación de 10 modelos (Appl. Sci. 2024, PA66 Schulamid 66 SK 1000)",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "no",
+   "nota": "No hay ajuste de Cross-WLF a puntos η(γ̇,T) ni RMSE/R²; los coeficientes ABS_CROSS/PP_CROSS están tecleados."
+  },
+  {
+   "num": 10,
+   "titulo": "Presión de cavidad y alabeo medidos — SABIC PP 576P (Sci.Rep. 2026), IJET conector Ultramid A3EG7 (15 piezas, 5 sensores), AIP 2015 POM carcasa 0.8 mm (CMM)",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "parcial",
+   "nota": "pInletSerie (fan.ts) emite p(t,vol%); SABIC 576P está ENCODEADO en validacion-industria.cjs pero no corrido (3 supuestos). Warp vs CMM: ninguna fuente corrida."
+  }
+ ],
+ "n_ejercicios_catalogo": 36,
+ "ejercicios_catalogo": [
+  {
+   "id": "moldflow-benchmarks-p242-01",
+   "cap": 1,
+   "titulo": "Cross-WLF del ejemplo de P2_42: evaluar η(γ̇,T) con n=0.2817 τ*=120200 D1=1.4e15 D2=361.15 D3=0 A1=37.592 Ã2=57.3",
+   "herramientas": "filling.ts viscosityCrossWLF · panel material",
+   "oraculo": "η0(T) y η(γ̇) reproducen la fórmula literal; con D3≠0 la p entra en T* Y en A2 (dos sitios); invariante: η→η0 cuando γ̇→0, pendiente log-log → n−1 en alta cizalla",
+   "respuesta_impresa": "coeficientes literales P2_42 §Viscosity (n=0.2817, τ*=120200, D1=1.4e15, D2=361.15, D3=0, A1=37.592, Ã2=57.3)",
+   "ya_existe": "si"
+  },
+  {
+   "id": "moldflow-benchmarks-p242-02",
+   "cap": 1,
+   "titulo": "Tait de dos dominios con el orden de la API (b5, b1m..b4m, b1s..b4s) — v(T,p) GPPS Styron 678 (Tabla 3 de Pedro 2020)",
+   "herramientas": "shrinkage.ts specificVolume/TaitCoeffs",
+   "oraculo": "v(T,p) continuo en T_t(p)=b5+b6·p; v_melt(230 °C, 0.1 MPa)=b1m+b2m·(T−b5) exacto; b7=b8=0 ⇒ sin salto amorfo",
+   "respuesta_impresa": "Tabla 3 Pedro 2020: b1m=0.0009881 b2m=7.03e-7 b3m=1.71e8 b4m=0.004495 b1s=0.0009873 b2s=2.89e-7 b3s=2.43e8 b4s=0.003106 b5=373.98 b6=2.88e-7 b7=b8=0",
+   "ya_existe": "si"
+  },
+  {
+   "id": "moldflow-benchmarks-p242-03",
+   "cap": 1,
+   "titulo": "Nakamura reformulado Y=ln(1/(1−θ)): integrar dY/dt=n·K(T)·Y^((n−1)/n) en enfriamiento y probar que θ≤1 por construcción",
+   "herramientas": "integrador de campo por nodo (no existe)",
+   "oraculo": "θ(t) monótono en [0,1]; con Y_germ>0 no hay NaN; control negativo: la forma en θ directa se pasa de 1 con Δt grande y la forma en Y no",
+   "respuesta_impresa": "",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-p242-04",
+   "cap": 1,
+   "titulo": "Degradación térmica Arrhenius F1 (Ea=160 kJ/mol, K=8.8e15) sobre placa cuadrada: el mapa α muestra 'burn marks' junto al inyector",
+   "herramientas": "campo de llenado FAN + tiempo de residencia por vóxel",
+   "oraculo": "α máximo en los vóxeles vecinos a la compuerta (patrón cualitativo literal); α(t) = 1−exp(−k·t) con k(T) exacto en una celda isoterma",
+   "respuesta_impresa": "P2_42: 'For a square plate the API would predict final thermal degradation showing burn marks near injectors'",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-p242-05",
+   "cap": 1,
+   "titulo": "Switchover V/P con los 5 criterios de la API (%vol, posición husillo, presión, fuerza de cierre, tiempo) — probeta con criterio 98 % vol vs criterio pLimit",
+   "herramientas": "fan.ts switchover · MoldPanels",
+   "oraculo": "tSO(98 %) = 0.98·V/Q analítico (Eq 17 Pedro) ±1 %; con criterio de fuerza de cierre F=p·A_proj (Eq 5.29) el disparo ocurre en el paso donde F cruza el tonelaje",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-p242-06",
+   "cap": 1,
+   "titulo": "Lag de máquina Q'=½(Q_prev+Q_cur): perfil escalonado de caudal programado vs logrado; el setpoint no es el proceso",
+   "herramientas": "fan.ts caudal por paso (hoy Q constante)",
+   "oraculo": "∫Q'dt = ∫Q dt (misma masa) y el frente llega Δt = 1 paso tarde; tFill con lag > tFill sin lag; p_max baja con lag (monotonía)",
+   "respuesta_impresa": "P2_42 §Injection machine response lag: Q' = ½(Q_previous + Q_current)",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-pedro-01",
+   "cap": 2,
+   "titulo": "Tubo Ø20 newtoniano (η=310 Pa·s, Uin=4 m/s): perfil u(r)=(r0²Δp/4µL)(1−(r/r0)²) — u_max/Uin y p_inlet vs 3 mallas + Richardson",
+   "herramientas": "solver de llenado FAN en canal circular · GCI",
+   "oraculo": "u_max/U_in → 2.000 (RE) con error <0.5 % en malla fina; p_inlet → 4.77 MPa (RE); errores monótonos decrecientes",
+   "respuesta_impresa": "Tabla 6: u/Uin 1.912/1.973/1.992 (err 4.37/1.33/0.40 %), RE 2.000 · Tabla 7: p 4.49/4.65/4.72 MPa (err 5.96/2.61/1.14 %), RE 4.77",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-pedro-02",
+   "cap": 2,
+   "titulo": "Tiempo de switchover analítico tSO=V/(A·Uin) al 98 % — el reloj del solver contra la aritmética",
+   "herramientas": "fan.ts tFillS/fase2",
+   "oraculo": "tSO = 0.0245 s ±2 % en la malla media (la M1 sin compresión de interfaz da 88.6 % — el control negativo de la difusión de frente)",
+   "respuesta_impresa": "Tabla 4: tSO analítico 0.0245 s; IC 0.0249/0.0246/0.0230 (1.63/0.41/6.12 %); NIC 0.0462/0.0250/0.0247",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-pedro-03",
+   "cap": 2,
+   "titulo": "Cavidad 150×40×4 con inserto Ø15 a 55 mm de la entrada: separación y REUNIÓN del frente = línea de soldadura",
+   "herramientas": "flowlen.ts computeWeldMask · fan.ts",
+   "oraculo": "la máscara de soldadura cae aguas abajo del inserto sobre el eje; T_max en cortes S1/S2 ≤ 230.6 °C (nunca por encima de la entrada +1 °C); compresible vs incompresible difieren <4 % en velocidad",
+   "respuesta_impresa": "Tabla 8: T_max S1 230.4 °C, S2 230.6 °C; diferencias compresible/incompresible <4 %",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-pedro-04",
+   "cap": 2,
+   "titulo": "Probeta de tracción (dogbone), Q=15.7 cm³/s, GPPS Styron 678: p_max al switchover vs Moldex3D — 3 mallas + Richardson",
+   "herramientas": "fan.ts + probeta/espiral · GCI",
+   "oraculo": "p_max converge a 11.0–12.7 MPa (RE de ambos códigos); error de la malla fina <10 %; T_max error <1 %",
+   "respuesta_impresa": "Tabla 12: Moldex3D 7.18/8.32/9.66/11.61 MPa (RE 12.68); openInjMoldSim 7.76/14.07/12.01 (RE 11.01) · Tabla 13 errores Pmax/Umax/Tmax",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-pedro-05",
+   "cap": 2,
+   "titulo": "Richardson + criterio de convergencia (<5 %) aplicado al solver FAN: 3 mallas (cell, cell/2, cell/4) de la espiral, p_max y L",
+   "herramientas": "scripts/verif-gci-test.cjs (Roache/Celik) sobre fan.ts",
+   "oraculo": "orden observado p∈[1,2]; GCI_fine <5 % en L y p_max; se reporta la corrida de más celdas, NUNCA el límite extrapolado (regla 2.1.4 del pliego NAFEMS)",
+   "respuesta_impresa": "Apéndice A Pedro 2020: convergido cuando e_i <5 % (ref. [27])",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-pedro-06",
+   "cap": 2,
+   "titulo": "Formulación compresible (Tait) vs incompresible en el llenado: la compresible llena 'más rápido' y a mayor p en el mismo Q",
+   "herramientas": "fan.ts + shrinkage.ts specificVolume acoplado",
+   "oraculo": "Δp_compresible > Δp_incompresible y ΔtSO <1 % (Tabla 5); masa inyectada = ∫ρ(p,T)·Q dt > ρ0·Q·t",
+   "respuesta_impresa": "Tabla 5/6/7: compresible siempre mayor u_max y p (4.49→4.72 vs 4.46→4.68 MPa)",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-guerrier-01",
+   "cap": 3,
+   "titulo": "Placa 18×45×2 mm con puente central de 0.5 mm, ABS MFI 7, 237 °C/17 °C, ram 10 mm/s: tiempos de frente A–E y fin de llenado",
+   "herramientas": "fan.ts termico N2 + cámara del video de llenado",
+   "oraculo": "tiempos simulados dentro de ±10 % de 162/330/390/536 ms en C/D/E/END (la V de la línea de soldadura sobre el puente delgado aparece)",
+   "respuesta_impresa": "Tabla 1 ABS: A 20/33, B 76/104, C 162/171, D 330/338, E 390/410, END 536/478 ms (exp/sim) · Tabla 3 desviaciones 65/36.8/5.6/2.4/5.1/−10.8 %",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-guerrier-02",
+   "cap": 3,
+   "titulo": "Mismo molde con HVPC (315 °C/95 °C, 12 mm/s): el simulador comercial sobre-fluye 20-30 % — nuestro sesgo debe tener el MISMO signo",
+   "herramientas": "fan.ts termico N2",
+   "oraculo": "END simulado ANTES que el medido (signo negativo, como Moldflow: −29.7 %); la V de soldadura más chica que con ABS",
+   "respuesta_impresa": "Tabla 2 HVPC: END 1672 ms exp vs 1176 ms sim (−29.7 %)",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-guerrier-03",
+   "cap": 3,
+   "titulo": "Presión P1 (canal) y P2 (cavidad tras compuerta) vs sensores: curvatura y nivel de la traza p(t) durante llenado + 4 s de empaque a 40 MPa",
+   "herramientas": "fan.ts pInletSerie + fase de empaque (no existe)",
+   "oraculo": "p(t) en P2 sube al llegar el frente al sensor (mismo instante ±10 %) y satura en 40 MPa durante el empaque",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-hesitacion-01",
+   "cap": 4,
+   "titulo": "Cavidad de escalones laterales (canal 1.5 mm, escalones 0.5…1.5 mm): la hesitación del frente en los escalones delgados",
+   "herramientas": "fan.ts thicknessMm por vóxel + piel erf",
+   "oraculo": "tiempos de llegada por escalón con desviación promedio ≤2.5 % y máxima ≤10 % (la vara publicada); el frente del escalón de 0.5 mm arranca DESPUÉS de que el canal lo rebasa",
+   "respuesta_impresa": "Polymers 2020: 'Filling times were predicted with an average relative error deviation of 2.5 %' · máx 10 % · σ medición 0.3 mm",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-hesitacion-02",
+   "cap": 4,
+   "titulo": "Sensibilidad HTC/caracterización: la subestimación de presión de inyección baja a ≤10 % al meter geometría de máquina + material medido",
+   "herramientas": "fan.ts + MachineSpec",
+   "oraculo": "Δp_inyección predicho vs medido ≤10 % tras corregir; control: con HTC por default el error es mayor (monotonía documentada)",
+   "respuesta_impresa": "Polymers 2020: 'characterization can reduce injection pressure underestimation errors down to 10% or less'",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-desbalance-01",
+   "cap": 5,
+   "titulo": "H-8 geométricamente balanceado, PBT Valox 337 (252 °C/63 °C): coeficiente Im=(1−m2/m1)·100 % con Cross-WLF paramétrico (λ=η0/τ*)",
+   "herramientas": "feed-layouts.ts + campo térmico en sección del canal (no existe)",
+   "oraculo": "Im>0 para el layout estándar (internas llenan antes); Im→1 % cuando λ=0.1 s y grande con λ=0.001 s (signo y monotonía)",
+   "respuesta_impresa": "Eq 3: Im = (1 − m2/m1)×100 %; GS: Im alto con λ=0.001 s → 1 % con λ=0.1 s",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-desbalance-02",
+   "cap": 5,
+   "titulo": "Layout con un 'overturn' (G1): el desbalance cambia de signo (Im=−35 %) — las externas llenan antes",
+   "herramientas": "feed-layouts.ts variantes de rama",
+   "oraculo": "Im(G1) < 0 y |Im| ≈ 33–35 % con λ bajo; con α=5 mm²/s baja a −17 %",
+   "respuesta_impresa": "G1: Im=−35 % (λ=0.001 s) → Im=1 % (λ=0.1 s); α=0.005 mm²/s Im=−33 %, α=5 mm²/s Im=−17 %",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-desbalance-03",
+   "cap": 5,
+   "titulo": "Sensibilidad a η0, n, λ y difusividad térmica: dIm/dη0>0, dIm/dn<0, dIm/dλ<0",
+   "herramientas": "estudio paramétrico (script)",
+   "oraculo": "los 3 signos reproducidos; Im(GS, α alta) = +12 %",
+   "respuesta_impresa": "Abstract: efecto de η0 positivo, de n y λ negativo; GS α=5 mm²/s Im=12 %",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-kennedy-01",
+   "cap": 6,
+   "titulo": "Placa ISO 60×60×3 iPP PHV252 (220 °C, 1 s, 43 °C, 80 MPa hold 15 s): decaimiento de presión en empaque vs T de transición 118–160 °C",
+   "herramientas": "fase de EMPAQUE (no existe) + fan.ts",
+   "oraculo": "con T_t=118 °C (medida) el decaimiento cae sobre la traza de Luye; con 160 °C la presión se congela antes (monotonía dp/dT_t)",
+   "respuesta_impresa": "Kennedy §2.4: T_t medida 118 °C; parámetros de moldeo Tabla (220 °C, 1 s, 43 °C, 7 l/min, 80 MPa, 15 s, 40 s)",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-kennedy-02",
+   "cap": 6,
+   "titulo": "Contracción paralela al flujo de la misma placa: 0.8 % medido",
+   "herramientas": "shrinkage.ts shrinkage() Tait doble dominio",
+   "oraculo": "S_paralela = 0.8 % ±0.2 % con T_t=118 °C y p_hold=80 MPa; sensibilidad: a mayor T_t mayor contracción",
+   "respuesta_impresa": "Kennedy Fig 2.4: 'The measured value from Luye [111] is 0.8%'",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-kennedy-03",
+   "cap": 6,
+   "titulo": "CRIMS: corregir la contracción calculada con contracción MEDIDA en probetas (PP Eltex PHV252, 10 condiciones; la presión de sostenimiento domina)",
+   "herramientas": "shrinkage.ts + regresión (no existe)",
+   "oraculo": "modelo sin corregir SOBREPREDICE (declarado); modelo corregido dentro de la banda de medición; ortotropía: perpendicular 10–20 % mayor que paralela en Terluran GP35",
+   "respuesta_impresa": "Kennedy §4.3: 'perpendicular shrinkage is around 10-20% higher than parallel' (Terluran GP35); 'hold pressure is the dominant variable'",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-bayer-01",
+   "cap": 7,
+   "titulo": "Límite de γ̇ en compuerta (Tabla 7-1): γ̇=4Q/πr³ redonda, 6Q/wt² rectangular; ABS Lustran 40,000 1/s, PC Makrolon 40,000, TPU 20,000, ½ para FR",
+   "herramientas": "gating.ts + filling.ts shearRate",
+   "oraculo": "el check reprueba la compuerta cuando γ̇ > límite de la familia; subir r 25 % baja γ̇ a la mitad (1.25³≈1.95)",
+   "respuesta_impresa": "Tabla 7-1 Bayer: Makrolon/Apec/Bayblend/Lustran ABS/SAN 40,000; Triax 50,000; Durethan 60,000; Texin TPU 20,000; PC/TPU 10,000; ½ para FR",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-bayer-02",
+   "cap": 7,
+   "titulo": "Viga I 10 in (1×1, t=0.2 in) Durethan BKV 130 PA6 GF30 a 60 °C, P=250 lb a 4 in: deflexión con módulo secante",
+   "herramientas": "occt.ts masa/inercia + mech factor-seguridad",
+   "oraculo": "I=0.0689 in⁴, Z=0.1378 in³, σb=4,354 psi (30 MPa), ε=1.3 % → E_sec=334,923 psi, y_max=0.214 in",
+   "respuesta_impresa": "Bayer cap 3 ejemplo: I=0.0689 in⁴; Z=0.1378 in³; σb=4,354 psi; E=334,923 psi; y=0.214 in",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-bayer-03",
+   "cap": 7,
+   "titulo": "Contracción vs espesor 0–10 mm (curva GF30 PA6 0–1.4 %): shrinkage=(molde−pieza)/molde",
+   "herramientas": "shrinkage.ts shrinkageRecommendation",
+   "oraculo": "S(t) monótona creciente con el espesor; GF30 PA6 en la banda 0.2–1.4 % (curva Bayer); rango declarado por familia",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-espiral-01",
+   "cap": 8,
+   "titulo": "Espiral ASTM D3123 canal 12.7×3.175 (US11976138) ABS Terluran a 238/249/260 °C — longitud vs Tabla 6 de US11230635",
+   "herramientas": "estudio-molde-datos.ts espiralN2Corrida · validacion-industria.cjs",
+   "oraculo": "cocientes L(249)/L(238) 1.150 ±5 %, pendiente 8.1 mm/°C ±15 %, monotonía; absoluto hoy +13..16 % (sesgo declarado) — META: ≤5 %",
+   "respuesta_impresa": "US11230635 Tabla 6: 238 °C→552 mm · 249 °C→635 mm · 260 °C→730 mm",
+   "ya_existe": "si"
+  },
+  {
+   "id": "moldflow-benchmarks-espiral-02",
+   "cap": 8,
+   "titulo": "2ª fuente: ficha SABIC Cycolac BDT5510 (ABS FR) 736.6 mm @260 °C, 3.175 mm, 10 in/s",
+   "herramientas": "validacion-industria.cjs (ya encodeado)",
+   "oraculo": "|730−736.6|/730 = 0.9 % entre fuentes; sim/ficha dentro de ≤5 % (hoy +12 %)",
+   "respuesta_impresa": "Ficha BDT5510: spiral flow 29 in (736.6 mm) @ 260 °C, 0.125 in (3.175 mm)",
+   "ya_existe": "si"
+  },
+  {
+   "id": "moldflow-benchmarks-espiral-03",
+   "cap": 8,
+   "titulo": "Toyolac GP (Toray) Fig. 8: espiral ABS 2.0 mm a 210/230/250 °C, molde 60 °C — digitalizar la figura y correr",
+   "herramientas": "espiralN2Corrida con h=2.0 mm",
+   "oraculo": "pendiente dL/dT y cocientes L(230)/L(210), L(250)/L(210) dentro de ±5 % de la figura digitalizada (declarar ±3 % de error de lectura)",
+   "respuesta_impresa": "",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-espiral-04",
+   "cap": 8,
+   "titulo": "Bajar el sesgo absoluto +13 %: 3 hipótesis medibles (intensificación 10:1 nominal, grado GP22NR vs MG47, HTC de pared) — una a la vez",
+   "herramientas": "validacion-industria.cjs + fan.ts termico",
+   "oraculo": "cada hipótesis mueve L en la dirección predicha; la combinación ganadora deja |error| ≤5 % en 238/249/260 SIN tocar cocientes (±5 %) ni pendiente (±15 %)",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-reologia-01",
+   "cap": 9,
+   "titulo": "Identificar Cross-WLF por optimización sobre puntos η(γ̇,T) — Ultramid B3K6: recuperar n, τ*, A1, A2, D1, D2 de Moldflow",
+   "herramientas": "módulo de ajuste (no existe) · panel material",
+   "oraculo": "n≈1.13e-5..1e-5 (≈0), τ*=4.318e5, A1=37.0±0.1, A2=51.6, D1=2.5±0.2e15, D2=333.2 K; objetivo ≤ el de Moldflow (1.5e-5 vs 43 % más)",
+   "respuesta_impresa": "Kim & Park 2018 Tabla 2: óptimo/Moldflow: τ* 4.318e5/4.318e5; A1 36.99/37.07; A3(=A2) 51.69/51.60; D1 2.455e15/2.628e15; D2 333.2/333.2",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-reologia-02",
+   "cap": 9,
+   "titulo": "18 puntos η(γ̇) de PA66 Schulamid 66 SK 1000 a 3 T: ajustar Power-Law, Cross, Cross-WLF y reportar RMSE y R²",
+   "herramientas": "módulo de ajuste (no existe)",
+   "oraculo": "Cross-WLF R²≈0.999 RMSE≈8; Power-Law R²≈0.90 RMSE≈89; Cross isotermo R²≈0.917 RMSE≈81 (el orden de mérito se reproduce)",
+   "respuesta_impresa": "Appl. Sci. 2024 Tabla 3: Power-Law η0=1774 n=0.6779 R²=0.9000 RMSE=88.80; Cross η0=1055 τ*=71190 n=0.3944 R²=0.9174 RMSE=80.72; Cross-WLF τ*=61930 n=0.417 D1=0.09667 A1=−12.63 A2=−27.19 Ts=367.9 R²=0.9991 RMSE=8.217",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-reologia-03",
+   "cap": 9,
+   "titulo": "Cross-WLF → power-law equivalente (k, n) en la ventana γ̇∈[10²,10⁴] del proceso: la conversión que hoy es un supuesto declarado",
+   "herramientas": "filling.ts (ABS_MG47 k=17070 n=0.348 vs ABS_CROSS)",
+   "oraculo": "η_powerlaw vs η_CrossWLF dentro de ±15 % en la ventana a T_melt; fuera de la ventana declarar la desviación (plateau newtoniano)",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-presion-01",
+   "cap": 10,
+   "titulo": "SABIC PP 576P placa trapezoidal 80/120×60×2, compuerta central Ø2.5, 230 °C, 30 cm³/s, 2.75 s: p(%vol) medida 21/34/48/61/68 MPa",
+   "herramientas": "fan.ts pInletSerie · validacion-industria.cjs (encodeado, no corrido)",
+   "oraculo": "p(25/50/75/90/100 %) dentro de ≤5 % (la vara del paper) con los 3 supuestos DECLARADOS (D2 default, k desde Cross-WLF, sensor cavidad vs inyección) y su sensibilidad medida",
+   "respuesta_impresa": "Sci.Rep. 2026 (DOI 10.1038/s41598-026-51699-1): 25→21 · 50→34 · 75→48 · 90→61 · 100→68 MPa; Cross-WLF n=0.380 τ*=1.82e5 D1=3.16e12 A1=20.4 A2=51.6; aceptable ≤5 %",
+   "ya_existe": "parcial"
+  },
+  {
+   "id": "moldflow-benchmarks-presion-02",
+   "cap": 10,
+   "titulo": "Carcasa de conector Ultramid A3EG7 (IJET): 15 piezas, 5 sensores, 8 capas en espesor; pico 22,391 psi, V/P 21,888 psi, pack 3000 psi",
+   "herramientas": "fan.ts + fase de empaque + malla 8 capas",
+   "oraculo": "p en sensor #3 (post-compuerta, fin de llenado) llega en el mismo instante ±10 % y el pico de llenado ≈ 22,391 psi (154 MPa) ±10 %; con pack 3000 psi como setpoint fijo la traza de empaque se desvía (documentado)",
+   "respuesta_impresa": "IJET Tabla 1: Peak Pressure 22,391 psi; V/P Transfer 21,888 psi; Back Pressure 500 psi; Pack Pressure 3000 psi",
+   "ya_existe": "no"
+  },
+  {
+   "id": "moldflow-benchmarks-alabeo-01",
+   "cap": 10,
+   "titulo": "Carcasa POM tipo audífono, pared 0.8 mm (25 mm/s, 220/90 °C, 75 MPa 2 s, 6 s): alabeo L1/L2/L3/H vs CMM (10 piezas, 24 h/48 h/7 d)",
+   "herramientas": "warpage.ts alabeoPorEspesor/alabeoPorArea + FEA",
+   "oraculo": "desviación sim-CMM ≤0.02 mm (meta declarada del paper, vs 0.2–0.4 mm de la literatura previa); traza p promedio σ=1.2 bar en P1..P3",
+   "respuesta_impresa": "AIP 2015: meta 0.02 mm; literatura previa 0.2–0.4 mm; σ presión experimental 1.2 bar; t_inj 0.379 s",
+   "ya_existe": "parcial"
+  }
+ ],
+ "features": [
+  {
+   "nombre": "Cross-WLF completo (γ̇, T, p con D3 en T* y A2) como viscosidad del SOLVER, no solo del freno térmico",
+   "que_hace": "η(γ̇,T,p) por celda/nodo dentro del solve de presión; hoy fan.ts usa η_eff power-law (etaEfectiva) y Cross-WLF solo como cociente η0(T) del freno N2",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "donde": "src/forja/mold/filling.ts:CrossWLF/eta0CrossWLF/viscosityCrossWLF/ABS_CROSS/PP_CROSS · src/forja/mold/fan.ts:etaEfectiva + eta0CrossWLF(th.cross, …)",
+   "ejercicios": [
+    "moldflow-benchmarks-p242-01",
+    "moldflow-benchmarks-reologia-03",
+    "moldflow-benchmarks-presion-01"
+   ]
+  },
+  {
+   "nombre": "Verificación de solución (Richardson/GCI) sobre el solver de LLENADO",
+   "que_hace": "3 mallas del campo FAN → orden observado p, GCI, banda; reportar corrida real; criterio <5 % (Pedro) / <1 % (NAFEMS)",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "donde": "scripts/verif-gci-test.cjs (Roache/Celik, aplicado a lamina-vonmises.ts, NO a fan.ts)",
+   "ejercicios": [
+    "moldflow-benchmarks-pedro-01",
+    "moldflow-benchmarks-pedro-05",
+    "moldflow-benchmarks-pedro-04"
+   ]
+  },
+  {
+   "nombre": "Caso analítico Poiseuille (tubo newtoniano) + tSO=V/(A·U) en el solver FAN",
+   "que_hace": "verificación de CÓDIGO: u(r) y p_inlet cerrados; reloj del solver contra aritmética",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "donde": "grep Poiseuille en src/forja/mold → solo coolinglines.ts/cooling-design.ts (agua), no llenado",
+   "ejercicios": [
+    "moldflow-benchmarks-pedro-01",
+    "moldflow-benchmarks-pedro-02"
+   ]
+  },
+  {
+   "nombre": "Espiral de flujo contra fuentes medidas (recibo)",
+   "que_hace": "corre espiralN2Corrida en 3 isotermas y compara con patente + ficha; emite VERIFY_RESULT",
+   "estado_forja": "si",
+   "prioridad": "P0",
+   "donde": "src/forja/mold/estudio-molde-datos.ts:campoEspiral/espiralN2Corrida/ESPIRAL_PATENTE_MM · scripts/validacion-industria.cjs",
+   "ejercicios": [
+    "moldflow-benchmarks-espiral-01",
+    "moldflow-benchmarks-espiral-02",
+    "moldflow-benchmarks-espiral-03",
+    "moldflow-benchmarks-espiral-04"
+   ]
+  },
+  {
+   "nombre": "Traza de presión p(t, %vol) vs sensor de cavidad",
+   "que_hace": "comparar pInletSerie (y p en un vóxel-sensor) con dataset medido; fase de empaque con decaimiento",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "donde": "src/forja/mold/fan.ts:LlenadoFAN.pInletSerie/pFieldPa · scripts/validacion-industria.cjs:SABIC_576P (encodeado, no corrido)",
+   "ejercicios": [
+    "moldflow-benchmarks-presion-01",
+    "moldflow-benchmarks-presion-02",
+    "moldflow-benchmarks-guerrier-03",
+    "moldflow-benchmarks-kennedy-01"
+   ]
+  },
+  {
+   "nombre": "Switchover V/P con los 5 criterios de la API de Moldflow",
+   "que_hace": "disparo por %vol / posición / presión / fuerza de cierre / tiempo; hoy solo por tope de presión (modo stop|presion)",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "donde": "src/forja/mold/fan.ts:switchover {modo,tMaxS,qMinFrac} · filling.ts:clampForceN",
+   "ejercicios": [
+    "moldflow-benchmarks-p242-05",
+    "moldflow-benchmarks-pedro-02"
+   ]
+  },
+  {
+   "nombre": "Lag de máquina / perfil de caudal por paso",
+   "que_hace": "Q(t) programado vs logrado (Q'=½(Qprev+Qcur)); hoy Q constante (QmmS o V/fillTimeS)",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "src/forja/mold/fan.ts:resolverLlenadoFAN opciones QmmS/fillTimeS (constante)",
+   "ejercicios": [
+    "moldflow-benchmarks-p242-06"
+   ]
+  },
+  {
+   "nombre": "Hesitación de flujo en escalones delgados (placa DTU 2/0.5 mm)",
+   "que_hace": "que el frente se detenga en el puente delgado y forme la V de soldadura; oráculo de tiempos ±10 %",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "grep hesitat src/forja/mold = 0; fan.ts tiene thicknessMm por vóxel + piel erf (puede emerger, no verificado)",
+   "ejercicios": [
+    "moldflow-benchmarks-guerrier-01",
+    "moldflow-benchmarks-guerrier-02",
+    "moldflow-benchmarks-hesitacion-01",
+    "moldflow-benchmarks-hesitacion-02"
+   ]
+  },
+  {
+   "nombre": "Línea de soldadura por reunión de frentes (inserto)",
+   "que_hace": "máscara de soldadura donde dos frentes se encuentran",
+   "estado_forja": "si",
+   "prioridad": "P1",
+   "donde": "src/forja/mold/flowlen.ts:computeWeldMask · flowlen-surface.ts",
+   "ejercicios": [
+    "moldflow-benchmarks-pedro-03"
+   ]
+  },
+  {
+   "nombre": "Desbalance de llenado por CORTE en runners balanceados (Im)",
+   "que_hace": "perfil térmico/viscosidad en la sección del canal que gira en cada rama; hoy solo desbalance geométrico 1D",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "donde": "src/forja/mold/feed-layouts.ts:'DESBALANCE' (V̇ por cavidad) — sin física de corte",
+   "ejercicios": [
+    "moldflow-benchmarks-desbalance-01",
+    "moldflow-benchmarks-desbalance-02",
+    "moldflow-benchmarks-desbalance-03"
+   ]
+  },
+  {
+   "nombre": "Tait pvT acoplado al llenado (formulación compresible) y a la contracción",
+   "que_hace": "ρ(p,T) en el balance de masa y en la contracción; hoy Tait vive en shrinkage.ts desacoplado",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "donde": "src/forja/mold/shrinkage.ts:TaitCoeffs/specificVolume/ABS_TAIT · warpage.ts usa TaitCoeffs",
+   "ejercicios": [
+    "moldflow-benchmarks-p242-02",
+    "moldflow-benchmarks-pedro-06",
+    "moldflow-benchmarks-kennedy-02"
+   ]
+  },
+  {
+   "nombre": "Fase de EMPAQUE con decaimiento de presión y T de transición",
+   "que_hace": "p(t) tras el switchover hasta el sello de compuerta, sensible a T_t",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "fan.ts fase2 solo cubre el remate de llenado a p=P0 (Washburn), no empaque",
+   "ejercicios": [
+    "moldflow-benchmarks-kennedy-01",
+    "moldflow-benchmarks-presion-02"
+   ]
+  },
+  {
+   "nombre": "Contracción/alabeo contra medición (0.8 % Luye; CMM 0.02 mm POM)",
+   "que_hace": "validar shrinkage.ts/warpage.ts contra dato ajeno; CRIMS opcional",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "donde": "src/forja/mold/shrinkage.ts:shrinkage/shrinkageRecommendation · warpage.ts:alabeoPorEspesor/alabeoPorArea (validados solo contra Kazmer)",
+   "ejercicios": [
+    "moldflow-benchmarks-kennedy-02",
+    "moldflow-benchmarks-kennedy-03",
+    "moldflow-benchmarks-alabeo-01",
+    "moldflow-benchmarks-bayer-03"
+   ]
+  },
+  {
+   "nombre": "Ajuste de Cross-WLF a puntos η(γ̇,T) con RMSE/R²",
+   "que_hace": "identificar coeficientes desde datos (CAMPUS/ficha) en el panel de material",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "donde": "filling.ts coeficientes tecleados (ABS_CROSS, PP_CROSS); sin optimizador",
+   "ejercicios": [
+    "moldflow-benchmarks-reologia-01",
+    "moldflow-benchmarks-reologia-02"
+   ]
+  },
+  {
+   "nombre": "Check de γ̇ en compuerta contra límite por familia (Bayer Tabla 7-1)",
+   "que_hace": "γ̇=4Q/πr³ o 6Q/wt² vs límite; reprobar/recomendar tamaño",
+   "estado_forja": "parcial",
+   "prioridad": "P2",
+   "donde": "src/forja/mold/filling.ts:shearRateNewtonian/shearRatePowerLaw · gating.ts (sin tabla de límites)",
+   "ejercicios": [
+    "moldflow-benchmarks-bayer-01"
+   ]
+  },
+  {
+   "nombre": "Campos de usuario advectados (Nakamura cristalinidad, Arrhenius degradación) con AreValid/CheckAndFix",
+   "que_hace": "integrador genérico de EDO por celda con retroceso de paso por admisibilidad física",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "donde": "grep nakamura/degrad(campo) en src/forja/mold = solo 'degradación' de acero/vida en moldbase.ts/timeline.ts",
+   "ejercicios": [
+    "moldflow-benchmarks-p242-03",
+    "moldflow-benchmarks-p242-04"
+   ]
+  },
+  {
+   "nombre": "Orientación de fibra Folgar-Tucker (a11) — solo para grados GF",
+   "que_hace": "tensor A advectado, cierre híbrido f=1−27·det A",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "donde": "grep Folgar en src/forja = 0",
+   "ejercicios": []
+  },
+  {
+   "nombre": "Panel 'Recibos vs realidad' dentro del CAD (escuela vive en el CAD)",
+   "que_hace": "mostrar predicho-vs-medido con fuente citada dentro de ForgeBRepStudio/MoldPanels; hoy solo consola",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "grep recibo/validac en src/forja/commands/registry.ts = 0",
+   "ejercicios": [
+    "moldflow-benchmarks-espiral-01",
+    "moldflow-benchmarks-presion-01"
+   ]
+  }
+ ],
+ "supertickets": [
+  {
+   "slug": "moldflow-benchmarks-verificacion-analitica",
+   "titulo": "VERIFICACIÓN DE CÓDIGO Y SOLUCIÓN — el solver contra la aritmética antes que contra el mundo",
+   "capitulos": [
+    1,
+    2
+   ],
+   "objetivo": "Que el solver FAN pase los casos con solución cerrada (Poiseuille, tSO) y tenga barra de error (Richardson/GCI) ANTES de compararse con mediciones: <1 % contra sí mismo, reportando la corrida real y nunca el límite extrapolado.",
+   "ejercicios": [
+    {
+     "id": "moldflow-benchmarks-pedro-01",
+     "titulo": "Tubo Ø20 newtoniano: u_max/U_in y p_inlet vs Poiseuille, 3 mallas",
+     "herramientas": "fan.ts en canal circular · GCI",
+     "oraculo": "u_max/U_in→2.000 (err <0.5 % malla fina); p_inlet→4.77 MPa (RE); errores monótonos",
+     "respuesta_impresa": "Tabla 6/7 Pedro 2020: 1.912/1.973/1.992 (RE 2.000); 4.49/4.65/4.72 MPa (RE 4.77)"
+    },
+    {
+     "id": "moldflow-benchmarks-pedro-02",
+     "titulo": "tSO=V/(A·U) al 98 %: el reloj contra la aritmética",
+     "herramientas": "fan.ts tFillS/fase2",
+     "oraculo": "tSO=0.0245 s ±2 % en malla media",
+     "respuesta_impresa": "Tabla 4: analítico 0.0245 s"
+    },
+    {
+     "id": "moldflow-benchmarks-pedro-05",
+     "titulo": "Richardson + GCI sobre la espiral (cell, cell/2, cell/4): L y p_max con banda",
+     "herramientas": "scripts/verif-gci-test.cjs → fan.ts",
+     "oraculo": "p observado ∈[1,2]; GCI_fine <5 %; se reporta la corrida real",
+     "respuesta_impresa": "Pedro Apéndice A: convergido si e_i <5 %"
+    },
+    {
+     "id": "moldflow-benchmarks-p242-01",
+     "titulo": "Cross-WLF literal de P2_42 (n=0.2817 τ*=120200 D1=1.4e15 …) evaluado en el panel",
+     "herramientas": "filling.ts viscosityCrossWLF",
+     "oraculo": "η→η0 en γ̇→0; pendiente log-log n−1; D3 en T* y en A2",
+     "respuesta_impresa": "coeficientes literales P2_42 §Viscosity"
+    },
+    {
+     "id": "moldflow-benchmarks-p242-02",
+     "titulo": "Tait 2 dominios GPPS Styron 678 (Tabla 3): v(T,p) continuo en T_t(p)",
+     "herramientas": "shrinkage.ts specificVolume",
+     "oraculo": "continuidad en b5+b6·p; v_melt(230 °C,0.1 MPa)=b1m+b2m·(T−b5)",
+     "respuesta_impresa": "Tabla 3 Pedro 2020 (b1m=0.0009881 … b5=373.98 b6=2.88e-7)"
+    },
+    {
+     "id": "moldflow-benchmarks-pedro-06",
+     "titulo": "Compresible (Tait) vs incompresible: mismo Q, más p y más masa",
+     "herramientas": "fan.ts + shrinkage.ts acoplado",
+     "oraculo": "p_comp > p_incomp; ΔtSO <1 %; masa=∫ρ(p,T)Q dt",
+     "respuesta_impresa": "Tabla 7: 4.72 vs 4.68 MPa (M3)"
+    }
+   ],
+   "ya_existe": [
+    "scripts/verif-gci-test.cjs (GCI Roache/Celik sobre lamina-vonmises.ts)",
+    "filling.ts CrossWLF/eta0CrossWLF/viscosityCrossWLF",
+    "shrinkage.ts TaitCoeffs/specificVolume",
+    "fan.ts fase2 (switchover a p=P0)"
+   ],
+   "dependencias": [],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "moldflow-benchmarks-espiral-y-presion",
+   "titulo": "ESPIRAL Y PRESIÓN — los dos observables de la industria contra fuentes ajenas (≤5 %)",
+   "capitulos": [
+    8,
+    10,
+    3
+   ],
+   "objetivo": "Llevar el recibo de espiral del +13 % al ≤5 % con hipótesis medibles (una a la vez) y sumar el 2º observable: la traza p(%vol) del SABIC PP 576P con los 3 supuestos declarados y su sensibilidad; todo visible como panel 'Recibos vs realidad' en el CAD.",
+   "ejercicios": [
+    {
+     "id": "moldflow-benchmarks-espiral-01",
+     "titulo": "Espiral 12.7×3.175 ABS a 238/249/260 °C vs US11230635 Tabla 6",
+     "herramientas": "espiralN2Corrida · validacion-industria.cjs",
+     "oraculo": "cocientes ±5 %, pendiente ±15 %, absoluto META ≤5 % (hoy +13..16 %)",
+     "respuesta_impresa": "552 / 635 / 730 mm"
+    },
+    {
+     "id": "moldflow-benchmarks-espiral-02",
+     "titulo": "2ª fuente SABIC Cycolac BDT5510 736.6 mm @260 °C",
+     "herramientas": "validacion-industria.cjs",
+     "oraculo": "fuentes coinciden 0.9 %; sim/ficha ≤5 %",
+     "respuesta_impresa": "29 in = 736.6 mm @ 260 °C, 0.125 in"
+    },
+    {
+     "id": "moldflow-benchmarks-espiral-04",
+     "titulo": "Bajar el sesgo: intensificación 10:1, grado GP22NR vs MG47, HTC — una hipótesis por corrida",
+     "herramientas": "validacion-industria.cjs + fan.ts termico",
+     "oraculo": "|error| ≤5 % en las 3 T sin romper cocientes/pendiente",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "moldflow-benchmarks-espiral-03",
+     "titulo": "Toyolac GP Fig. 8 (2.0 mm, 210/230/250 °C, molde 60 °C) digitalizada",
+     "herramientas": "espiralN2Corrida h=2.0",
+     "oraculo": "cocientes L(230)/L(210), L(250)/L(210) ±5 % (±3 % lectura declarado)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "moldflow-benchmarks-presion-01",
+     "titulo": "SABIC PP 576P: p(%vol) 21/34/48/61/68 MPa con 3 supuestos declarados",
+     "herramientas": "fan.ts pInletSerie · panel recibos",
+     "oraculo": "p(25..100 %) ≤5 %; sensibilidad de cada supuesto tabulada",
+     "respuesta_impresa": "25→21 · 50→34 · 75→48 · 90→61 · 100→68 MPa"
+    },
+    {
+     "id": "moldflow-benchmarks-guerrier-03",
+     "titulo": "P1/P2 del molde de vidrio ABS: instante de llegada al sensor y saturación a 40 MPa",
+     "herramientas": "fan.ts pFieldPa en vóxel-sensor + empaque",
+     "oraculo": "instante ±10 %; meseta 40 MPa en empaque",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "estudio-molde-datos.ts campoEspiral/espiralN2Corrida/ESPIRAL_PATENTE_MM",
+    "scripts/validacion-industria.cjs (patente + BDT5510 + SABIC_576P encodeado)",
+    "fan.ts pInletSerie/pFieldPa"
+   ],
+   "dependencias": [
+    "moldflow-benchmarks-verificacion-analitica"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "moldflow-benchmarks-frente-de-flujo",
+   "titulo": "EL FRENTE CONTRA LA CÁMARA — hesitación, soldadura, desbalance y probeta",
+   "capitulos": [
+    3,
+    4,
+    5,
+    2
+   ],
+   "objetivo": "Que el patrón y los tiempos del frente coincidan con video de molde de vidrio y con Moldex3D: placa con puente de 0.5 mm (A–E ±10 %), escalones (2.5 % promedio), inserto con soldadura, H-8 con Im de signo correcto, dogbone p_max.",
+   "ejercicios": [
+    {
+     "id": "moldflow-benchmarks-guerrier-01",
+     "titulo": "Placa 18×45×2 + puente 0.5, ABS 237/17 °C, 10 mm/s: tiempos A–E y END",
+     "herramientas": "fan.ts termico N2 · video de llenado",
+     "oraculo": "C/D/E/END ±10 % de 162/330/390/536 ms; V de soldadura sobre el puente",
+     "respuesta_impresa": "Tabla 1: 20/76/162/330/390/536 ms (exp)"
+    },
+    {
+     "id": "moldflow-benchmarks-guerrier-02",
+     "titulo": "HVPC 315/95 °C: el sesgo debe tener el signo de Moldflow (sobre-fluye)",
+     "herramientas": "fan.ts termico N2",
+     "oraculo": "END_sim < END_exp; V más chica que en ABS",
+     "respuesta_impresa": "END 1672 exp vs 1176 sim (−29.7 %)"
+    },
+    {
+     "id": "moldflow-benchmarks-hesitacion-01",
+     "titulo": "Cavidad de escalones 1.5→0.5 mm: hesitación por escalón",
+     "herramientas": "fan.ts thicknessMm + piel erf",
+     "oraculo": "desviación promedio ≤2.5 %, máx ≤10 %",
+     "respuesta_impresa": "Polymers 2020: promedio 2.5 %, máximo 10 %"
+    },
+    {
+     "id": "moldflow-benchmarks-pedro-03",
+     "titulo": "Cavidad 150×40×4 con inserto Ø15 @55 mm: soldadura aguas abajo, T_max ≤ entrada+1 °C",
+     "herramientas": "flowlen.ts computeWeldMask · fan.ts",
+     "oraculo": "máscara en el eje tras el inserto; T_max S1/S2 ≤230.6 °C",
+     "respuesta_impresa": "Tabla 8: 230.4 / 230.6 °C"
+    },
+    {
+     "id": "moldflow-benchmarks-desbalance-01",
+     "titulo": "H-8 PBT Valox 337: Im=(1−m2/m1)·100 % con λ=0.001 vs 0.1 s",
+     "herramientas": "feed-layouts.ts + térmica de sección",
+     "oraculo": "Im>0 y decrece con λ; Im→1 % a λ=0.1 s",
+     "respuesta_impresa": "Eq 3; Im→1 % (λ=0.1 s)"
+    },
+    {
+     "id": "moldflow-benchmarks-desbalance-02",
+     "titulo": "Un overturn (G1): Im cambia de signo a −35 %",
+     "herramientas": "feed-layouts.ts variantes",
+     "oraculo": "Im(G1)<0, |Im|≈33–35 % con λ bajo",
+     "respuesta_impresa": "Im=−35 % (λ=0.001 s); −33 % (α=0.005); −17 % (α=5)"
+    },
+    {
+     "id": "moldflow-benchmarks-pedro-04",
+     "titulo": "Dogbone Q=15.7 cm³/s GPPS: p_max al switchover vs Moldex3D con Richardson",
+     "herramientas": "fan.ts + probeta · GCI",
+     "oraculo": "p_max→11–12.7 MPa; malla fina <10 %; T_max <1 %",
+     "respuesta_impresa": "Tabla 12: RE 12.68 (Moldex3D) / 11.01 (openInjMoldSim) MPa"
+    }
+   ],
+   "ya_existe": [
+    "flowlen.ts computeWeldMask",
+    "feed-layouts.ts desbalance geométrico",
+    "fan.ts thicknessMm por vóxel + TermicoFAN (piel erf)",
+    "scripts/llenado-video.cjs"
+   ],
+   "dependencias": [
+    "moldflow-benchmarks-verificacion-analitica"
+   ],
+   "esfuerzo": "XL",
+   "valor": 4,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "moldflow-benchmarks-contraccion-alabeo",
+   "titulo": "EMPAQUE, CONTRACCIÓN Y ALABEO contra placa ISO y CMM",
+   "capitulos": [
+    6,
+    7,
+    10
+   ],
+   "objetivo": "Abrir la fase de empaque (decaimiento de p sensible a T_t) y firmar contracción/alabeo contra datos ajenos: 0.8 % de Luye, ortotropía 10–20 %, curva Bayer S(t), carcasa POM en CMM (meta 0.02 mm).",
+   "ejercicios": [
+    {
+     "id": "moldflow-benchmarks-kennedy-01",
+     "titulo": "Placa ISO 60×60×3 iPP: p(t) de empaque vs T_t 118–160 °C",
+     "herramientas": "fase de empaque (nueva) + fan.ts",
+     "oraculo": "T_t=118 °C cae sobre la traza de Luye; dp/dT_t monótono",
+     "respuesta_impresa": "T_t medida 118 °C; 220 °C/1 s/43 °C/80 MPa/15 s"
+    },
+    {
+     "id": "moldflow-benchmarks-kennedy-02",
+     "titulo": "Contracción paralela de la misma placa: 0.8 %",
+     "herramientas": "shrinkage.ts shrinkage()",
+     "oraculo": "0.8 % ±0.2 % con T_t=118 °C, p_hold=80 MPa",
+     "respuesta_impresa": "0.8 % (Luye)"
+    },
+    {
+     "id": "moldflow-benchmarks-kennedy-03",
+     "titulo": "CRIMS: corregir con contracción medida; ortotropía perpendicular +10–20 %",
+     "herramientas": "shrinkage.ts + regresión",
+     "oraculo": "sin corregir sobrepredice; corregido en banda; ⊥/∥ ∈[1.10,1.20]",
+     "respuesta_impresa": "'perpendicular shrinkage is around 10-20% higher than parallel'"
+    },
+    {
+     "id": "moldflow-benchmarks-bayer-03",
+     "titulo": "Contracción vs espesor 0–10 mm (GF30 PA6 0.2–1.4 %)",
+     "herramientas": "shrinkage.ts shrinkageRecommendation",
+     "oraculo": "S(t) creciente; GF30 PA6 en la banda de la curva",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "moldflow-benchmarks-alabeo-01",
+     "titulo": "Carcasa POM 0.8 mm: L1/L2/L3/H vs CMM",
+     "herramientas": "warpage.ts + FEA occt.ts",
+     "oraculo": "|sim−CMM| ≤0.02 mm (meta) — declarar si se queda en 0.2–0.4 mm (literatura previa)",
+     "respuesta_impresa": "meta 0.02 mm; previa 0.2–0.4 mm; σ_p=1.2 bar"
+    }
+   ],
+   "ya_existe": [
+    "shrinkage.ts shrinkage/shrinkageRecommendation/ABS_TAIT",
+    "warpage.ts alabeoPorEspesor/alabeoPorArea",
+    "INDICE-ANALISIS A-208 (Eq 10.17-18) SÍ"
+   ],
+   "dependencias": [
+    "moldflow-benchmarks-espiral-y-presion"
+   ],
+   "esfuerzo": "XL",
+   "valor": 4,
+   "sprint_sugerido": 4
+  },
+  {
+   "slug": "moldflow-benchmarks-material-y-maquina",
+   "titulo": "MATERIAL Y MÁQUINA — el contrato de Moldflow: ajuste de Cross-WLF, switchover de 5 criterios, lag, γ̇ en compuerta, campos advectados",
+   "capitulos": [
+    1,
+    9,
+    7
+   ],
+   "objetivo": "Que el panel de material identifique Cross-WLF desde puntos (con RMSE/R²) y que el solver acepte el control de máquina real (lag, 5 criterios de switchover) y los campos de usuario con retroceso de paso por admisibilidad física.",
+   "ejercicios": [
+    {
+     "id": "moldflow-benchmarks-reologia-01",
+     "titulo": "Identificar Cross-WLF de Ultramid B3K6 y comparar con Moldflow",
+     "herramientas": "módulo de ajuste (nuevo) · panel material",
+     "oraculo": "A1 37.0±0.1, A2 51.6, D1 2.5e15±0.2e15, D2 333.2, τ* 4.318e5; objetivo ≤ Moldflow",
+     "respuesta_impresa": "Tabla 2 Kim & Park 2018"
+    },
+    {
+     "id": "moldflow-benchmarks-reologia-02",
+     "titulo": "18 puntos PA66 a 3 T: Power-Law vs Cross vs Cross-WLF con RMSE/R²",
+     "herramientas": "módulo de ajuste",
+     "oraculo": "Cross-WLF R²≈0.999/RMSE≈8; Power-Law R²≈0.90/RMSE≈89",
+     "respuesta_impresa": "Tabla 3 Appl. Sci. 2024"
+    },
+    {
+     "id": "moldflow-benchmarks-reologia-03",
+     "titulo": "Cross-WLF → power-law (k,n) en γ̇∈[10²,10⁴]: el supuesto declarado se mide",
+     "herramientas": "filling.ts ABS_MG47 vs ABS_CROSS",
+     "oraculo": "±15 % en la ventana a T_melt; fuera declarado",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "moldflow-benchmarks-p242-05",
+     "titulo": "Switchover por %vol / posición / presión / fuerza de cierre / tiempo",
+     "herramientas": "fan.ts switchover · clampForceN",
+     "oraculo": "tSO(98 %)=0.98·V/Q ±1 %; disparo por fuerza en el paso donde F cruza tonelaje",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "moldflow-benchmarks-p242-06",
+     "titulo": "Lag de máquina Q'=½(Qprev+Qcur) con perfil escalonado",
+     "herramientas": "fan.ts Q por paso",
+     "oraculo": "misma masa; frente 1 paso tarde; p_max baja",
+     "respuesta_impresa": "Q' = ½(Q_previous + Q_current)"
+    },
+    {
+     "id": "moldflow-benchmarks-bayer-01",
+     "titulo": "γ̇ en compuerta vs Tabla 7-1 (ABS 40,000 1/s; TPU 20,000; ½ FR)",
+     "herramientas": "gating.ts + filling.ts shearRate",
+     "oraculo": "reprueba si γ̇>límite; r+25 % → γ̇/2",
+     "respuesta_impresa": "Tabla 7-1 Bayer"
+    },
+    {
+     "id": "moldflow-benchmarks-p242-04",
+     "titulo": "Degradación Arrhenius F1 sobre placa cuadrada: mapa de 'burn marks' junto al inyector",
+     "herramientas": "integrador de campo por vóxel (nuevo)",
+     "oraculo": "α máximo en vecinos de la compuerta; celda isoterma exacta 1−exp(−kt)",
+     "respuesta_impresa": "'burn marks near injectors'"
+    }
+   ],
+   "ya_existe": [
+    "filling.ts ABS_CROSS/PP_CROSS/eta0CrossWLF",
+    "fan.ts switchover modo stop|presion",
+    "filling.ts shearRateNewtonian/PowerLaw · gating.ts",
+    "filling.ts clampForceN"
+   ],
+   "dependencias": [
+    "moldflow-benchmarks-verificacion-analitica"
+   ],
+   "esfuerzo": "L",
+   "valor": 3,
+   "sprint_sugerido": 5
+  }
+ ],
+ "brechas_vs_fusion": [
+  {
+   "brecha": "Viscosidad del solver = power-law η_eff; Moldflow/Moldex3D/Fusion (Moldflow Adviser) resuelven Cross-WLF(γ̇,T,p) por capa",
+   "prioridad": "P0",
+   "que_dice_el_libro": "P2_42: Cross-WLF con D3 dentro de la WLF en dos sitios; 4 granularidades de η (punto/nodo/laminado/elemento)",
+   "que_hace_la_competencia": "Cross-WLF + Tait por laminado en midplane/Dual Domain/3D; base de datos de ~10k grados"
+  },
+  {
+   "brecha": "Sin verificación de solución en el llenado (GCI solo en FEA del acero)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Pedro 2020: 3 mallas + Richardson, convergido si <5 %; NAFEMS: <1 % contra ti, reporta la corrida real",
+   "que_hace_la_competencia": "Moldflow no publica GCI; Moldex3D necesitó 4 mallas para <10 % en p_max (Tabla 12) — aquí se puede SUPERAR publicando la banda"
+  },
+  {
+   "brecha": "Un solo observable validado (espiral, +13 % absoluto) vs vara ≤5 %",
+   "prioridad": "P0",
+   "que_dice_el_libro": "US11230635 552/635/730 mm; BDT5510 736.6 mm; Sci.Rep. 2026 aceptable ≤5 %",
+   "que_hace_la_competencia": "Los comerciales también sobrepredicen espiral/presión (VALIDACION-INDUSTRIA.md) pero publican p(t) contra sensores Kistler/RJG"
+  },
+  {
+   "brecha": "Sin fase de EMPAQUE (decaimiento de p, T de transición) ni traza de sensor de cavidad",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Kennedy: T_t=118 °C domina el decaimiento y la contracción (0.8 %); IJET: 5 sensores, pack 3000 psi",
+   "que_hace_la_competencia": "Fill+Pack+Warp encadenados; Moldflow expone p en nodo-sensor y perfil de pack por pasos"
+  },
+  {
+   "brecha": "Switchover solo por tope de presión; sin lag de máquina",
+   "prioridad": "P1",
+   "que_dice_el_libro": "P2_42: 5 criterios (%vol, posición, p, fuerza de cierre, tiempo); Q'=½(Qprev+Qcur); 'el setpoint no es el proceso'",
+   "que_hace_la_competencia": "Moldflow: perfil de caudal por pasos, switchover por % vol/posición/presión/tiempo, respuesta de máquina en la API"
+  },
+  {
+   "brecha": "Hesitación de flujo y desbalance por corte no verificados contra cámara/experimento",
+   "prioridad": "P1",
+   "que_dice_el_libro": "DTU: tiempos ±10 % (2.5 % prom.); Wilczyński: Im=−35..+12 % según λ y layout",
+   "que_hace_la_competencia": "Moldflow 3D y Moldex3D reproducen la V de soldadura y el desbalance con malla 3D del runner; ambos usan Cross-WLF + térmica de sección"
+  },
+  {
+   "brecha": "Contracción/alabeo validados solo contra Kazmer; sin CRIMS ni CMM",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Kennedy CRIMS: medir en probetas y corregir; AIP 2015: meta 0.02 mm vs 0.2–0.4 mm previa",
+   "que_hace_la_competencia": "Moldflow CRIMS (datos medidos de contracción por grado); Dual Domain sin CRIMS difiere hasta 29 % del 3D en warp (IJET)"
+  },
+  {
+   "brecha": "Coeficientes de material tecleados; sin ajuste ni base de datos",
+   "prioridad": "P2",
+   "que_dice_el_libro": "Kim & Park: identificación por optimización con sensibilidad analítica; Appl. Sci.: Cross-WLF R²=0.9991 vs Power-Law 0.90",
+   "que_hace_la_competencia": "Moldflow: base de datos + ajuste desde reómetro; CAMPUS/Autodesk Material Lab"
+  },
+  {
+   "brecha": "Sin campos advectados de usuario (cristalinidad, degradación, fibra)",
+   "prioridad": "P2",
+   "que_dice_el_libro": "P2_42: user node fields con AreValid→retroceder paso; Nakamura en Y; Folgar-Tucker f=1−27·det A",
+   "que_hace_la_competencia": "Moldflow Solver API (DLL) + Folgar-Tucker/RSC/ARD nativos; Moldex3D iARD-RPR"
+  }
+ ],
+ "archivo_md": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/moldflow-benchmarks.md",
+ "archivo_json": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/moldflow-benchmarks.json"
+}

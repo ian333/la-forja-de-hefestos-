@@ -1,0 +1,4735 @@
+{
+ "libro": "Kazmer — Injection Mold Design Engineering (Hanser, 1a ed. 2007)",
+ "titulo": "Kazmer como cliente: el molde de TU pieza, capítulo por capítulo",
+ "autor_como_cliente": "Kazmer no pide un CAD de moldes: pide que el DISEÑO sea una cadena de análisis con números que rindan cuentas. Con cuatro datos (tamaño, pared, material, cantidad) cotizar ANTES de detallar (Fig 1.9, cap 3) y luego, subsistema por subsistema y con retornos, que cada decisión salga de una ecuación con datos del Apéndice A/B: la partición del área proyectada y la expulsabilidad (cap 4), el llenado desdoblado a mano contra la simulación (cap 5), la colada despejada por presupuesto de presión y redondeada steel-safe (cap 6), la compuerta que no corta ni congela antes de empacar (cap 7), el venteo entre h_min y h_max donde el frente termina (cap 8), el agua con ventanas de ⌀/profundidad/paso ruteada sin cruzar nada (cap 9), la contracción que SALE del PvT con banda y responsabilidad (cap 10), la expulsión desde la sección del CAD por el peor de tres criterios (cap 11), el acero que no cede, no fatiga y no abre más que el venteo (cap 12), y un acta firmada con costo/beneficio/riesgo (§13.10). Sus piezas de prueba son cuatro: bezel de laptop, cup, lid y el contenedor 100×160×60 — todo ejemplo del libro se resuelve sobre ellas y esa es la vara de La Forja.",
+ "capitulos": [
+  {
+   "num": 1,
+   "titulo": "Introduction",
+   "n_ejercicios": 1,
+   "cubierto_por_forja": "si",
+   "nota": "Corte A-A y roles ya en mold-assembly/lamina-seccion; Tabla 1.1 solo como texto"
+  },
+  {
+   "num": 2,
+   "titulo": "Plastic Part Design",
+   "n_ejercicios": 7,
+   "cubierto_por_forja": "parcial",
+   "nota": "DFM literal en dfm.ts; intake HECHO (mol-s2); undercuts por etiqueta; FEA de costillas y tolerancias FALTAN"
+  },
+  {
+   "num": 3,
+   "titulo": "Mold Cost Estimation",
+   "n_ejercicios": 8,
+   "cubierto_por_forja": "si",
+   "nota": "moldcost-detailed.ts reproduce $74,800 y $0.47; falta acabado por zonas y las 4 piezas de Tabla 3.3"
+  },
+  {
+   "num": 4,
+   "titulo": "Mold Layout Design",
+   "n_ejercicios": 9,
+   "cubierto_por_forja": "parcial",
+   "nota": "base/insertos/máquina SÍ (mol-s3); partición NO plana (loft ≥5°) y factores de acero Eq 4.2-4.3 FALTAN"
+  },
+  {
+   "num": 5,
+   "titulo": "Cavity Filling Analysis",
+   "n_ejercicios": 9,
+   "cubierto_por_forja": "parcial",
+   "nota": "lay-flat, 83.2 MPa, race-tracking y flow leaders SÍ (mol-s1); P(h)→1.36 mm, A_proj del kernel y Tabla 5.1 FALTAN"
+  },
+  {
+   "num": 6,
+   "titulo": "Feed System Design",
+   "n_ejercicios": 14,
+   "cubierto_por_forja": "parcial",
+   "nota": "feed.ts/feed-layouts/colada/threeplate SÍ; balanceo familia, residencia, Dh trapezoidal y anillo FALTAN"
+  },
+  {
+   "num": 7,
+   "titulo": "Gating Design",
+   "n_ejercicios": 9,
+   "cubierto_por_forja": "parcial",
+   "nota": "gating.ts reproduce 111k/132k/1.9/1.5/1.1; sin sólido 3D de compuertas ni cadena η(t)"
+  },
+  {
+   "num": 8,
+   "titulo": "Venting",
+   "n_ejercicios": 7,
+   "cubierto_por_forja": "parcial",
+   "nota": "h_min/h_max y ubicación (jabonera) SÍ; anatomía CAD del venteo FALTA"
+  },
+  {
+   "num": 9,
+   "titulo": "Cooling System Design",
+   "n_ejercicios": 12,
+   "cubierto_por_forja": "parcial",
+   "nota": "7 pasos SÍ; ruteo/circuito por pieza solo para el CUBO (E8b); conformal y Cu asimétrico FALTAN"
+  },
+  {
+   "num": 10,
+   "titulo": "Shrinkage and Warpage",
+   "n_ejercicios": 10,
+   "cubierto_por_forja": "parcial",
+   "nota": "Tait/contracción/alabeo SÍ (E9); anisotrópica, POM y mapa con empaque FALTAN"
+  },
+  {
+   "num": 11,
+   "titulo": "Ejection System Design",
+   "n_ejercicios": 16,
+   "cubierto_por_forja": "parcial",
+   "nota": "motor de expulsión y side actions SÍ; A_eff medida, sleeve/stripper y llave/interlock FALTAN"
+  },
+  {
+   "num": 12,
+   "titulo": "Structural System Design",
+   "n_ejercicios": 18,
+   "cubierto_por_forja": "parcial",
+   "nota": "placas/cores/interlocks/tornillos SÍ (E11); pilares Eq 12.12-13, área efectiva, Tabla 12.2 e inserción FALTAN"
+  },
+  {
+   "num": 13,
+   "titulo": "Mold Technologies",
+   "n_ejercicios": 18,
+   "cubierto_por_forja": "no",
+   "nota": "solo §13.9 (unscrewing/moldtech.ts) y el acta E12; el resto es descriptivo y FALTA"
+  },
+  {
+   "num": 14,
+   "titulo": "Apéndices A-F",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "parcial",
+   "nota": "Apéndice B literal en moldbase.ts; Apéndice A solo ABS/PP de 16"
+  }
+ ],
+ "n_ejercicios_catalogo": 141,
+ "features": [
+  {
+   "nombre": "Partición completa: dirección, línea por visibilidad, superficie loft ≥5°, shut-offs, tooling split",
+   "que_hace": "Propone el eje (máx área proyectada + expulsable), la línea en borde no visible, la superficie no plana por loft/knit ≥5°, un shut-off por ventana y parte el bloque en cavidad/macho sin residuo",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/parting.ts:partingLoops,splitNoPlano · lamina-particion-angulo.ts · mold.ts:ShutOffBox · visibilidad.ts",
+   "prioridad": "P0",
+   "ejercicios": [
+    "kazmer-c4-01",
+    "kazmer-c4-02",
+    "kazmer-c4-03",
+    "kazmer-c4-04",
+    "kazmer-c2-05"
+   ]
+  },
+  {
+   "nombre": "Ruteo y circuito de agua en el CAD por pieza (½⌀ de claro, tapones, manifold, baffle, K de barreno)",
+   "que_hace": "Líneas como grafo IN→OUT con extremos ciegos, cruces con O-ring, colisión contra sprue/insertos/pines, ΔP/ΔT serie-paralelo, distancia mínima por Eq 12.19",
+   "estado_forja": "parcial",
+   "donde": "src/forja/brep/useMoldStudio.ts:1237-1262 (E8b solo CUBO) · collision.ts:classifyInterface · cooling-design.ts",
+   "prioridad": "P0",
+   "ejercicios": [
+    "kazmer-c9-07",
+    "kazmer-c9-09",
+    "kazmer-c9-11",
+    "kazmer-c12-10"
+   ]
+  },
+  {
+   "nombre": "Reología y llenado lay-flat (Cross-WLF, velocidad, ΔP, P(h), tonelaje, arcos, flow leaders)",
+   "que_hace": "Todo el cap 5 encadenado; faltan P(h)→h_min, A_proj del kernel y PC del Apéndice A",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/filling.ts · layflat.ts · flowleaders.ts · flowlen.ts (mol-s1 HECHO)",
+   "prioridad": "P0",
+   "ejercicios": [
+    "kazmer-c5-01",
+    "kazmer-c5-02",
+    "kazmer-c5-03",
+    "kazmer-c5-04",
+    "kazmer-c5-05",
+    "kazmer-c5-06",
+    "kazmer-c5-08",
+    "kazmer-c5-09"
+   ]
+  },
+  {
+   "nombre": "Diseñador de colada: ΔP por segmento, radios por presupuesto ∝L, balanceo familia, Dh, residencia, steel-safe",
+   "que_hace": "Eq 6.3-6.11 + Tabla 6.3; faltan balanceo artificial de molde familia, Dh trapezoidal, anillo y residencia",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/feed.ts:minRunnerRadius,steelSafeDiaMm,designFeedSystem · feed-layouts.ts · colada.ts",
+   "prioridad": "P0",
+   "ejercicios": [
+    "kazmer-c6-02",
+    "kazmer-c6-03",
+    "kazmer-c6-04",
+    "kazmer-c6-06",
+    "kazmer-c6-07",
+    "kazmer-c6-08",
+    "kazmer-c6-09",
+    "kazmer-c6-12"
+   ]
+  },
+  {
+   "nombre": "Revisor DFM literal §2.3 + detección geométrica de draft/undercuts sobre el B-Rep",
+   "que_hace": "Pared, costillas 70/4x/10x, bosses, filetes, draft Tabla 2.14, 4 familias de undercut mapeadas a mecanismo y costo Tabla 3.9",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/dfm.ts:checkDFM,DRAFT_TABLE_214 · E1 sonda de draft · sideactions.ts · mechanism-catalog.ts",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c2-01",
+    "kazmer-c2-02",
+    "kazmer-c2-03",
+    "kazmer-c2-04",
+    "kazmer-c2-05"
+   ]
+  },
+  {
+   "nombre": "Cotizador causal del molde y de la pieza (Eq 3.1-3.25) con break-even y sobrediseño",
+   "que_hace": "Insertos, maquinado con complejidad A·h/V, acabado, base, customización, costo/pieza, arquitecturas; falta acabado por zonas",
+   "estado_forja": "si",
+   "donde": "src/forja/mold/moldcost-detailed.ts · cost.ts:breakEven · plate-cost.ts · scripts/mold-cost-test.cjs",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c3-01",
+    "kazmer-c3-02",
+    "kazmer-c3-03",
+    "kazmer-c3-04",
+    "kazmer-c3-05",
+    "kazmer-c3-06",
+    "kazmer-c3-07",
+    "kazmer-c3-08"
+   ]
+  },
+  {
+   "nombre": "Métricas de forma del kernel: A_surface, V, A_proj en la apertura, A_eff de sección, área de placa neta",
+   "que_hace": "Del B-Rep sin teclear: alimenta E2 (complejidad), E4 (tonelaje), E10 (F_eject) y E11 (área de soporte)",
+   "estado_forja": "parcial",
+   "donde": "occt.ts masa-inercia/sección; A_proj A-096 PARCIAL; ejection.ts:effectiveArea tecleada; structural.ts:plateCompression recibe A",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c3-08",
+    "kazmer-c5-06",
+    "kazmer-c11-01",
+    "kazmer-c12-04"
+   ]
+  },
+  {
+   "nombre": "Insertos, layout de cavidades, base estándar y compatibilidad con máquina (§4.2-4.3)",
+   "que_hace": "sizeInserts, aspecto <2:1, retículo HASCO/DME, checkMachine (tie bars, daylight, shot, clamp), tres placas",
+   "estado_forja": "si",
+   "donde": "src/forja/mold/moldbase.ts · platesizing.ts · machinesizing.ts · threeplate.ts (mol-s3 HECHO)",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c4-05",
+    "kazmer-c4-06",
+    "kazmer-c4-07",
+    "kazmer-c4-08",
+    "kazmer-c6-10"
+   ]
+  },
+  {
+   "nombre": "Calculadora de compuerta cerrada + geometría 3D de compuertas en el inserto",
+   "que_hace": "Tabla 7.1-7.4: tipo, corte, ΔP, congelamiento, steel-safe; sólidos OCC del túnel 45°/20°/3⌀, fan loft, diafragma",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/gating.ts (cálculo SÍ) · lamina-compuerta.ts (veredictos, sin sólido)",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c7-01",
+    "kazmer-c7-02",
+    "kazmer-c7-03",
+    "kazmer-c7-04",
+    "kazmer-c7-05",
+    "kazmer-c7-06",
+    "kazmer-c7-07",
+    "kazmer-c7-08",
+    "kazmer-c7-09"
+   ]
+  },
+  {
+   "nombre": "Venteo: h_min/h_max, ubicación desde el campo de llenado y anatomía CAD (land/alivio/salida, pin, inserto)",
+   "que_hace": "Eq 8.2-8.4 y enumerarVenteos SÍ; anatomía cortada en el inserto FALTA",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/venting.ts · venting-locations.ts · fits.ts:EJECTOR_DIAM_CLEARANCE_MM",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kazmer-c8-01",
+    "kazmer-c8-02",
+    "kazmer-c8-03",
+    "kazmer-c8-04",
+    "kazmer-c8-05",
+    "kazmer-c8-06",
+    "kazmer-c8-07"
+   ]
+  },
+  {
+   "nombre": "Flujo de enfriamiento de 7 pasos (t_c → Q → caudal → ⌀ → profundidad → paso) con tablas",
+   "que_hace": "Eqs 9.5-9.24, Tabla 9.1/9.2/9.3, SCF, variación de flujo por paso, núcleo esbelto",
+   "estado_forja": "si",
+   "donde": "src/forja/mold/cooling.ts · cooling-design.ts · coolinglines.ts · slendercore.ts",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c9-01",
+    "kazmer-c9-03",
+    "kazmer-c9-04",
+    "kazmer-c9-05",
+    "kazmer-c9-06",
+    "kazmer-c9-11"
+   ]
+  },
+  {
+   "nombre": "Campo térmico del molde (transitorio 1D convectivo, estacionario 3D, materiales asimétricos, conformal, un lado)",
+   "que_hace": "FDM por capas con Robin, solveSteadyMoldField, core Cu 940, hélice conformal, frontera adiabática (two-shot)",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/thermal-layers.ts · thermal-series.ts · thermal-steady.ts · mold-thermal-fdm.ts · lamina-nucleo-enfriamiento.ts",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c9-02",
+    "kazmer-c9-08",
+    "kazmer-c9-10",
+    "kazmer-c9-12",
+    "kazmer-c13-02"
+   ]
+  },
+  {
+   "nombre": "Contracción desde PvT (Tait) con banda, alarma, steel-safe cav/core, anisotrópica, semicristalinos y alabeo",
+   "que_hace": "shrinkage.ts + warpage.ts SÍ; anisotrópica Eq 10.14-16, POM Tait y mapa s(x,y) con empaque FALTAN",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/shrinkage.ts · warpage.ts · useMoldStudio.ts:1285 (E9) · fan.ts (llena, no empaca)",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c10-01",
+    "kazmer-c10-02",
+    "kazmer-c10-03",
+    "kazmer-c10-04",
+    "kazmer-c10-05",
+    "kazmer-c10-06",
+    "kazmer-c10-07",
+    "kazmer-c10-08",
+    "kazmer-c10-09",
+    "kazmer-c10-10"
+   ]
+  },
+  {
+   "nombre": "Motor de expulsión + layout por agarre + tipo por rasgo + detallado en placas",
+   "que_hace": "Eq 11.7-11.23, gripEjectorLayout, chooseEjectorType, regla 1⌀ de acero, conflicto con agua; sleeve/stripper sin geometría",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/ejection.ts · ejectortypes.ts · eject-layout.ts · mold-ejection-auto.ts · fits.ts",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c11-01",
+    "kazmer-c11-02",
+    "kazmer-c11-03",
+    "kazmer-c11-04",
+    "kazmer-c11-05",
+    "kazmer-c11-06",
+    "kazmer-c11-07",
+    "kazmer-c11-08",
+    "kazmer-c11-09",
+    "kazmer-c11-10",
+    "kazmer-c11-11"
+   ]
+  },
+  {
+   "nombre": "Side actions: core pull hidráulico y slide con perno ángulo con geometría de llave/interlock/gib",
+   "que_hace": "corePullForce, hydraulicBore, anglePinDesign, planSideAction SÍ; llave/interlock/claros como geometría FALTAN",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/sideactions.ts · mold-sideaction-gen.ts · scripts/mold-sideactions-test.cjs",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c11-12",
+    "kazmer-c11-13",
+    "kazmer-c11-14",
+    "kazmer-c11-15",
+    "kazmer-c11-16"
+   ]
+  },
+  {
+   "nombre": "Juez estructural: placas, pilares Eq 12.12-13, mejilla, interlocks, K de barrenos, cores, con contraste FEA",
+   "que_hace": "Tres veredictos (yield, fatiga, δ<venteo); pilares con superposición y pre-carga FALTAN; dos K y dos H13 conviven",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/structural.ts · platesizing.ts · mold-fea.ts · lamina-vonmises.ts · cores.ts · mold-interlocks.ts · mold-analysis.ts",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c12-01",
+    "kazmer-c12-02",
+    "kazmer-c12-03",
+    "kazmer-c12-04",
+    "kazmer-c12-05",
+    "kazmer-c12-06",
+    "kazmer-c12-07",
+    "kazmer-c12-08",
+    "kazmer-c12-09",
+    "kazmer-c12-10",
+    "kazmer-c12-11",
+    "kazmer-c12-12",
+    "kazmer-c12-13",
+    "kazmer-c12-14"
+   ]
+  },
+  {
+   "nombre": "Ajustes ANSI B4.1 completos (Tabla 12.1 + 12.2), fuerza de inserción y tornillería por izaje",
+   "que_hace": "interferenceFit (LN/FN) y fasteners SÍ; LC/LT dowels y Eq 12.29-12.31 FALTAN",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/fits.ts · fasteners.ts · mold-fasteners.ts",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c12-15",
+    "kazmer-c12-16",
+    "kazmer-c12-17",
+    "kazmer-c12-18"
+   ]
+  },
+  {
+   "nombre": "Bases de datos Apéndice A (16 plásticos) y B (11 metales) con selector de metal por K·P y costo",
+   "que_hace": "Apéndice B literal; Apéndice A solo ABS/PP; selector automático PARCIAL; factores Eq 4.2-4.3 FALTAN",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/moldbase.ts:MOLD_METALS · filling.ts:ABS_CROSS,PP_CROSS · shrinkage.ts:ABS_TAIT",
+   "prioridad": "P1",
+   "ejercicios": [
+    "kazmer-c14-01",
+    "kazmer-c14-02",
+    "kazmer-c4-09"
+   ]
+  },
+  {
+   "nombre": "Selector de tecnología (Fig 13.1) + variantes de base (split, reverse, rotating, collapsible, stack) + acta",
+   "que_hace": "moldtech.ts solo §13.9; unscrewing.ts ecuaciones; acta E12 HECHA; variantes sin geometría",
+   "estado_forja": "parcial",
+   "donde": "src/forja/mold/moldtech.ts · unscrewing.ts · estudio-molde-datos.ts:estacion12Dado",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kazmer-c13-01",
+    "kazmer-c13-03",
+    "kazmer-c13-08",
+    "kazmer-c13-09",
+    "kazmer-c13-10",
+    "kazmer-c13-11",
+    "kazmer-c13-18"
+   ]
+  },
+  {
+   "nombre": "Procesos especiales (coinyección, gas/water, lost core, IML, insulated, Melt Flipper, wall-temp)",
+   "que_hace": "Extensiones de E4/E8/E9 con dos materiales o fases; nada en el repo",
+   "estado_forja": "no",
+   "donde": "grep coinyec/gas.assist/lost.core/insulated/pulsed en src/forja/mold = 0",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kazmer-c13-04",
+    "kazmer-c13-05",
+    "kazmer-c13-06",
+    "kazmer-c13-07",
+    "kazmer-c13-12",
+    "kazmer-c13-13",
+    "kazmer-c13-14",
+    "kazmer-c13-15",
+    "kazmer-c13-16",
+    "kazmer-c13-17"
+   ]
+  },
+  {
+   "nombre": "Intake §2.1.5 + worksheets vivos + tolerancias ±0.4 %/±0.1 % + cotización por arquitectura",
+   "que_hace": "Intake HECHO en mol-s2; tolerancias A-004 y regulatorio/estética A-005 FALTAN",
+   "estado_forja": "parcial",
+   "donde": "public/escuela/lecciones/mol-s2-intake.json · estudio-molde-datos.ts:estacion1",
+   "prioridad": "P2",
+   "ejercicios": [
+    "kazmer-c2-06",
+    "kazmer-c2-07",
+    "kazmer-c6-14",
+    "kazmer-c1-01"
+   ]
+  }
+ ],
+ "supertickets": [
+  {
+   "slug": "kazmer-s4-partir-tu-pieza",
+   "titulo": "Tu pieza se PARTE: apertura, línea, superficie no plana y shut-offs",
+   "capitulos": [
+    4,
+    2
+   ],
+   "objetivo": "Que la pieza del árbol (no el cubo) salga de E3 con dirección de apertura elegida por área proyectada, línea de partición en borde no visible, superficie de partición por loft ≥5° cosida, un shut-off por ventana y tooling split con conservación de volumen; undercuts detectados geométricamente. Es la automatización #1 de PROCESOS-REPETITIVOS y desbloquea el bezel y las piezas de los cursos.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c4-01",
+     "titulo": "Dirección de apertura: cup axial vs radial (split) y bezel",
+     "herramientas": "molde-E3 visibilidad masa-inercia",
+     "oraculo": "Eje = normal del máx área proyectada Y 0 caras atrapadas; eje radial del cup → ≥1 atrapada → 'split cavity' f 0.5/1.0",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c4-02",
+     "titulo": "Línea de partición del cup en la base del rim, no en el labio",
+     "herramientas": "molde-E3 parting visibilidad",
+     "oraculo": "partingLoops devuelve el lazo en la base del rim; test v1·3 'la BOCA cae EN la partición'; candidato del labio marcado 'visible'",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c4-03",
+     "titulo": "Superficie de partición no plana del bezel por loft ≥5° y knit",
+     "herramientas": "loft superficies knit molde-E3 parting",
+     "oraculo": "Superficie cerrada y manifold; ángulo mín ≥5° (lamina-particion-angulo); V_cav+V_core+V_pieza = V_bloque ±0.1 %",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c4-04",
+     "titulo": "Shut-off de la ventana del display del bezel",
+     "herramientas": "molde-E3 parting superficies",
+     "oraculo": "n_shutoffs == n_ventanas pasantes (bezel 1, cup 0); parting.ts reporta 'ventana tapada'",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c2-05",
+     "titulo": "Detectar las cuatro familias de undercut",
+     "herramientas": "croquis extruir molde-E1 molde-E10 sideactions",
+     "oraculo": "Detector reporta exactamente 4 features atrapadas en Z (control sin features → 0); cada una con mecanismo de mechanism-catalog",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c4-05",
+     "titulo": "Dimensionar insertos: 3⌀ de agua, cheek = profundidad, redondeo a placa",
+     "herramientas": "molde-E3 revolve extruir moldbase",
+     "oraculo": "sizeInserts: cup driver 'estructural', bezel 'refrigeración'; alturas múltiplo de 10; V medido = L×W×H ±0.1 %",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c4-06",
+     "titulo": "Layouts de cavidades: línea, grid, círculo, híbrido de 6",
+     "herramientas": "patrón molde-E3 feed-layouts",
+     "oraculo": "aspecto(línea 8)>2 rechazado; grid 8 ≤2; área(círculo)>área(grid); 0 colisiones inserto-inserto/guide pins",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/parting.ts:partingLoops,splitNoPlano (plana y quebrada por pasos)",
+    "src/forja/mold/lamina-particion-angulo.ts (ángulo ≥5° medido)",
+    "src/forja/mold/mold.ts:ShutOffBox",
+    "src/forja/mold/visibilidad.ts",
+    "src/forja/mold/dfm.ts:DFMUndercut (por etiqueta)",
+    "v1·3 'la BOCA cae EN la partición' (ciclo-dado-test)"
+   ],
+   "dependencias": [
+    "mol-s1-llenado-por-pieza",
+    "mol-s3-base-catalogo"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "kazmer-s5-llenado-que-decide",
+   "titulo": "El llenado DECIDE: espesor mínimo, tonelaje del kernel y benchmark Tabla 5.1",
+   "capitulos": [
+    5
+   ],
+   "objetivo": "Cerrar el cap 5 sobre el bezel: curva P(h) → 1.36 mm, área proyectada medida por el kernel → 99 t, PC del Apéndice A, y el solver FAN contrastado contra Moldflow (Tabla 5.1) como vara ≤10 %.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c5-05",
+     "titulo": "Espesor mínimo de pared por la curva P(h) a 100 MPa",
+     "herramientas": "molde-E4 barrido",
+     "oraculo": "h_min(100 MPa)=1.36±0.03; P(h) monótona; P(1.5)=83.2",
+     "respuesta_impresa": "espesor mínimo = 1.36 mm (p.108)"
+    },
+    {
+     "id": "kazmer-c5-06",
+     "titulo": "Tonelaje al fin del llenado, inicio del empaque y bezel completo",
+     "herramientas": "molde-E4 masa-inercia machinesizing",
+     "oraculo": "clampForceN(50e6,0.2×0.012)=120 kN; 180 kN; A_proj del kernel = 9,724±100 mm2 → 99±1 t",
+     "respuesta_impresa": "120 kN = 12.2 t; 180 kN = 18.3 t; bezel 972,000 N = 99 t (p.110-111)"
+    },
+    {
+     "id": "kazmer-c5-02",
+     "titulo": "Curva Cross-WLF vs Newtoniano vs power-law para PC",
+     "herramientas": "molde-E4 materials",
+     "oraculo": "viscosityCrossWLF(PC,100,280)=350±10 %; (1e4)=80±10 %; eta0(270)/eta0(290)=2.64±0.1; ∫perfil = caudal",
+     "respuesta_impresa": "350 Pa·s a 100 1/s y 80 a 10,000 (280 °C); η0 250 @290, 660 @270 (p.97)"
+    },
+    {
+     "id": "kazmer-c5-01",
+     "titulo": "Corte, esfuerzo, fuerza y gradiente de presión en canal plano",
+     "herramientas": "molde-E4",
+     "oraculo": "shearRate 66.7±0.5; τ 6,667±50; F 133-135; 2τ/H 17.33; ΔP 3.47±0.05",
+     "respuesta_impresa": "γ̇ 67 1/s; τ 6,700 Pa; F 135 N; dP/dL 17.3 MPa/m; ΔP 3.5 MPa (p.94-96)"
+    },
+    {
+     "id": "kazmer-c5-03",
+     "titulo": "Velocidad de inyección recomendada del bezel con convergencia",
+     "herramientas": "molde-E4",
+     "oraculo": "convergeVelocityTraced reproduce 0.69/0.77/0.80/0.82±0.01; η(2000,239)=120±3; Vdot 125±5",
+     "respuesta_impresa": "0.5→0.69→0.77→0.80→0.82 m/s; 0.25 s; 125 cc/s (p.105-106)"
+    },
+    {
+     "id": "kazmer-c5-04",
+     "titulo": "Presión de llenado del bezel por lay-flat power-law",
+     "herramientas": "molde-E4 layflat",
+     "oraculo": "fillingPressure=83.2±0.5 (test existente); variante A/B/C > tira única",
+     "respuesta_impresa": "ΔP = 83.2 MPa = 12,060 psi (p.108)"
+    },
+    {
+     "id": "kazmer-c5-07",
+     "titulo": "Contraste análisis a mano vs Moldflow MPI 5.1 del bezel",
+     "herramientas": "molde-E4 FAN benchmark",
+     "oraculo": "solver 3D (FAN/flowlen) del bezel: P ∈ [100,121] MPa; F_fill 486-570 kN; 0<ΔT<5 °C",
+     "respuesta_impresa": "Tabla 5.1 (p.111)"
+    },
+    {
+     "id": "kazmer-c14-03",
+     "titulo": "Velocidad de fundido que balancea corte vs pérdida de calor (power-law → Newton)",
+     "herramientas": "molde-E4",
+     "oraculo": "forma general en n=1 coincide ±1e-9; recommendedVelocity reproduce Eq 5.23",
+     "respuesta_impresa": "v Newtoniano = √(5(Tmelt−Twall)κ/3μ) (p.407)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/filling.ts:fillingPressure (83.2 ✓),convergeVelocityTraced,clampForceN",
+    "src/forja/mold/layflat.ts (contenedor, race, flow leader ✓ en mol-s1)",
+    "src/forja/mold/flowlen.ts:predicadoDeMalla (mol-s1)"
+   ],
+   "dependencias": [
+    "mol-s1-llenado-por-pieza"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "kazmer-s6-colada-por-presupuesto",
+   "titulo": "La colada se DESPEJA: radios por presupuesto, familia balanceada y cortador steel-safe",
+   "capitulos": [
+    6
+   ],
+   "objetivo": "Que E5 despeje los radios por ΔP ∝ longitud, balancee artificialmente el molde familia cup+lid (46.8 MPa por ambas ramas), calcule residencia/vueltas, maneje secciones trapezoidales (Dh) y anulares, y redondee HACIA ABAJO al cortador; con la colada sólida verificada.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c6-03",
+     "titulo": "Radios mínimos por presupuesto de ΔP repartido por longitud",
+     "herramientas": "molde-E5 feed barrido",
+     "oraculo": "minRunnerRadius 5.0/4.4/4.4±0.05 y 4.0/3.5/3.5; V 35±0.5 y 21.3±0.3; R_manifold==R_nozzle",
+     "respuesta_impresa": "30 MPa: R 5/4.4/4.4, V 35 cc; 50 MPa: 4/3.5/3.5, 21.3 cc (p.143-144)"
+    },
+    {
+     "id": "kazmer-c6-04",
+     "titulo": "Balanceo artificial del molde familia cup + lid",
+     "herramientas": "molde-E5 feed ensamble",
+     "oraculo": "16.8/15.4±0.3; radios ±0.05; ΔP_total ambas ramas 46.8±0.5; regrind 3.5±0.3 %",
+     "respuesta_impresa": "ΔP_cup 16.8; ΔP_lid 15.4; R 1.5/1.25/2.7 mm; regrind 3.5 % (p.146-148)"
+    },
+    {
+     "id": "kazmer-c6-02",
+     "titulo": "ΔP y volumen del hot runner del bezel segmento a segmento",
+     "herramientas": "molde-E5 feed",
+     "oraculo": "pressureDropRunner 5.9/8.8/16.7±0.2, suma 31.4±0.3; feedVolume 37.0±0.5; reynolds<1",
+     "respuesta_impresa": "5.9 + 8.8 + 16.7 = 31.4 MPa; V 37 cc; Re ~0.1 (p.138-141)"
+    },
+    {
+     "id": "kazmer-c6-06",
+     "titulo": "Vueltas y tiempo de residencia del hot runner",
+     "herramientas": "molde-E5 feed",
+     "oraculo": "0.77±0.01; 24±0.5 s; alarma si n_turns>10 o t_res > límite",
+     "respuesta_impresa": "n_turns 0.77; t_residence 24 s (p.150)"
+    },
+    {
+     "id": "kazmer-c6-07",
+     "titulo": "Runner trapezoidal: diámetro hidráulico y ΔP",
+     "herramientas": "molde-E5 croquis sweep feed",
+     "oraculo": "Dh 7.04±0.02; ΔP 3.9±0.1; sweep del perfil reproduce Dh=4A/p ±1 %",
+     "respuesta_impresa": "Dh 7.04 mm; ΔP 3.9 MPa (p.152)"
+    },
+    {
+     "id": "kazmer-c6-08",
+     "titulo": "Sección anular de la boquilla con valve pin",
+     "herramientas": "molde-E5 feed",
+     "oraculo": "24.5±0.2 MPa Eq 6.14; Eq 6.15 power-law ≥ Newtoniana",
+     "respuesta_impresa": "ΔP = 24.5 MPa (p.153)"
+    },
+    {
+     "id": "kazmer-c6-09",
+     "titulo": "Redondear a cortador estándar HACIA ABAJO (steel-safe)",
+     "herramientas": "molde-E5 feed CAM",
+     "oraculo": "steelSafeDiaMm(4.6)=4.5; ΔP(4.5)>ΔP(4.6); V(4.5)<V(4.6); cortador existe en catálogo CAM",
+     "respuesta_impresa": "4.5 mm o 4 mm; no 5 mm (p.157)"
+    },
+    {
+     "id": "kazmer-c6-13",
+     "titulo": "Colada sólida del molde de dos placas: sprue con contra-cono, runners y puller",
+     "herramientas": "revolve sweep booleanas ensamble molde-E5 colada",
+     "oraculo": "verificacionColada: declarado≈medido; rBase>rTop; colada∩macho=∅; V vóxeles≈analítico≈OCC",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/feed.ts:minRunnerRadius,pressureDropRunner,feedVolume,steelSafeDiaMm,designFeedSystem",
+    "src/forja/mold/feed-layouts.ts (serie/ramificado/radial/híbrido)",
+    "src/forja/mold/colada.ts:construirColada,verificacionColada (medida 3 fuentes)",
+    "src/forja/mold/threeplate.ts"
+   ],
+   "dependencias": [
+    "mol-s1-llenado-por-pieza"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "kazmer-s7-compuerta-en-el-inserto",
+   "titulo": "La compuerta se CORTA en el inserto: tipo, corte, ΔP, congelamiento y el túnel a 45°",
+   "capitulos": [
+    7
+   ],
+   "objetivo": "La calculadora de compuerta (ya reproduce 111k/132k/1.9/1.5/1.1) encadenada con Cross-WLF a la tasa de corte y con la historia η(t) → 2.2 s, y la geometría 3D de las compuertas (túnel 45°/20°/3⌀, fan por loft, diafragma) cortada en cavidad/core con juez geométrico y apertura animada.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c7-07",
+     "titulo": "Modelar el tunnel gate de la tapa en el inserto y verificar sus tres ángulos",
+     "herramientas": "croquis revolve corte molde-E5 ensamble plano2D",
+     "oraculo": "sólido del túnel 45±1°, cono ≥20°, ≥3⌀ (juez geométrico); colada del lado del macho tras apertura",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c7-08",
+     "titulo": "Fan gate como loft círculo→rectángulo y diafragma como tira W = π·D",
+     "herramientas": "loft croquis molde-E5 compuerta molde-E4",
+     "oraculo": "V del loft = ∫secciones ±2 %; frente E4 plano (<5 % del ancho); γ diafragma < γ_max",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c7-04",
+     "titulo": "ΔP de la pin-point con Cross-WLF a la tasa de corte",
+     "herramientas": "molde-E5 compuerta reología",
+     "oraculo": "viscosityCrossWLF(ABS,132000,T_mid)=5.4±0.5 → 1.9±0.1; a 50,000 → 11.2±1 y 1.3±0.1",
+     "respuesta_impresa": "ΔP 1.9 MPa (⌀1.5) y 1.3 MPa (⌀2) (p.179)"
+    },
+    {
+     "id": "kazmer-c7-09",
+     "titulo": "Historia T/η de la compuerta → tiempo mínimo de empaque",
+     "herramientas": "térmico reología molde-E5",
+     "oraculo": "t(η=1e5)=2.2±0.2 s con serie de Fourier del cilindro + viscosityCrossWLF",
+     "respuesta_impresa": "pack time = 2.2 s (p.180)"
+    },
+    {
+     "id": "kazmer-c7-01",
+     "titulo": "Tasa de corte en las dos edge gates del bezel",
+     "herramientas": "molde-E5 compuerta reología",
+     "oraculo": "shearRateStrip=111,000±500 y ROJO; con W 14 ≤ 50,000",
+     "respuesta_impresa": "γ = 111,000 s^-1 (p.177)"
+    },
+    {
+     "id": "kazmer-c7-02",
+     "titulo": "Tasa de corte de la pin-point del vaso y despeje del radio",
+     "herramientas": "molde-E5 compuerta",
+     "oraculo": "shearRateCyl 132,000±1,500; gateRadiusForShear 1.03±0.01",
+     "respuesta_impresa": "γ = 132,000; R = 1.03 mm (p.177-178)"
+    },
+    {
+     "id": "kazmer-c7-05",
+     "titulo": "Tiempo de congelamiento del fan gate del bezel",
+     "herramientas": "molde-E5 compuerta térmico",
+     "oraculo": "gateFreezeStripS=1.5±0.05; bandera 'gatea a sección delgada'",
+     "respuesta_impresa": "t_s = 1.5 s (p.181)"
+    },
+    {
+     "id": "kazmer-c7-06",
+     "titulo": "Congelamiento de la pin-point ⌀2 vs solidificación del vaso de 3 mm",
+     "herramientas": "molde-E5 compuerta térmico",
+     "oraculo": "gateFreezeCylS 1.1±0.05; gateFreezeStripS(3) 24±0.5; ROJO",
+     "respuesta_impresa": "gate 1.1 s vs vaso 24 s (p.181)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/gating.ts (Tablas 7.2-7.4 con test mold-gating-test.cjs)",
+    "src/forja/mold/lamina-compuerta.ts (veredictos V7.7, mallaTronco)",
+    "src/forja/mold/thermal-series.ts:cylinderCenterTheta"
+   ],
+   "dependencias": [
+    "kazmer-s6-colada-por-presupuesto"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "kazmer-s9-agua-en-tu-molde",
+   "titulo": "El agua VIVE en tu molde: ruteo por pieza, redes, baffle y el gradiente que deja",
+   "capitulos": [
+    9,
+    12
+   ],
+   "objetivo": "Sacar el circuito E8b del cubo y hacerlo por pieza: 7 pasos con ventanas numéricas, ruteo con ½⌀ de claro y K de barreno Eq 12.19 (unificar las dos K del repo), redes serie/paralelo/manifold con tapones, baffle en core esbelto, y el campo estacionario que muestra el gradiente (6 °C) en el vaso.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c9-07",
+     "titulo": "Paso entre líneas y primer ruteo del vaso/tapa (infactible → factible)",
+     "herramientas": "molde-E8 ensamble interferencia térmico FEA-térmico",
+     "oraculo": "heatFluxVariation(2)<5 %; interferencia lista cruces (≥1 Fig 9.9, 0 Fig 9.10); campo 6±1.5 °C",
+     "respuesta_impresa": "ΔQ<5 % hasta W/H=2; gradiente 6 °C (p.214, 218-219)"
+    },
+    {
+     "id": "kazmer-c9-09",
+     "titulo": "Redes de enfriamiento del bezel: serie → paralelo → manifold interno → periférico",
+     "herramientas": "molde-E8 ensamble corte interferencia planeación",
+     "oraculo": "ΔP_serie=8·ΔP; ΔT_serie=8·ΔT; conexiones 16/8/2/2 emergentes del grafo; tapones = extremos ciegos",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c9-05",
+     "titulo": "Ventana de ⌀ de línea: turbulencia y ΔP → plug estándar",
+     "herramientas": "molde-E8 térmico",
+     "oraculo": "maxLineDiameter 20±0.5; minLineDiameter 3.7±0.15; plug ∈ Tabla 9.2",
+     "respuesta_impresa": "D_max 20; D_min 3.7; elegido 6.35 mm (p.209-211)"
+    },
+    {
+     "id": "kazmer-c9-06",
+     "titulo": "Profundidad de la línea: concentración de esfuerzo vs calor",
+     "herramientas": "molde-E8 fatiga térmico",
+     "oraculo": "maxMeltPressureMPa(456,SCF(4))=175±1; (166,SCF(1))=50±1; hLineMaxM(32)=0.032",
+     "respuesta_impresa": "175 MPa (P20 4D); 50 MPa (Al 1D); H<32 mm (p.212-213)"
+    },
+    {
+     "id": "kazmer-c12-10",
+     "titulo": "Distancia mínima de línea de agua ⌀9.5 a la cavidad en H13 a 200 MPa",
+     "herramientas": "molde-E8 molde-E11 térmico",
+     "oraculo": "H_hole 11.1±0.1; E8 respeta H≥11.1; K(1.5⌀)=3.40",
+     "respuesta_impresa": "K 3.8; H_hole 11.1 mm (p.323)"
+    },
+    {
+     "id": "kazmer-c9-11",
+     "titulo": "Selector de enfriamiento para núcleo esbelto: core 60 → baffle 12",
+     "herramientas": "molde-E8 corte ensamble térmico",
+     "oraculo": "chooseSlenderCoreCooling(60)='baffle', barreno ∈[6,25]; campo axi con baffle reduce gradiente",
+     "respuesta_impresa": "baffle 12 mm en core de 60 mm (p.226)"
+    },
+    {
+     "id": "kazmer-c9-01",
+     "titulo": "Tiempo de enfriamiento del molde familia y del runner",
+     "herramientas": "molde-E8 térmico",
+     "oraculo": "coolingTimePlate(0.002)=8.4±0.05; (0.003)=18.9; coolingTimeRod(0.00476)=22.9",
+     "respuesta_impresa": "lid 8.4 s; cup 18.9 s; runner 22.9 s (p.203)"
+    },
+    {
+     "id": "kazmer-c9-04",
+     "titulo": "Caudal de refrigerante por línea vs controlador VacTherm",
+     "herramientas": "molde-E8 térmico",
+     "oraculo": "coolantFlowRate(260,1)=6.2e-5±0.1e-5; total ≤1e-3 → VERDE",
+     "respuesta_impresa": "6.2e-5 m3/s ≈ 1 GPM; total 2.5e-4 (p.208-209)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/brep/useMoldStudio.ts:1237-1262 (E8b anillo+serpentina+baffle+tapones+O-rings del CUBO)",
+    "src/forja/mold/cooling-design.ts:heatFluxVariation,stressConcentration,PLUGS_DME",
+    "src/forja/mold/coolinglines.ts:designCoolingLines",
+    "src/forja/mold/thermal-steady.ts:solveSteadyMoldField",
+    "src/forja/mold/slendercore.ts · lamina-nucleo-enfriamiento.ts",
+    "src/forja/mold/lamina-vonmises.ts:kBarrenoLibro (K 3.40 exacto)"
+   ],
+   "dependencias": [
+    "kazmer-s4-partir-tu-pieza"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "kazmer-s10-contraccion-y-alabeo",
+   "titulo": "La pieza ENCOGE y se TUERCE: banda PvT, steel-safe, anisotropía y alabeo",
+   "capitulos": [
+    10
+   ],
+   "objetivo": "E9 por pieza: contracción desde Tait con banda min/max y alarma, steel-safe cav/core medido, anisotrópica con fibra y escalado por eje, POM semicristalino, y los dos alabeos (espesor 1.6 mm, área 6.6 mm) con los números impresos en el gate.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c10-03",
+     "titulo": "Contracción volumétrica y lineal isotrópica del bezel",
+     "herramientas": "molde-E9 materiales",
+     "oraculo": "shrinkage(ABS_TAIT,405,66) rv 0.991±0.001; s 0.31±0.03 %",
+     "respuesta_impresa": "T_t 386 K; rv 0.9907; s = 0.31 % (p.239-241)"
+    },
+    {
+     "id": "kazmer-c10-05",
+     "titulo": "Banda de contracción del bezel: sobre-empaque vs empaque corto",
+     "herramientas": "molde-E9 materiales",
+     "oraculo": "shrinkageRecommendation(83) low −0.2±0.05 con alarma; high 1.9±0.1",
+     "respuesta_impresa": "s −0.2 % (sobre-empaque); 1.9 % (p.244-245)"
+    },
+    {
+     "id": "kazmer-c10-07",
+     "titulo": "Steel-safe: cavidad 0.4 % y macho 0.6 % para s 0.5 %",
+     "herramientas": "molde-E9 escalado cotas ensamble",
+     "oraculo": "cavidad ×1.004, macho ×1.006 ±1e-4 en kernel; descalce registrado como spotting",
+     "respuesta_impresa": "cavidad 0.4 %, macho 0.6 % (Fig 10.10)"
+    },
+    {
+     "id": "kazmer-c10-04",
+     "titulo": "Contracción anisotrópica del bezel en ABS 15 % GF",
+     "herramientas": "molde-E9 materiales escalado-anisotrópico",
+     "oraculo": "s=0.00352→0.00351; escalado X ×1/(1−0.0018), Y/Z ×1/(1−0.0035) medido en kernel",
+     "respuesta_impresa": "p≈6 %; rv 0.9912; s 0.35 % cruz, 0.18 % flujo (p.243-244)"
+    },
+    {
+     "id": "kazmer-c10-08",
+     "titulo": "Semicristalino: acetal Delrin 500 contrae 3.5 %",
+     "herramientas": "molde-E9 materiales",
+     "oraculo": "specificVolume POM 0.77/0.69±0.01; s 3.5±0.2; bandera semicristalino",
+     "respuesta_impresa": "rv 0.90; s 3.5 % (p.251)"
+    },
+    {
+     "id": "kazmer-c10-09",
+     "titulo": "Alabeo del bezel por gradiente de 2 °C a través del espesor",
+     "herramientas": "molde-E9 alabeo FEA-térmico",
+     "oraculo": "alabeoPorEspesor → R 9050±300, δ 1.6±0.1; (100/102 °C, 0 MPa) → 2.1±0.15",
+     "respuesta_impresa": "R 9050 mm; δ 1.6 mm (errata sin(120/1050)); 2.1 mm a 0 MPa (p.253-254)"
+    },
+    {
+     "id": "kazmer-c10-10",
+     "titulo": "Pandeo de la tapa center-gated por contracción diferencial",
+     "herramientas": "molde-E9 alabeo pandeo",
+     "oraculo": "alabeoPorArea → criterio TRUE y δ 6.6±0.2",
+     "respuesta_impresa": "0.0135 > 0.0011 → pandea; δ 6.6 mm (p.255)"
+    },
+    {
+     "id": "kazmer-c10-02",
+     "titulo": "PvT Tait de ABS: densidad, CVTE y compresibilidad",
+     "herramientas": "molde-E9 materiales gráfica",
+     "oraculo": "1/specificVolume(293,0)=1047±3; CVTE ±0.2e-4; β ±0.3e-4; |ρ−1044|<1 %",
+     "respuesta_impresa": "ρ 1047; CVTE 3.1e-4; β −2.5e-4 (p.236-237)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/shrinkage.ts:specificVolume,shrinkage,shrinkageRecommendation (0.31 % ✓, alarma ✓)",
+    "src/forja/mold/warpage.ts:alabeoPorEspesor,alabeoPorArea (sin test con 9050/1.6/6.6)",
+    "src/forja/brep/useMoldStudio.ts:1285-1325 (E9 steel-safe medido)"
+   ],
+   "dependencias": [
+    "kazmer-s5-llenado-que-decide"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "kazmer-s11-expulsion-por-regla",
+   "titulo": "La expulsión por REGLA: A_eff de la sección, el peor de tres criterios y pines junto al agarre",
+   "capitulos": [
+    11
+   ],
+   "objetivo": "Cerrar la cadena Eq 11.7→11.10/11.12→Euler con la A_eff MEDIDA en la sección del CAD (no tecleada), layout automático junto a costillas/paredes con regla 1⌀ de acero y sin chocar agua, pandeo con K=0.7 literal, blade y undercut elástico; detallado del pin a través de las placas.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c11-01",
+     "titulo": "Fuerza de expulsión del vaso desde la sección del CAD",
+     "herramientas": "molde-E10 sección masa-inercia expulsión",
+     "oraculo": "ejectionForce=1800±60; A_eff medida en la sección = 526±5 %",
+     "respuesta_impresa": "F_eject ≈ 1,800 N (p.267)"
+    },
+    {
+     "id": "kazmer-c11-02",
+     "titulo": "Área efectiva del bezel con costillas y sanity vs máquina",
+     "herramientas": "molde-E10 expulsión máquina",
+     "oraculo": "effectiveArea 1.3e-3±2 %; 4700±150 N; F/clamp ≤0.02",
+     "respuesta_impresa": "A_eff 1.3e-3 m²; F ≈ 4,700 N; 0.5 % vs 2 % (p.268-269)"
+    },
+    {
+     "id": "kazmer-c11-03",
+     "titulo": "Área de empuje y perímetro mínimo de 20 pines",
+     "herramientas": "molde-E10 expulsión",
+     "oraculo": "ejectorPinSizing → pushArea 10.4±0.3, dShear 2.23±0.06, dComp 0.8±0.05",
+     "respuesta_impresa": "A>10.4 mm² → ⌀≥0.8; Ω>0.14 m → ⌀≥2.23 (p.270-271)"
+    },
+    {
+     "id": "kazmer-c11-04",
+     "titulo": "10 pines ⌀4.5 vs 40 ⌀1.125; layout Fig 11.9 rechazado",
+     "herramientas": "molde-E10 expulsión layout interferencia",
+     "oraculo": "⌀(10)=4.46±0.05, σ 30±1; ⌀(40)=1.11, σ 100±3; juez de acero ROJO a 1 mm",
+     "respuesta_impresa": "10: ⌀4.5, 30 MPa; 40: ⌀1.125, 100 MPa (p.272)"
+    },
+    {
+     "id": "kazmer-c11-05",
+     "titulo": "Layout de expulsores junto al agarre: pad y pin contorneado",
+     "herramientas": "molde-E10 layout malla interferencia molde-E8",
+     "oraculo": "distancia pin→agarre ≤2⌀; acero ≥1⌀; sin colisión con agua; deflexión FEA <0.1 mm",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c11-07",
+     "titulo": "Pandeo del pin eyector (Euler, columna 0.7L)",
+     "herramientas": "molde-E10 pandeo expulsión",
+     "oraculo": "pinBuckling(1.86,200,235,K 0.7).sf≈1.0±0.05; K=2 default = DESVIACIÓN DECLARADA",
+     "respuesta_impresa": "R>0.93 → ⌀1.86 → 2 mm (p.279)"
+    },
+    {
+     "id": "kazmer-c11-08",
+     "titulo": "Largo máximo del ejector blade del bezel",
+     "herramientas": "molde-E10 pandeo expulsión",
+     "oraculo": "bladeMaxLengthMm(235,6,1)=93±1; checkEjectorBlade(93.8) ok=false",
+     "respuesta_impresa": "L<93 mm; real 93.8 (p.281)"
+    },
+    {
+     "id": "kazmer-c11-06",
+     "titulo": "Detallado del pin eyector en el ensamble de placas",
+     "herramientas": "ensamble corte chaflán ajustes molde-E10 plano2D cotas",
+     "oraculo": "interfaz pin↔core 0.13, pin↔support +0.5, cabeza↔retainer holgada 'esperado'; DOF rotacional 0 (dowel)",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/ejection.ts:ejectionForce,effectiveArea,ejectorPinSizing,pinBuckling (K=2 default)",
+    "src/forja/mold/eject-layout.ts:gripEjectorLayout",
+    "src/forja/mold/mold-ejection-auto.ts:maxPinDiaForSteelMm,autoEjectionPlan",
+    "src/forja/mold/ejectortypes.ts:bladeMaxLengthMm,checkUndercut",
+    "E10 del cubo (pines escalonados, useMoldStudio.ts:1332)"
+   ],
+   "dependencias": [
+    "kazmer-s9-agua-en-tu-molde"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "kazmer-s12-juez-estructural",
+   "titulo": "El acero RINDE CUENTAS: tres veredictos, pilares con pre-carga y el barreno que ovala",
+   "capitulos": [
+    12
+   ],
+   "objetivo": "Juez estructural del molde por pieza con tres veredictos independientes (yield en sobrepresión, fatiga, δ<0.02 mm=flash): área de soporte neta medida, viga vs FEA (2×), pilares con superposición Eq 12.12-13 y pre-carga, K de barrenos con vida S-N y ovalización, cores huecos.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c12-07",
+     "titulo": "Pilar de soporte del bezel para δ_total < 0.1 mm",
+     "herramientas": "molde-E11 ensamble cotas",
+     "oraculo": "σ 297/167±1.5; δ_comp 0.07±0.005; δ_bend 0.02±0.003; δ_max Eq 12.13; pilar sin chocar pines/KO",
+     "respuesta_impresa": "⌀37.5 σ 297 δ 0.13; ⌀50 σ 167 δ 0.07; δ_bend 0.02; 88.97 mm (p.316-317)"
+    },
+    {
+     "id": "kazmer-c12-04",
+     "titulo": "Compresión de la placa A alrededor de la cavidad",
+     "herramientas": "molde-E11 ensamble kernel-área",
+     "oraculo": "área de cara menos barrenos medida por kernel 0.069±0.002; σ 28.5±0.5",
+     "respuesta_impresa": "A 0.069 m²; σ 28.5; δ 0.002 mm (p.308-309)"
+    },
+    {
+     "id": "kazmer-c12-06",
+     "titulo": "Flexión de placa como viga con carga central (bezel)",
+     "herramientas": "molde-E11 FEA-estático",
+     "oraculo": "plateBending 0.056±0.003; runMoldFea 0.4-0.5× viga; flash si δ>0.02",
+     "respuesta_impresa": "I 3.6e-5; δ 0.056; FEA 0.024 (p.311)"
+    },
+    {
+     "id": "kazmer-c12-11",
+     "titulo": "Barreno de expulsor ⌀4 con 0.5 mm de QC7 a 100 MPa",
+     "herramientas": "molde-E10 molde-E11 FEA-estático fatiga",
+     "oraculo": "K 5.3±0.05; yieldOk true, fatigaOk false, vida ≈1e3; FEA 0.10±0.03",
+     "respuesta_impresa": "K 5.3; σ 530; ε 0.73 %; δ 0.03; FEA 0.10 (p.324-325)"
+    },
+    {
+     "id": "kazmer-c12-02",
+     "titulo": "FEA del molde del bezel a 150 MPa: von Mises y apertura de 0.36 mm",
+     "herramientas": "FEA-estático molde-E11 ensamble",
+     "oraculo": "FEA tet: separación 0.36±0.06; viga Eq 12.10 ≈2.3× el FEA",
+     "respuesta_impresa": "0.36 mm (0.014 in); platina 0.04 (p.304)"
+    },
+    {
+     "id": "kazmer-c12-13",
+     "titulo": "Hoop del core del vaso y ⌀ interno máximo en QC7 (doble vara)",
+     "herramientas": "molde-E11 molde-E8",
+     "oraculo": "hoopStress 240; maxInnerDiameter 31/38±0.5; govBy fatiga",
+     "respuesta_impresa": "240 MPa; 31 mm vs 38 → 31 (p.328-329)"
+    },
+    {
+     "id": "kazmer-c12-14",
+     "titulo": "Flexión del core del vaso por ΔP=40 MPa",
+     "herramientas": "molde-E11 molde-E5 molde-E4",
+     "oraculo": "coreInertiaM4 5.1e-7±2 %; δ 0.03±0.003; interlocked → 0.003; ΔP debería salir de E4 (A-270)",
+     "respuesta_impresa": "I 5.1e-7; δ 0.03 mm (p.330)"
+    },
+    {
+     "id": "kazmer-c12-01",
+     "titulo": "Esfuerzo límite: dos caminos excluyentes y el aluminio sin límite de fatiga",
+     "herramientas": "molde-E11 fatiga materiales",
+     "oraculo": "limiteMaterial('QC7',N) 545/370/170; P20 456; nunca f y peor caso juntos (control negativo)",
+     "respuesta_impresa": "QC7 545/370/170 MPa; P20 ≈450 (Fig 12.5: 456) (p.303)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/structural.ts:plateCompression,plateBending,shearStress",
+    "src/forja/mold/platesizing.ts:sizeSupportPlate,optimizeSupportPlate (solo claro)",
+    "src/forja/mold/mold-fea.ts:runMoldFea (B+soporte+rieles)",
+    "src/forja/mold/cores.ts:designCore (cup exacto)",
+    "src/forja/mold/lamina-vonmises.ts:limiteMaterial,kBarrenoLibro",
+    "E11 del cubo R90 firmado (gate 181)"
+   ],
+   "dependencias": [
+    "kazmer-s9-agua-en-tu-molde"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "kazmer-s8-venteo-con-anatomia",
+   "titulo": "El aire SALE: ubicación desde el llenado y la anatomía del venteo cortada en el inserto",
+   "capitulos": [
+    8
+   ],
+   "objetivo": "Correr enumerarVenteos sobre el bezel (3 tipos, ~36 → 8), dimensionar h entre h_min y h_max sin prorratear, y cortar en el inserto la anatomía land/alivio/salida, el anillo perimetral, la holgura de pin con cono y el inserto venteado en bolsa muerta con chequeo topológico de conectividad.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c8-02",
+     "titulo": "Mapa de ubicaciones de venteo del bezel: 3 tipos → 8 iniciales",
+     "herramientas": "molde-E4 molde-E7 venteo",
+     "oraculo": "enumerarVenteos sobre el bezel: 3 tipos; 4 fin de flujo 'obligatorio'; lista 'maquinar' = 8",
+     "respuesta_impresa": "~36 consideradas; 8 especificadas (p.189)"
+    },
+    {
+     "id": "kazmer-c8-03",
+     "titulo": "Espesor mínimo del venteo",
+     "herramientas": "molde-E7 venteo",
+     "oraculo": "ventMinThickness(100e-6,0.01,0.01,0.1e6)=0.06±0.002",
+     "respuesta_impresa": "h_min = 0.06 mm (p.190)"
+    },
+    {
+     "id": "kazmer-c8-04",
+     "titulo": "Espesor máximo del venteo por rebaba",
+     "herramientas": "molde-E7 venteo",
+     "oraculo": "ventMaxThickness(0.0002) ∈ [0.06,0.09] (redondeo declarado)",
+     "respuesta_impresa": "H_max 0.08 mm; banda 0.06-0.08 (p.191)"
+    },
+    {
+     "id": "kazmer-c8-01",
+     "titulo": "Caudal de aire del bezel y su reparto conservador",
+     "herramientas": "molde-E7 venteo",
+     "oraculo": "el plan asigna 62.5e-6 a cada venteo",
+     "respuesta_impresa": "62.5 cc/s por venteo (p.189)"
+    },
+    {
+     "id": "kazmer-c8-05",
+     "titulo": "Anatomía CAD del venteo en partición (bezel) y anillo perimetral (tapa)",
+     "herramientas": "croquis extruir corte molde-E7 plano2D cotas",
+     "oraculo": "volumen removido = W·L·h ±5 %; land-canal-barreno conectados (una cavidad de aire, chequeo topológico)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c8-06",
+     "titulo": "Venteo por la holgura del pin eyector y del blade",
+     "herramientas": "molde-E7 molde-E10 ajustes corte",
+     "oraculo": "ejectorHole=⌀+0.13; h_vent 0.065; ventMinThickness local ≤ 0.065 → VERDE",
+     "respuesta_impresa": "0.065 mm (p.194)"
+    },
+    {
+     "id": "kazmer-c8-07",
+     "titulo": "Inserto venteado en bolsa muerta y venteo sinterizado",
+     "herramientas": "croquis extruir corte molde-E7 molde-E10",
+     "oraculo": "inserto cabe (interferencia 0); venteo conecta; juez propone blade si hay costilla",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/venting.ts:ventMinThickness,ventMaxThickness,ventDesign (E7 exacto)",
+    "src/forja/mold/venting-locations.ts:enumerarVenteos (jabonera)",
+    "src/forja/mold/fits.ts:EJECTOR_DIAM_CLEARANCE_MM 0.13"
+   ],
+   "dependencias": [
+    "kazmer-s5-llenado-que-decide",
+    "kazmer-s11-expulsion-por-regla"
+   ],
+   "esfuerzo": "M",
+   "valor": 3,
+   "sprint_sugerido": 4
+  },
+  {
+   "slug": "kazmer-s11b-side-actions-y-placas",
+   "titulo": "Lo que se MUEVE: core pull, slide con perno, sleeve, stripper y retorno",
+   "capitulos": [
+    11,
+    13
+   ],
+   "objetivo": "Geometría y cinemática de los mecanismos: core pull hidráulico con llave/interlock/claros y barrido sin colisión, slide con perno a 20° con gib/heel block, sleeve sobre core pin con stack-up, stripper plate flotante, retorno por resortes, y collapsible/rotating core para roscas.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c11-14",
+     "titulo": "Layout del core móvil del bezel: llave, interlock y claros",
+     "herramientas": "ensamble corte croquis extruir interferencia molde-E10 cinemática",
+     "oraculo": "barrido 15 mm sin colisión salvo contactos declarados; interlock 0 juego vertical; claro frontal >0",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c11-15",
+     "titulo": "Slide con perno ángulo: largo para 12 mm a 20°",
+     "herramientas": "molde-E10 side-action cinemática ensamble",
+     "oraculo": "anglePinDesign(12,20,25) → 35±0.5, 60±1; slide recorre 12 cuando placa recorre L·cos φ",
+     "respuesta_impresa": "L 35 mm; total ≈60 (p.293)"
+    },
+    {
+     "id": "kazmer-c11-12",
+     "titulo": "Fuerza que debe sostener el core pull del bezel",
+     "herramientas": "molde-E10 side-action",
+     "oraculo": "corePullForce(200e6,220e-6)=44,000; A_proj del sólido ≥220 mm²",
+     "respuesta_impresa": "44,000 N ≈ 4 t (p.289)"
+    },
+    {
+     "id": "kazmer-c11-13",
+     "titulo": "Cilindro hidráulico del core pull: bore y carrera estándar",
+     "herramientas": "molde-E10 side-action ensamble catálogo",
+     "oraculo": "hydraulicBore 75±0.5; pickStdBore 82.55; carrera ≥15",
+     "respuesta_impresa": "D_bore 75 → 82.55×25.4 mm (p.291)"
+    },
+    {
+     "id": "kazmer-c11-09",
+     "titulo": "Ensamble de ejector sleeve sobre core pin fijo (boss)",
+     "herramientas": "ensamble revolve ajustes tolerancias molde-E10 cinemática",
+     "oraculo": "sleeve recorre la carrera sin colisión; stack-up ≤ tolerancia de pared del boss",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c11-10",
+     "titulo": "Molde con stripper plate para vaso y tapa",
+     "herramientas": "ensamble corte molde-E10 cinemática plano2D",
+     "oraculo": "desbalance F_eject <50 % o refuerzo; apertura sin colisión; borde de empuje ≥90° o bandera",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c11-16",
+     "titulo": "Retorno temprano: rod roscado vs resortes",
+     "herramientas": "molde-E10 resortes ensamble",
+     "oraculo": "springReturnCheck: compresión ≤0.40; >4⌀ → pin; F ≈0.25·F_eject ±20 %",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c13-08",
+     "titulo": "Collapsible core comercial: colapso ≈6 % del ⌀",
+     "herramientas": "molde-E10 ensamble cinemática",
+     "oraculo": "collapsibleCoreCheck ok ⇔ 0.06⌀ ≥ 2·undercut; fuera de 13-90 → no comercial",
+     "respuesta_impresa": "13-90 mm; ≈6 % (p.384)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/sideactions.ts:corePullForce,hydraulicBore,anglePinDesign,springReturnCheck (44 kN, 75→82.55, 35 mm ✓)",
+    "src/forja/mold/mold-sideaction-gen.ts:planSideAction,sideActionVerdicts",
+    "src/forja/mold/ejectortypes.ts:chooseEjectorType",
+    "src/forja/mold/unscrewing.ts:collapsibleCoreCheck"
+   ],
+   "dependencias": [
+    "kazmer-s11-expulsion-por-regla",
+    "kazmer-s4-partir-tu-pieza"
+   ],
+   "esfuerzo": "L",
+   "valor": 4,
+   "sprint_sugerido": 4
+  },
+  {
+   "slug": "kazmer-s12b-ajustes-tornillos-metal",
+   "titulo": "Se SUJETA y se COMPRA: ajustes ANSI, inserción, tornillos por izaje y el metal por K·P",
+   "capitulos": [
+    12,
+    14,
+    4
+   ],
+   "objetivo": "Completar Tabla 12.2 (dowels LC/LT) y la fuerza de inserción contra la prensa del taller, mejilla e interlocks acotados en el plano, tornillos DIN 912 por izaje, y el selector de metal (Apéndice B + factores Eq 4.2-4.3) unificando H13 690/760.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c12-15",
+     "titulo": "Tolerancias FN1 para el core insert cuadrado 88.90 mm",
+     "herramientas": "molde-E3 cotas plano2D GD&T",
+     "oraculo": "interferenceFit(88.9,'FN1') ±0.001; cota con límites en el plano",
+     "respuesta_impresa": "inserto 88.96–88.98; barreno 88.90–88.92 (p.334)"
+    },
+    {
+     "id": "kazmer-c12-16",
+     "titulo": "Fuerza de inserción del core insert FN1",
+     "herramientas": "molde-E3 cotas planeación",
+     "oraculo": "σ 69±1; F 808±10 kN; si F>prensa → LN1-LN3",
+     "respuesta_impresa": "σ 69 MPa; F 808 kN (p.335)"
+    },
+    {
+     "id": "kazmer-c12-18",
+     "titulo": "Dowel ⌀12 LT3: juego esperado y peor interferencia",
+     "herramientas": "molde-E3 cotas plano2D",
+     "oraculo": "límites ±0.001; F 50±1 kN; plano con LT3",
+     "respuesta_impresa": "dowel 12.002–12.013; barreno 12.000–12.018; σ 111; F 50 kN (p.339-340)"
+    },
+    {
+     "id": "kazmer-c12-17",
+     "titulo": "Tornillos SHCS que unen las mitades: peor caso de izaje",
+     "herramientas": "molde-E11 ensamble catálogo DIN",
+     "oraculo": "362±2 kg; 47 kN±2 %; DIN 912 M10; masa bloque vs ensamble <2×",
+     "respuesta_impresa": "M 362 kg; F 47,000 N; D 8.65 → M10 (p.336-338)"
+    },
+    {
+     "id": "kazmer-c12-08",
+     "titulo": "Mejilla (cheek) del vaso: cortante y deflexión",
+     "herramientas": "molde-E11 molde-E2 cotas",
+     "oraculo": "τ 89±1; δ 0.04±0.004; cota cheek CUMPLE/VIOLA vs max(3⌀,0.73H,H)",
+     "respuesta_impresa": "τ 89 MPa; δ 0.04 mm; W>0.73H (p.318)"
+    },
+    {
+     "id": "kazmer-c12-09",
+     "titulo": "Cortante en el interlock ⌀19 de la cavidad del vaso",
+     "herramientas": "molde-E11 ensamble",
+     "oraculo": "interlockShear 19,050 y 67±1; interlock en partición sin comerse la mejilla",
+     "respuesta_impresa": "F 19,050 N; τ 67 MPa (p.321)"
+    },
+    {
+     "id": "kazmer-c14-02",
+     "titulo": "Selección del metal por límite de fatiga, K del barreno y maquinado",
+     "herramientas": "molde-E1 molde-E11 materiales costo",
+     "oraculo": "filtro σ_fat ≥ 3P: P=200 → {A6,D2,H13}; P=80 incluye P20/4140; cost.ts cambia con la tasa",
+     "respuesta_impresa": "'high melt pressures … A6, D2, or H13' (p.323)"
+    },
+    {
+     "id": "kazmer-c4-09",
+     "titulo": "Selección del acero: difusividad, fatiga, Brinell y factores de costo",
+     "herramientas": "molde-E3 materials",
+     "oraculo": "f_making(P20)=f_operating(P20)=1; Al<1 ambos; SS420 operating≈1.8; H13 making > D2 > P20; Tabla 4.1 ABS 1M → {Cu,P20,SS420}; vidrio 1M → {H13}",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/fits.ts:interferenceFit (Tabla 12.1 literal)",
+    "src/forja/mold/fasteners.ts · mold-fasteners.ts:fastenerPlan",
+    "src/forja/mold/mold-interlocks.ts · mold-analysis.ts (cheek)",
+    "src/forja/mold/moldbase.ts:MOLD_METALS (Apéndice B literal)"
+   ],
+   "dependencias": [
+    "kazmer-s12-juez-estructural"
+   ],
+   "esfuerzo": "S",
+   "valor": 3,
+   "sprint_sugerido": 4
+  },
+  {
+   "slug": "kazmer-s2-dfm-y-cotizacion",
+   "titulo": "La pieza se REVISA y se COTIZA: costillas por FEA, acabado por cara y complejidad del kernel",
+   "capitulos": [
+    2,
+    3
+   ],
+   "objetivo": "Cerrar los huecos de caps 2-3: banco de costillas con FEA (+15 % material, +70 % ciclo), bosses con gussets, tolerancias ±0.4/±0.1 % en el plano con alarma vs E9, acabado por CARA (34 h), factor de complejidad de 4 piezas medido en el kernel; el resto del cotizador ya reproduce $74,800/$0.47.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c2-01",
+     "titulo": "Costilla eficiente 70 % / 4x / 10x con 2° de draft",
+     "herramientas": "croquis extruir patrón FEA-estático molde-E1 cotas",
+     "oraculo": "checkDFM sin errores §2.3.2; V(1.3t)/V(costillas)=1.15±0.03 (kernel); tc(1.3t)/tc(t)=1.69±0.05 Eq 9.5; FEA deflexión ±15 %",
+     "respuesta_impresa": "rigidez equivalente a la pieza 30 % más gruesa; +15 % material, +70 % ciclo (§2.3.2 p.29)"
+    },
+    {
+     "id": "kazmer-c2-02",
+     "titulo": "Tres diseños de boss con gussets (120° / 90° / libre)",
+     "herramientas": "croquis extruir patrón molde-E1",
+     "oraculo": "checkDFM 0 errores §2.3.3 con boss ≤70 %; control negativo boss 100 % → 1 error",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c2-03",
+     "titulo": "Filetes 150 %/50 % y chaflán ½ antes del shell",
+     "herramientas": "fillet chamfer shell molde-E1 sonda",
+     "oraculo": "Espesor en la esquina = t ±5 % (sonda); checkDFM §2.3.4 ok; esquina viva → error",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c2-04",
+     "titulo": "Draft requerido por acabado y resina",
+     "herramientas": "draft molde-E1 cotas",
+     "oraculo": "draftForFinish reproduce las 5 filas; la sonda mide el ángulo en la cara = valor ±0.05°",
+     "respuesta_impresa": "0.5° / 1.5° / 2° / 4° / 7.5° (Tabla 2.14 p.34)"
+    },
+    {
+     "id": "kazmer-c2-06",
+     "titulo": "Tolerancia general ±0.4 % y crítica ±0.1 % en el plano",
+     "herramientas": "plano2D cotas GD&T molde-E9",
+     "oraculo": "Cota impresa = nominal×% exacto; >3 críticas o crítica < contracción alcanzable → alarma",
+     "respuesta_impresa": "100 ± 0.4 mm; 10 ± 0.01 mm (§2.2.3 p.23)"
+    },
+    {
+     "id": "kazmer-c3-04",
+     "titulo": "Costo de acabado por zonas (B-3 + A-1 frontal)",
+     "herramientas": "molde-E2 selección-de-caras",
+     "oraculo": "ΣA_i/R_i = 34.3±0.3 h con áreas por cara del kernel; $1,700±20",
+     "respuesta_impresa": "t_finishing 34 h; $1,700 (p.52)"
+    },
+    {
+     "id": "kazmer-c3-08",
+     "titulo": "Factor de complejidad de cuatro piezas medido en el kernel",
+     "herramientas": "masa-inercia molde-E2 croquis extruir",
+     "oraculo": "placa maciza f=1.00-1.05; bezel 2.5±0.1; monotonía f1<f2<f3<f4",
+     "respuesta_impresa": "1.02 / 1.9 / 2.5 / 3.1 (Tabla 3.3 p.49); bezel 2.5 (p.50)"
+    },
+    {
+     "id": "kazmer-c3-07",
+     "titulo": "Costo por pieza del bezel: molde, material, proceso, yield",
+     "herramientas": "molde-E2 molde-E12",
+     "oraculo": "cycleTimeEstimate 13.5; moldingMachineRate(294,1.2)=50.1±0.2; partUSD∈[0.47,0.48]; veredicto SOBREDISEÑO si molde/pza > 3× material",
+     "respuesta_impresa": "$0.22 molde; $0.063 material; 13.5 s; 294 mTon; $50.1/h; $0.19 proceso; C_part $0.48/$0.47 (p.60/66)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/dfm.ts:checkDFM,DRAFT_TABLE_214,draftForFinish",
+    "src/forja/mold/moldcost-detailed.ts (EXACTO $74,800; FINISH_RATE único)",
+    "mol-s2-intake (HECHO)",
+    "scripts/mold-cost-test.cjs, mold-cost-detailed-test.cjs"
+   ],
+   "dependencias": [
+    "mol-s2-intake"
+   ],
+   "esfuerzo": "M",
+   "valor": 3,
+   "sprint_sugerido": 5
+  },
+  {
+   "slug": "kazmer-s9b-campo-termico-avanzado",
+   "titulo": "El calor por DONDE puede: convectivo, Cu 940 asimétrico, conformal y un solo lado",
+   "capitulos": [
+    9,
+    13
+   ],
+   "objetivo": "Campo térmico más allá del cubo: FDM convectivo 1000 W/°C (24 s), core Cu 940 vs P20 (esquina 5→1 °C), inserto fresado con gasket y hélice conformal, flujo de calor a un lado (two-shot 75.6/13.5 s y la 2a capa 0.6·h1).",
+   "ejercicios": [
+    {
+     "id": "kazmer-c9-02",
+     "titulo": "Regla 2·h² y frontera convectiva 1000 W/°C",
+     "herramientas": "molde-E8 térmico FDM-1D",
+     "oraculo": "coolingTimeRuleOfThumb(3)=18; tcSlabSeriesS 19.2±0.3; FDM Robin 1000 → 24±1.5",
+     "respuesta_impresa": "18 s (regla); 19.2 s; 24 s convectivo (p.206)"
+    },
+    {
+     "id": "kazmer-c9-08",
+     "titulo": "Core de Cu 940 vs P20: gradiente del core y esquina interior",
+     "herramientas": "molde-E8 FEA-térmico materiales",
+     "oraculo": "gradiente ≤0.45× P20; esquina 5±1 vs 1±0.5 °C",
+     "respuesta_impresa": "≈60 %; 5 °C vs 1 °C (p.223-224)"
+    },
+    {
+     "id": "kazmer-c9-10",
+     "titulo": "Inserto de core con canal fresado + gasket y conformal helicoidal",
+     "herramientas": "sweep hélice croquis corte ensamble molde-E8 FEA-térmico",
+     "oraculo": "un solo camino IN→OUT; distancia canal-superficie ≥2⌀; gradiente ≤1 °C",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c9-12",
+     "titulo": "Flujo de calor por UN lado: two-shot ABS sobre PC",
+     "herramientas": "molde-E8 térmico planeación",
+     "oraculo": "tiempoUnSoloLado(3,ABS)=75.6±1; PC 13.5±0.5; la capa delgada va segunda",
+     "respuesta_impresa": "t_c ABS 75.6 s; PC 13.5 s (p.231-232)"
+    },
+    {
+     "id": "kazmer-c13-02",
+     "titulo": "Multi-shot: segunda capa 40 % más delgada (flujo de calor a UN lado)",
+     "herramientas": "térmico molde-E8 molde-E1",
+     "oraculo": "FDM adiabático: t_cool(0.6h1, un lado) ≈ t_cool(h1, dos lados) ±10 %",
+     "respuesta_impresa": "la segunda capa 40 % más delgada (p.359)"
+    },
+    {
+     "id": "kazmer-c9-03",
+     "titulo": "Calor a extraer y potencia por línea (vaso/tapa)",
+     "herramientas": "molde-E8 térmico masa",
+     "oraculo": "heatPerShotJ 20,900±100; Q_line 260±5; masa del kernel ±3 %",
+     "respuesta_impresa": "20,900 J; 1,050 W; 260 W/línea; 500 W/lado (p.207)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/thermal-layers.ts:makeLayeredFDM (hC existe)",
+    "src/forja/mold/thermal-series.ts:tcSlabSeriesS",
+    "src/forja/mold/thermal-steady.ts · mold-thermal-fdm.ts",
+    "src/forja/mold/lamina-nucleo-enfriamiento.ts:tiempoUnSoloLado (75.6 ✓)"
+   ],
+   "dependencias": [
+    "kazmer-s9-agua-en-tu-molde"
+   ],
+   "esfuerzo": "L",
+   "valor": 3,
+   "sprint_sugerido": 5
+  },
+  {
+   "slug": "kazmer-s10b-empaque-y-materiales",
+   "titulo": "El EMPAQUE que Moldflow ve: mapa s(x,y), 2 vs 4 compuertas y los 16 plásticos",
+   "capitulos": [
+    10,
+    5,
+    14
+   ],
+   "objetivo": "Extender el solver Hele-Shaw a la fase de empaque con decaimiento de presión para obtener s(x,y) del bezel (0.3/0.6/>1 %), comparar 2 vs 4 gates y perfil de empaque, y cargar los 16 plásticos del Apéndice A con oráculos internos (η0=WLF(T_mid), α=k/ρcp).",
+   "ejercicios": [
+    {
+     "id": "kazmer-c10-06",
+     "titulo": "Mapa de contracción no uniforme: 2 vs 4 compuertas y perfil de empaque",
+     "herramientas": "molde-E4 molde-E9 empaque CFD-Hele-Shaw mapa",
+     "oraculo": "s(x,y): mediana 0.6±0.15, máx >0.9 en borde lejano; 4 gates baja máx ≥0.15 y media ≥0.05",
+     "respuesta_impresa": "0.3/0.6/>1 % (2 gates); máx 0.9, media 0.5 (4 gates) — Moldflow (p.247-248)"
+    },
+    {
+     "id": "kazmer-c14-01",
+     "titulo": "Base de datos de 16 plásticos (Cross-WLF + Tait + contracción) con oráculo interno",
+     "herramientas": "materiales molde-E4 molde-E9",
+     "oraculo": "por material: η0_WLF(T_mid) ±5 %; α ±2 %; ABS Tait 0.31 %",
+     "respuesta_impresa": "ABS η0 2210 Pa·s, α 8.73e-8, s 0.4-0.8 % (p.390-393)"
+    },
+    {
+     "id": "kazmer-c5-07",
+     "titulo": "Contraste análisis a mano vs Moldflow MPI 5.1 del bezel",
+     "herramientas": "molde-E4 FAN benchmark",
+     "oraculo": "solver 3D (FAN/flowlen) del bezel: P ∈ [100,121] MPa; F_fill 486-570 kN; 0<ΔT<5 °C",
+     "respuesta_impresa": "Tabla 5.1 (p.111)"
+    },
+    {
+     "id": "kazmer-c10-04",
+     "titulo": "Contracción anisotrópica del bezel en ABS 15 % GF",
+     "herramientas": "molde-E9 materiales escalado-anisotrópico",
+     "oraculo": "s=0.00352→0.00351; escalado X ×1/(1−0.0018), Y/Z ×1/(1−0.0035) medido en kernel",
+     "respuesta_impresa": "p≈6 %; rv 0.9912; s 0.35 % cruz, 0.18 % flujo (p.243-244)"
+    },
+    {
+     "id": "kazmer-c10-08",
+     "titulo": "Semicristalino: acetal Delrin 500 contrae 3.5 %",
+     "herramientas": "molde-E9 materiales",
+     "oraculo": "specificVolume POM 0.77/0.69±0.01; s 3.5±0.2; bandera semicristalino",
+     "respuesta_impresa": "rv 0.90; s 3.5 % (p.251)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/fan.ts:resolverLlenadoFAN (llena, no empaca)",
+    "src/forja/mold/filling.ts:ABS_CROSS,PP_CROSS · shrinkage.ts:ABS_TAIT",
+    "memoria N2b 'pvT sink para empaque' (DESPUES-DE-V1)"
+   ],
+   "dependencias": [
+    "kazmer-s10-contraccion-y-alabeo",
+    "kazmer-s5-llenado-que-decide"
+   ],
+   "esfuerzo": "XL",
+   "valor": 3,
+   "sprint_sugerido": 5
+  },
+  {
+   "slug": "kazmer-s13-tecnologias-y-variantes",
+   "titulo": "Otros MOLDES: el árbol de la Fig 13.1, tres placas, split, reverse, rotating y stack",
+   "capitulos": [
+    13,
+    1,
+    6
+   ],
+   "objetivo": "Selector de tecnología completo desde el intake con la lista de análisis a modificar, y las variantes de base con geometría: tres placas animado, split cavity con angle pins, reverse ejection, rotating core planetario y stack de 2 niveles; todas pasan el ciclo E2..E11 y cierran en el acta.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c13-01",
+     "titulo": "Selector de tecnología de molde (árbol Fig 13.1)",
+     "herramientas": "molde-E1 planeación",
+     "oraculo": "tabla de verdad: cada hoja alcanzable con su combinación; banco → two-plate/hot-runner; vaso con rosca → rotating",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c6-10",
+     "titulo": "Molde de tres placas: apertura en 2 fases, stripper bolts y daylight",
+     "herramientas": "ensamble cinemática molde-E3 molde-E10 threeplate",
+     "oraculo": "threePlateLayout 308/250/558; daylightNeededMm(264,75)=339; moldOpeningVelocity(100)≈210; openingSequence sin colisiones",
+     "respuesta_impresa": "daylight 339 vs 558 mm; apertura 0.36 vs 1.2 s (p.128-129)"
+    },
+    {
+     "id": "kazmer-c13-10",
+     "titulo": "Split cavity del bolo: mitades, angle pins, gibs y cheek ≈ profundidad",
+     "herramientas": "molde-E10 ensamble cinemática molde-E11 molde-E8",
+     "oraculo": "separación de mitades ≥ undercut+holgura; cheek CUMPLE V13.4; sin interferencia gibs↔pins",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c13-11",
+     "titulo": "Reverse ejection: cavidad al móvil, core y expulsores al fijo",
+     "herramientas": "molde-E10 molde-E2 ensamble",
+     "oraculo": "base invertida pasa E2..E11 espejo; ninguna marca en cara 'estética' (visibilidad.ts)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c13-09",
+     "titulo": "Rotating core: hélice vs planetario para 64 tapas y anti-rotación",
+     "herramientas": "molde-E10 cinemática ensamble mecanismos",
+     "oraculo": "unscrewTurns/helixDrive coherentes; torque < capacidad; ≥1 feature anti-rotación",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c13-03",
+     "titulo": "Stack mold de 2 niveles: mismo clamp, doble cavidades",
+     "herramientas": "molde-E2 molde-E6 dimensionado-máquina ensamble",
+     "oraculo": "machineSizing(2 niveles): clamp igual ±1 %, shot ×2, stack >; daylight check",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c1-01",
+     "titulo": "Corte A-A del molde de dos placas con componentes rotulados",
+     "herramientas": "ensamble plano2D molde-E3 lamina-seccion",
+     "oraculo": "El ensamble contiene los 12 componentes por rol (mold-assembly) y el corte HLR los intersecta; 0 interferencias (collision.ts)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c13-18",
+     "titulo": "El acta: toda decisión aprobada con costos, beneficios y riesgos",
+     "herramientas": "planeación molde-E12",
+     "oraculo": "estacion12Dado FIRMADO solo si todas las estaciones y decisiones completas; omitir una ⇒ INCOMPLETO",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mold/moldtech.ts:chooseMoldTechnology (§13.9)",
+    "src/forja/mold/threeplate.ts (308/250/558 ✓)",
+    "src/forja/mold/unscrewing.ts:unscrewTurns,helixDrive",
+    "src/forja/mold/mold-assembly.ts · lamina-seccion.ts (corte A-A)",
+    "estacion12Dado (acta HECHA)"
+   ],
+   "dependencias": [
+    "kazmer-s11b-side-actions-y-placas"
+   ],
+   "esfuerzo": "L",
+   "valor": 3,
+   "sprint_sugerido": 6
+  },
+  {
+   "slug": "kazmer-s13b-procesos-especiales",
+   "titulo": "Procesos ESPECIALES (congelado): coinyección, gas, lost core, IML, wall-temp, Melt Flipper",
+   "capitulos": [
+    13
+   ],
+   "objetivo": "Extensiones de E4/E8/E9 con dos materiales o fases y control térmico de pared. Descriptivo en el libro, sin respuesta impresa reproducible salvo cifras sueltas; se declara congelado hasta que una pieza real lo pida.",
+   "ejercicios": [
+    {
+     "id": "kazmer-c13-16",
+     "titulo": "Coinyección: meta-material por capas y llenar con el más viscoso",
+     "herramientas": "molde-E4 molde-E8 molde-E9 materiales",
+     "oraculo": "E4 con η máx; E8/E9 ponderados; resultados entre los puros",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c13-12",
+     "titulo": "Gas/water assist: canales gruesos que guían el fluido",
+     "herramientas": "molde-E4 molde-E1 materiales",
+     "oraculo": "E4 con 2a fase: ≥90 % del hueco dentro del canal; SS420 si water",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "kazmer-c13-14",
+     "titulo": "Lost core: el core Bi58/Sn42 (138 °C) como sumidero de calor",
+     "herramientas": "térmico molde-E8 ensamble",
+     "oraculo": "FDM con contacto: T_sup core <138 °C durante llenado+empaque",
+     "respuesta_impresa": "58 % Bi / 42 % Sn funde a ≈138 °C (p.355)"
+    },
+    {
+     "id": "kazmer-c13-15",
+     "titulo": "In-mold labeling: film 0.15 mm contra cortante y calor",
+     "herramientas": "molde-E4 térmico",
+     "oraculo": "τ_pared E4 < τ_adm; 1D funde la cara (T>T_nf) sin el espesor completo",
+     "respuesta_impresa": "film ≈0.15 mm (p.379)"
+    },
+    {
+     "id": "kazmer-c13-04",
+     "titulo": "Insulated runner: piel congelada de 6 mm en ⌀25 a 60 s",
+     "herramientas": "térmico molde-E6",
+     "oraculo": "espesor congelado a 60 s = 6±1.5 mm",
+     "respuesta_impresa": "⌀≈25, 60 s, piel ≈6 mm (p.365)"
+    },
+    {
+     "id": "kazmer-c13-05",
+     "titulo": "Pulsed cooling: energía y costo por ciclo de 100 kg de P20",
+     "herramientas": "térmico molde-E6 costo",
+     "oraculo": "10 MJ exacto; 2.78 kWh; $0.28-0.30 con masa del ensamble",
+     "respuesta_impresa": "10 MJ ≈ 3 kWh; $0.30 (p.373)"
+    },
+    {
+     "id": "kazmer-c13-06",
+     "titulo": "Conduction heating: potencia entregada vs drenada",
+     "herramientas": "térmico circuito molde-E8",
+     "oraculo": "R=ρL/A 450 μΩ; P=I²R 112.5; q 28 kW/m² ±3 %; 113<420",
+     "respuesta_impresa": "R 450 μΩ; 113 W; 28 kW/m²; ≥420 W (p.374-375)"
+    },
+    {
+     "id": "kazmer-c13-13",
+     "titulo": "Desbalance térmico en runners simétricos (Melt Flipper)",
+     "herramientas": "molde-E5 CFD",
+     "oraculo": "flujo a 4 cav difiere >5 % sin flipper y <2 % con cambio de nivel",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "nada en src/forja/mold (grep coinyec/gas.assist/lost.core/insulated/pulsed = 0)"
+   ],
+   "dependencias": [
+    "kazmer-s9b-campo-termico-avanzado",
+    "kazmer-s6-colada-por-presupuesto"
+   ],
+   "esfuerzo": "XL",
+   "valor": 1,
+   "sprint_sugerido": 6
+  }
+ ],
+ "brechas_vs_fusion": [
+  {
+   "brecha": "Partición NO plana automática (Parting Lines → Shut-off → Parting Surface → Tooling Split)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "§4.1.3 loft con inclinación ≥5° y knit; §4.1.4 un shut-off por ventana",
+   "que_hace_la_competencia": "SolidWorks Mold Tools lo hace en 4 comandos (aún picando 87 aristas); Fusion Mold Design workspace; NX Mold Wizard. La Forja: splitNoPlano por pasos, sin loft ni knit"
+  },
+  {
+   "brecha": "Cooling channel features con plugs/fittings y análisis de circuito por pieza",
+   "prioridad": "P0",
+   "que_dice_el_libro": "cap 9 completo: ⌀/profundidad/paso, ½⌀ de claro, tapones y manifold; Eq 12.19 para el barreno",
+   "que_hace_la_competencia": "NX/SolidWorks Mold Tools: cooling lines con O-rings y tapones de catálogo; Moldflow Cool: Re/ΔP por circuito. La Forja: solo el circuito del CUBO (E8b)"
+  },
+  {
+   "brecha": "Simulación de empaque y mapa de contracción/alabeo",
+   "prioridad": "P1",
+   "que_dice_el_libro": "§10.2 Figs 10.8-10.12: s no uniforme 0.3/0.6/>1 %, 4 gates, perfil de empaque",
+   "que_hace_la_competencia": "Moldflow Pack+Warp, Moldex3D, SolidWorks Plastics. La Forja: fan.ts llena pero no empaca"
+  },
+  {
+   "brecha": "Runner balance de molde familia y secciones reales (trapezoidal, anular)",
+   "prioridad": "P1",
+   "que_dice_el_libro": "§6.4.6 balanceo artificial cup+lid; §6.5.1 Dh Tabla 6.3, Eq 6.14-6.15",
+   "que_hace_la_competencia": "Moldflow Runner Balance; SolidWorks Plastics runner design; Melt Flipper. La Forja: solo balance geométrico en serie"
+  },
+  {
+   "brecha": "Librería paramétrica de compuertas, venteos y componentes de expulsión (sleeve, stripper, slides con gib/heel)",
+   "prioridad": "P1",
+   "que_dice_el_libro": "§7.2 geometrías de gate; §8.3 anatomía del venteo; §11.3 sleeve/stripper/slide",
+   "que_hace_la_competencia": "NX Mold Wizard, Cimatron, SolidWorks Toolbox DME/HASCO/Progressive: features paramétricos de catálogo. La Forja: cálculo sí, sólido no"
+  },
+  {
+   "brecha": "Base de datos de materiales (miles de grados Cross-WLF/Tait) y metales con fatiga",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Apéndice A 16 plásticos; Apéndice B 11 metales",
+   "que_hace_la_competencia": "Moldflow: miles de grados; SolidWorks Plastics DB. La Forja: ABS/PP y los 11 metales"
+  },
+  {
+   "brecha": "FEA del molde completo (lado fijo, platinas) con contacto y core shift",
+   "prioridad": "P1",
+   "que_dice_el_libro": "§12.1.2 FEA 0.36 mm de apertura; §12.3.3 flexión del core",
+   "que_hace_la_competencia": "SolidWorks/Fusion Simulation genérico; Moldflow core shift acoplado. La Forja: mold-fea.ts solo B+soporte+rieles"
+  },
+  {
+   "brecha": "Conformal cooling y variantes de base (stack, reverse, split) como ensambles",
+   "prioridad": "P2",
+   "que_dice_el_libro": "§9.3.3 SLS conformal; §13.6.2 stack; §13.9 split/reverse",
+   "que_hace_la_competencia": "Fusion/nTopology generativo para SLM; catálogos de stack molds. La Forja: nada"
+  },
+  {
+   "brecha": "Lo que NINGUNA suite hace y el libro exige (foso de La Forja)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "cotización causal cap 3, fuerza de expulsión cap 11, juez estructural cap 12 con δ<venteo, acta §13.10, selector de tecnología Fig 13.1",
+   "que_hace_la_competencia": "Nadie: es know-how de mold shop. La Forja ya tiene E2/E10/E11/E12 para el cubo — la ventaja es hacerlo por PIEZA con evidencia"
+  }
+ ],
+ "archivo_md": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/kazmer.md",
+ "archivo_json": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/kazmer.json",
+ "catalogo": [
+  {
+   "id": "kazmer-c1-01",
+   "capitulo": 1,
+   "seccion": "§1.3.3 Fig 1.6",
+   "pagina": "7-9",
+   "titulo": "Corte A-A del molde de dos placas con componentes rotulados",
+   "enunciado": "Ensamblar el molde de dos placas (cup+lid) y producir vista superior y corte A-A con cada componente rotulado (top clamp, A, B, support, ejector housing, locating ring ⌀100, sprue bushing, runners, gates, guide pins, ejector plate/pins, agua).",
+   "datos": "Locating ring ⌀100 mm; dos cavidades cup y lid",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "ensamble",
+    "plano2D",
+    "molde-E3",
+    "lamina-seccion"
+   ],
+   "oraculo": "El ensamble contiene los 12 componentes por rol (mold-assembly) y el corte HLR los intersecta; 0 interferencias (collision.ts)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/lamina-seccion.ts:MoldSectionReveal · mold-assembly.ts · mold-drawing-set.ts",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c2-01",
+   "capitulo": 2,
+   "seccion": "§2.3.2 Fig 2.3",
+   "pagina": "29",
+   "titulo": "Costilla eficiente 70 % / 4x / 10x con 2° de draft",
+   "enunciado": "Placa de pared t con costillas base 0.7t, altura 4t, paso 10t, draft 2°; FEA vs placa lisa 1.3t; verificar +15 % material y +70 % ciclo.",
+   "datos": "base 70 %; altura 4×; paso 10×; draft 2°; alternativa 1.3t",
+   "respuesta_impresa": "rigidez equivalente a la pieza 30 % más gruesa; +15 % material, +70 % ciclo (§2.3.2 p.29)",
+   "herramientas_suite": [
+    "croquis",
+    "extruir",
+    "patrón",
+    "FEA-estático",
+    "molde-E1",
+    "cotas"
+   ],
+   "oraculo": "checkDFM sin errores §2.3.2; V(1.3t)/V(costillas)=1.15±0.03 (kernel); tc(1.3t)/tc(t)=1.69±0.05 Eq 9.5; FEA deflexión ±15 %",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/dfm.ts (§2.3.2); FEA von Mises occt.ts sin banco de costillas",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c2-02",
+   "capitulo": 2,
+   "seccion": "§2.3.3 Fig 2.4",
+   "pagina": "29-30",
+   "titulo": "Tres diseños de boss con gussets (120° / 90° / libre)",
+   "enunciado": "Modelar los tres bosses de Fig 2.4 con boss/costilla/gusset al 70 % de la pared; pasar el revisor DFM.",
+   "datos": "boss/rib/gusset = 0.7×pared; draft 0° en boss y gusset",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "croquis",
+    "extruir",
+    "patrón",
+    "molde-E1"
+   ],
+   "oraculo": "checkDFM 0 errores §2.3.3 con boss ≤70 %; control negativo boss 100 % → 1 error",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/dfm.ts:DFMBoss (solo espesor; no gussets)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c2-03",
+   "capitulo": 2,
+   "seccion": "§2.3.4 Fig 2.5-2.6",
+   "pagina": "30-31",
+   "titulo": "Filetes 150 %/50 % y chaflán ½ antes del shell",
+   "enunciado": "Caja de pared t: filete externo 1.5t y shell (interno 0.5t); variante chaflán 0.5t; medir espesor en la esquina vs esquina viva.",
+   "datos": "R_ext 1.5t; R_int 0.5t; chaflán ½ pared 45°",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "fillet",
+    "chamfer",
+    "shell",
+    "molde-E1",
+    "sonda"
+   ],
+   "oraculo": "Espesor en la esquina = t ±5 % (sonda); checkDFM §2.3.4 ok; esquina viva → error",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/dfm.ts §2.3.4; occt.ts fillet/chamfer/shell",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c2-04",
+   "capitulo": 2,
+   "seccion": "§2.3.6 Tabla 2.14",
+   "pagina": "33-34",
+   "titulo": "Draft requerido por acabado y resina",
+   "enunciado": "Dada rugosidad/textura y resina devolver el draft (Tabla 2.14, +1°/20 µm, mín 0.5°) y aplicarlo a las caras verticales.",
+   "datos": "A-1 acrílico 0.5°; B-3 ABS 1.5°; sand PC-GF 2°; leather PVC 4°; leather ABS 7.5°",
+   "respuesta_impresa": "0.5° / 1.5° / 2° / 4° / 7.5° (Tabla 2.14 p.34)",
+   "herramientas_suite": [
+    "draft",
+    "molde-E1",
+    "cotas"
+   ],
+   "oraculo": "draftForFinish reproduce las 5 filas; la sonda mide el ángulo en la cara = valor ±0.05°",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/dfm.ts:DRAFT_TABLE_214,draftForFinish; E1 sonda de draft",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c2-05",
+   "capitulo": 2,
+   "seccion": "§2.3.7 Fig 2.7",
+   "pagina": "34-35",
+   "titulo": "Detectar las cuatro familias de undercut",
+   "enunciado": "Pieza de Fig 2.7 (ventana lateral, overhang, boss horizontal, snap) → detectar cada undercut respecto a la apertura y mapear a mecanismo y costo Tabla 3.9.",
+   "datos": "4 features atrapados",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "croquis",
+    "extruir",
+    "molde-E1",
+    "molde-E10",
+    "sideactions"
+   ],
+   "oraculo": "Detector reporta exactamente 4 features atrapadas en Z (control sin features → 0); cada una con mecanismo de mechanism-catalog",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/dfm.ts:DFMUndercut (por etiqueta); E1 'caras atrapadas'; sideactions.ts, mechanism-catalog.ts",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c2-06",
+   "capitulo": 2,
+   "seccion": "§2.2.3 Tabla 2.6",
+   "pagina": "23-24",
+   "titulo": "Tolerancia general ±0.4 % y crítica ±0.1 % en el plano",
+   "enunciado": "Acotar con tolerancia general porcentual y ≤3 críticas; alarma de sobre-especificación vs contracción alcanzable (E9).",
+   "datos": "100 mm → ±0.4; ⌀10 crítico → ±0.01",
+   "respuesta_impresa": "100 ± 0.4 mm; 10 ± 0.01 mm (§2.2.3 p.23)",
+   "herramientas_suite": [
+    "plano2D",
+    "cotas",
+    "GD&T",
+    "molde-E9"
+   ],
+   "oraculo": "Cota impresa = nominal×% exacto; >3 críticas o crítica < contracción alcanzable → alarma",
+   "ya_existe": "desconocido",
+   "donde": "INDICE A-004 FALTA; drawing.ts no verificado",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "teoria"
+  },
+  {
+   "id": "kazmer-c2-07",
+   "capitulo": 2,
+   "seccion": "§2.1.5 + Tablas 2.1-2.11",
+   "pagina": "19-27",
+   "titulo": "Intake mínimo: tamaño, pared, material, cantidad",
+   "enunciado": "Declarar la pieza con los 4 datos de §2.1.5 y hojas 2.3/2.10 como documentos vivos; sin ellas no cotiza ni corre E4.",
+   "datos": "Tabla 2.3: 9 campos; Tabla 2.10: 18 propiedades",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E1",
+    "planeación"
+   ],
+   "oraculo": "Con pared declarada la cotización del STEP macizo cae a la del v1-gate; sin pared/material el intake bloquea E4",
+   "ya_existe": "si",
+   "donde": "public/escuela/lecciones/mol-s2-intake.json; estudio-molde-datos.ts:estacion1 (HECHO en mol-s2)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c3-01",
+   "capitulo": 3,
+   "seccion": "§3.2.2 Eq 3.1 Tabla 3.1",
+   "pagina": "40-42",
+   "titulo": "Break-even colada fría 2 cav vs hot runner 32 cav",
+   "enunciado": "Con Tabla 3.1 calcular el volumen de break-even y Ctotal(n) log-log; reproducir $0.75 y $0.21.",
+   "datos": "Cfixed 10,000/250,000; Cmarg 0.55/0.16",
+   "respuesta_impresa": "n_breakeven = 615,000 piezas; $0.75/pza a 50k; $0.21/pza a 5M (p.40-41)",
+   "herramientas_suite": [
+    "molde-E2",
+    "planeación"
+   ],
+   "oraculo": "breakEven=615,385±500; cold@50k 0.75; hot@5M 0.21; chooseMold frío a 100k, caliente a 1M",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/cost.ts:breakEven · scripts/mold-cost-test.cjs",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c3-02",
+   "capitulo": 3,
+   "seccion": "§3.3.1.2 Eq 3.5-3.7",
+   "pagina": "45-46",
+   "titulo": "Dimensiones y costo de material de los insertos del bezel",
+   "enunciado": "Estimar L,W,H de insertos del bezel (240×160×10) con Eq 3.7, volumen y costo D2.",
+   "datos": "D2 7670 kg/m3, 21.4 $/kg",
+   "respuesta_impresa": "Lcav 0.268, Wcav 0.176, Hcav 0.057 m; V=2.65e-3 m3; $435 (p.46)",
+   "herramientas_suite": [
+    "molde-E2",
+    "molde-E3"
+   ],
+   "oraculo": "cavityInsertDims=(0.268,0.176,0.057); materialUSD=435±3 (errata 0.264 en el volumen)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldcost-detailed.ts:cavityInsertDims,estimateMoldCost",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c3-03",
+   "capitulo": 3,
+   "seccion": "§3.3.1.3 Eq 3.8-3.12",
+   "pagina": "46-50",
+   "titulo": "Tiempo y costo de maquinado de los insertos del bezel",
+   "enunciado": "t_volume, t_area con tasas D2, complejidad A·h/V, EDM 4, eficiencia 0.25, $100/h.",
+   "datos": "V 2.65e-3; A 0.0457; h 1.5; Vpart 27,500 mm3",
+   "respuesta_impresa": "t_vol 3.78 h; t_area 2.69 h; f_complexity 2.5; 258 h; $25,800 (p.50)",
+   "herramientas_suite": [
+    "molde-E2",
+    "masa-inercia"
+   ],
+   "oraculo": "complexity 2.49±0.02; tMachiningH 258±2; $25,800±200; A y V del kernel de la pieza real",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldcost-detailed.ts (MACHINING_FACTOR, Eq 3.12)",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c3-04",
+   "capitulo": 3,
+   "seccion": "§3.3.1.5 Eq 3.13-3.14 Tabla 3.6",
+   "pagina": "51-52",
+   "titulo": "Costo de acabado por zonas (B-3 + A-1 frontal)",
+   "enunciado": "Tiempo de acabado: todo B-3 (0.0025 m2/h) salvo frente 0.01 m2 A-1 (0.0005); $50/h; acabado asignado POR CARA.",
+   "datos": "A 0.0457 m2; frente 0.01 m2",
+   "respuesta_impresa": "t_finishing 34 h; $1,700 (p.52)",
+   "herramientas_suite": [
+    "molde-E2",
+    "selección-de-caras"
+   ],
+   "oraculo": "ΣA_i/R_i = 34.3±0.3 h con áreas por cara del kernel; $1,700±20",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/moldcost-detailed.ts:FINISH_RATE (un solo acabado; A-031 FALTA)",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c3-05",
+   "capitulo": 3,
+   "seccion": "§3.3.2 Eq 3.14-3.17",
+   "pagina": "53-55",
+   "titulo": "Masa y costo del mold base del bezel",
+   "enunciado": "L,W,H del mold base (Eq 3.16), masa Eq 3.15, costo P20 $830+5.25 $/kg.",
+   "datos": "1330 kg/m2 + 17200 kg/m3",
+   "respuesta_impresa": "Lmold 0.351, Wmold 0.234, Hmold 0.30 m; 538 kg; $3,700 (p.55)",
+   "herramientas_suite": [
+    "molde-E2",
+    "molde-E3"
+   ],
+   "oraculo": "M=538±5 kg; base $3,700±30",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldcost-detailed.ts:MOLD_STEEL_COEF; plate-cost.ts",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c3-06",
+   "capitulo": 3,
+   "seccion": "§3.3.3 Eq 3.18 Tablas 3.7-3.11",
+   "pagina": "55-59",
+   "titulo": "Customización por subsistema y costo total del molde",
+   "enunciado": "Sumar coeficientes (hot runner 0.4/2.0; agua 0.15/0.4; expulsión 0.2/0.2; estructura 0.3/0.2; sensores 0.1/0.2) → total.",
+   "datos": "Ccav $27,900; Cbase $3,700; Σf 1.15 / 3.0",
+   "respuesta_impresa": "C_customization $43,200; C_total ≈ $74,800 (p.59)",
+   "herramientas_suite": [
+    "molde-E2",
+    "molde-E12"
+   ],
+   "oraculo": "customization 43,200±100; total 74,800±200; cada coeficiente ligado a una decisión del acta E12",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldcost-detailed.ts:CUSTOM_FACTORS,estimateMoldCost",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c3-07",
+   "capitulo": 3,
+   "seccion": "§3.4 Eq 3.19-3.25",
+   "pagina": "60-66",
+   "titulo": "Costo por pieza del bezel: molde, material, proceso, yield",
+   "enunciado": "C_mold/part (×3 mantenimiento), material (waste 1.02), t_cycle=4h²f, F_clamp, tarifa, C_process, yield 0.98.",
+   "datos": "h 1.5; f_cycle 1.5; 240×160; 75 MPa",
+   "respuesta_impresa": "$0.22 molde; $0.063 material; 13.5 s; 294 mTon; $50.1/h; $0.19 proceso; C_part $0.48/$0.47 (p.60/66)",
+   "herramientas_suite": [
+    "molde-E2",
+    "molde-E12"
+   ],
+   "oraculo": "cycleTimeEstimate 13.5; moldingMachineRate(294,1.2)=50.1±0.2; partUSD∈[0.47,0.48]; veredicto SOBREDISEÑO si molde/pza > 3× material",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldcost-detailed.ts:estimatePartCost,moldingMachineRate,cycleTimeEstimate",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c3-08",
+   "capitulo": 3,
+   "seccion": "§3.3.1.3 Eq 3.12 Tabla 3.3",
+   "pagina": "49",
+   "titulo": "Factor de complejidad de cuatro piezas medido en el kernel",
+   "enunciado": "4 piezas de complejidad creciente; f = A·h/V del B-Rep; placa lisa ≈ 1.",
+   "datos": "Tabla 3.3: 1.02, 1.9, 2.5, 3.1",
+   "respuesta_impresa": "1.02 / 1.9 / 2.5 / 3.1 (Tabla 3.3 p.49); bezel 2.5 (p.50)",
+   "herramientas_suite": [
+    "masa-inercia",
+    "molde-E2",
+    "croquis",
+    "extruir"
+   ],
+   "oraculo": "placa maciza f=1.00-1.05; bezel 2.5±0.1; monotonía f1<f2<f3<f4",
+   "ya_existe": "parcial",
+   "donde": "Eq 3.12 en moldcost-detailed.ts; las 4 piezas de Tabla 3.3 no están en el banco",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-01",
+   "capitulo": 4,
+   "seccion": "§4.1.1 Fig 4.2-4.5",
+   "pagina": "67-70",
+   "titulo": "Dirección de apertura: cup axial vs radial (split) y bezel",
+   "enunciado": "Determinar la apertura por máx área proyectada + expulsable; comparar con split-cavity y su sobrecosto Tabla 3.10.",
+   "datos": "cup; bezel 240×160×10",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E3",
+    "visibilidad",
+    "masa-inercia"
+   ],
+   "oraculo": "Eje = normal del máx área proyectada Y 0 caras atrapadas; eje radial del cup → ≥1 atrapada → 'split cavity' f 0.5/1.0",
+   "ya_existe": "parcial",
+   "donde": "INDICE A-060 PARCIAL; src/forja/mold/visibilidad.ts; E1 caras atrapadas",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-02",
+   "capitulo": 4,
+   "seccion": "§4.1.2 Fig 4.6-4.7",
+   "pagina": "70-71",
+   "titulo": "Línea de partición del cup en la base del rim, no en el labio",
+   "enunciado": "Dos candidatos de parting line; elegir por visibilidad/función; bezel: línea no plana por las features laterales.",
+   "datos": "cup con rim; bezel con conectores",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E3",
+    "parting",
+    "visibilidad"
+   ],
+   "oraculo": "partingLoops devuelve el lazo en la base del rim; test v1·3 'la BOCA cae EN la partición'; candidato del labio marcado 'visible'",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/parting.ts:partingLoops; scripts/ciclo-dado-test.cjs v1·3",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-03",
+   "capitulo": 4,
+   "seccion": "§4.1.3 Fig 4.9-4.10",
+   "pagina": "71-73",
+   "titulo": "Superficie de partición no plana del bezel por loft ≥5° y knit",
+   "enunciado": "Desde la línea no plana generar superficies lofted con inclinación ≥5°, coserlas y cerrar la partición; tooling split.",
+   "datos": "interlocks ≥5°",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "loft",
+    "superficies",
+    "knit",
+    "molde-E3",
+    "parting"
+   ],
+   "oraculo": "Superficie cerrada y manifold; ángulo mín ≥5° (lamina-particion-angulo); V_cav+V_core+V_pieza = V_bloque ±0.1 %",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/parting.ts:splitNoPlano; lamina-particion-angulo.ts; PROCESOS-REPETITIVOS §4 = automatización #1",
+   "esfuerzo": "L",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-04",
+   "capitulo": 4,
+   "seccion": "§4.1.4 Fig 4.11-4.12",
+   "pagina": "73",
+   "titulo": "Shut-off de la ventana del display del bezel",
+   "enunciado": "Shut-off con la línea en el estante oculto; n_shutoffs = n_ventanas; el cup no lleva.",
+   "datos": "1 ventana grande",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E3",
+    "parting",
+    "superficies"
+   ],
+   "oraculo": "n_shutoffs == n_ventanas pasantes (bezel 1, cup 0); parting.ts reporta 'ventana tapada'",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/parting.ts (shut-off), mold.ts:ShutOffBox",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-05",
+   "capitulo": 4,
+   "seccion": "§4.2 Fig 4.13-4.16",
+   "pagina": "74-77",
+   "titulo": "Dimensionar insertos: 3⌀ de agua, cheek = profundidad, redondeo a placa",
+   "enunciado": "Altura ≥3⌀ agua redondeada a 10 mm; L/W por 3⌀ o cheek = profundidad; construir insertos (cup torno, bezel rectangular).",
+   "datos": "⌀ agua 4.76…15.88; placas de 10 mm",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E3",
+    "revolve",
+    "extruir",
+    "moldbase"
+   ],
+   "oraculo": "sizeInserts: cup driver 'estructural', bezel 'refrigeración'; alturas múltiplo de 10; V medido = L×W×H ±0.1 %",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldbase.ts:coolingLineDia,sizeInserts",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-06",
+   "capitulo": 4,
+   "seccion": "§4.3.1 Fig 4.17-4.20",
+   "pagina": "77-79",
+   "titulo": "Layouts de cavidades: línea, grid, círculo, híbrido de 6",
+   "enunciado": "Colocar n insertos en línea/grid/círculo/híbrido; aspecto <2:1; elegir el más compacto con colada balanceable.",
+   "datos": "aspecto <2:1; circular ≤8",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "patrón",
+    "molde-E3",
+    "feed-layouts"
+   ],
+   "oraculo": "aspecto(línea 8)>2 rechazado; grid 8 ≤2; área(círculo)>área(grid); 0 colisiones inserto-inserto/guide pins",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/feed-layouts.ts (feed); layout de cavidades por aspecto A-069 PARCIAL",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-07",
+   "capitulo": 4,
+   "seccion": "§4.3.2 Fig 4.21-4.22",
+   "pagina": "79-81",
+   "titulo": "Seleccionar base estándar: área usable, A, B, S, E y stack",
+   "enunciado": "Verificar insertos en el área usable (½⌀ de holgura), elegir base 200-1000, A y B por altura, E = profundidad, stack.",
+   "datos": "holgura ½⌀; E ≈ altura de pieza",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E3",
+    "moldbase",
+    "ensamble"
+   ],
+   "oraculo": "Test 'Fig 4.21 el inserto cabe'; selectMoldBase = menor retículo HASCO/DME (cubo 196×196; pieza chica 156×156)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldbase.ts:selectMoldBase,STANDARD_BASES; platesizing.ts:snapToCommercialPlate; lección mol-s3 (HECHO)",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-08",
+   "capitulo": 4,
+   "seccion": "§4.3.3 Fig 4.23-4.24",
+   "pagina": "81-82",
+   "titulo": "Compatibilidad con la Battenfeld HM320",
+   "enunciado": "Verificar tie bars 800×630, daylight 350-800, shot 120-250 de 490 cc, clamp 3200 kN.",
+   "datos": "HM320",
+   "respuesta_impresa": "3200 kN = 326 metric tons = 360 English tons (p.82)",
+   "herramientas_suite": [
+    "molde-E3",
+    "molde-E4",
+    "machinesizing"
+   ],
+   "oraculo": "checkMachine: 900 mm → no pasa; stack 300 → no cierra; stack+carrera>800 → no abre; shot 25-50 %; clamp ≤326 t",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldbase.ts:MACHINES,checkMachine; machinesizing.ts",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c4-09",
+   "capitulo": 4,
+   "seccion": "§4.4 Eq 4.1-4.3 Tabla 4.1",
+   "pagina": "84-89",
+   "titulo": "Selección del acero: difusividad, fatiga, Brinell y factores de costo",
+   "enunciado": "α=k/(ρCp), f_making ∝ costo·HB/tasa, f_operating ∝ 1/(α·HB) normalizados a P20; frontera Fig 4.27; Tabla 4.1.",
+   "datos": "P20 α 8.2e-6, 456 MPa, 300 HB; Al QC-7; SS420; D2",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E3",
+    "materials"
+   ],
+   "oraculo": "f_making(P20)=f_operating(P20)=1; Al<1 ambos; SS420 operating≈1.8; H13 making > D2 > P20; Tabla 4.1 ABS 1M → {Cu,P20,SS420}; vidrio 1M → {H13}",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/moldbase.ts:MOLD_METALS,selectMetal (reglas); Eq 4.2-4.3 no calculados (A-078 FALTA)",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c5-01",
+   "capitulo": 5,
+   "seccion": "§5.3.1-5.3.2 Eq 5.2, 5.7",
+   "pagina": "94-96",
+   "titulo": "Corte, esfuerzo, fuerza y gradiente de presión en canal plano",
+   "enunciado": "Placa a 100 mm/s sobre 1.5 mm (η 100): γ̇, τ, F en 200×100; con τ 13,000 Pa: dP/dL y ΔP en 200 mm.",
+   "datos": "v 100 mm/s; h 1.5; η 100; τ 13,000; L 0.2",
+   "respuesta_impresa": "γ̇ 67 1/s; τ 6,700 Pa; F 135 N; dP/dL 17.3 MPa/m; ΔP 3.5 MPa (p.94-96)",
+   "herramientas_suite": [
+    "molde-E4"
+   ],
+   "oraculo": "shearRate 66.7±0.5; τ 6,667±50; F 133-135; 2τ/H 17.33; ΔP 3.47±0.05",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/filling.ts:shearRateNewtonian,pressureDropSegment (sin test)",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c5-02",
+   "capitulo": 5,
+   "seccion": "§5.3.3-5.3.5 Eq 5.8-5.22",
+   "pagina": "96-101",
+   "titulo": "Curva Cross-WLF vs Newtoniano vs power-law para PC",
+   "enunciado": "η(γ̇) Cross-WLF de PC a 270/280/290 °C, ajuste Newtoniano y power-law; perfiles Eq 5.14/5.19 n=1,0.6,0.2.",
+   "datos": "PC 280 °C",
+   "respuesta_impresa": "350 Pa·s a 100 1/s y 80 a 10,000 (280 °C); η0 250 @290, 660 @270 (p.97)",
+   "herramientas_suite": [
+    "molde-E4",
+    "materials"
+   ],
+   "oraculo": "viscosityCrossWLF(PC,100,280)=350±10 %; (1e4)=80±10 %; eta0(270)/eta0(290)=2.64±0.1; ∫perfil = caudal",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/filling.ts:CrossWLF,ABS_CROSS,PP_CROSS (falta PC del Apéndice A)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c5-03",
+   "capitulo": 5,
+   "seccion": "§5.5.1 Eq 5.23-5.25 Fig 5.11",
+   "pagina": "104-106",
+   "titulo": "Velocidad de inyección recomendada del bezel con convergencia",
+   "enunciado": "Iterar v=5(Tmelt−Twall)κ/(3μ) con η Cross-WLF a γ̇=6v/H desde 0.5 m/s; tiempo de llenado y caudal.",
+   "datos": "κ 0.19; h 1.5; L 0.2; V 30 cc",
+   "respuesta_impresa": "0.5→0.69→0.77→0.80→0.82 m/s; 0.25 s; 125 cc/s (p.105-106)",
+   "herramientas_suite": [
+    "molde-E4"
+   ],
+   "oraculo": "convergeVelocityTraced reproduce 0.69/0.77/0.80/0.82±0.01; η(2000,239)=120±3; Vdot 125±5",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/filling.ts:convergeVelocityTraced; ciclo-dado-test 'η(γ̇=2000)≈120'",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c5-04",
+   "capitulo": 5,
+   "seccion": "§5.5.2 Eq 5.22 Fig 5.12",
+   "pagina": "107-108",
+   "titulo": "Presión de llenado del bezel por lay-flat power-law",
+   "enunciado": "Desdoblar ¼ del bezel como tira 200×20×1.5 (variantes A/B/C) y ΔP power-law (k 17,070, n 0.348) a 0.82 m/s.",
+   "datos": "L 0.2; W 20; H 1.5; v 0.82",
+   "respuesta_impresa": "ΔP = 83.2 MPa = 12,060 psi (p.108)",
+   "herramientas_suite": [
+    "molde-E4",
+    "layflat"
+   ],
+   "oraculo": "fillingPressure=83.2±0.5 (test existente); variante A/B/C > tira única",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/filling.ts:fillingPressure,ABS_MG47; layflat.ts",
+   "esfuerzo": "S",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c5-05",
+   "capitulo": 5,
+   "seccion": "§5.5.2 Fig 5.13",
+   "pagina": "108-109",
+   "titulo": "Espesor mínimo de pared por la curva P(h) a 100 MPa",
+   "enunciado": "Barrer h 0.5-3.5 mm recomputando v y ΔP, cortar con 100 MPa → h_min.",
+   "datos": "techo 100 MPa; ABS 239 °C; L 0.2",
+   "respuesta_impresa": "espesor mínimo = 1.36 mm (p.108)",
+   "herramientas_suite": [
+    "molde-E4",
+    "barrido"
+   ],
+   "oraculo": "h_min(100 MPa)=1.36±0.03; P(h) monótona; P(1.5)=83.2",
+   "ya_existe": "no",
+   "donde": "grep '1.36' src/forja/mold = 0 hits; A-095 FALTA",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c5-06",
+   "capitulo": 5,
+   "seccion": "§5.5.3 Eq 5.26-5.29",
+   "pagina": "109-111",
+   "titulo": "Tonelaje al fin del llenado, inicio del empaque y bezel completo",
+   "enunciado": "Tira 200×12 mm: 50 MPa promedio al llenar, 75 al empacar; bezel 100 MPa sobre A_proj 9,724 mm2 (piso 50 MPa).",
+   "datos": "A_proj 9,724 mm2",
+   "respuesta_impresa": "120 kN = 12.2 t; 180 kN = 18.3 t; bezel 972,000 N = 99 t (p.110-111)",
+   "herramientas_suite": [
+    "molde-E4",
+    "masa-inercia",
+    "machinesizing"
+   ],
+   "oraculo": "clampForceN(50e6,0.2×0.012)=120 kN; 180 kN; A_proj del kernel = 9,724±100 mm2 → 99±1 t",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/filling.ts:clampForceN; área proyectada del kernel A-096 PARCIAL",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c5-07",
+   "capitulo": 5,
+   "seccion": "§5.5.3 Tabla 5.1",
+   "pagina": "111-112",
+   "titulo": "Contraste análisis a mano vs Moldflow MPI 5.1 del bezel",
+   "enunciado": "Bezel 1.36 mm, 2 gates, ABS 239/60, 0.25 s: presión, ΔT, γ̇, tonelaje fill/pack vs simulación.",
+   "datos": "análisis 100 MPa/0 °C/1760/486/972 kN; sim 110/+3.4/1290/519/397",
+   "respuesta_impresa": "Tabla 5.1 (p.111)",
+   "herramientas_suite": [
+    "molde-E4",
+    "FAN",
+    "benchmark"
+   ],
+   "oraculo": "solver 3D (FAN/flowlen) del bezel: P ∈ [100,121] MPa; F_fill 486-570 kN; 0<ΔT<5 °C",
+   "ya_existe": "no",
+   "donde": "A-107 FALTA; bezel en banco sin esta comparación",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "benchmark"
+  },
+  {
+   "id": "kazmer-c5-08",
+   "capitulo": 5,
+   "seccion": "§5.5.4 Fig 5.15-5.17",
+   "pagina": "112-114",
+   "titulo": "Patrón de llenado del contenedor por arcos y phantom gates",
+   "enunciado": "Contenedor 100×160×60, gate de borde: desdoblar, arcos con phantom gates, detectar race-tracking, weld y gas trap.",
+   "datos": "W 100, L 160, H 60; pared 2",
+   "respuesta_impresa": "race-tracking porque 60 > ½·100; weld line y gas trap en la pared opuesta (p.113-114)",
+   "herramientas_suite": [
+    "molde-E4",
+    "layflat",
+    "molde-E7"
+   ],
+   "oraculo": "veredictoRace=true; L_side 210 < L_center 280; máscara de soldadura en pared opuesta; gas trap fuera de partición (E7)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/layflat.ts:contenedorKazmer,phantomGates,veredictoRace; flowlen.ts:computeWeldMask",
+   "esfuerzo": "S",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c5-09",
+   "capitulo": 5,
+   "seccion": "§5.5.5 Eq 5.30-5.35",
+   "pagina": "114-116",
+   "titulo": "Flow leader: adelgazar paredes laterales para matar el race-tracking",
+   "enunciado": "H_side = H·√(L_side/L_center); re-trazar arcos; validar (+10 % presión, −10 % peso).",
+   "datos": "H 2; L 280/210",
+   "respuesta_impresa": "H_side = 1.5 mm; v_side 75 %; +10 % presión, −10 % peso (p.115-116)",
+   "herramientas_suite": [
+    "molde-E4",
+    "layflat",
+    "shell-variable"
+   ],
+   "oraculo": "remedioFlowLeader=1.50±0.02; veredictoRace=false; masa −10 %±3",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/layflat.ts:remedioFlowLeader; flowleaders.ts",
+   "esfuerzo": "S",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-01",
+   "capitulo": 6,
+   "seccion": "§6.4 Eq 6.1",
+   "pagina": "132-133",
+   "titulo": "Regla de velocidad constante D_down = D_up/√n (contraejemplo)",
+   "enunciado": "Sprue 6 mm bifurcado en 2: diámetro que conserva velocidad; mostrar que es inferior al método de restricción.",
+   "datos": "D 6; n 2; 50 cc/s",
+   "respuesta_impresa": "D = 4.24 mm; v 1.77 m/s (p.133)",
+   "herramientas_suite": [
+    "molde-E5",
+    "feed"
+   ],
+   "oraculo": "4.243 mm; velocidades iguales ±0.01; V_feed(Eq 6.1) > V_feed(Eq 6.8) a igual ΔP",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/feed-layouts.ts:146 (Eq 6.1 radial)",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-02",
+   "capitulo": 6,
+   "seccion": "§6.4.3-6.4.4 Eq 6.2-6.6 Fig 6.18",
+   "pagina": "138-141",
+   "titulo": "ΔP y volumen del hot runner del bezel segmento a segmento",
+   "enunciado": "Sprue 90/R6, manifold 118/R5 ×2, boquillas 108/R3.5 ×2; power-law k 17,000 n 0.35; 125 cc/s.",
+   "datos": "segmentos (90,6)(118,5)(108,3.5)",
+   "respuesta_impresa": "5.9 + 8.8 + 16.7 = 31.4 MPa; V 37 cc; Re ~0.1 (p.138-141)",
+   "herramientas_suite": [
+    "molde-E5",
+    "feed"
+   ],
+   "oraculo": "pressureDropRunner 5.9/8.8/16.7±0.2, suma 31.4±0.3; feedVolume 37.0±0.5; reynolds<1",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/feed.ts:reynolds,pressureDropRunner,feedVolume (sin test 31.4/37)",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-03",
+   "capitulo": 6,
+   "seccion": "§6.4.5 Eq 6.7-6.9 Fig 6.19",
+   "pagina": "141-145",
+   "titulo": "Radios mínimos por presupuesto de ΔP repartido por longitud",
+   "enunciado": "ΔP_max 30 MPa ∝ longitud → R por Eq 6.8; repetir 50 MPa; barrido V vs ΔP_max (Fig 6.19).",
+   "datos": "L 90/118/108; 125 y 62.5 cc/s",
+   "respuesta_impresa": "30 MPa: R 5/4.4/4.4, V 35 cc; 50 MPa: 4/3.5/3.5, 21.3 cc (p.143-144)",
+   "herramientas_suite": [
+    "molde-E5",
+    "feed",
+    "barrido"
+   ],
+   "oraculo": "minRunnerRadius 5.0/4.4/4.4±0.05 y 4.0/3.5/3.5; V 35±0.5 y 21.3±0.3; R_manifold==R_nozzle",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/feed.ts:minRunnerRadius,designFeedSystem; barrido Fig 6.19 A-118 FALTA",
+   "esfuerzo": "S",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-04",
+   "capitulo": 6,
+   "seccion": "§6.4.6",
+   "pagina": "145-148",
+   "titulo": "Balanceo artificial del molde familia cup + lid",
+   "enunciado": "ΔP de cup y lid; runner al cup 30 MPa, al lid 31.4 para igualar 46.8 totales; sprue 76 mm a 20 MPa; regrind.",
+   "datos": "cup L 0.09 H 3; lid L 0.055 H 2; runners 38; sprue 76",
+   "respuesta_impresa": "ΔP_cup 16.8; ΔP_lid 15.4; R 1.5/1.25/2.7 mm; regrind 3.5 % (p.146-148)",
+   "herramientas_suite": [
+    "molde-E5",
+    "feed",
+    "ensamble"
+   ],
+   "oraculo": "16.8/15.4±0.3; radios ±0.05; ΔP_total ambas ramas 46.8±0.5; regrind 3.5±0.3 %",
+   "ya_existe": "no",
+   "donde": "A-119 FALTA; grep 'famil' en feed.ts = 0",
+   "esfuerzo": "M",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-05",
+   "capitulo": 6,
+   "seccion": "§6.4.7 Tabla 6.2",
+   "pagina": "148-149",
+   "titulo": "El sprue no debe alargar el ciclo: t_c cup vs t_c sprue",
+   "enunciado": "t_c pared 3 mm (tira) y sprue ⌀5.4 (cilindro); si domina el sprue, reducirlo.",
+   "datos": "h 3; D 5.4; α 8.69e-8",
+   "respuesta_impresa": "t_c cup 18.9 s; sprue 26.7 s (p.149)",
+   "herramientas_suite": [
+    "molde-E5",
+    "molde-E8",
+    "térmico"
+   ],
+   "oraculo": "tira 18.9±0.3 (test E8); cilindro: el 26.7 NO reproduce (feed.ts:63 → 17.3 s); veredicto 'sprue domina' si t_sprue>t_cup",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/feed.ts:runnerCoolingTimeS,designSprueFeed; ciclo-dado-test E8",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-06",
+   "capitulo": 6,
+   "seccion": "§6.4.8 Eq 6.10-6.11",
+   "pagina": "149-150",
+   "titulo": "Vueltas y tiempo de residencia del hot runner",
+   "enunciado": "n_turns = V_hr/V_cav; t_res = (1+n)·t_cycle; alarma cambio de color.",
+   "datos": "V_hr 21.3; V_cav 27.5; 13.5 s",
+   "respuesta_impresa": "n_turns 0.77; t_residence 24 s (p.150)",
+   "herramientas_suite": [
+    "molde-E5",
+    "feed"
+   ],
+   "oraculo": "0.77±0.01; 24±0.5 s; alarma si n_turns>10 o t_res > límite",
+   "ya_existe": "no",
+   "donde": "grep 'residenc|nTurns' src/forja/mold → solo comentarios; A-123 FALTA",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-07",
+   "capitulo": 6,
+   "seccion": "§6.5.1 Eq 6.12-6.13 Tabla 6.3",
+   "pagina": "150-152",
+   "titulo": "Runner trapezoidal: diámetro hidráulico y ΔP",
+   "enunciado": "Primario trapezoidal 120 mm, W 6, H 8, 5°; Dh y ΔP power-law como circular (44 cc/s).",
+   "datos": "k 17,000; n 0.35",
+   "respuesta_impresa": "Dh 7.04 mm; ΔP 3.9 MPa (p.152)",
+   "herramientas_suite": [
+    "molde-E5",
+    "croquis",
+    "sweep",
+    "feed"
+   ],
+   "oraculo": "Dh 7.04±0.02; ΔP 3.9±0.1; sweep del perfil reproduce Dh=4A/p ±1 %",
+   "ya_existe": "no",
+   "donde": "grep 'trapez|hydraulic' src/forja/mold = 0 (INDICE A-124 marca SÍ: desactualizado)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-08",
+   "capitulo": 6,
+   "seccion": "§6.5.1 Eq 6.14-6.15 Fig 6.21",
+   "pagina": "153",
+   "titulo": "Sección anular de la boquilla con valve pin",
+   "enunciado": "Boquilla 150 mm, bore ⌀10, pin ⌀5, η 100, 50 cc/s: ΔP como tira de W = π·D_medio.",
+   "datos": "L 0.15",
+   "respuesta_impresa": "ΔP = 24.5 MPa (p.153)",
+   "herramientas_suite": [
+    "molde-E5",
+    "feed"
+   ],
+   "oraculo": "24.5±0.2 MPa Eq 6.14; Eq 6.15 power-law ≥ Newtoniana",
+   "ya_existe": "no",
+   "donde": "grep 'anul' src/forja/mold = 0; A-125",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-09",
+   "capitulo": 6,
+   "seccion": "§6.5.4-6.5.5",
+   "pagina": "157-158",
+   "titulo": "Redondear a cortador estándar HACIA ABAJO (steel-safe)",
+   "enunciado": "Óptimo 4.6 mm → steel-safe del catálogo; re-verificar ΔP y V.",
+   "datos": "catálogo 2…12 mm",
+   "respuesta_impresa": "4.5 mm o 4 mm; no 5 mm (p.157)",
+   "herramientas_suite": [
+    "molde-E5",
+    "feed",
+    "CAM"
+   ],
+   "oraculo": "steelSafeDiaMm(4.6)=4.5; ΔP(4.5)>ΔP(4.6); V(4.5)<V(4.6); cortador existe en catálogo CAM",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/feed.ts:STANDARD_RUNNER_DIAMM,steelSafeDiaMm",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-10",
+   "capitulo": 6,
+   "seccion": "§6.3.2 Tabla 6.1",
+   "pagina": "125-129",
+   "titulo": "Molde de tres placas: apertura en 2 fases, stripper bolts y daylight",
+   "enunciado": "Modelar tres placas y animar la apertura; comparar stack, carrera, daylight, masa y tiempo (v=184+13·log F).",
+   "datos": "2 placas 264/75/151 kg; 3 placas 308/250/181 kg",
+   "respuesta_impresa": "daylight 339 vs 558 mm; apertura 0.36 vs 1.2 s (p.128-129)",
+   "herramientas_suite": [
+    "ensamble",
+    "cinemática",
+    "molde-E3",
+    "molde-E10",
+    "threeplate"
+   ],
+   "oraculo": "threePlateLayout 308/250/558; daylightNeededMm(264,75)=339; moldOpeningVelocity(100)≈210; openingSequence sin colisiones",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/threeplate.ts; moldbase.ts:checkMachine; MoldOpenDriver",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-11",
+   "capitulo": 6,
+   "seccion": "§6.5.2 Fig 6.22",
+   "pagina": "154-155",
+   "titulo": "Sucker pins: diámetro, altura y conicidad",
+   "enunciado": "⌀ < runner, altura ½ D_runner, 5°, slots alineados.",
+   "datos": "altura ½·D; 5°",
+   "respuesta_impresa": "altura ½ del diámetro del runner y 5° (p.154)",
+   "herramientas_suite": [
+    "croquis",
+    "revolve",
+    "ensamble",
+    "molde-E5",
+    "molde-E10"
+   ],
+   "oraculo": "suckerPinDesign(D): dia<D, depth=D/2, cono 5°; pin no invade runner; slots mismo ángulo",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/threeplate.ts:suckerPinDesign; A-134 PARCIAL",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-12",
+   "capitulo": 6,
+   "seccion": "§6.3.1 + §6.4.2 Fig 6.13-6.17",
+   "pagina": "123-138",
+   "titulo": "Layouts de colada con caudales (serie, ramificado, radial, híbrido)",
+   "enunciado": "8 cavidades: árbol 100→50→25→12.5 cc/s vs radial e híbrido por longitud, volumen y balance.",
+   "datos": "100 cc/s; 8 cav",
+   "respuesta_impresa": "50/25/12.5 cc/s (p.123)",
+   "herramientas_suite": [
+    "molde-E5",
+    "feed-layouts",
+    "sweep",
+    "ensamble"
+   ],
+   "oraculo": "Σ hijos = padre ±1e-9; híbrido V_feed < ramificado y ΔP igual por rama (<1 %); diámetros monótonos aguas abajo",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/feed-layouts.ts:layoutBranched/Radial/Series/Hybrid; monotonía A-129 FALTA",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c6-13",
+   "capitulo": 6,
+   "seccion": "§6.3.1 Fig 6.4-6.5",
+   "pagina": "123-125",
+   "titulo": "Colada sólida del molde de dos placas: sprue con contra-cono, runners y puller",
+   "enunciado": "Sprue cónico (orificio boquilla < entrada), contra-cono del puller, runners full-round; verificar contra datums y que no invada el macho.",
+   "datos": "cono; runners A/B",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "revolve",
+    "sweep",
+    "booleanas",
+    "ensamble",
+    "molde-E5",
+    "colada"
+   ],
+   "oraculo": "verificacionColada: declarado≈medido; rBase>rTop; colada∩macho=∅; V vóxeles≈analítico≈OCC",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/colada.ts:construirColada,verificacionColada; ciclo-dado-test",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c6-14",
+   "capitulo": 6,
+   "seccion": "§6.4.1 Tabla 6.2 + §1.4 Tabla 1.1",
+   "pagina": "12-13, 121-134",
+   "titulo": "Elegir el tipo de colada y su presupuesto de ΔP y volumen",
+   "enunciado": "Elegir 2/3 placas / insulated / hot / stack; ΔP ≤ min(50 MPa, 50 % P_cav); V ≤ 30 % (frío) o 1 vuelta (caliente).",
+   "datos": "máquina 200; cavidad 150",
+   "respuesta_impresa": "feed ≤ 50 MPa; regrind 30 % → 15 cc; hot runner 50 cc (p.121-122)",
+   "herramientas_suite": [
+    "molde-E2",
+    "molde-E5",
+    "planeación"
+   ],
+   "oraculo": "designFeedSystem maxDpMPa=min(50,0.5·P_cav); warn regrind>30 %; E2 corre 3 arquitecturas citando Tabla 6.2",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/feed.ts:designSprueFeed; moldmachine.ts; A-108/A-109 PARCIAL",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c7-01",
+   "capitulo": 7,
+   "seccion": "§7.3.2 Tabla 7.2",
+   "pagina": "177",
+   "titulo": "Tasa de corte en las dos edge gates del bezel",
+   "enunciado": "γ por edge gate 0.75×6 mm a 62.5 cc/s vs γ_max 50,000; remedio W 14 mm o 60 cc/s.",
+   "datos": "V̇ 62.5e-6; h 0.75; W 6",
+   "respuesta_impresa": "γ = 111,000 s^-1 (p.177)",
+   "herramientas_suite": [
+    "molde-E5",
+    "compuerta",
+    "reología"
+   ],
+   "oraculo": "shearRateStrip=111,000±500 y ROJO; con W 14 ≤ 50,000",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/gating.ts:shearRateStrip · scripts/mold-gating-test.cjs",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c7-02",
+   "capitulo": 7,
+   "seccion": "§7.3.2",
+   "pagina": "177-178",
+   "titulo": "Tasa de corte de la pin-point del vaso y despeje del radio",
+   "enunciado": "Vaso 44 cc/s por pin-point ⌀1.5: γ; radio para γ_max = 50,000; steel-safe.",
+   "datos": "V̇ 44e-6; D 1.5",
+   "respuesta_impresa": "γ = 132,000; R = 1.03 mm (p.177-178)",
+   "herramientas_suite": [
+    "molde-E5",
+    "compuerta"
+   ],
+   "oraculo": "shearRateCyl 132,000±1,500; gateRadiusForShear 1.03±0.01",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/gating.ts:shearRateCyl,gateRadiusForShear",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c7-03",
+   "capitulo": 7,
+   "seccion": "§7.3.3 Tabla 7.3",
+   "pagina": "178-179",
+   "titulo": "Caída de presión del fan gate del bezel (power-law)",
+   "enunciado": "Fan gate como tira 10×3.5×10 mm; ΔP ABS k 17,000 n 0.35 a 62.5 cc/s.",
+   "datos": "W 10; H 3.5; L 10",
+   "respuesta_impresa": "ΔP = 1.9 MPa (p.179)",
+   "herramientas_suite": [
+    "molde-E5",
+    "compuerta",
+    "reología"
+   ],
+   "oraculo": "gateDropStripPL 1.9±0.1; VERDE (<6 MPa)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/gating.ts:gateDropStripPL",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c7-04",
+   "capitulo": 7,
+   "seccion": "§7.3.3",
+   "pagina": "179",
+   "titulo": "ΔP de la pin-point con Cross-WLF a la tasa de corte",
+   "enunciado": "η Cross-WLF a 132,000 (5.4 Pa·s) y ΔP newtoniana L 1 mm; repetir ⌀2 (11.2 Pa·s).",
+   "datos": "L 1 mm; 44 cc/s",
+   "respuesta_impresa": "ΔP 1.9 MPa (⌀1.5) y 1.3 MPa (⌀2) (p.179)",
+   "herramientas_suite": [
+    "molde-E5",
+    "compuerta",
+    "reología"
+   ],
+   "oraculo": "viscosityCrossWLF(ABS,132000,T_mid)=5.4±0.5 → 1.9±0.1; a 50,000 → 11.2±1 y 1.3±0.1",
+   "ya_existe": "parcial",
+   "donde": "gating.ts:gateDropCylNewt + filling.ts:viscosityCrossWLF (no encadenados; A-146)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c7-05",
+   "capitulo": 7,
+   "seccion": "§7.3.4 Tabla 7.4",
+   "pagina": "181",
+   "titulo": "Tiempo de congelamiento del fan gate del bezel",
+   "enunciado": "t_s de la sección 0.75 mm (ABS 240/60/132) → no gatear a sección delgada.",
+   "datos": "h 0.75; α 8.69e-8",
+   "respuesta_impresa": "t_s = 1.5 s (p.181)",
+   "herramientas_suite": [
+    "molde-E5",
+    "compuerta",
+    "térmico"
+   ],
+   "oraculo": "gateFreezeStripS=1.5±0.05; bandera 'gatea a sección delgada'",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/gating.ts:gateFreezeStripS (bandera PARCIAL)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c7-06",
+   "capitulo": 7,
+   "seccion": "§7.3.4",
+   "pagina": "181",
+   "titulo": "Congelamiento de la pin-point ⌀2 vs solidificación del vaso de 3 mm",
+   "enunciado": "t_s cilindro ⌀2 vs tira 3 mm: la compuerta congela antes y el vaso no empaca.",
+   "datos": "D 2; h 3",
+   "respuesta_impresa": "gate 1.1 s vs vaso 24 s (p.181)",
+   "herramientas_suite": [
+    "molde-E5",
+    "compuerta",
+    "térmico"
+   ],
+   "oraculo": "gateFreezeCylS 1.1±0.05; gateFreezeStripS(3) 24±0.5; ROJO",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/gating.ts:gateFreezeCylS,designGateProcess",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c7-07",
+   "capitulo": 7,
+   "seccion": "§7.2.7 Figs 7.11-7.13 · Tabla 7.1",
+   "pagina": "170-176",
+   "titulo": "Modelar el tunnel gate de la tapa en el inserto y verificar sus tres ángulos",
+   "enunciado": "Tabla 7.1 → túnel: 45°, cono ≥20°, ≥3⌀ bajo el plano; sucker pin; corte cerrado y abierto.",
+   "datos": "45°; ≥20°; ≥3⌀",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "croquis",
+    "revolve",
+    "corte",
+    "molde-E5",
+    "ensamble",
+    "plano2D"
+   ],
+   "oraculo": "sólido del túnel 45±1°, cono ≥20°, ≥3⌀ (juez geométrico); colada del lado del macho tras apertura",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/lamina-compuerta.ts (veredictos V7.7, mallaTronco) — sin sólido OCC",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c7-08",
+   "capitulo": 7,
+   "seccion": "§7.2.5-7.2.6 Figs 7.8-7.10",
+   "pagina": "168-169",
+   "titulo": "Fan gate como loft círculo→rectángulo y diafragma como tira W = π·D",
+   "enunciado": "Modelar fan (loft) y diafragma; verificar flujo lineal; corte/ΔP del diafragma.",
+   "datos": "runner ⌀6.35; fan 14×0.75",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "loft",
+    "croquis",
+    "molde-E5",
+    "compuerta",
+    "molde-E4"
+   ],
+   "oraculo": "V del loft = ∫secciones ±2 %; frente E4 plano (<5 % del ancho); γ diafragma < γ_max",
+   "ya_existe": "no",
+   "donde": "A-145/A-153 FALTA; fan.ts es Hele-Shaw",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c7-09",
+   "capitulo": 7,
+   "seccion": "§7.3.4 Fig 7.18",
+   "pagina": "180",
+   "titulo": "Historia T/η de la compuerta → tiempo mínimo de empaque",
+   "enunciado": "Cilindro ⌀2: T_bulk(t) y η(t) Cross-WLF a γ=10; no-flow a 1e5 Pa·s.",
+   "datos": "D 2; η_noflow 1e5",
+   "respuesta_impresa": "pack time = 2.2 s (p.180)",
+   "herramientas_suite": [
+    "térmico",
+    "reología",
+    "molde-E5"
+   ],
+   "oraculo": "t(η=1e5)=2.2±0.2 s con serie de Fourier del cilindro + viscosityCrossWLF",
+   "ya_existe": "parcial",
+   "donde": "thermal-series.ts:cylinderCenterTheta + filling.ts:viscosityCrossWLF (no encadenados)",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c8-01",
+   "capitulo": 8,
+   "seccion": "§8.2.1-8.2.3",
+   "pagina": "186-189",
+   "titulo": "Caudal de aire del bezel y su reparto conservador",
+   "enunciado": "125 cc/s en 2 frentes → 62.5 cc/s por CADA venteo (no prorratear).",
+   "datos": "125 cc/s; 4 venteos/lado",
+   "respuesta_impresa": "62.5 cc/s por venteo (p.189)",
+   "herramientas_suite": [
+    "molde-E7",
+    "venteo"
+   ],
+   "oraculo": "el plan asigna 62.5e-6 a cada venteo",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/venting.ts:ventDesign",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c8-02",
+   "capitulo": 8,
+   "seccion": "§8.2.2 Figs 8.1-8.5",
+   "pagina": "186-189",
+   "titulo": "Mapa de ubicaciones de venteo del bezel: 3 tipos → 8 iniciales",
+   "enunciado": "Enumerar candidatos: 12 en partición, soldaduras interiores, ~20 bolsas muertas; cortar a 8.",
+   "datos": "bezel 2 gates",
+   "respuesta_impresa": "~36 consideradas; 8 especificadas (p.189)",
+   "herramientas_suite": [
+    "molde-E4",
+    "molde-E7",
+    "venteo"
+   ],
+   "oraculo": "enumerarVenteos sobre el bezel: 3 tipos; 4 fin de flujo 'obligatorio'; lista 'maquinar' = 8",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/venting-locations.ts:enumerarVenteos (jabonera probada; bezel no)",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c8-03",
+   "capitulo": 8,
+   "seccion": "§8.2.3 Eq 8.2",
+   "pagina": "190",
+   "titulo": "Espesor mínimo del venteo",
+   "enunciado": "Venteo 10×10 mm, 100 cc/s aire, ΔP 0.1 MPa, μ 1.8e-5 → h_min.",
+   "datos": "W 10; L 10",
+   "respuesta_impresa": "h_min = 0.06 mm (p.190)",
+   "herramientas_suite": [
+    "molde-E7",
+    "venteo"
+   ],
+   "oraculo": "ventMinThickness(100e-6,0.01,0.01,0.1e6)=0.06±0.002",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/venting.ts:ventMinThickness · ciclo-dado-test E7",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c8-04",
+   "capitulo": 8,
+   "seccion": "§8.2.3 Eqs 8.3-8.4",
+   "pagina": "191",
+   "titulo": "Espesor máximo del venteo por rebaba",
+   "enunciado": "h_max = 0.4·L_flash con t_flash 0.003 s, 100 MPa/s, η 10; banda con h_min; Tabla 8.1.",
+   "datos": "L_flash 0.2",
+   "respuesta_impresa": "H_max 0.08 mm; banda 0.06-0.08 (p.191)",
+   "herramientas_suite": [
+    "molde-E7",
+    "venteo"
+   ],
+   "oraculo": "ventMaxThickness(0.0002) ∈ [0.06,0.09] (redondeo declarado)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/venting.ts:ventMaxThickness,VENT_TABLE_MM",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c8-05",
+   "capitulo": 8,
+   "seccion": "§8.3.1 Figs 8.6-8.7",
+   "pagina": "192-194",
+   "titulo": "Anatomía CAD del venteo en partición (bezel) y anillo perimetral (tapa)",
+   "enunciado": "Land 0.06×2 mm + canal 2 mm + salida ⌀3; tapa: anillo 0.015×1 mm.",
+   "datos": "bezel; tapa",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "croquis",
+    "extruir",
+    "corte",
+    "molde-E7",
+    "plano2D",
+    "cotas"
+   ],
+   "oraculo": "volumen removido = W·L·h ±5 %; land-canal-barreno conectados (una cavidad de aire, chequeo topológico)",
+   "ya_existe": "no",
+   "donde": "A-169 FALTA; venting.ts solo dimensiona",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c8-06",
+   "capitulo": 8,
+   "seccion": "§8.3.2 Fig 8.8",
+   "pagina": "194-195",
+   "titulo": "Venteo por la holgura del pin eyector y del blade",
+   "enunciado": "Barreno ⌀pin+0.13 → 0.065 por lado; canal hasta 3 mm y cono; verificar con Eq 8.2.",
+   "datos": "0.13 mm",
+   "respuesta_impresa": "0.065 mm (p.194)",
+   "herramientas_suite": [
+    "molde-E7",
+    "molde-E10",
+    "ajustes",
+    "corte"
+   ],
+   "oraculo": "ejectorHole=⌀+0.13; h_vent 0.065; ventMinThickness local ≤ 0.065 → VERDE",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/fits.ts:EJECTOR_DIAM_CLEARANCE_MM (cono 3D no modelado)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c8-07",
+   "capitulo": 8,
+   "seccion": "§8.3.3 Figs 8.9-8.10",
+   "pagina": "196-197",
+   "titulo": "Inserto venteado en bolsa muerta y venteo sinterizado",
+   "enunciado": "Inserto 0.2×2 mm en cima de costilla; alternativa blade; sinterizado ⌀2-12.",
+   "datos": "H 0.2; L 2",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "croquis",
+    "extruir",
+    "corte",
+    "molde-E7",
+    "molde-E10"
+   ],
+   "oraculo": "inserto cabe (interferencia 0); venteo conecta; juez propone blade si hay costilla",
+   "ya_existe": "no",
+   "donde": "A-171 FALTA",
+   "esfuerzo": "M",
+   "valor": 2,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c9-01",
+   "capitulo": 9,
+   "seccion": "§9.2.1 Eqs 9.5-9.6",
+   "pagina": "203",
+   "titulo": "Tiempo de enfriamiento del molde familia y del runner",
+   "enunciado": "t_c tapa 2 mm, vaso 3 mm (placa) y runner ⌀4.76 (cilindro).",
+   "datos": "239/60/97.6; α 8.69e-8",
+   "respuesta_impresa": "lid 8.4 s; cup 18.9 s; runner 22.9 s (p.203)",
+   "herramientas_suite": [
+    "molde-E8",
+    "térmico"
+   ],
+   "oraculo": "coolingTimePlate(0.002)=8.4±0.05; (0.003)=18.9; coolingTimeRod(0.00476)=22.9",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/cooling.ts:coolingTimePlate,coolingTimeRod · ciclo-dado-test E8",
+   "esfuerzo": "S",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c9-02",
+   "capitulo": 9,
+   "seccion": "§9.2.1 Eqs 9.7-9.9 Figs 9.2-9.3",
+   "pagina": "204-206",
+   "titulo": "Regla 2·h² y frontera convectiva 1000 W/°C",
+   "enunciado": "t_c=2h² vs serie (19.2 s); FDM 1D isotérmica y convectiva h_c 1000 (→24 s).",
+   "datos": "h 3",
+   "respuesta_impresa": "18 s (regla); 19.2 s; 24 s convectivo (p.206)",
+   "herramientas_suite": [
+    "molde-E8",
+    "térmico",
+    "FDM-1D"
+   ],
+   "oraculo": "coolingTimeRuleOfThumb(3)=18; tcSlabSeriesS 19.2±0.3; FDM Robin 1000 → 24±1.5",
+   "ya_existe": "parcial",
+   "donde": "cooling.ts:coolingTimeRuleOfThumb; thermal-series.ts; thermal-layers.ts:makeLayeredFDM (24 s sin gate, A-178)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c9-03",
+   "capitulo": 9,
+   "seccion": "§9.2.2 Eqs 9.10-9.12",
+   "pagina": "207",
+   "titulo": "Calor a extraer y potencia por línea (vaso/tapa)",
+   "enunciado": "62.6 g ABS, Cp 2340, 239→96.7: Q; t_c 20 s → potencia; 4 líneas.",
+   "datos": "m 0.0626 kg",
+   "respuesta_impresa": "20,900 J; 1,050 W; 260 W/línea; 500 W/lado (p.207)",
+   "herramientas_suite": [
+    "molde-E8",
+    "térmico",
+    "masa"
+   ],
+   "oraculo": "heatPerShotJ 20,900±100; Q_line 260±5; masa del kernel ±3 %",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/cooling-design.ts:heatPerShotJ,coolingDesign",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c9-04",
+   "capitulo": 9,
+   "seccion": "§9.2.3 Eq 9.13 Tabla 9.1",
+   "pagina": "208-209",
+   "titulo": "Caudal de refrigerante por línea vs controlador VacTherm",
+   "enunciado": "260 W, ΔT 1 °C → caudal; total 4 líneas vs 1e-3 m3/s.",
+   "datos": "ΔT 1 °C",
+   "respuesta_impresa": "6.2e-5 m3/s ≈ 1 GPM; total 2.5e-4 (p.208-209)",
+   "herramientas_suite": [
+    "molde-E8",
+    "térmico"
+   ],
+   "oraculo": "coolantFlowRate(260,1)=6.2e-5±0.1e-5; total ≤1e-3 → VERDE",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/coolinglines.ts:coolantFlowRate,CONTROLLERS",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c9-05",
+   "capitulo": 9,
+   "seccion": "§9.2.4 Eqs 9.14-9.17 Tabla 9.2",
+   "pagina": "209-211",
+   "titulo": "Ventana de ⌀ de línea: turbulencia y ΔP → plug estándar",
+   "enunciado": "D_max Re>4000; D_min ΔP ≤100 kPa (L 0.6 m); plug Tabla 9.2.",
+   "datos": "V̇ 6.2e-5; μ 0.001",
+   "respuesta_impresa": "D_max 20; D_min 3.7; elegido 6.35 mm (p.209-211)",
+   "herramientas_suite": [
+    "molde-E8",
+    "térmico"
+   ],
+   "oraculo": "maxLineDiameter 20±0.5; minLineDiameter 3.7±0.15; plug ∈ Tabla 9.2",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/coolinglines.ts:maxLineDiameter,minLineDiameter,COOLING_PLUGS",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c9-06",
+   "capitulo": 9,
+   "seccion": "§9.2.5 Eqs 9.19-9.22 Fig 9.4",
+   "pagina": "211-213",
+   "titulo": "Profundidad de la línea: concentración de esfuerzo vs calor",
+   "enunciado": "⌀6.35 a 4D en P20 (SCF 2.6) → P_melt máx; Al a 1D; H_max=k/1000; 2D<H<5D.",
+   "datos": "P20 456; Al 166",
+   "respuesta_impresa": "175 MPa (P20 4D); 50 MPa (Al 1D); H<32 mm (p.212-213)",
+   "herramientas_suite": [
+    "molde-E8",
+    "fatiga",
+    "térmico"
+   ],
+   "oraculo": "maxMeltPressureMPa(456,SCF(4))=175±1; (166,SCF(1))=50±1; hLineMaxM(32)=0.032",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/cooling-design.ts:stressConcentration,maxMeltPressureMPa,hLineMaxM",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c9-07",
+   "capitulo": 9,
+   "seccion": "§9.2.6-9.2.7 Eqs 9.23-9.24 Figs 9.5-9.10",
+   "pagina": "213-218",
+   "titulo": "Paso entre líneas y primer ruteo del vaso/tapa (infactible → factible)",
+   "enunciado": "Eq 9.23 (<5 % hasta W=2H); rutear ⌀6.35 H 12.7 W 25.4; detectar cruces con sprue/insertos; gradiente 6 °C del core.",
+   "datos": "claro ½⌀",
+   "respuesta_impresa": "ΔQ<5 % hasta W/H=2; gradiente 6 °C (p.214, 218-219)",
+   "herramientas_suite": [
+    "molde-E8",
+    "ensamble",
+    "interferencia",
+    "térmico",
+    "FEA-térmico"
+   ],
+   "oraculo": "heatFluxVariation(2)<5 %; interferencia lista cruces (≥1 Fig 9.9, 0 Fig 9.10); campo 6±1.5 °C",
+   "ya_existe": "parcial",
+   "donde": "cooling-design.ts:heatFluxVariation; thermal-steady.ts; ruteo A-198 PARCIAL; E8b useMoldStudio.ts:1237 solo CUBO",
+   "esfuerzo": "L",
+   "valor": 5,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c9-08",
+   "capitulo": 9,
+   "seccion": "§9.3.4 Figs 9.18-9.19",
+   "pagina": "223-224",
+   "titulo": "Core de Cu 940 vs P20: gradiente del core y esquina interior",
+   "enunciado": "Campo térmico con core Cu 940: gradiente −60 %; esquina 5 °C (P20/P20) vs 1 °C (P20/Cu).",
+   "datos": "k_P20 32; k_Cu 250",
+   "respuesta_impresa": "≈60 %; 5 °C vs 1 °C (p.223-224)",
+   "herramientas_suite": [
+    "molde-E8",
+    "FEA-térmico",
+    "materiales"
+   ],
+   "oraculo": "gradiente ≤0.45× P20; esquina 5±1 vs 1±0.5 °C",
+   "ya_existe": "parcial",
+   "donde": "thermal-steady.ts + mold-thermal-fdm.ts; material asimétrico A-202 FALTA",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c9-09",
+   "capitulo": 9,
+   "seccion": "§9.3.1 Figs 9.12-9.15",
+   "pagina": "219-221",
+   "titulo": "Redes de enfriamiento del bezel: serie → paralelo → manifold interno → periférico",
+   "enunciado": "8 líneas: serie, 4 paralelos, manifold interno con 20 tapones, periférico; ΔP, ΔT y conexiones.",
+   "datos": "8 líneas ⌀6.35",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E8",
+    "ensamble",
+    "corte",
+    "interferencia",
+    "planeación"
+   ],
+   "oraculo": "ΔP_serie=8·ΔP; ΔT_serie=8·ΔT; conexiones 16/8/2/2 emergentes del grafo; tapones = extremos ciegos",
+   "ya_existe": "parcial",
+   "donde": "useMoldStudio.ts:1237-1262 (E8b cubo); A-204 FALTA genérico",
+   "esfuerzo": "L",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c9-10",
+   "capitulo": 9,
+   "seccion": "§9.3.2-9.3.3 Figs 9.16-9.17",
+   "pagina": "222-223",
+   "titulo": "Inserto de core con canal fresado + gasket y conformal helicoidal",
+   "enunciado": "Canal fresado por el dorso del inserto con gasket; core del vaso con hélice conformal.",
+   "datos": "fresa de bola; hélice",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "sweep",
+    "hélice",
+    "croquis",
+    "corte",
+    "ensamble",
+    "molde-E8",
+    "FEA-térmico"
+   ],
+   "oraculo": "un solo camino IN→OUT; distancia canal-superficie ≥2⌀; gradiente ≤1 °C",
+   "ya_existe": "no",
+   "donde": "grep conformal src/forja/mold = 0",
+   "esfuerzo": "L",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c9-11",
+   "capitulo": 9,
+   "seccion": "§9.3.5 Tabla 9.3",
+   "pagina": "225-230",
+   "titulo": "Selector de enfriamiento para núcleo esbelto: core 60 → baffle 12",
+   "enunciado": "Tabla 9.3 por ⌀ del core; baffle 12 mm; barreno + lámina.",
+   "datos": "⌀core 60",
+   "respuesta_impresa": "baffle 12 mm en core de 60 mm (p.226)",
+   "herramientas_suite": [
+    "molde-E8",
+    "corte",
+    "ensamble",
+    "térmico"
+   ],
+   "oraculo": "chooseSlenderCoreCooling(60)='baffle', barreno ∈[6,25]; campo axi con baffle reduce gradiente",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/slendercore.ts; lamina-nucleo-enfriamiento.ts · mold-nucleo-enfriamiento-test.cjs",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c9-12",
+   "capitulo": 9,
+   "seccion": "§9.3.6 Fig 9.27",
+   "pagina": "231-232",
+   "titulo": "Flujo de calor por UN lado: two-shot ABS sobre PC",
+   "enunciado": "2h en Eq 9.5 → t_c ABS 3 mm; alternativa PC 2 mm segunda; decidir orden.",
+   "datos": "ABS 3; PC 2",
+   "respuesta_impresa": "t_c ABS 75.6 s; PC 13.5 s (p.231-232)",
+   "herramientas_suite": [
+    "molde-E8",
+    "térmico",
+    "planeación"
+   ],
+   "oraculo": "tiempoUnSoloLado(3,ABS)=75.6±1; PC 13.5±0.5; la capa delgada va segunda",
+   "ya_existe": "parcial",
+   "donde": "lamina-nucleo-enfriamiento.ts:tiempoUnSoloLado (75.6 ✓); PC 13.5 y orden A-182 FALTA",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c10-01",
+   "capitulo": 10,
+   "seccion": "§10 Eq 10.1",
+   "pagina": "234",
+   "titulo": "Contracción nominal y longitud de pieza desde la cavidad",
+   "enunciado": "20→19.85: s; 300 mm 0.8 %: L; 100 mm s 0.5 %: cavidad.",
+   "datos": "",
+   "respuesta_impresa": "s 0.75 %; 297.6 mm; 100.5 mm (p.234-235)",
+   "herramientas_suite": [
+    "molde-E9",
+    "cotas",
+    "escalado"
+   ],
+   "oraculo": "moldScale=1/(1−s); acero escalado mide 100.5±0.01",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/shrinkage.ts:shrinkage; useMoldStudio.ts:1285 E9",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c10-02",
+   "capitulo": 10,
+   "seccion": "§10.1.2 Eqs 10.2-10.9 Fig 10.2",
+   "pagina": "236-237",
+   "titulo": "PvT Tait de ABS: densidad, CVTE y compresibilidad",
+   "enunciado": "v(T) a 0/100/200 MPa; ρ, CVTE, β; comparar con proveedor 1044.",
+   "datos": "Tait ABS Apéndice A",
+   "respuesta_impresa": "ρ 1047; CVTE 3.1e-4; β −2.5e-4 (p.236-237)",
+   "herramientas_suite": [
+    "molde-E9",
+    "materiales",
+    "gráfica"
+   ],
+   "oraculo": "1/specificVolume(293,0)=1047±3; CVTE ±0.2e-4; β ±0.3e-4; |ρ−1044|<1 %",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/shrinkage.ts:specificVolume,ABS_TAIT; sanidad vs proveedor A-211 FALTA",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c10-03",
+   "capitulo": 10,
+   "seccion": "§10.1.1-10.1.4 Eqs 10.10-10.13",
+   "pagina": "235-241",
+   "titulo": "Contracción volumétrica y lineal isotrópica del bezel",
+   "enunciado": "P_pack 66 MPa; T_t 386 K; v(132 °C,66) y v(20,0) → rv, s.",
+   "datos": "66 MPa; 405 K",
+   "respuesta_impresa": "T_t 386 K; rv 0.9907; s = 0.31 % (p.239-241)",
+   "herramientas_suite": [
+    "molde-E9",
+    "materiales"
+   ],
+   "oraculo": "shrinkage(ABS_TAIT,405,66) rv 0.991±0.001; s 0.31±0.03 %",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/shrinkage.ts:shrinkage · mold-shrinkage-test.cjs · ciclo-dado-test E9",
+   "esfuerzo": "S",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c10-04",
+   "capitulo": 10,
+   "seccion": "§10.1.5 Eqs 10.14-10.16",
+   "pagina": "243-244",
+   "titulo": "Contracción anisotrópica del bezel en ABS 15 % GF",
+   "enunciado": "p≈6 % no contrae; a=0.5; iterar Eq 10.16; escalado distinto por eje.",
+   "datos": "ρ 1044/2600; a 0.5",
+   "respuesta_impresa": "p≈6 %; rv 0.9912; s 0.35 % cruz, 0.18 % flujo (p.243-244)",
+   "herramientas_suite": [
+    "molde-E9",
+    "materiales",
+    "escalado-anisotrópico"
+   ],
+   "oraculo": "s=0.00352→0.00351; escalado X ×1/(1−0.0018), Y/Z ×1/(1−0.0035) medido en kernel",
+   "ya_existe": "no",
+   "donde": "grep anisotr shrinkage.ts = 0 (A-213/A-222 FALTA)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c10-05",
+   "capitulo": 10,
+   "seccion": "§10.1.6",
+   "pagina": "244-245",
+   "titulo": "Banda de contracción del bezel: sobre-empaque vs empaque corto",
+   "enunciado": "Mín (132 °C, 100 MPa) → s<0; máx (185 °C, 30 MPa) → 1.9 %.",
+   "datos": "",
+   "respuesta_impresa": "s −0.2 % (sobre-empaque); 1.9 % (p.244-245)",
+   "herramientas_suite": [
+    "molde-E9",
+    "materiales"
+   ],
+   "oraculo": "shrinkageRecommendation(83) low −0.2±0.05 con alarma; high 1.9±0.1",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/shrinkage.ts:shrinkageRecommendation · ciclo-dado-test E9",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c10-06",
+   "capitulo": 10,
+   "seccion": "§10.2.1/10.2.3 Figs 10.8-10.9, 10.12",
+   "pagina": "247-250",
+   "titulo": "Mapa de contracción no uniforme: 2 vs 4 compuertas y perfil de empaque",
+   "enunciado": "Llenado+empaque del bezel (66 MPa, 20 s): mapa s; 4 gates y perfil de empaque.",
+   "datos": "bezel; 2 vs 4 gates",
+   "respuesta_impresa": "0.3/0.6/>1 % (2 gates); máx 0.9, media 0.5 (4 gates) — Moldflow (p.247-248)",
+   "herramientas_suite": [
+    "molde-E4",
+    "molde-E9",
+    "empaque",
+    "CFD-Hele-Shaw",
+    "mapa"
+   ],
+   "oraculo": "s(x,y): mediana 0.6±0.15, máx >0.9 en borde lejano; 4 gates baja máx ≥0.15 y media ≥0.05",
+   "ya_existe": "no",
+   "donde": "A-218/A-220 FALTA; fan.ts llena, no empaca",
+   "esfuerzo": "L",
+   "valor": 4,
+   "tipo": "benchmark"
+  },
+  {
+   "id": "kazmer-c10-07",
+   "capitulo": 10,
+   "seccion": "§10.2.2 Fig 10.10",
+   "pagina": "249",
+   "titulo": "Steel-safe: cavidad 0.4 % y macho 0.6 % para s 0.5 %",
+   "enunciado": "Escalar insertos con s distinta dejando reserva de metal; descalce en shut-off.",
+   "datos": "",
+   "respuesta_impresa": "cavidad 0.4 %, macho 0.6 % (Fig 10.10)",
+   "herramientas_suite": [
+    "molde-E9",
+    "escalado",
+    "cotas",
+    "ensamble"
+   ],
+   "oraculo": "cavidad ×1.004, macho ×1.006 ±1e-4 en kernel; descalce registrado como spotting",
+   "ya_existe": "si",
+   "donde": "useMoldStudio.ts:1285-1325 (E9 steel-safe MEDIDO)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c10-08",
+   "capitulo": 10,
+   "seccion": "§10.2.4 Fig 10.13",
+   "pagina": "250-251",
+   "titulo": "Semicristalino: acetal Delrin 500 contrae 3.5 %",
+   "enunciado": "PvT del acetal con transición Eq 10.6: 0.77→0.69 → s.",
+   "datos": "Tait POM",
+   "respuesta_impresa": "rv 0.90; s 3.5 % (p.251)",
+   "herramientas_suite": [
+    "molde-E9",
+    "materiales"
+   ],
+   "oraculo": "specificVolume POM 0.77/0.69±0.01; s 3.5±0.2; bandera semicristalino",
+   "ya_existe": "parcial",
+   "donde": "shrinkage.ts (Tait con vT); solo ABS_TAIT; A-221",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c10-09",
+   "capitulo": 10,
+   "seccion": "§10.3.1 Eqs 10.17-10.18 Fig 10.14",
+   "pagina": "253-254",
+   "titulo": "Alabeo del bezel por gradiente de 2 °C a través del espesor",
+   "enunciado": "s_cav 0.31 / s_core 0.34 → R=2h/Δs; δ=W·sin(W/R) con W 120; a 0 MPa 2.1 mm.",
+   "datos": "h 1.5; W 120",
+   "respuesta_impresa": "R 9050 mm; δ 1.6 mm (errata sin(120/1050)); 2.1 mm a 0 MPa (p.253-254)",
+   "herramientas_suite": [
+    "molde-E9",
+    "alabeo",
+    "FEA-térmico"
+   ],
+   "oraculo": "alabeoPorEspesor → R 9050±300, δ 1.6±0.1; (100/102 °C, 0 MPa) → 2.1±0.15",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/warpage.ts:alabeoPorEspesor (sin test con 9050/1.6)",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c10-10",
+   "capitulo": 10,
+   "seccion": "§10.3.1 Eqs 10.19-10.20 Fig 10.15",
+   "pagina": "255",
+   "titulo": "Pandeo de la tapa center-gated por contracción diferencial",
+   "enunciado": "Centro 0.31 %, borde 1.66 %; criterio 0.44(h/W)²; δ.",
+   "datos": "h 2; W 40.5",
+   "respuesta_impresa": "0.0135 > 0.0011 → pandea; δ 6.6 mm (p.255)",
+   "herramientas_suite": [
+    "molde-E9",
+    "alabeo",
+    "pandeo"
+   ],
+   "oraculo": "alabeoPorArea → criterio TRUE y δ 6.6±0.2",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/warpage.ts:alabeoPorArea",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-01",
+   "capitulo": 11,
+   "seccion": "§11.2.2 Eq 11.7 Fig 11.6",
+   "pagina": "267",
+   "titulo": "Fuerza de expulsión del vaso desde la sección del CAD",
+   "enunciado": "A_eff 526 mm² (del CAD), μ 0.5, draft 1°, E 2.28 GPa, CTE 8.83e-5, ΔT 35 → F.",
+   "datos": "cos(10°) errata",
+   "respuesta_impresa": "F_eject ≈ 1,800 N (p.267)",
+   "herramientas_suite": [
+    "molde-E10",
+    "sección",
+    "masa-inercia",
+    "expulsión"
+   ],
+   "oraculo": "ejectionForce=1800±60; A_eff medida en la sección = 526±5 %",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/ejection.ts:ejectionForce · mold-ejection-test.cjs (A_eff tecleada)",
+   "esfuerzo": "S",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-02",
+   "capitulo": 11,
+   "seccion": "§11.2.2 Eq 11.8 Fig 11.7",
+   "pagina": "267-269",
+   "titulo": "Área efectiva del bezel con costillas y sanity vs máquina",
+   "enunciado": "A_eff = h(2L+2W)+n_wall·h·H+n_rib·h_rib·H_rib → F; ≈0.5 % del clamp.",
+   "datos": "1.5; 240×160; 4 paredes; 7 costillas",
+   "respuesta_impresa": "A_eff 1.3e-3 m²; F ≈ 4,700 N; 0.5 % vs 2 % (p.268-269)",
+   "herramientas_suite": [
+    "molde-E10",
+    "expulsión",
+    "máquina"
+   ],
+   "oraculo": "effectiveArea 1.3e-3±2 %; 4700±150 N; F/clamp ≤0.02",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/ejection.ts:effectiveArea,ejectionForce",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-03",
+   "capitulo": 11,
+   "seccion": "§11.2.3 Eqs 11.9-11.12",
+   "pagina": "270-271",
+   "titulo": "Área de empuje y perímetro mínimo de 20 pines",
+   "enunciado": "Compresión (450 MPa) y cortante en plástico (44 MPa, h 1.5) → ⌀ mín; gobierna cortante.",
+   "datos": "F 4700; 20 pines",
+   "respuesta_impresa": "A>10.4 mm² → ⌀≥0.8; Ω>0.14 m → ⌀≥2.23 (p.270-271)",
+   "herramientas_suite": [
+    "molde-E10",
+    "expulsión"
+   ],
+   "oraculo": "ejectorPinSizing → pushArea 10.4±0.3, dShear 2.23±0.06, dComp 0.8±0.05",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/ejection.ts:ejectorPinSizing",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-04",
+   "capitulo": 11,
+   "seccion": "§11.2.4-11.2.5 Fig 11.9",
+   "pagina": "272-273",
+   "titulo": "10 pines ⌀4.5 vs 40 ⌀1.125; layout Fig 11.9 rechazado",
+   "enunciado": "Mismo perímetro, distinta compresión; regla ≥1⌀ de acero al borde de cavidad.",
+   "datos": "Ω 0.14 m",
+   "respuesta_impresa": "10: ⌀4.5, 30 MPa; 40: ⌀1.125, 100 MPa (p.272)",
+   "herramientas_suite": [
+    "molde-E10",
+    "expulsión",
+    "layout",
+    "interferencia"
+   ],
+   "oraculo": "⌀(10)=4.46±0.05, σ 30±1; ⌀(40)=1.11, σ 100±3; juez de acero ROJO a 1 mm",
+   "ya_existe": "parcial",
+   "donde": "mold-ejection-auto.ts:maxPinDiaForSteelMm,autoEjectionPlan; A-236 PARCIAL",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-05",
+   "capitulo": 11,
+   "seccion": "§11.2.5 Figs 11.10-11.13",
+   "pagina": "273-275",
+   "titulo": "Layout de expulsores junto al agarre: pad y pin contorneado",
+   "enunciado": "Pines donde nace la fricción; conflicto con agua; pad sólido; pin contorneado.",
+   "datos": "bezel",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E10",
+    "layout",
+    "malla",
+    "interferencia",
+    "molde-E8"
+   ],
+   "oraculo": "distancia pin→agarre ≤2⌀; acero ≥1⌀; sin colisión con agua; deflexión FEA <0.1 mm",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/eject-layout.ts:gripEjectorLayout; A-239 PARCIAL",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c11-06",
+   "capitulo": 11,
+   "seccion": "§11.2.6 Figs 11.14-11.15",
+   "pagina": "276-277",
+   "titulo": "Detallado del pin eyector en el ensamble de placas",
+   "enunciado": "Venteo 0.02×2-3⌀, +0.5 mm, chaflanes, contrataladro, plano+dowel.",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "ensamble",
+    "corte",
+    "chaflán",
+    "ajustes",
+    "molde-E10",
+    "plano2D",
+    "cotas"
+   ],
+   "oraculo": "interfaz pin↔core 0.13, pin↔support +0.5, cabeza↔retainer holgada 'esperado'; DOF rotacional 0 (dowel)",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/fits.ts; collision.ts:classifyInterface; A-252 PARCIAL",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c11-07",
+   "capitulo": 11,
+   "seccion": "§11.3.1 Eqs 11.13-11.16",
+   "pagina": "278-279",
+   "titulo": "Pandeo del pin eyector (Euler, columna 0.7L)",
+   "enunciado": "235 N, L 0.2 m, E 200 GPa → ⌀ teórico; estándar 2 mm; step pin.",
+   "datos": "",
+   "respuesta_impresa": "R>0.93 → ⌀1.86 → 2 mm (p.279)",
+   "herramientas_suite": [
+    "molde-E10",
+    "pandeo",
+    "expulsión"
+   ],
+   "oraculo": "pinBuckling(1.86,200,235,K 0.7).sf≈1.0±0.05; K=2 default = DESVIACIÓN DECLARADA",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/ejection.ts:pinBuckling (default K=2)",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-08",
+   "capitulo": 11,
+   "seccion": "§11.3.2 Eqs 11.17-11.19",
+   "pagina": "280-281",
+   "titulo": "Largo máximo del ejector blade del bezel",
+   "enunciado": "20 blades 235 N, W 6, H 1: L<(1.7EWH³/F)^½; real 93.8 → marginal.",
+   "datos": "",
+   "respuesta_impresa": "L<93 mm; real 93.8 (p.281)",
+   "herramientas_suite": [
+    "molde-E10",
+    "pandeo",
+    "expulsión"
+   ],
+   "oraculo": "bladeMaxLengthMm(235,6,1)=93±1; checkEjectorBlade(93.8) ok=false",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/ejectortypes.ts:bladeMaxLengthMm,checkEjectorBlade",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-09",
+   "capitulo": 11,
+   "seccion": "§11.3.3 Fig 11.18",
+   "pagina": "282-283",
+   "titulo": "Ensamble de ejector sleeve sobre core pin fijo (boss)",
+   "enunciado": "Core pin en placa trasera; sleeve retenido que desliza; holguras y stack-up de concentricidad.",
+   "datos": "5 placas",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "ensamble",
+    "revolve",
+    "ajustes",
+    "tolerancias",
+    "molde-E10",
+    "cinemática"
+   ],
+   "oraculo": "sleeve recorre la carrera sin colisión; stack-up ≤ tolerancia de pared del boss",
+   "ya_existe": "no",
+   "donde": "chooseEjectorType='sleeve' sin geometría (A-245 FALTA)",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c11-10",
+   "capitulo": 11,
+   "seccion": "§11.3.4 Figs 11.19-11.21",
+   "pagina": "283-285",
+   "titulo": "Molde con stripper plate para vaso y tapa",
+   "enunciado": "Placa flotante, stripper bolt, punto de contacto stripper/core, 2 puntos de accionamiento.",
+   "datos": "vaso ⌀81",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "ensamble",
+    "corte",
+    "molde-E10",
+    "cinemática",
+    "plano2D"
+   ],
+   "oraculo": "desbalance F_eject <50 % o refuerzo; apertura sin colisión; borde de empuje ≥90° o bandera",
+   "ya_existe": "parcial",
+   "donde": "ejectortypes.ts:chooseEjectorType('stripper'); mold-ejection-auto.ts; sin placa flotante",
+   "esfuerzo": "L",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c11-11",
+   "capitulo": 11,
+   "seccion": "§11.3.5 Eqs 11.20-11.23",
+   "pagina": "285-287",
+   "titulo": "Expulsión elástica de la tapa con undercut",
+   "enunciado": "δ 1/L 77 → ε 1.3 %; F con A_eff 725e-6; τ vs 44 MPa.",
+   "datos": "",
+   "respuesta_impresa": "ε 1.3 %; F 1,200 N; τ 1.7 MPa (p.286-287)",
+   "herramientas_suite": [
+    "molde-E10",
+    "expulsión",
+    "undercut"
+   ],
+   "oraculo": "undercutStrain 0.013; undercutEjectForceN 1200±15; undercutShearMPa 1.7±0.1",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/ejectortypes.ts:undercutStrain,undercutEjectForceN,checkUndercut",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-12",
+   "capitulo": 11,
+   "seccion": "§11.3.6 Eq 11.24",
+   "pagina": "289",
+   "titulo": "Fuerza que debe sostener el core pull del bezel",
+   "enunciado": "22×10 mm bajo 200 MPa: F = P·A.",
+   "datos": "",
+   "respuesta_impresa": "44,000 N ≈ 4 t (p.289)",
+   "herramientas_suite": [
+    "molde-E10",
+    "side-action"
+   ],
+   "oraculo": "corePullForce(200e6,220e-6)=44,000; A_proj del sólido ≥220 mm²",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/sideactions.ts:corePullForce",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-13",
+   "capitulo": 11,
+   "seccion": "§11.3.6 Eq 11.25 Figs 11.25-11.26",
+   "pagina": "290-291",
+   "titulo": "Cilindro hidráulico del core pull: bore y carrera estándar",
+   "enunciado": "44 kN a 10 MPa → D_bore; carrera 15 → 82.55×25.4; risers, switches.",
+   "datos": "",
+   "respuesta_impresa": "D_bore 75 → 82.55×25.4 mm (p.291)",
+   "herramientas_suite": [
+    "molde-E10",
+    "side-action",
+    "ensamble",
+    "catálogo"
+   ],
+   "oraculo": "hydraulicBore 75±0.5; pickStdBore 82.55; carrera ≥15",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/sideactions.ts:hydraulicBore,pickStdBore; risers A-249 PARCIAL",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-14",
+   "capitulo": 11,
+   "seccion": "§11.3.6 Figs 11.23-11.25",
+   "pagina": "287-289",
+   "titulo": "Layout del core móvil del bezel: llave, interlock y claros",
+   "enunciado": "Inserto móvil con llave, chaflanes, interlock frontal y claro; modifica A/B/insertos.",
+   "datos": "22×10",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "ensamble",
+    "corte",
+    "croquis",
+    "extruir",
+    "interferencia",
+    "molde-E10",
+    "cinemática"
+   ],
+   "oraculo": "barrido 15 mm sin colisión salvo contactos declarados; interlock 0 juego vertical; claro frontal >0",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/mold-sideaction-gen.ts:planSideAction,sideActionVerdicts (sin llave/interlock)",
+   "esfuerzo": "L",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c11-15",
+   "capitulo": 11,
+   "seccion": "§11.3.7 Eq 11.26 Figs 11.27-11.28",
+   "pagina": "291-293",
+   "titulo": "Slide con perno ángulo: largo para 12 mm a 20°",
+   "enunciado": "L=12/sin20 + 25 empotre; heel block; resorte; switch.",
+   "datos": "",
+   "respuesta_impresa": "L 35 mm; total ≈60 (p.293)",
+   "herramientas_suite": [
+    "molde-E10",
+    "side-action",
+    "cinemática",
+    "ensamble"
+   ],
+   "oraculo": "anglePinDesign(12,20,25) → 35±0.5, 60±1; slide recorre 12 cuando placa recorre L·cos φ",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/sideactions.ts:anglePinDesign",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c11-16",
+   "capitulo": 11,
+   "seccion": "§11.3.8 Figs 11.29-11.30",
+   "pagina": "294-295",
+   "titulo": "Retorno temprano: rod roscado vs resortes",
+   "enunciado": "Resortes ≤40 %, ¼ F, pin de soporte si >4⌀; vs retorno positivo.",
+   "datos": "F 4700 → 1175 N",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E10",
+    "resortes",
+    "ensamble"
+   ],
+   "oraculo": "springReturnCheck: compresión ≤0.40; >4⌀ → pin; F ≈0.25·F_eject ±20 %",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/sideactions.ts:springReturnCheck (A-251 PARCIAL)",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-01",
+   "capitulo": 12,
+   "seccion": "§12.1.1",
+   "pagina": "302-303",
+   "titulo": "Esfuerzo límite: dos caminos excluyentes y el aluminio sin límite de fatiga",
+   "enunciado": "σ_limit P20 (456) vs QC7 por ciclos (545/370/170); prohibido apilar f + peor caso.",
+   "datos": "",
+   "respuesta_impresa": "QC7 545/370/170 MPa; P20 ≈450 (Fig 12.5: 456) (p.303)",
+   "herramientas_suite": [
+    "molde-E11",
+    "fatiga",
+    "materiales"
+   ],
+   "oraculo": "limiteMaterial('QC7',N) 545/370/170; P20 456; nunca f y peor caso juntos (control negativo)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/lamina-vonmises.ts:limiteMaterial; ciclo-dado-test E11 R69",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c12-02",
+   "capitulo": 12,
+   "seccion": "§12.1.1-12.1.2",
+   "pagina": "300-305",
+   "titulo": "FEA del molde del bezel a 150 MPa: von Mises y apertura de 0.36 mm",
+   "enunciado": "Molde completo bajo 150 MPa: core −0.24, cavidad +0.12 → 0.36 ≫ 0.02 → flash.",
+   "datos": "403×381×302",
+   "respuesta_impresa": "0.36 mm (0.014 in); platina 0.04 (p.304)",
+   "herramientas_suite": [
+    "FEA-estático",
+    "molde-E11",
+    "ensamble"
+   ],
+   "oraculo": "FEA tet: separación 0.36±0.06; viga Eq 12.10 ≈2.3× el FEA",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/mold-fea.ts:runMoldFea (sin lado fijo); lamina-vonmises.ts:seccionBezelLibro",
+   "esfuerzo": "L",
+   "valor": 4,
+   "tipo": "benchmark"
+  },
+  {
+   "id": "kazmer-c12-03",
+   "capitulo": 12,
+   "seccion": "§12.2.1",
+   "pagina": "307",
+   "titulo": "Cambio de altura del stack del bezel con 200 t",
+   "enunciado": "σ=F/A, ε, δ con L 403.",
+   "datos": "",
+   "respuesta_impresa": "σ 17 MPa; ε 8.3e-5; δ 0.03 mm (p.307)",
+   "herramientas_suite": [
+    "molde-E11",
+    "cotas"
+   ],
+   "oraculo": "plateCompression σ 17±0.3, δ 0.03±0.003; L y A del ensamble real",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/structural.ts:plateCompression",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-04",
+   "capitulo": 12,
+   "seccion": "§12.2.1",
+   "pagina": "308-309",
+   "titulo": "Compresión de la placa A alrededor de la cavidad",
+   "enunciado": "Área = placa − cavidad − 4 postes − 4 bujes; σ, ε, δ de la cavidad 12 mm.",
+   "datos": "",
+   "respuesta_impresa": "A 0.069 m²; σ 28.5; δ 0.002 mm (p.308-309)",
+   "herramientas_suite": [
+    "molde-E11",
+    "ensamble",
+    "kernel-área"
+   ],
+   "oraculo": "área de cara menos barrenos medida por kernel 0.069±0.002; σ 28.5±0.5",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/structural.ts:plateCompression (A no descontada del ensamble; A-257)",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-05",
+   "capitulo": 12,
+   "seccion": "§12.2.2",
+   "pagina": "310",
+   "titulo": "Cortante perimetral en core insert + placa de soporte",
+   "enunciado": "A_shear = perímetro × (B+soporte−12); τ.",
+   "datos": "248×168",
+   "respuesta_impresa": "A_shear 0.090 m²; τ 21.8 MPa (p.310)",
+   "herramientas_suite": [
+    "molde-E11"
+   ],
+   "oraculo": "shearArea/shearStress 0.090 y 21.8±0.3",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/structural.ts:shearArea,shearStress",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-06",
+   "capitulo": 12,
+   "seccion": "§12.2.2",
+   "pagina": "311",
+   "titulo": "Flexión de placa como viga con carga central (bezel)",
+   "enunciado": "I=WH³/12 (248×120), L 215.9; δ=FL³/48EI; vs FEA 0.024.",
+   "datos": "",
+   "respuesta_impresa": "I 3.6e-5; δ 0.056; FEA 0.024 (p.311)",
+   "herramientas_suite": [
+    "molde-E11",
+    "FEA-estático"
+   ],
+   "oraculo": "plateBending 0.056±0.003; runMoldFea 0.4-0.5× viga; flash si δ>0.02",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/structural.ts:plateBending; mold-fea.ts; platesizing.ts",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-07",
+   "capitulo": 12,
+   "seccion": "§12.2.3",
+   "pagina": "315-317",
+   "titulo": "Pilar de soporte del bezel para δ_total < 0.1 mm",
+   "enunciado": "F 327.6 kN; ⌀37.5 → 297 MPa, 0.13 mm; ⌀50 → 167, 0.07; δ_bend 0.02; δ_max Eq 12.13; pre-carga 88.97.",
+   "datos": "",
+   "respuesta_impresa": "⌀37.5 σ 297 δ 0.13; ⌀50 σ 167 δ 0.07; δ_bend 0.02; 88.97 mm (p.316-317)",
+   "herramientas_suite": [
+    "molde-E11",
+    "ensamble",
+    "cotas"
+   ],
+   "oraculo": "σ 297/167±1.5; δ_comp 0.07±0.005; δ_bend 0.02±0.003; δ_max Eq 12.13; pilar sin chocar pines/KO",
+   "ya_existe": "parcial",
+   "donde": "platesizing.ts:sizeSupportPlate (solo claro); mold-plano-set.ts:supportPillarPositions; E11 R75 (297/167); A-260 FALTA",
+   "esfuerzo": "M",
+   "valor": 5,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-08",
+   "capitulo": 12,
+   "seccion": "§12.2.4",
+   "pagina": "317-318",
+   "titulo": "Mejilla (cheek) del vaso: cortante y deflexión",
+   "enunciado": "τ=PH/W; δ=3PH⁴/(2EW³); W_cheek>0.73H.",
+   "datos": "P 80; H 50; W 45",
+   "respuesta_impresa": "τ 89 MPa; δ 0.04 mm; W>0.73H (p.318)",
+   "herramientas_suite": [
+    "molde-E11",
+    "molde-E2",
+    "cotas"
+   ],
+   "oraculo": "τ 89±1; δ 0.04±0.004; cota cheek CUMPLE/VIOLA vs max(3⌀,0.73H,H)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/mold-analysis.ts; lamina-seccion.ts V4.8/V12.10",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-09",
+   "capitulo": 12,
+   "seccion": "§12.2.5",
+   "pagina": "320-321",
+   "titulo": "Cortante en el interlock ⌀19 de la cavidad del vaso",
+   "enunciado": "F=½PφH; τ vs 300 MPa S7.",
+   "datos": "P 40",
+   "respuesta_impresa": "F 19,050 N; τ 67 MPa (p.321)",
+   "herramientas_suite": [
+    "molde-E11",
+    "ensamble"
+   ],
+   "oraculo": "interlockShear 19,050 y 67±1; interlock en partición sin comerse la mejilla",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/mold-interlocks.ts:interlockShear,planInterlocks",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-10",
+   "capitulo": 12,
+   "seccion": "§12.2.6",
+   "pagina": "323",
+   "titulo": "Distancia mínima de línea de agua ⌀9.5 a la cavidad en H13 a 200 MPa",
+   "enunciado": "K_adm=760/200=3.8; despejar Eq 12.19 → H_hole.",
+   "datos": "",
+   "respuesta_impresa": "K 3.8; H_hole 11.1 mm (p.323)",
+   "herramientas_suite": [
+    "molde-E8",
+    "molde-E11",
+    "térmico"
+   ],
+   "oraculo": "H_hole 11.1±0.1; E8 respeta H≥11.1; K(1.5⌀)=3.40",
+   "ya_existe": "parcial",
+   "donde": "lamina-vonmises.ts:kBarrenoLibro (directa); cooling-design.ts:stressConcentration usa OTRA curva; sin despeje (A-265)",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-11",
+   "capitulo": 12,
+   "seccion": "§12.2.6",
+   "pagina": "324-325",
+   "titulo": "Barreno de expulsor ⌀4 con 0.5 mm de QC7 a 100 MPa",
+   "enunciado": "K 5.3 → σ 530 < yield 545 pero ≫ 166 → ~1000 ciclos; δ_hole 0.03; FEA 0.10.",
+   "datos": "",
+   "respuesta_impresa": "K 5.3; σ 530; ε 0.73 %; δ 0.03; FEA 0.10 (p.324-325)",
+   "herramientas_suite": [
+    "molde-E10",
+    "molde-E11",
+    "FEA-estático",
+    "fatiga"
+   ],
+   "oraculo": "K 5.3±0.05; yieldOk true, fatigaOk false, vida ≈1e3; FEA 0.10±0.03",
+   "ya_existe": "parcial",
+   "donde": "estudio-molde-datos.ts:estacion11Dado mkB; lamina-vonmises.ts V12.12; sin δ_hole ni vida (A-266)",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-12",
+   "capitulo": 12,
+   "seccion": "§12.3.1",
+   "pagina": "326-327",
+   "titulo": "Deflexión vertical del core hueco del vaso por compresión axial",
+   "enunciado": "σ_pared con φ 63/50; δ = ε·58.",
+   "datos": "P 80",
+   "respuesta_impresa": "σ 216; ε 0.11 %; δ 0.06 mm (p.326-327)",
+   "herramientas_suite": [
+    "molde-E11",
+    "molde-E8"
+   ],
+   "oraculo": "axialStress 216±2; δ 0.06±0.005; bore del baffle de la E8 real",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/cores.ts:axialStress,designCore",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-13",
+   "capitulo": 12,
+   "seccion": "§12.3.2",
+   "pagina": "328-329",
+   "titulo": "Hoop del core del vaso y ⌀ interno máximo en QC7 (doble vara)",
+   "enunciado": "σ_hoop 240; φ_in<0.51φ (fatiga) vs 0.63φ (yield); regla P20 h>φ/6.",
+   "datos": "",
+   "respuesta_impresa": "240 MPa; 31 mm vs 38 → 31 (p.328-329)",
+   "herramientas_suite": [
+    "molde-E11",
+    "molde-E8"
+   ],
+   "oraculo": "hoopStress 240; maxInnerDiameter 31/38±0.5; govBy fatiga",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/cores.ts:hoopStress,maxInnerDiameter; ciclo-dado-test E11 hoop",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-14",
+   "capitulo": 12,
+   "seccion": "§12.3.3",
+   "pagina": "330",
+   "titulo": "Flexión del core del vaso por ΔP=40 MPa",
+   "enunciado": "I anular 60/40; δ=ΔPφH⁴/8EI; interlock → 10 %.",
+   "datos": "H 58",
+   "respuesta_impresa": "I 5.1e-7; δ 0.03 mm (p.330)",
+   "herramientas_suite": [
+    "molde-E11",
+    "molde-E5",
+    "molde-E4"
+   ],
+   "oraculo": "coreInertiaM4 5.1e-7±2 %; δ 0.03±0.003; interlocked → 0.003; ΔP debería salir de E4 (A-270)",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/cores.ts:coreInertiaM4,coreBendingMm",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-15",
+   "capitulo": 12,
+   "seccion": "§12.4.1",
+   "pagina": "334",
+   "titulo": "Tolerancias FN1 para el core insert cuadrado 88.90 mm",
+   "enunciado": "D=√(WL); λ=0.001·C·D^(1/3) Tabla 12.1; acotar inserto y barreno.",
+   "datos": "FN1",
+   "respuesta_impresa": "inserto 88.96–88.98; barreno 88.90–88.92 (p.334)",
+   "herramientas_suite": [
+    "molde-E3",
+    "cotas",
+    "plano2D",
+    "GD&T"
+   ],
+   "oraculo": "interferenceFit(88.9,'FN1') ±0.001; cota con límites en el plano",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/fits.ts:apparentDia,interferenceFit",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-16",
+   "capitulo": 12,
+   "seccion": "§12.4.1",
+   "pagina": "335",
+   "titulo": "Fuerza de inserción del core insert FN1",
+   "enunciado": "λ 0.06; σ=λE/2D; F=f·σ·πDH (H 42); vs prensa.",
+   "datos": "",
+   "respuesta_impresa": "σ 69 MPa; F 808 kN (p.335)",
+   "herramientas_suite": [
+    "molde-E3",
+    "cotas",
+    "planeación"
+   ],
+   "oraculo": "σ 69±1; F 808±10 kN; si F>prensa → LN1-LN3",
+   "ya_existe": "no",
+   "donde": "grep insercion/insertionForce = 0; A-272 FALTA",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-17",
+   "capitulo": 12,
+   "seccion": "§12.4.2",
+   "pagina": "336-338",
+   "titulo": "Tornillos SHCS que unen las mitades: peor caso de izaje",
+   "enunciado": "M 362 kg; F=M·n_g·g·L_COG/L_screw; D por σ_ult 800.",
+   "datos": "n_g 10",
+   "respuesta_impresa": "M 362 kg; F 47,000 N; D 8.65 → M10 (p.336-338)",
+   "herramientas_suite": [
+    "molde-E11",
+    "ensamble",
+    "catálogo DIN"
+   ],
+   "oraculo": "362±2 kg; 47 kN±2 %; DIN 912 M10; masa bloque vs ensamble <2×",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/fasteners.ts; mold-fasteners.ts:fastenerPlan",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c12-18",
+   "capitulo": 12,
+   "seccion": "§12.4.3",
+   "pagina": "339-340",
+   "titulo": "Dowel ⌀12 LT3: juego esperado y peor interferencia",
+   "enunciado": "Tabla 12.2 LT3: límites; juego medio; peor caso σ y F.",
+   "datos": "",
+   "respuesta_impresa": "dowel 12.002–12.013; barreno 12.000–12.018; σ 111; F 50 kN (p.339-340)",
+   "herramientas_suite": [
+    "molde-E3",
+    "cotas",
+    "plano2D"
+   ],
+   "oraculo": "límites ±0.001; F 50±1 kN; plano con LT3",
+   "ya_existe": "no",
+   "donde": "fits.ts solo Tabla 12.1; LT3/LC1 = 0 hits; A-274 FALTA",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c13-01",
+   "capitulo": 13,
+   "seccion": "§13.1 Fig 13.1",
+   "pagina": "344",
+   "titulo": "Selector de tecnología de molde (árbol Fig 13.1)",
+   "enunciado": "Del requisito del intake a la hoja de la Fig 13.1 (20 tecnologías).",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E1",
+    "planeación"
+   ],
+   "oraculo": "tabla de verdad: cada hoja alcanzable con su combinación; banco → two-plate/hot-runner; vaso con rosca → rotating",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/moldtech.ts:chooseMoldTechnology (solo §13.9); A-276",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-02",
+   "capitulo": 13,
+   "seccion": "§13.5",
+   "pagina": "359",
+   "titulo": "Multi-shot: segunda capa 40 % más delgada (flujo de calor a UN lado)",
+   "enunciado": "t_cool capa 2 con h2=0.6·h1 y frontera adiabática.",
+   "datos": "",
+   "respuesta_impresa": "la segunda capa 40 % más delgada (p.359)",
+   "herramientas_suite": [
+    "térmico",
+    "molde-E8",
+    "molde-E1"
+   ],
+   "oraculo": "FDM adiabático: t_cool(0.6h1, un lado) ≈ t_cool(h1, dos lados) ±10 %",
+   "ya_existe": "desconocido",
+   "donde": "thermal-layers.ts / mold-thermal-fdm.ts (frontera adiabática no verificada); A-279",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-03",
+   "capitulo": 13,
+   "seccion": "§13.6.2",
+   "pagina": "365-367",
+   "titulo": "Stack mold de 2 niveles: mismo clamp, doble cavidades",
+   "enunciado": "Clamp igual, disparo ×2, stack sube; daylight/máquina.",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E2",
+    "molde-E6",
+    "dimensionado-máquina",
+    "ensamble"
+   ],
+   "oraculo": "machineSizing(2 niveles): clamp igual ±1 %, shot ×2, stack >; daylight check",
+   "ya_existe": "no",
+   "donde": "machinesizing.ts sin niveles; moldbase.ts sin placa central; A-282",
+   "esfuerzo": "L",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-04",
+   "capitulo": 13,
+   "seccion": "§13.6.1",
+   "pagina": "364-365",
+   "titulo": "Insulated runner: piel congelada de 6 mm en ⌀25 a 60 s",
+   "enunciado": "Solver cilíndrico transitorio → piel ≈6 mm a 60 s; ⌀ mínimo.",
+   "datos": "",
+   "respuesta_impresa": "⌀≈25, 60 s, piel ≈6 mm (p.365)",
+   "herramientas_suite": [
+    "térmico",
+    "molde-E6"
+   ],
+   "oraculo": "espesor congelado a 60 s = 6±1.5 mm",
+   "ya_existe": "no",
+   "donde": "grep insulated = 0; A-281",
+   "esfuerzo": "M",
+   "valor": 2,
+   "tipo": "benchmark"
+  },
+  {
+   "id": "kazmer-c13-05",
+   "capitulo": 13,
+   "seccion": "§13.7.1",
+   "pagina": "373",
+   "titulo": "Pulsed cooling: energía y costo por ciclo de 100 kg de P20",
+   "enunciado": "E=2·cp·m·ΔT = 10 MJ → $0.30/ciclo.",
+   "datos": "",
+   "respuesta_impresa": "10 MJ ≈ 3 kWh; $0.30 (p.373)",
+   "herramientas_suite": [
+    "térmico",
+    "molde-E6",
+    "costo"
+   ],
+   "oraculo": "10 MJ exacto; 2.78 kWh; $0.28-0.30 con masa del ensamble",
+   "ya_existe": "no",
+   "donde": "grep pulsed = 0; A-284",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c13-06",
+   "capitulo": 13,
+   "seccion": "§13.7.2",
+   "pagina": "374-375",
+   "titulo": "Conduction heating: potencia entregada vs drenada",
+   "enunciado": "R 450 μΩ, 500 A → 113 W vs ≥420 W que drena el agua.",
+   "datos": "",
+   "respuesta_impresa": "R 450 μΩ; 113 W; 28 kW/m²; ≥420 W (p.374-375)",
+   "herramientas_suite": [
+    "térmico",
+    "circuito",
+    "molde-E8"
+   ],
+   "oraculo": "R=ρL/A 450 μΩ; P=I²R 112.5; q 28 kW/m² ±3 %; 113<420",
+   "ya_existe": "no",
+   "donde": "grep conduction = 0; A-285",
+   "esfuerzo": "S",
+   "valor": 2,
+   "tipo": "ejemplo"
+  },
+  {
+   "id": "kazmer-c13-07",
+   "capitulo": 13,
+   "seccion": "§13.7.3-13.7.4",
+   "pagina": "375-378",
+   "titulo": "Ventana de inducción y capa aislante pasiva",
+   "enunciado": "1000 W/cm² a 400 kHz +50 °C en 10 s; ventana 100-10,000; poliimida 0.25 mm.",
+   "datos": "",
+   "respuesta_impresa": "≈1000 W/cm² sube 50 °C en 10 s (p.376)",
+   "herramientas_suite": [
+    "térmico"
+   ],
+   "oraculo": "FDM multicapa: ΔT_sup(10 s) ≈50 °C ±30 %",
+   "ya_existe": "no",
+   "donde": "thermal-layers.ts sin fuente superficial; A-286",
+   "esfuerzo": "M",
+   "valor": 1,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-08",
+   "capitulo": 13,
+   "seccion": "§13.9.2",
+   "pagina": "383-384",
+   "titulo": "Collapsible core comercial: colapso ≈6 % del ⌀",
+   "enunciado": "Elegir núcleo colapsable 13-90; verificar 0.06·⌀ ≥ undercut.",
+   "datos": "",
+   "respuesta_impresa": "13-90 mm; ≈6 % (p.384)",
+   "herramientas_suite": [
+    "molde-E10",
+    "ensamble",
+    "cinemática"
+   ],
+   "oraculo": "collapsibleCoreCheck ok ⇔ 0.06⌀ ≥ 2·undercut; fuera de 13-90 → no comercial",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/unscrewing.ts:collapsibleCoreCheck",
+   "esfuerzo": "S",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-09",
+   "capitulo": 13,
+   "seccion": "§13.9.3",
+   "pagina": "385-387",
+   "titulo": "Rotating core: hélice vs planetario para 64 tapas y anti-rotación",
+   "enunciado": "Vueltas = largo/paso; hélice vs rack-piñón-planetario; feature anti-rotación.",
+   "datos": "64 cav",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E10",
+    "cinemática",
+    "ensamble",
+    "mecanismos"
+   ],
+   "oraculo": "unscrewTurns/helixDrive coherentes; torque < capacidad; ≥1 feature anti-rotación",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/unscrewing.ts:unscrewTurns,unscrewTorque,helixDrive (sin planetario); A-289",
+   "esfuerzo": "M",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-10",
+   "capitulo": 13,
+   "seccion": "§13.9.1",
+   "pagina": "381-383",
+   "titulo": "Split cavity del bolo: mitades, angle pins, gibs y cheek ≈ profundidad",
+   "enunciado": "Variante de base con cavidad partida y 4 angle pins; cheek de la retén.",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E10",
+    "ensamble",
+    "cinemática",
+    "molde-E11",
+    "molde-E8"
+   ],
+   "oraculo": "separación de mitades ≥ undercut+holgura; cheek CUMPLE V13.4; sin interferencia gibs↔pins",
+   "ya_existe": "parcial",
+   "donde": "moldtech.ts (selección); lamina-seccion.ts V13.4; sin geometría de cavidad partida",
+   "esfuerzo": "L",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-11",
+   "capitulo": 13,
+   "seccion": "§13.9.4",
+   "pagina": "387-388",
+   "titulo": "Reverse ejection: cavidad al móvil, core y expulsores al fijo",
+   "enunciado": "Base invertida con cilindros; sprue por el core plate; cara 100 % estética.",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E10",
+    "molde-E2",
+    "ensamble"
+   ],
+   "oraculo": "base invertida pasa E2..E11 espejo; ninguna marca en cara 'estética' (visibilidad.ts)",
+   "ya_existe": "parcial",
+   "donde": "moldtech.ts (selección); visibilidad.ts; sin base invertida en moldbase.ts",
+   "esfuerzo": "L",
+   "valor": 3,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-12",
+   "capitulo": 13,
+   "seccion": "§13.2.3",
+   "pagina": "347-349",
+   "titulo": "Gas/water assist: canales gruesos que guían el fluido",
+   "enunciado": "Canales de flujo gruesos; water assist exige SS420.",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E4",
+    "molde-E1",
+    "materiales"
+   ],
+   "oraculo": "E4 con 2a fase: ≥90 % del hueco dentro del canal; SS420 si water",
+   "ya_existe": "no",
+   "donde": "grep gas.assist = 0; A-278",
+   "esfuerzo": "L",
+   "valor": 2,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-13",
+   "capitulo": 13,
+   "seccion": "§13.6.3",
+   "pagina": "368-369",
+   "titulo": "Desbalance térmico en runners simétricos (Melt Flipper)",
+   "enunciado": "Sección con perfil de viscosidad; desbalance en la rama; cambio de nivel.",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E5",
+    "CFD"
+   ],
+   "oraculo": "flujo a 4 cav difiere >5 % sin flipper y <2 % con cambio de nivel",
+   "ya_existe": "no",
+   "donde": "feed.ts balancea solo por geometría; A-283",
+   "esfuerzo": "L",
+   "valor": 2,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-14",
+   "capitulo": 13,
+   "seccion": "§13.3.3",
+   "pagina": "353-355",
+   "titulo": "Lost core: el core Bi58/Sn42 (138 °C) como sumidero de calor",
+   "enunciado": "Verificar que el core no funde durante inyección de PC/acetal.",
+   "datos": "",
+   "respuesta_impresa": "58 % Bi / 42 % Sn funde a ≈138 °C (p.355)",
+   "herramientas_suite": [
+    "térmico",
+    "molde-E8",
+    "ensamble"
+   ],
+   "oraculo": "FDM con contacto: T_sup core <138 °C durante llenado+empaque",
+   "ya_existe": "no",
+   "donde": "grep lost.core = 0",
+   "esfuerzo": "M",
+   "valor": 2,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-15",
+   "capitulo": 13,
+   "seccion": "§13.8.1",
+   "pagina": "379",
+   "titulo": "In-mold labeling: film 0.15 mm contra cortante y calor",
+   "enunciado": "τ_pared del E4 sobre el film; térmico funde la cara sin destruir la impresión.",
+   "datos": "",
+   "respuesta_impresa": "film ≈0.15 mm (p.379)",
+   "herramientas_suite": [
+    "molde-E4",
+    "térmico"
+   ],
+   "oraculo": "τ_pared E4 < τ_adm; 1D funde la cara (T>T_nf) sin el espesor completo",
+   "ya_existe": "no",
+   "donde": "A-287 FALTA",
+   "esfuerzo": "M",
+   "valor": 2,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-16",
+   "capitulo": 13,
+   "seccion": "§13.2.2",
+   "pagina": "346-347",
+   "titulo": "Coinyección: meta-material por capas y llenar con el más viscoso",
+   "enunciado": "E4 con el más viscoso; E8/E9 con propiedades ponderadas.",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "molde-E4",
+    "molde-E8",
+    "molde-E9",
+    "materiales"
+   ],
+   "oraculo": "E4 con η máx; E8/E9 ponderados; resultados entre los puros",
+   "ya_existe": "no",
+   "donde": "grep coinyec = 0; A-277",
+   "esfuerzo": "M",
+   "valor": 2,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-17",
+   "capitulo": 13,
+   "seccion": "§13.6.4",
+   "pagina": "369-371",
+   "titulo": "Válvula autorregulada: P_out = F_control/A_válvula (100:1)",
+   "enunciado": "Balance de fuerzas del pin de válvula.",
+   "datos": "",
+   "respuesta_impresa": "≈100:1 (p.371)",
+   "herramientas_suite": [
+    "control",
+    "molde-E5"
+   ],
+   "oraculo": "P_out = P_act·A_act/A_head ±5 %",
+   "ya_existe": "no",
+   "donde": "grep autorregul = 0",
+   "esfuerzo": "S",
+   "valor": 1,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c13-18",
+   "capitulo": 13,
+   "seccion": "§13.10",
+   "pagina": "388",
+   "titulo": "El acta: toda decisión aprobada con costos, beneficios y riesgos",
+   "enunciado": "Acta con costo/beneficio/riesgo/responsable por decisión.",
+   "datos": "",
+   "respuesta_impresa": "",
+   "herramientas_suite": [
+    "planeación",
+    "molde-E12"
+   ],
+   "oraculo": "estacion12Dado FIRMADO solo si todas las estaciones y decisiones completas; omitir una ⇒ INCOMPLETO",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/estudio-molde-datos.ts:estacion12Dado; ciclo-dado-test E12 (HECHO)",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c14-01",
+   "capitulo": 14,
+   "seccion": "Apéndice A",
+   "pagina": "390-393",
+   "titulo": "Base de datos de 16 plásticos (Cross-WLF + Tait + contracción) con oráculo interno",
+   "enunciado": "Cargar los 16 materiales; η0 impresa = WLF(T_mid); α = k/(ρ·cp); ABS → 0.31 %.",
+   "datos": "",
+   "respuesta_impresa": "ABS η0 2210 Pa·s, α 8.73e-8, s 0.4-0.8 % (p.390-393)",
+   "herramientas_suite": [
+    "materiales",
+    "molde-E4",
+    "molde-E9"
+   ],
+   "oraculo": "por material: η0_WLF(T_mid) ±5 %; α ±2 %; ABS Tait 0.31 %",
+   "ya_existe": "parcial",
+   "donde": "filling.ts:ABS_CROSS,PP_CROSS; shrinkage.ts:ABS_TAIT; solo ABS/PP de 16",
+   "esfuerzo": "M",
+   "valor": 4,
+   "tipo": "benchmark"
+  },
+  {
+   "id": "kazmer-c14-02",
+   "capitulo": 14,
+   "seccion": "Apéndice B + §12.2.6",
+   "pagina": "323, 394-397",
+   "titulo": "Selección del metal por límite de fatiga, K del barreno y maquinado",
+   "enunciado": "σ_local=K·P bajo fatiga 1e6: a 200 MPa solo A6/D2/H13; ordenar por $/m³ y tasa.",
+   "datos": "11 metales",
+   "respuesta_impresa": "'high melt pressures … A6, D2, or H13' (p.323)",
+   "herramientas_suite": [
+    "molde-E1",
+    "molde-E11",
+    "materiales",
+    "costo"
+   ],
+   "oraculo": "filtro σ_fat ≥ 3P: P=200 → {A6,D2,H13}; P=80 incluye P20/4140; cost.ts cambia con la tasa",
+   "ya_existe": "si",
+   "donde": "src/forja/mold/moldbase.ts:MOLD_METALS,metalByKey; selector por K·P A-291 PARCIAL; cooling-design.ts H13=690 vs 760 INCONSISTENTE",
+   "esfuerzo": "S",
+   "valor": 4,
+   "tipo": "caso"
+  },
+  {
+   "id": "kazmer-c14-03",
+   "capitulo": 14,
+   "seccion": "Apéndice F",
+   "pagina": "405-407",
+   "titulo": "Velocidad de fundido que balancea corte vs pérdida de calor (power-law → Newton)",
+   "enunciado": "Forma general evaluada en n=1 = Newtoniana.",
+   "datos": "",
+   "respuesta_impresa": "v Newtoniano = √(5(Tmelt−Twall)κ/3μ) (p.407)",
+   "herramientas_suite": [
+    "molde-E4"
+   ],
+   "oraculo": "forma general en n=1 coincide ±1e-9; recommendedVelocity reproduce Eq 5.23",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/filling.ts:recommendedVelocity (solo Newtoniana)",
+   "esfuerzo": "S",
+   "valor": 1,
+   "tipo": "teoria"
+  }
+ ],
+ "ya_hecho": [
+  "mol-s1-llenado-por-pieza (E4/E5 por pieza, predicadoDeMalla)",
+  "mol-s2-intake (§2.1.5)",
+  "mol-s3-base-catalogo (retículo HASCO/DME)",
+  "molde-l1 (lección 1 v1·6)",
+  "EL CICLO DEL DADO E1..E12 para el cubo (gate 236/236)",
+  "v1·1..v1·6 primera pieza (E3/draft/cotización/lección por pieza)"
+ ],
+ "n_no_asignados": 23,
+ "no_asignados": [
+  "kazmer-c2-07",
+  "kazmer-c3-01",
+  "kazmer-c3-02",
+  "kazmer-c3-03",
+  "kazmer-c3-05",
+  "kazmer-c3-06",
+  "kazmer-c4-07",
+  "kazmer-c4-08",
+  "kazmer-c5-08",
+  "kazmer-c5-09",
+  "kazmer-c6-01",
+  "kazmer-c6-05",
+  "kazmer-c6-11",
+  "kazmer-c6-12",
+  "kazmer-c6-14",
+  "kazmer-c7-03",
+  "kazmer-c10-01",
+  "kazmer-c11-11",
+  "kazmer-c12-03",
+  "kazmer-c12-05",
+  "kazmer-c12-12",
+  "kazmer-c13-07",
+  "kazmer-c13-17"
+ ]
+}

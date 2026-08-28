@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-27 22:59",
+ "generado": "2026-08-28 18:34",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -147,8 +147,8 @@
       "titulo": "Bethune (SolidWorks 2023) leído: catálogo + supertickets",
       "herramientas": "lector×4 sintetizador",
       "oraculo": "docs/forja-research/libros/bethune.md + .json con ≥40 ejercicios y ≥3 supertickets",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "rojo",
+      "checks": "ERROR falta md o json",
       "video": "",
       "still": "",
       "nota": ""
@@ -158,19 +158,19 @@
       "titulo": "Kazmer (Injection Mold Design) leído",
       "herramientas": "lector×3 sintetizador",
       "oraculo": "libros/kazmer.md + .json con ≥30 ejercicios y ≥3 supertickets",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 141 (json 141 · tabla md 141) ≥ 30: OK · supertickets 16 ≥ 3: OK · features 21 · md 562 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Kazmer como cliente: el molde de TU pieza, capítulo por capítulo"
      },
      {
       "id": "lib-shigley",
       "titulo": "Shigley (Mechanical Engineering Design 2024) leído",
       "herramientas": "lector×12 sintetizador",
       "oraculo": "libros/shigley.md + .json con ≥80 ejercicios y ≥5 supertickets",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "rojo",
+      "checks": "ERROR falta md o json",
       "video": "",
       "still": "",
       "nota": ""
@@ -180,19 +180,19 @@
       "titulo": "Anderson (Fundamentals of Aerodynamics) leído",
       "herramientas": "lector×10 sintetizador",
       "oraculo": "libros/anderson.md + .json con ≥40 ejercicios y ≥3 supertickets",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 298 (json 298 · tabla md 298) ≥ 40: OK · supertickets 18 ≥ 3: OK · features 27 · md 789 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Anderson 6e como cliente de La Forja: catálogo, features y supertickets"
      },
      {
       "id": "lib-bertin",
       "titulo": "Bertin & Cummings (Aerodynamics for Engineers) leído",
       "herramientas": "lector×8 sintetizador",
       "oraculo": "libros/bertin.md + .json con ≥40 ejercicios y ≥3 supertickets",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "rojo",
+      "checks": "ERROR falta md o json",
       "video": "",
       "still": "",
       "nota": ""
@@ -202,115 +202,115 @@
       "titulo": "Raymer (Aircraft Design) leído",
       "herramientas": "lector×9 sintetizador",
       "oraculo": "libros/raymer.md + .json con ≥40 ejercicios y ≥3 supertickets",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 130 (json 130 · tabla md 130) ≥ 40: OK · supertickets 19 ≥ 3: OK · features 18 · md 739 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Pliego Raymer: del croquis al avion dimensionado, dentro del CAD"
      },
      {
       "id": "lib-herath",
       "titulo": "Herath (Foundations of Robotics) leído",
       "herramientas": "lector×4 sintetizador",
       "oraculo": "libros/herath.md + .json con ≥30 ejercicios y ≥3 supertickets",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 115 (json 115 · tabla md 115) ≥ 30: OK · supertickets 12 ≥ 3: OK · features 22 · md 441 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "ROBÓTICA (Herath & St-Onge) — catálogo de ejercicios y supertickets"
      },
      {
       "id": "dom-fea-lineal",
       "titulo": "FEA lineal + NAFEMS (Felippa, CalculiX, Code_Aster)",
       "herramientas": "agente de dominio",
       "oraculo": "libros/fea-lineal.md + .json con ≥10 benchmarks y ≥1 superticket",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 45 (json 0 · tabla md 45) ≥ 10: OK · supertickets 6 ≥ 1: OK · features 22 · md 231 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "FEA lineal verificado: el solver que se prueba contra el libro"
      },
      {
       "id": "dom-fea-nolineal",
       "titulo": "FEA no lineal (plasticidad, contacto, grandes deformaciones)",
       "herramientas": "agente de dominio",
       "oraculo": "libros/fea-nolineal.md + .json con ≥8 benchmarks y ≥1 superticket",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 45 (json 0 · tabla md 45) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 21 · md 217 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "FEA no-lineal: plasticidad J2, grandes deformaciones, contacto, hiperelástico"
      },
      {
       "id": "dom-kernel-nurbs",
       "titulo": "Kernel CAD: NURBS, RMF, loft, IGA, FreeCAD",
       "herramientas": "agente de dominio",
       "oraculo": "libros/kernel-nurbs.md + .json con ≥8 ejercicios y ≥1 superticket",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 30 (json 30 · tabla md 30) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 15 · md 181 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Kernel CAD — NURBS, sweep RMF, loft, IGA, FreeCAD como UX de referencia"
      },
      {
       "id": "dom-termica-cfd",
       "titulo": "Térmico + CFD + CHT",
       "herramientas": "agente de dominio",
       "oraculo": "libros/termica-cfd.md + .json con ≥8 benchmarks y ≥1 superticket",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 31 (json 0 · tabla md 31) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 18 · md 184 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Pliego Térmico-CFD-CHT como cliente"
      },
      {
       "id": "dom-cam-chapa",
       "titulo": "CAM (RS274) + chapa (factor K, springback)",
       "herramientas": "agente de dominio",
       "oraculo": "libros/cam-chapa.md + .json con ≥8 ejercicios y ≥1 superticket",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 39 (json 0 · tabla md 39) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 14 · md 209 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "CAM (G-code RS274/NGC) + chapa metalica (factor K, BA/BD, springback) + catalogo de herramienta"
      },
      {
       "id": "dom-dibujo-gdt",
       "titulo": "Dibujo + GD&T ASME Y14.5-2018",
       "herramientas": "agente de dominio",
       "oraculo": "libros/dibujo-gdt.md + .json con ≥8 ejercicios y ≥1 superticket",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 45 (json 0 · tabla md 45) ≥ 8: OK · supertickets 6 ≥ 1: OK · features 20 · md 228 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "El plano es un documento legal: cotas con precio, datums reales, zonas medibles"
      },
      {
       "id": "dom-moldflow-benchmarks",
       "titulo": "Validación del solver de inyección (Moldflow + benchmarks reales)",
       "herramientas": "agente de dominio",
       "oraculo": "libros/moldflow-benchmarks.md + .json con ≥8 benchmarks y ≥1 superticket",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 36 (json 0 · tabla md 36) ≥ 8: OK · supertickets 5 ≥ 1: OK · features 18 · md 200 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Moldflow + benchmarks de llenado como CLIENTE — el solver se demuestra contra terceros, no contra el libro"
      },
      {
       "id": "dom-generativo-fatiga-dinamica",
       "titulo": "TopOpt + fatiga + modal + multicuerpo",
       "herramientas": "agente de dominio",
       "oraculo": "libros/generativo-fatiga-dinamica.md + .json con ≥8 ejercicios y ≥1 superticket",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 48 (json 48 · tabla md 48) ≥ 8: OK · supertickets 6 ≥ 1: OK · features 16 · md 211 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Generativo, fatiga y dinamica: topologia (top88), fatiga (fe-safe), modal (masa efectiva), pandeo (MIT) y multicuerpo (Schwab/Featherstone)"
      }
     ],
     "progreso": {
-     "verdes": 0,
-     "rojos": 0,
+     "verdes": 12,
+     "rojos": 3,
      "total": 15
     },
     "objetivo": "ian (2026-08-27): «todas las empresas allá afuera tienen miles de ingenieros y ya tienen tu misma capacidad; ellos nos llevan ventaja en PLANEACIÓN». Quiere que con los libros descargados se construya la nueva suite de diseño en el navegad…",

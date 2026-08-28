@@ -1,0 +1,5899 @@
+{
+ "libro": "Anderson — Fundamentals of Aerodynamics, 6e (2017)",
+ "titulo": "Anderson 6e como cliente de La Forja: catálogo, features y supertickets",
+ "autor_como_cliente": "Anderson como cliente pide una suite donde TODA fuerza sale de integrar p y τ sobre la piel del sólido del kernel y se reporta como coeficiente con S y l de referencia explícitas y función de (Re, M, α); un contrato de datos con 5 motores baratos que corren en milisegundos dentro del CAD: (1) potencial 2D por paneles fuentes+vórtices + perfil delgado (caps 3-4) acoplado a capa límite (caps 17-19) para que el arrastre EXISTA; (2) línea sustentadora / VLM + polar del avión con e de Oswald (caps 5-6); (3) gas dinámico completo — isentrópicas, choque normal, θ-β-M, Prandtl-Meyer, Rayleigh-Pitot, tobera casi-1D — con las tablas A/B/C como oráculo a 4 cifras (caps 7-10); (4) correcciones P-G/K-T, Mach crítico, regla del área y supersónico lineal SIEMPRE junto al exacto choque-expansión (caps 11-12); (5) hipersónico de ingeniería — newtoniana sobre la malla B-Rep, calentamiento de estancamiento q∝1/√R, MOC para toberas, Taylor-Maccoll (caps 13-14). Exige HONESTIDAD codificada: el solver declara su dominio (M<0.3 incompresible, P-G<0.7, transónico 'no veo', T>2000 K gas real, Re_cr es ENTRADA nunca default, cf turbulento ±20 %) y muestra 'no aplica' en vez de un número falso; y bilingüe SI/inglés porque los problemas mezclan slug, °R y lb/ft² a propósito.",
+ "capitulos": [
+  {
+   "num": 1,
+   "titulo": "Aerodynamics: Some Introductory Thoughts",
+   "n_ejercicios": 29,
+   "cubierto_por_forja": "parcial",
+   "nota": "Ej 1.1 y 1.10 hechos (a1-l1, a1-l4, cuna-anderson.ts, atmosfera.ts); falta integrador general 2D (N',A',M,xcp), performance, similitud, hidrostática"
+  },
+  {
+   "num": 2,
+   "titulo": "Fundamental Principles and Equations",
+   "n_ejercicios": 19,
+   "cubierto_por_forja": "parcial",
+   "nota": "skin.ts cierra ∮n̂dS=0 (P2.1); potencial.ts integra líneas y Γ solo Joukowski; falta campo 2D genérico, volumen de control, ψ/φ"
+  },
+  {
+   "num": 3,
+   "titulo": "Inviscid Incompressible Flow",
+   "n_ejercicios": 36,
+   "cubierto_por_forja": "parcial",
+   "nota": "panel2d.ts pasa Ej 3.19 a 4 cifras y el cilindro exacto; NO cableado al CAD; sin cuasi-1D/Pitot/venturi ni fuente/sumidero"
+  },
+  {
+   "num": 4,
+   "titulo": "Incompressible Flow over Airfoils",
+   "n_ejercicios": 27,
+   "cubierto_por_forja": "no",
+   "nota": "potencial.ts solo Joukowski/00xx; sin perfil delgado, paneles de vórtice, ac, Cf/transición ni polares NACA digitalizadas"
+  },
+  {
+   "num": 5,
+   "titulo": "Incompressible Flow over Finite Wings",
+   "n_ejercicios": 16,
+   "cubierto_por_forja": "no",
+   "nota": "wing-metrics.ts mide S/AR/λ/MAC del sólido; sin lifting-line, Biot-Savart ni VLM"
+  },
+  {
+   "num": 6,
+   "titulo": "Three-Dimensional Incompressible Flow",
+   "n_ejercicios": 5,
+   "cubierto_por_forja": "no",
+   "nota": "skin.ts panelea la malla 3D; sin doblete/esfera 3D ni polar de Oswald"
+  },
+  {
+   "num": 7,
+   "titulo": "Compressible Flow: Preliminary Aspects",
+   "n_ejercicios": 13,
+   "cubierto_por_forja": "no",
+   "nota": "atmosfera.ts da a=√γRT; sin T0/p0, Δs, isentrópicas"
+  },
+  {
+   "num": 8,
+   "titulo": "Normal Shock Waves",
+   "n_ejercicios": 19,
+   "cubierto_por_forja": "no",
+   "nota": "solo ISA; sin choque normal, Rayleigh-Pitot ni tablas A/B"
+  },
+  {
+   "num": 9,
+   "titulo": "Oblique Shock and Expansion Waves",
+   "n_ejercicios": 23,
+   "cubierto_por_forja": "parcial",
+   "nota": "cuna-anderson.ts θ-β-M con desprendido explícito + Estudio Viento de cuña; sin Prandtl-Meyer, estado completo (M2,p02), reflexiones ni choque-expansión"
+  },
+  {
+   "num": 10,
+   "titulo": "Nozzles, Diffusers, Wind Tunnels",
+   "n_ejercicios": 19,
+   "cubierto_por_forja": "no",
+   "nota": "ISA hasta 71 km; sin área-Mach, tobera casi-1D, túnel"
+  },
+  {
+   "num": 11,
+   "titulo": "Subsonic Compressible: Linear Theory",
+   "n_ejercicios": 14,
+   "cubierto_por_forja": "no",
+   "nota": "panel2d da Cp0; sin P-G/K-T, Mach crítico, regla del área"
+  },
+  {
+   "num": 12,
+   "titulo": "Linearized Supersonic Flow",
+   "n_ejercicios": 10,
+   "cubierto_por_forja": "parcial",
+   "nota": "viento.ts cuña exacta; sin Cp=2θ/√(M²−1), diamante, Sutherland/Cf"
+  },
+  {
+   "num": 13,
+   "titulo": "Numerical Techniques Nonlinear Supersonic",
+   "n_ejercicios": 5,
+   "cubierto_por_forja": "no",
+   "nota": "sin MOC, MacCormack, time-marching, Taylor-Maccoll"
+  },
+  {
+   "num": 14,
+   "titulo": "Elements of Hypersonic Flow",
+   "n_ejercicios": 16,
+   "cubierto_por_forja": "parcial",
+   "nota": "cuna-anderson.ts β a M=36 OK; skin.ts lista para newtoniana; sin newtoniana.ts, calentamiento, waverider"
+  },
+  {
+   "num": 15,
+   "titulo": "Viscous Flow: Principles",
+   "n_ejercicios": 5,
+   "cubierto_por_forja": "no",
+   "nota": "sin Sutherland, Couette aero, transición"
+  },
+  {
+   "num": 16,
+   "titulo": "Couette Flow",
+   "n_ejercicios": 5,
+   "cubierto_por_forja": "no",
+   "nota": "Couette/Poiseuille existen solo en el molde (fan.ts, cooling-design.ts); nada en aero"
+  },
+  {
+   "num": 17,
+   "titulo": "Introduction to Boundary Layers",
+   "n_ejercicios": 2,
+   "cubierto_por_forja": "parcial",
+   "nota": "panel2d.ts existe para el lazo viscoso-inviscido; sin δ* ni acoplamiento"
+  },
+  {
+   "num": 18,
+   "titulo": "Laminar Boundary Layers",
+   "n_ejercicios": 9,
+   "cubierto_por_forja": "no",
+   "nota": "sin Blasius, T*, estancamiento; viento.ts usa τ=431 s^-0.2 empírico y cita capa-limite.ts inexistente"
+  },
+  {
+   "num": 19,
+   "titulo": "Turbulent Boundary Layers",
+   "n_ejercicios": 13,
+   "cubierto_por_forja": "no",
+   "nota": "sin 0.074/Re^0.2, transición, Baldwin-Lomax"
+  },
+  {
+   "num": 20,
+   "titulo": "Navier-Stokes Solutions + Apéndices A-E",
+   "n_ejercicios": 13,
+   "cubierto_por_forja": "parcial",
+   "nota": "atmosfera.ts reproduce Ap. D (ISO 2533, sin fixture literal); NS2D.tsx es Stam cualitativo; sin RANS; fixture Lombardi solo en doc"
+  }
+ ],
+ "n_ejercicios_catalogo": 298,
+ "features": [
+  {
+   "nombre": "Estudio Viento en el CAD (supersónico, cuña medida de la pieza, ISA, θ-β-M, overlay)",
+   "que_hace": "Pestaña del Part Studio que mide δ del bbox, corre viento.ts a Mach/altitud y pinta Cp/flechas/choque; base de TODO lo aero en la UI",
+   "estado_forja": "si",
+   "donde": "src/forja/brep/ForgeBRepStudio.tsx:VientoOverlay/VientoStreamlines (~l.2051-2300, estado vientoOn ~3658); src/forja/sim/viento.ts:estudioVientoSupersonico; lecciones a1-l1/a1-l4; forja-gate 'vitest-aero'",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c1-01",
+    "anderson-c9-05",
+    "anderson-c18-04"
+   ]
+  },
+  {
+   "nombre": "Atmósfera estándar ISA (geopotencial, 7 capas hasta 84.85 km)",
+   "que_hace": "T,p,ρ,a,q,M por altitud; falta selector ARDC-1959 vs ISO-2533, unidades inglesas y μ(T)",
+   "estado_forja": "si",
+   "donde": "src/aero/atmosfera.ts:atmosferaISA/atmosferaISAz/geopotencial/mach/presionDinamica + atmosfera.test.ts",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c1-10",
+    "anderson-c8-01",
+    "anderson-c20-13",
+    "anderson-c20-14"
+   ]
+  },
+  {
+   "nombre": "Integrador 2D de superficie p(s),τ(s) → N',A',L',D',M'LE,M'c/4,xcp (ecs 1.7-1.22)",
+   "que_hace": "Sobre el contorno del croquis con distribuciones arbitrarias; paneles con convención de signos del libro; convergencia en n",
+   "estado_forja": "parcial",
+   "donde": "src/aero/cuna-anderson.ts:cunaAnderson (solo D' de cuña); panel2d.ts da Cp sin integrar fuerzas",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c1-01",
+    "anderson-c1-03",
+    "anderson-c1-04",
+    "anderson-c1-13",
+    "anderson-c1-15",
+    "anderson-c1-16",
+    "anderson-c1-17",
+    "anderson-c1-28"
+   ]
+  },
+  {
+   "nombre": "Integrador 3D sobre la piel B-Rep con cierre y volumen + campos analíticos (newtoniano, constante por cara)",
+   "que_hace": "∮(−p n̂+τ t̂)dS sobre la malla del kernel; verifica ∮n̂dS≈0 y V; alimentado por campos de libro",
+   "estado_forja": "parcial",
+   "donde": "src/aero/skin.ts:pielDeMalla/integrarPresion/integrarCortante/ReferenciaAero + skin.test.ts; SIN consumidor en UI ni campo newtoniano",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c1-02",
+    "anderson-c1-23",
+    "anderson-c2-12",
+    "anderson-c14-04"
+   ]
+  },
+  {
+   "nombre": "Método de paneles fuentes (Hess-Smith) + vórtices/Kutta CABLEADO al CAD (Estudio Viento subsónico)",
+   "que_hace": "Toma la polilínea del croquis, LU una vez, α barato; añade paneles de vórtice + Kutta para cl, cm, Γ; Cp sobre la piel, slider α, gate de compresibilidad local",
+   "estado_forja": "parcial",
+   "donde": "src/aero/panel2d.ts (solo fuentes; Ej 3.19 a 4 cifras en panel2d.test.ts); cero imports fuera de src/aero; registry.ts sin comando aero",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c3-19",
+    "anderson-c3-13",
+    "anderson-c4-01",
+    "anderson-c4-06",
+    "anderson-c4-13",
+    "anderson-c3-35"
+   ]
+  },
+  {
+   "nombre": "Teoría del perfil delgado (Glauert): A0,An,cl,αL0,cm_c/4,xcp + generador NACA 4/5 dígitos con comba",
+   "que_hace": "Cuadratura de dz/dx(θ); línea media literal del 23012/4412; espesor perpendicular a la línea media; exporta al sketcher y a panel2d",
+   "estado_forja": "parcial",
+   "donde": "src/aero/potencial.ts:nacaProfile (solo 00xx) y liftCoefficient=2π sinα; grep A0/alphaL0: nada",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c4-05",
+    "anderson-c4-06",
+    "anderson-c4-16",
+    "anderson-c4-17",
+    "anderson-c4-18",
+    "anderson-c4-24"
+   ]
+  },
+  {
+   "nombre": "Polares experimentales NACA digitalizadas (Abbott) + centro aerodinámico desde datos + sistema fuerza-momento",
+   "que_hace": "cl/cd/cm vs α para 2412/0012/23012/4412; inversa cl→α; x_ac=−m0/a0+0.25; transferencias LE/c4/ac/cp",
+   "estado_forja": "no",
+   "donde": "docs/forja-research/aero-pliego/figuras/ solo trae Figs 1.58, 18.7-18.9; grep aeroCenter: nada",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c4-01",
+    "anderson-c4-02",
+    "anderson-c4-03",
+    "anderson-c4-07",
+    "anderson-c4-14",
+    "anderson-c4-15",
+    "anderson-c4-20",
+    "anderson-c1-18"
+   ]
+  },
+  {
+   "nombre": "Capa límite de placa plana: Blasius (shooting) + turbulenta + transición Re_cr + tres espesores",
+   "que_hace": "cf=0.664/√Rex, Cf=1.328/√Rec, δ=5x/√Rex, δ*=1.72, θ=0.664; 0.074/Re^0.2; compuesta con Re_cr ENTRADA; fricción de la pieza en el Estudio Viento (sustituye τ=431 s^-0.2)",
+   "estado_forja": "no",
+   "donde": "find blasius/capa-limite: nada; viento.ts cita capa-limite.ts inexistente; CURRICULUM a6-l2 ❌",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c18-01",
+    "anderson-c18-02",
+    "anderson-c19-01",
+    "anderson-c19-05",
+    "anderson-c19-06",
+    "anderson-c19-07",
+    "anderson-c4-08",
+    "anderson-c4-09",
+    "anderson-c4-10",
+    "anderson-c4-11",
+    "anderson-c17-02"
+   ]
+  },
+  {
+   "nombre": "Propiedades de transporte y capa límite compresible: Sutherland μ(T), k, Pr, temperatura de referencia (Eckert/Meador-Smart), auto-similar F,G",
+   "que_hace": "μ/μ0=(T/T0)^1.5(T0+110)/(T+110); T*; Cf* laminar (1 %) y turbulento (±20 %); solver auto-similar que sustituye Figs 18.8/19.1",
+   "estado_forja": "no",
+   "donde": "grep sutherland src: 0 hits",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c15-04",
+    "anderson-c18-05",
+    "anderson-c18-06",
+    "anderson-c18-07",
+    "anderson-c19-03",
+    "anderson-c19-04",
+    "anderson-c19-08",
+    "anderson-c12-03",
+    "anderson-c1-25"
+   ]
+  },
+  {
+   "nombre": "Acoplamiento viscoso-inviscido (cuerpo efectivo ab+δ*) + drag buildup 2D = polar completa",
+   "que_hace": "Lazo de 5 pasos de §17.2 sobre panel2d; Thwaites/Head; cf(x), separación, Cd=presión+fricción vs Abbott; fixture Lombardi 5.34e-3",
+   "estado_forja": "parcial",
+   "donde": "src/aero/panel2d.ts sí; δ*/lazo no; CRUCE-Y-PLAN l.110 requisito 2 y F1",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c17-01",
+    "anderson-c19-13",
+    "anderson-c20-01",
+    "anderson-c20-02"
+   ]
+  },
+  {
+   "nombre": "lifting-line.ts (Prandtl/Fourier) + campo δ(λ,AR),τ + Helmbold/Kuchemann + Biot-Savart + VLM",
+   "que_hace": "Γ(θ), A_n, CL=A1πAR, δ, e, α_i(y), escalado entre AR; vlm.ts con herraduras a l/4 para baja AR/flecha/delta; carta de McCormick precomputada",
+   "estado_forja": "no",
+   "donde": "grep lifting|lattice|biot src: cero; solo wing-metrics.ts (S,b,AR,λ,MAC del sólido); CRUCE-Y-PLAN F2",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c5-01",
+    "anderson-c5-02",
+    "anderson-c5-03",
+    "anderson-c5-04",
+    "anderson-c5-05",
+    "anderson-c5-06",
+    "anderson-c5-07",
+    "anderson-c5-10",
+    "anderson-c5-13",
+    "anderson-c5-15"
+   ]
+  },
+  {
+   "nombre": "polar.ts + performance: CD=CDo+CL²/(πeAR), e de Oswald, (L/D)max, Vstall, Vmax, P requerida, CL(V)",
+   "que_hace": "La piedra angular del diseño conceptual; distingue e de envergadura vs Oswald; vuelo nivelado L=W, T=D; bilingüe",
+   "estado_forja": "no",
+   "donde": "grep oswald|vstall|potencia requerida src: cero",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c6-01",
+    "anderson-c6-02",
+    "anderson-c1-07",
+    "anderson-c1-08",
+    "anderson-c1-12",
+    "anderson-c1-24",
+    "anderson-c5-08",
+    "anderson-c5-09",
+    "anderson-c5-12",
+    "anderson-c5-14"
+   ]
+  },
+  {
+   "nombre": "Métricas del ala desde el kernel (S,b,AR,λ,MAC,mojada) y referencia explícita de coeficientes",
+   "que_hace": "Estampa S y l junto a cada coeficiente; falta flecha a media cuerda y torsión",
+   "estado_forja": "si",
+   "donde": "src/aero/wing-metrics.ts:metricasAla/macTrapezoidal + tests; skin.ts:ReferenciaAero",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c1-27",
+    "anderson-c5-04",
+    "anderson-c6-01"
+   ]
+  },
+  {
+   "nombre": "Similitud dinámica y calculadora de túnel (mismo Re y M) + cuasi-1D venturi/túnel/manómetro/Pitot/EAS + diseño conceptual de túnel",
+   "que_hace": "V,T,ρ,p del túnel para un modelo a escala; A1V1=A2V2 + Bernoulli; IWC 3.23 (sección, Pt=½ρAV³, ER)",
+   "estado_forja": "no",
+   "donde": "grep similitud|venturi|pitot|manometr src: nada",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c1-05",
+    "anderson-c1-06",
+    "anderson-c1-19",
+    "anderson-c1-20",
+    "anderson-c3-03",
+    "anderson-c3-04",
+    "anderson-c3-05",
+    "anderson-c3-07",
+    "anderson-c3-09",
+    "anderson-c3-23",
+    "anderson-c15-05"
+   ]
+  },
+  {
+   "nombre": "Campo 2D genérico + operadores (∇·,∇×,D/Dt) + líneas de corriente/trayectoria RK4 sobre campo arbitrario + Γ con signo de Anderson + ψ/φ + volumen de control",
+   "que_hace": "Sustrato del cap 2: el usuario define u(x,y) o lo toma del solver; Γ≡−∮V·ds sobre contorno arbitrario; rastrillo Pitot D'=∫ρu(u1−u)dy vs piel",
+   "estado_forja": "parcial",
+   "donde": "src/aero/potencial.ts:integrateStreamline/integrateParcel/circulationIntegral (solo Joukowski, ∮u·dl sin el menos); src/math VectorFields.tsx (campos fijos, voseo l.122)",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c2-01",
+    "anderson-c2-03",
+    "anderson-c2-04",
+    "anderson-c2-08",
+    "anderson-c2-11",
+    "anderson-c2-15",
+    "anderson-c2-17",
+    "anderson-c2-18"
+   ]
+  },
+  {
+   "nombre": "Flujo-LEGO: fuente/sumidero/doblete/vórtice, semicuerpo, Rankine, cilindro con circulación (3 regímenes), esfera 3D",
+   "que_hace": "φ,ψ,Vr,Vθ de la Tabla 3.1; línea divisoria como CROQUIS generado; estancamientos; Cp=1−(9/4)sin²θ; CD(Re) del cilindro real",
+   "estado_forja": "parcial",
+   "donde": "potencial.ts:flowVelocity (uniforme+doblete+vórtice), panel2d.ts:cpCilindroExacto; fuente/sumidero/esfera no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c3-16",
+    "anderson-c3-17",
+    "anderson-c3-18",
+    "anderson-c3-29",
+    "anderson-c3-30",
+    "anderson-c6-04",
+    "anderson-c6-05",
+    "anderson-c3-21"
+   ]
+  },
+  {
+   "nombre": "gasdinamica.ts: isentrópicas (T0,p0,ρ0,T*,a*,M*, A/A* bivaluada) + choque normal directo/inverso + Rayleigh-Pitot + Prandtl-Meyer ν(M)/M(ν) + tablas A/B/C como oráculo",
+   "que_hace": "Funciones cerradas con inversas por bisección, γ y R/PM arbitrarios; bandera M>0.3 y T0>2000 K; 'Bernoulli prohibido'",
+   "estado_forja": "no",
+   "donde": "grep isentrop|normal shock|prandtl|rayleigh src/aero: nada; CURRICULUM a7-l2/a7-l5 ❌; atmosfera.ts:mach es lo único",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c7-05",
+    "anderson-c7-06",
+    "anderson-c8-02",
+    "anderson-c8-06",
+    "anderson-c8-10",
+    "anderson-c8-11",
+    "anderson-c9-08",
+    "anderson-c10-02",
+    "anderson-c20-10",
+    "anderson-c20-11",
+    "anderson-c20-12"
+   ]
+  },
+  {
+   "nombre": "Estado completo tras choque oblicuo (M2,T2,p02 vía Mn1) + reflexiones/intersecciones + tomas multichoque + choque-expansión sobre polígono del croquis",
+   "que_hace": "Reusa choque normal con Mn1; NUNCA p02/p1; cadena oblicuo(s)+normal para inlets/SCRAMjet; placa/rombo/cuña/X-15 → cl, cd_w; overlay de ondas",
+   "estado_forja": "parcial",
+   "donde": "src/aero/cuna-anderson.ts:resolverChoqueOblicuo/thetaDeBeta/deflexionMaxima (θ-β-M con desprendido) + viento.ts (p2 de cuña a α=0)",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c9-02",
+    "anderson-c9-04",
+    "anderson-c9-06",
+    "anderson-c9-11",
+    "anderson-c9-12",
+    "anderson-c9-17",
+    "anderson-c9-19",
+    "anderson-c9-20",
+    "anderson-c12-05"
+   ]
+  },
+  {
+   "nombre": "Tobera casi-1D con contrapresión (régimen automático, choque interno) + gasto ahogado + empuje + dimensionador de túnel supersónico + tobera como PIEZA del CAD",
+   "que_hace": "M(x),p(x),T(x) de A(x) medida del sólido revolucionado; T=ṁue+(pe−p∞)Ae; segunda garganta At2/At1=p01/p02; Re, ṁ, tanque",
+   "estado_forja": "no",
+   "donde": "grep tobera|nozzle src/aero: nada (los 'nozzle' de src/forja son de impresora/molde); revolve en occt.ts",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c10-02",
+    "anderson-c10-04",
+    "anderson-c10-05",
+    "anderson-c10-07",
+    "anderson-c10-13",
+    "anderson-c10-16",
+    "anderson-c10-17"
+   ]
+  },
+  {
+   "nombre": "Corrección de compresibilidad P-G/K-T/Laitone + Mach crítico (Cp,cr(M) ∩ corrección) + pendiente compresible de ala",
+   "que_hace": "Una división sobre el Cp de panel2d; raíz de (11.63); declara rango (P-G≲0.7; transónico 'no veo')",
+   "estado_forja": "no",
+   "donde": "grep glauert|tsien|Mcr src: nada; panel2d.ts da Cp0",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c11-01",
+    "anderson-c11-02",
+    "anderson-c11-03",
+    "anderson-c11-07",
+    "anderson-c11-08",
+    "anderson-c11-12",
+    "anderson-c11-14"
+   ]
+  },
+  {
+   "nombre": "Regla del área transónica/supersónica: barrido de cortes del sólido (normales y al ángulo de Mach μ)",
+   "que_hace": "A(x) del ensamble completo con métrica de suavidad; invariante ∫A dx = volumen; cortes oblicuos (F-16)",
+   "estado_forja": "parcial",
+   "donde": "src/forja/brep/occt.ts (booleanas/cortes/masa-inercia); sin barrido",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c11-13",
+    "anderson-c12-04"
+   ]
+  },
+  {
+   "nombre": "Supersónico linealizado sobre el perfil croquizado: Cp=2θ/√(M²−1), cl, cd_w, L/D con Cf, SIEMPRE junto al exacto",
+   "que_hace": "θ local por panel; error vs choque-expansión; α óptimo P12.6",
+   "estado_forja": "parcial",
+   "donde": "viento.ts + cuna-anderson.ts (cuña exacta); lineal no",
+   "prioridad": "P0",
+   "ejercicios": [
+    "anderson-c12-01",
+    "anderson-c12-02",
+    "anderson-c12-05",
+    "anderson-c12-07",
+    "anderson-c12-09",
+    "anderson-c12-10"
+   ]
+  },
+  {
+   "nombre": "MOC 2D + diseñador de tobera supersónica (contorno → croquis → extruir + plano)",
+   "que_hace": "Proceso unitario θ±ν=K±; sección de enderezamiento por cancelación de ondas; oráculo A/A*(Me) del kernel",
+   "estado_forja": "no",
+   "donde": "grep moc|caracter src: nada; CRUCE-Y-PLAN fila 8 [NAVEGADOR]",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c13-01",
+    "anderson-c13-02"
+   ]
+  },
+  {
+   "nombre": "Newtoniana / newtoniana modificada sobre la piel B-Rep + calentamiento de estancamiento (Tauber-Meneses, q∝1/√R) + Taylor-Maccoll + waverider caret",
+   "que_hace": "Cp=Cp,max sin²θ por panel con sombra; L,D,Cm; casos analíticos; radio de nariz mínimo con fillet del CAD; cono por EDO inversa; caret desde el plano de choque",
+   "estado_forja": "parcial",
+   "donde": "src/aero/skin.ts (piel lista); CURRICULUM fila 160 newtoniana.ts ❌; grep heating|tauber|taylor: nada",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c14-01",
+    "anderson-c14-02",
+    "anderson-c14-03",
+    "anderson-c14-04",
+    "anderson-c14-05",
+    "anderson-c14-08",
+    "anderson-c14-12",
+    "anderson-c14-15",
+    "anderson-c13-05",
+    "anderson-c18-08",
+    "anderson-c19-11"
+   ]
+  },
+  {
+   "nombre": "Couette/Poiseuille exactos (banco de calibración) + MacCormack/time-marching/RANS Baldwin-Lomax + banda ±20 % declarada",
+   "que_hace": "u lineal, T parabólica, r=Pr, CH/cf=1/(2Pr); shooting compresible; solvers Euler/NS solo como [GPU-VIVO] con incertidumbre rotulada",
+   "estado_forja": "parcial",
+   "donde": "src/physics/modules/fluids/NavierStokes2D.tsx (Stam cualitativo, fuera de src/forja); Couette solo en molde (fan.ts, cojinete-jaula.ts)",
+   "prioridad": "P2",
+   "ejercicios": [
+    "anderson-c15-01",
+    "anderson-c16-01",
+    "anderson-c16-02",
+    "anderson-c16-04",
+    "anderson-c19-12",
+    "anderson-c20-03",
+    "anderson-c20-08",
+    "anderson-c13-04"
+   ]
+  },
+  {
+   "nombre": "Capa de unidades dual SI / inglesas (slug, °R, lb/ft², mi/h, hp, atm=2116 lb/ft²) + tabla de calibración de magnitudes típicas §1.12",
+   "que_hace": "Cada entrada lleva unidad; sanity-check contra CD 2.0/1.2/0.12, cd 0.004-0.006, L/D 10-21",
+   "estado_forja": "desconocido",
+   "donde": "src/aero/* trabaja en SI (grep slug src/aero = 0); no verifiqué el CAD",
+   "prioridad": "P2",
+   "ejercicios": [
+    "anderson-c1-14",
+    "anderson-c3-02",
+    "anderson-c4-14",
+    "anderson-c5-08",
+    "anderson-c7-06",
+    "anderson-c10-07",
+    "anderson-c16-01"
+   ]
+  },
+  {
+   "nombre": "Escuela AERO: lecciones U1-U9 con clase-drive (a1-l1, a1-l4 HECHAS; a1-l2/l3/l5, a2-*, a3-*, a5-*, a6-*, a7-*, a8-*, a9-* pendientes)",
+   "que_hace": "Cada ejercicio resuelto EN el CAD con voz + stills + oráculo; runner scripts/escuela/clase-drive.cjs + parrilla.sh",
+   "estado_forja": "parcial",
+   "donde": "public/escuela/lecciones/a1-l1.json, a1-l4.json (ls); docs/forja-research/aero/CURRICULUM-AERO.md define el resto",
+   "prioridad": "P1",
+   "ejercicios": [
+    "anderson-c1-01",
+    "anderson-c1-10",
+    "anderson-c3-19",
+    "anderson-c4-06",
+    "anderson-c5-04",
+    "anderson-c9-02",
+    "anderson-c18-01",
+    "anderson-c19-01"
+   ]
+  }
+ ],
+ "supertickets": [
+  {
+   "slug": "anderson-u1-fuerzas-momentos",
+   "titulo": "U1 · De p y τ a fuerzas, momentos y xcp (el contrato de datos)",
+   "capitulos": [
+    1
+   ],
+   "objetivo": "Generalizar cuna-anderson.ts a un integrador 2D de paneles con p(s),τ(s) arbitrarios que entregue N',A',L',D',M'LE,M'c/4,xcp y coeficientes con S,l explícitas; cierra el cap 1 y prepara paneles/perfil delgado. a1-l1 y a1-l4 YA HECHAS: no se repiten.",
+   "ejercicios": [
+    {
+     "id": "anderson-c1-16",
+     "titulo": "P1.4 Placa 1 m a 10°: N',A',L',D',M'LE,M'c/4,xcp",
+     "herramientas": "perfil-2D,croquis",
+     "oraculo": "N'=1.123e5, A'=1273.8, M'LE=−3.75e4, xcp=0.334 m; panelizado ≤0.5% del cerrado",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c1-15",
+     "titulo": "P1.3 Placa supersónica p constante: xcp",
+     "herramientas": "perfil-2D",
+     "oraculo": "xcp=c/2 exacto ±1e-6 (carga uniforme)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c1-03",
+     "titulo": "Ej 1.3 NACA 4412: xcp desde cl y cm,c/4",
+     "herramientas": "perfil-2D,panel-2D",
+     "oraculo": "xcp/c=0.356 ±0.5%; simétrico ⇒ 0.25",
+     "respuesta_impresa": "xcp/c = 0.25 − (−0.09/0.85) = 0.356"
+    },
+    {
+     "id": "anderson-c1-04",
+     "titulo": "Ej 1.4 DC-3: L' y xcp desde dos momentos",
+     "herramientas": "perfil-2D,cotas",
+     "oraculo": "L'=556.6 lb/ft, xcp=5.774 ft ±0.5%; invariante ec 1.22",
+     "respuesta_impresa": "L'=556.6 lb/ft; xcp=5.774 ft"
+    },
+    {
+     "id": "anderson-c1-13",
+     "titulo": "IWC 1.16 Fuerza axial hacia adelante NACA 2412 a 6°",
+     "herramientas": "perfil-2D,panel-2D",
+     "oraculo": "ca=−cl sinα+cd cosα=−0.084<0; frontera L/D=cotα",
+     "respuesta_impresa": "L/D=110 > cot6°=9.52 ⇒ A<0"
+    },
+    {
+     "id": "anderson-c1-17",
+     "titulo": "P1.5 De (cn,ca) a (cl,cd) a 12°",
+     "herramientas": "perfil-2D",
+     "oraculo": "cl=1.1675, cd=0.2788 ±1e-4",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c1-23",
+     "titulo": "P1.13 Cilindro hipersónico Cp=2cos²φ: CD=4/3",
+     "herramientas": "croquis,extruir,panel-3D",
+     "oraculo": "CD=4/3 ±0.5% integrando sobre la piel; L=0 por simetría",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c1-02",
+     "titulo": "Ej 1.2 Cono hipersónico newtoniano: CD=Cp referido a la base",
+     "herramientas": "croquis,revolve,panel-3D",
+     "oraculo": "CD integrado sobre la piel del cono (skin.ts) = 2sin²θc ±1e-3 para θc=5/10/20°; cierre ∮n̂dS≈0",
+     "respuesta_impresa": "CD = Cp = 2 sin²θc"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/cuna-anderson.ts:cunaAnderson (D' de cuña, 25 tests)",
+    "src/aero/skin.ts:integrarPresion/integrarCortante (3D, sin momento)",
+    "public/escuela/lecciones/a1-l1.json (Ej 1.1 HECHO)",
+    "public/escuela/lecciones/a1-l4.json (Ej 1.10 HECHO)"
+   ],
+   "dependencias": [],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "anderson-u1-performance-similitud",
+   "titulo": "U1 · Vuelo nivelado, similitud y túnel: los números del diseñador",
+   "capitulos": [
+    1,
+    3,
+    6
+   ],
+   "objetivo": "polar.ts + performance.ts (L=W, T=D, Vstall, (L/D)max, P) y similitud.ts (mismo Re y M para un modelo a escala) sobre atmosfera.ts; lecciones a1-l2/a1-l3 del currículo.",
+   "ejercicios": [
+    {
+     "id": "anderson-c1-07",
+     "titulo": "Ej 1.7 Citation V crucero: CL y L/D",
+     "herramientas": "performance,ISA",
+     "oraculo": "CL=0.21, L/D=14 ±1%; ρ(33,000 ft)=0.4106 kg/m³ ±0.5%",
+     "respuesta_impresa": "CL=0.21; L/D=14"
+    },
+    {
+     "id": "anderson-c1-08",
+     "titulo": "Ej 1.8 CL,max del Citation V desde Vstall",
+     "herramientas": "performance",
+     "oraculo": "CL,max=1.81 ±1%; inversa Vstall=146.7 ft/s",
+     "respuesta_impresa": "CL,max=1.81"
+    },
+    {
+     "id": "anderson-c1-12",
+     "titulo": "Ej 1.12 P-35: potencia requerida",
+     "herramientas": "performance,ISA",
+     "oraculo": "V=377.8 ft/s, D=1026 lb, P=704 hp ±1%; 257.6 vs 260 mi/h",
+     "respuesta_impresa": "V=377.8 ft/s; D=1026 lb; P=704 hp"
+    },
+    {
+     "id": "anderson-c1-24",
+     "titulo": "P1.15 Cessna Skylane: CL,CD,L/D vs V",
+     "herramientas": "performance,gráfica",
+     "oraculo": "(L/D)max=13.6 en CL*=0.680, V*=144.8 ft/s ±1 ft/s",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c1-06",
+     "titulo": "Ej 1.6 Túnel para modelo 1/50 del 747",
+     "herramientas": "similitud,ISA",
+     "oraculo": "V2=577.5 mi/h, p2=11.26 atm ±0.5%; Re2/Re1=M2/M1=1",
+     "respuesta_impresa": "V2=577.5 mi/h; p2=23,836 lb/ft²=11.26 atm"
+    },
+    {
+     "id": "anderson-c1-20",
+     "titulo": "P1.10 Túnel a 1 atm para Lear jet 1/5",
+     "herramientas": "similitud,ISA",
+     "oraculo": "ρ2=2.07, T2=170 K, V2=218 m/s ±1%",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c1-05",
+     "titulo": "Ej 1.5 Dos cilindros dinámicamente similares",
+     "herramientas": "similitud,panel-2D",
+     "oraculo": "Cp(s/d) idénticos punto a punto; |CD1−CD2|<1e-6; Re y M iguales",
+     "respuesta_impresa": "μ2/μ1=2, a2/a1=2, M2=M1, Re2=Re1 ⇒ CD1=CD2"
+    },
+    {
+     "id": "anderson-c1-19",
+     "titulo": "P1.9 ¿Similares a 200 K y 800 K?",
+     "herramientas": "similitud",
+     "oraculo": "M iguales; Re2/Re1=2.83 ⇒ NO",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/aero/atmosfera.ts:atmosferaISA/presionDinamica/mach"
+   ],
+   "dependencias": [
+    "anderson-u1-fuerzas-momentos"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "anderson-u3-paneles-en-el-cad",
+   "titulo": "U3 · Paneles de fuentes CABLEADOS al Estudio Viento subsónico",
+   "capitulos": [
+    3
+   ],
+   "objetivo": "El hueco real del cap 3: panel2d.ts pasa el Ej 3.19 a 4 cifras pero nadie lo llama desde el CAD. Comando en registry.ts, modo subsónico del VientoOverlay: polilínea del croquis → Cp sobre la piel → líneas de corriente; gate de compresibilidad local; flujo-LEGO mínimo (fuente/sumidero) para el semicuerpo.",
+   "ejercicios": [
+    {
+     "id": "anderson-c3-19",
+     "titulo": "Ej 3.19 Paneles de fuentes sobre el cilindro (8 paneles)",
+     "herramientas": "croquis,panel-2D,gate-masa",
+     "oraculo": "I_4,2=0.4018 ±5e-4; 8 λ a 4 cifras; ΣλS<1e-9; Cp<0.05 (8) y <1e-3 (64)",
+     "respuesta_impresa": "I_4,2=0.4018; λ/(2πV∞)=0.3765,0.2662,0,−0.2662,…"
+    },
+    {
+     "id": "anderson-c3-13",
+     "titulo": "Ej 3.13 Dónde p=p∞ sobre el cilindro",
+     "herramientas": "panel-2D,Cp",
+     "oraculo": "raíces 30,150,210,330° ±0.01°; con 64 paneles ±1°",
+     "respuesta_impresa": "θ=30°,150°,210°,330°"
+    },
+    {
+     "id": "anderson-c3-12",
+     "titulo": "Ej 3.12 Gate de compresibilidad (Cp=−5.3)",
+     "herramientas": "Cp,gate-compresibilidad",
+     "oraculo": "V=200.8 y 753 ft/s; (b) ROJO M_local>0.3",
+     "respuesta_impresa": "(b) not correct: M_local>0.674"
+    },
+    {
+     "id": "anderson-c3-35",
+     "titulo": "P3.22 V de túnel máxima incompresible (cilindro)",
+     "herramientas": "gate-compresibilidad",
+     "oraculo": "V∞=125 mi/h=55.9 m/s ±0.5; Cp_min=−3 del panel",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c3-16",
+     "titulo": "Ej 3.16 Cp pico con cl=5",
+     "herramientas": "cilindro-circulación",
+     "oraculo": "Cp(90°)=−6.82 ±0.01",
+     "respuesta_impresa": "Cp=−6.82"
+    },
+    {
+     "id": "anderson-c3-17",
+     "titulo": "Ej 3.17 Estancamiento y Cp=0 con cl=5",
+     "herramientas": "cilindro-circulación",
+     "oraculo": "estanc. 203.4/336.6° ±0.1°; Cp=0 en 5.85/174.1/243.8/296.2°",
+     "respuesta_impresa": "θ=203.4°,336.6°; Cp=0 en 243.8,296.23,5.85,174.1°"
+    },
+    {
+     "id": "anderson-c3-29",
+     "titulo": "P3.12 Semicuerpo (fuente+uniforme) y su Cp",
+     "herramientas": "flujo-lego,croquis-generado",
+     "oraculo": "semiancho asintótico=π ft; Cp=1 nariz→0; curva ψ=Λ/2 <1e-6",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c3-14",
+     "titulo": "Ej 3.14 Aceleración de la parcela: 510 g",
+     "herramientas": "líneas-corriente,parcela",
+     "oraculo": "extremos en 45°+k90° ±1°; |a|max=5000 ±50 m/s²",
+     "respuesta_impresa": "|a|max=2V∞²/R=5000 m/s²=510 g"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/panel2d.ts:construirPaneles/influencia/prepararPaneles/resolverAlpha/cpCilindroExacto/circulo (+panel2d.test.ts en forja-gate vitest-aero)",
+    "src/forja/brep/ForgeBRepStudio.tsx:VientoOverlay (solo supersónico)",
+    "src/aero/potencial.ts:cpValue/flowVelocity"
+   ],
+   "dependencias": [
+    "anderson-u1-fuerzas-momentos"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "anderson-u3-cuasi-1d-pitot",
+   "titulo": "U3 · Bernoulli cuasi-1D: venturi, túnel, manómetro, Pitot, EAS",
+   "capitulos": [
+    3
+   ],
+   "objetivo": "Calculadora de ingeniería sobre atmosfera.ts con A1/A2 medido del venturi revolucionado en el kernel; bilingüe SI/inglés; lecciones a3-l1/a3-l2.",
+   "ejercicios": [
+    {
+     "id": "anderson-c3-01",
+     "titulo": "Ej 3.1 V en un punto por Bernoulli",
+     "herramientas": "Bernoulli",
+     "oraculo": "V=142.8 m/s ±0.3",
+     "respuesta_impresa": "V=142.8 m/s"
+    },
+    {
+     "id": "anderson-c3-03",
+     "titulo": "Ej 3.3 Venturi como velocímetro",
+     "herramientas": "croquis,revolve,cuasi-1D",
+     "oraculo": "V1=102.3 ft/s ±0.2; A1/A2 del kernel",
+     "respuesta_impresa": "V1=102.3 ft/s"
+    },
+    {
+     "id": "anderson-c3-04",
+     "titulo": "Ej 3.4 Manómetro Hg en túnel 12:1",
+     "herramientas": "cuasi-1D,manómetro",
+     "oraculo": "Δp=1527 ±2 Pa; h=0.01148 m",
+     "respuesta_impresa": "p1−p2=1527 N/m²; h=0.01148 m"
+    },
+    {
+     "id": "anderson-c3-05",
+     "titulo": "Ej 3.5 Δp máximo por la balanza (1000 lb)",
+     "herramientas": "cuasi-1D,planeación",
+     "oraculo": "V=328.4 ft/s; Δp=127.3 lb/ft² ±0.2",
+     "respuesta_impresa": "V∞=328.4 ft/s; p1−p2=127.3 lb/ft²"
+    },
+    {
+     "id": "anderson-c3-07",
+     "titulo": "Ej 3.7 V desde Pitot a nivel del mar",
+     "herramientas": "Pitot",
+     "oraculo": "V=249.5 ±1 ft/s",
+     "respuesta_impresa": "V1=250 ft/s"
+    },
+    {
+     "id": "anderson-c3-09",
+     "titulo": "Ej 3.9 P-35 a 4 km desde Pitot (Ap. D)",
+     "herramientas": "ISA,Pitot",
+     "oraculo": "V=114.2 ±0.3 m/s con atmosferaISA(4000)",
+     "respuesta_impresa": "V1=114.2 m/s=255 mph"
+    },
+    {
+     "id": "anderson-c3-10",
+     "titulo": "Ej 3.10 Velocidad equivalente (EAS)",
+     "herramientas": "ISA,q",
+     "oraculo": "q=5343 ±5 Pa; Ve=93.2 ±0.2 m/s",
+     "respuesta_impresa": "q=5.343e3; Ve=93.2 m/s"
+    },
+    {
+     "id": "anderson-c3-23",
+     "titulo": "IWC 3.23 Diseño conceptual de túnel subsónico",
+     "herramientas": "dimensionado-túnel,croquis,loft",
+     "oraculo": "sección 2×3×3.2; Pt=6.376e6 ±1e4 W; motor 1030 ±2 hp",
+     "respuesta_impresa": "3×2×3.2 m; Pt=6.376e6 W; 1030 hp"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/atmosfera.ts:presionDinamica/mach",
+    "src/forja/brep/occt.ts (revolve, área de sección)"
+   ],
+   "dependencias": [],
+   "esfuerzo": "S",
+   "valor": 3,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "anderson-u4-perfil-delgado-naca",
+   "titulo": "U4 · Perfil delgado + generador NACA con comba (fixture de oro Ej 4.6)",
+   "capitulos": [
+    4
+   ],
+   "objetivo": "nacaProfile con 4/5 dígitos y línea media literal del 23012/4412; Glauert A0,An → cl, αL0, cm_c/4, xcp; ac desde datos; el perfil sale como croquis al sketcher y a panel2d (snap de 10 px ya pagado).",
+   "ejercicios": [
+    {
+     "id": "anderson-c4-06",
+     "titulo": "Ej 4.6 NACA 23012 por perfil delgado (FIXTURE DE ORO)",
+     "herramientas": "croquis,cotas,perfil-delgado",
+     "oraculo": "αL0=−1.09 ±0.01°; cl=0.559 ±0.002; A1=0.0954; A2=0.0792; cm_c/4=−0.0127; xcp/c=0.273",
+     "respuesta_impresa": "αL0=−1.09°; cl=0.559; cm_c/4=−0.0127; xcp/c=0.273"
+    },
+    {
+     "id": "anderson-c4-05",
+     "titulo": "Ej 4.5 Placa plana a 5°: cl, cm_le, cm_c/4, cm_te",
+     "herramientas": "perfil-delgado",
+     "oraculo": "cl=2πα ±1e-3; cm_le=−cl/4; cm_c/4=0; cm_te=0.411",
+     "respuesta_impresa": "cl=0.5485; cm_le=−0.137; cm_c/4=0; cm_te=0.411"
+    },
+    {
+     "id": "anderson-c4-17",
+     "titulo": "P4.6 NACA 4412 por perfil delgado: αL0 y cl(3°)",
+     "herramientas": "croquis,perfil-delgado",
+     "oraculo": "cuadratura vs analítico <0.1%; ref. literatura αL0≈−4.15° (NO impreso)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c4-18",
+     "titulo": "P4.7 4412: cm_c/4 y xcp a 3°",
+     "herramientas": "perfil-delgado",
+     "oraculo": "cm_c/4=π/4(A2−A1) invariante en α; xcp por (4.66)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c4-07",
+     "titulo": "Ej 4.7 Centro aerodinámico del 23012 desde datos",
+     "herramientas": "estabilidad",
+     "oraculo": "x_ac=0.241 ±0.001",
+     "respuesta_impresa": "x_ac=0.241"
+    },
+    {
+     "id": "anderson-c4-20",
+     "titulo": "P4.10 ac del 2412 desde dos ángulos",
+     "herramientas": "estabilidad",
+     "oraculo": "x_ac=0.2423 ±0.0005",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c4-24",
+     "titulo": "P4.14 ¿Vuela un perfil de cabeza?",
+     "herramientas": "perfil-2D",
+     "oraculo": "cl=0.8; invertido 0.2; α=11°",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c4-04",
+     "titulo": "Ej 4.4 Vórtice de arranque",
+     "herramientas": "potencial-2D",
+     "oraculo": "Γ=14.56 ±0.01; Γ_perfil+Γ_arranque=0",
+     "respuesta_impresa": "Γ=14.56 m²/s"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/potencial.ts:nacaProfile (00xx)/liftCoefficient/liftPerSpan/kuttaGamma"
+   ],
+   "dependencias": [
+    "anderson-u3-paneles-en-el-cad"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "anderson-u4-vortices-kutta-polares",
+   "titulo": "U4 · Paneles de vórtice + Kutta + polares NACA digitalizadas",
+   "capitulos": [
+    4
+   ],
+   "objetivo": "Hess-Smith completo (fuentes+vórtices, γ_i=−γ_{i−1}) para cl con espesor; polares de Abbott (2412/0012/23012/4412) trazadas a 300-400 dpi como oráculo citado; L/D vs α y lectura inversa cl→α; lecciones a1-l5..l7.",
+   "ejercicios": [
+    {
+     "id": "anderson-c4-01",
+     "titulo": "Ej 4.1 NACA 2412: de L' a α y D'",
+     "herramientas": "perfil-2D,ISA,polar-experimental,panel-2D",
+     "oraculo": "q y cl a 3 cifras; α=4 ±0.5°; cd∈[0.0065,0.0072]; D'=13.1 ±0.3 N/m",
+     "respuesta_impresa": "q=3013.5; cl=0.65; α=4°; Re=3.08e6; cd=0.0068; D'=13.1 N/m"
+    },
+    {
+     "id": "anderson-c4-02",
+     "titulo": "Ej 4.2 Momento sobre el ac",
+     "herramientas": "perfil-2D,polar",
+     "oraculo": "M'ac=−61.7 ±0.1 N·m",
+     "respuesta_impresa": "M'ac=−61.7 N·m"
+    },
+    {
+     "id": "anderson-c4-03",
+     "titulo": "Ej 4.3 L/D del 2412 a 0,4,8,12°",
+     "herramientas": "polar-experimental",
+     "oraculo": "tabla ±(0.02,0.0005,3); max entre 4 y 8°",
+     "respuesta_impresa": "L/D=38.5, 93, 96, 85"
+    },
+    {
+     "id": "anderson-c4-14",
+     "titulo": "P4.1 2412 a 4°, 50 ft/s, c=2 ft (imperial)",
+     "herramientas": "polar,ISA",
+     "oraculo": "q=2.971 lb/ft²; L'=3.86 ±0.15; M'c/4≈−0.59",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c4-15",
+     "titulo": "P4.2 De L'=1353 N/m al α",
+     "herramientas": "polar",
+     "oraculo": "cl=0.44; α≈1.9 ±0.5°",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c4-13",
+     "titulo": "IWC 4.17 Paredes de túnel: imágenes y paneles",
+     "herramientas": "potencial-2D,panel-2D",
+     "oraculo": "v(x,0)<1e-9V; Cp_min<−3 y →−3 cuando h/R→∞; ΣλS=0",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c1-18",
+     "titulo": "P1.6 NACA 2412: xcp/c(α) desde tabla",
+     "herramientas": "perfil-2D,gráfica",
+     "oraculo": "xcp/c: −2°→1.09, 0→0.41, 4→0.306, 14→0.266 ±0.5%; >0.25 siempre",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c4-19",
+     "titulo": "P4.8 Teoría vs experimento 4412 (%)",
+     "herramientas": "perfil-delgado,polar,reporte",
+     "oraculo": "reporte |teo−exp|/exp; verde si polar Ref.11 con cita",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/aero/panel2d.ts (solo fuentes)",
+    "docs/forja-research/aero-pliego/figuras-digitalizadas.md (método píxel a píxel)"
+   ],
+   "dependencias": [
+    "anderson-u3-paneles-en-el-cad",
+    "anderson-u4-perfil-delgado-naca"
+   ],
+   "esfuerzo": "L",
+   "valor": 4,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "anderson-u2-campos-circulacion",
+   "titulo": "U2 · Campos, vorticidad, Γ de Anderson y volumen de control",
+   "capitulos": [
+    2
+   ],
+   "objetivo": "Campo 2D definido por el usuario con ∇·,∇×,D/Dt; RK4 sobre campo arbitrario; circulacionAnderson=−∮V·ds sobre contorno dibujado; ψ/φ con test de ortogonalidad; rastrillo Pitot D'_estela vs D'_piel. Lecciones a2-l1..l5.",
+   "ejercicios": [
+    {
+     "id": "anderson-c2-01",
+     "titulo": "Ej 2.1 Pared ondulada: ∇·V en (1/4,1)",
+     "herramientas": "campo-2D,divergencia",
+     "oraculo": "div numérica=−0.7327 ±1%; =0 en x/l=0,½,1",
+     "respuesta_impresa": "∇·V=−0.7327 s⁻¹"
+    },
+    {
+     "id": "anderson-c2-03",
+     "titulo": "Ej 2.3 Derivada sustancial: 358.6 m/s² (36.6 g)",
+     "herramientas": "campo-2D,D/Dt",
+     "oraculo": "|a|=358.6 ±1%, ambas componentes negativas",
+     "respuesta_impresa": "ax=−358.56, ay=−0.129 m/s²"
+    },
+    {
+     "id": "anderson-c2-04",
+     "titulo": "Ej 2.4 Línea de corriente del vórtice por (0,5)",
+     "herramientas": "campo-2D,RK4",
+     "oraculo": "polilínea RK4 con |r−5|<1e-3 tras una vuelta",
+     "respuesta_impresa": "x²+y²=25"
+    },
+    {
+     "id": "anderson-c2-08",
+     "titulo": "Ej 2.8 Circulación del vórtice Γ=2π independiente del radio",
+     "herramientas": "campo-2D,circulación",
+     "oraculo": "Γ=2π ±1e-6 en r=1,2,5,10; signo de Anderson Γ≡−∮V·ds",
+     "respuesta_impresa": "Γ=2π m²/s"
+    },
+    {
+     "id": "anderson-c2-15",
+     "titulo": "P2.4/2.8 Vórtice libre: líneas, div, curl, Γ",
+     "herramientas": "campo-2D,circulación",
+     "oraculo": "círculos; div=curl=0; Γ=2πc si encierra el origen, 0 si no",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c2-17",
+     "titulo": "P2.6/2.11 Estancamiento u=cx,v=−cy: ψ, φ, ortogonalidad",
+     "herramientas": "campo-2D,ψ,φ",
+     "oraculo": "hipérbolas xy=cte; ψ=cxy, φ=c(x²−y²)/2; ∇ψ·∇φ=0; ∇²ψ=∇²φ=0",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c2-18",
+     "titulo": "P2.12 Fuerza sobre tubo en U (momento integral)",
+     "herramientas": "volumen-control,ensamble",
+     "oraculo": "F=2ρAV²=4830 N ±1% en sentido de la entrada",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c2-11",
+     "titulo": "§2.6 Arrastre por estela (rastrillo Pitot)",
+     "herramientas": "volumen-control,CFD,piel",
+     "oraculo": "D'_estela = D'_piel ±3% en estaciones 2c,4c,8c",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/aero/potencial.ts:integrateStreamline/integrateParcel/circulationIntegral",
+    "src/aero/skin.ts campo cierre (P2.1 HECHO)",
+    "src/math/modules/calc/VectorFields.tsx (voseo l.122: corregir)"
+   ],
+   "dependencias": [],
+   "esfuerzo": "M",
+   "valor": 3,
+   "sprint_sugerido": 4
+  },
+  {
+   "slug": "anderson-u5-lifting-line-baron",
+   "titulo": "U5 · Línea sustentadora: el Baron 58 y el perfil que te mintió",
+   "capitulos": [
+    5
+   ],
+   "objetivo": "lifting-line.ts (Fourier N×N, δ, τ, e, α_i(y)), campo δ(λ,AR) precomputado, Biot-Savart, Helmbold/Kuchemann; el ala se loftea en el kernel y wing-metrics.ts entrega S,b,AR; gate 'elíptica ⇒ e=1.0000'. Lecciones a5-l1..l7.",
+   "ejercicios": [
+    {
+     "id": "anderson-c5-05",
+     "titulo": "Invariante ala elíptica: δ=0, e=1, a=a0/(1+a0/πAR)",
+     "herramientas": "lifting-line",
+     "oraculo": "|δ|<1e-6; |e−1|<1e-6; a(AR=8,2π)=5.02655 ±1e-4; w(y) constante",
+     "respuesta_impresa": "δ=0, e=1; w=−Γ0/2b; a=a0/(1+a0/πAR)"
+    },
+    {
+     "id": "anderson-c5-01",
+     "titulo": "Ej 5.1 Ala AR=8, λ=0.8 a 5°",
+     "herramientas": "panel-3D,lifting-line",
+     "oraculo": "CL=0.4335 ±0.5%; CD,i=0.00789 ±1% con δ=τ=0.055 entrada",
+     "respuesta_impresa": "a=4.97/rad; CL=0.4335; CD,i=0.00789"
+    },
+    {
+     "id": "anderson-c5-02",
+     "titulo": "Ej 5.2 Escalar CD,i de AR=6 a AR=10",
+     "herramientas": "lifting-line",
+     "oraculo": "CD,i=0.0076 ±1%; a0=5.989 ±0.2%",
+     "respuesta_impresa": "CD,i=0.0076"
+    },
+    {
+     "id": "anderson-c5-04",
+     "titulo": "Ej 5.4 Baron 58: el perfil te mintió (ANCLA)",
+     "herramientas": "croquis,loft,lifting-line,perfil-2D",
+     "oraculo": "CL=0.443 ±1%; CD=0.0148 ±1%; AR del sólido lofteado=7.61 ±0.5%",
+     "respuesta_impresa": "e=0.99; CL=0.443; CD=0.0065+0.0083=0.0148"
+    },
+    {
+     "id": "anderson-c5-03",
+     "titulo": "Ej 5.3 α de crucero del jet ejecutivo",
+     "herramientas": "lifting-line,performance",
+     "oraculo": "α=0.6 ±0.05°",
+     "respuesta_impresa": "a=4.627/rad; α=0.6°"
+    },
+    {
+     "id": "anderson-c5-07",
+     "titulo": "P5.3 Ala 23012 AR=8 λ=0.8 a 7°",
+     "herramientas": "lifting-line",
+     "oraculo": "cadena a/CL/CD,i con δ(λ,AR) propio ±5%",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c5-10",
+     "titulo": "P5.6/5.7 Pendiente recta vs flecha 45° (AR 6 y 3)",
+     "herramientas": "lifting-line,VLM",
+     "oraculo": "Kuchemann vs Prandtl; VLM propio <5% a AR=6",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c5-06",
+     "titulo": "P5.1/5.2 Anillo de vórtice (Biot-Savart)",
+     "herramientas": "biot-savart",
+     "oraculo": "V=Γ/2R centro; ΓR²/(2(R²+A²)^1.5) eje a 1e-6",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/aero/wing-metrics.ts:metricasAla/macTrapezoidal (F0 cerrado)",
+    "src/aero/skin.ts:pielDeMalla (sustrato del VLM)"
+   ],
+   "dependencias": [
+    "anderson-u4-perfil-delgado-naca"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "anderson-u6-polar-avion-oswald",
+   "titulo": "U6 · Polar del avión completo: e de Oswald y (L/D)max",
+   "capitulos": [
+    6,
+    5,
+    1
+   ],
+   "objetivo": "polar.ts: CD=CDo+CL²/(πeAR), e=1.78(1−0.045AR^0.68)−0.64, (L/D)max=(πeAR CDo)^½/2CDo; P-35 vs Loftin; Spitfire (inducido 25 % crucero / 60 % aproximación); Cherokee. Nombra distinto e_envergadura y e_Oswald.",
+   "ejercicios": [
+    {
+     "id": "anderson-c6-01",
+     "titulo": "Ej 6.1 CD,o del P-35 desde la polar y e de Oswald",
+     "herramientas": "polar,performance",
+     "oraculo": "e=0.873 ±0.2%; CD,o=0.026 ±1%; Loftin 0.0251 <4%",
+     "respuesta_impresa": "AR=5.89; e=0.873; CD,o=0.026"
+    },
+    {
+     "id": "anderson-c6-02",
+     "titulo": "Ej 6.2 (L/D)max del P-35",
+     "herramientas": "polar,performance",
+     "oraculo": "12.46 ±0.5%; en ese punto CD,o=CL²/πeAR",
+     "respuesta_impresa": "(CL/CD)max=12.46"
+    },
+    {
+     "id": "anderson-c5-08",
+     "titulo": "P5.4 Piper Cherokee: α de crucero",
+     "herramientas": "performance,lifting-line",
+     "oraculo": "AR=6.02; CL=W/qS; α por (5.70); L=W",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c5-09",
+     "titulo": "P5.5 D_i del avión completo (e=0.64)",
+     "herramientas": "performance",
+     "oraculo": "dos vías (qSC_L²/πeAR y (W/b)²/πeq) coinciden a 1e-9",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c5-12",
+     "titulo": "P5.9 Spitfire a Vmax: CD,i y %",
+     "herramientas": "performance,ISA",
+     "oraculo": "CD,i=CL²/πAR; D=550ηHP/V; fracción; ρ(18,500 ft) ±0.5%",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c5-14",
+     "titulo": "P5.11 Spitfire aproximación 70 mi/h",
+     "herramientas": "performance",
+     "oraculo": "CD,i un orden mayor que P5.9",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c5-11",
+     "titulo": "P5.8 Wright y Lilienthal: corrección por AR",
+     "herramientas": "lifting-line",
+     "oraculo": "CL,Wright=0.546·a(3.5)/a(6.48) <0.546",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c1-24",
+     "titulo": "P1.15 Cessna Skylane: CL,CD,L/D vs V",
+     "herramientas": "performance,gráfica",
+     "oraculo": "(L/D)max=13.6 en CL*=0.680, V*=144.8 ft/s ±1 ft/s",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/aero/atmosfera.ts",
+    "src/aero/wing-metrics.ts"
+   ],
+   "dependencias": [
+    "anderson-u5-lifting-line-baron",
+    "anderson-u1-performance-similitud"
+   ],
+   "esfuerzo": "S",
+   "valor": 5,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "anderson-u7-gasdinamica-tablas",
+   "titulo": "U7 · gasdinamica.ts: isentrópicas, choque normal, Rayleigh-Pitot y tablas A/B/C",
+   "capitulos": [
+    7,
+    8,
+    20
+   ],
+   "objetivo": "El módulo que consumen los caps 8-14 y que hoy NO existe: T0/p0/ρ0/T*/a*/M*, choque normal directo e inverso, entropía, p02/p01, Pitot con umbral 1.893, ν(M) e inversa; generador de Ap. A/B/C al 4º decimal (modo exacto vs 'nearest entry'); banderas M>0.3 y T0>2000 K. Lecciones a7-l1..l4.",
+   "ejercicios": [
+    {
+     "id": "anderson-c20-10",
+     "titulo": "Ap. A Oráculo isentrópico",
+     "herramientas": "gasdinámica",
+     "oraculo": "error <0.1% fila a fila; A/A* min=1 en M=1",
+     "respuesta_impresa": "M=2: 7.824, 4.347, 1.800, 1.687; M=5: 529.1, 88.18, 6.000, 25.00"
+    },
+    {
+     "id": "anderson-c20-11",
+     "titulo": "Ap. B Oráculo de choque normal",
+     "herramientas": "gasdinámica",
+     "oraculo": "error <0.1%; ρ2/ρ1→6; p02/p01=1 en M=1 y decrece",
+     "respuesta_impresa": "M1=2: 4.500, 2.667, 1.687, 0.7209, 5.640, 0.5774; M1=3: 10.33, 3.857, 2.679, 0.3283, 12.06, 0.4752"
+    },
+    {
+     "id": "anderson-c20-12",
+     "titulo": "Ap. C Oráculo de Prandtl-Meyer",
+     "herramientas": "gasdinámica",
+     "oraculo": "error <0.05°; M(ν(M))=M a 1e-6; ν_max=130.45°",
+     "respuesta_impresa": "M=2: ν=26.38°, μ=30°; M=3: 49.76°, 19.47°; M=5: 76.92°, 11.54°"
+    },
+    {
+     "id": "anderson-c8-06",
+     "titulo": "Ej 8.11 Choque normal: estado aguas abajo",
+     "herramientas": "choque-normal",
+     "oraculo": "8.59/8.65/8.67 en M1=2 → 0.5774/4.5/1.6875 ±1e-4; T02=T01",
+     "respuesta_impresa": "p2=4.5 atm; T2=486 K; u2=255 m/s"
+    },
+    {
+     "id": "anderson-c8-10",
+     "titulo": "Ej 8.15-8.17 Choque normal INVERSO",
+     "herramientas": "choque-normal",
+     "oraculo": "inversas por bisección → M1=2/5/3 ±1e-3",
+     "respuesta_impresa": "M1=2; 5; 3"
+    },
+    {
+     "id": "anderson-c8-11",
+     "titulo": "Ej 8.22 Pitot compresible: decidir sub/supersónico",
+     "herramientas": "Pitot-Rayleigh",
+     "oraculo": "umbral 1.893; M=0.6/1.3/3.0 ±0.005",
+     "respuesta_impresa": "M=0.6; 1.3; 3.0"
+    },
+    {
+     "id": "anderson-c7-06",
+     "titulo": "Ej 7.7 Pitot subsónico compresible a 10,000 ft",
+     "herramientas": "Pitot-compresible",
+     "oraculo": "V∞=862 ft/s ±0.3%; RECHAZA Bernoulli M>0.3",
+     "respuesta_impresa": "T0=544.9 °R; V∞=862 ft/s"
+    },
+    {
+     "id": "anderson-c8-13",
+     "titulo": "Ej 8.24 Velocidad del SR-71 desde Pitot a 25 km",
+     "herramientas": "Pitot-Rayleigh,ISA",
+     "oraculo": "ISA(25000) p=2527 ±3; M=3.40 ±0.01; V=1003 ±3",
+     "respuesta_impresa": "M1=3.4; V1=1003 m/s"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/atmosfera.ts:mach (a=√γRT)",
+    "src/aero/cuna-anderson.ts:resolverChoqueOblicuo (β=90° implícito)"
+   ],
+   "dependencias": [],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "anderson-u8-choque-expansion-croquis",
+   "titulo": "U8 · Choque-expansión exacta sobre el polígono del croquis (placa, rombo, cuña, X-15)",
+   "capitulos": [
+    9,
+    12
+   ],
+   "objetivo": "Extender viento.ts: α≠0, cara a cara (giro hacia el flujo=oblicuo, alejándose=Prandtl-Meyer), estado completo detrás (M2,T2,p02 vía Mn1, nunca p02/p1), cl y cd_w, desprendido por cara, overlay de ondas; supersónico lineal Cp=2θ/√(M²−1) SIEMPRE al lado con su error; tomas multichoque y reflexiones.",
+   "ejercicios": [
+    {
+     "id": "anderson-c9-02",
+     "titulo": "Ej 9.2 Choque oblicuo 20° a Mach 2: estado completo",
+     "herramientas": "θ-β-M,choque-oblicuo,isentrópico",
+     "oraculo": "β=53.4 ±0.3°; M2=1.21 ±0.01; p02=7.00 ±0.05 atm; NO usar p02/p1",
+     "respuesta_impresa": "β=53.4°; M2=1.21; p2=2.82 atm; T2=399.7 K; p02=7.00 atm"
+    },
+    {
+     "id": "anderson-c9-08",
+     "titulo": "Ej 9.9 Expansión Prandtl-Meyer 15° desde M=1.5",
+     "herramientas": "Prandtl-Meyer",
+     "oraculo": "ν(1.5)=11.91 ±0.01°; M(26.91°)=2.00; p02=p01; p2=0.469 ±0.003",
+     "respuesta_impresa": "M2=2.0; p2=0.469 atm; T2=232 K; p02=3.671 atm"
+    },
+    {
+     "id": "anderson-c9-11",
+     "titulo": "Ej 9.12 Placa plana 5° Mach 3: cl y cd por choque-expansión",
+     "herramientas": "croquis,shock-expansion",
+     "oraculo": "cl=0.125 ±0.003; cd=0.011 ±0.001; cd/cl=tanα exacto",
+     "respuesta_impresa": "cl=0.125; cd=0.011"
+    },
+    {
+     "id": "anderson-c9-05",
+     "titulo": "Ej 9.6 cd de onda de cuña 15° a Mach 5",
+     "herramientas": "croquis,estudio-viento,θ-β-M",
+     "oraculo": "Dp/(qc)=0.114 ±0.002 aislando presión",
+     "respuesta_impresa": "β=24.2°; p2/p1=4.736; cd=0.114"
+    },
+    {
+     "id": "anderson-c9-20",
+     "titulo": "P9.14 Rombo ε=10° a α=15°, Mach 3",
+     "herramientas": "croquis,shock-expansion",
+     "oraculo": "4 caras; α=0 ⇒ cl=0 y D'=(p2−p3)t",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c9-12",
+     "titulo": "Ej 9.13 Cola de cuña del X-15: cl placa vs cuña",
+     "herramientas": "croquis,shock-expansion",
+     "oraculo": "cl_placa=0.126 ±0.004; cl_cuña=0.241 ±0.006; ratio≈2",
+     "respuesta_impresa": "cl=0.126 (placa); 0.241 (cuña)"
+    },
+    {
+     "id": "anderson-c12-01",
+     "titulo": "Ej 12.1 Placa 5° Mach 3: lineal vs exacto (1.6%)",
+     "herramientas": "supersónico-lineal,shock-expansion",
+     "oraculo": "cl=0.123 ±0.5%; cd=0.011; |Δcl|≤2% vs exacto",
+     "respuesta_impresa": "cl=0.123; cd=0.011 (exacto 0.125/0.011)"
+    },
+    {
+     "id": "anderson-c9-04",
+     "titulo": "Ej 9.5 Frenar Mach 3: normal vs oblicuo 40°+normal",
+     "herramientas": "toma-supersónica",
+     "oraculo": "0.578/0.3283=1.76 ±0.02",
+     "respuesta_impresa": "ratio=1.76 (76% más p0)"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/cuna-anderson.ts:thetaDeBeta/deflexionMaxima/resolverChoqueOblicuo/betaChoqueOblicuo (15 tests)",
+    "src/forja/sim/viento.ts:estudioVientoSupersonico (cuña a α=0)",
+    "src/forja/brep/ForgeBRepStudio.tsx:useWedgeFrame (~l.2111)"
+   ],
+   "dependencias": [
+    "anderson-u7-gasdinamica-tablas"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "anderson-u7-tobera-tunel",
+   "titulo": "U7 · Tobera casi-1D con contrapresión y túnel supersónico (tobera como PIEZA)",
+   "capitulos": [
+    10
+   ],
+   "objetivo": "A(x) medida del sólido revolucionado; régimen automático (subsónico/ahogado/choque interno/salida); ṁ ahogado; empuje del cohete γ=1.22; segunda garganta y IWC 10.8 completo; colormap = DATO sobre el sólido. Lecciones a7-l5/a7-l6.",
+   "ejercicios": [
+    {
+     "id": "anderson-c10-02",
+     "titulo": "Ej 10.2 Tobera Ae/A*=2: dos soluciones",
+     "herramientas": "gasdinámica-1D,tobera",
+     "oraculo": "raíces 2.2 y 0.3 ±2%; p*/p0=0.5283, T*/T0=0.8333 exactas",
+     "respuesta_impresa": "(a) Me=2.2, pe=0.0935 atm; (b) Me=0.3, pe=0.94 atm"
+    },
+    {
+     "id": "anderson-c10-03",
+     "titulo": "Ej 10.3 pe=0.973 atm: garganta NO sónica",
+     "herramientas": "tobera",
+     "oraculo": "Mt=0.44 ±3%; At/A*=1.482>1",
+     "respuesta_impresa": "Me=0.2; At/A*=1.482; Mt=0.44"
+    },
+    {
+     "id": "anderson-c10-04",
+     "titulo": "Ej 10.4 Motor cohete H2/O2 (γ=1.22): empuje y Ae",
+     "herramientas": "tobera,ISA,revolve",
+     "oraculo": "T=2.17e6 N ±1%; Ae=16.5 m² ±1%; ue por energía vs Me·ae <0.5%; p(20 km)=5529 Pa",
+     "respuesta_impresa": "ṁ=586.4 kg/s; Me=4.38; ue=3700 m/s; T=2.17e6 N; Ae=16.5 m²"
+    },
+    {
+     "id": "anderson-c10-05",
+     "titulo": "Ej 10.5 Gasto ahogado cerrado (E10.3)",
+     "herramientas": "tobera",
+     "oraculo": "ṁ=583.2 ±0.5% (ojo: libro usa R=510); |cadena−cerrada|<1%",
+     "respuesta_impresa": "ṁ=583.2 kg/s"
+    },
+    {
+     "id": "anderson-c10-13",
+     "titulo": "P10.9 Ae/A*=1.53 con cuatro contrapresiones",
+     "herramientas": "tobera,choque-normal",
+     "oraculo": "clasificación automática; choque interno por bisección |pe−pe_calc|<1e-4 atm",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c10-06",
+     "titulo": "Ej 10.6 Segunda garganta de túnel Mach 2",
+     "herramientas": "choque-normal,túnel",
+     "oraculo": "At2/At1=1.387 ±0.5%",
+     "respuesta_impresa": "At,2/At,1=1.387"
+    },
+    {
+     "id": "anderson-c10-07",
+     "titulo": "IWC 10.8 Túnel blowdown Mach 2 completo",
+     "herramientas": "túnel,gasdinámica-1D,croquis,planeación",
+     "oraculo": "Re=23e6 ±3%; ṁ=7.05 lbm/s ±2%; V_tanque=9049 ft³ ±2%; 2h=2.31 ft",
+     "respuesta_impresa": "sección 3×3.5 ft; p01=1.387 atm; Re=23e6; ṁ=7.05 lbm/s; tanque 9049 ft³"
+    },
+    {
+     "id": "anderson-c10-14",
+     "titulo": "P10.10 Ae/A* del túnel desde β de una cuña de 20°",
+     "herramientas": "choque-oblicuo,croquis",
+     "oraculo": "M de thetaDeBeta(M,41.8°)=20°; A/A* supersónico; el alumno DIBUJA la cuña",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/aero/atmosfera.ts (p a 20 km)",
+    "src/forja/brep/occt.ts (revolve, cortes)",
+    "src/aero/cuna-anderson.ts:thetaDeBeta (P10.10)"
+   ],
+   "dependencias": [
+    "anderson-u7-gasdinamica-tablas"
+   ],
+   "esfuerzo": "L",
+   "valor": 4,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "anderson-u8-prandtl-glauert-mcr",
+   "titulo": "U8 · Prandtl-Glauert, Mach crítico y regla del área",
+   "capitulos": [
+    11,
+    12
+   ],
+   "objetivo": "Una división sobre el Cp de panel2d (+K-T/Laitone); Cp,cr(M) ∩ corrección → Mcr por bisección (0012: 0.7371); drag-divergence como decisión espesor/flecha; barrido A(x) del sólido (normal y al ángulo de Mach). Lecciones a8-l4/a8-l5.",
+   "ejercicios": [
+    {
+     "id": "anderson-c11-01",
+     "titulo": "Ej 11.1 Prandtl-Glauert sobre Cp puntual",
+     "herramientas": "compresibilidad-PG,panel-2D",
+     "oraculo": "Cp=−0.375 ±0.1%",
+     "respuesta_impresa": "Cp=−0.375"
+    },
+    {
+     "id": "anderson-c11-02",
+     "titulo": "Ej 11.2 Pendiente a M=0.7: +40%",
+     "herramientas": "compresibilidad-PG",
+     "oraculo": "8.8/rad ±0.5%; marca borde de validez",
+     "respuesta_impresa": "cl=8.8α; 1.4×"
+    },
+    {
+     "id": "anderson-c11-03",
+     "titulo": "Ej 11.3 Mach crítico del NACA 0012: 0.7371 vs 0.73",
+     "herramientas": "mach-crítico,panel-2D,croquis",
+     "oraculo": "raíz de (11.63)=0.7371 ±0.001; Cp,cr(M) ±1%; Cp0,min de panel2d ≈−0.43 ±10% en x/c≈0.1",
+     "respuesta_impresa": "Mcr=0.74 (gráfico); 0.7371 (analítico); exp 0.73"
+    },
+    {
+     "id": "anderson-c11-07",
+     "titulo": "P11.3 P-G, K-T, Laitone sobre Cp0=−0.54 a M=0.58",
+     "herramientas": "compresibilidad-PG",
+     "oraculo": "P-G ±0.1%; |Laitone|≥|K-T|≥|P-G|",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c11-08",
+     "titulo": "P11.4 Mcr con Cp0,min=−0.41",
+     "herramientas": "mach-crítico",
+     "oraculo": "raíz tol 1e-4; Mcr(−0.41)>0.7371",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c11-12",
+     "titulo": "P11.9 Mcr del cilindro: dentro de 3.5% de 0.404",
+     "herramientas": "mach-crítico,panel-2D",
+     "oraculo": "Cp0,min=−3; raíz dentro de 3.5% de 0.404",
+     "respuesta_impresa": "Mcr cilindro 0.404; esfera 0.57; within 3.5%"
+    },
+    {
+     "id": "anderson-c11-13",
+     "titulo": "Regla del área transónica: A(x) del sólido completo",
+     "herramientas": "sección-área,ensamble,loft",
+     "oraculo": "∫A(x)dx=volumen <0.5%; métrica de suavidad menor en area-ruled",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c12-04",
+     "titulo": "Regla del área SUPERSÓNICA del F-16 (cortes al ángulo de Mach)",
+     "herramientas": "sección-área,ensamble",
+     "oraculo": "μ=38.7°/56.4° exactos; A_oblicua suave; M→1 recupera A(x)",
+     "respuesta_impresa": "μ=38.7° (M=1.6); 56.4° (M=1.2)"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/panel2d.ts:resolverAlpha (Cp0)",
+    "src/aero/potencial.ts:nacaProfile (0012)",
+    "src/forja/brep/occt.ts (cortes/masa-inercia)"
+   ],
+   "dependencias": [
+    "anderson-u3-paneles-en-el-cad",
+    "anderson-u7-gasdinamica-tablas"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 4
+  },
+  {
+   "slug": "anderson-u6-blasius-capa-limite",
+   "titulo": "U6 · capa-limite.ts: Blasius, turbulento, transición — el arrastre existe",
+   "capitulos": [
+    17,
+    18,
+    19,
+    4
+   ],
+   "objetivo": "Shooting RK4 de Blasius (0.332/5.0/1.72/0.664, convención η=y√(V/νx)); correlaciones turbulentas; transición con Re_cr como ENTRADA; sustituye τ=431 s^-0.2 en viento.ts e integra con skin.ts sobre el ala del Cherokee extruida; factores 7.7 y 28.6. Lecciones a6-l1/a6-l2/a4-l7.",
+   "ejercicios": [
+    {
+     "id": "anderson-c18-01",
+     "titulo": "Blasius por shooting RK4: las cuatro constantes",
+     "herramientas": "capa-límite,shooting-RK4,EDO",
+     "oraculo": "0.332 / 5.0 / 1.72 / 0.664 ±1%; convención η=y√(V/νx) (NO la 0.4696 de Bertin)",
+     "respuesta_impresa": "f''(0)=0.332; η99=5.0; 1.72; 0.664"
+    },
+    {
+     "id": "anderson-c17-02",
+     "titulo": "δ, δ*, θ del perfil de Blasius: tres significados",
+     "herramientas": "capa-límite,integración",
+     "oraculo": "δ*/δ=0.34; θ/δ*=0.39; θ/δ=0.13 ±0.01; Cf=2θ_c/c=1.328/√Rec ±0.5%",
+     "respuesta_impresa": "δ*=0.34δ; θ=0.39δ*; Cf=2θ_c/c"
+    },
+    {
+     "id": "anderson-c18-02",
+     "titulo": "Ej 18.1a Placa laminar 100 m/s: 175.6 N",
+     "herramientas": "capa-límite,ISA,estudio-viento",
+     "oraculo": "D=175.6 N ±1%; aviso Rec>Re_cr",
+     "respuesta_impresa": "Rec=1.36e7; Cf=3.60e-4; D=175.6 N"
+    },
+    {
+     "id": "anderson-c19-01",
+     "titulo": "Ej 19.1a Placa turbulenta incompresible: factor 7.7",
+     "herramientas": "capa-límite,turbulento",
+     "oraculo": "D=1352 N ±1%; razón 7.7 ±0.1",
+     "respuesta_impresa": "Cf=2.77e-3; D=1352 N; 7.7×"
+    },
+    {
+     "id": "anderson-c19-05",
+     "titulo": "P19.1 Ala del Cherokee: fricción laminar vs turbulenta",
+     "herramientas": "capa-límite,estudio-viento,croquis,extruir",
+     "oraculo": "Rec≈6.9e6; D_lam≈38 N, D_turb≈241 N, razón 6.0-6.6 (derivados ±3%) sobre el ala extruida",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c19-07",
+     "titulo": "P19.3 Cherokee con transición Re_cr=5e5",
+     "herramientas": "capa-límite,transición",
+     "oraculo": "D≈222 N ±3% (derivado); D_lam<D<D_turb; límites Re_cr→∞/0",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c4-10",
+     "titulo": "Ej 4.10 Cf con transición Re_cr=5e5",
+     "herramientas": "capa-límite,transición",
+     "oraculo": "Net Cf=0.0063 ±5e-5 con Re_cr como ENTRADA",
+     "respuesta_impresa": "Net Cf=0.0063"
+    },
+    {
+     "id": "anderson-c18-04",
+     "titulo": "El arrastre NO va con V²: ×10 en V da ×28.6",
+     "herramientas": "estudio-viento,barrido",
+     "oraculo": "D(1000)/D(100)=28.6 ±0.3; pendiente log-log <2",
+     "respuesta_impresa": "factor 28.6 (no 100)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/sim/viento.ts (τ empírico etiquetado; cita capa-limite.ts)",
+    "src/aero/skin.ts:integrarCortante",
+    "src/aero/atmosfera.ts"
+   ],
+   "dependencias": [
+    "anderson-u1-fuerzas-momentos"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "anderson-u6-compresible-sutherland",
+   "titulo": "U6 · Sutherland, temperatura de referencia y Couette: fricción compresible con banda ±20 %",
+   "capitulos": [
+    15,
+    16,
+    18,
+    19,
+    12
+   ],
+   "objetivo": "Propiedades μ(T),k,Pr; T* de Eckert/Meador-Smart laminar (1 %) y turbulento (±20 % declarado); Couette 1D exacto como banco; F-104: fricción 60 % del arrastre; sustituye Figs 18.8/19.1 con el solver auto-similar (benchmark).",
+   "ejercicios": [
+    {
+     "id": "anderson-c15-04",
+     "titulo": "Propiedades de transporte: Sutherland, k=1.45μcp, Pr=0.71",
+     "herramientas": "propiedades,térmico",
+     "oraculo": "μ(288.16)=1.7894e-5 exacto; μ(320)=1.939e-5; Pr fijo 0.71 declarando k⇒0.69",
+     "respuesta_impresa": "μ/μ0=(T/T0)^1.5(T0+110)/(T+110); k=1.45μcp; Pr=0.71"
+    },
+    {
+     "id": "anderson-c18-05",
+     "titulo": "Ej 18.2 Temperatura de referencia (Eckert): 1%",
+     "herramientas": "capa-límite-compresible,T*,Sutherland",
+     "oraculo": "D=4976 N ±1%; T*=612.7 K; μ*=3.058e-5; Rec*=3.754e7",
+     "respuesta_impresa": "r=0.843; T*=612.7 K; Cf*=2.167e-4; D=4976 N"
+    },
+    {
+     "id": "anderson-c18-06",
+     "titulo": "Ej 18.3 Meador-Smart laminar: 0.4%",
+     "herramientas": "capa-límite-compresible,T*",
+     "oraculo": "D=5008 N ±1% (erratas ρ*=0.599, Cf*=2.09e-4)",
+     "respuesta_impresa": "T*=587.5 K; D=5008 N"
+    },
+    {
+     "id": "anderson-c19-03",
+     "titulo": "Ej 19.2 Turbulento por T*: 20% de discrepancia",
+     "herramientas": "T*",
+     "oraculo": "D=51,890 N ±1%; banda ±20% reportada",
+     "respuesta_impresa": "Cf*=2.26e-3; D=51,890 N (20%)"
+    },
+    {
+     "id": "anderson-c19-04",
+     "titulo": "Ej 19.3 Meador-Smart turbulento: 14%",
+     "herramientas": "T*,Sutherland",
+     "oraculo": "D=56,140 N ±1%; ∫0.02296/Rex^0.139 = 0.02667/Rec^0.139 a 1e-6",
+     "respuesta_impresa": "T*=581.8 K; Cf*=2.32e-3; D=56,140 N (14%)"
+    },
+    {
+     "id": "anderson-c12-03",
+     "titulo": "Ej 12.3 F-104: fricción vs onda; L/D 28.3→11.2",
+     "herramientas": "supersónico-lineal,fricción-compresible,Sutherland",
+     "oraculo": "μ=1.4226e-5 ±0.1%; Re=3.33e7; cd,onda=2.83e-3; L/D=11.2 ±1%; α_igualdad=2.47°",
+     "respuesta_impresa": "Cf=4.3e-3; cd,w=2.83e-3; fricción 60%; L/D 28.3→11.2"
+    },
+    {
+     "id": "anderson-c16-01",
+     "titulo": "Ej 16.1 Couette incompresible imperial",
+     "herramientas": "Couette,unidades",
+     "oraculo": "100 ft/s; 0.09 lb/ft²; 519.6 R; 8.97; 521.36 R ±1%",
+     "respuesta_impresa": "u=100 ft/s; τ=0.09 lb/ft²; Tmax=519.6 R; q_w=8.97; Taw=521.36 R"
+    },
+    {
+     "id": "anderson-c16-02",
+     "titulo": "Ej 16.2 Couette compresible Mach 3: q_w por Reynolds",
+     "herramientas": "Couette,analogía-Reynolds",
+     "oraculo": "q_w=3.68e4 W/m² ±1%; CH/cf=1/(2Pr) exacto",
+     "respuesta_impresa": "cf=1.13e-4; CH=8e-5; Taw=656 K; q_w=3.68e4 W/m²"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/atmosfera.ts",
+    "src/forja/mold/fan.ts (Hele-Shaw, otro dominio, solo referencia)"
+   ],
+   "dependencias": [
+    "anderson-u6-blasius-capa-limite",
+    "anderson-u7-gasdinamica-tablas"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 4
+  },
+  {
+   "slug": "anderson-u6-polar-completa-xfoil",
+   "titulo": "U6 · Acoplamiento viscoso-inviscido: la polar completa (el truco de XFOIL)",
+   "capitulos": [
+    17,
+    19,
+    20
+   ],
+   "objetivo": "Cuerpo efectivo ab+δ* sobre panel2d con lazo de 5 pasos; Thwaites/Head; cf(x/c) con pico tras el LE; Cd=presión+fricción vs Abbott; fixture Lombardi 5.34e-3 con banda; regla de producto ±20 %. Lección a6-l6.",
+   "ejercicios": [
+    {
+     "id": "anderson-c17-01",
+     "titulo": "Acoplamiento viscoso-inviscido: cuerpo efectivo ab+δ*",
+     "herramientas": "panel-2D,capa-límite,acoplamiento",
+     "oraculo": "placa: δ*=1.72x/√Rex ±1%, 1 iteración; perfil: converge ≤10 it; Cd>0",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c20-02",
+     "titulo": "cf(x/c) sobre el 0012 vs placa plana: el pico tras el LE",
+     "herramientas": "perfil-2D,capa-límite,croquis",
+     "oraculo": "cf(0)=0; argmax en x/c<0.1; decreciente después; integral = c20-01 ±5%",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c20-01",
+     "titulo": "Tabla 20.4 Lombardi: Cf del 0012 capa límite vs tres RANS",
+     "herramientas": "perfil-2D,capa-límite,CFD",
+     "oraculo": "capa límite acoplada: Cf=5.34e-3 ±5%; RANS en [5.34e-3,7.5e-3] con banda ±20%",
+     "respuesta_impresa": "Cf×10³: k-ε 7.486; RNG 6.272; RSM 6.792; BL 5.340; 18-40%"
+    },
+    {
+     "id": "anderson-c19-13",
+     "titulo": "Drag buildup 2D: paneles (presión) + placa plana (fricción)",
+     "herramientas": "perfil-2D,panel-2D,capa-límite,transición,polar",
+     "oraculo": "Cd(α=0) del 0012 ±15% de Abbott; Cd_presión→0 en α=0",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c20-08",
+     "titulo": "Regla de producto: banda ±20% y malla de pared para cf/q_w",
+     "herramientas": "CFD,reporte",
+     "oraculo": "cf RANS con banda ±20% y ≤2 cifras; BL sin banda solo si cf>0 en toda la cuerda",
+     "respuesta_impresa": "no better than about 20 percent accuracy"
+    },
+    {
+     "id": "anderson-c15-03",
+     "titulo": "Re_cr medido: xcr=0.05 m a 120 m/s → 412,000",
+     "herramientas": "transición,estudio-viento",
+     "oraculo": "412,000 ±0.5%; xcr(240)=0.025 m; 4 factores reducen xcr",
+     "respuesta_impresa": "Re_cr=412,000; xcr=0.025 m a 240 m/s; regla 500,000"
+    }
+   ],
+   "ya_existe": [
+    "src/aero/panel2d.ts:prepararPaneles/resolverAlpha",
+    "src/aero/skin.ts:integrarCortante"
+   ],
+   "dependencias": [
+    "anderson-u6-blasius-capa-limite",
+    "anderson-u4-vortices-kutta-polares"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 5
+  },
+  {
+   "slug": "anderson-u9-hipersonico-newtoniana",
+   "titulo": "U9 · Newtoniana sobre la piel B-Rep + calentamiento: por qué la nariz es roma",
+   "capitulos": [
+    14,
+    18,
+    19
+   ],
+   "objetivo": "newtoniana.ts: Cp=Cp,max sin²θ por panel de skin.ts con sombra; L,D,Cm de TU pieza; Tauber-Meneses 45.78 W/cm² vs Zoby 45; q∝1/√R con el fillet del CAD; gate T>2000 K; waverider caret con el kernel. Lecciones a9-l1..l3.",
+   "ejercicios": [
+    {
+     "id": "anderson-c14-04",
+     "titulo": "Cp newtoniano modificado sobre la malla B-Rep de cualquier pieza",
+     "herramientas": "panel-3D,piel,revolve,choque-normal",
+     "oraculo": "Cp,max 1.79/1.83 ±1%; esfera CD=1, cilindro 4/3, placa 2, cono 2sin²θc ±0.5%",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c14-01",
+     "titulo": "Ej 14.1(a) Placa 15° Mach 8 exacta",
+     "herramientas": "shock-expansion,Prandtl-Meyer",
+     "oraculo": "impresos ±2%; L/D=cot15°=3.732 ±0.1%",
+     "respuesta_impresa": "Cp2=−0.0219; Cp3=0.1885; cl=0.2032; cd=0.0545; L/D=3.73"
+    },
+    {
+     "id": "anderson-c14-02",
+     "titulo": "Ej 14.1(b) La misma placa por Newton",
+     "herramientas": "newtoniana",
+     "oraculo": "impresos ±1%; errores 29%/100%/36.6% ±2%; L/D exacto",
+     "respuesta_impresa": "Cp3=0.134; cl=0.1294; cd=0.03468; L/D=3.73"
+    },
+    {
+     "id": "anderson-c14-03",
+     "titulo": "Ej 14.2 Calentamiento de estancamiento del Shuttle (Tauber-Meneses)",
+     "herramientas": "térmico,ISA",
+     "oraculo": "45.78 W/cm² ±1%; ±3% vs Zoby 45; unidades W/cm², m/s, kg/m³, m",
+     "respuesta_impresa": "h0=2.185e7 J/kg; hw/h0=0.051; q_w=45.78 W/cm² (Zoby 45)"
+    },
+    {
+     "id": "anderson-c14-15",
+     "titulo": "Dimensionar el radio de nariz: q_w∝1/√R",
+     "herramientas": "térmico,revolve,fillet",
+     "oraculo": "q_w·√R=52.0 const ±1e-9; R=0.1 m→164 W/cm²; R(30 W/cm²)=3.0 m",
+     "respuesta_impresa": "q_w∝1/√R; Q_total=½(Cf/CD)(½mVE²)"
+    },
+    {
+     "id": "anderson-c14-05",
+     "titulo": "Curvas newtonianas de placa: cl,max=0.77 a 54.7°, (L/D)max con fricción",
+     "herramientas": "newtoniana,optimización",
+     "oraculo": "cl,max=4/(3√3)=0.7698; α=54.74°; identidades 14.23-14.27 ±1e-9",
+     "respuesta_impresa": "cl,max=0.77 a 54.7°; α*=(cd0)^1/3; (L/D)max=0.67/(cd0)^1/3; cd,w=2cd0"
+    },
+    {
+     "id": "anderson-c14-12",
+     "titulo": "Waverider caret de Nonweiler en el CAD",
+     "herramientas": "croquis,loft,choque-oblicuo,panel-3D",
+     "oraculo": "bordes de ataque en el plano de choque <1e-6·l; Cp intradós uniforme=(14.38); L/D=cotδ; vol=prisma ±1e-6",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c19-11",
+     "titulo": "P19.7 Nariz esférica a 35 km: q a 1500 y 4500 m/s",
+     "herramientas": "térmico,estancamiento,ISA,Sutherland",
+     "oraculo": "q(4500)/q(1500)∈[20,35]; ISA(35 km)=583.59 Pa, 246.1 K ±0.5%; etiqueta gas real",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/aero/skin.ts:pielDeMalla/integrarPresion (piel + integración lista)",
+    "src/aero/cuna-anderson.ts:resolverChoqueOblicuo (β a M=36 OK)",
+    "src/aero/atmosfera.ts (hasta 84.852 km)",
+    "src/forja/brep/occt.ts (fillet, loft)"
+   ],
+   "dependencias": [
+    "anderson-u7-gasdinamica-tablas",
+    "anderson-u8-choque-expansion-croquis"
+   ],
+   "esfuerzo": "M",
+   "valor": 4,
+   "sprint_sugerido": 5
+  },
+  {
+   "slug": "anderson-u9-moc-taylor-maccoll",
+   "titulo": "U9 · MOC: diseñar la tobera sin choques + Taylor-Maccoll (cuña vs cono)",
+   "capitulos": [
+    13,
+    14
+   ],
+   "objetivo": "Proceso unitario θ±ν=K±, contorno de enderezamiento → croquis → extruir + plano acotado con oráculo A/A*(Me) del kernel; EDO de Taylor-Maccoll para que el Estudio Viento distinga revolve (cono) de extrude (cuña); independencia de Mach.",
+   "ejercicios": [
+    {
+     "id": "anderson-c13-01",
+     "titulo": "P13.1 Proceso unitario del MOC: punto 3 desde 1 y 2",
+     "herramientas": "MOC-2D,Prandtl-Meyer",
+     "oraculo": "K± ±1e-9; derivado: θ3=10°, M3≈2.39, (x3,y3)≈(0.089,0.049) m ±2%",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c13-02",
+     "titulo": "Diseño del contorno de tobera supersónica por MOC (§13.3)",
+     "herramientas": "MOC-2D,croquis,extruir,plano2D",
+     "oraculo": "semialtura salida/garganta = A/A*(Me): 1.6875 (M=2), 2.6367 (M=2.5) ±0.5%; Me uniforme <0.5%; θ_salida=0",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c13-05",
+     "titulo": "Taylor-Maccoll: cono por método inverso + carta θc-θs-M",
+     "herramientas": "EDO,revolve,aero-3D",
+     "oraculo": "β_cono<β_cuña; θc,max cono>cuña; Vθ(θc)=0 ±1e-6; vs Sims ±0.5%",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c14-08",
+     "titulo": "Independencia de Mach: cuña y cono 15° vs M (Fig 14.15)",
+     "herramientas": "choque-oblicuo,EDO,newtoniana",
+     "oraculo": "límites ±1e-9; Cp_cono<Cp_cuña; |Cp(M)−Cp(∞)|<5% para M>10",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "anderson-c14-07",
+     "titulo": "Cuña 15° a M=36: β=18° y límite β=1.2θ",
+     "herramientas": "choque-oblicuo",
+     "oraculo": "resolverChoqueOblicuo(36,15°)≈18.2° ±2%; ρ2/ρ1→6; Cp→0.163",
+     "respuesta_impresa": "β=18°; β=1.2θ"
+    },
+    {
+     "id": "anderson-c10-19",
+     "titulo": "P10.17/10.18 Línea de corriente en abanico PM (M 1→1.6)",
+     "herramientas": "Prandtl-Meyer,croquis",
+     "oraculo": "giro total ν(1.6)−ν(1); tangente continua",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/aero/cuna-anderson.ts",
+    "src/forja/brep/occt.ts + drawing.ts (extruir, plano)"
+   ],
+   "dependencias": [
+    "anderson-u7-gasdinamica-tablas",
+    "anderson-u8-choque-expansion-croquis"
+   ],
+   "esfuerzo": "L",
+   "valor": 3,
+   "sprint_sugerido": 6
+  }
+ ],
+ "brechas_vs_fusion": [
+  {
+   "brecha": "Arrastre de fricción y separación: la suite es 100 % inviscida (Cd=0, d'Alembert)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Caps 4.12, 17-19: Cf=1.328/√Re, 0.074/Re^0.2, transición Re_cr como entrada, cuerpo efectivo ab+δ*; 'take it seriously' (§19.2.3)",
+   "que_hace_la_competencia": "XFOIL/XFLR5: paneles + capa límite integral + e^N acoplados; SolidWorks Flow Simulation y Autodesk CFD (Fusion) por CFD volumétrico"
+  },
+  {
+   "brecha": "Paneles 2D con Kutta y perfiles NACA nativos dentro del CAD (hoy panel2d.ts vive sin UI y solo fuentes)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "§3.17, §4.2, §4.8, §4.10: fuentes+vórtices, línea media literal del 23012, cl=π(2A0+A1)",
+   "que_hace_la_competencia": "XFLR5/XFoil/JavaFoil generan NACA 4/5 dígitos y resuelven paneles de vórtice; Fusion/SolidWorks solo por add-ins de importación .dat"
+  },
+  {
+   "brecha": "Gas dinámico completo (isentrópicas, choque normal, Prandtl-Meyer, tablas A/B/C, Pitot supersónico)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Caps 7-9 y Apéndices: 'las tablas son el oráculo'; NUNCA p02/p1 con Mn1 en oblicuos; Bernoulli prohibido si M>0.3",
+   "que_hace_la_competencia": "MATLAB Aerospace Toolbox (flowisentropic/flownormalshock/flowprandtlmeyer), calculadoras NASA/VT; Fluent density-based captura choques"
+  },
+  {
+   "brecha": "Ala finita y polar del avión: lifting-line, VLM, e de Oswald, (L/D)max",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Caps 5-6: 'la polar CDo+CL²/πeAR es la piedra angular del diseño conceptual'; el factor #1 es el AR",
+   "que_hace_la_competencia": "AVL, OpenVSP/VSPAERO, Tornado, XFLR5 (LLT/VLM); Raymer RDS; cero en navegador"
+  },
+  {
+   "brecha": "Tobera casi-1D y túnel supersónico sobre la pieza revolucionada",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Cap 10: área-Mach bivaluada, régimen por contrapresión, ṁ∝p0A*/√T0, segunda garganta At2/At1=p01/p02, IWC 10.8",
+   "que_hace_la_competencia": "Ansys Fluent/SolidWorks Flow (CFD, minutos-horas); RPA y NASA CEA para cohetes; hojas de Pope & Goin para túneles"
+  },
+  {
+   "brecha": "Compresibilidad subsónica: P-G/K-T, Mach crítico, regla del área (cortes normales y al ángulo de Mach)",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Caps 11-12: Cp=Cp0/√(1−M²); Mcr por (11.63); A(x) suave ⇒ ½ del pico de drag; F-16 area-ruled a M=1.6",
+   "que_hace_la_competencia": "XFoil aplica Karman-Tsien por defecto; OpenVSP tiene Wave Drag con cortes a planos de Mach; Fusion/SolidWorks: sección manual"
+  },
+  {
+   "brecha": "Hipersónico de ingeniería: newtoniana sobre malla, calentamiento de estancamiento, MOC, Taylor-Maccoll, waveriders",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Caps 13-14: Cp=Cp,max sin²θ para diseño preliminar; q∝V³/√R domina el diseño (nariz roma); MOC diseña el contorno sin choques",
+   "que_hace_la_competencia": "NASA CBAERO / S-HABP / TPSX, MAXWARP, tablas de Sims; ningún CAD comercial"
+  },
+  {
+   "brecha": "Campos 2D genéricos con operadores, líneas de corriente sobre campo arbitrario, Γ con signo del libro, volumen de control",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Cap 2: Γ≡−∮V·ds (horario positivo); D'=∫ρu2(u1−u2)dy (rastrillo Pitot); ψ⊥φ",
+   "que_hace_la_competencia": "ParaView (Calculator, StreamTracer, ParticleTracer), Fluent 'Surface Integrals'; ninguno cruza estela-vs-piel como invariante"
+  },
+  {
+   "brecha": "Honestidad codificada: dominios de validez, bandas de incertidumbre (cf turbulento ±20 %), gate T>2000 K, Re_cr sin default",
+   "prioridad": "P1",
+   "que_dice_el_libro": "§3.5 Ej 3.12, §7.4, §14.2, §20.4: 'no better than about 20 percent'; 'not even close below M=5'; epígrafe deHavilland",
+   "que_hace_la_competencia": "Nadie la declara: Fluent/Flow Simulation no avisan; XFLR5 avisa poco. Es la tesis de posicionamiento de CRUCE-Y-PLAN §1"
+  },
+  {
+   "brecha": "Unidades duales SI/inglesas (slug, °R, lb/ft², mi/h, hp) y Apéndice E",
+   "prioridad": "P2",
+   "que_dice_el_libro": "Problemas de los caps 1-10 y 19 mezclan sistemas a propósito ('which system to use will be self-evident')",
+   "que_hace_la_competencia": "Fusion/SolidWorks: unidades por documento conmutables; XFLR5 pide ρ/ν a mano"
+  },
+  {
+   "brecha": "CFD viscoso compresible (MacCormack, RANS Baldwin-Lomax, mallado O/C, quimera) y transónico",
+   "prioridad": "P2",
+   "que_dice_el_libro": "Caps 13, 16, 20: único camino para 0.8<M<1.2, cuerpos romos, separación masiva, choque/capa límite; [GPU-VIVO]",
+   "que_hace_la_competencia": "Ansys Fluent, SU2, OpenFOAM, Autodesk CFD, SolidWorks Flow Simulation; La Forja debe DECIR 'aquí no veo' (CURRICULUM l.162)"
+  }
+ ],
+ "archivo_md": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/anderson.md",
+ "archivo_json": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/anderson.json",
+ "catalogo": [
+  {
+   "id": "anderson-c1-01",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.1 Cuña 5° a Mach 2: D' integrando p y τ",
+   "herramientas": "croquis,cotas,extruir,estudio-viento,ISA",
+   "oraculo": "D'=1.24e4 N/m ±1%, cd=0.022 ±1.5%, fracción presión 0.85; n=50 dentro de 1% de n=400",
+   "respuesta_impresa": "D'=1.052e4+0.1873e4=1.24e4 N/m; cd=0.022 (85% presión)",
+   "ya_existe": "si",
+   "donde": "src/aero/cuna-anderson.ts:cunaAnderson; src/forja/sim/viento.ts:estudioVientoSupersonico; lección a1-l1.json",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c1-02",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.2 Cono hipersónico newtoniano: CD=Cp referido a la base",
+   "herramientas": "croquis,revolve,panel-3D",
+   "oraculo": "CD integrado sobre la piel del cono (skin.ts) = 2sin²θc ±1e-3 para θc=5/10/20°; cierre ∮n̂dS≈0",
+   "respuesta_impresa": "CD = Cp = 2 sin²θc",
+   "ya_existe": "parcial",
+   "donde": "src/aero/skin.ts:integrarPresion (sin campo newtoniano ni UI)",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c1-03",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.3 NACA 4412: xcp desde cl y cm,c/4",
+   "herramientas": "perfil-2D,panel-2D",
+   "oraculo": "xcp/c=0.356 ±0.5%; simétrico ⇒ 0.25",
+   "respuesta_impresa": "xcp/c = 0.25 − (−0.09/0.85) = 0.356",
+   "ya_existe": "no",
+   "donde": "grep xcp src/aero: nada",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-04",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.4 DC-3: L' y xcp desde dos momentos",
+   "herramientas": "perfil-2D,cotas",
+   "oraculo": "L'=556.6 lb/ft, xcp=5.774 ft ±0.5%; invariante ec 1.22",
+   "respuesta_impresa": "L'=556.6 lb/ft; xcp=5.774 ft",
+   "ya_existe": "no",
+   "donde": "sin módulo fuerza-momento",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-05",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.5 Dos cilindros dinámicamente similares",
+   "herramientas": "similitud,panel-2D",
+   "oraculo": "Cp(s/d) idénticos punto a punto; |CD1−CD2|<1e-6; Re y M iguales",
+   "respuesta_impresa": "μ2/μ1=2, a2/a1=2, M2=M1, Re2=Re1 ⇒ CD1=CD2",
+   "ya_existe": "no",
+   "donde": "panel2d.test 'el radio no cambia el Cp' (mitad)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-06",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.6 Túnel para modelo 1/50 del 747",
+   "herramientas": "similitud,ISA",
+   "oraculo": "V2=577.5 mi/h, p2=11.26 atm ±0.5%; Re2/Re1=M2/M1=1",
+   "respuesta_impresa": "V2=577.5 mi/h; p2=23,836 lb/ft²=11.26 atm",
+   "ya_existe": "no",
+   "donde": "sin calculadora de túnel",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c1-07",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.7 Citation V crucero: CL y L/D",
+   "herramientas": "performance,ISA",
+   "oraculo": "CL=0.21, L/D=14 ±1%; ρ(33,000 ft)=0.4106 kg/m³ ±0.5%",
+   "respuesta_impresa": "CL=0.21; L/D=14",
+   "ya_existe": "no",
+   "donde": "grep vstall src/aero: nada",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c1-08",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.8 CL,max del Citation V desde Vstall",
+   "herramientas": "performance",
+   "oraculo": "CL,max=1.81 ±1%; inversa Vstall=146.7 ft/s",
+   "respuesta_impresa": "CL,max=1.81",
+   "ya_existe": "no",
+   "donde": "sin performance",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-09",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.9 Globo: flotabilidad y techo",
+   "herramientas": "croquis,revolve,ISA,dinámica",
+   "oraculo": "B=1082 lb con vol_kernel ±0.5%; a=11.4 ft/s²; h=9842 ft ±1% (ley ρ(h) del libro)",
+   "respuesta_impresa": "B=1082 lb; a=11.4 ft/s²; techo 9842 ft",
+   "ya_existe": "parcial",
+   "donde": "vol_kernel del CAD (ForgeBRepStudio inv.vol_kernel)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-10",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.10 Atmósfera estándar a 5 km por hidrostática",
+   "herramientas": "ISA",
+   "oraculo": "T=255.69 K, p=5.407e4 Pa ±0.2%, ρ=0.7368; geopotencial(5000)=4996 m",
+   "respuesta_impresa": "T=255.69 K; p=5.407e4 N/m²; ρ=0.7368 kg/m³",
+   "ya_existe": "si",
+   "donde": "src/aero/atmosfera.ts:atmosferaISA/geopotencial; lección a1-l4.json",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c1-11",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.11 Barómetro de mercurio 76 cm",
+   "herramientas": "hidrostática",
+   "oraculo": "Δh=76 cm ±0.5%",
+   "respuesta_impresa": "Δh=0.76 m; columna sellada más alta",
+   "ya_existe": "no",
+   "donde": "grep manometr src: nada",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c1-12",
+   "capitulo": 1,
+   "tipo": "ejemplo",
+   "titulo": "Ej 1.12 P-35: potencia requerida",
+   "herramientas": "performance,ISA",
+   "oraculo": "V=377.8 ft/s, D=1026 lb, P=704 hp ±1%; 257.6 vs 260 mi/h",
+   "respuesta_impresa": "V=377.8 ft/s; D=1026 lb; P=704 hp",
+   "ya_existe": "no",
+   "donde": "sin performance",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c1-13",
+   "capitulo": 1,
+   "tipo": "caso",
+   "titulo": "IWC 1.16 Fuerza axial hacia adelante NACA 2412 a 6°",
+   "herramientas": "perfil-2D,panel-2D",
+   "oraculo": "ca=−cl sinα+cd cosα=−0.084<0; frontera L/D=cotα",
+   "respuesta_impresa": "L/D=110 > cot6°=9.52 ⇒ A<0",
+   "ya_existe": "parcial",
+   "donde": "panel2d.ts Cp sin cd ni N/A",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-14",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.1 Gas ideal en dos unidades",
+   "herramientas": "ISA,unidades",
+   "oraculo": "ρ=0.326 kg/m³; T=501 °R ±0.5%; ida y vuelta SI/inglés",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts ρ=p/RT; sin bilingüe",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c1-15",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.3 Placa supersónica p constante: xcp",
+   "herramientas": "perfil-2D",
+   "oraculo": "xcp=c/2 exacto ±1e-6 (carga uniforme)",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts solo arrastre",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-16",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.4 Placa 1 m a 10°: N',A',L',D',M'LE,M'c/4,xcp",
+   "herramientas": "perfil-2D,croquis",
+   "oraculo": "N'=1.123e5, A'=1273.8, M'LE=−3.75e4, xcp=0.334 m; panelizado ≤0.5% del cerrado",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "skin.ts integra 3D sin momento; ES el fixture del integrador 2D",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c1-17",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.5 De (cn,ca) a (cl,cd) a 12°",
+   "herramientas": "perfil-2D",
+   "oraculo": "cl=1.1675, cd=0.2788 ±1e-4",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "sin rotación N/A↔L/D",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c1-18",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.6 NACA 2412: xcp/c(α) desde tabla",
+   "herramientas": "perfil-2D,gráfica",
+   "oraculo": "xcp/c: −2°→1.09, 0→0.41, 4→0.306, 14→0.266 ±0.5%; >0.25 siempre",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "grep 2412 src: nada",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-19",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.9 ¿Similares a 200 K y 800 K?",
+   "herramientas": "similitud",
+   "oraculo": "M iguales; Re2/Re1=2.83 ⇒ NO",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "sin similitud",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-20",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.10 Túnel a 1 atm para Lear jet 1/5",
+   "herramientas": "similitud,ISA",
+   "oraculo": "ρ2=2.07, T2=170 K, V2=218 m/s ±1%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "sin túnel",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c1-21",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.11 Manómetro 20 cm Hg en el ala",
+   "herramientas": "hidrostática",
+   "oraculo": "p=7.43e4 Pa ±0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c1-22",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.12 Peso del Zeppelin: B+L",
+   "herramientas": "croquis,revolve,ISA,performance",
+   "oraculo": "ρ(1000m)=1.1117; L=3.85e3 N; B=1.634e5; W=1.673e5 N ±1%; vol_kernel=15,000 m³",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts + vol_kernel",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c1-23",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.13 Cilindro hipersónico Cp=2cos²φ: CD=4/3",
+   "herramientas": "croquis,extruir,panel-3D",
+   "oraculo": "CD=4/3 ±0.5% integrando sobre la piel; L=0 por simetría",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "skin.ts sin campo newtoniano",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c1-24",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.15 Cessna Skylane: CL,CD,L/D vs V",
+   "herramientas": "performance,gráfica",
+   "oraculo": "(L/D)max=13.6 en CL*=0.680, V*=144.8 ft/s ±1 ft/s",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "sin performance",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c1-25",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.16 dV/dy en pared a Mach 10",
+   "herramientas": "capa-límite,μ(T)",
+   "oraculo": "(dV/dy)w=τw/μ=1.576e7 s⁻¹ ±0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "sin μ(T)",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c1-26",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.17 dT/dy en pared del Shuttle a Mach 9",
+   "herramientas": "térmico,capa-límite",
+   "oraculo": "(dT/dy)w=−1.186e6 K/m ±0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "sin k(T)",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c1-27",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.18 Re de raíz: DC-3 vs F-22",
+   "herramientas": "performance,ISA,wing-metrics",
+   "oraculo": "Re=2.66e7 y 1.81e8 ±1% con cuerda MEDIDA del sólido",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "src/aero/wing-metrics.ts:metricasAla; sin función Re",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c1-28",
+   "capitulo": 1,
+   "tipo": "teoria",
+   "titulo": "P1.20 ¿A' negativa en placa plana?",
+   "herramientas": "perfil-2D",
+   "oraculo": "A'=∫(τu+τl)dx ≥0 siempre (dy/dx=0)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c1-29",
+   "capitulo": 1,
+   "tipo": "problema",
+   "titulo": "P1.19 Wright y la tabla de Lilienthal (3°)",
+   "herramientas": "polar-tabular",
+   "oraculo": "L/D(3°) máximo de la tabla; Fig 1.65 NO está en el txt (bloqueado)",
+   "respuesta_impresa": "",
+   "ya_existe": "desconocido",
+   "donde": "figuras-digitalizadas.md no verificado",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c2-01",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.1 Pared ondulada: ∇·V en (1/4,1)",
+   "herramientas": "campo-2D,divergencia",
+   "oraculo": "div numérica=−0.7327 ±1%; =0 en x/l=0,½,1",
+   "respuesta_impresa": "∇·V=−0.7327 s⁻¹",
+   "ya_existe": "no",
+   "donde": "src/math VectorFields.tsx solo campos fijos",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-02",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.2 Perfil potencial u=(y/δ)^n consistente con Cf laminar",
+   "herramientas": "capa-límite,volumen-control",
+   "oraculo": "raíces n=2.0166 y 0.2478 ±1%; n=2 cóncavo=no físico",
+   "respuesta_impresa": "n=2 o 0.25; n=2 nonphysical",
+   "ya_existe": "no",
+   "donde": "grep 1.328 src/aero: nada",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-03",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.3 Derivada sustancial: 358.6 m/s² (36.6 g)",
+   "herramientas": "campo-2D,D/Dt",
+   "oraculo": "|a|=358.6 ±1%, ambas componentes negativas",
+   "respuesta_impresa": "ax=−358.56, ay=−0.129 m/s²",
+   "ya_existe": "no",
+   "donde": "potencial.ts integrateParcel sin a",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-04",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.4 Línea de corriente del vórtice por (0,5)",
+   "herramientas": "campo-2D,RK4",
+   "oraculo": "polilínea RK4 con |r−5|<1e-3 tras una vuelta",
+   "respuesta_impresa": "x²+y²=25",
+   "ya_existe": "parcial",
+   "donde": "src/aero/potencial.ts:integrateStreamline (solo Joukowski)",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c2-05",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.5 Vorticidad del vórtice puntual = 0",
+   "herramientas": "campo-2D,rotacional",
+   "oraculo": "curl<1e-8 fuera de r<0.1; singularidad marcada",
+   "respuesta_impresa": "ξ=0 salvo origen",
+   "ya_existe": "parcial",
+   "donde": "NavierStokes2D.tsx ω en malla",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-06",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.6 La capa límite es rotacional",
+   "herramientas": "capa-límite,rotacional",
+   "oraculo": "|ξ|δ/V∞>1e-3 y signo constante en 0<y<δ",
+   "respuesta_impresa": "rotational",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c2-07",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.7 Pared ondulada no viscosa es irrotacional",
+   "herramientas": "campo-2D,rotacional",
+   "oraculo": "curl<1e-9·V∞/l en malla 50×50",
+   "respuesta_impresa": "∇×V=0",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c2-08",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.8 Circulación del vórtice Γ=2π independiente del radio",
+   "herramientas": "campo-2D,circulación",
+   "oraculo": "Γ=2π ±1e-6 en r=1,2,5,10; signo de Anderson Γ≡−∮V·ds",
+   "respuesta_impresa": "Γ=2π m²/s",
+   "ya_existe": "parcial",
+   "donde": "src/aero/potencial.ts:circulationIntegral (círculo, Joukowski, sin el menos)",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c2-09",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.9 Potencial φ de la pared ondulada",
+   "herramientas": "campo-2D,φ,isolíneas",
+   "oraculo": "∇φ reproduce (u,v) <1e-6 en malla",
+   "respuesta_impresa": "φ=V∞x+(V∞h/β)sin(2πx/l)e^(−2πβy/l)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-10",
+   "capitulo": 2,
+   "tipo": "ejemplo",
+   "titulo": "Ej 2.10 Esquema explícito FD para continuidad 1D",
+   "herramientas": "CFD,diferencias-finitas",
+   "oraculo": "gaussiana trasladada u·N·Δt, L2<2% con CFL 0.5 (esquema declarado); orden 2 en Δx",
+   "respuesta_impresa": "ρ_i^{t+Δt}=ρ_i^t−(Δt/2Δx)[...] (2.178)",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/mold-thermal-fdm.ts (FD calor)",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-11",
+   "capitulo": 2,
+   "tipo": "caso",
+   "titulo": "§2.6 Arrastre por estela (rastrillo Pitot)",
+   "herramientas": "volumen-control,CFD,piel",
+   "oraculo": "D'_estela = D'_piel ±3% en estaciones 2c,4c,8c",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "src/aero/skin.ts (piel) + NS2D; sin integral de déficit",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c2-12",
+   "capitulo": 2,
+   "tipo": "problema",
+   "titulo": "P2.1 p constante sobre cuerpo cerrado ⇒ F=0",
+   "herramientas": "piel,invariante-kernel",
+   "oraculo": "|∮n̂dS|<1e-9·A; V=⅓∮r·n̂dS = vol kernel",
+   "respuesta_impresa": "",
+   "ya_existe": "si",
+   "donde": "src/aero/skin.ts campo cierre + skin.test.ts inv 1-2",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c2-13",
+   "capitulo": 2,
+   "tipo": "problema",
+   "titulo": "P2.2 L' desde presiones en techo y piso del túnel",
+   "herramientas": "volumen-control,CFD",
+   "oraculo": "L'=∫(p_piso−p_techo)dx = L'_piel ±5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-14",
+   "capitulo": 2,
+   "tipo": "problema",
+   "titulo": "P2.3/2.7 Fuente: líneas, ∇·V, ∇×V",
+   "herramientas": "campo-2D",
+   "oraculo": "rayos θ=cte; div=curl=0 fuera del origen",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "VectorFields.tsx (F=(x,y), no c/r)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-15",
+   "capitulo": 2,
+   "tipo": "problema",
+   "titulo": "P2.4/2.8 Vórtice libre: líneas, div, curl, Γ",
+   "herramientas": "campo-2D,circulación",
+   "oraculo": "círculos; div=curl=0; Γ=2πc si encierra el origen, 0 si no",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "potencial.ts circulationIntegral solo Joukowski",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c2-16",
+   "capitulo": 2,
+   "tipo": "problema",
+   "titulo": "P2.5/2.9 Rotación sólida Vθ=cr es rotacional",
+   "herramientas": "campo-2D,rotacional",
+   "oraculo": "curl=2c ±1e-6 en toda la malla",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "VectorFields.tsx (voseo línea 122)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c2-17",
+   "capitulo": 2,
+   "tipo": "problema",
+   "titulo": "P2.6/2.11 Estancamiento u=cx,v=−cy: ψ, φ, ortogonalidad",
+   "herramientas": "campo-2D,ψ,φ",
+   "oraculo": "hipérbolas xy=cte; ψ=cxy, φ=c(x²−y²)/2; ∇ψ·∇φ=0; ∇²ψ=∇²φ=0",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "CURRICULUM a2-l5 pendiente",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c2-18",
+   "capitulo": 2,
+   "tipo": "problema",
+   "titulo": "P2.12 Fuerza sobre tubo en U (momento integral)",
+   "herramientas": "volumen-control,ensamble",
+   "oraculo": "F=2ρAV²=4830 N ±1% en sentido de la entrada",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c2-19",
+   "capitulo": 2,
+   "tipo": "teoria",
+   "titulo": "P2.10/2.13/2.14 derivaciones (ψ polares, φ, recta en y→∞)",
+   "herramientas": "ψ,φ",
+   "oraculo": "2.14 numérico: v/V∞<1e-6 para y/l≥3",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c3-01",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.1 V en un punto por Bernoulli",
+   "herramientas": "Bernoulli",
+   "oraculo": "V=142.8 m/s ±0.3",
+   "respuesta_impresa": "V=142.8 m/s",
+   "ya_existe": "no",
+   "donde": "solo cpValue V→Cp en potencial.ts:127",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-02",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.2 p aguas abajo (imperial)",
+   "herramientas": "Bernoulli,unidades",
+   "oraculo": "p2=2073.2 ±0.2 lb/ft²",
+   "respuesta_impresa": "p2=2073.2 lb/ft² (errata 2073.1)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c3-03",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.3 Venturi como velocímetro",
+   "herramientas": "croquis,revolve,cuasi-1D",
+   "oraculo": "V1=102.3 ft/s ±0.2; A1/A2 del kernel",
+   "respuesta_impresa": "V1=102.3 ft/s",
+   "ya_existe": "no",
+   "donde": "grep venturi src: nada",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-04",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.4 Manómetro Hg en túnel 12:1",
+   "herramientas": "cuasi-1D,manómetro",
+   "oraculo": "Δp=1527 ±2 Pa; h=0.01148 m",
+   "respuesta_impresa": "p1−p2=1527 N/m²; h=0.01148 m",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-05",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.5 Δp máximo por la balanza (1000 lb)",
+   "herramientas": "cuasi-1D,planeación",
+   "oraculo": "V=328.4 ft/s; Δp=127.3 lb/ft² ±0.2",
+   "respuesta_impresa": "V∞=328.4 ft/s; p1−p2=127.3 lb/ft²",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-06",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.6 p de reservorio para 100/200 mph",
+   "herramientas": "cuasi-1D",
+   "oraculo": "p1=1.022e5 y 1.059e5 ±50 Pa",
+   "respuesta_impresa": "1.01 atm; 1.048 atm (+3.8%)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-07",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.7 V desde Pitot a nivel del mar",
+   "herramientas": "Pitot",
+   "oraculo": "V=249.5 ±1 ft/s",
+   "respuesta_impresa": "V1=250 ft/s",
+   "ya_existe": "no",
+   "donde": "grep pitot src: nada",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-08",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.8 Pitot aguas arriba del modelo",
+   "herramientas": "Pitot,cuasi-1D",
+   "oraculo": "p0=2244 ±1 lb/ft²; V1=27.4 ft/s",
+   "respuesta_impresa": "p0=2244 lb/ft²; V1=27.3 ft/s",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-09",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.9 P-35 a 4 km desde Pitot (Ap. D)",
+   "herramientas": "ISA,Pitot",
+   "oraculo": "V=114.2 ±0.3 m/s con atmosferaISA(4000)",
+   "respuesta_impresa": "V1=114.2 m/s=255 mph",
+   "ya_existe": "parcial",
+   "donde": "src/aero/atmosfera.ts:atmosferaISA",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-10",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.10 Velocidad equivalente (EAS)",
+   "herramientas": "ISA,q",
+   "oraculo": "q=5343 ±5 Pa; Ve=93.2 ±0.2 m/s",
+   "respuesta_impresa": "q=5.343e3; Ve=93.2 m/s",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts:presionDinamica",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-11",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.11 Cp en un punto",
+   "herramientas": "Cp",
+   "oraculo": "Cp=−1.25 exacto",
+   "respuesta_impresa": "Cp=−1.25",
+   "ya_existe": "si",
+   "donde": "src/aero/potencial.ts:127 cpValue",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-12",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.12 Gate de compresibilidad (Cp=−5.3)",
+   "herramientas": "Cp,gate-compresibilidad",
+   "oraculo": "V=200.8 y 753 ft/s; (b) ROJO M_local>0.3",
+   "respuesta_impresa": "(b) not correct: M_local>0.674",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts:mach; sin gate",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c3-13",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.13 Dónde p=p∞ sobre el cilindro",
+   "herramientas": "panel-2D,Cp",
+   "oraculo": "raíces 30,150,210,330° ±0.01°; con 64 paneles ±1°",
+   "respuesta_impresa": "θ=30°,150°,210°,330°",
+   "ya_existe": "si",
+   "donde": "src/aero/panel2d.ts:223 cpCilindroExacto + test",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-14",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.14 Aceleración de la parcela: 510 g",
+   "herramientas": "líneas-corriente,parcela",
+   "oraculo": "extremos en 45°+k90° ±1°; |a|max=5000 ±50 m/s²",
+   "respuesta_impresa": "|a|max=2V∞²/R=5000 m/s²=510 g",
+   "ya_existe": "parcial",
+   "donde": "potencial.ts:174 integrateParcel",
+   "esfuerzo": "M",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-15",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.15 Intensidad de vórtice desde el viento",
+   "herramientas": "vórtice",
+   "oraculo": "Γ=18,430 ±10 ft²/s",
+   "respuesta_impresa": "|Γ|=1.843e4 ft²/s",
+   "ya_existe": "parcial",
+   "donde": "término vórtice en flowVelocity",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c3-16",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.16 Cp pico con cl=5",
+   "herramientas": "cilindro-circulación",
+   "oraculo": "Cp(90°)=−6.82 ±0.01",
+   "respuesta_impresa": "Cp=−6.82",
+   "ya_existe": "parcial",
+   "donde": "potencial.ts:84 flowVelocity gamma",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-17",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.17 Estancamiento y Cp=0 con cl=5",
+   "herramientas": "cilindro-circulación",
+   "oraculo": "estanc. 203.4/336.6° ±0.1°; Cp=0 en 5.85/174.1/243.8/296.2°",
+   "respuesta_impresa": "θ=203.4°,336.6°; Cp=0 en 243.8,296.23,5.85,174.1°",
+   "ya_existe": "parcial",
+   "donde": "campo existe; sin buscador",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-18",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.18 L' de un cilindro girando a 3 km",
+   "herramientas": "ISA,Kutta-Joukowski",
+   "oraculo": "Γ=39.27 ±0.01; L'=892.7 ±1 N/m",
+   "respuesta_impresa": "Γ=39.27 m²/s; L'=892.7 N/m",
+   "ya_existe": "parcial",
+   "donde": "potencial.ts:48 liftPerSpan; atmosfera.ts",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-19",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "Ej 3.19 Paneles de fuentes sobre el cilindro (8 paneles)",
+   "herramientas": "croquis,panel-2D,gate-masa",
+   "oraculo": "I_4,2=0.4018 ±5e-4; 8 λ a 4 cifras; ΣλS<1e-9; Cp<0.05 (8) y <1e-3 (64)",
+   "respuesta_impresa": "I_4,2=0.4018; λ/(2πV∞)=0.3765,0.2662,0,−0.2662,…",
+   "ya_existe": "si",
+   "donde": "src/aero/panel2d.ts + panel2d.test.ts:57-166 (forja-gate vitest-aero); NO cableado al CAD",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c3-20",
+   "capitulo": 3,
+   "tipo": "caso",
+   "titulo": "Design Box: sonda Pitot-estática (tomas a 8d-16d)",
+   "herramientas": "croquis,revolve,panel-axisimétrico",
+   "oraculo": "Cp(nariz)=1; Cp_min∈[−1.4,−1.1]; |Cp|<0.02 en x/d∈[8,16]",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "panel2d.ts es plano",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-21",
+   "capitulo": 3,
+   "tipo": "ejemplo",
+   "titulo": "§3.18 Cilindro real: cables SPAD y árbol de Hugo (CD(Re))",
+   "herramientas": "CD(Re),ISA",
+   "oraculo": "Re a 3 cifras; CD de curva ±10%; D=16,446 ±5% lb",
+   "respuesta_impresa": "d=4e-7 m; Re=9532 CD=1; Re=8.16e6 CD=0.7 D=16,446 lb",
+   "ya_existe": "no",
+   "donde": "Fig 3.44 no digitalizada",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-22",
+   "capitulo": 3,
+   "tipo": "teoria",
+   "titulo": "IWC 3.22 Pérdida de p0 = D'/2",
+   "herramientas": "CFD,estela",
+   "oraculo": "∫(p0in−p0out)dy / D'_estela = 0.5 ±5%",
+   "respuesta_impresa": "IL=D'/2",
+   "ya_existe": "no",
+   "donde": "NS2D cualitativo",
+   "esfuerzo": "M",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-23",
+   "capitulo": 3,
+   "tipo": "caso",
+   "titulo": "IWC 3.23 Diseño conceptual de túnel subsónico",
+   "herramientas": "dimensionado-túnel,croquis,loft",
+   "oraculo": "sección 2×3×3.2; Pt=6.376e6 ±1e4 W; motor 1030 ±2 hp",
+   "respuesta_impresa": "3×2×3.2 m; Pt=6.376e6 W; 1030 hp",
+   "ya_existe": "no",
+   "donde": "loft en occt.ts",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c3-24",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.2 Venturi en fuselaje",
+   "herramientas": "cuasi-1D,revolve",
+   "oraculo": "V1=154.7 ±0.5 ft/s (derivado)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-25",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.3 Vacío máximo del venturi a 90 m/s",
+   "herramientas": "cuasi-1D",
+   "oraculo": "Δp=1913 ±5 Pa (derivado)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-26",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.4 V de sección desde 10 cm Hg",
+   "herramientas": "cuasi-1D,manómetro",
+   "oraculo": "V2=147.7 ±0.5 m/s (derivado)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-27",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.5 Pitot en túnel sellado",
+   "herramientas": "Pitot",
+   "oraculo": "p0=1.0109e5 ±20 Pa (derivado)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-28",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.6/3.7 Pitot 1.07e5 y Cp en el ala",
+   "herramientas": "Pitot,Cp",
+   "oraculo": "V=98.8 ±0.3 m/s; Cp=−0.73 ±0.01",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "cpValue",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-29",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.12 Semicuerpo (fuente+uniforme) y su Cp",
+   "herramientas": "flujo-lego,croquis-generado",
+   "oraculo": "semiancho asintótico=π ft; Cp=1 nariz→0; curva ψ=Λ/2 <1e-6",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "sin fuente/sumidero en potencial.ts",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c3-30",
+   "capitulo": 3,
+   "tipo": "teoria",
+   "titulo": "P3.13 Estancamiento del óvalo de Rankine (3.81)",
+   "herramientas": "flujo-lego",
+   "oraculo": "V=0 numérico coincide con (3.81) a 1e-6",
+   "respuesta_impresa": "OA=sqrt(b²+Λb/(πV∞))",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-31",
+   "capitulo": 3,
+   "tipo": "teoria",
+   "titulo": "P3.15 Cp(r,θ) del cilindro",
+   "herramientas": "cilindro,Cp",
+   "oraculo": "en r=R iguala cpCilindroExacto a 1e-12; →0 en r→∞",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "ConformalMaps.tsx / potencial.ts campo",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c3-32",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.18 Γ de cilindro con L'=6 N/m",
+   "herramientas": "Kutta-Joukowski",
+   "oraculo": "Γ=0.1626 ±0.0005 m²/s",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "potencial.ts:48 liftPerSpan (sin inversa)",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c3-33",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.19 Montantes y cables del SPAD vs CD0",
+   "herramientas": "CD(Re),performance",
+   "oraculo": "D≈176 lb ±15%; D0=305 lb → ~58%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "sin CD(Re)",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-34",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.21 Espaciamiento de líneas de corriente",
+   "herramientas": "líneas-corriente",
+   "oraculo": "r3=1.432R ±0.001",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "integrateStreamline (Joukowski)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-35",
+   "capitulo": 3,
+   "tipo": "problema",
+   "titulo": "P3.22 V de túnel máxima incompresible (cilindro)",
+   "herramientas": "gate-compresibilidad",
+   "oraculo": "V∞=125 mi/h=55.9 m/s ±0.5; Cp_min=−3 del panel",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "panel2d.test Cp min −3; sin gate",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c3-36",
+   "capitulo": 3,
+   "tipo": "teoria",
+   "titulo": "P3.16/3.17 Invariancia de líneas de corriente",
+   "herramientas": "líneas-corriente",
+   "oraculo": "Hausdorff<1e-9R entre V∞=20 y 40; con Γ fija migran",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "potencial.test simetría",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c4-01",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.1 NACA 2412: de L' a α y D'",
+   "herramientas": "perfil-2D,ISA,polar-experimental,panel-2D",
+   "oraculo": "q y cl a 3 cifras; α=4 ±0.5°; cd∈[0.0065,0.0072]; D'=13.1 ±0.3 N/m",
+   "respuesta_impresa": "q=3013.5; cl=0.65; α=4°; Re=3.08e6; cd=0.0068; D'=13.1 N/m",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts; polar 2412 no digitalizada",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c4-02",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.2 Momento sobre el ac",
+   "herramientas": "perfil-2D,polar",
+   "oraculo": "M'ac=−61.7 ±0.1 N·m",
+   "respuesta_impresa": "M'ac=−61.7 N·m",
+   "ya_existe": "no",
+   "donde": "grep cm_ac: nada",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-03",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.3 L/D del 2412 a 0,4,8,12°",
+   "herramientas": "polar-experimental",
+   "oraculo": "tabla ±(0.02,0.0005,3); max entre 4 y 8°",
+   "respuesta_impresa": "L/D=38.5, 93, 96, 85",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c4-04",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.4 Vórtice de arranque",
+   "herramientas": "potencial-2D",
+   "oraculo": "Γ=14.56 ±0.01; Γ_perfil+Γ_arranque=0",
+   "respuesta_impresa": "Γ=14.56 m²/s",
+   "ya_existe": "parcial",
+   "donde": "potencial.ts:liftPerSpan",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c4-05",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.5 Placa plana a 5°: cl, cm_le, cm_c/4, cm_te",
+   "herramientas": "perfil-delgado",
+   "oraculo": "cl=2πα ±1e-3; cm_le=−cl/4; cm_c/4=0; cm_te=0.411",
+   "respuesta_impresa": "cl=0.5485; cm_le=−0.137; cm_c/4=0; cm_te=0.411",
+   "ya_existe": "parcial",
+   "donde": "potencial.ts:liftCoefficient 2π sinα; sin momentos",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c4-06",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.6 NACA 23012 por perfil delgado (FIXTURE DE ORO)",
+   "herramientas": "croquis,cotas,perfil-delgado",
+   "oraculo": "αL0=−1.09 ±0.01°; cl=0.559 ±0.002; A1=0.0954; A2=0.0792; cm_c/4=−0.0127; xcp/c=0.273",
+   "respuesta_impresa": "αL0=−1.09°; cl=0.559; cm_c/4=−0.0127; xcp/c=0.273",
+   "ya_existe": "no",
+   "donde": "grep A0/alphaL0 src/aero: nada",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c4-07",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.7 Centro aerodinámico del 23012 desde datos",
+   "herramientas": "estabilidad",
+   "oraculo": "x_ac=0.241 ±0.001",
+   "respuesta_impresa": "x_ac=0.241",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c4-08",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.8 δ y Cf laminar del 2412 (c=1.5 m)",
+   "herramientas": "capa-límite",
+   "oraculo": "δ=0.00426 m; Net Cf=0.0015 ±1e-5",
+   "respuesta_impresa": "δ=0.00426 m; Net Cf=0.0015",
+   "ya_existe": "no",
+   "donde": "grep 1.328: nada",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-09",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.9 δ y Cf turbulento",
+   "herramientas": "capa-límite",
+   "oraculo": "δ=0.0279 m; Net Cf=0.00744 ±2e-5",
+   "respuesta_impresa": "δ=0.0279 m; Net Cf=0.00744",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-10",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.10 Cf con transición Re_cr=5e5",
+   "herramientas": "capa-límite,transición",
+   "oraculo": "Net Cf=0.0063 ±5e-5 con Re_cr como ENTRADA",
+   "respuesta_impresa": "Net Cf=0.0063",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c4-11",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "Ej 4.11 Sensibilidad a Re_cr=1e6",
+   "herramientas": "capa-límite,transición",
+   "oraculo": "Net Cf=0.00528; 16 ±1% menor",
+   "respuesta_impresa": "Net Cf=0.00528 (16% menor)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c4-12",
+   "capitulo": 4,
+   "tipo": "ejemplo",
+   "titulo": "x_cr a 50 y 100 m/s",
+   "herramientas": "capa-límite,ISA",
+   "oraculo": "x_cr=0.145 y 0.0727 m ±0.001",
+   "respuesta_impresa": "x_cr=0.145 m; 0.0727 m",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts ρ/μ",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c4-13",
+   "capitulo": 4,
+   "tipo": "caso",
+   "titulo": "IWC 4.17 Paredes de túnel: imágenes y paneles",
+   "herramientas": "potencial-2D,panel-2D",
+   "oraculo": "v(x,0)<1e-9V; Cp_min<−3 y →−3 cuando h/R→∞; ΣλS=0",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "panel2d.ts polilínea cerrada; paredes no",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-14",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.1 2412 a 4°, 50 ft/s, c=2 ft (imperial)",
+   "herramientas": "polar,ISA",
+   "oraculo": "q=2.971 lb/ft²; L'=3.86 ±0.15; M'c/4≈−0.59",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts SI",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-15",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.2 De L'=1353 N/m al α",
+   "herramientas": "polar",
+   "oraculo": "cl=0.44; α≈1.9 ±0.5°",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-16",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.5 Simétrico a 1.5°",
+   "herramientas": "perfil-delgado",
+   "oraculo": "cl=0.1645; cm_le=−0.0411 ±1e-4",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "liftCoefficient",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c4-17",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.6 NACA 4412 por perfil delgado: αL0 y cl(3°)",
+   "herramientas": "croquis,perfil-delgado",
+   "oraculo": "cuadratura vs analítico <0.1%; ref. literatura αL0≈−4.15° (NO impreso)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c4-18",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.7 4412: cm_c/4 y xcp a 3°",
+   "herramientas": "perfil-delgado",
+   "oraculo": "cm_c/4=π/4(A2−A1) invariante en α; xcp por (4.66)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c4-19",
+   "capitulo": 4,
+   "tipo": "benchmark",
+   "titulo": "P4.8 Teoría vs experimento 4412 (%)",
+   "herramientas": "perfil-delgado,polar,reporte",
+   "oraculo": "reporte |teo−exp|/exp; verde si polar Ref.11 con cita",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-20",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.10 ac del 2412 desde dos ángulos",
+   "herramientas": "estabilidad",
+   "oraculo": "x_ac=0.2423 ±0.0005",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-21",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.11 2412 a 3 km, 60 m/s: L'",
+   "herramientas": "ISA,perfil-2D",
+   "oraculo": "ρ(3km)=0.9093; L'=2128 ±5 N/m",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-22",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.12 Circulación del P4.11",
+   "herramientas": "potencial-2D",
+   "oraculo": "Γ=39.0 ±0.1 m²/s",
+   "respuesta_impresa": "",
+   "ya_existe": "si",
+   "donde": "potencial.ts:liftPerSpan/kuttaGamma",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c4-23",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.13 Cilindro Magnus: ω para igual L'",
+   "herramientas": "potencial-2D",
+   "oraculo": "ω=Γ/(2πR²)=6.21 ±0.05 rad/s",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "potencial.ts",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c4-24",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.14 ¿Vuela un perfil de cabeza?",
+   "herramientas": "perfil-2D",
+   "oraculo": "cl=0.8; invertido 0.2; α=11°",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c4-25",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.15 Spitfire 2213: V para Re=9e6 y Cf turb",
+   "herramientas": "ISA,capa-límite",
+   "oraculo": "μ(18kft)=3.47e-7; V=277 ±5 ft/s; Net Cf=0.0060",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts (inglés no)",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c4-26",
+   "capitulo": 4,
+   "tipo": "problema",
+   "titulo": "P4.16 Spitfire con Re_cr=1e6",
+   "herramientas": "capa-límite,transición",
+   "oraculo": "Net Cf=0.00526 ±5e-5; presión≈12%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c4-27",
+   "capitulo": 4,
+   "tipo": "teoria",
+   "titulo": "P4.3/4.4/4.9 derivaciones (Kelvin, M'LE, cm_le)",
+   "herramientas": "perfil-delgado",
+   "oraculo": "cuadratura de (4.35) reproduce (4.36)/(4.62) <1e-6",
+   "respuesta_impresa": "M'LE=−qc²πα/2; cm_le=−π/2(A0+A1−A2/2)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c5-01",
+   "capitulo": 5,
+   "tipo": "ejemplo",
+   "titulo": "Ej 5.1 Ala AR=8, λ=0.8 a 5°",
+   "herramientas": "panel-3D,lifting-line",
+   "oraculo": "CL=0.4335 ±0.5%; CD,i=0.00789 ±1% con δ=τ=0.055 entrada",
+   "respuesta_impresa": "a=4.97/rad; CL=0.4335; CD,i=0.00789",
+   "ya_existe": "no",
+   "donde": "grep lifting src: cero; wing-metrics.ts solo S/AR/λ",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c5-02",
+   "capitulo": 5,
+   "tipo": "ejemplo",
+   "titulo": "Ej 5.2 Escalar CD,i de AR=6 a AR=10",
+   "herramientas": "lifting-line",
+   "oraculo": "CD,i=0.0076 ±1%; a0=5.989 ±0.2%",
+   "respuesta_impresa": "CD,i=0.0076",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c5-03",
+   "capitulo": 5,
+   "tipo": "ejemplo",
+   "titulo": "Ej 5.3 α de crucero del jet ejecutivo",
+   "herramientas": "lifting-line,performance",
+   "oraculo": "α=0.6 ±0.05°",
+   "respuesta_impresa": "a=4.627/rad; α=0.6°",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c5-04",
+   "capitulo": 5,
+   "tipo": "ejemplo",
+   "titulo": "Ej 5.4 Baron 58: el perfil te mintió (ANCLA)",
+   "herramientas": "croquis,loft,lifting-line,perfil-2D",
+   "oraculo": "CL=0.443 ±1%; CD=0.0148 ±1%; AR del sólido lofteado=7.61 ±0.5%",
+   "respuesta_impresa": "e=0.99; CL=0.443; CD=0.0065+0.0083=0.0148",
+   "ya_existe": "parcial",
+   "donde": "src/aero/wing-metrics.ts:metricasAla + panel2d.ts",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c5-05",
+   "capitulo": 5,
+   "tipo": "benchmark",
+   "titulo": "Invariante ala elíptica: δ=0, e=1, a=a0/(1+a0/πAR)",
+   "herramientas": "lifting-line",
+   "oraculo": "|δ|<1e-6; |e−1|<1e-6; a(AR=8,2π)=5.02655 ±1e-4; w(y) constante",
+   "respuesta_impresa": "δ=0, e=1; w=−Γ0/2b; a=a0/(1+a0/πAR)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c5-06",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.1/5.2 Anillo de vórtice (Biot-Savart)",
+   "herramientas": "biot-savart",
+   "oraculo": "V=Γ/2R centro; ΓR²/(2(R²+A²)^1.5) eje a 1e-6",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c5-07",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.3 Ala 23012 AR=8 λ=0.8 a 7°",
+   "herramientas": "lifting-line",
+   "oraculo": "cadena a/CL/CD,i con δ(λ,AR) propio ±5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c5-08",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.4 Piper Cherokee: α de crucero",
+   "herramientas": "performance,lifting-line",
+   "oraculo": "AR=6.02; CL=W/qS; α por (5.70); L=W",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts:presionDinamica (inglés no)",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c5-09",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.5 D_i del avión completo (e=0.64)",
+   "herramientas": "performance",
+   "oraculo": "dos vías (qSC_L²/πeAR y (W/b)²/πeq) coinciden a 1e-9",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c5-10",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.6/5.7 Pendiente recta vs flecha 45° (AR 6 y 3)",
+   "herramientas": "lifting-line,VLM",
+   "oraculo": "Kuchemann vs Prandtl; VLM propio <5% a AR=6",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c5-11",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.8 Wright y Lilienthal: corrección por AR",
+   "herramientas": "lifting-line",
+   "oraculo": "CL,Wright=0.546·a(3.5)/a(6.48) <0.546",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c5-12",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.9 Spitfire a Vmax: CD,i y %",
+   "herramientas": "performance,ISA",
+   "oraculo": "CD,i=CL²/πAR; D=550ηHP/V; fracción; ρ(18,500 ft) ±0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c5-13",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.10 Spitfire con λ=0.4",
+   "herramientas": "lifting-line",
+   "oraculo": "CD,i=(1+δ)CL²/πAR; diferencia ~1-2% vs elíptica",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c5-14",
+   "capitulo": 5,
+   "tipo": "problema",
+   "titulo": "P5.11 Spitfire aproximación 70 mi/h",
+   "herramientas": "performance",
+   "oraculo": "CD,i un orden mayor que P5.9",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c5-15",
+   "capitulo": 5,
+   "tipo": "benchmark",
+   "titulo": "Ala delta 60°: pendiente 0.05/deg, CLmax 1.3, L/D 9.3/16.5",
+   "herramientas": "VLM,croquis",
+   "oraculo": "VLM → πAR/2 sin succión; Polhamus sube hacia 0.05/deg; declara que no reproduce CLmax",
+   "respuesta_impresa": "slope ~0.05/deg; stall ~35°; CLmax ~1.3; L/D 9.3 / 16.5",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c5-16",
+   "capitulo": 5,
+   "tipo": "benchmark",
+   "titulo": "§5.4 Lifting-line numérico no lineal (post-stall 50°)",
+   "herramientas": "lifting-line",
+   "oraculo": "lineal: = Fourier <1%; convergencia monótona D=0.05",
+   "respuesta_impresa": "within 20 percent",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c6-01",
+   "capitulo": 6,
+   "tipo": "ejemplo",
+   "titulo": "Ej 6.1 CD,o del P-35 desde la polar y e de Oswald",
+   "herramientas": "polar,performance",
+   "oraculo": "e=0.873 ±0.2%; CD,o=0.026 ±1%; Loftin 0.0251 <4%",
+   "respuesta_impresa": "AR=5.89; e=0.873; CD,o=0.026",
+   "ya_existe": "no",
+   "donde": "grep oswald: cero",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c6-02",
+   "capitulo": 6,
+   "tipo": "ejemplo",
+   "titulo": "Ej 6.2 (L/D)max del P-35",
+   "herramientas": "polar,performance",
+   "oraculo": "12.46 ±0.5%; en ese punto CD,o=CL²/πeAR",
+   "respuesta_impresa": "(CL/CD)max=12.46",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c6-03",
+   "capitulo": 6,
+   "tipo": "benchmark",
+   "titulo": "Tabla 6.1 F-16XL CAWAPI: dispersión de 7 códigos",
+   "herramientas": "VLM,CFD",
+   "oraculo": "VLM del doble-delta cae en [0.438,0.468]; declara CD no predecible",
+   "respuesta_impresa": "CL 0.370-0.468; CD 0.111-0.162 (26%/42%)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c6-04",
+   "capitulo": 6,
+   "tipo": "problema",
+   "titulo": "P6.3 Esfera y cilindro: dónde poner la toma",
+   "herramientas": "panel-3D",
+   "oraculo": "θ=48.6° (derivado); Cp,min esfera −1.25, cilindro −3",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "panel2d.ts:cpCilindroExacto; esfera no",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c6-05",
+   "capitulo": 6,
+   "tipo": "benchmark",
+   "titulo": "Esfera: Vθ=1.5V∞sinθ, Cp=1−(9/4)sin²θ",
+   "herramientas": "panel-3D",
+   "oraculo": "paneles de fuente 3D sobre esfera teselada <2% con ~500 paneles; ΣσA=0",
+   "respuesta_impresa": "Vθ=(3/2)V∞sinθ; Cp=1−(9/4)sin²θ; CD 0.4→0.1 en Re 3e5",
+   "ya_existe": "parcial",
+   "donde": "src/aero/skin.ts:pielDeMalla",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c7-01",
+   "capitulo": 7,
+   "tipo": "ejemplo",
+   "titulo": "Ej 7.1 e y h del aire de un cuarto",
+   "herramientas": "gasdinámica",
+   "oraculo": "todos ±0.5%; H/E=γ exacto",
+   "respuesta_impresa": "ρ=1.181; e=2.138e5 J/kg; h=2.993e5; H/E=1.4",
+   "ya_existe": "no",
+   "donde": "grep isentrop src: cero",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c7-02",
+   "capitulo": 7,
+   "tipo": "ejemplo",
+   "titulo": "Ej 7.2/7.3 Depósito blow-down: dp/dt y tiempo 10→20 atm",
+   "herramientas": "gasdinámica",
+   "oraculo": "dp/dt=2870 ±0.5%; t=352.3 s ±0.5%",
+   "respuesta_impresa": "dp/dt=2867.13 N/(m²s); 352.27 s",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c7-03",
+   "capitulo": 7,
+   "tipo": "ejemplo",
+   "titulo": "Ej 7.4 747 a 36,000 ft: T isentrópica",
+   "herramientas": "ISA,isentrópico",
+   "oraculo": "T=372.0 °R ±0.3%; ISA 36,000 ft p=476, T=391",
+   "respuesta_impresa": "T=372 °R",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts (ISA sí)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c7-04",
+   "capitulo": 7,
+   "tipo": "ejemplo",
+   "titulo": "Ej 7.5 Expansión 20→1 atm con y sin Δs",
+   "herramientas": "gasdinámica",
+   "oraculo": "127.5 K y 175.3 K ±0.3%",
+   "respuesta_impresa": "(a) 127.5 K; (b) 175.3 K",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c7-05",
+   "capitulo": 7,
+   "tipo": "ejemplo",
+   "titulo": "Ej 7.6 Condiciones totales a 1000 m/s",
+   "herramientas": "isentrópico",
+   "oraculo": "T0=817.8 ±0.2%; p0=26.7 atm ±0.5%",
+   "respuesta_impresa": "T0=817.8 K; p0=26.7 atm",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts:mach",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c7-06",
+   "capitulo": 7,
+   "tipo": "ejemplo",
+   "titulo": "Ej 7.7 Pitot subsónico compresible a 10,000 ft",
+   "herramientas": "Pitot-compresible",
+   "oraculo": "V∞=862 ft/s ±0.3%; RECHAZA Bernoulli M>0.3",
+   "respuesta_impresa": "T0=544.9 °R; V∞=862 ft/s",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c7-07",
+   "capitulo": 7,
+   "tipo": "problema",
+   "titulo": "P7.1/7.2 ρ, cp, cv, e, h en estancamiento de misil",
+   "herramientas": "gasdinámica",
+   "oraculo": "cp=6006, cv=4290 exactos; h/e=γ",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c7-08",
+   "capitulo": 7,
+   "tipo": "problema",
+   "titulo": "P7.3 Δh, Δe, Δs a través de un choque",
+   "herramientas": "gasdinámica,choque-normal",
+   "oraculo": "Δs>0; estados = choque normal M≈2.8",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c7-09",
+   "capitulo": 7,
+   "tipo": "problema",
+   "titulo": "P7.4/7.5 ρ en el perfil y salida de tobera isentrópica",
+   "herramientas": "isentrópico",
+   "oraculo": "p/ρ^γ constante a 1e-9",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c7-10",
+   "capitulo": 7,
+   "tipo": "problema",
+   "titulo": "P7.6 Compresibilidades τ_T y τ_s",
+   "herramientas": "gasdinámica",
+   "oraculo": "τ_T/τ_s=γ exacto",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c7-11",
+   "capitulo": 7,
+   "tipo": "problema",
+   "titulo": "P7.7/7.8 h0 y V de salida adiabática",
+   "herramientas": "gasdinámica",
+   "oraculo": "V=√(2cp(T0−T))≈896 m/s; h0 constante",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c7-12",
+   "capitulo": 7,
+   "tipo": "problema",
+   "titulo": "P7.9-7.12 V isentrópica en el perfil y % error Bernoulli",
+   "herramientas": "isentrópico,perfil-2D",
+   "oraculo": "error crece con la caída de p; banda de aviso",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c7-13",
+   "capitulo": 7,
+   "tipo": "teoria",
+   "titulo": "P7.13 Bernoulli como límite incompresible",
+   "herramientas": "teoría",
+   "oraculo": "error <1% a M<0.3",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 1
+  },
+  {
+   "id": "anderson-c8-01",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.1 Mach de un avión a 250 m/s en 3 altitudes",
+   "herramientas": "ISA",
+   "oraculo": "mach(h,V)=0.735/0.78/0.835 ±0.005",
+   "respuesta_impresa": "M=0.735; 0.78; 0.835",
+   "ya_existe": "si",
+   "donde": "src/aero/atmosfera.ts:mach",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c8-02",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.7 T0 y p0 desde M=2.79",
+   "herramientas": "isentrópico",
+   "oraculo": "T0/T=2.557 ±0.001; p0/p=26.7 ±0.1",
+   "respuesta_impresa": "T0=818 K; p0=26.7 atm",
+   "ya_existe": "no",
+   "donde": "CURRICULUM a7-l2 ❌ gasdinamica.ts",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-03",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.8 p0,T0,T*,a*,M* en un punto",
+   "herramientas": "isentrópico",
+   "oraculo": "p0/p=76.27 ±0.05; T*=T0/1.2; M*²=4.26 ±0.01",
+   "respuesta_impresa": "p0=22.9 atm; T0=621 K; T*=517.5 K; a*=456; M*=2.06",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-04",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.9/8.10 M y V local sobre perfil subsónico compresible",
+   "herramientas": "isentrópico,perfil-2D",
+   "oraculo": "M1=0.90 ±0.005; V1=965 ±2 ft/s",
+   "respuesta_impresa": "p0=1.276 atm; M1=0.9; V1=965.4 ft/s",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-05",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "§8.5 ¿Cuándo compresible? Tobera 350 vs 900 ft/s",
+   "herramientas": "isentrópico,tobera",
+   "oraculo": "p(350)=1974 ±2; p(900)=1300 ±3 lb/ft²; bandera M>0.3",
+   "respuesta_impresa": "0.2% vs 13%; ρ/ρ0<5% para M<0.32",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-06",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.11 Choque normal: estado aguas abajo",
+   "herramientas": "choque-normal",
+   "oraculo": "8.59/8.65/8.67 en M1=2 → 0.5774/4.5/1.6875 ±1e-4; T02=T01",
+   "respuesta_impresa": "p2=4.5 atm; T2=486 K; u2=255 m/s",
+   "ya_existe": "no",
+   "donde": "grep normal shock src: nada",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c8-07",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.12 Pérdida de p0: M=2 vs M=4",
+   "herramientas": "choque-normal",
+   "oraculo": "p02/p01=0.7209 y 0.1388 ±5e-4",
+   "respuesta_impresa": "pérdida 2.184 atm; 130.7 atm",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-08",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.13 Ramjet a Mach 2 en 10 km",
+   "herramientas": "choque-normal,isentrópico,toma",
+   "oraculo": "p2=1.45e5 ±1%; T2=399 ±1 K",
+   "respuesta_impresa": "p2=1.45e5 N/m²; T2=399 K",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c8-09",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.14 El mismo ramjet a Mach 10 (SCRAMjet)",
+   "herramientas": "choque-normal,toma",
+   "oraculo": "p2=32.7 atm ±1%; T2=4653 K; bandera gas perfecto inválido",
+   "respuesta_impresa": "p2=32.7 atm; T2=4653 K",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-10",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.15-8.17 Choque normal INVERSO",
+   "herramientas": "choque-normal",
+   "oraculo": "inversas por bisección → M1=2/5/3 ±1e-3",
+   "respuesta_impresa": "M1=2; 5; 3",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-11",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.22 Pitot compresible: decidir sub/supersónico",
+   "herramientas": "Pitot-Rayleigh",
+   "oraculo": "umbral 1.893; M=0.6/1.3/3.0 ±0.005",
+   "respuesta_impresa": "M=0.6; 1.3; 3.0",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c8-12",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.23 Estancamiento nariz roma a Mach 8",
+   "herramientas": "Pitot-Rayleigh",
+   "oraculo": "p02/p1=82.87 ±0.05; ps=8.07e4 ±0.5%",
+   "respuesta_impresa": "ps=38.1 atm",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-13",
+   "capitulo": 8,
+   "tipo": "ejemplo",
+   "titulo": "Ej 8.24 Velocidad del SR-71 desde Pitot a 25 km",
+   "herramientas": "Pitot-Rayleigh,ISA",
+   "oraculo": "ISA(25000) p=2527 ±3; M=3.40 ±0.01; V=1003 ±3",
+   "respuesta_impresa": "M1=3.4; V1=1003 m/s",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c8-14",
+   "capitulo": 8,
+   "tipo": "problema",
+   "titulo": "P8.6 Punto sónico a M∞=0.82 en 10,000 ft",
+   "herramientas": "ISA,isentrópico",
+   "oraculo": "p*=0.5283p0, T*=0.8333T0 ±0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-15",
+   "capitulo": 8,
+   "tipo": "problema",
+   "titulo": "P8.7 Choque normal M1=2.6 completo + entropía",
+   "herramientas": "choque-normal",
+   "oraculo": "vs fila Ap.B ±0.5%; T02=T01; ds=−R ln(p02/p01)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c8-16",
+   "capitulo": 8,
+   "tipo": "problema",
+   "titulo": "P8.9 M1 desde el salto de entropía",
+   "herramientas": "choque-normal",
+   "oraculo": "bisección |ds−199.5|<0.1",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-17",
+   "capitulo": 8,
+   "tipo": "problema",
+   "titulo": "P8.11/8.13 Pitot subsónico y error de Bernoulli",
+   "herramientas": "Pitot,isentrópico",
+   "oraculo": "p0/p=1.555<1.893; error % reportado",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-18",
+   "capitulo": 8,
+   "tipo": "problema",
+   "titulo": "P8.15 T0 del SR-71 a 2112 mi/h, 80,000 ft",
+   "herramientas": "ISA,isentrópico",
+   "oraculo": "T0=T·(1+0.2M²) en °F",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c8-19",
+   "capitulo": 8,
+   "tipo": "problema",
+   "titulo": "P8.17/8.18 Apollo Mach 36: γ efectiva",
+   "herramientas": "isentrópico",
+   "oraculo": "T0(1.4)=300·(1+0.2·1296); γ para 11,000 K; etiqueta fuera de validez",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c9-01",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.1 Cono de Mach y sonic boom",
+   "herramientas": "cono-de-Mach",
+   "oraculo": "μ=asin(1/M); d=27.71 km ±0.05",
+   "respuesta_impresa": "μ=30°; d=27.7 km",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts resolverChoqueOblicuo(M,0)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-02",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.2 Choque oblicuo 20° a Mach 2: estado completo",
+   "herramientas": "θ-β-M,choque-oblicuo,isentrópico",
+   "oraculo": "β=53.4 ±0.3°; M2=1.21 ±0.01; p02=7.00 ±0.05 atm; NO usar p02/p1",
+   "respuesta_impresa": "β=53.4°; M2=1.21; p2=2.82 atm; T2=399.7 K; p02=7.00 atm",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts β; viento.ts p2; faltan M2,T2,p02",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c9-03",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.3 Dado β=30° y M1=2.4",
+   "herramientas": "θ-β-M",
+   "oraculo": "θ=6.5 ±0.1°; M2=2.11 ±0.02",
+   "respuesta_impresa": "θ=6.5°; M2=2.11",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts:thetaDeBeta",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-04",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.5 Frenar Mach 3: normal vs oblicuo 40°+normal",
+   "herramientas": "toma-supersónica",
+   "oraculo": "0.578/0.3283=1.76 ±0.02",
+   "respuesta_impresa": "ratio=1.76 (76% más p0)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c9-05",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.6 cd de onda de cuña 15° a Mach 5",
+   "herramientas": "croquis,estudio-viento,θ-β-M",
+   "oraculo": "Dp/(qc)=0.114 ±0.002 aislando presión",
+   "respuesta_impresa": "β=24.2°; p2/p1=4.736; cd=0.114",
+   "ya_existe": "parcial",
+   "donde": "viento.ts (suma τ empírico; sin cd presión aislado)",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c9-06",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.7 Reflexión de choque en pared",
+   "herramientas": "reflexión-de-choque",
+   "oraculo": "Φ=17.3 ±0.3°; M3=2.55 ±0.03; p3=9774 ±1%",
+   "respuesta_impresa": "Φ=17.3°; M3=2.55; p3=9774 lb/ft²; T3=825 °R",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c9-07",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.8 Entropía por línea de corriente tras choque de proa (M=8)",
+   "herramientas": "choque-oblicuo,cuerpo-romo",
+   "oraculo": "ds=1370 ±5 y 1180 ±10 J/(kg K)",
+   "respuesta_impresa": "s2−s1=1370; 1180 J/(kg K)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-08",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.9 Expansión Prandtl-Meyer 15° desde M=1.5",
+   "herramientas": "Prandtl-Meyer",
+   "oraculo": "ν(1.5)=11.91 ±0.01°; M(26.91°)=2.00; p02=p01; p2=0.469 ±0.003",
+   "respuesta_impresa": "M2=2.0; p2=0.469 atm; T2=232 K; p02=3.671 atm",
+   "ya_existe": "no",
+   "donde": "grep prandtl src/aero: nada",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c9-09",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.10 Compresión isentrópica 15° a Mach 10",
+   "herramientas": "Prandtl-Meyer",
+   "oraculo": "M(87.3°)=6.4 ±0.05; p2=18.0 ±0.3 atm",
+   "respuesta_impresa": "M2=6.4; p2=18.02 atm",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-10",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.11 Mismo giro con choque: pérdida 77% de p0",
+   "herramientas": "θ-β-M,Prandtl-Meyer",
+   "oraculo": "β=20.0 ±0.3°; M2=5.22 ±0.05; p02/p01=0.232 ±0.003",
+   "respuesta_impresa": "β=20°; M2=5.22; p2=13.32 atm; p02=9.85e3 atm",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts β",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-11",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.12 Placa plana 5° Mach 3: cl y cd por choque-expansión",
+   "herramientas": "croquis,shock-expansion",
+   "oraculo": "cl=0.125 ±0.003; cd=0.011 ±0.001; cd/cl=tanα exacto",
+   "respuesta_impresa": "cl=0.125; cd=0.011",
+   "ya_existe": "no",
+   "donde": "viento.ts solo cuña a α=0",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c9-12",
+   "capitulo": 9,
+   "tipo": "ejemplo",
+   "titulo": "Ej 9.13 Cola de cuña del X-15: cl placa vs cuña",
+   "herramientas": "croquis,shock-expansion",
+   "oraculo": "cl_placa=0.126 ±0.004; cl_cuña=0.241 ±0.006; ratio≈2",
+   "respuesta_impresa": "cl=0.126 (placa); 0.241 (cuña)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c9-13",
+   "capitulo": 9,
+   "tipo": "caso",
+   "titulo": "IWC 9.14 Sonic boom: onda N, Concorde, F-5E",
+   "herramientas": "shock-expansion,sonic-boom",
+   "oraculo": "a=968 ±1 ft/s; Δt=0.103 ±0.001 s",
+   "respuesta_impresa": "a=968 ft/s; V=1936 ft/s; Δt=0.103 s",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-14",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.2 Choque β=30° a Mach 4 en 10 km",
+   "herramientas": "θ-β-M,choque-oblicuo",
+   "oraculo": "Mn1=2 → fila M=2 ±1e-3; T02=T01",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "thetaDeBeta",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c9-15",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.6 p máxima con choque adherido a Mach 2.4",
+   "herramientas": "θ-β-M",
+   "oraculo": "α=θmax(2.4); α+0.01° ⇒ desprendido=true",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts:deflexionMaxima",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-16",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.7 Pitot tras choque de cuña 30.2° a Mach 3.5",
+   "herramientas": "θ-β-M,Pitot-Rayleigh",
+   "oraculo": "cadena β→M2→Rayleigh; p_Pitot<p01",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "β sí; Rayleigh no",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c9-17",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.8 Toma: 1, 2 y 3 choques para Mach 4",
+   "herramientas": "toma-supersónica",
+   "oraculo": "recuperación (a)<(b)<(c); Σds=−R ln(p0f/p01)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c9-18",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.9 Reflexión θ=18.2° a Mach 3.2",
+   "herramientas": "reflexión-de-choque",
+   "oraculo": "como Ej 9.7; Mach reflection si θ>θmax(M2)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-19",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.13 Placa a Mach 2.6: cl, cd_w para 5/15/30°",
+   "herramientas": "shock-expansion",
+   "oraculo": "cd=cl tanα; 5° ≈ lineal 0.1454 (<5%); 30° vs θmax desprendido",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c9-20",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.14 Rombo ε=10° a α=15°, Mach 3",
+   "herramientas": "croquis,shock-expansion",
+   "oraculo": "4 caras; α=0 ⇒ cl=0 y D'=(p2−p3)t",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c9-21",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.16 Cilindro (cd=4/3) vs rombo 5° a Mach 5",
+   "herramientas": "shock-expansion,cuerpo-romo",
+   "oraculo": "ratio ≫1 (10-30)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-22",
+   "capitulo": 9,
+   "tipo": "problema",
+   "titulo": "P9.18/9.19 Ducto con pared a 3°/30°: abanico PM vs cuasi-1D",
+   "herramientas": "Prandtl-Meyer,tobera-2D",
+   "oraculo": "x_A=h0/tan μ1; promedio ∈[M1,M2]",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c9-23",
+   "capitulo": 9,
+   "tipo": "tutorial",
+   "titulo": "P9.21 Nube del F/A-18: condensación en la expansión",
+   "herramientas": "Prandtl-Meyer,choque-normal",
+   "oraculo": "0.2569 ±0.001; 0.2941 ±0.003 (libro 0.2923)",
+   "respuesta_impresa": "dpH2O/dT=0.256; 0.2923",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c10-01",
+   "capitulo": 10,
+   "tipo": "ejemplo",
+   "titulo": "Ej 10.1 Tobera Ae/A*=10.25",
+   "herramientas": "gasdinámica-1D,tobera",
+   "oraculo": "Me=3.95 ±1%; pe=0.035 atm; Te=145.6 R",
+   "respuesta_impresa": "Me=3.95; pe=0.035 atm; Te=145.6 °R",
+   "ya_existe": "no",
+   "donde": "grep areaMach src: nada",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c10-02",
+   "capitulo": 10,
+   "tipo": "ejemplo",
+   "titulo": "Ej 10.2 Tobera Ae/A*=2: dos soluciones",
+   "herramientas": "gasdinámica-1D,tobera",
+   "oraculo": "raíces 2.2 y 0.3 ±2%; p*/p0=0.5283, T*/T0=0.8333 exactas",
+   "respuesta_impresa": "(a) Me=2.2, pe=0.0935 atm; (b) Me=0.3, pe=0.94 atm",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c10-03",
+   "capitulo": 10,
+   "tipo": "ejemplo",
+   "titulo": "Ej 10.3 pe=0.973 atm: garganta NO sónica",
+   "herramientas": "tobera",
+   "oraculo": "Mt=0.44 ±3%; At/A*=1.482>1",
+   "respuesta_impresa": "Me=0.2; At/A*=1.482; Mt=0.44",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c10-04",
+   "capitulo": 10,
+   "tipo": "ejemplo",
+   "titulo": "Ej 10.4 Motor cohete H2/O2 (γ=1.22): empuje y Ae",
+   "herramientas": "tobera,ISA,revolve",
+   "oraculo": "T=2.17e6 N ±1%; Ae=16.5 m² ±1%; ue por energía vs Me·ae <0.5%; p(20 km)=5529 Pa",
+   "respuesta_impresa": "ṁ=586.4 kg/s; Me=4.38; ue=3700 m/s; T=2.17e6 N; Ae=16.5 m²",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts (20 km)",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c10-05",
+   "capitulo": 10,
+   "tipo": "ejemplo",
+   "titulo": "Ej 10.5 Gasto ahogado cerrado (E10.3)",
+   "herramientas": "tobera",
+   "oraculo": "ṁ=583.2 ±0.5% (ojo: libro usa R=510); |cadena−cerrada|<1%",
+   "respuesta_impresa": "ṁ=583.2 kg/s",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c10-06",
+   "capitulo": 10,
+   "tipo": "ejemplo",
+   "titulo": "Ej 10.6 Segunda garganta de túnel Mach 2",
+   "herramientas": "choque-normal,túnel",
+   "oraculo": "At2/At1=1.387 ±0.5%",
+   "respuesta_impresa": "At,2/At,1=1.387",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c10-07",
+   "capitulo": 10,
+   "tipo": "caso",
+   "titulo": "IWC 10.8 Túnel blowdown Mach 2 completo",
+   "herramientas": "túnel,gasdinámica-1D,croquis,planeación",
+   "oraculo": "Re=23e6 ±3%; ṁ=7.05 lbm/s ±2%; V_tanque=9049 ft³ ±2%; 2h=2.31 ft",
+   "respuesta_impresa": "sección 3×3.5 ft; p01=1.387 atm; Re=23e6; ṁ=7.05 lbm/s; tanque 9049 ft³",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c10-08",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.1 Tobera Ae/A*=2.193: salida completa",
+   "herramientas": "tobera",
+   "oraculo": "p0e=p0, T0e=T0; ρe cierra <0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c10-09",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.2 Ae/A* desde pe/p0",
+   "herramientas": "gasdinámica-1D",
+   "oraculo": "round-trip a 1e-6",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c10-10",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.3 Ae/A* desde Pitot supersónico",
+   "herramientas": "choque-normal,gasdinámica-1D",
+   "oraculo": "p02/p01=0.4416 → M → A/A*; recompute <1e-5",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c10-11",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.4/10.6 Gasto con At=4 in²: cadena vs cerrada",
+   "herramientas": "tobera",
+   "oraculo": "coinciden <0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c10-12",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.7/10.8 Ae/A*=1.616 con pe=0.947: Mt y gasto",
+   "herramientas": "tobera",
+   "oraculo": "Mt<1; ṁ continuidad <1e-6",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c10-13",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.9 Ae/A*=1.53 con cuatro contrapresiones",
+   "herramientas": "tobera,choque-normal",
+   "oraculo": "clasificación automática; choque interno por bisección |pe−pe_calc|<1e-4 atm",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c10-14",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.10 Ae/A* del túnel desde β de una cuña de 20°",
+   "herramientas": "choque-oblicuo,croquis",
+   "oraculo": "M de thetaDeBeta(M,41.8°)=20°; A/A* supersónico; el alumno DIBUJA la cuña",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts:thetaDeBeta",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c10-15",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.11 p0 del túnel desde Pitot (Ae/A*=6.79)",
+   "herramientas": "choque-normal",
+   "oraculo": "round-trip Pitot <1e-5",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c10-16",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.12 Túnel Mach 2.8 con ṁ=1 slug/s",
+   "herramientas": "túnel,ISA",
+   "oraculo": "p0,T0 exactos; A*, Ae, At2>At",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c10-17",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.13 p de cámara de cohete desde ṁ (γ=1.2, PM=16)",
+   "herramientas": "tobera",
+   "oraculo": "(E10.3) invertida con R=Ru/PM ±0.1%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c10-18",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.14 p0 mínima con η_D=1.2 a Mach 3",
+   "herramientas": "túnel,choque-normal",
+   "oraculo": "p0=pa/(η_D·p02/p01(3))",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c10-19",
+   "capitulo": 10,
+   "tipo": "problema",
+   "titulo": "P10.17/10.18 Línea de corriente en abanico PM (M 1→1.6)",
+   "herramientas": "Prandtl-Meyer,croquis",
+   "oraculo": "giro total ν(1.6)−ν(1); tangente continua",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c11-01",
+   "capitulo": 11,
+   "tipo": "ejemplo",
+   "titulo": "Ej 11.1 Prandtl-Glauert sobre Cp puntual",
+   "herramientas": "compresibilidad-PG,panel-2D",
+   "oraculo": "Cp=−0.375 ±0.1%",
+   "respuesta_impresa": "Cp=−0.375",
+   "ya_existe": "no",
+   "donde": "grep glauert: nada; panel2d.ts da Cp0",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c11-02",
+   "capitulo": 11,
+   "tipo": "ejemplo",
+   "titulo": "Ej 11.2 Pendiente a M=0.7: +40%",
+   "herramientas": "compresibilidad-PG",
+   "oraculo": "8.8/rad ±0.5%; marca borde de validez",
+   "respuesta_impresa": "cl=8.8α; 1.4×",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c11-03",
+   "capitulo": 11,
+   "tipo": "ejemplo",
+   "titulo": "Ej 11.3 Mach crítico del NACA 0012: 0.7371 vs 0.73",
+   "herramientas": "mach-crítico,panel-2D,croquis",
+   "oraculo": "raíz de (11.63)=0.7371 ±0.001; Cp,cr(M) ±1%; Cp0,min de panel2d ≈−0.43 ±10% en x/c≈0.1",
+   "respuesta_impresa": "Mcr=0.74 (gráfico); 0.7371 (analítico); exp 0.73",
+   "ya_existe": "parcial",
+   "donde": "panel2d.ts + potencial.ts:nacaProfile (00xx)",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c11-04",
+   "capitulo": 11,
+   "tipo": "caso",
+   "titulo": "IWC 11.16 Wing-flow del P-51: M local 1.23 con K-T",
+   "herramientas": "compresibilidad-PG,isentrópico",
+   "oraculo": "Cp(K-T)=−1.0419 ±0.1%; M_A=1.23 ±0.5%",
+   "respuesta_impresa": "Cp=−1.0419; M_A=1.23 (7% vs Gilruth)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c11-05",
+   "capitulo": 11,
+   "tipo": "problema",
+   "titulo": "P11.1 M,p,T desde potencial subsónico dado",
+   "herramientas": "isentrópico",
+   "oraculo": "exacta (11.27) vs lineal (11.30) <2%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c11-06",
+   "capitulo": 11,
+   "tipo": "problema",
+   "titulo": "P11.2 cl del 2412 a 5° y M=0.6 por P-G",
+   "herramientas": "compresibilidad-PG,panel-2D",
+   "oraculo": "cl0 de panel2d (vs 2π(α−αL0) <5%) → /0.8; 2412 tiene COMBA (nacaProfile solo 00xx)",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "panel2d.ts; nacaProfile simétrico",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c11-07",
+   "capitulo": 11,
+   "tipo": "problema",
+   "titulo": "P11.3 P-G, K-T, Laitone sobre Cp0=−0.54 a M=0.58",
+   "herramientas": "compresibilidad-PG",
+   "oraculo": "P-G ±0.1%; |Laitone|≥|K-T|≥|P-G|",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c11-08",
+   "capitulo": 11,
+   "tipo": "problema",
+   "titulo": "P11.4 Mcr con Cp0,min=−0.41",
+   "herramientas": "mach-crítico",
+   "oraculo": "raíz tol 1e-4; Mcr(−0.41)>0.7371",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c11-09",
+   "capitulo": 11,
+   "tipo": "problema",
+   "titulo": "P11.5 p/p∞ en el mínimo cuando M∞=Mcr=0.8",
+   "herramientas": "isentrópico,mach-crítico",
+   "oraculo": "(11.56) con M_A=1; coherente con Cp,cr(0.8)=−0.435 ±1%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c11-10",
+   "capitulo": 11,
+   "tipo": "problema",
+   "titulo": "P11.6 Cp desde M∞=0.5 y M local 0.86",
+   "herramientas": "isentrópico",
+   "oraculo": "(11.58) vs tablas <1%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c11-11",
+   "capitulo": 11,
+   "tipo": "problema",
+   "titulo": "P11.7 Mcr=0.61 del perfil de la Fig 11.5",
+   "herramientas": "mach-crítico,compresibilidad-PG",
+   "oraculo": "M_A(0.5)=0.772 ±1%; M_A(0.61)=1.00 ±1%",
+   "respuesta_impresa": "M∞=0.5→M_A=0.772; 0.61→1.0",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c11-12",
+   "capitulo": 11,
+   "tipo": "problema",
+   "titulo": "P11.9 Mcr del cilindro: dentro de 3.5% de 0.404",
+   "herramientas": "mach-crítico,panel-2D",
+   "oraculo": "Cp0,min=−3; raíz dentro de 3.5% de 0.404",
+   "respuesta_impresa": "Mcr cilindro 0.404; esfera 0.57; within 3.5%",
+   "ya_existe": "parcial",
+   "donde": "panel2d.ts:cpCilindroExacto, circulo",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c11-13",
+   "capitulo": 11,
+   "tipo": "caso",
+   "titulo": "Regla del área transónica: A(x) del sólido completo",
+   "herramientas": "sección-área,ensamble,loft",
+   "oraculo": "∫A(x)dx=volumen <0.5%; métrica de suavidad menor en area-ruled",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "occt.ts (cortes, masa-inercia); falta barrido A(x)",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c11-14",
+   "capitulo": 11,
+   "tipo": "caso",
+   "titulo": "Pendiente compresible de ala finita (11.64-11.68)",
+   "herramientas": "performance,compresibilidad-PG",
+   "oraculo": "límites M→0 recuperan 5.70/5.81/5.82; t/c efectivo 0.106 a 45°",
+   "respuesta_impresa": "t2/c2=0.106 para Λ=45°",
+   "ya_existe": "no",
+   "donde": "wing-metrics.ts sin pendiente",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c12-01",
+   "capitulo": 12,
+   "tipo": "ejemplo",
+   "titulo": "Ej 12.1 Placa 5° Mach 3: lineal vs exacto (1.6%)",
+   "herramientas": "supersónico-lineal,shock-expansion",
+   "oraculo": "cl=0.123 ±0.5%; cd=0.011; |Δcl|≤2% vs exacto",
+   "respuesta_impresa": "cl=0.123; cd=0.011 (exacto 0.125/0.011)",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts (compresión exacta)",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c12-02",
+   "capitulo": 12,
+   "tipo": "ejemplo",
+   "titulo": "Ej 12.2 F-104 a Mach 2 y 11 km vuela a 1.98°",
+   "herramientas": "supersónico-lineal,ISA,performance",
+   "oraculo": "α=0.035 rad ±1%; ISA 11 km ρ=0.3648, T=216.78 ±0.2%",
+   "respuesta_impresa": "CL=0.08; α=1.98°",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c12-03",
+   "capitulo": 12,
+   "tipo": "ejemplo",
+   "titulo": "Ej 12.3 F-104: fricción vs onda; L/D 28.3→11.2",
+   "herramientas": "supersónico-lineal,fricción-compresible,Sutherland",
+   "oraculo": "μ=1.4226e-5 ±0.1%; Re=3.33e7; cd,onda=2.83e-3; L/D=11.2 ±1%; α_igualdad=2.47°",
+   "respuesta_impresa": "Cf=4.3e-3; cd,w=2.83e-3; fricción 60%; L/D 28.3→11.2",
+   "ya_existe": "no",
+   "donde": "skin.ts integra τ dado; sin Cf/Sutherland",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c12-04",
+   "capitulo": 12,
+   "tipo": "caso",
+   "titulo": "Regla del área SUPERSÓNICA del F-16 (cortes al ángulo de Mach)",
+   "herramientas": "sección-área,ensamble",
+   "oraculo": "μ=38.7°/56.4° exactos; A_oblicua suave; M→1 recupera A(x)",
+   "respuesta_impresa": "μ=38.7° (M=1.6); 56.4° (M=1.2)",
+   "ya_existe": "parcial",
+   "donde": "occt.ts cortes; sin barrido oblicuo",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c12-05",
+   "capitulo": 12,
+   "tipo": "problema",
+   "titulo": "P12.1 Placa Mach 2.6 a 5/15/30°: lineal vs exacto",
+   "herramientas": "supersónico-lineal,shock-expansion",
+   "oraculo": "5°: 0.1454/0.0127; 15°: 0.4363/0.1142; 30°: 0.8727/0.4569 ±0.1%; L/D=cotα exacto; desprendido avisa",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts desprendido",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c12-06",
+   "capitulo": 12,
+   "tipo": "problema",
+   "titulo": "P12.2 p/p∞ arriba y abajo: lineal vs exacto",
+   "herramientas": "supersónico-lineal",
+   "oraculo": "p/p∞=1+(γ/2)M²Cp; error de presión > error de cl",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c12-07",
+   "capitulo": 12,
+   "tipo": "problema",
+   "titulo": "P12.3 Diamante ε=10° α=15° Mach 3 lineal",
+   "herramientas": "supersónico-lineal,croquis",
+   "oraculo": "cl=4α/√8=0.370; cd=(4/√8)(α²+tan²ε)=0.140 ±1%; ε medido del croquis",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "viento.ts solo cuña",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c12-08",
+   "capitulo": 12,
+   "tipo": "teoria",
+   "titulo": "P12.5 (L/D)max de placa no viscosa",
+   "herramientas": "supersónico-lineal",
+   "oraculo": "L/D=1/α sin máximo (α→0)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c12-09",
+   "capitulo": 12,
+   "tipo": "problema",
+   "titulo": "P12.6 α óptimo y (L/D)max con Cf (RESPUESTA IMPRESA)",
+   "herramientas": "supersónico-lineal,fricción",
+   "oraculo": "fórmulas exactas; barrido coincide <0.1%; cd,onda=Cf en el óptimo",
+   "respuesta_impresa": "α=(Cf)^½(M²−1)^¼/2; (cl/cd)max=(Cf)^−½(M²−1)^−¼",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c12-10",
+   "capitulo": 12,
+   "tipo": "problema",
+   "titulo": "P12.7 (L/D)max del F-104 plano con Cf=4.3e-3",
+   "herramientas": "supersónico-lineal,performance",
+   "oraculo": "α_opt=2.47° ±1%; (L/D)max>11.2",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c13-01",
+   "capitulo": 13,
+   "tipo": "problema",
+   "titulo": "P13.1 Proceso unitario del MOC: punto 3 desde 1 y 2",
+   "herramientas": "MOC-2D,Prandtl-Meyer",
+   "oraculo": "K± ±1e-9; derivado: θ3=10°, M3≈2.39, (x3,y3)≈(0.089,0.049) m ±2%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "grep moc/caracter src: nada",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c13-02",
+   "capitulo": 13,
+   "tipo": "caso",
+   "titulo": "Diseño del contorno de tobera supersónica por MOC (§13.3)",
+   "herramientas": "MOC-2D,croquis,extruir,plano2D",
+   "oraculo": "semialtura salida/garganta = A/A*(Me): 1.6875 (M=2), 2.6367 (M=2.5) ±0.5%; Me uniforme <0.5%; θ_salida=0",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "CRUCE-Y-PLAN fila 8 (plan)",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c13-03",
+   "capitulo": 13,
+   "tipo": "tutorial",
+   "titulo": "MacCormack marchando en x por ducto divergente (§13.4)",
+   "herramientas": "CFD,croquis",
+   "oraculo": "∫ρu dy const ±1e-3; vs MOC y cuasi-1D ±2%; p0,T0 const ±0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c13-04",
+   "capitulo": 13,
+   "tipo": "benchmark",
+   "titulo": "Cuerpo romo time-marching: cilindro parabólico M=4 y 8",
+   "herramientas": "CFD,panel-3D",
+   "oraculo": "Cp estanc. 1.79 (M=4), 1.83 (M=8) ±2%; choque más cerca a M=8; nariz vs newtoniana ±5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "ForgeBRepStudio.tsx:2051 post-proceso solo analítico",
+   "esfuerzo": "L",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c13-05",
+   "capitulo": 13,
+   "tipo": "benchmark",
+   "titulo": "Taylor-Maccoll: cono por método inverso + carta θc-θs-M",
+   "herramientas": "EDO,revolve,aero-3D",
+   "oraculo": "β_cono<β_cuña; θc,max cono>cuña; Vθ(θc)=0 ±1e-6; vs Sims ±0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "grep taylor src/aero: nada",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c14-01",
+   "capitulo": 14,
+   "tipo": "ejemplo",
+   "titulo": "Ej 14.1(a) Placa 15° Mach 8 exacta",
+   "herramientas": "shock-expansion,Prandtl-Meyer",
+   "oraculo": "impresos ±2%; L/D=cot15°=3.732 ±0.1%",
+   "respuesta_impresa": "Cp2=−0.0219; Cp3=0.1885; cl=0.2032; cd=0.0545; L/D=3.73",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts intradós; sin ν(M)",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c14-02",
+   "capitulo": 14,
+   "tipo": "ejemplo",
+   "titulo": "Ej 14.1(b) La misma placa por Newton",
+   "herramientas": "newtoniana",
+   "oraculo": "impresos ±1%; errores 29%/100%/36.6% ±2%; L/D exacto",
+   "respuesta_impresa": "Cp3=0.134; cl=0.1294; cd=0.03468; L/D=3.73",
+   "ya_existe": "no",
+   "donde": "grep newtonian src/aero: nada",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c14-03",
+   "capitulo": 14,
+   "tipo": "ejemplo",
+   "titulo": "Ej 14.2 Calentamiento de estancamiento del Shuttle (Tauber-Meneses)",
+   "herramientas": "térmico,ISA",
+   "oraculo": "45.78 W/cm² ±1%; ±3% vs Zoby 45; unidades W/cm², m/s, kg/m³, m",
+   "respuesta_impresa": "h0=2.185e7 J/kg; hw/h0=0.051; q_w=45.78 W/cm² (Zoby 45)",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts hasta 84.852 km",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c14-04",
+   "capitulo": 14,
+   "tipo": "caso",
+   "titulo": "Cp newtoniano modificado sobre la malla B-Rep de cualquier pieza",
+   "herramientas": "panel-3D,piel,revolve,choque-normal",
+   "oraculo": "Cp,max 1.79/1.83 ±1%; esfera CD=1, cilindro 4/3, placa 2, cono 2sin²θc ±0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "src/aero/skin.ts:pielDeMalla/integrarPresion; newtoniana.ts ❌",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c14-05",
+   "capitulo": 14,
+   "tipo": "ejemplo",
+   "titulo": "Curvas newtonianas de placa: cl,max=0.77 a 54.7°, (L/D)max con fricción",
+   "herramientas": "newtoniana,optimización",
+   "oraculo": "cl,max=4/(3√3)=0.7698; α=54.74°; identidades 14.23-14.27 ±1e-9",
+   "respuesta_impresa": "cl,max=0.77 a 54.7°; α*=(cd0)^1/3; (L/D)max=0.67/(cd0)^1/3; cd,w=2cd0",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c14-06",
+   "capitulo": 14,
+   "tipo": "ejemplo",
+   "titulo": "T tras choque normal a M=36: 65,248 K vs 11,000 K",
+   "herramientas": "choque-normal,ISA",
+   "oraculo": "T2/T1=252.94 → 65,248 K ±0.1%; etiqueta fuera de validez",
+   "respuesta_impresa": "Ts=65,248 K (gas perfecto); ~11,000 K (reactivo)",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts (59 km da 248 K, libro 258 K)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c14-07",
+   "capitulo": 14,
+   "tipo": "ejemplo",
+   "titulo": "Cuña 15° a M=36: β=18° y límite β=1.2θ",
+   "herramientas": "choque-oblicuo",
+   "oraculo": "resolverChoqueOblicuo(36,15°)≈18.2° ±2%; ρ2/ρ1→6; Cp→0.163",
+   "respuesta_impresa": "β=18°; β=1.2θ",
+   "ya_existe": "si",
+   "donde": "src/aero/cuna-anderson.ts:resolverChoqueOblicuo",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c14-08",
+   "capitulo": 14,
+   "tipo": "benchmark",
+   "titulo": "Independencia de Mach: cuña y cono 15° vs M (Fig 14.15)",
+   "herramientas": "choque-oblicuo,EDO,newtoniana",
+   "oraculo": "límites ±1e-9; Cp_cono<Cp_cuña; |Cp(M)−Cp(∞)|<5% para M>10",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "cuña sí; cono no",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c14-09",
+   "capitulo": 14,
+   "tipo": "problema",
+   "titulo": "P14.1 Placa Mach 2.6 por Newton y Newton modificado",
+   "herramientas": "newtoniana,shock-expansion",
+   "oraculo": "Cp,max(2.6)=1.73 ±1%; L/D=cotα; Newton se aparta >30%",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c14-10",
+   "capitulo": 14,
+   "tipo": "problema",
+   "titulo": "P14.2 Placa 20° Mach 20: Newton vs exacto",
+   "herramientas": "newtoniana,shock-expansion",
+   "oraculo": "cl=0.2199; cd=0.0800; L/D=2.747; dorso Cp2→−0.0036",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c14-11",
+   "capitulo": 14,
+   "tipo": "problema",
+   "titulo": "P14.3 Nariz esférica M=20 a 150,000 ft: p,T,M,V a 20°",
+   "herramientas": "newtoniana,choque-normal,isentrópico",
+   "oraculo": "Cp,max≈1.84; p≈1.39e3 lb/ft²; M≈0.43 (derivados ±3%); etiqueta T>2000 K",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c14-12",
+   "capitulo": 14,
+   "tipo": "caso",
+   "titulo": "Waverider caret de Nonweiler en el CAD",
+   "herramientas": "croquis,loft,choque-oblicuo,panel-3D",
+   "oraculo": "bordes de ataque en el plano de choque <1e-6·l; Cp intradós uniforme=(14.38); L/D=cotδ; vol=prisma ±1e-6",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "occt.ts sí; generador no",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c14-13",
+   "capitulo": 14,
+   "tipo": "benchmark",
+   "titulo": "Waverider cónico viscoso-optimizado M=6 (Bowcutt): θs óptimo 12°",
+   "herramientas": "EDO,loft,capa-límite,optimización",
+   "oraculo": "θs óptimo=12°; 8<(L/D)max<9; D_onda/D_fricción∈[0.5,2]",
+   "respuesta_impresa": "óptimo en θs=12°; onda/fricción <2×",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c14-14",
+   "capitulo": 14,
+   "tipo": "teoria",
+   "titulo": "Barrera L/D: Kuchemann 4(M+3)/M vs waverider 6(M+2)/M",
+   "herramientas": "performance",
+   "oraculo": "M=5→6.40/8.40; M=10→5.20/7.20; waverider>Kuchemann ∀M",
+   "respuesta_impresa": "(L/D)max=4(M+3)/M; 6(M+2)/M",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c14-15",
+   "capitulo": 14,
+   "tipo": "caso",
+   "titulo": "Dimensionar el radio de nariz: q_w∝1/√R",
+   "herramientas": "térmico,revolve,fillet",
+   "oraculo": "q_w·√R=52.0 const ±1e-9; R=0.1 m→164 W/cm²; R(30 W/cm²)=3.0 m",
+   "respuesta_impresa": "q_w∝1/√R; Q_total=½(Cf/CD)(½mVE²)",
+   "ya_existe": "no",
+   "donde": "fillet en occt.ts",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c14-16",
+   "capitulo": 14,
+   "tipo": "benchmark",
+   "titulo": "Orbiter M=23 α=30°: presión y Cm (caso de alarma)",
+   "herramientas": "panel-3D,newtoniana,momentos",
+   "oraculo": "p/p∞≈170 en el fondo plano ±20%; Cm∈±0.04; brecha gas real declarada",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "wing-metrics.ts fixture Orbiter + skin.ts",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c15-01",
+   "capitulo": 15,
+   "tipo": "problema",
+   "titulo": "P15.1 Couette de aire: cortante con Sutherland a 320 K",
+   "herramientas": "Couette,Sutherland",
+   "oraculo": "u=ue y/h; τ=μue/h igual en ambas; μ(320)=1.94e-5 → τ=0.058 Pa ±1% (derivado)",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "grep couette/sutherland src/aero: nada (mold/cojinete = otro dominio)",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c15-02",
+   "capitulo": 15,
+   "tipo": "teoria",
+   "titulo": "P15.2 Poiseuille plano",
+   "herramientas": "Couette",
+   "oraculo": "u parabólico; τw=±(h/2)dp/dx; Q=−h³/(12μ)dp/dx",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "src/forja/mold/fan.ts (Hele-Shaw, otro dominio)",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c15-03",
+   "capitulo": 15,
+   "tipo": "ejemplo",
+   "titulo": "Re_cr medido: xcr=0.05 m a 120 m/s → 412,000",
+   "herramientas": "transición,estudio-viento",
+   "oraculo": "412,000 ±0.5%; xcr(240)=0.025 m; 4 factores reducen xcr",
+   "respuesta_impresa": "Re_cr=412,000; xcr=0.025 m a 240 m/s; regla 500,000",
+   "ya_existe": "no",
+   "donde": "viento.ts cita capa-limite.ts inexistente",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c15-04",
+   "capitulo": 15,
+   "tipo": "teoria",
+   "titulo": "Propiedades de transporte: Sutherland, k=1.45μcp, Pr=0.71",
+   "herramientas": "propiedades,térmico",
+   "oraculo": "μ(288.16)=1.7894e-5 exacto; μ(320)=1.939e-5; Pr fijo 0.71 declarando k⇒0.69",
+   "respuesta_impresa": "μ/μ0=(T/T0)^1.5(T0+110)/(T+110); k=1.45μcp; Pr=0.71",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c15-05",
+   "capitulo": 15,
+   "tipo": "teoria",
+   "titulo": "Similitud: γ, M, Re, Pr de adimensionalizar NS",
+   "herramientas": "similitud,túnel",
+   "oraculo": "identidades ±1e-9; escalador 1:10 con (p,T) o declara imposible",
+   "respuesta_impresa": "1/(γM²); 1/Re; γ/(Pr Re)",
+   "ya_existe": "desconocido",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c16-01",
+   "capitulo": 16,
+   "tipo": "ejemplo",
+   "titulo": "Ej 16.1 Couette incompresible imperial",
+   "herramientas": "Couette,unidades",
+   "oraculo": "100 ft/s; 0.09 lb/ft²; 519.6 R; 8.97; 521.36 R ±1%",
+   "respuesta_impresa": "u=100 ft/s; τ=0.09 lb/ft²; Tmax=519.6 R; q_w=8.97; Taw=521.36 R",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c16-02",
+   "capitulo": 16,
+   "tipo": "ejemplo",
+   "titulo": "Ej 16.2 Couette compresible Mach 3: q_w por Reynolds",
+   "herramientas": "Couette,analogía-Reynolds",
+   "oraculo": "q_w=3.68e4 W/m² ±1%; CH/cf=1/(2Pr) exacto",
+   "respuesta_impresa": "cf=1.13e-4; CH=8e-5; Taw=656 K; q_w=3.68e4 W/m²",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c16-03",
+   "capitulo": 16,
+   "tipo": "teoria",
+   "titulo": "Mach al que T0=1000 K (Pr constante)",
+   "herramientas": "isentrópico",
+   "oraculo": "M=3.5 ±1%; bandera Me>3.5",
+   "respuesta_impresa": "M=3.5",
+   "ya_existe": "desconocido",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c16-04",
+   "capitulo": 16,
+   "tipo": "benchmark",
+   "titulo": "Couette compresible por shooting: r=Pr y analogía",
+   "herramientas": "Couette,shooting-RK4,Sutherland",
+   "oraculo": "haw=he+Pr ue²/2 exacto; CH/cf=1/(2Pr) ±0.5%; A=30 → T centro ~5Tw",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c16-05",
+   "capitulo": 16,
+   "tipo": "benchmark",
+   "titulo": "MacCormack temporal converge al Couette compresible",
+   "herramientas": "CFD,NS-2D",
+   "oraculo": "salida = shooting ±1%; dt>CFL explota",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "NavierStokes2D.tsx (Stam, no verificado)",
+   "esfuerzo": "L",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c17-01",
+   "capitulo": 17,
+   "tipo": "caso",
+   "titulo": "Acoplamiento viscoso-inviscido: cuerpo efectivo ab+δ*",
+   "herramientas": "panel-2D,capa-límite,acoplamiento",
+   "oraculo": "placa: δ*=1.72x/√Rex ±1%, 1 iteración; perfil: converge ≤10 it; Cd>0",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "src/aero/panel2d.ts sí; capa límite y lazo no (CRUCE-Y-PLAN l.110)",
+   "esfuerzo": "L",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c17-02",
+   "capitulo": 17,
+   "tipo": "benchmark",
+   "titulo": "δ, δ*, θ del perfil de Blasius: tres significados",
+   "herramientas": "capa-límite,integración",
+   "oraculo": "δ*/δ=0.34; θ/δ*=0.39; θ/δ=0.13 ±0.01; Cf=2θ_c/c=1.328/√Rec ±0.5%",
+   "respuesta_impresa": "δ*=0.34δ; θ=0.39δ*; Cf=2θ_c/c",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c18-01",
+   "capitulo": 18,
+   "tipo": "benchmark",
+   "titulo": "Blasius por shooting RK4: las cuatro constantes",
+   "herramientas": "capa-límite,shooting-RK4,EDO",
+   "oraculo": "0.332 / 5.0 / 1.72 / 0.664 ±1%; convención η=y√(V/νx) (NO la 0.4696 de Bertin)",
+   "respuesta_impresa": "f''(0)=0.332; η99=5.0; 1.72; 0.664",
+   "ya_existe": "no",
+   "donde": "find blasius: nada; CURRICULUM a6-l2 ❌",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c18-02",
+   "capitulo": 18,
+   "tipo": "ejemplo",
+   "titulo": "Ej 18.1a Placa laminar 100 m/s: 175.6 N",
+   "herramientas": "capa-límite,ISA,estudio-viento",
+   "oraculo": "D=175.6 N ±1%; aviso Rec>Re_cr",
+   "respuesta_impresa": "Rec=1.36e7; Cf=3.60e-4; D=175.6 N",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts + skin.ts:integrarCortante; Cf laminar no",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c18-03",
+   "capitulo": 18,
+   "tipo": "ejemplo",
+   "titulo": "Ej 18.1b Placa laminar COMPRESIBLE 1000 m/s",
+   "herramientas": "capa-límite-compresible",
+   "oraculo": "D=5026 N ±1% con F=1.2 alimentado (Fig 18.8 no observada)",
+   "respuesta_impresa": "Cf√Rec=1.2; D=5026 N",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c18-04",
+   "capitulo": 18,
+   "tipo": "caso",
+   "titulo": "El arrastre NO va con V²: ×10 en V da ×28.6",
+   "herramientas": "estudio-viento,barrido",
+   "oraculo": "D(1000)/D(100)=28.6 ±0.3; pendiente log-log <2",
+   "respuesta_impresa": "factor 28.6 (no 100)",
+   "ya_existe": "parcial",
+   "donde": "ForgeBRepStudio.tsx:3661 vientoMach/vientoAltM",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c18-05",
+   "capitulo": 18,
+   "tipo": "ejemplo",
+   "titulo": "Ej 18.2 Temperatura de referencia (Eckert): 1%",
+   "herramientas": "capa-límite-compresible,T*,Sutherland",
+   "oraculo": "D=4976 N ±1%; T*=612.7 K; μ*=3.058e-5; Rec*=3.754e7",
+   "respuesta_impresa": "r=0.843; T*=612.7 K; Cf*=2.167e-4; D=4976 N",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c18-06",
+   "capitulo": 18,
+   "tipo": "ejemplo",
+   "titulo": "Ej 18.3 Meador-Smart laminar: 0.4%",
+   "herramientas": "capa-límite-compresible,T*",
+   "oraculo": "D=5008 N ±1% (erratas ρ*=0.599, Cf*=2.09e-4)",
+   "respuesta_impresa": "T*=587.5 K; D=5008 N",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c18-07",
+   "capitulo": 18,
+   "tipo": "benchmark",
+   "titulo": "Placa compresible auto-similar: calcular F(Me,Pr,Tw/Te) y G",
+   "herramientas": "capa-límite-compresible,shooting-RK4",
+   "oraculo": "Me=0 → Blasius ±0.5%; F(2.94,adiab)=1.2 ±0.05; r=√Pr ±1%; CH/cf=½Pr^-2/3 ±2%",
+   "respuesta_impresa": "F(2.94)=1.2; r=√Pr; Me=20 aislada >60, fría ~30",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c18-08",
+   "capitulo": 18,
+   "tipo": "caso",
+   "titulo": "Calentamiento de estancamiento: q∝1/√R",
+   "herramientas": "térmico,estancamiento,choque-normal",
+   "oraculo": "pendiente −0.500 ±0.005; esfera/cilindro=(0.763/0.57)Pr^-0.05; q=0 si Tw=Taw",
+   "respuesta_impresa": "q_w∝1/√R (18.83)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c18-09",
+   "capitulo": 18,
+   "tipo": "benchmark",
+   "titulo": "Marcha FD de capa límite sobre cuerpo arbitrario (18.84-18.92)",
+   "herramientas": "capa-límite,CFD,tridiagonal",
+   "oraculo": "placa: cf=0.664/√Rex ±1% en todas las estaciones; τw(0)=0 en estancamiento; refinar ×2 <0.5%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c19-01",
+   "capitulo": 19,
+   "tipo": "ejemplo",
+   "titulo": "Ej 19.1a Placa turbulenta incompresible: factor 7.7",
+   "herramientas": "capa-límite,turbulento",
+   "oraculo": "D=1352 N ±1%; razón 7.7 ±0.1",
+   "respuesta_impresa": "Cf=2.77e-3; D=1352 N; 7.7×",
+   "ya_existe": "no",
+   "donde": "grep 0.074 src: nada",
+   "esfuerzo": "S",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c19-02",
+   "capitulo": 19,
+   "tipo": "ejemplo",
+   "titulo": "Ej 19.1b Placa turbulenta compresible M=2.94: factor 13",
+   "herramientas": "capa-límite-compresible",
+   "oraculo": "D=65,400 N ±1% con Cf=1.34e-3 alimentado (Fig 19.1 no observada)",
+   "respuesta_impresa": "Cf=1.34e-3; D=65,400 N; 13×",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "M",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c19-03",
+   "capitulo": 19,
+   "tipo": "ejemplo",
+   "titulo": "Ej 19.2 Turbulento por T*: 20% de discrepancia",
+   "herramientas": "T*",
+   "oraculo": "D=51,890 N ±1%; banda ±20% reportada",
+   "respuesta_impresa": "Cf*=2.26e-3; D=51,890 N (20%)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c19-04",
+   "capitulo": 19,
+   "tipo": "ejemplo",
+   "titulo": "Ej 19.3 Meador-Smart turbulento: 14%",
+   "herramientas": "T*,Sutherland",
+   "oraculo": "D=56,140 N ±1%; ∫0.02296/Rex^0.139 = 0.02667/Rec^0.139 a 1e-6",
+   "respuesta_impresa": "T*=581.8 K; Cf*=2.32e-3; D=56,140 N (14%)",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c19-05",
+   "capitulo": 19,
+   "tipo": "problema",
+   "titulo": "P19.1 Ala del Cherokee: fricción laminar vs turbulenta",
+   "herramientas": "capa-límite,estudio-viento,croquis,extruir",
+   "oraculo": "Rec≈6.9e6; D_lam≈38 N, D_turb≈241 N, razón 6.0-6.6 (derivados ±3%) sobre el ala extruida",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "Estudio Viento + skin.ts; sin Cf ni modo subsónico",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c19-06",
+   "capitulo": 19,
+   "tipo": "problema",
+   "titulo": "P19.2 δ en el borde de fuga del Cherokee",
+   "herramientas": "capa-límite",
+   "oraculo": "δ_lam≈3.0 mm; δ_turb≈25 mm ±3%; δ(x) dibujada sobre la cuerda",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c19-07",
+   "capitulo": 19,
+   "tipo": "problema",
+   "titulo": "P19.3 Cherokee con transición Re_cr=5e5",
+   "herramientas": "capa-límite,transición",
+   "oraculo": "D≈222 N ±3% (derivado); D_lam<D<D_turb; límites Re_cr→∞/0",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c19-08",
+   "capitulo": 19,
+   "tipo": "problema",
+   "titulo": "P19.4 Mach 4, cuerda 5 in, laminar adiabática",
+   "herramientas": "capa-límite-compresible,T*",
+   "oraculo": "Eckert vs Meador-Smart <5%; solver c18-07 dentro de 3%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c19-09",
+   "capitulo": 19,
+   "tipo": "problema",
+   "titulo": "P19.5 Mach 4 todo turbulento",
+   "herramientas": "capa-límite-compresible,T*",
+   "oraculo": "D'_turb/D'_lam∈[10,15]; dos T* <15%; banda ±20%",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c19-10",
+   "capitulo": 19,
+   "tipo": "teoria",
+   "titulo": "P19.6 Crocco: T0 lineal en u con Pr=1",
+   "herramientas": "capa-límite-compresible",
+   "oraculo": "|T0−Tw−(T0e−Tw)f'|<1e-4 T0e",
+   "respuesta_impresa": "T0=Tw+(T0e−Tw)u/ue",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c19-11",
+   "capitulo": 19,
+   "tipo": "problema",
+   "titulo": "P19.7 Nariz esférica a 35 km: q a 1500 y 4500 m/s",
+   "herramientas": "térmico,estancamiento,ISA,Sutherland",
+   "oraculo": "q(4500)/q(1500)∈[20,35]; ISA(35 km)=583.59 Pa, 246.1 K ±0.5%; etiqueta gas real",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts (ISA sí)",
+   "esfuerzo": "M",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c19-12",
+   "capitulo": 19,
+   "tipo": "benchmark",
+   "titulo": "Baldwin-Lomax: viscosidad turbulenta algebraica",
+   "herramientas": "CFD,turbulencia",
+   "oraculo": "constantes literales; y+→∞ da l=ky; placa: Cf ±20% de 0.074/Rec^0.2",
+   "respuesta_impresa": "A+=26, Ccp=1.6, CKleb=0.3, Cwk=0.25, k=0.4, K=0.0168; Pr_T=1",
+   "ya_existe": "no",
+   "donde": "NavierStokes2D.tsx sin turbulencia",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c19-13",
+   "capitulo": 19,
+   "tipo": "caso",
+   "titulo": "Drag buildup 2D: paneles (presión) + placa plana (fricción)",
+   "herramientas": "perfil-2D,panel-2D,capa-límite,transición,polar",
+   "oraculo": "Cd(α=0) del 0012 ±15% de Abbott; Cd_presión→0 en α=0",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "panel2d.ts + wing-metrics.ts; CURRICULUM a6-l6 ❌",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c20-01",
+   "capitulo": 20,
+   "tipo": "benchmark",
+   "titulo": "Tabla 20.4 Lombardi: Cf del 0012 capa límite vs tres RANS",
+   "herramientas": "perfil-2D,capa-límite,CFD",
+   "oraculo": "capa límite acoplada: Cf=5.34e-3 ±5%; RANS en [5.34e-3,7.5e-3] con banda ±20%",
+   "respuesta_impresa": "Cf×10³: k-ε 7.486; RNG 6.272; RSM 6.792; BL 5.340; 18-40%",
+   "ya_existe": "parcial",
+   "donde": "fixture solo en anderson-caps15-20.md:805; panel2d.ts existe",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c20-02",
+   "capitulo": 20,
+   "tipo": "caso",
+   "titulo": "cf(x/c) sobre el 0012 vs placa plana: el pico tras el LE",
+   "herramientas": "perfil-2D,capa-límite,croquis",
+   "oraculo": "cf(0)=0; argmax en x/c<0.1; decreciente después; integral = c20-01 ±5%",
+   "respuesta_impresa": "",
+   "ya_existe": "parcial",
+   "donde": "panel2d.ts da ue(x); sin Thwaites/Head",
+   "esfuerzo": "M",
+   "valor": 5
+  },
+  {
+   "id": "anderson-c20-03",
+   "capitulo": 20,
+   "tipo": "caso",
+   "titulo": "Escalón hacia atrás supersónico M=2.19 (recirculación)",
+   "herramientas": "CFD,croquis,extruir",
+   "oraculo": "celda con u<0 tras el escalón; gradientes <10% del choque; capa límite DEBE fallar",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "NS2D Stam incompresible",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c20-04",
+   "capitulo": 20,
+   "tipo": "caso",
+   "titulo": "Perfil Wortmann Re=1e5: laminar separa, turbulento adhiere",
+   "herramientas": "CFD,perfil-2D",
+   "oraculo": "laminar cf cruza 0 en ambas caras; turbulento cf>0",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c20-05",
+   "capitulo": 20,
+   "tipo": "caso",
+   "titulo": "Interacción choque/capa límite turbulenta M=3",
+   "herramientas": "CFD,térmico",
+   "oraculo": "τw=0 en x<x0; meseta de p_w ≥1δ0; τw∈[−120,200] N/m²",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c20-06",
+   "capitulo": 20,
+   "tipo": "caso",
+   "titulo": "NACA 0015/0012 con protuberancia: quimera y asimetría",
+   "herramientas": "CFD,croquis,ensamble",
+   "oraculo": "con bulto cl≠0 a α=0 y u<0 tras el bulto; sin bulto cl=0 ±1e-3",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "L",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c20-07",
+   "capitulo": 20,
+   "tipo": "caso",
+   "titulo": "X-24C: líneas de cortante superficial",
+   "herramientas": "CFD,panel-3D",
+   "oraculo": "integradas de τw (no de V); convergen en separación",
+   "respuesta_impresa": "",
+   "ya_existe": "no",
+   "donde": "skin.ts:integrarCortante sin trazado",
+   "esfuerzo": "L",
+   "valor": 2
+  },
+  {
+   "id": "anderson-c20-08",
+   "capitulo": 20,
+   "tipo": "teoria",
+   "titulo": "Regla de producto: banda ±20% y malla de pared para cf/q_w",
+   "herramientas": "CFD,reporte",
+   "oraculo": "cf RANS con banda ±20% y ≤2 cifras; BL sin banda solo si cf>0 en toda la cuerda",
+   "respuesta_impresa": "no better than about 20 percent accuracy",
+   "ya_existe": "parcial",
+   "donde": "regla en anderson-caps15-20.md; no en código",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c20-10",
+   "capitulo": 0,
+   "tipo": "benchmark",
+   "titulo": "Ap. A Oráculo isentrópico",
+   "herramientas": "gasdinámica",
+   "oraculo": "error <0.1% fila a fila; A/A* min=1 en M=1",
+   "respuesta_impresa": "M=2: 7.824, 4.347, 1.800, 1.687; M=5: 529.1, 88.18, 6.000, 25.00",
+   "ya_existe": "no",
+   "donde": "grep isentrop src: 0",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c20-11",
+   "capitulo": 0,
+   "tipo": "benchmark",
+   "titulo": "Ap. B Oráculo de choque normal",
+   "herramientas": "gasdinámica",
+   "oraculo": "error <0.1%; ρ2/ρ1→6; p02/p01=1 en M=1 y decrece",
+   "respuesta_impresa": "M1=2: 4.500, 2.667, 1.687, 0.7209, 5.640, 0.5774; M1=3: 10.33, 3.857, 2.679, 0.3283, 12.06, 0.4752",
+   "ya_existe": "parcial",
+   "donde": "cuna-anderson.ts β=90° implícito; sin p02/p01 ni M2",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c20-12",
+   "capitulo": 0,
+   "tipo": "benchmark",
+   "titulo": "Ap. C Oráculo de Prandtl-Meyer",
+   "herramientas": "gasdinámica",
+   "oraculo": "error <0.05°; M(ν(M))=M a 1e-6; ν_max=130.45°",
+   "respuesta_impresa": "M=2: ν=26.38°, μ=30°; M=3: 49.76°, 19.47°; M=5: 76.92°, 11.54°",
+   "ya_existe": "no",
+   "donde": "",
+   "esfuerzo": "S",
+   "valor": 4
+  },
+  {
+   "id": "anderson-c20-13",
+   "capitulo": 0,
+   "tipo": "benchmark",
+   "titulo": "Ap. D Oráculo atmósfera SI (1959 ARDC)",
+   "herramientas": "ISA",
+   "oraculo": "|Δp|/p<0.5%, |ΔT|<0.5 K; h(10 km)=9,984 m",
+   "respuesta_impresa": "hG=0: 288.16 K, 1.01325e5, 1.2250; 10,000: 223.26, 2.65e4, 0.41351; 20,000: 216.66, 5529.3, 0.088909; 35,000: 246.09, 583.59, 8.262e-3; 50,000: 282.66, 87.858, 1.0829e-3",
+   "ya_existe": "si",
+   "donde": "src/aero/atmosfera.ts:atmosferaISAz + atmosfera.test.ts (falta fixture literal del libro)",
+   "esfuerzo": "S",
+   "valor": 3
+  },
+  {
+   "id": "anderson-c20-14",
+   "capitulo": 0,
+   "tipo": "benchmark",
+   "titulo": "Ap. E Oráculo atmósfera unidades inglesas",
+   "herramientas": "ISA,unidades",
+   "oraculo": "conversión SI→inglés <0.5%",
+   "respuesta_impresa": "hG=0 ft: 518.69 °R, 2116.2 lb/ft², 2.3769e-3 slug/ft³; 36,000 ft: 390.53 °R, 476.12, 7.1028e-4; μ0=3.7373e-7 slug/(ft s)",
+   "ya_existe": "parcial",
+   "donde": "atmosfera.ts solo SI",
+   "esfuerzo": "S",
+   "valor": 2
+  }
+ ]
+}

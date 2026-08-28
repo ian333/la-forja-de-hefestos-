@@ -1,0 +1,747 @@
+{
+ "libro": "FEA no-lineal: Code_Aster R5.03.01 (Newton cuasi-estático), R5.03.02 (integración elastoplástica J2), U2.04.04 (notice contacto), Bathe MIT 2.092 lec 10, Brannon 'Primer J2 plasticity' (Utah CSM), Autodesk University 'Nonlinear Simulation in Fusion 360'",
+ "titulo": "FEA no-lineal: plasticidad J2, grandes deformaciones, contacto, hiperelástico",
+ "autor_como_cliente": "EDF (Code_Aster) es el cliente que exige HONESTIDAD numérica: norma infinita del residuo, exclusión de GDL fijos y multiplicadores, fallback en carga cero, tangente coherente probada en Δp=0, escalera de desacople de no-linealidades antes de mezclar. Bathe exige que el usuario sepa en qué RÉGIMEN está (lineal / MNO / grandes desplazamientos / grandes deformaciones / contacto). Brannon exige 2 tests de plasticidad SIEMPRE (deformación uniaxial con pendiente K post-fluencia; rapideces isocóricas sin presión espuria, K=10G). Autodesk (el que enseña a decidir) exige que la suite AVISE cuándo el lineal miente: regla 1/10, 10°, σ>σy, contacto que se mueve más de un elemento; y que el no-lineal se resuelva en PASOS con slider y curva transitoria.",
+ "capitulos": [
+  {
+   "num": 1,
+   "titulo": "R5.03.01 — Newton cuasi-estático: predicción de Euler, corrección, 4 criterios de convergencia, tangente/secante, line search, Newton-Krylov, cargas seguidoras, piloting (arc-length)",
+   "n_ejercicios": 9,
+   "cubierto_por_forja": "parcial",
+   "nota": "fea.ts es LINEAL (un solo solve CG). Newton existe sólo en sketch-solver.ts (geométrico) y en mold/thermal-series.ts/filling.ts (escalares). No hay reacciones (Dirichlet por eliminación destruye filas), no hay norma ∞, no hay pasos de carga."
+  },
+  {
+   "num": 2,
+   "titulo": "R5.03.02 — Integración implícita cerrada de von Mises: VMIS_ISOT_LINE (Δp exacto), ISOT_TRAC (tramos), ISOT_PUIS (secante, p0=1e-10), tangente RIGI_MECA_TANG vs FULL_MECA, cinemático lineal",
+   "n_ejercicios": 8,
+   "cubierto_por_forja": "no",
+   "nota": "Cero plasticidad en el repo (grep returnMap/radial/plasticStrain: sólo nombres de piezas 'plástico'). formulas.ts tiene vonMisesStress/principalStresses/safetyFactorVonMises (post-proceso lineal)."
+  },
+  {
+   "num": 3,
+   "titulo": "U2.04.04 — Contacto: zonas/superficies, maestro-esclavo, normales, apareamiento, DISCRETE (CONTRAINTE/GCP/PENALIZATION) vs CONTINUE, fricción, presión de contacto, cuerpo rígido bloqueado, tres no-linealidades, superficie rígida, simetría vs fricción, interpenetración sin resolver",
+   "n_ejercicios": 11,
+   "cubierto_por_forja": "no",
+   "nota": "contacto-conforme.ts = Hertz LÍNEA analítico + EHL (no FEA). mold/collision.ts = interferencia geométrica. mold-fea.ts FUSIONA placas con K.fuse: el 'flashRisk δ>0.02 mm' de structural.ts es un problema de contacto/separación modelado como monolito."
+  },
+  {
+   "num": 4,
+   "titulo": "Bathe lec 10 — los 5 tipos de análisis (lineal, MNO, grandes desplazamientos/pequeñas deformaciones, grandes deformaciones, contacto), t+Δt F = t+Δt R, Newton completo vs modificado",
+   "n_ejercicios": 3,
+   "cubierto_por_forja": "no",
+   "nota": "El régimen no se clasifica ni se avisa; FEAResult.minSafetyFactor puede salir <1 y se pinta como si fuera real."
+  },
+  {
+   "num": 5,
+   "titulo": "Brannon J2 primer — cilindro de radio k√2, calibración k (τy / Y/√3), retorno radial en pseudo-código, 2 tests de verificación obligatorios",
+   "n_ejercicios": 5,
+   "cubierto_por_forja": "no",
+   "nota": "Son los tests unitarios del integrador; entran con el módulo J2."
+  },
+  {
+   "num": 6,
+   "titulo": "Fusion 360 nonlinear (AU 2017) — cuándo dejar el lineal (1/10, 10°, σ>σy, rigidez cambiante, contacto>1 elemento), 6 modelos de material, fuelle Mooney-Rivlin (¼ simetría, −0.5 in, 20 pasos, malla 0.0625 in), event simulation",
+   "n_ejercicios": 9,
+   "cubierto_por_forja": "parcial",
+   "nota": "Fusion es la vara comercial directa. La Forja tiene FEA lineal en ForgeBRepStudio (runFEA/prepareFeaSession) y lección mec-sim-l1 '¿Aguanta o se rompe?'; nada de pasos, materiales no lineales, contacto de separación ni slider transitorio."
+  }
+ ],
+ "n_ejercicios_catalogo": 45,
+ "features": [
+  {
+   "nombre": "Newton-Raphson global con pasos de carga y tangente consistente",
+   "que_hace": "Resolver K_T(u)·Δu = R_ext − F_int(u) por incrementos; predicción de Euler + corrección; tangente completa/reactualizada (REAC_ITER) o elástica; curva transitoria por paso (slider tipo Fusion). Sin esto ningún material/contacto/NLGEOM puede existir.",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "ejercicios": [
+    "fea-nolineal-r5301-01",
+    "fea-nolineal-r5301-06",
+    "fea-nolineal-bathe-02",
+    "fea-nolineal-fusion-05"
+   ],
+   "donde": "src/forja/brep/fea.ts:runFEA es un solo solve lineal (sparseCG); Newton sólo en src/forja/brep/sketch-solver.ts (geométrico)"
+  },
+  {
+   "nombre": "Criterios de convergencia de Code_Aster (RESI_GLOB_RELA norma ∞ ≤1e-6, exclusión de GDL fijos/LAGS, fallback RESI_GLOB_MAXI en carga cero, ITER_GLOB_MAXI)",
+   "que_hace": "Gate de honestidad del solver: el residuo se mide en el PEOR GDL, no en norma 2; se excluyen GDL con Dirichlet y multiplicadores; en descarga total se conmuta al absoluto del incremento anterior; se reporta si los ceros doblan (cuadrático) o no (tangente incoherente).",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "ejercicios": [
+    "fea-nolineal-r5301-02",
+    "fea-nolineal-r5301-03",
+    "fea-nolineal-r5302-04"
+   ],
+   "donde": "src/forja/brep/fea.ts:sparseCG usa ‖r‖/‖f‖ norma 2 recursiva con tol fija 1e-6; converged:false no bloquea"
+  },
+  {
+   "nombre": "Reacciones en Dirichlet + equilibrio ΣR+ΣF=0 (G8)",
+   "que_hace": "Guardar las filas fijas de K antes de eliminarlas y calcular R_d = Σ K[d][j]·u[j]; gate ‖ΣR+ΣF‖/‖ΣF‖<1e-8. Prerrequisito de todo residuo no-lineal y de la presión de contacto.",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "ejercicios": [
+    "fea-nolineal-r5301-02",
+    "fea-nolineal-u20404-01",
+    "fea-nolineal-u20404-07"
+   ],
+   "donde": "src/forja/brep/fea.ts:runFEA — 'Dirichlet por eliminación simétrica' (fila/columna=e_d) destruye las filas fijas"
+  },
+  {
+   "nombre": "Gate de cordura del régimen (G15): 1/10, 10°, σ_vm>σ_y, contacto>1 elemento",
+   "que_hace": "Después de cada solve lineal clasificar el régimen de Bathe/Fusion: max‖u‖ vs L/10, rotación vs 10°, σ_vm vs σ_y; si SF<1 marcar el resultado LINEAL como 'no describe la pieza' y sugerir el estudio no-lineal.",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "ejercicios": [
+    "fea-nolineal-bathe-01",
+    "fea-nolineal-fusion-01",
+    "fea-nolineal-fusion-09"
+   ],
+   "donde": "src/forja/brep/fea.ts:FEAResult.minSafetyFactor existe pero no clasifica régimen ni bloquea; formulas.ts:safetyFactorVonMises"
+  },
+  {
+   "nombre": "Plasticidad J2 isótropa lineal (VMIS_ISOT_LINE) con retorno radial CERRADO y tangente coherente",
+   "que_hace": "Por punto de Gauss: predictor elástico → Δp=(σ_eq^e−σ_y−R'p⁻)/(R'+3μ), R'=E·E_T/(E−E_T) → σ=iso+dev/fac; variables internas p e indicador; FULL_MECA con C_p y a; test automático Δp=0 ≡ RIGI_MECA_TANG. Tests de Brannon #1 y #2 en CI.",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "ejercicios": [
+    "fea-nolineal-r5302-01",
+    "fea-nolineal-r5302-04",
+    "fea-nolineal-j2-01",
+    "fea-nolineal-j2-02",
+    "fea-nolineal-j2-03"
+   ],
+   "donde": "grep -ri 'returnMap|radial.return|plasticStrain' src/forja → nada; formulas.ts:vonMisesStress sólo post-proceso"
+  },
+  {
+   "nombre": "Curva de tracción multilineal (VMIS_ISOT_TRAC) y potencia (VMIS_ISOT_PUIS) con VALIDACIÓN de datos",
+   "que_hace": "Aceptar tabla σ-ε (Fusion 'nonlinear plastic'): rechazar si x no es estrictamente creciente o si una pendiente supera la elástica; integración exacta por tramos; ley potencia con p0=1e-10 y secante.",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-r5302-02",
+    "fea-nolineal-r5302-03"
+   ],
+   "donde": "no existe (grep 'ECRO|multilineal|curva.*traccion' src/forja → nada)"
+  },
+  {
+   "nombre": "Endurecimiento cinemático lineal (VMIS_CINE_LINE, Bauschinger)",
+   "que_hace": "Δp=(σ_eq^e−σ_y)/(3μ+3C/2), C=(2/3)E·E_T/(E−E_T); ciclo carga-descarga-recarga con dominio elástico de ancho 2σ_y que se traslada. Opción de 'hardening rule' iso/cin como Fusion.",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "ejercicios": [
+    "fea-nolineal-r5302-05"
+   ],
+   "donde": "no existe"
+  },
+  {
+   "nombre": "Casos canónicos elasto-plásticos (placa con agujero, momento plástico Mp/My=1.5, cilindro grueso de Lamé a colapso)",
+   "que_hace": "Benchmarks analíticos que prueban el J2 dentro del CAD: primera fluencia con Kt=3 (formulas.ts:ktPlateWithHole), Mp/My=1.5 de sección rectangular, presión de colapso (2/√3)σ_y·ln(b/a) vs Lamé elástico (formulas.ts:lameThickCylinder).",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-r5302-06",
+    "fea-nolineal-r5302-07",
+    "fea-nolineal-r5302-08"
+   ],
+   "donde": "src/lib/formulas.ts:ktPlateWithHole, lameThickCylinder, beamStiffnessEulerBernoulli (sólo lado elástico)"
+  },
+  {
+   "nombre": "Grandes desplazamientos (NLGEOM): TL/UL, K geométrica ∫Gᵀ[S]G, cargas seguidoras, gates ε²<precisión y θ²·ε<precisión",
+   "que_hace": "Deformación finita (GDEF_LOG/SIMO_MIEHE/PETIT_REAC con sus límites: PETIT_REAC sólo rot<10°), rigidez geométrica para stress-stiffening, presión que sigue a la cara girada (matriz no simétrica).",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-bathe-03",
+    "fea-nolineal-r5301-07",
+    "fea-nolineal-r5301-08",
+    "fea-nolineal-fusion-02"
+   ],
+   "donde": "no existe (grep 'geometricStiff|NLGEOM|grandes desplaz' src/forja → nada)"
+  },
+  {
+   "nombre": "Piloting / arc-length (Riks) para snap-through",
+   "que_hace": "Control por longitud de arco para pasar el punto límite (armadura de 2 barras de von Mises, arco poco profundo); R5.03.01 §5 lo delega a R5.03.80.",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "ejercicios": [
+    "fea-nolineal-r5301-09"
+   ],
+   "donde": "no existe"
+  },
+  {
+   "nombre": "Line search (CORDE/MIXTE, ITER_LINE_MAXI 2-3, RESI_LINE_RELA 0.1) + Newton-Krylov (η adaptativa γ=0.1, η0=0.9)",
+   "que_hace": "Seguro contra tangente demasiado flexible; tolerancia del CG que se afloja lejos y se aprieta cerca (no resolver el primer Newton a 1e-6).",
+   "estado_forja": "parcial",
+   "prioridad": "P2",
+   "ejercicios": [
+    "fea-nolineal-r5301-04",
+    "fea-nolineal-r5301-05"
+   ],
+   "donde": "src/forja/brep/fea.ts:sparseCG (CG+IC(0), tol fija; warm-start existe) — falta la η adaptativa y cualquier line search"
+  },
+  {
+   "nombre": "Contacto normal sin fricción (penalidad / Lagrange) en mallas coincidentes: placas apiladas del molde",
+   "que_hace": "Signorini g≥0, p≥0, p·g=0; esclavo = malla fina/superficie chica/menos rígido; normales orientadas; rigidez K=5..50·E ó E_N0=10·E·L_car y ×10 hasta estabilizar ESFUERZOS; interpenetración ≤1% (RESI_GEOM 0.005 estricto); gate visual 'un nodo sí uno no'; presión de contacto p=σ·n·n en discreta.",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "ejercicios": [
+    "fea-nolineal-u20404-01",
+    "fea-nolineal-u20404-02",
+    "fea-nolineal-u20404-03",
+    "fea-nolineal-u20404-05",
+    "fea-nolineal-u20404-11",
+    "fea-nolineal-fusion-07"
+   ],
+   "donde": "src/forja/mold/mold-fea.ts fusiona con K.fuse; src/forja/mech/contacto-conforme.ts:hertzLine es analítico (sirve de ORÁCULO, no de solver); src/forja/mold/collision.ts = interferencia geométrica"
+  },
+  {
+   "nombre": "Fricción de Coulomb con estados 0/1/2 y exclusión de direcciones (SANS_GROUP_NO_FR / DIRE_EXCL_FROT)",
+   "que_hace": "Seuil μ·p; adherente/deslizante por nodo; conflicto simetría↔fricción resuelto excluyendo la dirección; CONTINUE + Newton generalizado (hasta 80% ahorro vs punto fijo, μ<0.3).",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "ejercicios": [
+    "fea-nolineal-u20404-04",
+    "fea-nolineal-u20404-10"
+   ],
+   "donde": "no existe (contacto-conforme.ts:frictionForce_N es tribológico, no FEA)"
+  },
+  {
+   "nombre": "Modos de cuerpo rígido bloqueados por contacto (CONTACT_INIT / resortes k≪K) y superficie rígida como maestra",
+   "que_hace": "Punzón rígido sobre bloque elástico (SSNV506 style): sólo la piel del rígido lleva GDL, todos impuestos (AFFE_CHAR_CINE), rígido = maestro; en discreta resortes blandos para quitar la singularidad.",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-u20404-06",
+    "fea-nolineal-u20404-07"
+   ],
+   "donde": "no existe"
+  },
+  {
+   "nombre": "Medir interpenetración SIN resolver el contacto (RESOLUTION='NON') como gate barato",
+   "que_hace": "Correr sin contacto y reportar el gap negativo máximo por zona; si no hay penetración se omite el contacto (ahorro); si la hay, es la magnitud del problema.",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-u20404-09"
+   ],
+   "donde": "src/forja/mold/collision.ts (interferencia geométrica estática) — falta hacerlo sobre la deformada"
+  },
+  {
+   "nombre": "Escalera de desacople de no-linealidades (U2.04.04 §4.3.1) como comando/gate de UI",
+   "que_hace": "Botón 'lineal primero' → elástico+contacto → ley no lineal sin contacto → NLGEOM solo → todo junto con REAC_ITER=1 + PREDICTION ELASTIQUE; el truco de Fusion de conmutar temporalmente a lineal isótropo.",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-u20404-08",
+    "fea-nolineal-fusion-09"
+   ],
+   "donde": "no existe (registry.ts sin comandos FEA; el FEA se dispara desde ForgeBRepStudio.tsx)"
+  },
+  {
+   "nombre": "Hiperelástico Mooney-Rivlin 2 ctes + D1 (casi incompresible, formulación u/p o hexa reducido)",
+   "que_hace": "W=C10(Ī1−3)+C01(Ī2−3)+(1/D1)(J−1)²; fuelle de Fusion A01=23.66 psi, A10=6.22 psi, D1=14,940; O-ring al 50% de deformación entre placas de acero.",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "ejercicios": [
+    "fea-nolineal-fusion-03",
+    "fea-nolineal-fusion-04"
+   ],
+   "donde": "no existe (grep -i 'mooney|hiperel|neo.hook' src/forja → nada)"
+  },
+  {
+   "nombre": "Elementos sin locking para plasticidad/incompresibilidad (hexa C3D8I sobre la rejilla voxel, o tet10)",
+   "que_hace": "El flujo plástico es isocórico: tet4 con 1 punto bloquea volumétricamente. La malla YA es una rejilla de hexaedros partida en 6 tets; usar C3D8I (modos incompatibles exactos en cajas) o tet10.",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-r5302-06",
+    "fea-nolineal-j2-01",
+    "fea-nolineal-fusion-03"
+   ],
+   "donde": "src/forja/brep/fea.ts:brepToVolumeTetMesh (Freudenthal 6 tets) + src/lib/formulas.ts:tet4Element"
+  },
+  {
+   "nombre": "Pandeo lineal (K geométrica + Lanczos) y pilares/pines a compresión",
+   "que_hace": "λ_cr de K·φ=λ·K_G·φ; oráculo Euler π²EI/(KL)²; aplica a pilares de soporte del molde y pines de expulsión (A-234 PARCIAL en el índice Kazmer).",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-fusion-02",
+    "fea-nolineal-r5301-09"
+   ],
+   "donde": "src/lib/formulas.ts:eulerBucklingLoad (sin usuarios en src); src/forja/mold/ejection.ts pandeo de pin analítico"
+  },
+  {
+   "nombre": "Event simulation explícito (cuerpos rígidos, curva multiplicadora, duración 0.1 s, mass scaling)",
+   "que_hace": "Dinámica explícita para snap-fit/impacto/fuelle; verificación cuasi-estática: E_cinética ≪ E_interna; placas como cuerpos rígidos con BC en todo el cuerpo.",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "ejercicios": [
+    "fea-nolineal-fusion-08"
+   ],
+   "donde": "no existe"
+  },
+  {
+   "nombre": "Hertz analítico (línea) como oráculo de contacto",
+   "que_hace": "p_max, semiancho a, ancho de contacto para cilindro-plano/cilindro-valle; E* del par. Sirve para juzgar al solver de contacto (≤5%).",
+   "estado_forja": "si",
+   "prioridad": "P1",
+   "ejercicios": [
+    "fea-nolineal-u20404-02"
+   ],
+   "donde": "src/forja/mech/contacto-conforme.ts:hertzLine, eStar, effectiveRadius_mm"
+  }
+ ],
+ "supertickets": [
+  {
+   "slug": "fea-nolineal-newton-y-gates",
+   "titulo": "Newton cuasi-estático con los gates de Code_Aster (antes de cualquier material o contacto)",
+   "capitulos": [
+    1,
+    4,
+    6
+   ],
+   "objetivo": "Que el solver de fea.ts deje de ser un solo solve: incrementos de carga + Newton-Raphson + reacciones + residuo en norma infinita con exclusiones + fallback en carga cero + clasificación de régimen. Cada gate se demuestra en una pieza del CAD con video y el número impreso del manual.",
+   "ejercicios": [
+    {
+     "id": "fea-nolineal-r5301-01",
+     "titulo": "Barra bilineal (E, E_T) a tracción por 10 incrementos: Newton converge cuadráticamente",
+     "herramientas": "sketch→extrude, material bilineal, estudio no lineal 10 pasos, tabla de residuos por iteración",
+     "oraculo": "los ceros del residuo DOBLAN por iteración (patrón 0.19→0.036→0.0013→0.0000017 de R5.03.01 §2.5); ‖r‖∞/‖L‖∞ ≤ 1e-6 en ≤4 iteraciones por paso",
+     "respuesta_impresa": "0.19 – 0.036 – 0.0013 – 0.0000017 (R5.03.01 §2.5, ejemplo de convergencia cuadrática)"
+    },
+    {
+     "id": "fea-nolineal-r5301-02",
+     "titulo": "Ménsula empotrada: residuo RESI_GLOB_RELA en norma ∞ con GDL fijos EXCLUIDOS y equilibrio de reacciones",
+     "herramientas": "FEA ménsula (fea-node-test), panel de convergencia, reacciones en la cara empotrada",
+     "oraculo": "‖Qᵀσ−L‖∞/‖L‖∞ ≤ 1e-6 (default η de R5.03.01); ‖ΣR+ΣF‖/‖ΣF‖ < 1e-8; ΣM_reacciones = P·L ±1e-6",
+     "respuesta_impresa": "η = 1e-6 (R5.03.01 §2.5 RESI_GLOB_RELA default)"
+    },
+    {
+     "id": "fea-nolineal-r5301-03",
+     "titulo": "Carga-descarga total (rampa 0→P→0): fallback automático a RESI_GLOB_MAXI cuando la carga cae 1e-6 veces",
+     "herramientas": "curva de carga por pasos, log del criterio activo por incremento",
+     "oraculo": "en el paso con carga ≈0 el criterio conmuta a MAXI con el valor del incremento anterior, no hay división por cero y regresa a RELA al recargar; u_final = 0 ±1e-9 (elástico)",
+     "respuesta_impresa": "'loading 10⁻⁶ time smaller than the smallest loading observed' (R5.03.01 §2.5)"
+    },
+    {
+     "id": "fea-nolineal-r5301-04",
+     "titulo": "Line search CORDE con matriz ELÁSTICA (tangente demasiado flexible): 2-3 iteraciones de ρ salvan la divergencia",
+     "herramientas": "estudio no lineal con MATRICE=ELASTIQUE, ITER_LINE_MAXI=3, RESI_LINE_RELA=0.1",
+     "oraculo": "sin line search diverge o excede ITER_GLOB_MAXI; con LS converge y ρ<1 en las primeras iteraciones; u_final igual al de tangente completa ±1e-6",
+     "respuesta_impresa": "ITER_LINE_MAXI default 0 (ρ=1); RESI_LINE_RELA default 0.1; orden de convergencia ≈1.6 (R5.03.01 §4.6.1)"
+    },
+    {
+     "id": "fea-nolineal-r5301-05",
+     "titulo": "Newton-Krylov: tolerancia adaptativa del CG (γ=0.1, η0=0.9) vs tolerancia fija 1e-6",
+     "herramientas": "sparseCG con η_{n+1}=max(min(0.4η_n, γ‖Rⁿ‖²/‖Rⁿ⁻¹‖²), η_min)",
+     "oraculo": "suma total de iteraciones CG baja ≥30% vs tol fija con la MISMA u final (±1e-6 relativo) y mismo número de iteraciones de Newton ±1",
+     "respuesta_impresa": "γ = 0.1, η0 = 0.9, limitador 0.4·η_n si (1−γ)η_n² ≤ 0.2 (R5.03.01 §2.7)"
+    },
+    {
+     "id": "fea-nolineal-r5301-06",
+     "titulo": "Newton completo vs Newton MODIFICADO (Bathe: K congelada al inicio del paso) en la misma barra bilineal",
+     "herramientas": "selector REAC_ITER=1 vs REAC_ITER=0, tabla de iteraciones",
+     "oraculo": "misma u final ±1e-8; el modificado necesita MÁS iteraciones (>= 2×) pero cada una sin refactorizar; F_int se recalcula correcto en ambas",
+     "respuesta_impresa": "'The K matrix can be somewhat wrong, but we must calculate t+ΔtF(i−1) correctly in each iteration' (Bathe lec 10 p.4)"
+    },
+    {
+     "id": "fea-nolineal-bathe-02",
+     "titulo": "Viga en voladizo que toca un resorte (tipo V de Bathe): cambio de condición de frontera dentro del paso",
+     "herramientas": "ménsula + resorte de contacto nodal con gap, Newton con detección de activación",
+     "oraculo": "antes del gap δ = PL³/3EI (formulas.ts:cantileverDeflection ±2%); después, δ = gap + (P−k·(δ−gap))·L³/3EI resuelto exacto (±1%)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "fea-nolineal-fusion-01",
+     "titulo": "Gate de régimen: ménsula esbelta cargada hasta que δ_lineal > L/10 y rotación > 10°",
+     "herramientas": "FEA lineal + clasificador de régimen (1/10, 10°, σ_y), sugerencia de estudio no lineal",
+     "oraculo": "el aviso salta exactamente cuando max‖u‖ ≥ L/10 o θ_punta ≥ 10°; contra la elástica (Bisshopp-Drucker) el lineal se desvía >5% en δ_vertical en ese punto",
+     "respuesta_impresa": "regla 1/10 y ~10° de rotación (Autodesk AU handout, 'When do I need nonlinear?')"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/brep/fea.ts:runFEA/prepareFeaSession/sparseCG (lineal, CG+IC(0), warm-start)",
+    "scripts/fea-node-test.cjs (barra + ménsula vs analítico)",
+    "scripts/fea-convergence.cjs",
+    "src/forja/brep/sketch-solver.ts (Newton geométrico reutilizable como patrón)",
+    "public/escuela/lecciones/mec-sim-l1.json ('¿Aguanta o se rompe?')"
+   ],
+   "dependencias": [
+    "G8 reacciones (guardar filas fijas de K antes de eliminar)",
+    "material bilineal 1D mínimo para que exista no-linealidad (puede ser resorte/barra)"
+   ],
+   "esfuerzo": "L",
+   "valor": 4,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "fea-nolineal-j2-retorno-radial",
+   "titulo": "Plasticidad J2 con retorno radial cerrado, tangente coherente y los tests de Brannon",
+   "capitulos": [
+    2,
+    5,
+    6
+   ],
+   "objetivo": "Integrador VMIS_ISOT_LINE por punto de Gauss con Δp cerrado, FULL_MECA probado en Δp=0, y los dos tests que Brannon dice correr SIEMPRE; luego los 3 casos canónicos dentro del CAD (placa con agujero, viga a Mp, cilindro grueso). Que cuando σ_vm>σ_y la suite diga la VERDAD en vez de un SF ficticio.",
+   "ejercicios": [
+    {
+     "id": "fea-nolineal-j2-03",
+     "titulo": "Calibrar k: cortante puro k=τ_y vs uniaxial k=Y/√3 (mismo material, dos ensayos en un cubo)",
+     "herramientas": "cubo 1 elemento, BC de cortante puro y de tracción uniaxial, J2",
+     "oraculo": "fluye en τ=τ_y (cortante) y en σ=Y=√3·τ_y (uniaxial) con error <1e-6 relativo",
+     "respuesta_impresa": "k = τ_y (simple shear); k = Y/√3 (uniaxial stress) (Brannon primer)"
+    },
+    {
+     "id": "fea-nolineal-j2-01",
+     "titulo": "Test #1 de Brannon: deformación UNIAXIAL (laterales fijas): dos pendientes conocidas",
+     "herramientas": "cubo con ε_A impuesta y ε_L=0, K y G, gráfica σ_A y σ_L vs ε_A",
+     "oraculo": "antes de fluir σ_A=C·ε_A con C=K+4G/3 y σ_L=λ·ε_A con λ=K−2G/3; fluencia en σ_HEL=C·Y/(2G); después la pendiente de AMBAS es exactamente K (±1e-6); descarga elástica y re-fluencia",
+     "respuesta_impresa": "σ_A = C ε_A, C = K + 4G/3; σ_L = λ ε_A, λ = K − 2G/3; σ_HEL = C·Y/(2G); pendiente post-fluencia = módulo volumétrico (Brannon, Verification test #1)"
+    },
+    {
+     "id": "fea-nolineal-j2-02",
+     "titulo": "Test #2 de Brannon: rapideces isocóricas ortogonales (cortante puro, luego otro cortante ortogonal) con K=10G",
+     "herramientas": "cubo, dos fases de ε̇ desviadoras, monitor de presión",
+     "oraculo": "presión p = tr(σ)/3 = 0 ±1e-9·G durante todo el ensayo; el estado recorre el cilindro sin salirse (‖dev σ‖ = √2·τ_y ±1e-9)",
+     "respuesta_impresa": "'try putting the bulk modulus to a large value, say K = 10G, to call attention to any spurious predictions of pressure' (Brannon, Verification test #2)"
+    },
+    {
+     "id": "fea-nolineal-r5302-01",
+     "titulo": "Tracción uniaxial bilineal VMIS_ISOT_LINE: Δp cerrado vs curva del libro",
+     "herramientas": "barra 3D a tracción con ECRO_LINE (E, E_T, σ_y), 20 pasos",
+     "oraculo": "σ = σ_y + E_T(ε − σ_y/E) exacto en cada paso (±1e-8); Δp por paso = (σ_eq^e − σ_y − R'p⁻)/(R'+3μ) con R' = E·E_T/(E−E_T); p acumulado = ε − σ/E",
+     "respuesta_impresa": "σ_L = E ε_L si ε_L ≤ σ_y/E; σ_L = σ_y + E_T(ε_L − σ_y/E) si ε_L ≥ σ_y/E; R' = E·E_T/(E−E_T) (R5.03.02 §3.1.1)"
+    },
+    {
+     "id": "fea-nolineal-r5302-04",
+     "titulo": "Tangente coherente FULL_MECA: evaluada en Δp=0 reproduce RIGI_MECA_TANG; el Newton global cuadra los ceros",
+     "herramientas": "test unitario del integrador + estudio no lineal de la barra con REAC_ITER=1",
+     "oraculo": "‖C_FULL(Δp=0) − C_TANG‖/‖C_TANG‖ < 1e-12; residuo global con los ceros doblando (≤4 iteraciones a 1e-6); con tangente ELÁSTICA el mismo caso tarda >2× iteraciones",
+     "respuesta_impresa": "'One finds it while making Δp = 0 in the expressions of C_p and a' (R5.03.02 §3.4); a = 1 + 3μΔp/R(p⁻+Δp)"
+    },
+    {
+     "id": "fea-nolineal-r5302-05",
+     "titulo": "Cinemático lineal VMIS_CINE_LINE: ciclo carga-descarga-recarga (Bauschinger)",
+     "herramientas": "barra con ECRO_LINE + hardening=cinemático, ciclo ±ε",
+     "oraculo": "el dominio elástico se traslada: fluencia inversa en σ_max − 2σ_y (±1e-6); Δp = (σ_eq^e − σ_y)/(3μ + 3C/2) con C = (2/3)E·E_T/(E−E_T); vs isótropo (fluencia inversa en −σ_max) la diferencia es 2(σ_max−σ_y)",
+     "respuesta_impresa": "C = (2/3)·E·E_T/(E−E_T) (R5.03.02 §4.1)"
+    },
+    {
+     "id": "fea-nolineal-fusion-05",
+     "titulo": "Viga bilineal cargada más allá de fluencia y DESCARGADA: esfuerzo residual y deformación permanente",
+     "herramientas": "ménsula con material 'elasto-plástico bilineal' de Fusion, rampa P→0, slider transitorio",
+     "oraculo": "tras descargar u_residual ≠ 0 y ε_p = ε_max − σ_max/E en la fibra externa; σ_residual autoequilibrado: ∫σ dA = 0 e ∫σ·y dA = 0 en la sección (±1% de σ_y·bh²/6)",
+     "respuesta_impresa": "'if the model exceeded the yield strength and then were unloaded, residual stress and permanent deformation would remain' (AU handout, Nonlinear elasto-plastic bi-linear)"
+    },
+    {
+     "id": "fea-nolineal-r5302-07",
+     "titulo": "Momento plástico de sección rectangular: Mp/My = 1.5 (viga a flexión pura, J2 perfecto E_T→0)",
+     "herramientas": "viga 3D con momento en extremos, curva M–κ",
+     "oraculo": "M asintótico = σ_y·b·h²/4 y M de primera fluencia = σ_y·b·h²/6 → cociente 1.5 ±3% (con ≥6 elementos en el espesor y hexa/tet10 sin locking)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "fea-nolineal-r5302-06",
+     "titulo": "Placa con agujero (Kt=3) elasto-plástica: primera fluencia, redistribución y la mentira del lineal",
+     "herramientas": "placa con barreno ¼ simetría, J2, comparación con FEA lineal",
+     "oraculo": "primera fluencia en σ_nom = σ_y/Kt con Kt de formulas.ts:ktPlateWithHole (±5%); a 1.5× esa carga el lineal reporta σ_max = 1.5·σ_y (falso) y el J2 reporta σ_max = σ_y + E_T·ε_p con zona plástica medible",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/lib/formulas.ts:vonMisesStress, principalStresses, safetyFactorVonMises, ktPlateWithHole, lameThickCylinder",
+    "src/forja/brep/fea.ts:tet4Element (D elástica; hay que meter D_ep por elemento)",
+    "docs/forja-research/pliegos/pliego-fea.md §6.3 (algoritmo ya digerido)"
+   ],
+   "dependencias": [
+    "fea-nolineal-newton-y-gates",
+    "elemento sin locking (hexa C3D8I o tet10) para r5302-06/07"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "fea-nolineal-contacto-molde",
+   "titulo": "Contacto normal sin fricción en mallas coincidentes: la partición del molde se ABRE, no se fusiona",
+   "capitulos": [
+    3,
+    6
+   ],
+   "objetivo": "Sustituir el K.fuse de mold-fea.ts por contacto de penalidad/Lagrange en las caras apiladas, con los gates de U2.04.04 (normales, maestro/esclavo, interpenetración ≤1%, 'un nodo sí uno no', presión desde σ·n·n) y Hertz como oráculo. El entregable de negocio: apertura δ de la partición vs 0.02 mm (flashRisk) calculada como SEPARACIÓN.",
+   "ejercicios": [
+    {
+     "id": "fea-nolineal-u20404-01",
+     "titulo": "Dos bloques apilados bajo presión uniforme, contacto sin fricción: presión de contacto = presión aplicada",
+     "herramientas": "dos sólidos coincidentes, zona de contacto, penalidad K=5..50·E, RESI_GEOM 0.01→0.005",
+     "oraculo": "p_contacto/p_aplicada = 1 ±1%; interpenetración máxima ≤1% del desplazamiento del paso (≤0.5% con RESI_GEOM=0.005); ΣR = p·A ±1e-6; al subir K ×10 los ESFUERZOS cambian <1%",
+     "respuesta_impresa": "RESI_GEOM=0.005 'de kind to lower the threshold around 0,5%' (U2.04.04 §2.4.3.2); default 1%"
+    },
+    {
+     "id": "fea-nolineal-u20404-03",
+     "titulo": "Normales mal orientadas y maestro/esclavo al revés: el gate rechaza ANTES de resolver",
+     "herramientas": "mismo caso con normal invertida; esclavo = malla fina/superficie chica/menos rígido",
+     "oraculo": "con normal invertida el juez emite error y no resuelve; con esclavo=malla gruesa la presión oscila (>20% entre nodos vecinos) y con esclavo=malla fina la oscilación <5%",
+     "respuesta_impresa": "'It is paramount always to direct the norms of contact surfaces' (U2.04.04 §2.2.4)"
+    },
+    {
+     "id": "fea-nolineal-u20404-02",
+     "titulo": "Cilindro sobre plano (Hertz línea): p_max y semiancho a vs contacto-conforme.ts:hertzLine",
+     "herramientas": "cilindro + bloque, ½ simetría, refinamiento local en la zona de contacto",
+     "oraculo": "p_max FEA vs Hertz ≤5% y semiancho a ≤10% con ≥8 nodos dentro de 2a; la firma 'un nodo sí, uno no' desaparece al refinar; ∫p dA = W",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "fea-nolineal-u20404-05",
+     "titulo": "Presión de contacto en formulación discreta desde p = σ·n·n vs multiplicador LAGS_C de la continua",
+     "herramientas": "mismo caso resuelto con PENALIZATION y con CONTINUE, post-proceso p=σ·n·n en la frontera",
+     "oraculo": "las dos curvas p(x) coinciden ±5% fuera de los bordes; ∫p dA = carga ±1%; en discreta p<0 espurio ≤2% de p_max",
+     "respuesta_impresa": "p = σ·n·n (U2.04.04 §4.1.2)"
+    },
+    {
+     "id": "fea-nolineal-u20404-09",
+     "titulo": "Medir la interpenetración SIN resolver el contacto (RESOLUTION='NON') como gate barato",
+     "herramientas": "estudio lineal de placas apiladas sin contacto + reporte de gap negativo por zona",
+     "oraculo": "gap_min reportado = −δ del cálculo sin contacto (±1e-9); si gap_min ≥ 0 el contacto se marca 'no necesario' y el resultado lineal se acepta",
+     "respuesta_impresa": "'replace the imposition of the conditions of contact by a simple checking of the interpenetration' (U2.04.04 §4.6)"
+    },
+    {
+     "id": "fea-nolineal-u20404-06",
+     "titulo": "Cuerpo rígido bloqueado sólo por el contacto: resortes k≪K (discreta) o CONTACT_INIT (continua)",
+     "herramientas": "bloque apoyado sólo por contacto, sin Dirichlet en la dirección normal",
+     "oraculo": "sin resorte: K singular (pivote ≈0 detectado por el gate V1); con k = 1e-6·K_diag: converge y u cambia <1e-3 relativo al variar k ×10",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "fea-nolineal-u20404-11",
+     "titulo": "EL MOLDE: placa B + soporte sobre rieles, partición y apilado como CONTACTO (no fuse): apertura vs venteo 0.02 mm",
+     "herramientas": "mold-fea.ts con zonas de contacto entre placas, presión de fundido en la cavidad, comparación con la versión fusionada",
+     "oraculo": "δ_apertura (gap positivo en la partición) reportado como flashRisk = δ > 0.02 mm; la versión fusionada subestima δ (el libro §12.2.2 da FEM ≈0.4× viga: 0.024 vs 0.056 mm en su bezel); ΣR en rieles = F_fundido ±1e-6",
+     "respuesta_impresa": "0.024 mm (FEM) vs 0.056 mm (viga) en el bezel (Kazmer §12.2.2, citado en mold-fea.ts)"
+    },
+    {
+     "id": "fea-nolineal-fusion-07",
+     "titulo": "Flexión 3 puntos con rodillos (½ simetría): la frontera de contacto se mueve más de un elemento",
+     "herramientas": "viga + 2 rodillos rígidos, contacto de separación, 20 pasos",
+     "oraculo": "a carga baja δ_centro = PL³/48EI (formulas.ts:beamDeflectionCenterLoad ±3%); el punto de contacto migra ≥2 elementos al final; el lineal con contacto bonded se desvía >10%",
+     "respuesta_impresa": "'with linear static stress, the amount of movement between parts in contact is expected to be within the distance of an element or less' (AU handout)"
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mech/contacto-conforme.ts:hertzLine/eStar (oráculo analítico)",
+    "src/forja/mold/mold-fea.ts (paquete B+soporte+rieles fusionado; BC y carga ya definidas)",
+    "src/forja/mold/structural.ts:structuralReport.flashRisk (δ>0.02 mm)",
+    "src/forja/mold/collision.ts (interferencia geométrica)"
+   ],
+   "dependencias": [
+    "fea-nolineal-newton-y-gates (reacciones + Newton)",
+    "mallas coincidentes entre placas (alinear voxel de mold-fea)"
+   ],
+   "esfuerzo": "XL",
+   "valor": 5,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "fea-nolineal-grandes-desplazamientos",
+   "titulo": "NLGEOM: régimen de Bathe, rotación rígida sin esfuerzo, cargas seguidoras, stress-stiffening y snap-through",
+   "capitulos": [
+    1,
+    4,
+    6
+   ],
+   "objetivo": "Cinemática finita con K geométrica y los gates de validez de pequeñas deformaciones de R5.03.01, probada en casos con respuesta analítica (rotación rígida, cuerda tensada, armadura de von Mises).",
+   "ejercicios": [
+    {
+     "id": "fea-nolineal-bathe-01",
+     "titulo": "Mismo modelo en los 4 regímenes de Bathe: lineal / MNO / grandes desplazamientos / grandes deformaciones",
+     "herramientas": "ménsula, selector de régimen, tabla comparativa",
+     "oraculo": "con ε<0.04 y δ<L/10 los 4 coinciden ±1%; al forzar δ>L/10 el lineal se separa >5% del NLGEOM; MNO sólo difiere si σ>σ_y",
+     "respuesta_impresa": "'ΔL/L = strain < 0.04' como frontera de pequeñas deformaciones (Bathe lec 10, Types of analysis)"
+    },
+    {
+     "id": "fea-nolineal-bathe-03",
+     "titulo": "Rotación rígida de 90° de una barra: esfuerzo CERO con NLGEOM, falso con lineal",
+     "herramientas": "barra con desplazamientos impuestos de rotación rígida, TL/UL",
+     "oraculo": "σ_vm(NLGEOM) < 1e-8·E; σ_vm(lineal) ≈ E·(1−cos θ) ≠ 0 (la mentira medible)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "fea-nolineal-r5301-08",
+     "titulo": "Gates de validez de pequeñas deformaciones: ε² < precisión y θ²·ε < precisión",
+     "herramientas": "clasificador que evalúa max ε² y max θ²·ε tras cada solve",
+     "oraculo": "el aviso PETIT_REAC/pequeñas deformaciones salta cuando ε² > 1e-8 (doble precisión útil) o θ > 10°; PETIT_REAC sólo se ofrece si rot<10° e isotrópico",
+     "respuesta_impresa": "'the square of the modulus of deformation remains lower than the precision of calculations'; PETIT_REAC rotaciones < 10° (R5.03.01 §1.2.2)"
+    },
+    {
+     "id": "fea-nolineal-r5301-07",
+     "titulo": "Carga seguidora: presión sobre la cara de una viga que gira 30°",
+     "herramientas": "presión 'follower' vs fuerza de dirección fija, NLGEOM, matriz no simétrica",
+     "oraculo": "la resultante de la presión seguidora gira con la cara (ángulo = θ_cara ±0.5°); la fuerza fija no; la diferencia en δ_punta >5% a 30°",
+     "respuesta_impresa": "'Chargements suivants' — presión que sigue la geometría deformada (R5.03.01 §3.2)"
+    },
+    {
+     "id": "fea-nolineal-fusion-02",
+     "titulo": "La cuerda de guitarra: stress-stiffening sube la frecuencia al tensar",
+     "herramientas": "barra esbelta pretensada (NLGEOM + K_G) + modal",
+     "oraculo": "f₁ = (1/2L)·√(T/μ) ±3% para T ≫ rigidez a flexión; sin K_G la frecuencia no cambia con T (falso)",
+     "respuesta_impresa": "'by tightening the string, the frequency will increase' (AU handout, stress stiffening)"
+    },
+    {
+     "id": "fea-nolineal-r5301-09",
+     "titulo": "Armadura de von Mises (2 barras poco inclinadas): snap-through con piloting/arc-length",
+     "herramientas": "2 barras, control por longitud de arco (R5.03.80), curva P–δ completa",
+     "oraculo": "carga límite = máximo analítico de P(δ) = 2EA·sinθ·(1 − cosθ₀/cosθ) (±2%); el control por carga se detiene en el punto límite y el arc-length pasa",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/lib/formulas.ts:eulerBucklingLoad, naturalFrequency, beamNaturalFrequency (oráculos)",
+    "src/forja/brep/fea.ts (K lineal a extender con K_G)"
+   ],
+   "dependencias": [
+    "fea-nolineal-newton-y-gates"
+   ],
+   "esfuerzo": "L",
+   "valor": 3,
+   "sprint_sugerido": 4
+  },
+  {
+   "slug": "fea-nolineal-hiperelastico-fuelle",
+   "titulo": "El fuelle de Fusion: Mooney-Rivlin, contacto de separación, 20 pasos y event simulation",
+   "capitulos": [
+    6,
+    3,
+    2
+   ],
+   "objetivo": "Reproducir el ejercicio completo del handout de Autodesk (¼ simetría, placas de acero, −0.5 in, malla 0.0625 in, 20 pasos) dentro de La Forja con las 3 no-linealidades juntas y la escalera de desacople de Code_Aster; O-ring al 50% y snap/press fit.",
+   "ejercicios": [
+    {
+     "id": "fea-nolineal-r5302-02",
+     "titulo": "Curva multilineal σ-ε: validación de datos (x estrictamente creciente, pendiente < E) e integración exacta por tramos",
+     "herramientas": "editor de material tipo 'nonlinear plastic' de Fusion, juez de curva",
+     "oraculo": "curva con pendiente > E o ε repetida → rechazada con mensaje; curva válida → σ(ε) reproducida en los vértices ±1e-9 sin prolongación lineal",
+     "respuesta_impresa": "'the X-coordinates (deformations) are strictly increasing'; 'the slope between 2 successive points is lower than the elastic slope' (R5.03.02 §3.1.2); Fusion: 'Values with a negative slope should be avoided'"
+    },
+    {
+     "id": "fea-nolineal-fusion-03",
+     "titulo": "Fuelle Mooney-Rivlin ¼ simetría comprimido 0.5 in por placa de acero (NLSS, 20 pasos, malla 0.0625 in)",
+     "herramientas": "material hiperelástico A01=23.66 psi, A10=6.22 psi, D1=14,940; contacto separación arriba/bonded abajo; desplazamiento impuesto",
+     "oraculo": "converge en 20 pasos (≥10 por contacto, 20-40 por material); J = det F = 1 ±2% en todo el fuelle (casi incompresible); curva reacción–desplazamiento monótona y suave; deformación máx del orden del 14.5% de la imagen del handout",
+     "respuesta_impresa": "A01 = 23.66 psi, A10 = 6.22 psi, D1 = 14,940; −0.5 in en Uz; malla absoluta 0.0625 in; 20 pasos (AU handout, Nonlinear Static Stress Example); 'Rubber Bellows Compression Analysis (Strain Max. 14.5%)'"
+    },
+    {
+     "id": "fea-nolineal-fusion-04",
+     "titulo": "O-ring hiperelástico entre placas de acero al 50% de deformación",
+     "herramientas": "sección axisimétrica o ¼, Mooney-Rivlin, contacto separación con 2 placas",
+     "oraculo": "deformación ingenieril del diámetro = 50% ±1% al final; fuerza por unidad de longitud vs Lindley (F/L ≈ 1.25·E·d·(δ/d)^1.5 + 50·E·d·(δ/d)^6) ±15%; sin penetración >1%",
+     "respuesta_impresa": "'Hyper elastic O-ring Compressed Between Steel Plates — Event Simulation Showing 50% Strain in O-ring' (AU handout)"
+    },
+    {
+     "id": "fea-nolineal-u20404-08",
+     "titulo": "Tres no-linealidades: la escalera de desacople (elástico+contacto → ley sin contacto → NLGEOM solo → todo) con REAC_ITER=1 y PREDICTION ELASTIQUE",
+     "herramientas": "comando 'escalera' que corre los 4 escalones y reporta cuál falla",
+     "oraculo": "cada escalón converge antes del siguiente; el caso completo converge con REAC_ITER=1 + predicción elástica y falla (o >2× iteraciones) con predicción tangente y REAC_ITER=0",
+     "respuesta_impresa": "'reactualization of the tangent matrix to each iteration (REAC_ITER=1)', 'PREDICTION=ELASTIQUE' (U2.04.04 §4.3.2)"
+    },
+    {
+     "id": "fea-nolineal-u20404-07",
+     "titulo": "Punzón RÍGIDO sobre bloque elástico (SSNV506 style): sólo la piel del rígido lleva GDL, rígido = maestro",
+     "herramientas": "superficie rígida con todos sus GDL impuestos (AFFE_CHAR_CINE), bloque deformable esclavo",
+     "oraculo": "reacción del punzón = ∫p dA ±1%; penetración ≤1%; huella de p con ≥8 nodos y sin patrón alternante",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "fea-nolineal-u20404-04",
+     "titulo": "Bloque sobre plano con fricción de Coulomb: desliza cuando F > μ·N (estados 0/1/2)",
+     "herramientas": "contacto-fricción CONTINUE, μ=0.2, rampa de fuerza tangencial",
+     "oraculo": "F_deslizamiento = μ·N ±1%; estado por nodo pasa 1→2 en el mismo incremento en toda la cara; con μ=0 desliza desde F>0",
+     "respuesta_impresa": "estado 0 = sin contacto, 1 = adherente, 2 = deslizante (U2.04.04 §4.7)"
+    },
+    {
+     "id": "fea-nolineal-fusion-06",
+     "titulo": "Press fit de anillo sobre eje (interferencia): contacto deslizante > 1 elemento y presión de ajuste vs Lamé",
+     "herramientas": "anillo + eje con interferencia radial, contacto separación con fricción baja, NLGEOM",
+     "oraculo": "presión de interfaz vs formulas.ts:lameThickCylinder (cilindro grueso con interferencia) ±5%; fuerza de inserción ≈ μ·p·π·d·L ±10%",
+     "respuesta_impresa": "'suitable for analysis such as snap fit or press fit' (AU handout)"
+    },
+    {
+     "id": "fea-nolineal-fusion-08",
+     "titulo": "Event simulation del mismo fuelle: placas rígidas, curva multiplicadora 0→1 en 0.1 s",
+     "herramientas": "explícito con cuerpos rígidos, prescribed translation con multiplier curve, duración 0.1 s",
+     "oraculo": "E_cinética/E_interna < 5% al final (cuasi-estático) y la curva reacción–δ coincide con NLSS ±5%; con duración 0.001 s la diferencia sube >20% (inercia)",
+     "respuesta_impresa": "duración total 0.1 s en vez del default 0.001 s; multiplicador (0,0)→(0.1,1) (AU handout, Event Simulation Example)"
+    }
+   ],
+   "ya_existe": [
+    "src/lib/formulas.ts:lameThickCylinder (oráculo press fit)",
+    "src/forja/mech/contacto-conforme.ts:frictionForce_N (tribológico, no FEA)"
+   ],
+   "dependencias": [
+    "fea-nolineal-contacto-molde",
+    "fea-nolineal-grandes-desplazamientos",
+    "elemento u/p o hexa reducido para casi-incompresible"
+   ],
+   "esfuerzo": "XL",
+   "valor": 2,
+   "sprint_sugerido": 5
+  }
+ ],
+ "brechas_vs_fusion": [
+  {
+   "brecha": "Estudio no lineal por PASOS con slider transitorio y gráfica resultado-vs-paso",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Fusion: 'the solution will be solved in increments or steps', default 10, ≥10 con contacto, 20-40 con material no lineal; 'Transient Results Plot'. Code_Aster: incrementos + Newton por incremento (R5.03.01 §2).",
+   "que_hace_la_competencia": "Fusion NLSS, SolidWorks Nonlinear, Ansys Mechanical: todos resuelven por incrementos con curva de carga y slider. La Forja: un solo solve lineal (fea.ts:runFEA)."
+  },
+  {
+   "brecha": "Modelos de material no lineales (bilineal, multilineal con endurecimiento iso/cin, Mooney-Rivlin, no lineal elástico)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Fusion lista 6 modelos y avisa que el lineal 'beyond the yield… are likely inaccurate'. R5.03.02 da VMIS_ISOT_LINE/TRAC/PUIS/CINE con solución cerrada.",
+   "que_hace_la_competencia": "Fusion/SolidWorks/Ansys: biblioteca de materiales con curva σ-ε y hiperelásticos. La Forja: sólo E, ν, σ_y (formulas.ts:elasticityMatrix3D)."
+  },
+  {
+   "brecha": "Contacto de separación/deslizante (snap fit, press fit, placas apiladas del molde)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "U2.04.04 entero; Fusion: 'sliding or separation contacts over large distances… snap fit or press fit'; el lineal sólo tolera movimiento < 1 elemento.",
+   "que_hace_la_competencia": "Fusion: contactos bonded/separation/sliding generados automáticamente. La Forja: K.fuse (mold-fea.ts) + interferencia geométrica (collision.ts); Hertz analítico aparte."
+  },
+  {
+   "brecha": "Gate de régimen: la suite avisa cuándo el lineal miente (1/10, 10°, σ>σ_y, contacto > 1 elemento)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "AU handout 'When do I need nonlinear?' + Bathe tipos I-V + R5.03.01 gates ε², θ²·ε.",
+   "que_hace_la_competencia": "Ni Fusion lo automatiza (es criterio del analista). La Forja puede ganar aquí: FEAResult.minSafetyFactor ya existe pero no clasifica ni bloquea."
+  },
+  {
+   "brecha": "Honestidad del solver: norma ∞, exclusión de GDL/multiplicadores, fallback carga cero, reacciones y equilibrio, tangente coherente probada",
+   "prioridad": "P1",
+   "que_dice_el_libro": "R5.03.01 §2.5 (4 criterios, exclusiones, fallback), R5.03.02 §3.4 (Δp=0), pliego-fea G8/G10/G15.",
+   "que_hace_la_competencia": "Code_Aster/CalculiX lo hacen; Fusion lo esconde. La Forja: CG norma 2 recursiva, sin reacciones, converged:false no bloquea."
+  },
+  {
+   "brecha": "Grandes desplazamientos (NLGEOM), cargas seguidoras, stress-stiffening, pandeo lineal",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Bathe tipos III/IV; R5.03.01 §1.2.2 y §3.2; AU 'large deflections, stress stiffening/softening, snap-thru, buckling, large strain'.",
+   "que_hace_la_competencia": "SolidWorks Simulation Buckling, Ansys Eigenvalue Buckling + NLGEOM. La Forja: eulerBucklingLoad en formulas.ts sin usuarios; pin buckling analítico en ejection.ts."
+  },
+  {
+   "brecha": "Elementos sin locking (tet10 por defecto en Fusion; hexa C3D8I/tet10) para plasticidad e incompresibilidad",
+   "prioridad": "P1",
+   "que_dice_el_libro": "CalculiX §6.2 (C3D8 'behaves badly for isochoric… plastic behavior'); pliego-fea NIVEL 1 'USAR HEXAEDROS'.",
+   "que_hace_la_competencia": "Fusion malla tet10 parabólico; Ansys hexa dominante. La Forja: tet4 Freudenthal sobre voxel (fea.ts:brepToVolumeTetMesh)."
+  },
+  {
+   "brecha": "Event simulation explícito con cuerpos rígidos y curvas multiplicadoras en el tiempo",
+   "prioridad": "P2",
+   "que_dice_el_libro": "AU handout Event Simulation Example (rigid bodies, multiplier curve, 0.1 s).",
+   "que_hace_la_competencia": "Fusion Event Simulation, Ansys Explicit/LS-DYNA. La Forja: nada."
+  },
+  {
+   "brecha": "Fricción de Coulomb con estados por nodo y exclusión de direcciones por simetría",
+   "prioridad": "P2",
+   "que_dice_el_libro": "U2.04.04 §3.3, §4.5 (SANS_GROUP_NO_FR, DIRE_EXCL_FROT), §4.7 estados 0/1/2.",
+   "que_hace_la_competencia": "Fusion (coeficiente en contacto separación), Ansys frictional contact. La Forja: nada FEA."
+  }
+ ],
+ "archivo_md": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/fea-nolineal.md",
+ "archivo_json": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/fea-nolineal.json"
+}

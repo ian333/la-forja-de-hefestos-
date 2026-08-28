@@ -1,0 +1,1193 @@
+{
+ "libro": "Manuales P0-P2: top88 (Andreassen et al. 2011), fe-safe Fatigue Theory Vol.2, Irvine Effective Modal Mass, Schwab/van der Linde Multibody Dynamics B, Featherstone & Orin Dynamics (Springer Handbook), Code_Aster R5.01.01, MIT 2.080 Lec.9",
+ "titulo": "Generativo, fatiga y dinamica: topologia (top88), fatiga (fe-safe), modal (masa efectiva), pandeo (MIT) y multicuerpo (Schwab/Featherstone)",
+ "autor_como_cliente": "Un ingeniero de simulacion que exige que cada solver se pruebe contra un numero PUBLICADO antes de creerle: la MBB de 88 lineas, los 881/75.2/574 de fe-safe, los 4.78/12.4 Hz de Irvine, el pi^2 EI/l^2 de Euler y el drift del pendulo doble. No acepta \"compila\": acepta \"reproduce la tabla\".",
+ "capitulos": [
+  {
+   "num": 1,
+   "titulo": "top88 — SIMP/OC con filtros de sensibilidad, densidad, Heaviside y PDE (MBB)",
+   "n_ejercicios": 8,
+   "cubierto_por_forja": "parcial",
+   "nota": "topopt.ts es top88 literal en 3D voxel (SIMP+OC+filtros+passive+voladizo); falta Heaviside, benchmark MBB 2D y prueba de independencia de malla"
+  },
+  {
+   "num": 2,
+   "titulo": "fe-safe Vol.2 — S-N, Miner, medias (Goodman/Gerber), e-N con memoria, Neuber, multiaxial, estadistica",
+   "n_ejercicios": 12,
+   "cubierto_por_forja": "no",
+   "nota": "solo basquinSN/goodmanFatigueSafety en src/lib/formulas.ts con Se=0.5Sut y f=0.9 hardcodeados; nada de rainflow/Miner/e-N/plano critico"
+  },
+  {
+   "num": 3,
+   "titulo": "Irvine — masa efectiva y factores de participacion (2-GDL, avionica 6-GDL, vigas, barra FE)",
+   "n_ejercicios": 7,
+   "cubierto_por_forja": "no",
+   "nota": "fea.ts no ensambla matriz de masa; solo naturalFrequency 1-GDL en formulas.ts"
+  },
+  {
+   "num": 4,
+   "titulo": "Schwab/van der Linde — Newton-Euler con restricciones (DAE), Lagrange, TMT, drift",
+   "n_ejercicios": 6,
+   "cubierto_por_forja": "no",
+   "nota": "dinamica.ts es estatica (armStatics/vehicleDynamics); fourbar.ts es cinematica pura"
+  },
+  {
+   "num": 5,
+   "titulo": "Featherstone & Orin — algebra espacial, RNEA, ABA, CRBA, lazos cerrados",
+   "n_ejercicios": 6,
+   "cubierto_por_forja": "no",
+   "nota": "sin RNEA/CRBA/ABA en src/forja/mech (grep rnea|RNEA = 0 hits); grublerMobility si (armgen.ts)"
+  },
+  {
+   "num": 6,
+   "titulo": "Code_Aster R5.01.01 — solvers modales (Lanczos, IRAM, Bathe-Wilson, QZ), Sturm, bandas",
+   "n_ejercicios": 4,
+   "cubierto_por_forja": "no",
+   "nota": "no hay eigen-solver en fea.ts/occt.ts (solo eigen 3x3 del tensor de inercia)"
+  },
+  {
+   "num": 7,
+   "titulo": "MIT 2.080 Lec.9 — estabilidad elastica: Euler, Rayleigh-Ritz, imperfecciones, esbeltez",
+   "n_ejercicios": 5,
+   "cubierto_por_forja": "parcial",
+   "nota": "eulerBucklingLoad con 4 condiciones (formulas.ts:904); falta pandeo por eigenvalores [K+lambda Ks] y Johnson"
+  }
+ ],
+ "n_ejercicios_catalogo": 48,
+ "features": [
+  {
+   "nombre": "SIMP + OC + filtros (sensibilidad/densidad) sobre voxeles 3D",
+   "que_hace": "top88 literal: E_e=Emin+x^p(E0-Emin), sensibilidad, OC con biseccion, filtro H con rmin/minMemberMm, passive keep-in/out, filtro de voladizo AM",
+   "estado_forja": "si",
+   "prioridad": "P0",
+   "donde": "src/forja/brep/topopt.ts:runTopOpt, src/forja/brep/topopt-am.ts:amOverhangFilter/passiveMask; UI ForgeBRepStudio.tsx:GenerativeVoxels/GenerativeSurface; scripts/topopt-node-test.cjs, scripts/generative-farm.cjs",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-top88-01",
+    "generativo-fatiga-dinamica-top88-02",
+    "generativo-fatiga-dinamica-top88-06",
+    "generativo-fatiga-dinamica-top88-07",
+    "generativo-fatiga-dinamica-top88-08"
+   ]
+  },
+  {
+   "nombre": "Proyeccion Heaviside (beta continuation) y filtro PDE",
+   "que_hace": "diseño 0/1 nitido (§3.5 top88) y filtro Helmholtz volumen-preservante",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "grep -i heaviside src/forja/brep/topopt.ts = 0 hits",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-top88-04",
+    "generativo-fatiga-dinamica-top88-05"
+   ]
+  },
+  {
+   "nombre": "Benchmark MBB 2D + prueba de independencia de malla",
+   "que_hace": "reproducir Fig.3 a/b/c del paper (60x20, 150x50, 300x100) con rmin escalado y contar barras",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "donde": "solo cantilever 3D (scripts/topopt-node-test.cjs I1-I5); sin MBB ni escalera de mallas",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-top88-01",
+    "generativo-fatiga-dinamica-top88-03"
+   ]
+  },
+  {
+   "nombre": "Optimizador MMA / TO con restriccion de pandeo (KS)",
+   "que_hace": "sustituir OC por MMA y agregar lambda_pandeo >= lambda_min via Kreisselmeier-Steinhauser (Ferrari-Sigmund-Guest)",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "donde": "no existe",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-mit-01"
+   ]
+  },
+  {
+   "nombre": "Motor de fatiga S-N: Basquin parametrizado, Marin, Goodman/Gerber/Soderberg/SWT/Walker, Miner",
+   "que_hace": "Sa=A*Nf^b de datos, correccion de media, daño por bloque y vida en repeticiones",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "donde": "src/lib/formulas.ts:basquinSN (Se=0.5Sut, f=0.9 fijos), goodmanFatigueSafety; sin Miner ni Gerber ni Marin",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-fesafe-01",
+    "generativo-fatiga-dinamica-fesafe-03",
+    "generativo-fatiga-dinamica-fesafe-04",
+    "generativo-fatiga-dinamica-fesafe-05"
+   ]
+  },
+  {
+   "nombre": "Rainflow (ASTM E1049) sobre historial de esfuerzo/deformacion",
+   "que_hace": "conteo de ciclos cerrados con memoria de material; histograma Sa/Sm/n",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "donde": "grep -ri rainflow src/ = 0 hits",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-fesafe-12",
+    "generativo-fatiga-dinamica-fesafe-03"
+   ]
+  },
+  {
+   "nombre": "Fatiga e-N: Ramberg-Osgood ciclico, lazos de histeresis (Masing), Coffin-Manson, SWT, Neuber",
+   "que_hace": "seguir A..F por la curva ciclica y sus lazos, cerrar ciclos, vida por strain-life y SWT; entalla por Neuber",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "no existe (pliego-shigley H1 lo pide como src/forja/maquinas/fatiga.ts)",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-fesafe-02",
+    "generativo-fatiga-dinamica-fesafe-10"
+   ]
+  },
+  {
+   "nombre": "Fatiga multiaxial: Mohr 3D de deformaciones, Brown-Miller, plano critico, Dang Van",
+   "que_hace": "e3 por Poisson efectivo, gamma_max, eps_n; daño por plano",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "donde": "no existe",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-fesafe-06",
+    "generativo-fatiga-dinamica-fesafe-07",
+    "generativo-fatiga-dinamica-fesafe-08"
+   ]
+  },
+  {
+   "nombre": "Fatiga sobre el FEA existente (mapa nodal de vida)",
+   "que_hace": "carga unitaria en prepareFeaSession + historial -> sigma(t) por nodo -> rainflow+S-N -> mapa de vida (fe-safe §8.3)",
+   "estado_forja": "parcial",
+   "prioridad": "P1",
+   "donde": "infra si: src/forja/brep/fea.ts:prepareFeaSession/solveLoadOnSession; capa de fatiga no",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-fesafe-11"
+   ]
+  },
+  {
+   "nombre": "Estadistica de fatiga (log-normal / Weibull, p=k/(n+1))",
+   "que_hace": "vida media y desviacion log de probetas; vida a probabilidad de falla",
+   "estado_forja": "no",
+   "prioridad": "P2",
+   "donde": "no existe",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-fesafe-09"
+   ]
+  },
+  {
+   "nombre": "Matriz de masa consistente + eigensolver GEP (Lanczos shift-invert / Jacobi) + test de Sturm",
+   "que_hace": "K phi = w^2 M phi sobre la malla tet4 de fea.ts; banda de frecuencias con verificacion de Sturm",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "donde": "fea.ts sin masa (grep massMatrix|lumped = 0); occt.ts solo eigen 3x3 de inercia",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-irvine-06",
+    "generativo-fatiga-dinamica-aster-01",
+    "generativo-fatiga-dinamica-aster-02",
+    "generativo-fatiga-dinamica-aster-03",
+    "generativo-fatiga-dinamica-aster-04"
+   ]
+  },
+  {
+   "nombre": "Masa efectiva y factores de participacion (truncamiento >= 90%)",
+   "que_hace": "Gamma_i = phi^T M r, meff = Gamma^2/m_i por eje; suma = masa total",
+   "estado_forja": "no",
+   "prioridad": "P0",
+   "donde": "formulas.ts:naturalFrequency es 1-GDL",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-irvine-01",
+    "generativo-fatiga-dinamica-irvine-02",
+    "generativo-fatiga-dinamica-irvine-03",
+    "generativo-fatiga-dinamica-irvine-04",
+    "generativo-fatiga-dinamica-irvine-05",
+    "generativo-fatiga-dinamica-irvine-07"
+   ]
+  },
+  {
+   "nombre": "Pandeo lineal por eigenvalores [K + lambda Ks] + Euler/Johnson",
+   "que_hace": "rigidez geometrica de la solucion estatica, lambda1 = BLF; verificar con Euler pin-pin y esbeltez critica",
+   "estado_forja": "parcial",
+   "prioridad": "P0",
+   "donde": "src/lib/formulas.ts:eulerBucklingLoad (4 condiciones); sin Ks ni eigen",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-mit-01",
+    "generativo-fatiga-dinamica-mit-02",
+    "generativo-fatiga-dinamica-mit-03"
+   ]
+  },
+  {
+   "nombre": "Multicuerpo DAE: Newton-Euler + restricciones, Lagrange, TMT, Baumgarte",
+   "que_hace": "[M Phi_q^T; Phi_q 0][qdd; lambda] = [Q; gamma], integradores, medicion de drift, cross-check por 3 formulaciones",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "src/forja/mech/dinamica.ts = estatica (armStatics/vehicleDynamics); fourbar.ts cinematica",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-schwab-01",
+    "generativo-fatiga-dinamica-schwab-02",
+    "generativo-fatiga-dinamica-schwab-03",
+    "generativo-fatiga-dinamica-schwab-04",
+    "generativo-fatiga-dinamica-schwab-05",
+    "generativo-fatiga-dinamica-schwab-06"
+   ]
+  },
+  {
+   "nombre": "RNEA / CRBA / ABA (algebra espacial de Featherstone)",
+   "que_hace": "tau requerido por eslabon, matriz H con cond(H), dinamica directa O(n); lazos cerrados para el cicloidal",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "grep -rn \"rnea|RNEA\" src/forja/mech = 0; armgen.ts:grublerMobility si",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-feather-01",
+    "generativo-fatiga-dinamica-feather-02",
+    "generativo-fatiga-dinamica-feather-03",
+    "generativo-fatiga-dinamica-feather-05",
+    "generativo-fatiga-dinamica-feather-06"
+   ]
+  },
+  {
+   "nombre": "Lecciones de escuela (video 4K con voz) para generativo/fatiga/modal/pandeo/MBD",
+   "que_hace": "public/escuela/lecciones/*.json + clase-drive.cjs",
+   "estado_forja": "no",
+   "prioridad": "P1",
+   "donde": "ls public/escuela/lecciones: mec-u*, mol-s*, a1-l*; ninguna de topologia/fatiga/modal",
+   "ejercicios": [
+    "generativo-fatiga-dinamica-top88-01",
+    "generativo-fatiga-dinamica-fesafe-01",
+    "generativo-fatiga-dinamica-irvine-01",
+    "generativo-fatiga-dinamica-mit-01",
+    "generativo-fatiga-dinamica-schwab-01"
+   ]
+  }
+ ],
+ "supertickets": [
+  {
+   "slug": "generativo-fatiga-dinamica-top88-mbb",
+   "titulo": "La viga MBB: el generativo se mide contra el paper de 88 lineas",
+   "capitulos": [
+    1
+   ],
+   "objetivo": "Reproducir top88 §3.6 (Fig.3/5) DENTRO del generativo de La Forja: MBB 60x20/150x50/300x100, filtros de sensibilidad, densidad y Heaviside; independencia de malla y diseño 0/1, con volumen exacto por iteracion.",
+   "ejercicios": [
+    {
+     "id": "generativo-fatiga-dinamica-top88-01",
+     "titulo": "MBB 60x20 ft=1",
+     "herramientas": "generativo SIMP+OC, filtro sensibilidad, rmin 2.4",
+     "oraculo": "topologia Fig.3a arriba; mean(xPhys)=0.5+-1e-3; c monotono",
+     "respuesta_impresa": "Fig.3"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-top88-02",
+     "titulo": "MBB 60x20 ft=2 (densidad)",
+     "herramientas": "generativo, filtro densidad",
+     "oraculo": "topologia Fig.3a abajo; volumen sobre xPhys = 0.5",
+     "respuesta_impresa": "Fig.3"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-top88-03",
+     "titulo": "Escalera de mallas 60x20/150x50/300x100, rmin=0.04 nelx",
+     "herramientas": "generativo, refinamiento",
+     "oraculo": "mismo numero de barras en las 3 mallas; sin checkerboard",
+     "respuesta_impresa": "Fig.3 a/b/c"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-top88-04",
+     "titulo": "Heaviside con beta doblado cada 50 iter",
+     "herramientas": "generativo + Heaviside",
+     "oraculo": "celdas grises (0.1<x<0.9) < 5%; topologia Fig.5",
+     "respuesta_impresa": "Fig.5"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-top88-08",
+     "titulo": "Keep-out + 2 casos de carga",
+     "herramientas": "generativo passive/multiload",
+     "oraculo": "void permanece 0 en todas las iteraciones; c = suma por caso",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-top88-06",
+     "titulo": "Cantilever 3D I1-I5 (regresion)",
+     "herramientas": "generativo 3D voxel",
+     "oraculo": "I1..I5 verdes en scripts/topopt-node-test.cjs",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/brep/topopt.ts:runTopOpt (SIMP+OC+ft 1|2+passive+voladizo)",
+    "scripts/topopt-node-test.cjs (cantilever 3D I1-I5)",
+    "scripts/generative-farm.cjs (6 piezas 6/6)",
+    "ForgeBRepStudio.tsx:GenerativeVoxels/GenerativeSurface"
+   ],
+   "dependencias": [
+    "malla 2D-en-3D de 1 voxel de espesor o modo plano en fea.ts",
+    "Heaviside beta continuation en topopt.ts"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "generativo-fatiga-dinamica-fesafe-sn",
+   "titulo": "Fatiga S-N: Miner, Goodman y Gerber contra los ejemplos de fe-safe",
+   "capitulos": [
+    2
+   ],
+   "objetivo": "Motor de fatiga esfuerzo-vida con curva Sa=A Nf^b de DATOS (no Se=0.5Sut fijo), correccion de media y daño acumulado; los 3 numeros impresos de fe-safe §5.3 (881 / 75.2 / 574) y el 333 del Ej 1.1 salen exactos.",
+   "ejercicios": [
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-01",
+     "titulo": "Ej 1.1 Miner dos bloques",
+     "herramientas": "fatiga S-N, Miner",
+     "oraculo": "333 repeticiones",
+     "respuesta_impresa": "333 (p.1-5)"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-03",
+     "titulo": "Espectro 6 niveles sin correccion",
+     "herramientas": "fatiga S-N, Miner",
+     "oraculo": "D=1.135e-3 -> 881",
+     "respuesta_impresa": "881 (p.5-10)"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-04",
+     "titulo": "Espectro con Goodman",
+     "herramientas": "fatiga S-N, Goodman",
+     "oraculo": "D=1.329e-2 -> 75.2",
+     "respuesta_impresa": "75.2 (p.5-10)"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-05",
+     "titulo": "Espectro con Gerber",
+     "herramientas": "fatiga S-N, Gerber",
+     "oraculo": "D=1.740e-3 -> 574",
+     "respuesta_impresa": "574 (p.5-11)"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-12",
+     "titulo": "Rainflow del historial A..F",
+     "herramientas": "rainflow ASTM E1049",
+     "oraculo": "3 ciclos B-C, E-F, A-D",
+     "respuesta_impresa": "Fig.2.33"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-09",
+     "titulo": "Ej 9.1 estadistica de 9 probetas",
+     "herramientas": "log-normal, p=k/(n+1)",
+     "oraculo": "media 2.95e5, s=0.12",
+     "respuesta_impresa": "2.95e5; 0.12"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-11",
+     "titulo": "Mapa de vida sobre el FEA (carga unitaria + historial)",
+     "herramientas": "fatiga sobre fea.ts",
+     "oraculo": "vida minima en nodo de sigma max = calculo a mano",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/lib/formulas.ts:basquinSN (Se=0.5Sut, f=0.9 hardcodeados — corregir, no extender)",
+    "src/lib/formulas.ts:goodmanFatigueSafety",
+    "src/forja/brep/fea.ts:prepareFeaSession/solveLoadOnSession (N cargas sobre una K)"
+   ],
+   "dependencias": [
+    "modulo nuevo src/forja/maquinas/fatiga.ts (pliego-shigley H1) — CREA declarado en la orden",
+    "comandos fatiga.* en registry.ts"
+   ],
+   "esfuerzo": "M",
+   "valor": 5,
+   "sprint_sugerido": 1
+  },
+  {
+   "slug": "generativo-fatiga-dinamica-fesafe-en",
+   "titulo": "Fatiga e-N: el lazo de histeresis con memoria, Neuber y biaxial (Ej 2.1 y 7.x)",
+   "capitulos": [
+    2
+   ],
+   "objetivo": "Deformacion-vida local: Ramberg-Osgood ciclico, lazos de Masing con memoria de material, cierre de ciclos, Coffin-Manson y SWT, Neuber en entalla y Mohr 3D de deformaciones; el Ej 2.1 de fe-safe reproduce los 6 esfuerzos y 85,500 repeticiones.",
+   "ejercicios": [
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-02",
+     "titulo": "Ej 2.1 SAE1045 A..F",
+     "herramientas": "e-N, R-O ciclico, memoria, Coffin-Manson, SWT",
+     "oraculo": "321.1/-225.2/189.9/-301.1/239.1/-176 MPa; 85,500 rep; D_SWT=1.273e-5",
+     "respuesta_impresa": "85500; 1.273e-5 (p.2-21)"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-10",
+     "titulo": "Neuber en entalla con Kt",
+     "herramientas": "Neuber + R-O",
+     "oraculo": "sigma*eps=(Kt S)^2/E y R-O simultaneos, residuo<1e-6",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-06",
+     "titulo": "Ej 7.1 directa con transversal restringida",
+     "herramientas": "Mohr 3D deformaciones",
+     "oraculo": "e3=-343, gmax=1140, en=229 ue",
+     "respuesta_impresa": "p.7-26"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-07",
+     "titulo": "Ej 7.2 torsion pura",
+     "herramientas": "Mohr",
+     "oraculo": "e1=400, e2=-400 ue",
+     "respuesta_impresa": "p.7-27"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-08",
+     "titulo": "Ej 7.3 combinado en fase",
+     "herramientas": "plano critico Brown-Miller",
+     "oraculo": "plano de daño maximo coherente con 7.1+7.2",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-fesafe-12",
+     "titulo": "Rainflow con memoria = mismos 3 ciclos",
+     "herramientas": "rainflow",
+     "oraculo": "B-C, E-F, A-D",
+     "respuesta_impresa": "Fig.2.33"
+    }
+   ],
+   "ya_existe": [
+    "nada de e-N en el repo (verificado: grep Coffin|Neuber|rainflow src/ = 0)"
+   ],
+   "dependencias": [
+    "generativo-fatiga-dinamica-fesafe-sn (motor S-N y rainflow)",
+    "propiedades ciclicas sf,b,ef,c,K,n en MATERIAL_DATABASE (pliego-shigley H13)"
+   ],
+   "esfuerzo": "L",
+   "valor": 4,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "generativo-fatiga-dinamica-modal-irvine",
+   "titulo": "Modal con masa efectiva: del 2-GDL de Irvine a la barra FE y la avionica",
+   "capitulos": [
+    3,
+    6
+   ],
+   "objetivo": "Ensamblar la matriz de masa consistente en fea.ts, resolver K phi = w^2 M phi (Lanczos shift-invert + Sturm) y reportar participacion y masa efectiva por eje con regla del 90%; los numeros de Irvine salen literales.",
+   "ejercicios": [
+    {
+     "id": "generativo-fatiga-dinamica-irvine-01",
+     "titulo": "2-GDL m=2,1 k=1000,2000,3000",
+     "herramientas": "GEP, masa efectiva",
+     "oraculo": "4.78 y 12.4 Hz; meff 2.944+0.056=3 kg",
+     "respuesta_impresa": "Ec.12,15,30,32"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-irvine-06",
+     "titulo": "Barra Al 1in x 48in, 4 elementos",
+     "herramientas": "masa consistente, GEP",
+     "oraculo": "1029.9/3248.8/5901.6/8534.3 Hz; 83% de 3.77 lbm",
+     "respuesta_impresa": "App.F"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-irvine-04",
+     "titulo": "Viga empotrada-libre (tet4 de fea.ts)",
+     "herramientas": "modal 3D",
+     "oraculo": "beta1=1.87510 (<2%); meff1 ~0.6131 rho L; 4 modos >= 90%",
+     "respuesta_impresa": "Tabla D-2"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-irvine-03",
+     "titulo": "Viga simplemente apoyada",
+     "herramientas": "modal 3D",
+     "oraculo": "meff1 = 8/pi^2 rho L; pares = 0",
+     "respuesta_impresa": "Tabla D-1"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-irvine-02",
+     "titulo": "Avionica 6-GDL sobre aisladores",
+     "herramientas": "cuerpo rigido + resortes",
+     "oraculo": "7.338..83.19 Hz; total 0.0111 por eje",
+     "respuesta_impresa": "App.A"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-aster-01",
+     "titulo": "Test de Sturm sobre el rod",
+     "herramientas": "LDL^T(K - sigma M)",
+     "oraculo": "pivotes negativos = modos bajo sigma",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-aster-02",
+     "titulo": "Lanczos shift-invert vs QZ",
+     "herramientas": "eigensolver",
+     "oraculo": "frecuencias identicas <1e-6 rel",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/lib/formulas.ts:naturalFrequency (1-GDL), beamNaturalFrequency",
+    "src/forja/brep/fea.ts:sparseCG/K tet4 (sin M)",
+    "occt.ts masa-inercia (eigen 3x3)"
+   ],
+   "dependencias": [
+    "matriz de masa consistente tet4 en fea.ts",
+    "eigensolver (Lanczos + LDL^T) nuevo"
+   ],
+   "esfuerzo": "L",
+   "valor": 5,
+   "sprint_sugerido": 2
+  },
+  {
+   "slug": "generativo-fatiga-dinamica-pandeo-mit",
+   "titulo": "Pandeo por eigenvalores: Euler, Rayleigh-Ritz e imperfeccion (MIT 2.080 Lec.9)",
+   "capitulos": [
+    7,
+    1
+   ],
+   "objetivo": "Rigidez geometrica Ks de la solucion estatica y [K + lambda Ks] phi = 0 sobre la malla de fea.ts; verificar contra Euler pin-pin, la esbeltez critica y la amplificacion 1/(1-P/Pc); dejar el gancho para TO con restriccion de pandeo.",
+   "ejercicios": [
+    {
+     "id": "generativo-fatiga-dinamica-mit-01",
+     "titulo": "Columna pin-pin FE vs Euler",
+     "herramientas": "pandeo lineal, Ks",
+     "oraculo": "lambda1 P = pi^2 EI/l^2 (<2%); sigma_c = pi^2 E/beta^2",
+     "respuesta_impresa": "Ec.9.68-9.70"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-mit-01",
+     "titulo": "4 condiciones de extremo (fijo-libre, pin-pin, fijo-pin, fijo-fijo)",
+     "herramientas": "pandeo lineal",
+     "oraculo": "C = 2, 1, 0.7, 0.5 vs eulerBucklingLoad",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-mit-02",
+     "titulo": "Rayleigh-Ritz con phi de prueba",
+     "herramientas": "energia",
+     "oraculo": "cota superior; sin(pi x/l) exacto",
+     "respuesta_impresa": "Ec.9.27"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-mit-03",
+     "titulo": "Columna imperfecta",
+     "herramientas": "no lineal geometrico",
+     "oraculo": "w_max = w0/(1-P/Pc) (<3%)",
+     "respuesta_impresa": "Fig.9.8"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-mit-01",
+     "titulo": "Esbeltez critica beta_c = pi sqrt(E/sigma_y)",
+     "herramientas": "esbeltez",
+     "oraculo": "transicion Euler/fluencia en beta_c",
+     "respuesta_impresa": "Fig.9.12"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-top88-06",
+     "titulo": "Cantilever generativo: BLF del diseño final",
+     "herramientas": "generativo + pandeo",
+     "oraculo": "lambda1 >= 1 reportado (gancho para TO+pandeo)",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/lib/formulas.ts:eulerBucklingLoad (4 condiciones)",
+    "fea.ts estatico lineal (base para Ks)"
+   ],
+   "dependencias": [
+    "generativo-fatiga-dinamica-modal-irvine (eigensolver compartido)"
+   ],
+   "esfuerzo": "L",
+   "valor": 4,
+   "sprint_sugerido": 3
+  },
+  {
+   "slug": "generativo-fatiga-dinamica-mbd-schwab",
+   "titulo": "Multicuerpo real: el pendulo doble por 3 caminos, drift, grua y RNEA",
+   "capitulos": [
+    4,
+    5
+   ],
+   "objetivo": "Que dinamica.ts deje de ser estatica: DAE con multiplicadores, Lagrange en coordenadas independientes y TMT dan las MISMAS aceleraciones; el drift se mide y se corrige (Baumgarte); RNEA/CRBA cierran el lazo tau requerido -> brazo/cicloidal.",
+   "ejercicios": [
+    {
+     "id": "generativo-fatiga-dinamica-schwab-01",
+     "titulo": "Pendulo doble DAE con Euler dt 0.1..0.01",
+     "herramientas": "Newton-Euler + restricciones",
+     "oraculo": "|Phi|(0.5 s) decrece ~O(dt); juntas se abren",
+     "respuesta_impresa": "Fig. p.1-12"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-schwab-02",
+     "titulo": "Pendulo doble Lagrange (phi1,phi2)",
+     "herramientas": "Lagrange",
+     "oraculo": "cero drift; energia conservada <1e-6 (RK4)",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-schwab-05",
+     "titulo": "Pendulo doble TMT",
+     "herramientas": "TMT",
+     "oraculo": "qdd(t=0) identicas a DAE y Lagrange <1e-9",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-schwab-06",
+     "titulo": "Baumgarte sobre el DAE",
+     "herramientas": "estabilizacion",
+     "oraculo": "|Phi| < 1e-6 durante 10 s",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-schwab-04",
+     "titulo": "Grua de contenedores (carro + pendulo)",
+     "herramientas": "Lagrange 2 GDL",
+     "oraculo": "EoM vb1.6; omega=sqrt(g/l) con carro fijo",
+     "respuesta_impresa": "vb1.4-1.5"
+    },
+    {
+     "id": "generativo-fatiga-dinamica-feather-01",
+     "titulo": "RNEA del pendulo doble",
+     "herramientas": "dinamica inversa",
+     "oraculo": "tau = Lagrange cerrado <1e-9",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-feather-02",
+     "titulo": "CRBA del brazo 3 eslabones de La Forja",
+     "herramientas": "matriz de masa",
+     "oraculo": "H simetrica PD; cond(H) por paso",
+     "respuesta_impresa": ""
+    },
+    {
+     "id": "generativo-fatiga-dinamica-feather-05",
+     "titulo": "Cicloidal como lazo cerrado",
+     "herramientas": "lazo cerrado + Baumgarte",
+     "oraculo": "restriccion de lazo <1e-6 por vuelta; tau_out = 11 tau_in",
+     "respuesta_impresa": ""
+    }
+   ],
+   "ya_existe": [
+    "src/forja/mech/dinamica.ts:armStatics/vehicleDynamics (estatica)",
+    "src/forja/mech/armgen.ts:grublerMobility",
+    "src/forja/mech/fourbar.ts (cinematica)",
+    "src/forja/mech/brazo.ts, cycloidal.ts (geometria)"
+   ],
+   "dependencias": [
+    "integrador RK4 + LDL/KKT solver pequeño denso",
+    "algebra espacial 6x6 (Tabla 2.1)"
+   ],
+   "esfuerzo": "XL",
+   "valor": 4,
+   "sprint_sugerido": 3
+  }
+ ],
+ "brechas_vs_fusion": [
+  {
+   "brecha": "Analisis modal (frecuencias + modos + masa efectiva)",
+   "prioridad": "P0",
+   "que_dice_el_libro": "Irvine: truncar modos hasta >=90% de masa efectiva; Code_Aster: Lanczos/IRAM con Sturm para no perder modos",
+   "que_hace_la_competencia": "Fusion Simulation \"Modal Frequencies\" y SolidWorks Frequency dan modos y masa participativa; Ansys reporta ratio de masa efectiva por eje. La Forja: 0 (fea.ts sin matriz de masa)."
+  },
+  {
+   "brecha": "Pandeo lineal por eigenvalores",
+   "prioridad": "P0",
+   "que_dice_el_libro": "MIT 2.080: Pc = pi^2 EI/l^2 es el caso de verificacion; imperfecciones bajan la carga real",
+   "que_hace_la_competencia": "Fusion \"Structural Buckling\" y SolidWorks Buckling dan BLF y modo; La Forja solo la formula de Euler 1-D (formulas.ts)."
+  },
+  {
+   "brecha": "Fatiga con rainflow + Miner + correccion de media + e-N",
+   "prioridad": "P1",
+   "que_dice_el_libro": "fe-safe Vol.2: S-N con Goodman/Gerber, e-N con memoria de material y SWT, Neuber en entalla, plano critico",
+   "que_hace_la_competencia": "SolidWorks Simulation Fatigue (S-N, Goodman/Gerber/Soderberg, rainflow); Ansys Fatigue Tool / nCode (e-N, multiaxial). Fusion NO tiene fatiga — oportunidad. La Forja: basquin/goodman hardcodeados."
+  },
+  {
+   "brecha": "Generativo con diseño 0/1 y verificacion contra benchmark publicado",
+   "prioridad": "P1",
+   "que_dice_el_libro": "top88: Heaviside + independencia de malla (Fig.3/5) son la prueba de que el optimizador es correcto",
+   "que_hace_la_competencia": "Fusion Generative Design entrega solidos limpios (con voladizo/AM) tras pago de la extension; La Forja ya corre SIMP gratis en CPU con voladizo, pero sin Heaviside ni MBB reproducido."
+  },
+  {
+   "brecha": "Simulacion de movimiento dinamica (DAE, fuerzas de reaccion, tau requerido)",
+   "prioridad": "P1",
+   "que_dice_el_libro": "Schwab: sin tratar las restricciones a nivel de coordenadas hay drift; Featherstone: RNEA/ABA O(n), cond(H) crece O(n^4)",
+   "que_hace_la_competencia": "SolidWorks Motion (ADAMS) y Fusion Event Simulation dan reacciones y pares; La Forja: dinamica.ts estatica y fourbar cinematico."
+  },
+  {
+   "brecha": "TO con restriccion de pandeo y optimizador MMA",
+   "prioridad": "P2",
+   "que_dice_el_libro": "Digesto §11 (Ferrari-Sigmund-Guest): sensibilidad de eigenvalores + KS",
+   "que_hace_la_competencia": "Ninguna suite comercial de escritorio lo ofrece al usuario comun — diferenciador premium."
+  }
+ ],
+ "catalogo": [
+  {
+   "id": "generativo-fatiga-dinamica-top88-01",
+   "fuente": "top88",
+   "titulo": "Media viga MBB 60x20, volfrac 0.5, penal 3, rmin 2.4, filtro de sensibilidad (ft=1)",
+   "herramientas": "generativo SIMP+OC, filtro sensibilidad",
+   "oraculo": "topologia = Fig.3(a) arriba (2 diagonales + cordon superior); mean(xPhys)=0.5 +-1e-3 en cada iteracion; c monotono decreciente",
+   "respuesta_impresa": "Fig. 3 (top88 §3.6) — imagen, sin numero impreso",
+   "tipo": "cad",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-top88-02",
+   "fuente": "top88",
+   "titulo": "MBB 60x20 con filtro de densidad (ft=2)",
+   "herramientas": "generativo SIMP+OC, filtro densidad",
+   "oraculo": "topologia = Fig.3(a) abajo; borde gris de ancho ~rmin; volumen 0.5 exacto sobre xPhys (no sobre x)",
+   "respuesta_impresa": "Fig. 3 (abajo)",
+   "tipo": "cad",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-top88-03",
+   "fuente": "top88",
+   "titulo": "Independencia de malla: MBB 60x20 / 150x50 / 300x100 con rmin escalado (0.04*nelx)",
+   "herramientas": "generativo SIMP, refinamiento",
+   "oraculo": "misma topologia (numero de barras) en las 3 mallas (Fig.3 a/b/c); sin checkerboard",
+   "respuesta_impresa": "Fig. 3 a/b/c; Tabla 1 tiempos/iteracion",
+   "tipo": "cad",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-top88-04",
+   "fuente": "top88",
+   "titulo": "MBB con proyeccion Heaviside (beta se dobla cada 50 iter o al converger)",
+   "herramientas": "generativo SIMP + Heaviside",
+   "oraculo": "diseño casi 0/1: fraccion de celdas con 0.1<x<0.9 < 5%; topologia = Fig.5",
+   "respuesta_impresa": "Fig. 5; Tabla 3 tiempos",
+   "tipo": "cad",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-top88-05",
+   "fuente": "top88",
+   "titulo": "Variante con filtro PDE (Helmholtz) en vez de kernel H",
+   "herramientas": "generativo SIMP, filtro PDE",
+   "oraculo": "misma topologia que ft=2 (Fig.4); volumen conservado (el filtro PDE preserva volumen)",
+   "respuesta_impresa": "Fig. 4",
+   "tipo": "cad",
+   "valor": 2
+  },
+  {
+   "id": "generativo-fatiga-dinamica-top88-06",
+   "fuente": "top88",
+   "titulo": "Cantilever 3D (test de rigor de La Forja: invariantes I1-I5)",
+   "herramientas": "generativo SIMP 3D voxel",
+   "oraculo": "I1 c baja; I2 mean(xPhys)=volfrac; I3 change<=tol; I4 0<=x<=1; I5 void real >0",
+   "respuesta_impresa": "",
+   "tipo": "cad",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-top88-07",
+   "fuente": "top88",
+   "titulo": "6 piezas reales (mensula, brazo, base motor, cartabon, columna excentrica, viga biempotrada)",
+   "herramientas": "generativo SIMP 3D + malla suave",
+   "oraculo": "6/6 invariantes; compliance -70..-93%; volumen objetivo +-3e-4 (docs/forja-research/generativo-piezas-reales.md)",
+   "respuesta_impresa": "",
+   "tipo": "cad",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-top88-08",
+   "fuente": "top88",
+   "titulo": "Elementos pasivos (keep-in/keep-out) y cargas multiples (extensiones §3.7 del paper)",
+   "herramientas": "generativo SIMP, passive, multi-load",
+   "oraculo": "celdas void quedan x=0 y solid x=1 en TODAS las iteraciones; c = suma de compliances por caso",
+   "respuesta_impresa": "",
+   "tipo": "cad",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-01",
+   "fuente": "fesafe",
+   "titulo": "Ej 1.1 Miner: 10 ciclos a 100 kN (N=1e4) + 2000 ciclos a 10 kN (N=1e6)",
+   "herramientas": "fatiga S-N, Miner",
+   "oraculo": "D = 0.001 + 0.002 = 0.003 por bloque -> 333 repeticiones",
+   "respuesta_impresa": "333 repeticiones (fe-safe Vol.2 §1, Ej 1.1, p.1-5)",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-02",
+   "fuente": "fesafe",
+   "titulo": "Ej 2.1 historial de deformacion local A..F en SAE1045 (sf=948, b=-0.092, K=1258, n=0.208, ef=0.26, c=-0.445, E=202000)",
+   "herramientas": "fatiga e-N, Ramberg-Osgood ciclico, memoria de material, rainflow, Coffin-Manson, SWT",
+   "oraculo": "esfuerzos en A..F = 321.1/-225.2/189.9/-301.1/239.1/-176 MPa; 3 ciclos cerrados (B-C, E-F, A-D); vida e-N = 85,500 repeticiones; daño SWT = 1.273e-5",
+   "respuesta_impresa": "85500 repeticiones (strain-life); 1.273e-5 daño SWT (§2.7, Ej 2.1, p.2-20..2-21)",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-03",
+   "fuente": "fesafe",
+   "titulo": "Daño S-N sin correccion de media: Sa=800*Nf^-0.086, espectro rainflow de 6 niveles (340..190 MPa)",
+   "herramientas": "fatiga S-N, Miner, histograma",
+   "oraculo": "D = 1.135e-3 -> 881 repeticiones del espectro",
+   "respuesta_impresa": "881 repeticiones (§5.3, p.5-10)",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-04",
+   "fuente": "fesafe",
+   "titulo": "Mismo espectro con correccion Goodman (Sao = Sa/(1-Sm/UTS), UTS~800)",
+   "herramientas": "fatiga S-N, Goodman",
+   "oraculo": "D = 1.329e-2 -> 75.2 repeticiones",
+   "respuesta_impresa": "75.2 repeticiones (§5.3, p.5-10)",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-05",
+   "fuente": "fesafe",
+   "titulo": "Mismo espectro con correccion Gerber (Sao = Sa/(1-(Sm/UTS)^2))",
+   "herramientas": "fatiga S-N, Gerber",
+   "oraculo": "D = 1.740e-3 -> 574 repeticiones",
+   "respuesta_impresa": "574 repeticiones (§5.3, p.5-11)",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-06",
+   "fuente": "fesafe",
+   "titulo": "Ej 7.1 biaxial: e1 0->800 ue con transversal restringida, nu=0.3",
+   "herramientas": "fatiga multiaxial, Mohr 3D",
+   "oraculo": "e3 = -343 ue; gamma_max = 1140 ue; e_n = 229 ue",
+   "respuesta_impresa": "e3=-343, gmax=1140, en=229 ue (§7.4, Ej 7.1, p.7-26)",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-07",
+   "fuente": "fesafe",
+   "titulo": "Ej 7.2 torsion pura gamma 0->800 ue",
+   "herramientas": "fatiga multiaxial",
+   "oraculo": "e1 = +400 ue, e2 = -400 ue",
+   "respuesta_impresa": "e1=400, e2=-400 ue (Ej 7.2, p.7-27)",
+   "tipo": "cae",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-08",
+   "fuente": "fesafe",
+   "titulo": "Ej 7.3 torsion + directa en fase (ex y gxy 0->800 ue)",
+   "herramientas": "fatiga multiaxial, plano critico",
+   "oraculo": "plano critico = donde el daño (Brown-Miller) es maximo; combinacion coherente con 7.1+7.2",
+   "respuesta_impresa": "(Ej 7.3, p.7-28: procedimiento, sin numero final en el texto extraido)",
+   "tipo": "cae",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-09",
+   "fuente": "fesafe",
+   "titulo": "Ej 9.1 estadistica: 9 probetas (2.0..4.2 x1e5 ciclos), p=k/(n+1)",
+   "herramientas": "fatiga estadistica, log-normal",
+   "oraculo": "vida media 2.95e5 ciclos (log10=5.47); desv. std log s = 0.12",
+   "respuesta_impresa": "2.95e5 ciclos, s=0.12 (§9.2, Ej 9.1)",
+   "tipo": "cae",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-10",
+   "fuente": "fesafe",
+   "titulo": "Regla de Neuber en entalla con Kt (§2.9): S nominal -> hiperbola Kt^2 S e = sigma eps sobre R-O ciclico",
+   "herramientas": "fatiga e-N, Neuber",
+   "oraculo": "punto (sigma,eps) satisface sigma*eps = (Kt*S)^2/E y la curva R-O simultaneamente (residuo < 1e-6)",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-11",
+   "fuente": "fesafe",
+   "titulo": "§8.3 modelo FE elastico lineal + historial de carga unitario -> mapa nodal de vida",
+   "herramientas": "fatiga sobre FEA, superposicion",
+   "oraculo": "vida minima en el nodo de sigma max; en carga constante coincide con calculo a mano (Ej 5.x)",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-fesafe-12",
+   "fuente": "fesafe",
+   "titulo": "§4.2 conteo rainflow del historial del Ej 2.1",
+   "herramientas": "rainflow",
+   "oraculo": "3 ciclos: B-C (0.0024), E-F (0.0024), A-D (0.0055); conteo ASTM E1049 identico",
+   "respuesta_impresa": "3 ciclos (Fig. 2.33)",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-irvine-01",
+   "fuente": "irvine",
+   "titulo": "2-GDL m1=2, m2=1 kg; k1=1000, k2=2000, k3=3000 N/m",
+   "herramientas": "modal GEP, masa efectiva",
+   "oraculo": "f1=4.78 Hz, f2=12.4 Hz; meff = 2.944 + 0.056 = 3.0 kg (100% de la masa)",
+   "respuesta_impresa": "f1=4.78, f2=12.4 Hz; meff1=2.944, meff2=0.056 kg (Irvine Ec.12,15,30,32)",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-irvine-02",
+   "fuente": "irvine",
+   "titulo": "Apendice A: componente de avionica sobre aisladores (6 GDL cuerpo rigido) M=4.28 lbm, Jx=44.9, Jy=39.9, Jz=18.8 lbm in^2",
+   "herramientas": "modal 6-GDL, masa efectiva por eje",
+   "oraculo": "frecuencias 7.338/12.02/27.04/27.47/63.06/83.19 Hz; masa modal total x=y=z=0.0111 lbf s^2/in",
+   "respuesta_impresa": "7.338..83.19 Hz; total 0.0111 (App. A)",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-irvine-03",
+   "fuente": "irvine",
+   "titulo": "Tabla D-1 viga simplemente apoyada: masa efectiva por modo",
+   "herramientas": "modal viga Euler-Bernoulli",
+   "oraculo": "meff_n = 8 rho L/(n^2 pi^2) modos impares, 0 pares; 7 modos = 95% de la masa",
+   "respuesta_impresa": "8/pi^2 rho L modo 1; 95% con 7 modos (Tabla D-1)",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-irvine-04",
+   "fuente": "irvine",
+   "titulo": "Tabla D-2 viga empotrada-libre: beta1=1.87510, meff1=0.6131 rho L",
+   "herramientas": "modal viga en voladizo",
+   "oraculo": "participacion 0.7830/0.4339/0.2544/0.1818 sqrt(rho L); meff 0.6131/0.1883/0.06474/0.03306 rho L; 4 modos=90%",
+   "respuesta_impresa": "0.6131 rho L; 90% con 4 modos (Tabla D-2)",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-irvine-05",
+   "fuente": "irvine",
+   "titulo": "Tabla E-1 barra fija-libre longitudinal: meff1 = 8 rho L/pi^2",
+   "herramientas": "modal barra axial",
+   "oraculo": "meff_n = 8 rho L/((2n-1)^2 pi^2)",
+   "respuesta_impresa": "8/pi^2 (Tabla E-1)",
+   "tipo": "cae",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-irvine-06",
+   "fuente": "irvine",
+   "titulo": "Apendice F: barra de aluminio D=1 in, L=48 in, 4 elementos FE con masa consistente",
+   "herramientas": "modal FE, masa consistente, participacion",
+   "oraculo": "fn = 1029.9/3248.8/5901.6/8534.3 Hz; meff = 0.0075/0.0005/0.0001/0.0000; total 3.14 lbm = 83% de 3.77 lbm",
+   "respuesta_impresa": "1029.9 Hz ...; 83% de la masa (App. F)",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-irvine-07",
+   "fuente": "irvine",
+   "titulo": "Regla de truncamiento: modos hasta capturar >=90% de la masa efectiva total",
+   "herramientas": "modal, criterio de truncamiento",
+   "oraculo": "suma(meff)/M_total >= 0.9 decide cuantos modos guardar",
+   "respuesta_impresa": ">= 90% (Irvine p.1)",
+   "tipo": "cae",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-schwab-01",
+   "fuente": "schwab",
+   "titulo": "Ej 1 cap.1: pendulo doble por Newton-Euler + restricciones (DAE indice 3), integrador de Euler dt=0.1/0.05/0.02/0.01 s, 0.5 s",
+   "herramientas": "multicuerpo DAE, Newton-Euler, integracion",
+   "oraculo": "DRIFT: las juntas A y B se abren; |Phi| a t=0.5 s decrece con dt (~O(dt)); configuracion final distinta por dt (Fig. cap.1 p.1-12)",
+   "respuesta_impresa": "Fig. 1-12: las juntas se abren; los gaps bajan con dt",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-schwab-02",
+   "fuente": "schwab",
+   "titulo": "Ej 2 cap.2: pendulo doble en coordenadas generalizadas (phi1, phi2) por Lagrange",
+   "herramientas": "multicuerpo Lagrange",
+   "oraculo": "cero drift (restricciones cumplidas por construccion); energia total conservada < 1e-6 relativo con RK4",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-schwab-03",
+   "fuente": "schwab",
+   "titulo": "Ej 3 cap.1: cuerpo rigido (m, J) con restriccion, x=[l/2,0,0]: matriz de restricciones D y su transpuesta = fuerzas",
+   "herramientas": "multicuerpo, jacobiano de restricciones",
+   "oraculo": "columnas de D_k,i son fuerzas aplicadas; rank(Phi_q) = numero de restricciones independientes",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-schwab-04",
+   "fuente": "schwab",
+   "titulo": "Ej 1 cap.2: grua de contenedores (carro x + pendulo phi, masa puntual)",
+   "herramientas": "multicuerpo Lagrange, 2 GDL",
+   "oraculo": "EoM (vb1.6..): [m, ml cos phi; ml cos phi, ml^2][x..;phi..] + ... ; linealizado con carro fijo: omega = sqrt(g/l)",
+   "respuesta_impresa": "T = 1/2 m(x.^2 + 2 x. l phi. cos phi + l^2 phi.^2), V = -mgl cos phi (vb1.4-1.5)",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-schwab-05",
+   "fuente": "schwab",
+   "titulo": "Cap.3 TMT: mismo pendulo doble por transformacion T^T M T",
+   "herramientas": "multicuerpo TMT",
+   "oraculo": "aceleraciones identicas a Newton-Euler (cap.1) y Lagrange (cap.2) en t=0 (< 1e-9)",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-schwab-06",
+   "fuente": "schwab",
+   "titulo": "Estabilizacion de Baumgarte sobre el DAE del Ej 1 (Featherstone §2.6 la declara)",
+   "herramientas": "multicuerpo DAE + Baumgarte",
+   "oraculo": "|Phi| acotado (< 1e-6) durante 10 s; sin Baumgarte crece",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-feather-01",
+   "fuente": "feather",
+   "titulo": "RNEA (Alg. §2.5.1): dinamica inversa del pendulo doble planar",
+   "herramientas": "robotica RNEA, dinamica inversa",
+   "oraculo": "tau(q,qd,qdd) = Lagrange cerrado de Schwab Ej 2 (< 1e-9)",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-feather-02",
+   "fuente": "feather",
+   "titulo": "CRBA (§2.5.3): matriz de masa H del brazo de 3 eslabones de La Forja",
+   "herramientas": "robotica CRBA",
+   "oraculo": "H simetrica, definida positiva; cond(H) reportado por paso (alerta §2.7.5 O(n^4))",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-feather-03",
+   "fuente": "feather",
+   "titulo": "ABA (§2.5.2): dinamica directa O(n) vs qdd = H^-1(tau - C)",
+   "herramientas": "robotica ABA",
+   "oraculo": "qdd identicas (< 1e-9) para n=3 y n=7; costo lineal en n",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-feather-04",
+   "fuente": "feather",
+   "titulo": "Humanoide Fig.2.3 / Tablas 2.2-2.3: conectividad, lazos cerrados y raices de lazo",
+   "herramientas": "estructura de datos de mecanismo",
+   "oraculo": "tabla de padres lambda(i), juntas que cierran lazo y raices coinciden con Tablas 2.2-2.3",
+   "respuesta_impresa": "Tablas 2.2 y 2.3 (conectividad del humanoide)",
+   "tipo": "cae",
+   "valor": 2
+  },
+  {
+   "id": "generativo-fatiga-dinamica-feather-05",
+   "fuente": "feather",
+   "titulo": "Lazo cerrado §2.6: cicloidal print-in-place como mecanismo con restriccion de lazo",
+   "herramientas": "robotica lazo cerrado, Baumgarte",
+   "oraculo": "restriccion de lazo cumplida (< 1e-6) durante 1 vuelta; par de salida = tau_in * i (11:1)",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-feather-06",
+   "fuente": "feather",
+   "titulo": "Tabla 2.1 aritmetica espacial: transformacion X e inercia espacial con ejes paralelos",
+   "herramientas": "algebra espacial 6x6",
+   "oraculo": "I_espacial de un solido occt = [Ic + m c x c x^T, m c x; m c x^T, m 1] con Ic del kernel (masa-inercia)",
+   "respuesta_impresa": "Tabla 2.1",
+   "tipo": "cae",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-aster-01",
+   "fuente": "aster",
+   "titulo": "Test de Sturm: numero de modos bajo sigma = pivotes negativos de LDL^T(K - sigma M)",
+   "herramientas": "modal, Sturm",
+   "oraculo": "cuenta de Sturm = modos encontrados en la banda (rod FE de Irvine: 4 bajo 9000 Hz, 2 bajo 4000 Hz)",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-aster-02",
+   "fuente": "aster",
+   "titulo": "Lanczos shift-invert (TRI_DIAG) vs QZ/Jacobi sobre el GEP 4x4 del rod de Irvine",
+   "herramientas": "modal, Lanczos",
+   "oraculo": "frecuencias identicas a QZ (< 1e-6 rel) = 1029.9/3248.8/5901.6/8534.3 Hz",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-aster-03",
+   "fuente": "aster",
+   "titulo": "OPTION=BANDE partida en sub-bandas: union de los modos por sub-banda = espectro completo",
+   "herramientas": "modal, bandas",
+   "oraculo": "sin modos repetidos ni faltantes (Sturm por sub-banda)",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 2
+  },
+  {
+   "id": "generativo-fatiga-dinamica-aster-04",
+   "fuente": "aster",
+   "titulo": "Bathe & Wilson (JACOBI) iteracion de subespacio: tests de convergencia §8.2",
+   "herramientas": "modal, subespacio",
+   "oraculo": "convergencia monotona de cada eigenvalor; error < 1e-8 vs Lanczos",
+   "respuesta_impresa": "",
+   "tipo": "cae",
+   "valor": 2
+  },
+  {
+   "id": "generativo-fatiga-dinamica-mit-01",
+   "fuente": "mit",
+   "titulo": "Columna pin-pin: Pc = pi^2 EI/l^2, sigma_c = pi^2 E/beta^2, beta_c = pi sqrt(E/sigma_y)",
+   "herramientas": "pandeo lineal [K + lambda Ks], Euler",
+   "oraculo": "lambda1 * P_aplicada = Pc de Euler (< 2% con 20 elementos); sigma_c vs beta hiperbola Fig. 9.12",
+   "respuesta_impresa": "Ec. 9.68-9.70",
+   "tipo": "cae",
+   "valor": 5
+  },
+  {
+   "id": "generativo-fatiga-dinamica-mit-02",
+   "fuente": "mit",
+   "titulo": "Cociente de Rayleigh-Ritz con forma de prueba (Ec. 9.27): cota superior",
+   "herramientas": "pandeo energetico",
+   "oraculo": "Nc(phi) >= Pc exacto; con phi = sin(pi x/l) da exactamente pi^2 EI/l^2",
+   "respuesta_impresa": "Ec. 9.27: siempre cota superior",
+   "tipo": "teoria",
+   "valor": 3
+  },
+  {
+   "id": "generativo-fatiga-dinamica-mit-03",
+   "fuente": "mit",
+   "titulo": "Columna imperfecta (angulo theta0 / curvatura inicial): amplificacion 1/(1 - P/Pc)",
+   "herramientas": "pandeo no lineal, imperfeccion",
+   "oraculo": "w_max = w0/(1-P/Pc); familia de curvas Fig. 9.8; sin bifurcacion, punto limite",
+   "respuesta_impresa": "Fig. 9.8; factor 1/(1-P/Pc)",
+   "tipo": "cae",
+   "valor": 4
+  },
+  {
+   "id": "generativo-fatiga-dinamica-mit-04",
+   "fuente": "mit",
+   "titulo": "Columna de Euler discreta (barra rigida + resorte rotacional, Fig. 9.3): bifurcacion y trayectoria secundaria",
+   "herramientas": "estabilidad, energia potencial",
+   "oraculo": "delta^2 Pi cambia de signo en Pc; trayectoria secundaria Fig. 9.5",
+   "respuesta_impresa": "Fig. 9.2-9.5",
+   "tipo": "teoria",
+   "valor": 2
+  },
+  {
+   "id": "generativo-fatiga-dinamica-mit-05",
+   "fuente": "mit",
+   "titulo": "Estriccion de Considere (Ec. 9.66): sigma = dsigma/deps en el maximo de carga",
+   "herramientas": "plasticidad, inestabilidad material",
+   "oraculo": "instante de estriccion = donde la tangente de la curva sigma-eps verdadera iguala sigma",
+   "respuesta_impresa": "Ec. 9.66",
+   "tipo": "teoria",
+   "valor": 1
+  }
+ ],
+ "archivo_md": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/generativo-fatiga-dinamica.md",
+ "archivo_json": "/tmp/claude-1000/-home-ian-Orkesta-la-forja/bec93bb9-09c0-4a0d-b030-b3f226c67838/scratchpad/salida/generativo-fatiga-dinamica.json"
+}
