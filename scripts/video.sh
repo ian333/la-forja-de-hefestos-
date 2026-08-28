@@ -31,7 +31,10 @@ print(' '.join(map(str,d)) if isinstance(d,list) else d)"; }
 # un preview NUNCA sobrescriba el master 4K ya rendido.
 W="${W:-$(m formato.w)}"; H="${H:-$(m formato.h)}"; FPS=$(m formato.fps); DUR=$(m formato.dur)
 SUF=""; if [ "$W" != "$(m formato.w)" ] || [ "$H" != "$(m formato.h)" ]; then SUF="-${W}x${H}"; fi
-HTML=$(m escena.html); QUERY=$(m escena.query); HOOK=$(m escena.hook)
+HTML=$(m escena.html); QUERY="${QUERY:-$(m escena.query)}"; HOOK=$(m escena.hook)
+# QUERY se puede sobreescribir por entorno para variantes de CÁMARA de la MISMA pieza
+# (p.ej. la versión 16:9: `QUERY="m=wsilla&cam=w" W=3840 H=2160`). El sufijo -WxH ya
+# separa los frames y las salidas, así que la variante no pisa al vertical.
 FRAMES="$ROOT/$(m render.frames)$SUF"; BATCH=$(m render.batch); SHARDS="${SHARDS:-$(m render.shards)}"
 # CAPTURA (2026-08-17): cdp-jpeg por default = 3.8× por cuadro (ver render-clip.cjs).
 # Se declara por pieza en render.captura o se fuerza con CAPTURA=. La extensión de los
