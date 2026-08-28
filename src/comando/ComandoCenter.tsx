@@ -88,6 +88,15 @@ export default function ComandoCenter() {
   const [registro, setRegistro] = useState<Registro>({});
   const [tab, setTab] = useState<'publicar' | 'cad' | 'calidad' | 'prod' | 'tele' | 'temis'>('publicar');
   const temis = useTemis(tab === 'temis');   // TEMIS = el MISMO módulo del lobby de La Forja
+  // ANÁLISIS DE REELS (ian, 2026-08-28: "me dejaste fuera y solo me diste un resumen cuando ya
+  // sacaste relaciones"). El dataset y sus correlaciones son un ARTEFACTO —lo escribe
+  // scripts/analisis-reels.py— y aquí se PINTA para que ian lo ordene por la columna que quiera.
+  const [ana, setAna] = useState<any>(null);
+  const [ordAna, setOrdAna] = useState<string>('vistas');
+  useEffect(() => {
+    if (tab !== 'tele' || ana) return;
+    fetch('/comando/analisis-ig.json').then((r) => r.ok ? r.json() : null).then(setAna).catch(() => {});
+  }, [tab, ana]);
   const [inicio, setInicio] = useState<string>(() => { try { return localStorage.getItem('comando_cad_inicio') || new Date().toISOString().slice(0, 10); } catch { return new Date().toISOString().slice(0, 10); } });
   const [familia, setFamilia] = useState<string>('todas');
   const [pendiente, setPendiente] = useState<string>('');   // plataforma k para filtrar pendientes
@@ -509,6 +518,7 @@ export default function ComandoCenter() {
         {/* ═══ TELEMETRÍA ═══ */}
         {tab === 'tele' && (
           <div>
+            {ana && <AnalisisReels ana={ana} ord={ordAna} setOrd={setOrdAna} />}
             {!tele.connected ? <div style={{ color: '#8893A8' }}>Telemetría sin conectar.</div> : (
               <>
                 {/* EL EMBUDO LIMPIO manda. Los crudos incluyen NUESTRAS pruebas y bots: con
@@ -568,6 +578,72 @@ export default function ComandoCenter() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** ANÁLISIS DE REELS — el dataset COMPLETO de la cuenta con sus tasas y correlaciones.
+ *  Las tasas van POR MIL DE ALCANCE: es lo único comparable entre un video de 92k y uno de 300.
+ *  CAVEAT que se pinta en pantalla: guardados y compartidos son en parte CONSECUENCIA de la
+ *  distribución, no solo causa. Y la API NO da seguidores por video. */
+function AnalisisReels({ ana, ord, setOrd }: { ana: any; ord: string; setOrd: (s: string) => void }) {
+  const vids = [...(ana.videos || [])].sort((a: any, b: any) =>
+    ord === 'fecha' ? (a.fecha < b.fecha ? 1 : -1) : (b[ord] ?? 0) - (a[ord] ?? 0));
+  const cols: Array<[string, string]> = [['fecha', 'fecha'], ['vistas', 'vistas'], ['alcance', 'alcance'],
+    ['skip3s', 'skip 3s'], ['seg_vistos', 'seg vistos'], ['g_por_mil', 'guard/1000'], ['c_por_mil', 'comp/1000']];
+  const R = ana.correlaciones_log_vistas || {};
+  const mx = Math.max(...vids.map((v: any) => v.vistas || 0), 1);
+  return (
+    <div style={{ marginBottom: 18, border: '1px solid rgba(140,180,255,.14)', borderRadius: 10, padding: '12px 14px' }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#FDB813', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
+        Análisis de Reels · {ana.n} videos · {(ana.vistas_totales || 0).toLocaleString('es-MX')} vistas
+      </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11.5, color: '#A6B4C8', marginBottom: 10, fontFamily: "'JetBrains Mono',ui-monospace,monospace" }}>
+        <span>top 2 = <b style={{ color: '#f27a6c' }}>{ana.top2_pct}%</b> de las vistas</span>
+        <span>top 8 = <b style={{ color: '#f27a6c' }}>{ana.top8_pct}%</b></span>
+        <span>{ana.cuenta?.followers_count?.toLocaleString('es-MX')} seguidores</span>
+        <span>{ana.seguidores_por_mil_vistas} seg/1000 vistas</span>
+      </div>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 11.5, marginBottom: 4, fontFamily: "'JetBrains Mono',ui-monospace,monospace" }}>
+        <span style={{ color: '#7E90A9' }}>correlación con log(vistas):</span>
+        {Object.entries(R).map(([k, v]: any) => (
+          <span key={k} style={{ color: Math.abs(v) > 0.7 ? '#7ee0a0' : Math.abs(v) > 0.5 ? '#FDB813' : '#8893A8' }}>{k} {v > 0 ? '+' : ''}{v}</span>
+        ))}
+      </div>
+      <div style={{ fontSize: 11.5, color: '#A6B4C8', marginBottom: 10, fontFamily: "'JetBrains Mono',ui-monospace,monospace" }}>
+        R² skip solo <b>{ana.modelo_skip?.r2}</b> · R² skip+guardados+compartidos <b style={{ color: '#7ee0a0' }}>{ana.modelo_3?.r2}</b>
+        {' '}(compartir pesa {ana.modelo_3?.b_compartidos && ana.modelo_3?.b_guardados ? (ana.modelo_3.b_compartidos / ana.modelo_3.b_guardados).toFixed(1) : '?'}× lo que guardar)
+      </div>
+      <div style={{ maxHeight: 420, overflow: 'auto', border: '1px solid rgba(140,180,255,.08)', borderRadius: 8 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, fontFamily: "'JetBrains Mono',ui-monospace,monospace" }}>
+          <thead><tr>
+            {cols.map(([k, l]) => (
+              <th key={k} onClick={() => setOrd(k)} title="ordenar"
+                  style={{ position: 'sticky', top: 0, background: '#16202F', color: ord === k ? '#FDB813' : '#7E90A9', textAlign: 'right',
+                           padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 700 }}>{l}</th>
+            ))}
+            <th style={{ position: 'sticky', top: 0, background: '#16202F', color: '#7E90A9', textAlign: 'left', padding: '6px 8px' }}>título</th>
+          </tr></thead>
+          <tbody>
+            {vids.map((v: any) => (
+              <tr key={v.id} style={{ borderTop: '1px solid rgba(140,180,255,.06)' }}>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: '#7E90A9' }}>{v.fecha.slice(5)}</td>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: '#DCE7F5', fontWeight: 700,
+                             background: `linear-gradient(90deg, rgba(253,184,19,${0.05 + 0.28 * (v.vistas / mx)}) 100%, transparent 0)` }}>
+                  {v.vistas.toLocaleString('es-MX')}</td>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: '#8893A8' }}>{v.alcance.toLocaleString('es-MX')}</td>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: v.skip3s < 42 ? '#7ee0a0' : v.skip3s > 55 ? '#f27a6c' : '#FDB813' }}>{v.skip3s}</td>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: v.seg_vistos > 25 ? '#7ee0a0' : '#A6B4C8' }}>{v.seg_vistos}</td>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: '#A6B4C8' }}>{v.g_por_mil}</td>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: v.c_por_mil >= 15 ? '#7ee0a0' : v.c_por_mil === 0 ? '#f27a6c' : '#A6B4C8', fontWeight: 700 }}>{v.c_por_mil}</td>
+                <td style={{ padding: '4px 8px', color: '#A6B4C8', maxWidth: 380, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <a href={v.url} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{v.titulo}</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ fontSize: 10.5, color: '#7E90A9', marginTop: 8, lineHeight: 1.5 }}>{ana.nota}</div>
     </div>
   );
 }
