@@ -39,7 +39,17 @@ def credenciales():
 
 def subir(vid, privacidad, programar, con_captions, forzar):
     p, d = manifiesto(vid); c = copy_de(d); gate_autorizado(d, 'yt', forzar)
-    archivo = archivo_master(d, 'h264')
+    # ARCHIVO= sobreescribe qué se sube. Sirve para (a) el master HEVC 10-bit, que a YouTube
+    # le conviene más que el h264 —YouTube re-encodea a VP9/AV1 y un origen de 10 bits reduce
+    # el banding en degradados oscuros, que es TODO nuestro contenido—, y (b) las variantes de
+    # formato (16:9) que viven con sufijo -WxH. CLAVE= elige bajo qué llave se registra en el
+    # manifiesto, para que 9:16 y 16:9 no se pisen (`yt` y `yt16x9`).
+    archivo = os.environ.get('ARCHIVO') or archivo_master(d, 'h264')
+    if not os.path.isabs(archivo):
+        archivo = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), archivo)
+    if not os.path.exists(archivo): sys.exit(f'✗ no existe {archivo}')
+    clave = os.environ.get('CLAVE', 'yt')
+    print(f'   archivo: {os.path.basename(archivo)} · registra en publicar.subidas.{clave}')
     gate_calidad(archivo)   # LEY ABSOLUTA: solo 4K / bitrate altísimo
     yt = build('youtube', 'v3', credentials=credenciales())
     tags = [h.lstrip('#') for h in c.get('hashtags', [])][:30]
@@ -72,7 +82,7 @@ def subir(vid, privacidad, programar, con_captions, forzar):
                                            media_body=MediaFileUpload(srt, mimetype='application/octet-stream')).execute()
                 info['captions'] = cap['id']; print(f'✓ captions (es) subidos desde segs.json: {cap["id"]}')
             except HttpError as e: print(f'   ⚠ captions fallaron: {e}')
-    registrar(p, d, 'yt', info)
+    registrar(p, d, clave, info)
 
 if __name__ == '__main__':
     a = sys.argv[1:]
