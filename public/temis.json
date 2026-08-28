@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 18:48",
+ "generado": "2026-08-28 19:00",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -147,11 +147,11 @@
       "titulo": "Bethune (SolidWorks 2023) leído: catálogo + supertickets",
       "herramientas": "lector×4 sintetizador",
       "oraculo": "docs/forja-research/libros/bethune.md + .json con ≥40 ejercicios y ≥3 supertickets",
-      "estado": "rojo",
-      "checks": "ERROR falta md o json",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 230 (json 230 · tabla md 230) ≥ 40: OK · supertickets 21 ≥ 3: OK · features 46 · md 864 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "El curso completo como pruebas: del croquis acotado al examen que se califica solo"
      },
      {
       "id": "lib-kazmer",
@@ -169,11 +169,11 @@
       "titulo": "Shigley (Mechanical Engineering Design 2024) leído",
       "herramientas": "lector×12 sintetizador",
       "oraculo": "libros/shigley.md + .json con ≥80 ejercicios y ≥5 supertickets",
-      "estado": "rojo",
-      "checks": "ERROR falta md o json",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 217 (json 217 · tabla md 217) ≥ 80: OK · supertickets 23 ≥ 5: OK · features 25 · md 988 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Diseño de máquinas como servicio: el proceso de decisión de Shigley dentro de La Forja"
      },
      {
       "id": "lib-anderson",
@@ -191,11 +191,11 @@
       "titulo": "Bertin & Cummings (Aerodynamics for Engineers) leído",
       "herramientas": "lector×8 sintetizador",
       "oraculo": "libros/bertin.md + .json con ≥40 ejercicios y ≥3 supertickets",
-      "estado": "rojo",
-      "checks": "ERROR falta md o json",
+      "estado": "verde",
+      "checks": "json válido · ejercicios 180 (json 180 · tabla md 180) ≥ 40: OK · supertickets 24 ≥ 3: OK · features 27 · md 726 líneas",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "Bertin & Cummings — Aerodynamics for Engineers, 6e (2022) — pliego de supertickets"
      },
      {
       "id": "lib-raymer",
@@ -309,8 +309,8 @@
      }
     ],
     "progreso": {
-     "verdes": 12,
-     "rojos": 3,
+     "verdes": 15,
+     "rojos": 0,
      "total": 15
     },
     "objetivo": "ian (2026-08-27): «todas las empresas allá afuera tienen miles de ingenieros y ya tienen tu misma capacidad; ellos nos llevan ventaja en PLANEACIÓN». Quiere que con los libros descargados se construya la nueva suite de diseño en el navegad…",
