@@ -77,7 +77,24 @@
         "#gaia"
       ],
       "nota": "El copy se escribe en el paso del GUION, no al final (canon)."
-    }
+    },
+    "autorizado": "2026-08-27 yt,ig — dicho por ian en sesión: \"me mama, está bien verga, súbelo a youtube y a instagram, estrenemos\"",
+    "subidas": {
+      "yt": {
+        "id": "9QpQJ5mcuYg",
+        "url": "https://youtu.be/9QpQJ5mcuYg",
+        "privacidad": "private",
+        "publishAt": "",
+        "captions": "AUieDaY0nIEA7znoUEMsouvnSQQHhihvSI5Cnq0-brd5iC7yRspfi9B7ag",
+        "fecha": "2026-08-28T10:57"
+      },
+      "ig": {
+        "id": "18147040033550977",
+        "url": "https://www.instagram.com/reel/Dcl3S1Ugnfu/",
+        "fecha": "2026-08-28T11:16"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-la-silla.mp4?v=3d548c8df3"
   },
   "guion": {
     "archivo": "scripts/guiones/silla.txt",
