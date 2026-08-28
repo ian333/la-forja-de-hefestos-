@@ -2445,6 +2445,16 @@ const WSILLA_CAPAS: CapasSpec = {
 const WSILLA_DURATION = 50;
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
+// ?zoom= — ACERCA la cámara sin tocar las tomas: escala la distancia al TARGET. Nació del 16:9
+// (2026-08-28): la FOV de three.js es VERTICAL, así que al pasar de 9:16 a 16:9 el cuadro pierde
+// altura, el sujeto queda del mismo tamaño angular y sobra negro a los lados — el primer 16:9 de
+// LA SILLA dio fill 0.252 contra 0.434 del vertical. Escribir una lista de tomas apretada POR
+// PIEZA no escala (hay 4 piezas y vienen más); un multiplicador de radio sirve para todas.
+// Default 1 = todas las piezas verticales quedan BIT-IDÉNTICAS (renderizador congelado).
+const CAM_ZOOM = (() => {
+  const v = typeof location !== 'undefined' ? parseFloat(new URLSearchParams(location.search).get('zoom') || '') : NaN;
+  return Number.isFinite(v) && v > 0.05 && v <= 3 ? v : 1;
+})();
 // Las tomas salen del REGISTRO (datos), no de constantes por video. Variante nueva =
 // otra entrada en CAMERA_SHOTS + ?cam=<x>, sin tocar este componente. Ver docs/CANON-VIDEO.md.
 // ?cam=<x> → CAMERA_SHOTS['wpair-<x>'], sin tocar este archivo por cada variante (canon Regla #0.5).
@@ -2455,7 +2465,12 @@ function WaterPairCamera({ time, R, shots, ex, pts }: { time: number; R: number;
   useEffect(() => {
     // R (bohr) = separación viva; nucX = R/2 (el O) para el dive. Vertical (reel) → roll intacto.
     const asp = (camera as THREE.PerspectiveCamera).aspect;
-    const { pos, fov, target, roll } = playShots(shots, time, { ex, nucX: R / 2, bondR: R, t: time, pts, aspect: asp });
+    const { pos: pos0, fov, target, roll } = playShots(shots, time, { ex, nucX: R / 2, bondR: R, t: time, pts, aspect: asp });
+    // ?zoom= escala la distancia al target (1 = idéntico). Ver CAM_ZOOM.
+    const pos: Vec3 = CAM_ZOOM === 1 ? pos0
+      : [target[0] + (pos0[0] - target[0]) * CAM_ZOOM,
+         target[1] + (pos0[1] - target[1]) * CAM_ZOOM,
+         target[2] + (pos0[2] - target[2]) * CAM_ZOOM];
     camera.position.set(pos[0], pos[1], pos[2]);
     const fwd = new THREE.Vector3(target[0] - pos[0], target[1] - pos[1], target[2] - pos[2]).normalize();
     const up0 = new THREE.Vector3(0, 1, 0); if (Math.abs(fwd.dot(up0)) > 0.94) up0.set(0, 0, 1);

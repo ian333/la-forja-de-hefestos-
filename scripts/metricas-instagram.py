@@ -23,8 +23,14 @@ def main(ids):
         d = json.load(open(mp, encoding='utf-8')); vid = d.get('id')
         if ids and vid not in ids: continue
         ig = ((d.get('publicar') or {}).get('subidas') or {}).get('ig')
-        if not ig: continue
+        # Un Reel BORRADO deja `{borrado, id_borrado}` sin `id` — pedirle insights truena con
+        # KeyError y tumba TODA la corrida (pasó con LA SAL el 2026-08-28). Sin id, se salta.
+        if not ig or not ig.get('id'):
+            if ig: print(f'{vid}: (sin id — {ig.get("borrado", "sin registrar")[:60]})')
+            continue
         r = requests.get(f'https://graph.instagram.com/{V}/{ig["id"]}/insights', params={'metric': MET, 'access_token': tk}).json()
+        if 'error' in r:
+            print(f'{vid}: ✗ insights: {str(r["error"].get("message"))[:90]}'); continue
         m = {x['name']: (x.get('values') or [{}])[0].get('value') for x in r.get('data', [])}
         com = requests.get(f'https://graph.instagram.com/{V}/{ig["id"]}/comments', params={'fields': 'text,like_count,timestamp', 'limit': 100, 'access_token': tk}).json().get('data', [])
         json.dump(com, open(os.path.join(ROOT, 'dist-video', 'comentarios', f'{vid}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
