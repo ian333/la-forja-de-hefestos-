@@ -46,12 +46,14 @@ export interface PiezaEnRevision {
   annualVolume?: number;
 }
 
-export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo }: {
+export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, foco }: {
   pieza: PiezaEnRevision | null;
   /** el lote DEGRADADO: sigue existiendo para regresiones, ya no es la puerta */
   onAbrirLote?: () => void;
   /** T3: llevar la cámara al hallazgo. Todavía no hay anclas — se declara el hueco. */
   onVerHallazgo?: (c: Criterio) => void;
+  /** U3 · EL FOCO: el plano encima de la pieza. Arranca apagado (regla de Detroit). */
+  foco?: { on: boolean; toggle: () => void; nMedidas: number; noMedido: string[] };
 }) {
   const [rev, setRev] = useState<RevisionModelo | null>(null);
   const [estado, setEstado] = useState<string>('');
@@ -115,6 +117,29 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo }:
         )}
         {rev && <span style={{ opacity: 0.6, fontSize: 10.5 }}>{rev.pkg.recomendacion.arch} × {rev.pkg.recomendacion.nCav} cav</span>}
       </div>
+
+      {/* EL FOCO — el interruptor vive junto a la pieza, que es donde estás mirando.
+          Encendido, la pieza se enfría a holograma y sus medidas flotan encima. */}
+      {foco && (
+        <div style={{ marginBottom: 8 }}>
+          <button data-testid="btn-foco" onClick={foco.toggle}
+            title="EL FOCO — las medidas de la pieza, encima de la pieza (como tener el plano puesto)"
+            style={{
+              width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: 7, padding: '7px 10px',
+              font: '700 11.5px ui-monospace,Menlo,monospace', letterSpacing: 0.4,
+              background: foco.on ? 'rgba(95,212,245,0.16)' : 'transparent',
+              border: `1px solid ${foco.on ? '#5fd4f5' : '#2c3a50'}`,
+              color: foco.on ? '#bfeeff' : '#8fa3ba',
+            }}>
+            {foco.on ? '◉' : '○'} EL FOCO <span style={{ opacity: 0.65, fontWeight: 400 }}>· las medidas encima {foco.on ? `(${foco.nMedidas})` : ''}</span>
+          </button>
+          {foco.on && foco.noMedido.length > 0 && (
+            <div data-testid="foco-no-medido" style={{ fontSize: 10, opacity: 0.55, marginTop: 4, lineHeight: 1.45 }}>
+              El Foco no puede medir: {foco.noMedido.join(' · ')}
+            </div>
+          )}
+        </div>
+      )}
 
       {estado && <div data-testid="rp-estado" style={{ opacity: 0.7, padding: '6px 0' }}>⏳ {estado}</div>}
 

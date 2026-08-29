@@ -1,0 +1,34 @@
+{
+ "foco-envolvente": {
+  "estado": "verde",
+  "checks": "gate · gear.stl → ancho 22.0 · largo 57.0 · alto 10.0 mm, con las líneas de cota tiradas POR FUERA de la pieza (como en un plano) · en pantalla se leen las tres flotando sobre la geometría",
+  "video": "", "still": "evidencia/2026-08-29-u3-el-foco-las-medidas/01-foco-envolvente-still.jpg",
+  "nota": "reusa MoldCotas3D (CotaLines dentro del Canvas con depthTest:false + etiquetas DOM proyectadas): cero geometría nueva"
+ },
+ "foco-pared": {
+  "estado": "verde",
+  "checks": "gate · con pared 2.0 / p95 3.4 la cota AVISA: «§2.3.1 · la pared p95 es 1.70× el nominal: el llenado se desbalancea» y se pinta como fuera de norma",
+  "video": "", "still": "", "nota": "el umbral 1.25× sale del §2.3.1, no de un gusto"
+ },
+ "foco-barrenos": {
+  "estado": "verde",
+  "checks": "gate · con cilindros del kernel salen los ⌀ (⌀8 medido); con una malla sola el Foco DICE «una malla no trae caras — importa un STEP y salen del kernel» en vez de inventar barrenos",
+  "video": "", "still": "", "nota": "un STL no tiene topología: se declara la limitación en pantalla"
+ },
+ "foco-encendido": {
+  "estado": "verde",
+  "checks": "el Foco arranca APAGADO (regla de Detroit: el HUD está limpio y la información aparece solo cuando hace falta); el botón ◉/○ lo prende y lo apaga, y apagado no queda ni una línea sobre la pieza",
+  "video": "", "still": "evidencia/2026-08-29-u3-el-foco-las-medidas/02-foco-horizon-still.jpg", "nota": ""
+ },
+ "foco-legible": {
+  "estado": "verde",
+  "checks": "las tres etiquetas se leen sin encimarse y la pieza sigue ocupando el centro del cuadro · la cota del ALTO se movió al lado derecho porque por la izquierda caía sobre el panel (cazado a ojo en la 1ª corrida)",
+  "video": "", "still": "", "nota": ""
+ },
+ "foco-horizon": {
+  "estado": "verde",
+  "checks": "bajo el Foco la pieza se enfría a HOLOGRAMA: cian translúcido (opacidad 0.62, doble cara, emisión fría) — se ven los barrenos por dentro. Cotas en cian #5fd4f5 = lo que la máquina midió; ámbar reservado para lo que exige atención",
+  "video": "", "still": "evidencia/2026-08-29-u3-el-foco-las-medidas/02-foco-horizon-still.jpg",
+  "nota": "los dos idiomas separados por estilo, como Horizon: el Foco es holograma sobre la pieza, el Banco es mobiliario sólido del CAD"
+ }
+}

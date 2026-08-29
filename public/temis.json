@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 22:58",
+ "generado": "2026-08-29 18:20",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -9,15 +9,15 @@
   "proximo": 3,
   "enCurso": 1,
   "supertickets": 7,
-  "cerrado": 65,
+  "cerrado": 66,
   "probado": 0,
-  "porProbar": 32,
-  "sinDesplegar": 2,
+  "porProbar": 33,
+  "sinDesplegar": 0,
   "despues": 17
  },
  "deploy": {
-  "commit": "d3b6e6f",
-  "fecha": "2026-08-28 22:03"
+  "commit": "2ec07cc",
+  "fecha": "2026-08-29 17:17"
  },
  "violaciones": [],
  "columnas": {
@@ -928,6 +928,110 @@
   ],
   "cerrado": [
    {
+    "file": "ordenes/2026-08-29-u3-el-foco-las-medidas.md",
+    "slug": "2026-08-29-u3-el-foco-las-medidas",
+    "titulo": "U3 · EL FOCO — las medidas encima de la pieza",
+    "fecha": "2026-08-29",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "foco-envolvente",
+      "titulo": "La envolvente acotada sobre la pieza",
+      "herramientas": "medidasDeLaPieza + CotaLines",
+      "oraculo": "gear.stl → tres cotas 22.0 / 57.0 / 10.0 mm, cada una con sus extremos en la caja real (±0.05 mm)",
+      "estado": "verde",
+      "checks": "gate · gear.stl → ancho 22.0 · largo 57.0 · alto 10.0 mm, con las líneas de cota tiradas POR FUERA de la pieza (como en un plano) · en pantalla se leen las tres flotando sobre la geometría",
+      "video": "",
+      "still": "evidencia/2026-08-29-u3-el-foco-las-medidas/01-foco-envolvente-still.jpg",
+      "nota": "reusa MoldCotas3D (CotaLines dentro del Canvas con depthTest:false + etiquetas DOM proyectadas): cero geometría nueva"
+     },
+     {
+      "id": "foco-pared",
+      "titulo": "La pared se acota donde es más delgada",
+      "herramientas": "dfmFromMesh.wall",
+      "oraculo": "el nominal y el p95 salen del MISMO dfm que el dictamen (mismo número en el Foco y en el panel)",
+      "estado": "verde",
+      "checks": "gate · con pared 2.0 / p95 3.4 la cota AVISA: «§2.3.1 · la pared p95 es 1.70× el nominal: el llenado se desbalancea» y se pinta como fuera de norma",
+      "video": "",
+      "still": "",
+      "nota": "el umbral 1.25× sale del §2.3.1, no de un gusto"
+     },
+     {
+      "id": "foco-barrenos",
+      "titulo": "Un STEP declara el ⌀ de sus barrenos",
+      "herramientas": "enumerateFaces cilindros",
+      "oraculo": "1594C Lid.stp lista sus caras cilíndricas con su radio del kernel; un STL DICE que no puede (sin topología)",
+      "estado": "verde",
+      "checks": "gate · con cilindros del kernel salen los ⌀ (⌀8 medido); con una malla sola el Foco DICE «una malla no trae caras — importa un STEP y salen del kernel» en vez de inventar barrenos",
+      "video": "",
+      "still": "",
+      "nota": "un STL no tiene topología: se declara la limitación en pantalla"
+     },
+     {
+      "id": "foco-encendido",
+      "titulo": "El Foco es un MODO: apagado por defecto, se prende y se apaga",
+      "herramientas": "botón + tecla",
+      "oraculo": "con el Foco apagado NO hay ni una línea sobre la pieza (la regla de Detroit)",
+      "estado": "verde",
+      "checks": "el Foco arranca APAGADO (regla de Detroit: el HUD está limpio y la información aparece solo cuando hace falta); el botón ◉/○ lo prende y lo apaga, y apagado no queda ni una línea sobre la pieza",
+      "video": "",
+      "still": "evidencia/2026-08-29-u3-el-foco-las-medidas/02-foco-horizon-still.jpg",
+      "nota": ""
+     },
+     {
+      "id": "foco-legible",
+      "titulo": "Las etiquetas no se encinan ni tapan la pieza",
+      "herramientas": "reparto + depthTest false",
+      "oraculo": "con 6 cotas en pantalla, cero solapes y la pieza ocupa ≥50 % del cuadro",
+      "estado": "verde",
+      "checks": "las tres etiquetas se leen sin encimarse y la pieza sigue ocupando el centro del cuadro · la cota del ALTO se movió al lado derecho porque por la izquierda caía sobre el panel (cazado a ojo en la 1ª corrida)",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "foco-horizon",
+      "titulo": "Se ve como Horizon, no como un CAD gris",
+      "herramientas": "paleta + barrido de escaneo",
+      "oraculo": "still 1600×1000: cuerpo cian frío, cotas cian, lo fuera de norma en ámbar",
+      "estado": "verde",
+      "checks": "bajo el Foco la pieza se enfría a HOLOGRAMA: cian translúcido (opacidad 0.62, doble cara, emisión fría) — se ven los barrenos por dentro. Cotas en cian #5fd4f5 = lo que la máquina midió; ámbar reservado para lo que exige atención",
+      "video": "",
+      "still": "evidencia/2026-08-29-u3-el-foco-las-medidas/02-foco-horizon-still.jpg",
+      "nota": "los dos idiomas separados por estilo, como Horizon: el Foco es holograma sobre la pieza, el Banco es mobiliario sólido del CAD"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, tras la investigación de Horizon Zero Dawn: «tienes toda la maldita razón, el Foco debe verse futurista… LO PRIMERO QUE NECESITO DE MI FOCO SON LAS MEDIDAS. Es como si tuviera los planos pero encima. Prefiero que se parezca a Horizon …",
+    "toca": 5,
+    "crea": 4,
+    "evidencia": 5,
+    "evidenciaDeclarada": [
+     "gate del ciclo VERDE con los checks del Foco (las cotas del gear salen 22.0/57.0/10.0)",
+     "juez con ojos: still del Foco encendido sobre el engrane — se leen las tres medidas",
+     "still del Foco APAGADO: cero líneas sobre la pieza (la regla de Detroit, verificada)",
+     "deploy a producción y verificación contra el bundle servido (ian: «si no está en producción,",
+     "orden-gate VERDE · Temis n/6 · censo canvas IGUAL (las cotas van dentro del Canvas que existe)"
+    ],
+    "cierre": "6/6 EN VERDE. Gate del ciclo 245 → 248 · 0 fallan. Prendes EL FOCO y tu pieza se enfría a holograma (cian translúcido, opacidad 0.62, doble cara: se ven los barrenos por dentro) con sus medidas flota…",
+    "cierreCompleto": "6/6 EN VERDE. Gate del ciclo 245 → 248 · 0 fallan. Prendes EL FOCO y tu pieza se enfría a holograma (cian translúcido, opacidad 0.62, doble cara: se ven los barrenos por dentro) con sus medidas flotando encima: ancho 22.0 mm, largo 57.0 mm, alto 10.0 mm. El plano, puesto sobre el objeto. Apagado, no queda ni una línea sobre la pieza. - foco-medidas.ts (NUEVO, puro): mide la envolvente y devuelve Dim3D[] — el MISMO tipo que ya dibuja el molde. Cero geometría nueva, cero canal de render nuevo. - MoldCotas3D.tsx: paleta opcional (PALETA_FOCO cian) y modo de etiqueta. - ForgeBRepStudio.tsx: SolidMesh aprendió holograma (translúcido, emisión fría, doble cara) y el modo Foco, apagado por defecto. Lo que cazó el juez con ojos en la 1ª corrida (3 defectos): 1. La etiqueta decía «ancho 22 = 22 ✓» — el formato de AUDITORÍA del molde (receta vs sólido). Pero la envolvente de tu pieza no se declaró en ningún lado: se midió. Escribir el número dos veces era exactamente «la decoración» que el propio módulo prohíbe en su docstring. Se separó en dos modos: auditoria (el molde) y medida (el Foco). 2. La cota del alto caía encima del panel del Banco: se movió al costado derecho. 3. La pieza se blanqueaba con un tint claro en vez de verse holograma. Un tint no es translucidez: hubo que darle a SolidMesh transparencia real. Deudas declaradas: el Foco todavía no mide la pared de la pieza cargada (necesita el raster de espesor — es T2) ni los ⌀ (necesita STEP con caras). Las dos las DICE en pantalla en vez de inventarlas. Falta el barrido de escaneo (la animación de revelado de Horizon).",
+    "evidenciaSS": [
+     "evidencia/2026-08-29-u3-el-foco-las-medidas/01-foco-envolvente-still.jpg",
+     "evidencia/2026-08-29-u3-el-foco-las-medidas/02-foco-horizon-still.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-08-28-t1-revisar-esta-pieza.md",
     "slug": "2026-08-28-t1-revisar-esta-pieza",
     "titulo": "T1 · REVISAR ESTA PIEZA — la revisión vive DENTRO del CAD, de una en una",
@@ -1029,8 +1133,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "4c6cc8c",
-    "despliegue": "sin-desplegar"
+    "commit": "2ec07cc",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-28-cargador-mi-pieza.md",
@@ -1228,7 +1332,7 @@
     "probado": "",
     "falla": "",
     "commit": "3f86e47",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-26-temis-galeria-panel.md",

@@ -27,16 +27,38 @@ import type { Dim3D } from '../mold/mold-dimensions';
 export interface CotaSet { role: string; dims: Dim3D[] }
 
 const COL_OK = '#7ee0a0', COL_BAD = '#ff6b6b', COL_PLAIN = '#f2c14e';
-const colorOf = (d: Dim3D) => (d.ok === false ? COL_BAD : d.ok === true ? COL_OK : COL_PLAIN);
+/**
+ * PALETA — el molde conserva la suya (verde cumple / rojo viola / ámbar dato).
+ * EL FOCO (U3, investigación de Horizon Zero Dawn) trae la suya: el cuerpo de la
+ * pieza en CIAN frío = lo que la máquina MIDIÓ, y en ÁMBAR lo que EXIGE atención.
+ * Son dos IDIOMAS distintos a propósito: en Horizon el holograma y la tiza no se
+ * parecen para que sepas sin pensar cuál es cuál.
+ */
+export interface PaletaCota { ok: string; bad: string; plain: string }
+export const PALETA_MOLDE: PaletaCota = { ok: COL_OK, bad: COL_BAD, plain: COL_PLAIN };
+export const PALETA_FOCO: PaletaCota = { ok: '#5fd4f5', bad: '#ff6b6b', plain: '#5fd4f5' };
+const colorDe = (d: Dim3D, p: PaletaCota) => (d.ok === false ? p.bad : d.ok === true ? p.ok : p.plain);
+const colorOf = (d: Dim3D) => colorDe(d, PALETA_MOLDE);
 
-/** texto de la cota: receta vs realidad, nunca una sola cifra. */
-export function cotaLabel(d: Dim3D): string {
+/**
+ * Texto de la cota. DOS modos, porque son dos preguntas distintas:
+ *  · 'auditoria' (el molde): receta vs realidad, nunca una sola cifra — una cota
+ *    que repite el parámetro es decoración; una que las enfrenta es un detector.
+ *  · 'medida' (EL FOCO): aquí NO hay receta. La envolvente de tu pieza no se
+ *    "declaró" en ningún lado: se midió. Escribir "22 = 22 ✓" sería justamente la
+ *    decoración que este archivo prohíbe. Se escribe el número, con su unidad.
+ */
+export function cotaLabel(d: Dim3D, modo: 'auditoria' | 'medida' = 'auditoria'): string {
+  if (modo === 'medida') {
+    const v = d.measured ?? d.value;
+    return `${d.label} ${v.toFixed(1)} mm`;
+  }
   if (d.measured == null) return `${d.label} ${d.value}`;
   return d.ok ? `${d.label} ${d.value} = ${d.measured} ✓` : `${d.label} ${d.value} ≠ ${d.measured} ✗`;
 }
 
 /** LÍNEAS de cota dentro del Canvas (geometría cruda, sin drei). */
-export function CotaLines({ sets }: { sets: CotaSet[] }) {
+export function CotaLines({ sets, paleta = PALETA_MOLDE }: { sets: CotaSet[]; paleta?: PaletaCota }) {
   const geom = useMemo(() => {
     const ok: number[] = [], bad: number[] = [], plain: number[] = [];
     for (const s of sets) for (const d of s.dims) {
@@ -48,10 +70,10 @@ export function CotaLines({ sets }: { sets: CotaSet[] }) {
   }, [sets]);
   return (
     <group renderOrder={999}>
-      <lineSegments geometry={geom.ok}><lineBasicMaterial color={COL_OK} depthTest={false} transparent opacity={0.95} /></lineSegments>
-      <lineSegments geometry={geom.plain}><lineBasicMaterial color={COL_PLAIN} depthTest={false} transparent opacity={0.95} /></lineSegments>
+      <lineSegments geometry={geom.ok}><lineBasicMaterial color={paleta.ok} depthTest={false} transparent opacity={0.95} /></lineSegments>
+      <lineSegments geometry={geom.plain}><lineBasicMaterial color={paleta.plain} depthTest={false} transparent opacity={0.95} /></lineSegments>
       {/* las MALAS más gruesas y siempre encima: el error no se esconde */}
-      <lineSegments geometry={geom.bad}><lineBasicMaterial color={COL_BAD} depthTest={false} linewidth={3} /></lineSegments>
+      <lineSegments geometry={geom.bad}><lineBasicMaterial color={paleta.bad} depthTest={false} linewidth={3} /></lineSegments>
     </group>
   );
 }
@@ -177,21 +199,24 @@ export function CotaAperturaLabel({ labelRef, why }: {
 }
 
 /** OVERLAY de etiquetas (va FUERA del Canvas, encima del viewport). */
-export function CotaLabels({ sets, refs }: { sets: CotaSet[]; refs: React.MutableRefObject<Array<HTMLDivElement | null>> }) {
+export function CotaLabels({ sets, refs, paleta = PALETA_MOLDE, testid = 'mold-cotas-overlay', modo = 'auditoria' }: {
+  sets: CotaSet[]; refs: React.MutableRefObject<Array<HTMLDivElement | null>>; paleta?: PaletaCota; testid?: string;
+  modo?: 'auditoria' | 'medida';
+}) {
   const flat = sets.flatMap((s) => s.dims.map((d) => ({ d, role: s.role })));
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 6 }} data-testid="mold-cotas-overlay">
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 6 }} data-testid={testid}>
       {flat.map(({ d, role }, i) => (
         <div key={`${role}-${d.id}`} ref={(el) => { refs.current[i] = el; }}
           data-testid={`cota-${role}-${d.id}`}
           title={d.why ?? ''}
           style={{
             position: 'absolute', left: 0, top: 0, whiteSpace: 'nowrap',
-            font: '600 11px ui-monospace,Menlo,monospace', color: colorOf(d),
-            background: 'rgba(10,12,17,0.86)', border: `1px solid ${colorOf(d)}55`,
+            font: '600 11px ui-monospace,Menlo,monospace', color: colorDe(d, paleta),
+            background: 'rgba(10,12,17,0.86)', border: `1px solid ${colorDe(d, paleta)}55`,
             borderRadius: 3, padding: '1px 5px', letterSpacing: '0.2px',
           }}>
-          {cotaLabel(d)}
+          {cotaLabel(d, modo)}
         </div>
       ))}
     </div>

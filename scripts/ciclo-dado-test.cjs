@@ -1403,6 +1403,38 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `score ${rGear.fila.score} · ✗${viola} ⚠${crit.filter((c) => c.estado === 'ADVIERTE').length} ✓${crit.filter((c) => c.estado === 'CUMPLE').length} · todos con § y detalle`);
   }
 
+  // ══ U3 · EL FOCO — las medidas encima de la pieza ══
+  console.log('── U3 · EL FOCO (las medidas de TU pieza)');
+  {
+    const { medidasDeLaPieza } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'foco-medidas.ts'));
+    const { parseSTL } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'stl.ts'));
+    const bg = readFileSync(path.resolve(__dirname, '..', 'test-parts', 'gear.stl'));
+    const gear = parseSTL(bg.buffer.slice(bg.byteOffset, bg.byteOffset + bg.byteLength));
+
+    const m = medidasDeLaPieza(gear);
+    const por = (id) => m.dims.find((d) => d.id === id);
+    const fuera = m.dims.filter((d) => d.kind === 'envolvente').every((d) => {
+      // la línea de cota se saca de la pieza: al menos un extremo cae FUERA del bbox
+      const dentro = (p) => p[0] >= m.bbox.min[0] && p[0] <= m.bbox.max[0] && p[1] >= m.bbox.min[1] && p[1] <= m.bbox.max[1];
+      return !(dentro(d.a) && dentro(d.b));
+    });
+    check('FOCO · la envolvente acotada sale con las medidas REALES de la pieza',
+      por('foco-x').value === 22 && por('foco-y').value === 57 && por('foco-z').value === 10 && fuera,
+      `ancho ${por('foco-x').value} · largo ${por('foco-y').value} · alto ${por('foco-z').value} mm · líneas por fuera de la pieza`);
+
+    const conPared = medidasDeLaPieza(gear, { wallNominalMm: 2.0, wallP95Mm: 3.4 });
+    const pared = conPared.dims.find((d) => d.id === 'foco-pared');
+    check('FOCO · la pared se acota y AVISA cuando p95/nominal pasa 1.25 (§2.3.1)',
+      pared && pared.ok === false && /1\.70×/.test(pared.why) && conPared.noMedido.every((n) => !/pared/.test(n)),
+      `pared ${pared && pared.value} → p95 ${pared && pared.measured} · ${pared && pared.why.slice(0, 60)}`);
+
+    const conBarrenos = medidasDeLaPieza(gear, { cilindros: [{ radioMm: 4, centro: [0, 28, 5] }] });
+    check('FOCO · los ⌀ salen del kernel; con una malla se DICE que no se puede (no se inventa)',
+      conBarrenos.dims.some((d) => d.kind === 'barreno' && d.value === 8)
+      && m.noMedido.some((n) => /barrenos/.test(n) && /STEP/.test(n)),
+      `con cilindros: ⌀8 · sin ellos: "${m.noMedido.find((n) => /barrenos/.test(n)).slice(0, 70)}…"`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

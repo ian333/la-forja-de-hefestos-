@@ -49,7 +49,8 @@ import type { MeshLike } from '../mold/flowlen-mesh';
 import { fastenerPlan } from '../mold/mold-fasteners';
 import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
-import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
+import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, PALETA_FOCO, type CotaSet } from './MoldCotas3D';
+import { medidasDeLaPieza } from '../mold/foco-medidas';   // U3 · EL FOCO: el plano, encima de la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
@@ -2481,7 +2482,7 @@ function FeaDeformMesh({ mesh, colors, disp, dispMax, clip }: {
 // ──────────────────────────────────────────────────────────────────
 function SolidMesh({
   mesh, faded, matKey, tint, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
-  feaColors, overhangColors, clip,
+  feaColors, overhangColors, clip, holograma = false,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
@@ -2501,6 +2502,10 @@ function SolidMesh({
   overhangColors: Float32Array | null;
   /** Planos de corte (sección). undefined/null = sin corte. */
   clip: THREE.Plane[] | null;
+  /** U3 · EL FOCO: la pieza se enfría a HOLOGRAMA (cian translúcido, doble cara).
+   *  De Horizon: bajo el Foco el cuerpo es frío y se ve a través — lo cálido se
+   *  reserva para lo que exige atención. */
+  holograma?: boolean;
 }) {
   const pbrBase = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
   // Con tinte: acabado MATE de color (metalness bajo) — el metálico espejo murió.
@@ -2692,15 +2697,19 @@ function SolidMesh({
              y el acabado salen de MATERIAL_PBR → el selector por fin se VE.
              Sin emissive: en un CAD la pieza no brilla, REFLEJA. */
           <meshPhysicalMaterial
-            color={faded ? '#9aa3ad' : pbr.color}
-            metalness={pbr.metalness}
-            roughness={pbr.roughness}
-            clearcoat={pbr.clearcoat}
+            color={holograma ? '#123a4d' : faded ? '#9aa3ad' : pbr.color}
+            metalness={holograma ? 0 : pbr.metalness}
+            roughness={holograma ? 0.85 : pbr.roughness}
+            clearcoat={holograma ? 0 : pbr.clearcoat}
             clearcoatRoughness={pbr.clearcoatRoughness}
-            envMapIntensity={1.35}
+            emissive={holograma ? '#2e8fb0' : '#000000'}
+            emissiveIntensity={holograma ? 0.5 : 0}
+            transparent={holograma}
+            opacity={holograma ? 0.62 : 1}
+            envMapIntensity={holograma ? 0.25 : 1.35}
             flatShading={false}
             clippingPlanes={clipPlanes}
-            side={clipPlanes ? THREE.DoubleSide : THREE.FrontSide}
+            side={holograma || clipPlanes ? THREE.DoubleSide : THREE.FrontSide}
           />
         )}
       </mesh>
@@ -3527,6 +3536,18 @@ export default function ForgeBRepStudio() {
   // que el operador soltó, para que su pieza esté EN el CAD y no en una estampa.
   const [piezaMalla, setPiezaMalla] = useState<{ visor: MallaVisor; mesh: MeshLike; nombre: string; notas: string[] } | null>(null);
   const [errPieza, setErrPieza] = useState<string>('');
+  // U3 · EL FOCO — arranca APAGADO a propósito (la regla que salió de Detroit: el HUD
+  // está limpio y la información aparece solo cuando hace falta). Lo prende el operador.
+  const [focoOn, setFocoOn] = useState(false);
+  /** las cotas del Foco: la envolvente + la pared, medidas de LA pieza que está en el visor. */
+  const focoCotas = useMemo<CotaSet[]>(() => {
+    if (!piezaMalla) return [];
+    try {
+      const m = medidasDeLaPieza(piezaMalla.mesh);
+      return m.dims.length ? [{ role: 'foco', dims: m.dims }] : [];
+    } catch { return []; }
+  }, [piezaMalla]);
+  const focoRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [unscrewOn, setUnscrewOn] = useState(false);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
@@ -6224,10 +6245,20 @@ export default function ForgeBRepStudio() {
               /* T1 · TU PIEZA, EN EL VISOR. Mismo `SolidMesh` que el sólido del
                  kernel: por eso hereda picking, sección y —en T2— el canal de
                  colores por vértice para pintarle el espesor encima. */
-              <SolidMesh mesh={piezaMalla.visor as unknown as TessellatedMesh} faded={false} matKey={material} tint={partColor}
-                faces={[]} edgeGeoms={[]} selFaces={[]} selEdges={[]}
-                pickMode="none" onPickFace={() => {}} onPickEdge={() => {}}
-                feaColors={null} overhangColors={null} clip={sectionPlanes} />
+              <>
+                <SolidMesh mesh={piezaMalla.visor as unknown as TessellatedMesh} faded={false} matKey={material} tint={focoOn ? undefined : partColor}
+                  faces={[]} edgeGeoms={[]} selFaces={[]} selEdges={[]}
+                  pickMode="none" onPickFace={() => {}} onPickEdge={() => {}}
+                  feaColors={null} overhangColors={null} clip={sectionPlanes} holograma={focoOn} />
+                {/* EL FOCO · LAS MEDIDAS — hermanas de la malla: MISMO espacio de
+                    coordenadas, así que la cota cae donde está la arista. */}
+                {focoOn && focoCotas.length > 0 && (
+                  <>
+                    <CotaLines sets={focoCotas} paleta={PALETA_FOCO} />
+                    <CotaDriver sets={focoCotas} refs={focoRefs} />
+                  </>
+                )}
+              </>
             ) : moldParts.length ? (
               // MOLDE EN VIVO: cada PLACA es un componente separado (aislar/ocultar/
               // opacidad desde el árbol; la SECCIÓN los corta a todos). Se LEVANTA sobre
@@ -6479,6 +6510,9 @@ export default function ForgeBRepStudio() {
             del Canvas es el gotcha conocido, y el texto DOM sale nítido a cualquier zoom.
             CotaDriver (dentro del Canvas) les mueve el transform por frame. */}
         {cotasOn && liveCotas.length > 0 && <CotaLabels sets={liveCotas} refs={cotaRefs} />}
+        {focoOn && focoCotas.length > 0 && (
+          <CotaLabels sets={focoCotas} refs={focoRefs} paleta={PALETA_FOCO} testid="foco-cotas-overlay" modo="medida" />
+        )}
         {cotasOn && liveMoldSpec && moldOpenStrokeMm > 0 && (
           <CotaAperturaLabel labelRef={cotaAperturaRef}
             why={`§6.3.2: la apertura típica = 2-3 × la altura de la pieza (${liveMoldSpec.cavity.depthMm} mm) para que salga del núcleo y caiga. Tabla 6.1: daylight = stack + carrera (264 + 75 = 339).`} />
@@ -7211,7 +7245,12 @@ export default function ForgeBRepStudio() {
                     pieza={piezaMalla
                       ? { mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas }
                       : result ? { mesh: { positions: result.mesh.positions, indices: result.mesh.indices }, nombre: docName } : null}
-                    onAbrirLote={() => setRevisarLoteOn(true)} />
+                    onAbrirLote={() => setRevisarLoteOn(true)}
+                    foco={piezaMalla ? {
+                      on: focoOn, toggle: () => setFocoOn((v) => !v),
+                      nMedidas: focoCotas.reduce((n, c) => n + c.dims.length, 0),
+                      noMedido: medidasDeLaPieza(piezaMalla.mesh).noMedido,
+                    } : undefined} />
                 </Suspense>
                 {piezaMalla && (
                   <button data-testid="rp-quitar" onClick={() => { setPiezaMalla(null); setErrPieza(''); }}
