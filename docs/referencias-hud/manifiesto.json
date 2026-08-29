@@ -1,0 +1,138 @@
+[
+ {
+  "slug": "horizon",
+  "appid": 1151640,
+  "nombre": "Horizon Zero Dawn™ Complete Edition",
+  "imagenes": [
+   "horizon-1.jpg",
+   "horizon-2.jpg",
+   "horizon-3.jpg",
+   "horizon-4.jpg",
+   "horizon-5.jpg"
+  ]
+ },
+ {
+  "slug": "shipbreaker",
+  "appid": 1161580,
+  "nombre": "Hardspace: Shipbreaker",
+  "imagenes": [
+   "shipbreaker-1.jpg",
+   "shipbreaker-2.jpg",
+   "shipbreaker-3.jpg",
+   "shipbreaker-4.jpg",
+   "shipbreaker-5.jpg",
+   "shipbreaker-6.jpg"
+  ]
+ },
+ {
+  "slug": "deathstr",
+  "appid": 1190460,
+  "nombre": "DEATH STRANDING",
+  "imagenes": [
+   "deathstr-1.jpg",
+   "deathstr-2.jpg",
+   "deathstr-3.jpg",
+   "deathstr-4.jpg",
+   "deathstr-5.jpg",
+   "deathstr-6.jpg"
+  ]
+ },
+ {
+  "slug": "cyberpunk",
+  "appid": 1091500,
+  "nombre": "Cyberpunk 2077",
+  "imagenes": [
+   "cyberpunk-1.jpg",
+   "cyberpunk-2.jpg",
+   "cyberpunk-3.jpg",
+   "cyberpunk-4.jpg",
+   "cyberpunk-5.jpg"
+  ]
+ },
+ {
+  "slug": "titanfall2",
+  "appid": 1237970,
+  "nombre": "Titanfall® 2",
+  "imagenes": [
+   "titanfall2-1.jpg",
+   "titanfall2-2.jpg",
+   "titanfall2-3.jpg",
+   "titanfall2-4.jpg"
+  ]
+ },
+ {
+  "slug": "deusex",
+  "appid": 337000,
+  "nombre": "Deus Ex: Mankind Divided",
+  "imagenes": [
+   "deusex-1.jpg",
+   "deusex-2.jpg",
+   "deusex-3.jpg",
+   "deusex-4.jpg"
+  ]
+ },
+ {
+  "slug": "armoredcore",
+  "appid": 1888160,
+  "nombre": "ARMORED CORE™ VI FIRES OF RUBICON™",
+  "imagenes": [
+   "armoredcore-1.jpg",
+   "armoredcore-2.jpg",
+   "armoredcore-3.jpg",
+   "armoredcore-4.jpg",
+   "armoredcore-5.jpg"
+  ]
+ },
+ {
+  "slug": "nier",
+  "appid": 524220,
+  "nombre": "NieR:Automata™",
+  "imagenes": [
+   "nier-1.jpg",
+   "nier-2.jpg",
+   "nier-3.jpg",
+   "nier-4.jpg"
+  ]
+ },
+ {
+  "slug": "subnautica",
+  "appid": 264710,
+  "nombre": "Subnautica",
+  "imagenes": [
+   "subnautica-1.jpg",
+   "subnautica-2.jpg",
+   "subnautica-3.jpg",
+   "subnautica-4.jpg"
+  ]
+ },
+ {
+  "slug": "prey",
+  "appid": 480490,
+  "nombre": "Prey",
+  "imagenes": [
+   "prey-1.jpg",
+   "prey-2.jpg",
+   "prey-3.jpg",
+   "prey-4.jpg"
+  ]
+ },
+ {
+  "slug": "ghostrunner",
+  "appid": 1139900,
+  "nombre": "Ghostrunner",
+  "imagenes": [
+   "ghostrunner-1.jpg",
+   "ghostrunner-2.jpg",
+   "ghostrunner-3.jpg"
+  ]
+ },
+ {
+  "slug": "stellaris",
+  "appid": 281990,
+  "nombre": "Stellaris",
+  "imagenes": [
+   "stellaris-1.jpg",
+   "stellaris-2.jpg"
+  ]
+ }
+]

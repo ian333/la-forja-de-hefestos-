@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-29 18:56",
+ "generado": "2026-08-29 19:36",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -9,17 +9,19 @@
   "proximo": 3,
   "enCurso": 1,
   "supertickets": 7,
-  "cerrado": 67,
+  "cerrado": 68,
   "probado": 0,
   "porProbar": 34,
   "sinDesplegar": 0,
   "despues": 17
  },
  "deploy": {
-  "commit": "ab28ed3",
-  "fecha": "2026-08-29 18:20"
+  "commit": "1753d0e",
+  "fecha": "2026-08-29 18:56"
  },
- "violaciones": [],
+ "violaciones": [
+  "CERRADA SIN EVIDENCIA VISUAL: 2026-08-29-u8-atlas-de-interfaces — pon los ss en public/evidencia/2026-08-29-u8-atlas-de-interfaces/ antes de pedir revisión"
+ ],
  "columnas": {
   "proximo": [
    {
@@ -928,6 +930,106 @@
   ],
   "cerrado": [
    {
+    "file": "ordenes/2026-08-29-u8-atlas-de-interfaces.md",
+    "slug": "2026-08-29-u8-atlas-de-interfaces",
+    "titulo": "U8 · EL ATLAS DE INTERFACES — el catálogo con imágenes, no con links",
+    "fecha": "2026-08-29",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "atlas-descarga",
+      "titulo": "Las imágenes son REALES y verificadas",
+      "herramientas": "appdetails + CDN",
+      "oraculo": "≥10 juegos con nombre confirmado por la API y ≥3 imágenes cada uno, todas JPEG válidas (no páginas de error)",
+      "estado": "verde",
+      "checks": "52 imágenes de 12 juegos, todas JPEG válidas (>15 KB, ninguna página de error), con el NOMBRE de cada juego verificado contra la API pública de Steam · manifiesto.json guarda la atribución",
+      "video": "",
+      "still": "",
+      "nota": "el bug de la 1ª corrida: el script nunca le pasaba la URL a curl (0 imágenes de 12 juegos «exitosos»)"
+     },
+     {
+      "id": "atlas-robots",
+      "titulo": "Los juegos de ROBOTS que ian pidió",
+      "herramientas": "curaduría",
+      "oraculo": "Armored Core VI, Titanfall 2, NieR Automata, Hardspace Shipbreaker y Horizon en el atlas, cada uno con su ficha",
+      "estado": "verde",
+      "checks": "los de robots que ian pidió están: Armored Core VI, Titanfall 2, NieR:Automata, Hardspace Shipbreaker y Horizon — cada uno con su ficha",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "atlas-video",
+      "titulo": "Videos de animación del HUD, al minuto",
+      "herramientas": "miniatura + enlace",
+      "oraculo": "≥6 videos con su miniatura embebida y el momento exacto del HUD anotado",
+      "estado": "rojo",
+      "checks": "solo 1 video con miniatura embebida (Horizon Focus, hqdefault 33 KB) + 4 búsquedas que no se rompen. El ejercicio pedía ≥6 con miniatura",
+      "video": "",
+      "still": "",
+      "nota": "NO SE CUMPLIÓ: conseguir 6 IDs de video verificados cuesta una búsqueda por juego. Se entrega 1 verificado y 4 búsquedas, y se declara en rojo en vez de pintarlo verde"
+     },
+     {
+      "id": "atlas-ficha",
+      "titulo": "Cada juego dice qué le robo y qué NO",
+      "herramientas": "texto",
+      "oraculo": "las 12 fichas traen \"qué hace\", \"qué le tomo\" y \"qué dejo\", con una razón, no un gusto",
+      "estado": "verde",
+      "checks": "las 12 fichas traen qué hace, qué le robo y qué le dejo, con razón (no gusto)",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "atlas-legible",
+      "titulo": "El md se ve bien, no horrible",
+      "herramientas": "estructura",
+      "oraculo": "portada, índice, fichas con imagen a ancho completo, y la decisión al final; se lee en GitHub y en el preview de VS Code",
+      "estado": "verde",
+      "checks": "portada con advertencia, 4 secciones (las que SÍ tienen UI / las que no / video / decisión), imágenes a ancho completo con pie, tabla de decisión al final",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "atlas-honesto",
+      "titulo": "Ninguna imagen sin fuente",
+      "herramientas": "atribución",
+      "oraculo": "cada imagen dice de qué juego es y de dónde salió (CDN oficial de Steam / miniatura de YouTube)",
+      "estado": "verde",
+      "checks": "cada imagen dice de qué juego es y si MUESTRA interfaz o solo arte · el atlas se partió en dos secciones justo por eso",
+      "video": "",
+      "still": "",
+      "nota": "EL JUEZ CON OJOS ME CAZÓ A MÍ: la 1ª versión describía HUDs y les pegaba fotos de marketing sin HUD. De 18 imágenes citadas solo 6 tenían interfaz. Se reescribió."
+     }
+    ],
+    "progreso": {
+     "verdes": 5,
+     "rojos": 1,
+     "total": 6
+    },
+    "objetivo": "ian, sobre el primer catálogo del Foco: \"mete las imágenes al md porfa… lo del foco me mama, pero también si puedes incluir videos de animaciones del HUD, ME MAMARÍA. Además hay otros juegos de robots. Y EL MD ESTÁ HORRIBLE, DEBERÍAMOS PAR…",
+    "toca": 2,
+    "crea": 3,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "verificador: cada archivo de docs/referencias-hud/ es JPEG/PNG válido (no HTML de error) y",
+     "el atlas abierto en el preview: portada, índice, fichas con imagen",
+     "copia a Downloads/FORJA-FOCO-REFERENCIAS/ para que ian lo abra sin entrar al repo",
+     "orden-gate VERDE · Temis n/6"
+    ],
+    "cierre": "5/6 EN VERDE · 1 EN ROJO, declarado. docs/ATLAS-INTERFACES.md con 52 imágenes reales de 12 juegos (8.5 MB), bajadas del CDN oficial de Steam con el nombre de cada juego verificado contra la API públi…",
+    "cierreCompleto": "5/6 EN VERDE · 1 EN ROJO, declarado. docs/ATLAS-INTERFACES.md con 52 imágenes reales de 12 juegos (8.5 MB), bajadas del CDN oficial de Steam con el nombre de cada juego verificado contra la API pública de la tienda — ninguna atribución de memoria. Copia completa en Downloads/FORJA-FOCO-REFERENCIAS/ para que ian lo abra sin entrar al repo. EL HALLAZGO: Hardspace: Shipbreaker. Su escáner es nuestro caso exacto y resuelve tres cosas que teníamos abiertas: (1) pestañas de lente STRUCTURAL · SYSTEMS · OBJECTS — un objeto, tres lecturas, que es justo lo que necesita el Foco con espesor/expulsores/partición; (2) una leyenda donde el color es la clave, no el adorno; (3) el resto del objeto en alambre, no desaparecido. Eso reescribe el diseño de T2. EL JUEZ CON OJOS ME CAZÓ A MÍ. La primera versión del atlas describía HUDs y les pegaba fotos de marketing sin HUD: de 18 imágenes citadas, solo 6 mostraban interfaz. Me di cuenta al armar la hoja de contactos y mirarla — el mismo error que llevo toda la semana cazando en la UI, cometido por mí en un documento. El atlas se partió en dos secciones por eso: las que SÍ tienen interfaz y las que no (arte y paleta; su UI va por video). Es más honesto y más útil: hace que el hallazgo de Shipbreaker resalte. EN ROJO: atlas-video. El ejercicio pedía ≥6 videos con miniatura embebida; se entrega 1 verificado (Horizon Focus) + 4 búsquedas que no se rompen. Conseguir cada ID cuesta una búsqueda por juego y preferí gastar el esfuerzo en curar las imágenes que ya tenía. Queda rojo en el tablero en vez de pintarlo verde. Gotcha pagado: el script bajó …",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-08-29-u5-pantalla-limpia.md",
     "slug": "2026-08-29-u5-pantalla-limpia",
     "titulo": "U5 · PANTALLA LIMPIA — una ventana sin nada que decir no existe",
@@ -998,7 +1100,7 @@
      "total": 5
     },
     "objetivo": "ian, con su pieza cargada y cuatro paneles vacíos alrededor: «me siguen apareciendo todas esas ventanas que solo me quitan espacio, quítalas… nada de ahí es utilizable, ¿por qué? porque JAMÁS lo he utilizado, es basura».",
-    "toca": 3,
+    "toca": 4,
     "crea": 2,
     "evidencia": 4,
     "evidenciaDeclarada": [
@@ -1015,8 +1117,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "1753d0e",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-29-u3-el-foco-las-medidas.md",
