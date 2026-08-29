@@ -337,6 +337,14 @@ un `CapasSpec` por pieza (`WPAIR_CAPAS`, `WTET_CAPAS`…), cada capa un objeto c
    "préndelas: ahí está el puente" → vuelven. Es la #2 llevada al límite: la nada como
    argumento.
 
+**⚠ SI APAGAS TODO, DECLARA LA VENTANA.** El portero de cuadros negros de `render-clip` juzga
+por TAMAÑO DE ARCHIVO, así que un cuadro legítimamente negro lo reprueba y lo reintenta con
+navegador nuevo. Medido en LA SILLA el 2026-08-29: **hasta 12 reintentos por cuadro** entre
+t=21.7 y 22.5, >1000 arranques de navegador desperdiciados por render, y el ritmo cayendo de
+0.04 a **1.18 s/cuadro**. El portero peleaba contra la dirección de arte. Cura: el manifiesto
+declara `render.ventanasNegras: "20.2-24.8"` y `video.sh` se lo pasa a `render-clip --negras`.
+A/B en el mismo shard: 28 reintentos → 0.
+
 **Reglas ganadas a sangre:** apagar a 0 absoluto deja "alambre azul" o vacío muerto — el
 rey baja a 58 %/15 %, no a 0, salvo cuando la NADA es el argumento (figura 3) y dura ≤3 s.
 El corte de capa cae en el ARRANQUE de la línea, no en su final (2.5 s tarde = el

@@ -43,6 +43,9 @@ CAPTURA="${CAPTURA:-$(m render.captura)}"; CAPTURA="${CAPTURA:-cdp-jpeg}"
 FEXT=png; [ "$CAPTURA" = "cdp-jpeg" ] && FEXT=jpg
 ADIR="$ROOT/$(m audio.dir)"; NARR=$(m audio.narracion); MUS=$(m audio.musica)
 MVOL=$(m audio.musicaVol); MFIN=$(m audio.musicaFadeIn); MFOUT=$(m audio.musicaFadeOutAt)
+# ventanas donde el cuadro es negro A PROPÓSITO (canon §LA MECÁNICA DEL O₂):
+# sin esto el portero de cuadros negros las reintenta hasta 12 veces cada una.
+NEGRAS="$(m render.ventanasNegras)"
 SEGS="$ADIR/$(m audio.segs)"; ASS="$ADIR/$(m audio.ass)"
 ODIR=$(m salida.dir)
 # E: FUERA DEL CAMINO CRÍTICO (2026-08-17): un drvfs muerto rompía el ensamble en el último
@@ -105,7 +108,7 @@ paso_render() {
       local pids=()
       for k in $(seq 0 $((SHARDS-1))); do
         node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" --dur "$DUR" \
-          --out "$FRAMES" --fps "$FPS" --w "$W" --h "$H" --batch "$BATCH" \
+          --out "$FRAMES" --fps "$FPS" --w "$W" --h "$H" --batch "$BATCH" ${NEGRAS:+--negras "$NEGRAS"} \
           --nshards "$SHARDS" --shard "$k" > "/tmp/$ID-shard$k.log" 2>&1 &
         pids+=($!)
       done

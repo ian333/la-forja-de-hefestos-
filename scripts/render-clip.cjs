@@ -123,13 +123,25 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
   // negro-de-WebGL-muerto (uniforme) ~30-80 KB. 100 KB separa limpio; sigue siendo
   // override-able con BLACK= para escenas de sujeto delgado (la lección de "El codo").
   const BLACK = parseInt(process.env.BLACK || (FEXT === 'jpg' ? '100000' : '150000'), 10);
+  // VENTANAS NEGRAS A PROPÓSITO (2026-08-29). El canon §LA MECÁNICA DEL O₂ tiene una figura
+  // que APAGA TODAS las capas para que la NADA sea el argumento ("quita las nubes: no hay
+  // nada"). Ese cuadro es legítimamente casi negro — y el portero lo reprobaba en bucle:
+  // MEDIDO en LA SILLA, hasta 12 reintentos por cuadro entre t=21.7 y 22.5, cada uno
+  // levantando un navegador nuevo. Más de mil arranques desperdiciados por render, y el
+  // ritmo cayendo de 0.04 a 1.18 s/cuadro. El portero peleaba contra la dirección de arte.
+  //   --negras "20.4-24.6,41.0-42.5"   (segundos del guion; se declara en el manifiesto)
+  const NEGRAS = (arg('--negras', '') || '').split(',').map((r) => r.trim()).filter(Boolean)
+    .map((r) => r.split('-').map(Number)).filter((p) => p.length === 2 && p.every(Number.isFinite));
+  const esNegraAProposito = (t) => NEGRAS.some(([a2, b2]) => t >= a2 && t <= b2);
+  if (NEGRAS.length) console.log(`[clip] ventanas negras a propósito (portero apagado): ${NEGRAS.map((p) => p.join('-')).join(', ')}`);
   let blacks = 0;
   for (let i = 0; i < N; i++) {
     // PARALELO: cada worker rinde solo su franja por stride (índices disjuntos → sin colisión)
     if (nshards > 1 && (i % nshards) !== shard) continue;
     const f = path.join(outdir, String(i).padStart(5, '0') + '.' + FEXT);
     // RESUME: si el frame ya existe y NO es negro, saltarlo (re-correr continúa donde quedó)
-    if (fs.existsSync(f) && fs.statSync(f).size > BLACK) continue;
+    const tSeg = i / fps;
+    if (fs.existsSync(f) && (fs.statSync(f).size > BLACK || esNegraAProposito(tSeg))) continue;
     if (frameInCtx >= batch) await freshCtx();
     const t = i / fps;
     let ok = false;
@@ -152,7 +164,8 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
           await page.screenshot({ path: f, type: 'png', clip: { x: 0, y: 0, width: W, height: H }, timeout: 60000 });
         }
         const sz = fs.statSync(f).size;
-        if (sz > BLACK) { ok = true; }
+        // en una ventana declarada como negra, el tamaño NO es criterio: se acepta el cuadro.
+        if (sz > BLACK || esNegraAProposito(t)) { ok = true; }
         else {
           // frame NEGRO (race o WebGL2 caído): relanzar browser fresco y reintentar este frame
           console.log(`[clip] frame ${i} negro (${sz}B) → reintento ${attempt + 1} (browser fresco)`);

@@ -18,6 +18,7 @@ import { useMemo, useRef, type ReactNode } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import AtomModel from '@/masterclass/assets/gltf/AtomModel';
+import ModelCloud from '../../assets/gltf/ModelCloud';
 import { CineStage, CineCamera, CineModel, useCineTime } from '@/masterclass/cine';
 import NebulaWorld from '@/masterclass/cine/NebulaWorld';
 import type { CineCamKey } from '@/masterclass/cine/CineCamera';
@@ -153,12 +154,15 @@ function SimCow({ i, simRef }: { i: number; simRef: React.MutableRefObject<SimSt
     const drift = Math.cos(t * 0.18 + phase) * 1.3;
     const wob = Math.sin(t * 0.4 + phase) * 0.9;
     g.position.set(home[0] + drift, Math.abs(Math.sin(t * 1.6 + phase)) * 0.12, home[1] + wob);
-    g.rotation.y = t * 0.12 + phase;
+    g.rotation.y = Math.sin(t * 0.25 + phase) * 0.35;   // se voltea, no gira sin parar
   });
 
   return (
     <group ref={groupRef}>
-      <AtomModel src={COW} color="#EDE6CE" glow={1.0} mode="atom" fitTo={2.0} halo={false} />
+      {/* NUBE, no superficie (2026-08-29): el .glb de pocos polígonos pintado con aristas
+          se leía como cajas y rompía el idioma del canal. Ver ModelCloud. */}
+      <ModelCloud src={COW} color="#FFF0D2" n={7000} fitTo={2.0} size={0.022}
+                  brightness={1.0} blend="normal" seed={i * 7.13} />
     </group>
   );
 }

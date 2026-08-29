@@ -16,7 +16,9 @@
   "render": {
     "shards": 5,
     "batch": 40,
-    "frames": "dist-video/.wsillaframes"
+    "frames": "dist-video/.wsillaframes",
+    "ventanasNegras": "20.2-24.8",
+    "nota_negras": "La ventana \"quita las nubes\" (canon §LA MECÁNICA DEL O₂, figura 3) apaga TODAS las capas a propósito. Sin declararla, el portero de cuadros negros de render-clip la reintentaba hasta 12 veces por cuadro con navegador nuevo — MEDIDO 2026-08-29: >1000 arranques desperdiciados por render y el ritmo cayendo de 0.04 a 1.18 s/cuadro."
   },
   "audio": {
     "dir": "dist-video/silla-narracion",
