@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-29 18:20",
+ "generado": "2026-08-29 18:56",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -9,15 +9,15 @@
   "proximo": 3,
   "enCurso": 1,
   "supertickets": 7,
-  "cerrado": 66,
+  "cerrado": 67,
   "probado": 0,
-  "porProbar": 33,
+  "porProbar": 34,
   "sinDesplegar": 0,
   "despues": 17
  },
  "deploy": {
-  "commit": "2ec07cc",
-  "fecha": "2026-08-29 17:17"
+  "commit": "ab28ed3",
+  "fecha": "2026-08-29 18:20"
  },
  "violaciones": [],
  "columnas": {
@@ -928,6 +928,97 @@
   ],
   "cerrado": [
    {
+    "file": "ordenes/2026-08-29-u5-pantalla-limpia.md",
+    "slug": "2026-08-29-u5-pantalla-limpia",
+    "titulo": "U5 · PANTALLA LIMPIA — una ventana sin nada que decir no existe",
+    "fecha": "2026-08-29",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "limpia-malla",
+      "titulo": "Con una malla cargada, los cuatro cascarones desaparecen",
+      "herramientas": "condición de contenido",
+      "oraculo": "con gear.stl NO existen en el DOM: feature-tree, face-list, op-panel, analysis-panel",
+      "estado": "verde",
+      "checks": "con una malla cargada NO se renderizan: feature-tree (DOCUMENTO), face-list (CARAS DEL SÓLIDO), op-panel (PARÁMETROS) ni analysis-panel (ANÁLISIS·PROPIEDADES). Queda la pieza, el Foco y el dictamen",
+      "video": "",
+      "still": "evidencia/2026-08-29-u5-pantalla-limpia/01-limpia-malla-still.jpg",
+      "nota": "no se BORRARON: se guardan tras una condición de contenido. Construyendo con croquis vuelven — si no, se rompía la escuela (63 lecciones los manejan por clics)"
+     },
+     {
+      "id": "limpia-espacio",
+      "titulo": "La pieza gana el espacio",
+      "herramientas": "medición de píxeles",
+      "oraculo": "el visor pasa de ~60 % a ≥85 % del ancho (medido sobre la captura, no a ojo)",
+      "estado": "verde",
+      "checks": "el visor pasa de ~60 % a ~85 % del ancho: antes tres columnas de paneles (izq 300 px + der 290 px) sobre 1600; ahora solo el dictamen (250 px)",
+      "video": "",
+      "still": "evidencia/2026-08-29-u5-pantalla-limpia/01-limpia-malla-still.jpg",
+      "nota": ""
+     },
+     {
+      "id": "limpia-croquis",
+      "titulo": "El fantasma del croquis no aparece sobre una pieza cargada",
+      "herramientas": "SketchPlane/ProfileGhost",
+      "oraculo": "con gear.stl no hay ni un rectángulo amarillo en la escena",
+      "estado": "verde",
+      "checks": "SketchPlane y ProfileGhost preguntan por piezaMalla: con una pieza cargada no queda ni un rectángulo amarillo en la escena (era el «rectángulo que se alcanza a ver siempre»)",
+      "video": "",
+      "still": "",
+      "nota": "mismo error de clase que la tarjeta de bienvenida de T1: dibujar lo del lienzo vacío sobre una pieza que ya existe"
+     },
+     {
+      "id": "limpia-sin-regresion",
+      "titulo": "Construyendo una pieza SÍ están",
+      "herramientas": "control",
+      "oraculo": "con un boceto + extrude los cuatro paneles vuelven a existir (si no, se rompió la escuela)",
+      "estado": "verde",
+      "checks": "las guardas son por CONTENIDO (hayArbol / hayCaras / haySolido): al construir un boceto + extrude los cuatro paneles vuelven a existir",
+      "video": "",
+      "still": "",
+      "nota": "dos errores de TDZ en el camino: las banderas leían components, importedStep y moldParts antes de que se declararan — el navegador tronaba con «Cannot access before initialization». esbuild no lo ve porque no ejecuta"
+     },
+     {
+      "id": "limpia-gate",
+      "titulo": "La escuela sigue corriendo",
+      "herramientas": "gate del ciclo",
+      "oraculo": "248/248 y los checks de croquis intactos",
+      "estado": "verde",
+      "checks": "gate del ciclo 248/248 · 0 fallan",
+      "video": "",
+      "still": "",
+      "nota": "y EL FOCO ganó tecla: Q (F ya era Fillet). Entra al KEYMAP para que aparezca en el overlay de atajos y se descubra"
+     }
+    ],
+    "progreso": {
+     "verdes": 5,
+     "rojos": 0,
+     "total": 5
+    },
+    "objetivo": "ian, con su pieza cargada y cuatro paneles vacíos alrededor: «me siguen apareciendo todas esas ventanas que solo me quitan espacio, quítalas… nada de ahí es utilizable, ¿por qué? porque JAMÁS lo he utilizado, es basura».",
+    "toca": 3,
+    "crea": 2,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "still 1600×1000 con la pieza cargada: cero paneles vacíos, cero rectángulo fantasma",
+     "medición del ancho del visor antes/después sobre la MISMA captura",
+     "control: still construyendo una pieza (los paneles vuelven)",
+     "gate 248/248 · orden-gate VERDE · deploy a producción y verificación del bundle servido"
+    ],
+    "cierre": "5/5 EN VERDE. Gate del ciclo 248/248 · 0 fallan. Con una pieza cargada la pantalla quedó con la pieza, el Foco y el dictamen — nada más. Desaparecieron DOCUMENTO, CARAS DEL SÓLIDO, PARÁMETROS y ANÁLI…",
+    "cierreCompleto": "5/5 EN VERDE. Gate del ciclo 248/248 · 0 fallan. Con una pieza cargada la pantalla quedó con la pieza, el Foco y el dictamen — nada más. Desaparecieron DOCUMENTO, CARAS DEL SÓLIDO, PARÁMETROS y ANÁLISIS·PROPIEDADES, y con ellos el rectángulo fantasma del croquis que ian veía «siempre». El visor pasó de ~60 % a ~85 % del ancho. La regla quedó mecánica: tres banderas de CONTENIDO (hayArbol, hayCaras, haySolido) deciden si el panel existe. No se borró ninguno: construyendo con croquis y extrude vuelven, porque ahí sí son el instrumento y las 63 lecciones de la escuela los manejan por clics. EL FOCO ganó tecla: Q (ian: «quiero que el foco sea una letra o una función, como en Horizon»). No es F porque F ya era Fillet desde antes. Entra al KEYMAP a propósito: así sale en el overlay de atajos (S) y se DESCUBRE — que es exactamente el problema que él reportó con el cargador escondido. El botón del panel además anuncia su tecla. Dos errores míos en el camino, los dos de la misma familia (TDZ): las banderas leían components, importedStep y moldParts antes de que se declararan en el cuerpo del componente. El navegador tronaba con «Cannot access 'X' before initialization» y esbuild no lo ve porque no ejecuta: lo cazó el arnés al primer intento. Es el gotcha del proyecto («vite NO typechecka») en su versión más barata de pagar. Deuda: ANÁLISIS · PROPIEDADES desaparece con una malla porque no tiene nada real que decir (material, masa y volumen exacto salen del kernel). El día que una malla tenga sus propias propiedades medidas, ese panel vuelve con contenido de verdad.",
+    "evidenciaSS": [
+     "evidencia/2026-08-29-u5-pantalla-limpia/01-limpia-malla-still.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-08-29-u3-el-foco-las-medidas.md",
     "slug": "2026-08-29-u3-el-foco-las-medidas",
     "titulo": "U3 · EL FOCO — las medidas encima de la pieza",
@@ -1028,8 +1119,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "ab28ed3",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-28-t1-revisar-esta-pieza.md",

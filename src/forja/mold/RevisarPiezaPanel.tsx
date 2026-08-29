@@ -132,6 +132,7 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
               color: foco.on ? '#bfeeff' : '#8fa3ba',
             }}>
             {foco.on ? '◉' : '○'} EL FOCO <span style={{ opacity: 0.65, fontWeight: 400 }}>· las medidas encima {foco.on ? `(${foco.nMedidas})` : ''}</span>
+            <span style={{ float: 'right', opacity: 0.5, fontWeight: 400, fontSize: 10 }}>Q</span>
           </button>
           {foco.on && foco.noMedido.length > 0 && (
             <div data-testid="foco-no-medido" style={{ fontSize: 10, opacity: 0.55, marginTop: 4, lineHeight: 1.45 }}>

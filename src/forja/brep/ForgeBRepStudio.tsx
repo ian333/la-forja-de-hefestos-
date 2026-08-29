@@ -3600,6 +3600,18 @@ export default function ForgeBRepStudio() {
   useEffect(() => { docNameRef.current = docName; }, [docName]);
   const mold = useMoldStudio({ oc, setCollapsed, setDocName, arbol: arbolRef, arbolRev });
   const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
+  // ── U5 · PANTALLA LIMPIA (ian: «esas ventanas solo me quitan espacio… jamás las
+  //    he utilizado») — una ventana SIN CONTENIDO no se renderiza. No se colapsa, no
+  //    se achica: no existe. Es la regla de Detroit vuelta mecánica.
+  //    NO se borran los paneles: cuando construyes con croquis y extrude son el
+  //    instrumento (y las 63 lecciones de la escuela los manejan por clics). Lo que
+  //    se mata es el CASCARÓN vacío, que es lo que él nunca usó porque nunca tuvo nada.
+  const hayArbol = ops.length > 0 || components.length > 0 || !!importedStep;
+  const hayCaras = !!result && result.faces.length > 0;
+  // ANÁLISIS · PROPIEDADES vive del SÓLIDO DEL KERNEL (material, masa, volumen exacto).
+  // Con una malla del operador no tiene nada real que decir: no entra. Su lugar lo toma
+  // el dictamen de la pieza, que sí habla de ella.
+  const haySolido = !!result || moldParts.length > 0;
   const [libNames, setLibNames] = useState<string[]>([]);
   const refreshLib = useCallback(() => setLibNames(Object.keys(readLib()).sort()), []);
   const resolvedParams = useMemo<ResolvedParams>(() => resolveParams(params), [params]);
@@ -5439,6 +5451,11 @@ export default function ForgeBRepStudio() {
     { key: 'g', icon: '⚙', label: 'Engrane', action: () => applyGear() },
     { key: 'p', icon: '◧', label: 'Pick cara', action: () => enableFacePick() },
     { key: 'k', icon: '╱', label: 'Pick arista', action: () => enableEdgePick() },
+    // EL FOCO en una tecla (ian: «quiero que el foco sea una letra o una función, como
+    // en Horizon Zero Dawn»). Es Q y no F porque F ya era Fillet desde antes; Q está
+    // libre y cae bajo el meñique. Entra al KEYMAP a propósito: así aparece en el
+    // overlay de atajos (S) y se DESCUBRE, en vez de esconderse en un panel.
+    { key: 'q', icon: '◉', label: 'EL FOCO · medidas', action: () => setFocoOn((v) => !v) },
   ], [setSketch, addOp, startHole, applyGear, enableFacePick, enableEdgePick]);
   useEffect(() => {
     const onMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
@@ -6237,10 +6254,10 @@ export default function ForgeBRepStudio() {
               <CamStock3D center={meshBBox.center as [number, number, number]} half={meshBBox.half as [number, number, number]} />
             )}
             {workspace === 'manufactura' && camView3D && <CamToolpath3D segs={camView3D} />}
-            {!(gbMotion && gbParts) && !moldParts.length && showSketch && <SketchPlane plane={sketchPlaneK} />}
+            {!(gbMotion && gbParts) && !moldParts.length && !piezaMalla && showSketch && <SketchPlane plane={sketchPlaneK} />}
             {/* El fantasma del perfil VIEJO se esconde mientras el croquis está
                 abierto: el SVG en vivo ES la verdad ahí; dos versiones confunden. */}
-            {!(gbMotion && gbParts) && !moldParts.length && showSketch && !sketchOpen && <ProfileGhost pts={profilePts} />}
+            {!(gbMotion && gbParts) && !moldParts.length && !piezaMalla && showSketch && !sketchOpen && <ProfileGhost pts={profilePts} />}
             {piezaMalla ? (
               /* T1 · TU PIEZA, EN EL VISOR. Mismo `SolidMesh` que el sólido del
                  kernel: por eso hereda picking, sección y —en T2— el canal de
@@ -7035,6 +7052,7 @@ export default function ForgeBRepStudio() {
 
           {/* ── Panel izquierdo: GRAFO de features (clic = editar) ── */}
           <div className="fb-rail fb-rail-left" data-testid="rail-left">
+          {hayArbol && (
           <aside className={`fb-features ${collapsed.features ? 'collapsed' : ''} ${winPos.features ? 'floating' : ''}`} data-testid="feature-tree" onPointerDown={winDrag('features')} onDoubleClick={winUndock('features')} style={winStyle('features')}>
             <CollapseHead id="features" title="Documento" collapsed={!!collapsed.features}
               onToggle={() => toggleCollapse('features')}
@@ -7204,7 +7222,8 @@ export default function ForgeBRepStudio() {
             <MoldAnalisisPanel mold={mold} />
             {/* ── EL CICLO DE KAZMER: el conductor del molde del dado, estación por estación ── */}
             <CicloPanel mold={mold} />
-          </aside>
+          </aside>)}
+          {hayCaras && (
           <aside className={`fb-facelist ${collapsed.faces ? 'collapsed' : ''} ${winPos.faces ? 'floating' : ''}`} data-testid="face-list" onPointerDown={winDrag('faces')} onDoubleClick={winUndock('faces')} style={winStyle('faces')}>
             <CollapseHead id="faces" title="Caras del sólido" collapsed={!!collapsed.faces}
               onToggle={() => toggleCollapse('faces')}
@@ -7226,7 +7245,7 @@ export default function ForgeBRepStudio() {
                 </button>
               ))}
             </div>
-          </aside>
+          </aside>)}
           {workspace === 'simulacion' && (
           <aside className={`fb-sim ${collapsed.sim ? 'collapsed' : ''} ${winPos.sim ? 'floating' : ''}`} data-testid="sim-panel" onPointerDown={winDrag('sim')} onDoubleClick={winUndock('sim')} style={winStyle('sim')}>
             <CollapseHead id="sim" title="Simulación · von Mises (FEA real)" collapsed={!!collapsed.sim}
@@ -7478,6 +7497,7 @@ export default function ForgeBRepStudio() {
           )}
           </div>
           <div className="fb-rail fb-rail-right" data-testid="rail-right">
+          {hayArbol && (
           <aside className={`fb-params ${collapsed.params ? 'collapsed' : ''} ${winPos.params ? 'floating' : ''}`} data-testid="op-panel" onPointerDown={winDrag('params')} onDoubleClick={winUndock('params')} style={winStyle('params')}>
             <CollapseHead id="params" title="Parámetros" collapsed={!!collapsed.params}
               onToggle={() => toggleCollapse('params')} />
@@ -8229,7 +8249,8 @@ export default function ForgeBRepStudio() {
               </button>
             )}
             {/* Exportar STEP/STL y Mostrar/Ocultar boceto se movieron al menú ⋮ Opciones (header). */}
-          </aside>
+          </aside>)}
+          {haySolido && (
           <aside className={`fb-analysis ${collapsed.analysis ? 'collapsed' : ''} ${winPos.analysis ? 'floating' : ''}`} data-testid="analysis-panel" onPointerDown={winDrag('analysis')} onDoubleClick={winUndock('analysis')} style={winStyle('analysis')}>
             <CollapseHead id="analysis" title="Análisis · Propiedades" collapsed={!!collapsed.analysis}
               onToggle={() => toggleCollapse('analysis')} />
@@ -8305,7 +8326,7 @@ export default function ForgeBRepStudio() {
             ) : (
               <div className="fb-mass"><Row k="Estado" v="construyendo…" /></div>
             )}
-          </aside>
+          </aside>)}
           </div>
 
           {/* ── Menú CONTEXTUAL (clic derecho en un nodo del árbol) ── */}

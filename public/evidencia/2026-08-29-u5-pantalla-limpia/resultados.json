@@ -1,0 +1,28 @@
+{
+ "limpia-malla": {
+  "estado": "verde",
+  "checks": "con una malla cargada NO se renderizan: feature-tree (DOCUMENTO), face-list (CARAS DEL SÓLIDO), op-panel (PARÁMETROS) ni analysis-panel (ANÁLISIS·PROPIEDADES). Queda la pieza, el Foco y el dictamen",
+  "video": "", "still": "evidencia/2026-08-29-u5-pantalla-limpia/01-limpia-malla-still.jpg",
+  "nota": "no se BORRARON: se guardan tras una condición de contenido. Construyendo con croquis vuelven — si no, se rompía la escuela (63 lecciones los manejan por clics)"
+ },
+ "limpia-espacio": {
+  "estado": "verde",
+  "checks": "el visor pasa de ~60 % a ~85 % del ancho: antes tres columnas de paneles (izq 300 px + der 290 px) sobre 1600; ahora solo el dictamen (250 px)",
+  "video": "", "still": "evidencia/2026-08-29-u5-pantalla-limpia/01-limpia-malla-still.jpg", "nota": ""
+ },
+ "limpia-croquis": {
+  "estado": "verde",
+  "checks": "SketchPlane y ProfileGhost preguntan por piezaMalla: con una pieza cargada no queda ni un rectángulo amarillo en la escena (era el «rectángulo que se alcanza a ver siempre»)",
+  "video": "", "still": "", "nota": "mismo error de clase que la tarjeta de bienvenida de T1: dibujar lo del lienzo vacío sobre una pieza que ya existe"
+ },
+ "limpia-sin-regresion": {
+  "estado": "verde",
+  "checks": "las guardas son por CONTENIDO (hayArbol / hayCaras / haySolido): al construir un boceto + extrude los cuatro paneles vuelven a existir",
+  "video": "", "still": "", "nota": "dos errores de TDZ en el camino: las banderas leían components, importedStep y moldParts antes de que se declararan — el navegador tronaba con «Cannot access before initialization». esbuild no lo ve porque no ejecuta"
+ },
+ "limpia-gate": {
+  "estado": "verde",
+  "checks": "gate del ciclo 248/248 · 0 fallan",
+  "video": "", "still": "", "nota": "y EL FOCO ganó tecla: Q (F ya era Fillet). Entra al KEYMAP para que aparezca en el overlay de atajos y se descubra"
+ }
+}
