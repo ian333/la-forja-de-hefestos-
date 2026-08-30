@@ -1,0 +1,54 @@
+[
+ {
+  "slug": "horizon",
+  "appid": 1151640,
+  "imagenes": [
+   "horizon-mostrecent-hud-1.jpg",
+   "horizon-mostrecent-hud-2.jpg",
+   "horizon-mostrecent-hud-3.jpg",
+   "horizon-mostrecent-hud-4.jpg",
+   "horizon-mostrecent-hud-5.jpg",
+   "horizon-mostrecent-hud-6.jpg",
+   "horizon-mostrecent-hud-7.jpg",
+   "horizon-mostrecent-hud-8.jpg"
+  ]
+ },
+ {
+  "slug": "deathstr",
+  "appid": 1190460,
+  "imagenes": []
+ },
+ {
+  "slug": "cyberpunk",
+  "appid": 1091500,
+  "imagenes": []
+ },
+ {
+  "slug": "armoredcore",
+  "appid": 1888160,
+  "imagenes": [
+   "armoredcore-mostrecent-hud-1.jpg",
+   "armoredcore-mostrecent-hud-2.jpg",
+   "armoredcore-mostrecent-hud-3.jpg",
+   "armoredcore-mostrecent-hud-4.jpg",
+   "armoredcore-mostrecent-hud-5.jpg",
+   "armoredcore-mostrecent-hud-6.jpg",
+   "armoredcore-mostrecent-hud-7.jpg",
+   "armoredcore-mostrecent-hud-8.jpg"
+  ]
+ },
+ {
+  "slug": "stellaris",
+  "appid": 281990,
+  "imagenes": [
+   "stellaris-mostrecent-hud-1.jpg",
+   "stellaris-mostrecent-hud-2.jpg",
+   "stellaris-mostrecent-hud-3.jpg",
+   "stellaris-mostrecent-hud-4.jpg",
+   "stellaris-mostrecent-hud-5.jpg",
+   "stellaris-mostrecent-hud-6.jpg",
+   "stellaris-mostrecent-hud-7.jpg",
+   "stellaris-mostrecent-hud-8.jpg"
+  ]
+ }
+]

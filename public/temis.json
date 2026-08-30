@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-29 19:36",
+ "generado": "2026-08-30 20:07",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -8,20 +8,18 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "supertickets": 7,
+  "supertickets": 8,
   "cerrado": 68,
   "probado": 0,
   "porProbar": 34,
-  "sinDesplegar": 0,
+  "sinDesplegar": 1,
   "despues": 17
  },
  "deploy": {
   "commit": "1753d0e",
   "fecha": "2026-08-29 18:56"
  },
- "violaciones": [
-  "CERRADA SIN EVIDENCIA VISUAL: 2026-08-29-u8-atlas-de-interfaces — pon los ss en public/evidencia/2026-08-29-u8-atlas-de-interfaces/ antes de pedir revisión"
- ],
+ "violaciones": [],
  "columnas": {
   "proximo": [
    {
@@ -926,6 +924,106 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-30-u9-el-foco-de-horizon.md",
+    "slug": "2026-08-30-u9-el-foco-de-horizon",
+    "titulo": "U9 · EL FOCO DE HORIZON — las capturas que ian consiguió cuando yo no pude",
+    "fecha": "2026-08-30",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "foco-capturas",
+      "titulo": "Las cinco capturas de ian, en el atlas",
+      "herramientas": "imágenes embebidas",
+      "oraculo": "las 5 horizon-foco-*.jpg existen, son JPEG válidos y están citadas en la sección de Horizon",
+      "estado": "verde",
+      "checks": "las 5 capturas de ian están en docs/referencias-hud/ (horizon-foco-escaneo-cuarto, -puerta-holograma, -nexo-codigo, -registro-audio, -persona-grabada), las 5 son JPEG válidos y las 5 están citadas en la sección «HORIZON: EL FOCO, POR FIN»",
+      "video": "",
+      "still": "",
+      "nota": "las 2 últimas (8:09 y 8:26) se recuperaron del transcript de la sesión, donde el cliente las guarda en base64"
+     },
+     {
+      "id": "foco-regla-color",
+      "titulo": "Sale una REGLA accionable, no una descripción",
+      "herramientas": "doctrina",
+      "oraculo": "el atlas dice qué se pinta cian y qué violeta en La Forja, con el criterio \"de dónde viene el número\" (medido vs simulado)",
+      "estado": "verde",
+      "checks": "del cuadro 8:26 sale la regla: el APARATO es cian y lo PROYECTADO es violeta → en La Forja cian = lo que MEDIMOS (envolvente, pared del ráster, ⌀ del kernel) y violeta = lo que SIMULAMOS (llenado, térmico, partición propuesta, fuerza de expulsión). El color dice de dónde viene el número",
+      "video": "",
+      "still": "",
+      "nota": "corrige mi propio diagnóstico de la mañana («el Foco es violeta y yo lo hice cian»): no sobraba el cian, tenía otro trabajo"
+     },
+     {
+      "id": "foco-aro",
+      "titulo": "EL ARO queda descrito como componente",
+      "herramientas": "vocabulario",
+      "oraculo": "el atlas explica el aro de reproducir anclado al objeto y su barra de marquitas, y lo ata a nuestro ciclo (llenar→compactar→enfriar→abrir→expulsar)",
+      "estado": "verde",
+      "checks": "el atlas describe EL ARO (botón ▶ grueso anclado sobre el objeto) y su barra de tiempo en marquitas, y lo ata a nuestro ciclo llenar→compactar→enfriar→abrir→expulsar",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "foco-animacion",
+      "titulo": "La pregunta de ian queda contestada por escrito",
+      "herramientas": "§3.1",
+      "oraculo": "el atlas dice que NO puedo ver video, las 3 formas que sí funcionan, y la regla \"mándame dos cuadros, no el enlace\"",
+      "estado": "verde",
+      "checks": "§3.1 contesta la pregunta literal de ian: NO puedo ver video; las 3 formas que sí funcionan (2-3 cuadros del mismo efecto / describirla y yo la construyo / ffmpeg sobre un archivo local); y la regla del proyecto: mándame dos cuadros, no el enlace",
+      "video": "",
+      "still": "",
+      "nota": "ian ya había usado el método correcto sin saberlo: 5 cuadros del mismo video en momentos distintos"
+     },
+     {
+      "id": "foco-sin-huerfanas",
+      "titulo": "Ninguna imagen citada falta y ninguna basura entra al repo",
+      "herramientas": "verificador",
+      "oraculo": "26/26 citadas existen; docs/referencias-hud/hud/ queda podado a las 6 que el atlas usa",
+      "estado": "verde",
+      "checks": "26 imágenes citadas, 0 faltantes, todas con cabecera JPEG real (3.8 MB) · docs/referencias-hud/hud/ podado de 128 archivos (15 MB) a las 6 que el atlas cita + sus 2 manifiestos de atribución",
+      "video": "",
+      "still": "",
+      "nota": "las 122 podadas fueron pesca: ya se sacaron los peces, la red no se guarda"
+     },
+     {
+      "id": "foco-produccion",
+      "titulo": "ian lo puede abrir sin entrar al repo",
+      "herramientas": "entrega",
+      "oraculo": "copia autocontenida en su Downloads de Windows (nada en /tmp)",
+      "estado": "verde",
+      "checks": "copia en C:/Users/sebas/Downloads/FORJA-FOCO-REFERENCIAS/ — el atlas, la carpeta de imágenes y la versión AUTOCONTENIDA de un solo archivo. Nada en /tmp",
+      "video": "",
+      "still": "",
+      "nota": "ian: «RECUERDA NO ME PONGAS NADA EN TMP SI VEREMOS IMÁGENES LOS DOS»"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "el atlas U8 cerró con una confesión: de Horizon, la favorita de ian, no había una sola captura con el Foco encendido (Steam publica marketing, la comunidad publica modo foto, YouTube pide *PO tokens*, Fandom responde 403 al HTML). ian lo r…",
+    "toca": 1,
+    "crea": 17,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "verificador de citas: citadas: N · faltantes: 0 contra docs/referencias-hud/",
+     "las 5 capturas leídas con ojos (no descritas de memoria) y lo leído escrito en el atlas",
+     "copia autocontenida en el Downloads de Windows de ian — nada en /tmp, él lo va a abrir",
+     "orden-gate VERDE · Temis n/6"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -1012,7 +1110,7 @@
     },
     "objetivo": "ian, sobre el primer catálogo del Foco: \"mete las imágenes al md porfa… lo del foco me mama, pero también si puedes incluir videos de animaciones del HUD, ME MAMARÍA. Además hay otros juegos de robots. Y EL MD ESTÁ HORRIBLE, DEBERÍAMOS PAR…",
     "toca": 2,
-    "crea": 3,
+    "crea": 57,
     "evidencia": 4,
     "evidenciaDeclarada": [
      "verificador: cada archivo de docs/referencias-hud/ es JPEG/PNG válido (no HTML de error) y",
@@ -1026,8 +1124,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "3a5f413",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-29-u5-pantalla-limpia.md",

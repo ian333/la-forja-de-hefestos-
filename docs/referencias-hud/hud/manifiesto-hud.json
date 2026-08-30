@@ -1,0 +1,132 @@
+[
+ {
+  "slug": "horizon",
+  "appid": 1151640,
+  "imagenes": [
+   "horizon-hud-1.jpg",
+   "horizon-hud-2.jpg",
+   "horizon-hud-3.jpg",
+   "horizon-hud-4.jpg",
+   "horizon-hud-5.jpg",
+   "horizon-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "shipbreaker",
+  "appid": 1161580,
+  "imagenes": [
+   "shipbreaker-hud-1.jpg",
+   "shipbreaker-hud-2.jpg",
+   "shipbreaker-hud-3.jpg",
+   "shipbreaker-hud-4.jpg",
+   "shipbreaker-hud-5.jpg",
+   "shipbreaker-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "deathstr",
+  "appid": 1190460,
+  "imagenes": []
+ },
+ {
+  "slug": "cyberpunk",
+  "appid": 1091500,
+  "imagenes": []
+ },
+ {
+  "slug": "armoredcore",
+  "appid": 1888160,
+  "imagenes": [
+   "armoredcore-hud-1.jpg",
+   "armoredcore-hud-2.jpg",
+   "armoredcore-hud-3.jpg",
+   "armoredcore-hud-4.jpg",
+   "armoredcore-hud-5.jpg",
+   "armoredcore-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "titanfall2",
+  "appid": 1237970,
+  "imagenes": [
+   "titanfall2-hud-1.jpg",
+   "titanfall2-hud-2.jpg",
+   "titanfall2-hud-3.jpg",
+   "titanfall2-hud-4.jpg",
+   "titanfall2-hud-5.jpg",
+   "titanfall2-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "nier",
+  "appid": 524220,
+  "imagenes": [
+   "nier-hud-1.jpg",
+   "nier-hud-2.jpg",
+   "nier-hud-3.jpg",
+   "nier-hud-4.jpg",
+   "nier-hud-5.jpg",
+   "nier-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "subnautica",
+  "appid": 264710,
+  "imagenes": [
+   "subnautica-hud-1.jpg",
+   "subnautica-hud-2.jpg",
+   "subnautica-hud-3.jpg",
+   "subnautica-hud-4.jpg",
+   "subnautica-hud-5.jpg",
+   "subnautica-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "prey",
+  "appid": 480490,
+  "imagenes": [
+   "prey-hud-1.jpg",
+   "prey-hud-2.jpg",
+   "prey-hud-3.jpg",
+   "prey-hud-4.jpg",
+   "prey-hud-5.jpg",
+   "prey-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "deusex",
+  "appid": 337000,
+  "imagenes": [
+   "deusex-hud-1.jpg",
+   "deusex-hud-2.jpg",
+   "deusex-hud-3.jpg",
+   "deusex-hud-4.jpg",
+   "deusex-hud-5.jpg",
+   "deusex-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "ghostrunner",
+  "appid": 1139900,
+  "imagenes": [
+   "ghostrunner-hud-1.jpg",
+   "ghostrunner-hud-2.jpg",
+   "ghostrunner-hud-3.jpg",
+   "ghostrunner-hud-4.jpg",
+   "ghostrunner-hud-5.jpg",
+   "ghostrunner-hud-6.jpg"
+  ]
+ },
+ {
+  "slug": "stellaris",
+  "appid": 281990,
+  "imagenes": [
+   "stellaris-hud-1.jpg",
+   "stellaris-hud-2.jpg",
+   "stellaris-hud-3.jpg",
+   "stellaris-hud-4.jpg",
+   "stellaris-hud-5.jpg",
+   "stellaris-hud-6.jpg"
+  ]
+ }
+]

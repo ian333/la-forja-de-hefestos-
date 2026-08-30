@@ -1,0 +1,35 @@
+{
+ "foco-capturas": {
+  "estado": "verde",
+  "checks": "las 5 capturas de ian están en docs/referencias-hud/ (horizon-foco-escaneo-cuarto, -puerta-holograma, -nexo-codigo, -registro-audio, -persona-grabada), las 5 son JPEG válidos y las 5 están citadas en la sección «HORIZON: EL FOCO, POR FIN»",
+  "video": "", "still": "",
+  "nota": "las 2 últimas (8:09 y 8:26) se recuperaron del transcript de la sesión, donde el cliente las guarda en base64"
+ },
+ "foco-regla-color": {
+  "estado": "verde",
+  "checks": "del cuadro 8:26 sale la regla: el APARATO es cian y lo PROYECTADO es violeta → en La Forja cian = lo que MEDIMOS (envolvente, pared del ráster, ⌀ del kernel) y violeta = lo que SIMULAMOS (llenado, térmico, partición propuesta, fuerza de expulsión). El color dice de dónde viene el número",
+  "video": "", "still": "",
+  "nota": "corrige mi propio diagnóstico de la mañana («el Foco es violeta y yo lo hice cian»): no sobraba el cian, tenía otro trabajo"
+ },
+ "foco-aro": {
+  "estado": "verde",
+  "checks": "el atlas describe EL ARO (botón ▶ grueso anclado sobre el objeto) y su barra de tiempo en marquitas, y lo ata a nuestro ciclo llenar→compactar→enfriar→abrir→expulsar",
+  "video": "", "still": "", "nota": ""
+ },
+ "foco-animacion": {
+  "estado": "verde",
+  "checks": "§3.1 contesta la pregunta literal de ian: NO puedo ver video; las 3 formas que sí funcionan (2-3 cuadros del mismo efecto / describirla y yo la construyo / ffmpeg sobre un archivo local); y la regla del proyecto: mándame dos cuadros, no el enlace",
+  "video": "", "still": "",
+  "nota": "ian ya había usado el método correcto sin saberlo: 5 cuadros del mismo video en momentos distintos"
+ },
+ "foco-sin-huerfanas": {
+  "estado": "verde",
+  "checks": "26 imágenes citadas, 0 faltantes, todas con cabecera JPEG real (3.8 MB) · docs/referencias-hud/hud/ podado de 128 archivos (15 MB) a las 6 que el atlas cita + sus 2 manifiestos de atribución",
+  "video": "", "still": "", "nota": "las 122 podadas fueron pesca: ya se sacaron los peces, la red no se guarda"
+ },
+ "foco-produccion": {
+  "estado": "verde",
+  "checks": "copia en C:/Users/sebas/Downloads/FORJA-FOCO-REFERENCIAS/ — el atlas, la carpeta de imágenes y la versión AUTOCONTENIDA de un solo archivo. Nada en /tmp",
+  "video": "", "still": "", "nota": "ian: «RECUERDA NO ME PONGAS NADA EN TMP SI VEREMOS IMÁGENES LOS DOS»"
+ }
+}
