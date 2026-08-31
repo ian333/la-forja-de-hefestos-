@@ -1435,6 +1435,122 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `con cilindros: ⌀8 · sin ellos: "${m.noMedido.find((n) => /barrenos/.test(n)).slice(0, 70)}…"`);
   }
 
+  // ══ U10 · LAS LENTES DEL FOCO — el análisis, encima de la pieza ══
+  // ian: «que el Foco sea el LUGAR del análisis y no tengas que pagar extra ni
+  // esperar». Se verifica lo tres: que el número sea EL DEL LIBRO, que no se
+  // pague espera, y que el color diga de dónde viene el dato.
+  console.log('── U10 · LAS LENTES DEL FOCO (pared · enfriamiento · llenado)');
+  {
+    const { lentesDelFoco } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'foco-lentes.ts'));
+    const { coolingTimePlate, ABS_KAZMER } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'cooling.ts'));
+    const { parseSTL } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'stl.ts'));
+
+    // ORÁCULO: la Eq 9.5 sobre una placa ABS de 2 mm da los 8.4 s del libro (p.203).
+    // Si esto se mueve, la lente de enfriamiento está mintiendo.
+    const t2 = coolingTimePlate(0.002, ABS_KAZMER);
+    check('LENTE · el oráculo del libro: placa ABS 2 mm = 8.4 s (Eq 9.5)',
+      Math.abs(t2 - 8.4) < 0.1, `${t2.toFixed(2)} s`);
+
+    const bt = readFileSync(path.resolve(__dirname, '..', 'test-parts', 'rpi4-top.stl'));
+    const tapa = parseSTL(bt.buffer.slice(bt.byteOffset, bt.byteOffset + bt.byteLength));
+    const t0 = Date.now();
+    const r = lentesDelFoco(tapa);
+    const msReal = Date.now() - t0;
+    const L = (id) => r.lentes.find((x) => x.id === id);
+    const nv = tapa.positions.length / 3;
+
+    check('LENTE · UNA pasada del campo entrega las TRES lecturas',
+      r.lentes.length === 3 && L('pared') && L('enfriamiento') && L('llenado'),
+      r.lentes.map((x) => x.nombre).join(' · '));
+
+    check('LENTE · sin esperar: el campo + las 3 lentes en ≤2.5 s',
+      msReal <= 2500 && r.ms.total <= 2500 && r.ms.total > 0,
+      `${(r.ms.total / 1000).toFixed(2)} s (campo ${r.ms.campo} ms + lentes ${r.ms.lentes} ms) · reloj ${msReal} ms`);
+
+    check('LENTE · el color dice DE DÓNDE VIENE el número (cian medido / violeta simulado)',
+      L('pared').origen === 'medido' && L('enfriamiento').origen === 'simulado' && L('llenado').origen === 'simulado',
+      `pared=${L('pared').origen} · enfriamiento=${L('enfriamiento').origen} · llenado=${L('llenado').origen}`);
+
+    check('LENTE · cada vértice del sólido recibe color (RGB 3·N, sin NaN)',
+      r.lentes.every((x) => x.colores.length === nv * 3 && !x.colores.some((c) => !Number.isFinite(c))),
+      `${nv} vértices × 3 = ${nv * 3} por lente`);
+
+    // el t_c de la lente TIENE que ser la Eq 9.5 evaluada en el espesor que la
+    // propia lente de pared reporta — si no, son dos verdades en la misma pantalla
+    const hMax = L('pared').maxCampo, tcMax = L('enfriamiento').maxCampo;
+    check('LENTE · el t_c máximo ES la Eq 9.5 del espesor máximo (una sola verdad)',
+      Math.abs(tcMax - coolingTimePlate(hMax / 1000, ABS_KAZMER)) < 0.05 * tcMax,
+      `h=${hMax.toFixed(2)} mm → t_c ${tcMax.toFixed(1)} s vs Eq ${coolingTimePlate(hMax / 1000, ABS_KAZMER).toFixed(1)} s`);
+
+    check('LENTE · la leyenda tiene paradas DISTINTAS con valor y unidad (el color ES la clave)',
+      r.lentes.every((x) => x.paradas.length >= 3
+        && new Set(x.paradas.map((p) => p.hex)).size === x.paradas.length
+        && x.paradas.every((p) => /^#[0-9a-f]{6}$/.test(p.hex) && Number.isFinite(p.v) && p.etiqueta.length > 3)),
+      r.lentes.map((x) => `${x.nombre}:${x.paradas.length}`).join(' '));
+
+    check('LENTE · la rampa NO es degenerada (p05≠p95: si no, la pieza sale de un color)',
+      r.lentes.every((x) => x.escala.hi > x.escala.lo),
+      r.lentes.map((x) => `${x.nombre} ${x.escala.lo.toFixed(1)}→${x.escala.hi.toFixed(1)}`).join(' · '));
+
+    check('LENTE · la ficha habla ESPAÑOL y nombra el punto que manda (no símbolos crudos)',
+      r.lentes.every((x) => x.titular.length > 25 && x.cuerpo.length > 80 && !/[=]{1}\s*\d/.test(x.titular))
+      && /ciclo lo manda/.test(L('enfriamiento').titular) && L('enfriamiento').peor != null,
+      `«${L('enfriamiento').titular}»`);
+
+    check('LENTE · LA MARCA cae DENTRO de la pieza y coincide con el máximo de la ficha',
+      r.lentes.every((x) => {
+        if (!x.peor) return false;
+        const [px, py, pz] = x.peor.punto;
+        const P = tapa.positions;
+        let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+        for (let i = 0; i < P.length; i += 3) {
+          if (P[i] < x0) x0 = P[i]; if (P[i] > x1) x1 = P[i];
+          if (P[i + 1] < y0) y0 = P[i + 1]; if (P[i + 1] > y1) y1 = P[i + 1];
+          if (P[i + 2] < z0) z0 = P[i + 2]; if (P[i + 2] > z1) z1 = P[i + 2];
+        }
+        return px >= x0 && px <= x1 && py >= y0 && py <= y1 && pz >= z0 && pz <= z1
+          && Math.abs(x.peor.valor - x.maxCampo) < 1e-3;
+      }),
+      r.lentes.map((x) => `${x.nombre} (${x.peor.punto.map((v) => v.toFixed(0)).join(',')})`).join(' · '));
+
+    // EL INVARIANTE QUE HACE HONESTA A LA LENTE: la leyenda tiene que describir lo
+    // que está PINTADO. Se busca el vértice cuyo valor más se acerca a cada parada
+    // de la rampa y se exige que su color sea el de esa parada. Si render y leyenda
+    // usaran dos funciones distintas, esto revienta — que es justo el punto.
+    {
+      const hx = (c) => '#' + [0, 1, 2].map((k) => Math.round(Math.max(0, Math.min(1, c[k])) * 255).toString(16).padStart(2, '0')).join('');
+      const malas = [];
+      for (const x of r.lentes) {
+        for (const par of x.paradas) {
+          if (par.v < x.escala.lo || par.v > x.escala.hi) continue;   // ámbar/rojo no son de la rampa
+          let mejor = -1, dist = Infinity;
+          for (let v = 0; v < x.valores.length; v++) {
+            const d = Math.abs(x.valores[v] - par.v);
+            if (Number.isFinite(d) && d < dist) { dist = d; mejor = v; }
+          }
+          if (mejor < 0 || dist > (x.escala.hi - x.escala.lo) * 0.02) continue;  // nadie cerca: no aplica
+          const c = hx([x.colores[mejor * 3], x.colores[mejor * 3 + 1], x.colores[mejor * 3 + 2]]);
+          // tolerancia de 1/255 por canal: el color del sólido pasa por Float32Array
+          // y el de la leyenda se calcula en double — un canal puede diferir en 1 por
+          // redondeo. Eso NO es una mentira; un color distinto sí lo es.
+          const ch = (t) => [1, 3, 5].map((i) => parseInt(t.slice(i, i + 2), 16));
+          const d = ch(c).map((v, i) => Math.abs(v - ch(par.hex)[i]));
+          if (Math.max(...d) > 1) malas.push(`${x.nombre}@${par.v.toFixed(1)}: pintado ${c} ≠ leyenda ${par.hex}`);
+        }
+      }
+      check('LENTE · la LEYENDA describe lo que está PINTADO (mismo color, mismo valor)',
+        malas.length === 0, malas.length ? malas.slice(0, 2).join(' · ') : 'las paradas de rampa coinciden con el sólido');
+    }
+
+    // DETERMINISMO: el módulo es puro, misma malla ⇒ mismos colores. Sin esto, dos
+    // corridas pintarían distinto y la leyenda dejaría de significar algo.
+    const r2 = lentesDelFoco(tapa);
+    check('LENTE · es PURA: dos corridas dan el MISMO campo y los MISMOS colores',
+      r2.lentes.every((x, i) => x.maxCampo === r.lentes[i].maxCampo
+        && x.colores.every((c, j) => c === r.lentes[i].colores[j])),
+      `${r2.lentes.length} lentes idénticas`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

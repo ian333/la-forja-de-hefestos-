@@ -15,14 +15,20 @@
  * pantalla y la del lote dieran números distintos, tendríamos dos verdades — que
  * es el bug de contabilidad que este proyecto ya pagó una vez.
  *
- * Lo que sigue (declarado, no escondido): las capas sobre el sólido (T2), el
- * texto con hilo a la geometría (T3), la voz de Matilda (T4) y el expediente que
- * se ve (T5) aterrizan AQUÍ. Por eso el panel expone `onVerHallazgo`.
+ * U10 · LAS LENTES (2026-08-30) — ian: «que el Foco sea el LUGAR del análisis y
+ * no tengas que pagar extra ni esperar». Aterrizó aquí: `PanelDeLentes` al final
+ * de este archivo. Una pasada del campo alimenta PARED (cian, medido),
+ * ENFRIAMIENTO y LLENADO (violeta, simulado) sobre la MISMA pieza.
+ *
+ * Lo que sigue (declarado, no escondido): el texto con hilo a la geometría (T3),
+ * la voz de Matilda (T4) y el expediente que se ve (T5) aterrizan AQUÍ. Por eso
+ * el panel expone `onVerHallazgo`.
  */
 import { useEffect, useRef, useState } from 'react';
 import { revisarModelo, type RevisionModelo } from './revisar-modelo';
 import type { MeshLike } from './flowlen-mesh';
 import type { Criterio, ContratoEstado } from './mold-contratos';
+import type { Lente, LenteId, LentesFoco } from './foco-lentes';
 
 const GOLD = '#c9a227';
 const COLOR: Record<ContratoEstado, string> = {
@@ -52,8 +58,20 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
   onAbrirLote?: () => void;
   /** T3: llevar la cámara al hallazgo. Todavía no hay anclas — se declara el hueco. */
   onVerHallazgo?: (c: Criterio) => void;
-  /** U3 · EL FOCO: el plano encima de la pieza. Arranca apagado (regla de Detroit). */
-  foco?: { on: boolean; toggle: () => void; nMedidas: number; noMedido: string[] };
+  /** U3 · EL FOCO: el plano encima de la pieza. Arranca apagado (regla de Detroit).
+   *  U10 · LAS LENTES: el análisis vive AQUÍ, no en otra pantalla ni en otro módulo. */
+  foco?: {
+    on: boolean; toggle: () => void; nMedidas: number; noMedido: string[];
+    lente: LenteId | 'medidas';
+    setLente: (id: LenteId | 'medidas') => void;
+    lentes: Lente[] | null;
+    campo: LentesFoco['campo'] | null;
+    ms: number | null;
+    /** dispara la pasada única del campo (0.5-2.4 s medidos) */
+    calcular: () => void;
+    busy: boolean;
+    err: string;
+  };
 }) {
   const [rev, setRev] = useState<RevisionModelo | null>(null);
   const [estado, setEstado] = useState<string>('');
@@ -134,7 +152,12 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
             {foco.on ? '◉' : '○'} EL FOCO <span style={{ opacity: 0.65, fontWeight: 400 }}>· las medidas encima {foco.on ? `(${foco.nMedidas})` : ''}</span>
             <span style={{ float: 'right', opacity: 0.5, fontWeight: 400, fontSize: 10 }}>Q</span>
           </button>
-          {foco.on && foco.noMedido.length > 0 && (
+          {/* U10 · LAS LENTES — de Hardspace: Shipbreaker: UN objeto, VARIAS lecturas,
+              pestañas sobre la misma pieza en vez de tres pantallas. El punto del
+              color: cian = MEDIDO (está en la pieza) · violeta = SIMULADO (es un
+              cálculo). Esa es la regla que salió del Foco de Horizon. */}
+          {foco.on && <PanelDeLentes foco={foco} />}
+          {foco.on && foco.lente === 'medidas' && foco.noMedido.length > 0 && (
             <div data-testid="foco-no-medido" style={{ fontSize: 10, opacity: 0.55, marginTop: 4, lineHeight: 1.45 }}>
               El Foco no puede medir: {foco.noMedido.join(' · ')}
             </div>
@@ -195,9 +218,109 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
       {/* LO QUE FALTA, DICHO: sin esto el panel parecería completo y no lo está */}
       {rev && (
         <div style={{ fontSize: 10, opacity: 0.45, marginTop: 8, lineHeight: 1.5 }}>
-          Falta aquí: las capas sobre el sólido (espesor, expulsores) · el hilo de cada § a su
-          lugar en la pieza · la voz que lo dicta · el expediente con su consecuencia visible.
-          Son T2-T5 y todavía no están.
+          Falta aquí: el hilo de cada § a su lugar en la pieza · la voz que lo dicta · el
+          expediente con su consecuencia visible. Son T3-T5 y todavía no están.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * LAS LENTES DEL FOCO — el análisis, encima de tu pieza.
+ * ============================================================================
+ * ian: «que el Foco sea el LUGAR del análisis y no tengas que pagar extra ni
+ * esperar». Por eso: pestañas sobre la MISMA pieza (Shipbreaker), una sola
+ * pasada del campo para las tres, y la leyenda donde EL COLOR ES LA CLAVE.
+ *
+ * La ficha va en LENGUAJE NATURAL (Horizon). ian sobre el panel viejo: «no
+ * tengo ni idea de qué dice ahí». Aquí no se lee `t_c=382.9s`: se lee qué
+ * significa y qué hacer.
+ */
+function PanelDeLentes({ foco }: {
+  foco: NonNullable<Parameters<typeof RevisarPiezaPanel>[0]['foco']>;
+}) {
+  const activa = foco.lentes?.find((l) => l.id === foco.lente) ?? null;
+  const PESTANAS: Array<{ id: LenteId | 'medidas'; txt: string }> = [
+    { id: 'medidas', txt: 'MEDIDAS' },
+    { id: 'pared', txt: 'PARED' },
+    { id: 'enfriamiento', txt: 'ENFRIAMIENTO' },
+    { id: 'llenado', txt: 'LLENADO' },
+  ];
+  // el idioma de color: cian = lo que MEDIMOS · violeta = lo que SIMULAMOS
+  const tono = (id: LenteId | 'medidas') => (id === 'medidas' || id === 'pared' ? '#5fd4f5' : '#e061c8');
+  const n1 = (x: number) => (Math.abs(x) >= 100 ? x.toFixed(0) : x.toFixed(1));
+
+  return (
+    <div data-testid="foco-lentes" style={{ marginTop: 6 }}>
+      {/* REJILLA 2×2 FIJA, no flex-wrap: con `flex:1 1 auto` la cuarta pestaña
+          (LLENADO) se caía sola a un segundo renglón y el bloque quedaba chueco.
+          Cazado a ojo en el drive; es el mismo defecto de CSS que ya pagamos con
+          el panel del lobby. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 3 }}>
+        {PESTANAS.map((p) => {
+          const on = foco.lente === p.id;
+          const c = tono(p.id);
+          return (
+            <button key={p.id} data-testid={`lente-${p.id}`}
+              onClick={() => { foco.setLente(p.id); if (p.id !== 'medidas') foco.calcular(); }}
+              title={p.id === 'medidas' ? 'las cotas de la envolvente' : 'el campo, pintado sobre tu pieza'}
+              style={{
+                minWidth: 0, cursor: 'pointer', borderRadius: 5, padding: '5px 6px',
+                font: `${on ? 700 : 500} 9.5px ui-monospace,Menlo,monospace`, letterSpacing: 0.3,
+                background: on ? `${c}22` : 'transparent',
+                border: `1px solid ${on ? c : '#2c3a50'}`,
+                color: on ? c : '#7f8fa6',
+              }}>{p.txt}</button>
+          );
+        })}
+      </div>
+
+      {foco.busy && (
+        <div data-testid="lentes-calculando" style={{ fontSize: 10.5, opacity: 0.8, marginTop: 6 }}>
+          ⏳ midiendo el campo de tu pieza… <span style={{ opacity: 0.6 }}>(una sola pasada para las tres lentes)</span>
+        </div>
+      )}
+      {foco.err && (
+        <div data-testid="lentes-error" style={{ fontSize: 10.5, color: '#ffb3b3', marginTop: 6 }}>✗ {foco.err}</div>
+      )}
+
+      {activa && (
+        <div data-testid={`ficha-${activa.id}`} style={{ marginTop: 7 }}>
+          {/* LA FICHA — borde izquierdo duro, como la tarjeta de Horizon */}
+          <div style={{
+            borderLeft: `3px solid ${tono(activa.id)}`, paddingLeft: 8,
+            background: 'rgba(255,255,255,0.028)', borderRadius: '0 6px 6px 0', padding: '6px 8px 7px 8px',
+          }}>
+            <div style={{ fontSize: 9, letterSpacing: 0.6, opacity: 0.55, marginBottom: 2 }}>
+              {activa.origen === 'medido' ? 'MEDIDO DE TU PIEZA' : 'SIMULADO — NO ESTÁ EN LA PIEZA, ES UN CÁLCULO'}
+            </div>
+            <div data-testid="ficha-titular" style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.35, marginBottom: 4 }}>
+              {activa.titular}
+            </div>
+            <div style={{ fontSize: 10.5, opacity: 0.78, lineHeight: 1.5 }}>{activa.cuerpo}</div>
+            <div style={{ fontSize: 9.5, opacity: 0.45, marginTop: 5 }}>{activa.ref}</div>
+          </div>
+
+          {/* LA LEYENDA — el color ES la clave (Shipbreaker), con valores reales */}
+          <div data-testid="lente-leyenda" style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {activa.paradas.map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10 }}>
+                <span style={{ width: 16, height: 10, borderRadius: 2, background: p.hex, flex: '0 0 auto', border: '1px solid rgba(255,255,255,0.18)' }} />
+                <b style={{ fontVariantNumeric: 'tabular-nums', minWidth: 44 }}>{n1(p.v)} {activa.unidad}</b>
+                <span style={{ opacity: 0.6 }}>{p.etiqueta}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* LO QUE NO SE ESCONDE: la resolución del campo y lo que quedó sin dato */}
+          <div style={{ fontSize: 9.5, opacity: 0.42, marginTop: 6, lineHeight: 1.5 }}>
+            celda {foco.campo ? n1(foco.campo.celdaMm) : '—'} mm ·{' '}
+            {foco.campo ? foco.campo.huecos.toLocaleString('es-MX') : '—'} vóxeles ·{' '}
+            {foco.ms != null ? `${(foco.ms / 1000).toFixed(1)} s` : '—'}
+            {activa.sinDato > 0 && ` · ${activa.sinDato} vértices sin dato (fuera de la rejilla)`}
+            {foco.campo?.avisos.length ? ` · ⚠ ${foco.campo.avisos[0]}` : ''}
+          </div>
         </div>
       )}
     </div>

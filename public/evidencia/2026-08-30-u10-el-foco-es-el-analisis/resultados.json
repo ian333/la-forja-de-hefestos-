@@ -1,0 +1,37 @@
+{
+ "lente-motor": {
+  "estado": "verde",
+  "checks": "lentesDelFoco(mesh) corre flowFieldFromMesh UNA vez y devuelve PARED + ENFRIAMIENTO + LLENADO · el oráculo del libro pasa: placa ABS de 2 mm = 8.40 s (Kazmer p.203 dice 8.4) · el t_c máximo de la lente ES la Eq 9.5 evaluada en el espesor máximo de la lente de pared (una sola verdad, no dos)",
+  "video": "", "still": "lente-enfriamiento.png",
+  "nota": "cero motor nuevo: se consume flowlen (espesor Hildebrand-Rüegsegger) + cooling.ts, que ya estaban probados"
+ },
+ "lente-sin-esperar": {
+  "estado": "verde",
+  "checks": "medido sobre STL reales: rpi4-top 0.46 s · einsy-base 0.62 s · naturebytes-front 0.85 s · 3dbenchy (225,706 triángulos) 2.44 s. El gate exige ≤2.5 s y el módulo imprime sus propios ms. Las lentes se cachean por malla: cambiar de pestaña no vuelve a pagar el campo",
+  "video": "", "still": "",
+  "nota": "DESCARTADO por medición: la vía del SDF exacto (sdf-malla.ts) tardó 14 s en la pieza más chica (1,700 triángulos)"
+ },
+ "lente-color-honesto": {
+  "estado": "verde",
+  "checks": "PARED origen=medido (cian) · ENFRIAMIENTO y LLENADO origen=simulado (violeta). Es la regla que salió de la captura 8:26 de Horizon: el aparato es cian, lo que proyecta es violeta → el color dice DE DÓNDE VIENE el número",
+  "video": "", "still": "lente-pared.png", "nota": ""
+ },
+ "lente-leyenda": {
+  "estado": "verde",
+  "checks": "cada lente entrega ≥3 paradas con valor real, unidad y colores distintos · y el gate verifica el invariante duro: el vértice cuyo valor cae en una parada está PINTADO con el color de esa parada (tolerancia 1/255 por redondeo de Float32)",
+  "video": "", "still": "",
+  "nota": "el gate cazó una MENTIRA real: la parada de arriba de PARED enseñaba cian pálido, pero a ese espesor la pieza se pinta ÁMBAR — ese cian no existía en el sólido. Se corta la rampa en el umbral de 1.25× del §2.3.1"
+ },
+ "lente-ficha": {
+  "estado": "verde",
+  "checks": "la ficha va en español y nombra el punto que manda: «El ciclo lo manda un solo punto: 383 s. El resto está listo en 26.1 s» + qué hacer (bajarle 30 % al macizo quita la mitad del ciclo, porque t_c va con el CUADRADO del espesor)",
+  "video": "", "still": "lente-enfriamiento.png",
+  "nota": "responde a ian sobre el panel viejo: «no tengo ni idea de qué dice ahí»"
+ },
+ "lente-en-la-forja": {
+  "estado": "verde",
+  "checks": "cero <Canvas> nuevo (censo 8→8) · la pieza se pinta con el mismo SolidMesh por el canal feaColors que ya iba con meshBasicMaterial toneMapped:false · las pestañas y la ficha son DOM en el panel que ya existía. Manejado con forja-drive.cjs sobre la UI real: 7 gestos, 0 errores de consola",
+  "video": "", "still": "foco-medidas.png",
+  "nota": "2 defectos cazados A OJO en el primer drive y corregidos: las cotas del Foco seguían encima del campo, y la 4ª pestaña se caía de renglón"
+ }
+}

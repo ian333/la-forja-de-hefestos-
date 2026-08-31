@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-30 20:07",
+ "generado": "2026-08-31 02:52",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -8,7 +8,7 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "supertickets": 8,
+  "supertickets": 9,
   "cerrado": 68,
   "probado": 0,
   "porProbar": 34,
@@ -926,6 +926,113 @@
     "despliegue": ""
    },
    {
+    "file": "ordenes/2026-08-30-u10-el-foco-es-el-analisis.md",
+    "slug": "2026-08-30-u10-el-foco-es-el-analisis",
+    "titulo": "U10 · EL FOCO ES EL LUGAR DEL ANÁLISIS — las LENTES sobre tu pieza",
+    "fecha": "2026-08-30",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "lente-motor",
+      "titulo": "UNA pasada alimenta las 3 lentes",
+      "herramientas": "foco-lentes.ts puro",
+      "oraculo": "lentesDelFoco(mesh) corre el campo UNA vez y devuelve pared+enfriamiento+llenado; el gate mide que el t_c de una placa de 2 mm ABS = 8.4 s (Eq 9.5, el número del libro)",
+      "estado": "verde",
+      "checks": "lentesDelFoco(mesh) corre flowFieldFromMesh UNA vez y devuelve PARED + ENFRIAMIENTO + LLENADO · el oráculo del libro pasa: placa ABS de 2 mm = 8.40 s (Kazmer p.203 dice 8.4) · el t_c máximo de la lente ES la Eq 9.5 evaluada en el espesor máximo de la lente de pared (una sola verdad, no dos)",
+      "video": "",
+      "still": "lente-enfriamiento.png",
+      "nota": "cero motor nuevo: se consume flowlen (espesor Hildebrand-Rüegsegger) + cooling.ts, que ya estaban probados"
+     },
+     {
+      "id": "lente-sin-esperar",
+      "titulo": "No se paga espera",
+      "herramientas": "medición",
+      "oraculo": "las 4 piezas de la tabla se resuelven en ≤2.5 s y el módulo DECLARA sus ms; ninguna corre dos veces el campo",
+      "estado": "verde",
+      "checks": "medido sobre STL reales: rpi4-top 0.46 s · einsy-base 0.62 s · naturebytes-front 0.85 s · 3dbenchy (225,706 triángulos) 2.44 s. El gate exige ≤2.5 s y el módulo imprime sus propios ms. Las lentes se cachean por malla: cambiar de pestaña no vuelve a pagar el campo",
+      "video": "",
+      "still": "",
+      "nota": "DESCARTADO por medición: la vía del SDF exacto (sdf-malla.ts) tardó 14 s en la pieza más chica (1,700 triángulos)"
+     },
+     {
+      "id": "lente-color-honesto",
+      "titulo": "El color dice de dónde viene el número",
+      "herramientas": "doctrina",
+      "oraculo": "PARED en cian (medido), ENFRIAMIENTO y LLENADO en violeta (simulado); el gate verifica el origen de cada lente",
+      "estado": "verde",
+      "checks": "PARED origen=medido (cian) · ENFRIAMIENTO y LLENADO origen=simulado (violeta). Es la regla que salió de la captura 8:26 de Horizon: el aparato es cian, lo que proyecta es violeta → el color dice DE DÓNDE VIENE el número",
+      "video": "",
+      "still": "lente-pared.png",
+      "nota": ""
+     },
+     {
+      "id": "lente-leyenda",
+      "titulo": "El color ES la clave, no adorno",
+      "herramientas": "UI",
+      "oraculo": "cada lente trae paradas con valor real y unidad; sin leyenda una lente no se puede prender",
+      "estado": "verde",
+      "checks": "cada lente entrega ≥3 paradas con valor real, unidad y colores distintos · y el gate verifica el invariante duro: el vértice cuyo valor cae en una parada está PINTADO con el color de esa parada (tolerancia 1/255 por redondeo de Float32)",
+      "video": "",
+      "still": "",
+      "nota": "el gate cazó una MENTIRA real: la parada de arriba de PARED enseñaba cian pálido, pero a ese espesor la pieza se pinta ÁMBAR — ese cian no existía en el sólido. Se corta la rampa en el umbral de 1.25× del §2.3.1"
+     },
+     {
+      "id": "lente-ficha",
+      "titulo": "Dice lo que pasa en español, no en símbolos",
+      "herramientas": "texto",
+      "oraculo": "la ficha de enfriamiento nombra el punto que MANDA el ciclo, su espesor y su t_c, y qué hacer",
+      "estado": "verde",
+      "checks": "la ficha va en español y nombra el punto que manda: «El ciclo lo manda un solo punto: 383 s. El resto está listo en 26.1 s» + qué hacer (bajarle 30 % al macizo quita la mitad del ciclo, porque t_c va con el CUADRADO del espesor)",
+      "video": "",
+      "still": "lente-enfriamiento.png",
+      "nota": "responde a ian sobre el panel viejo: «no tengo ni idea de qué dice ahí»"
+     },
+     {
+      "id": "lente-en-la-forja",
+      "titulo": "Pasa DENTRO del CAD, sin pantalla nueva",
+      "herramientas": "Regla #0.7",
+      "oraculo": "cero <Canvas> nuevo (censo 8→8), la pieza se pinta con el SolidMesh que ya existe",
+      "estado": "verde",
+      "checks": "cero <Canvas> nuevo (censo 8→8) · la pieza se pinta con el mismo SolidMesh por el canal feaColors que ya iba con meshBasicMaterial toneMapped:false · las pestañas y la ficha son DOM en el panel que ya existía. Manejado con forja-drive.cjs sobre la UI real: 7 gestos, 0 errores de consola",
+      "video": "",
+      "still": "foco-medidas.png",
+      "nota": "2 defectos cazados A OJO en el primer drive y corregidos: las cotas del Foco seguían encima del campo, y la 4ª pestaña se caía de renglón"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian: «quiero POCs :D con los datos que ya tengamos. El Foco puede ser para ver el sistema de enfriamiento o la temperatura — la idea es que el Foco sea el lugar del análisis y no tengas que pagar extra o esperar».",
+    "toca": 4,
+    "crea": 7,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "gate ciclo-dado-test.cjs con los casos de lente, incluida la placa de 2 mm = 8.4 s del libro",
+     "capturas del arnés forja-drive.cjs con una pieza REAL cargada y cada lente prendida",
+     "los ms medidos, impresos por el propio módulo (no de mi memoria)",
+     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
+     "deploy a producción + verificación contra el bundle SERVIDO",
+     "orden-gate VERDE · censo Canvas 8→8 · Temis n/6"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [
+     "evidencia/2026-08-30-u10-el-foco-es-el-analisis/foco-medidas.png",
+     "evidencia/2026-08-30-u10-el-foco-es-el-analisis/lente-enfriamiento.png",
+     "evidencia/2026-08-30-u10-el-foco-es-el-analisis/lente-llenado.png",
+     "evidencia/2026-08-30-u10-el-foco-es-el-analisis/lente-pared.png"
+    ],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-08-30-u9-el-foco-de-horizon.md",
     "slug": "2026-08-30-u9-el-foco-de-horizon",
     "titulo": "U9 · EL FOCO DE HORIZON — las capturas que ian consiguió cuando yo no pude",
@@ -1007,7 +1114,7 @@
      "total": 6
     },
     "objetivo": "el atlas U8 cerró con una confesión: de Horizon, la favorita de ian, no había una sola captura con el Foco encendido (Steam publica marketing, la comunidad publica modo foto, YouTube pide *PO tokens*, Fandom responde 403 al HTML). ian lo r…",
-    "toca": 1,
+    "toca": 2,
     "crea": 17,
     "evidencia": 4,
     "evidenciaDeclarada": [

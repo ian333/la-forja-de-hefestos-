@@ -51,6 +51,7 @@ import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, PALETA_FOCO, type CotaSet } from './MoldCotas3D';
 import { medidasDeLaPieza } from '../mold/foco-medidas';   // U3 · EL FOCO: el plano, encima de la pieza
+import { lentesDelFoco, type LentesFoco, type LenteId } from '../mold/foco-lentes';   // U10 · EL FOCO: el ANÁLISIS, encima de la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
@@ -3548,6 +3549,45 @@ export default function ForgeBRepStudio() {
     } catch { return []; }
   }, [piezaMalla]);
   const focoRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  // ── U10 · LAS LENTES DEL FOCO ────────────────────────────────────────────
+  // ian: «el Foco puede ser para ver el sistema de enfriamiento o la temperatura —
+  // que el Foco sea el LUGAR del análisis y no tengas que pagar extra ni esperar».
+  // Una sola pasada de `lentesDelFoco` (0.5-2.4 s medidos) alimenta las tres
+  // lecturas; la activa entra por el canal `feaColors` que el SolidMesh YA pinta
+  // con `toneMapped:false` — o sea que el colormap sale como DATO, no maquillado.
+  const [lenteId, setLenteId] = useState<LenteId | 'medidas'>('medidas');
+  const [lentes, setLentes] = useState<LentesFoco | null>(null);
+  const [lentesBusy, setLentesBusy] = useState(false);
+  const [lentesErr, setLentesErr] = useState('');
+  /** de QUÉ malla son las lentes que hay en memoria — si cambia la pieza, no valen */
+  const lentesDe = useRef<MeshLike | null>(null);
+  const calcularLentes = useCallback(() => {
+    if (!piezaMalla || lentesBusy) return;
+    if (lentesDe.current === piezaMalla.mesh && lentes) return;   // ya están: no se paga dos veces
+    setLentesBusy(true); setLentesErr('');
+    // el mismo idioma que el FEA de esta pantalla: pinta el "calculando" y DESPUÉS
+    // bloquea. `lentesDelFoco` es síncrono y pesado a propósito (es el campo real).
+    requestAnimationFrame(() => {
+      try {
+        const r = lentesDelFoco(piezaMalla.mesh);
+        lentesDe.current = piezaMalla.mesh;
+        setLentes(r);
+      } catch (e) {
+        setLentes(null); lentesDe.current = null;
+        setLentesErr(String(e instanceof Error ? e.message : e).slice(0, 160));
+      } finally { setLentesBusy(false); }
+    });
+  }, [piezaMalla, lentesBusy, lentes]);
+  const lenteActiva = useMemo(
+    () => (lenteId === 'medidas' ? null : lentes?.lentes.find((l) => l.id === lenteId) ?? null),
+    [lentes, lenteId],
+  );
+  /** el radio de LA MARCA se escala a la pieza: fija en mm, en una tapa tapa todo */
+  const marcaR = useMemo(
+    () => (piezaMalla ? Math.max(0.8, bboxDeMalla(piezaMalla.mesh).diagonal * 0.012) : 1),
+    [piezaMalla],
+  );
   const [unscrewOn, setUnscrewOn] = useState(false);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
@@ -6266,10 +6306,27 @@ export default function ForgeBRepStudio() {
                 <SolidMesh mesh={piezaMalla.visor as unknown as TessellatedMesh} faded={false} matKey={material} tint={focoOn ? undefined : partColor}
                   faces={[]} edgeGeoms={[]} selFaces={[]} selEdges={[]}
                   pickMode="none" onPickFace={() => {}} onPickEdge={() => {}}
-                  feaColors={null} overhangColors={null} clip={sectionPlanes} holograma={focoOn} />
+                  /* U10 · LA LENTE. Con colores por vértice el SolidMesh cambia solo a
+                     `meshBasicMaterial vertexColors toneMapped={false}` — el holograma
+                     queda ignorado ahí, que es lo correcto: un colormap teñido de cian
+                     ya no significa lo que dice su leyenda. */
+                  feaColors={focoOn ? lenteActiva?.colores ?? null : null}
+                  overhangColors={null} clip={sectionPlanes} holograma={focoOn} />
+                {/* U10 · LA MARCA — el punto que MANDA en esta lente (el macizo que
+                    fija el ciclo, el último rincón en llenarse). De Horizon: la ficha
+                    señala UN lugar, no toda la pieza. */}
+                {focoOn && lenteActiva?.peor && (
+                  <mesh position={lenteActiva.peor.punto} renderOrder={9}>
+                    <sphereGeometry args={[marcaR, 16, 12]} />
+                    <meshBasicMaterial color={lenteActiva.origen === 'medido' ? '#5fd4f5' : '#ffd3f2'}
+                      toneMapped={false} depthTest={false} transparent opacity={0.9} />
+                  </mesh>
+                )}
                 {/* EL FOCO · LAS MEDIDAS — hermanas de la malla: MISMO espacio de
-                    coordenadas, así que la cota cae donde está la arista. */}
-                {focoOn && focoCotas.length > 0 && (
+                    coordenadas, así que la cota cae donde está la arista. Las cotas
+                    solo salen en la lente MEDIDAS: encima de un campo de color serían
+                    ruido sobre ruido. */}
+                {focoOn && !lenteActiva && focoCotas.length > 0 && (
                   <>
                     <CotaLines sets={focoCotas} paleta={PALETA_FOCO} />
                     <CotaDriver sets={focoCotas} refs={focoRefs} />
@@ -6527,7 +6584,11 @@ export default function ForgeBRepStudio() {
             del Canvas es el gotcha conocido, y el texto DOM sale nítido a cualquier zoom.
             CotaDriver (dentro del Canvas) les mueve el transform por frame. */}
         {cotasOn && liveCotas.length > 0 && <CotaLabels sets={liveCotas} refs={cotaRefs} />}
-        {focoOn && focoCotas.length > 0 && (
+        {/* Las etiquetas van AL PAR de sus líneas 3D: con una lente prendida el
+            sólido ya está pintado y las cotas encima serían ruido sobre ruido.
+            (Cazado A OJO en el drive de U10: la lente de enfriamiento salía con
+            «alto 38.0 mm» flotando encima del campo.) */}
+        {focoOn && !lenteActiva && focoCotas.length > 0 && (
           <CotaLabels sets={focoCotas} refs={focoRefs} paleta={PALETA_FOCO} testid="foco-cotas-overlay" modo="medida" />
         )}
         {cotasOn && liveMoldSpec && moldOpenStrokeMm > 0 && (
@@ -6782,6 +6843,8 @@ export default function ForgeBRepStudio() {
                   const nombre = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 28);
                   setErrPieza('');
                   setPiezaMalla({ visor: mallaParaElVisor(mesh), mesh, nombre, notas });
+                  // U10: las lentes son de LA pieza anterior — se tiran, no se heredan.
+                  setLentes(null); lentesDe.current = null; setLenteId('medidas'); setLentesErr('');
                   setWorkspace('simulacion');
                   setCollapsed((c) => ({ ...c, sim: false }));      // el panel arranca colapsado: se abre
                   const bb = bboxDeMalla(mesh);
@@ -7269,6 +7332,11 @@ export default function ForgeBRepStudio() {
                       on: focoOn, toggle: () => setFocoOn((v) => !v),
                       nMedidas: focoCotas.reduce((n, c) => n + c.dims.length, 0),
                       noMedido: medidasDeLaPieza(piezaMalla.mesh).noMedido,
+                      // U10 · LAS LENTES: el análisis, en el mismo lugar donde ya estás mirando
+                      lente: lenteId, setLente: setLenteId,
+                      lentes: lentes?.lentes ?? null, campo: lentes?.campo ?? null,
+                      ms: lentes?.ms.total ?? null,
+                      calcular: calcularLentes, busy: lentesBusy, err: lentesErr,
                     } : undefined} />
                 </Suspense>
                 {piezaMalla && (
