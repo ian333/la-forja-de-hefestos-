@@ -137,7 +137,11 @@ vértice cuyo valor cae en una parada tiene que estar pintado con el color de es
 ## 4. LO QUE FALTA (y en qué orden lo haría)
 
 1. **EL BARRIDO** (B) — el revelado. Barato y es el que cambia la sensación.
-2. ~~**LA CAPA** (T2 / C) — la pared pintada sobre el sólido.~~ ✅ **HECHO en U10.**
+2. **LA CAPA** (T2) — U10 entregó **3 de sus 6**: el espesor pintado sobre el sólido con su
+   leyenda en mm, las capas que se prenden sin recalcular, y cero regresión en von Mises.
+   **Faltan 3, y son reales:** la **escala FIJA** en múltiplos del nominal (hoy la rampa se
+   normaliza por pieza — se lee mejor, pero dos piezas distintas no se pueden comparar entre
+   sí), los **expulsores** donde empujan, y la **visibilidad** claro/oscuro.
 3. **EL HILO** (T3) — cada § atado a su lugar en la pieza.
 4. **EL CALCO** (E) — el segundo modo del Foco.
 5. **EL BANCO SOLARPUNK** (F) — cuando el Foco esté completo.
