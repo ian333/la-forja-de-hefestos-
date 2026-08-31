@@ -19,7 +19,7 @@ sin pensar cuál es cuál. Nosotros copiamos esa separación:
 | qué es | lo que la máquina SABE de tu pieza | el mobiliario del CAD |
 | dónde vive | **sobre la geometría** | en los costados, nunca encima de la pieza |
 | cómo se ve | holograma frío, translúcido | sólido, callado |
-| color | cian `#5fd4f5` = medido · ámbar `#ffc24b` = exige atención | oro `#c9a227` = lo que TÚ decides |
+| color | cian `#5fd4f5` = **medido** · violeta `#a248d8` = **simulado** · ámbar `#ffc24b` = exige atención | oro `#c9a227` = lo que TÚ decides |
 | cuándo aparece | cuando lo prendes (tecla **Q**) | cuando tiene algo que decir |
 
 De **Detroit** viene la regla dura: *el HUD está limpio y la información aparece solo cuando
@@ -40,6 +40,9 @@ Nombrarlas no es cosmético: cuando ian dice «el hilo se encima» yo sé exacta
 | **EL BARRIDO** | el plano de escaneo que revela la información al prender el Foco | ⏳ propuesto |
 | **LA MARCA** | un punto señalado en la pieza (compuerta, pin, defecto) | ⏳ T3 |
 | **EL HOLOGRAMA** | la pieza enfriada: cian translúcido, doble cara | ✅ vive (U3) |
+| **LA LENTE** | una lectura del campo pintada sobre el sólido (pared · enfriamiento · llenado) | ✅ vive (U10) |
+| **LA FICHA** | la tarjeta de borde duro que dice, en español, qué pasa y qué hacer | ✅ vive (U10) |
+| **LA MARCA** | la esfera que señala EL punto que manda (el macizo del ciclo, el último rincón) | ✅ vive (U10) |
 
 ### Del BANCO
 | nombre | qué es | estado |
@@ -102,16 +105,39 @@ en el instrumento.
 
 ---
 
+## 2.5 · LA REGLA DE COLOR — el color dice DE DÓNDE VIENE EL NÚMERO
+
+Sale de la captura del minuto 8:26 de *How Aloy Got Her Focus* (atlas §1.5): el **aparato**
+de Aloy brilla **cian** y lo que **proyecta** es **violeta**. No son dos gustos: son dos
+trabajos. Traducido a La Forja y ya en producción (U10):
+
+| | color | qué es | ejemplo |
+|---|---|---|---|
+| **medido** | **cian** | está EN la pieza; el Foco solo lo trazó | la envolvente, la pared del ráster, el ⌀ del kernel |
+| **simulado** | **violeta** | NO está en la pieza: es un cálculo | el enfriamiento (Eq 9.5), el llenado, la partición propuesta |
+| **atención** | **ámbar** | se pasa de la norma del libro | pared > 1.25× el nominal (§2.3.1) |
+| **violación** | **rojo** | rompe el libro | un punto sin camino a la compuerta (short shot) |
+
+Por qué importa: hoy un ⌀ **medido** y un frente de llenado **calculado** se pintaban igual,
+y no son lo mismo. Con esta regla el operador sabe, sin preguntar, qué está viendo.
+
+Y de **Hardspace: Shipbreaker**: la leyenda donde **el color ES la clave** — cada lente
+entrega sus paradas con valor y unidad reales. El gate verifica el invariante duro: *el
+vértice cuyo valor cae en una parada tiene que estar pintado con el color de esa parada.*
+
 ## 3. LO QUE YA ESTÁ EN PRODUCCIÓN
 
 - **EL FOCO** con LAS COTAS: envolvente medida de tu pieza, holograma cian, tecla **Q**.
 - **PANTALLA LIMPIA**: una ventana sin contenido no existe. El visor pasó de ~60 % a ~85 %.
 - **EL DICTAMEN** al costado: los hallazgos de tu pieza por severidad, con su § y sus números.
+- **LAS LENTES** (U10): PARED · ENFRIAMIENTO · LLENADO sobre la MISMA pieza, de UNA pasada del
+  campo (0.4–2.4 s medidos), con su leyenda y su ficha en español. El análisis dejó de ser
+  otra pantalla: pasa donde ya estás mirando.
 
 ## 4. LO QUE FALTA (y en qué orden lo haría)
 
 1. **EL BARRIDO** (B) — el revelado. Barato y es el que cambia la sensación.
-2. **LA CAPA** (T2 / C) — la pared pintada sobre el sólido. Es el primer gate del libro.
+2. ~~**LA CAPA** (T2 / C) — la pared pintada sobre el sólido.~~ ✅ **HECHO en U10.**
 3. **EL HILO** (T3) — cada § atado a su lugar en la pieza.
 4. **EL CALCO** (E) — el segundo modo del Foco.
 5. **EL BANCO SOLARPUNK** (F) — cuando el Foco esté completo.

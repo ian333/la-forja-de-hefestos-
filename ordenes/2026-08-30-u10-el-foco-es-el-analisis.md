@@ -61,6 +61,7 @@ trae su leyenda con valores reales, y una **FICHA en lenguaje natural** — no `
 - NO existe: ningún módulo que ate el campo a una lente del Foco, ni leyenda, ni ficha.
 
 ## TOCA
+- docs/DOCTRINA-FOCO.md
 - src/forja/brep/ForgeBRepStudio.tsx
 - src/forja/mold/RevisarPiezaPanel.tsx
 - scripts/ciclo-dado-test.cjs
