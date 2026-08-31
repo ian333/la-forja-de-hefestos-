@@ -6,7 +6,8 @@
     "html": "cinematic-molecule.html",
     "query": "m=wetanol&zoom=0.55",
     "hook": "__cinematicAtom",
-    "nota_zoom": "zoom 0.55: la LEY DE ENCUADRE de playShots clava la distancia en dMin midiendo rCore contra TODOS los núcleos, y la cola de carbono del etanol la manda lejísimos (fill 0.06 en todo el tercio explicativo). ?zoom= se aplica DESPUÉS de la ley. Barrido 0.45/0.55/0.65/0.75 con fill medido: 0.45 saca al agua del cuadro y rompe la legibilidad; 0.55 deja 0.17-0.30 en el medio y 0.50 en el clímax."
+    "nota_zoom": "zoom 0.55: la LEY DE ENCUADRE de playShots clava la distancia en dMin midiendo rCore contra TODOS los núcleos, y la cola de carbono del etanol la manda lejísimos (fill 0.06 en todo el tercio explicativo). ?zoom= se aplica DESPUÉS de la ley. Barrido 0.45/0.55/0.65/0.75 con fill medido: 0.45 saca al agua del cuadro y rompe la legibilidad; 0.55 deja 0.17-0.30 en el medio y 0.50 en el clímax.",
+    "nota_16x9": "La versión ancha usa zoom 0.38, no 0.55: el cuadro 16:9 vacía más (a 0.55 el tercio explicativo caía a 0.105). Medido con still-alarma en 7 tiempos: 0.38 deja 0.13-0.36 con el sujeto completo. Se lanza con QUERY=\"m=wetanol&zoom=0.38\" W=3840 H=2160."
   },
   "formato": {
     "w": 2160,
@@ -19,7 +20,8 @@
     "batch": 40,
     "frames": "dist-video/.etanolframes",
     "ventanasNegras": "46.2-51.5",
-    "nota_negras": "Ventana de l11 (\"Quita las nubes\") tomada de segs.json: 46.33-51.05. La primera version (43.8-50.2) la puse en los cortes de camara a ojo y se tragaba l10 — la voz decia \"Miralas acercarse\" sobre pantalla negra."
+    "nota_negras": "Ventana de l11 (\"Quita las nubes\") tomada de segs.json: 46.33-51.05. La primera version (43.8-50.2) la puse en los cortes de camara a ojo y se tragaba l10 — la voz decia \"Miralas acercarse\" sobre pantalla negra.",
+    "nota_fuentes": "El titulo PARPADEABA (ian, 2026-08-31: \"parpadea varias veces, exactamente en el segundo 0:13, pareciera que se pone en negritas\"). Causa: index.html trae Inter y JetBrains Mono de Google Fonts con display=swap, y render-clip abre un contexto FRESCO por lote (cache de fuentes vacia) -> los primeros cuadros del lote salian con la fuente del sistema. Medido en el video viejo: 6 anchos distintos del titulo (427/475/690/692/740/751 px); con el arreglo, 1 solo (427). Fix en render-clip.cjs: esperar document.fonts.load + document.fonts.ready por contexto. Protege a TODA la serie."
   },
   "audio": {
     "dir": "dist-video/alcohol-narracion",
@@ -90,7 +92,23 @@
       ],
       "nota": "El copy se escribe en el paso del GUION, no al final (canon)."
     },
-    "autorizado": ""
+    "autorizado": "2026-08-31 yt,ig — dicho por ian en sesión: \"me mama subelo\" y \"a calidad absoluta el master Y HACES LA VERSION 16:9 PORFA\"",
+    "subidas": {
+      "yt": {
+        "id": "g2QMjWyo4HI",
+        "url": "https://youtu.be/g2QMjWyo4HI",
+        "privacidad": "public",
+        "publishAt": "",
+        "captions": "AUieDaa9utbnLpUpfpfd4x58B3oMww8AkNZKbK5Roy8RnGpHhdA-K7shrg",
+        "fecha": "2026-08-31T16:19"
+      },
+      "ig": {
+        "id": "17904402600508591",
+        "url": "https://www.instagram.com/reel/DcuKMnHHYhs/",
+        "fecha": "2026-08-31T16:37"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-etoh-el-alcohol.mp4?v=56d3746f08"
   },
   "guion": {
     "archivo": "scripts/guiones/alcohol.txt",

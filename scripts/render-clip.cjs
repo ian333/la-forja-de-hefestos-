@@ -78,6 +78,21 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
         page.on('pageerror', (e) => console.error('[pageerror]', e.message));
         await page.goto(url, { waitUntil: 'networkidle', timeout: 90000 });
         await page.waitForFunction((h) => window[h] && window[h].ready === true, hook, { timeout: 120000 });
+        // ── ESPERAR A LAS TIPOGRAFÍAS. Sin esto el título PARPADEA: ian lo cazó en EL ALCOHOL
+        // ("parpadea varias veces, exactamente en el segundo 0:13… pareciera que se pone en
+        // negritas"). Causa: index.html trae Inter y JetBrains Mono de Google Fonts con
+        // `display=swap`, que por definición pinta el FALLBACK del sistema y cambia a la real
+        // cuando llega. Y este render abre un CONTEXTO FRESCO por lote (ver `frameInCtx >=
+        // batch`), o sea con caché de fuentes VACÍA: los primeros cuadros de un lote salían con
+        // la fuente del sistema —más gorda— y los demás con Inter. Por eso el defecto aparecía
+        // en un instante puntual y no en todo el video: es el borde de un lote.
+        // `networkidle` NO basta — resuelve con el CSS descargado, antes de los archivos .woff2,
+        // que el navegador pide solo cuando algo los usa.
+        await page.evaluate(async () => {
+          const caras = ['200 100px Inter', '400 100px Inter', '500 100px "JetBrains Mono"'];
+          try { await Promise.all(caras.map((f) => document.fonts.load(f))); } catch (e) { /* sin red: el fallback es estable igual */ }
+          await document.fonts.ready;
+        }).catch(() => {});
         if (!glLogged) {
           const gl = await page.evaluate(() => { try { const c = document.createElement('canvas'); const g = c.getContext('webgl2'); const e = g.getExtension('WEBGL_debug_renderer_info'); return e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : 'masked'; } catch (err) { return 'err ' + err.message; } });
           console.log('[gl]', gl); glLogged = true;
