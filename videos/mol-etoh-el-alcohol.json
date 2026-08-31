@@ -1,0 +1,101 @@
+{
+  "id": "mol-etoh-el-alcohol",
+  "titulo": "El alcohol — C₂H₅OH···H₂O (por qué se mezcla con el agua y el aceite no)",
+  "nota": "Primera pieza con BIN NUEVO desde el rey. Etanol + agua ab initio (RHF/aug-cc-pVDZ, SCF en GPU con gpu4pyscf, 30 separaciones de 5.60 a 3.02 Å). La afirmación central está MEDIDA con el mismo método y la misma fuente de geometría que el rey: etanol···agua −3.68 kcal/mol contra agua···agua −3.82 = 96 %. Estructura = la plantilla LITERAL del rey (9 tomas, Σ=79 s, apagar una capa para probar la frase, clímax al 78 %).",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wetanol&zoom=0.55",
+    "hook": "__cinematicAtom",
+    "nota_zoom": "zoom 0.55: la LEY DE ENCUADRE de playShots clava la distancia en dMin midiendo rCore contra TODOS los núcleos, y la cola de carbono del etanol la manda lejísimos (fill 0.06 en todo el tercio explicativo). ?zoom= se aplica DESPUÉS de la ley. Barrido 0.45/0.55/0.65/0.75 con fill medido: 0.45 saca al agua del cuadro y rompe la legibilidad; 0.55 deja 0.17-0.30 en el medio y 0.50 en el clímax."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 79
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.etanolframes",
+    "ventanasNegras": "46.2-51.5",
+    "nota_negras": "Ventana de l11 (\"Quita las nubes\") tomada de segs.json: 46.33-51.05. La primera version (43.8-50.2) la puse en los cortes de camara a ojo y se tragaba l10 — la voz decia \"Miralas acercarse\" sobre pantalla negra."
+  },
+  "audio": {
+    "dir": "dist-video/alcohol-narracion",
+    "narracion": "alcohol-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 75,
+    "segs": "segs.json",
+    "ass": "alcohol.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "etoh-el-alcohol-4k-master.mp4",
+    "h264": "etoh-el-alcohol-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-ethanol.bin",
+      "water-ethanol-efield.bin"
+    ],
+    "guion": "alcohol.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py",
+      "precompute-water-approach.py",
+      "bin-gate.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "fisica": {
+    "metodo": "RHF/aug-cc-pVDZ, SCF en GPU (gpu4pyscf), Δρ de interacción contra promolécula",
+    "ebind_etanol_agua_kcal": -3.68,
+    "ebind_agua_agua_kcal": -3.82,
+    "razon": 0.96,
+    "control": "MISMO método y MISMA fuente de geometría en los dos — el 96 % es una comparación pareada, no dos números de literaturas distintas",
+    "nota": "El bin se escribió con posq ADAPTATIVO (scripts/precompute-water-approach.py posq_para): con el posq fijo de 5000 el int16 topaba en ±6.55 bohr y aplastaba el 9.3 % de las coordenadas contra esa cara — una pared plana visible en pantalla, cazada por ian el 2026-08-30. Portero: scripts/bin-gate.py."
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-etoh-el-alcohol.mp4",
+    "capsulaRel": "moleculas/_code/mol-etoh-el-alcohol-capsula.tar.gz",
+    "pieza": "mol-etoh el alcohol",
+    "nueva": true,
+    "copy": {
+      "titulo": "Por qué el alcohol se mezcla con el agua y el aceite no",
+      "descripcion": "Echa aceite al agua y se separan. Echa alcohol y desaparece. Los dos son líquidos, así que la diferencia no está por fuera: está en la forma de la molécula. 🔬 Esto no es una animación: es etanol y agua resueltos con física cuántica (ab initio, RHF/aug-cc-pVDZ), y lo que ves es lo que dicen las ecuaciones. El alcohol tiene dos lados. De un lado es puro carbono, y el agua lo rechaza. Del otro trae un oxígeno con un hidrógeno colgando: exactamente la misma punta que tiene el agua. Por ese lado, el alcohol ES agua. Medimos el jalón entre los dos con el mismo método que usamos para el agua consigo misma: 3.68 contra 3.82 kilocalorías por mol. El 96%. Por eso el alcohol se mezcla con el agua en cualquier proporción. Y por eso el gel de manos funciona: una mano agarra el agua, la otra agarra la grasa. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#alcohol",
+        "#etanol",
+        "#química",
+        "#cuántica",
+        "#enlacedehidrógeno",
+        "#ciencia",
+        "#geldemanos",
+        "#física",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "nota": "El copy se escribe en el paso del GUION, no al final (canon)."
+    },
+    "autorizado": ""
+  },
+  "guion": {
+    "archivo": "scripts/guiones/alcohol.txt",
+    "lineas": 18,
+    "palabras": 174,
+    "nota": "79 s a 0.455 s/palabra. Plantilla del rey: DOS protagonistas distintos, cotidiano en las manos del público (gel), hueco abierto en l2 y cerrado con IMAGEN, palabra-color (dorado) en l7, apagar la capa para probar la frase en l11, clímax al 78 %, y el sello GAIA al final."
+  }
+}

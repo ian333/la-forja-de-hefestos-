@@ -81,7 +81,78 @@ if PAR == 'na':
     O_IDX = [1]; H_IDX = [2, 3]
     # Base con difusas para el ION: cc-pVDZ sobre-liga −29 kcal/mol (BSSE); aug-cc-pVDZ da −24.0 = experimento.
     BASIS = 'aug-cc-pvdz'
+if PAR == 'etanol':
+    # EL ALCOHOL (2026-08-29): etanol (DON, dona su H hidroxílico) + agua (ACC).
+    # GATE medido ANTES de escribir esto, con el mismo método y su control:
+    #   agua···agua   −3.82 kcal/mol   (experimento −5.0)
+    #   etanol···agua −3.68 kcal/mol   (experimento ~−5 a −6)
+    # RHF sub-liga los DOS por igual (~25%, le falta correlación), así que lo que vale es la
+    # RAZÓN: el puente del alcohol es el 96% del puente del agua. Eso ES la pieza —
+    # "el alcohol tiene una cara de agua" no es metáfora, es el número.
+    # (El aceite sigue sin poderse: su −0.5 kcal/mol es dispersión pura, que RHF no tiene.)
+    _a = np.deg2rad(104.478 / 2.0); _r = 0.9578
+    # etanol anti (literatura, Å); índice 3 = H del hidroxilo, el que DONA el puente
+    _et = np.array([
+        [-1.2143,  0.2601,  0.0000],   # 0 C metilo
+        [ 0.0000, -0.6425,  0.0000],   # 1 C metileno
+        [ 1.1932,  0.1290,  0.0000],   # 2 O hidroxilo
+        [ 1.9445, -0.4767,  0.0000],   # 3 H del PUENTE
+        [ 0.0290, -1.2884,  0.8830],   # 4-8 H de los carbonos
+        [ 0.0290, -1.2884, -0.8830],
+        [-2.1394, -0.3181,  0.0000],
+        [-1.2087,  0.8971,  0.8858],
+        [-1.2087,  0.8971, -0.8858],
+    ])
+    _dir = _et[3] - _et[2]; _dir /= np.linalg.norm(_dir)     # eje O-H hidroxílico, prolongado
+    _Ow = _et[3] + _dir * 2.15                                # O del agua al mínimo del gate
+    _b = np.cross(_dir, np.array([0.0, 0.0, 1.0])); _b /= np.linalg.norm(_b)
+    DIMER_A = np.vstack([_et, _Ow,
+                         _Ow + _dir * (_r * np.cos(_a)) + _b * (_r * np.sin(_a)),
+                         _Ow + _dir * (_r * np.cos(_a)) - _b * (_r * np.sin(_a))])
+    Z = np.array([6, 6, 8, 1, 1, 1, 1, 1, 1, 8, 1, 1])
+    DON = list(range(9)); ACC = [9, 10, 11]
+    O_don0, O_acc0 = _et[2], _Ow                              # eje O(alcohol)···O(agua)
+    AXIS = (O_don0 - O_acc0); RE_A = np.linalg.norm(AXIS); AXIS = AXIS / RE_A
+    MID0 = 0.5 * (O_don0 + O_acc0)
+    # R_MAX MEDIDO, no elegido: a 6.4 Å el núcleo más externo queda a 11.0 bohr y la nube llega
+    # a 13.5 = el borde EXACTO de la caja → se corta. Agrandar la caja degradaría la malla
+    # (dx = 2·LX/NX), así que se acerca el punto de partida. 5.6 Å deja 12.7 de 13.5 y es
+    # además el mismo R_MAX del rey — la serie queda consistente. Ebind ahí ≈ −0.6: sigue suelto.
+    R_MAX_A = 5.6
+    # R_MIN medido, no supuesto: con 2.72 el barrido QUICK daba Ebind −3.26 en 3.25 Å y luego
+    # SUBÍA a −1.75 en 2.72 — o sea que la animación terminaba en zona REPULSIVA, aplastando
+    # las moléculas más allá del equilibrio. El gate de ∫Δρ no lo caza (la carga sigue creciendo
+    # aunque las aplastes); lo caza la ENERGÍA. Equilibrio: H···O 2.15 + O–H 0.97 ≈ 3.12 Å.
+    # 3.02 = ligeramente comprimido, igual que el rey (2.78 sobre un equilibrio de 2.90).
+    R_MIN_A = 3.02
+    NOMBRE = 'EL ALCOHOL · C2H5OH + H2O'; BIN_ID = 'water-ethanol'
+    O_IDX = [2, 9]; H_IDX = [3, 10, 11]
+    BASIS = 'aug-cc-pvdz'
 NNUC = len(Z)
+
+# ── SCF EN GPU (ian, 2026-08-29). gpu4pyscf paga a partir de ~150 funciones de base (medido:
+# 6.17× a 464, 1.99× a 232). El etanol+agua en aug-cc-pVDZ son 164 → sí paga. Devuelve SIEMPRE
+# arrays de NUMPY: el resto del pipeline (eval_rhos, esp3d) es numpy puro y no debe enterarse.
+# GPU=0 fuerza CPU. Si gpu4pyscf no está o truena, cae a CPU con aviso — nunca falla en silencio.
+_USA_GPU = os.environ.get('GPU', '1') == '1'
+_gscf = None
+if _USA_GPU:
+    try:
+        from gpu4pyscf import scf as _gscf
+        print('  [scf] gpu4pyscf ACTIVO')
+    except Exception as _e:
+        print(f'  [scf] sin gpu4pyscf ({str(_e)[:50]}) → CPU')
+
+def rhf(mol):
+    """RHF en GPU si se puede, y el resultado SIEMPRE en numpy."""
+    if _gscf is not None:
+        mf = _gscf.RHF(mol); mf.max_cycle = 200; mf.kernel()
+        e = float(mf.e_tot)
+        dm = mf.make_rdm1()
+        dm = dm.get() if hasattr(dm, 'get') else np.asarray(dm)   # cupy → numpy
+        return e, dm
+    mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
+    return float(mf.e_tot), mf.make_rdm1()
 
 if QUICK:
     K = 8;  N_ACC, N_DEP, N_SPIN = 6000, 3000, 3000;  NX, NY, NZ = 80, 56, 56
@@ -90,6 +161,16 @@ else:
 
 # caja de muestreo (bohr), centrada en MID0 (el punto medio O-O es fijo por el acercamiento simétrico)
 LX, LR = 9.6, 6.2
+if PAR == 'etanol':
+    # El etanol mide ~3.2 Å él solo (metilo→hidroxilo) y la caja del dímero de agua lo CORTA:
+    # en la figura QUICK se vio un tajo recto vertical en la nube del alcohol. La caja se
+    # dimensiona por el sistema, no por herencia. Con R_MAX 6.4 Å el sistema abarca ~11 Å de
+    # dimensiona por el SISTEMA, no por herencia.
+    LX, LR = 16.5, 8.4
+    # NX crece CON la caja para que dx NO cambie (dx = 2·LX/NX): con LX 13.5 la nube del
+    # alcohol seguía saliendo cortada por una línea vertical perfecta, visible al ampliar la
+    # figura. 16.5 la deja entera y 162 puntos mantienen dx ≈ 0.204 bohr.
+    NX = 98 if QUICK else 162
 RE = RE_A / BOHR
 R_MIN = R_MIN_A / BOHR; R_MAX = R_MAX_A / BOHR
 Rvals = R_MAX + (R_MIN - R_MAX) * (np.arange(K) / (K - 1))    # descendente Rmax→Rmin (como O2)
@@ -230,14 +311,12 @@ def build():
         gb = geom_at(R_A)                                  # bohr, centrada
         atoms = [[int(Z[i]), tuple(gb[i])] for i in range(NNUC)]
         mol = gto.M(atom=atoms, basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE)
-        mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
-        dm = mf.make_rdm1()
+        e_tot, dm = rhf(mol)
         # monómeros aislados a SU posición (promolécula) → Δρ de interacción
         md = gto.M(atom=[atoms[i] for i in DON], basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE_DON)
         ma = gto.M(atom=[atoms[i] for i in ACC], basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE_ACC)
-        ed = scf.RHF(md).kernel(); ea = scf.RHF(ma).kernel()
-        ebind = (mf.e_tot - ed - ea) * HART2KCAL
-        dm_d = md.RHF().run(verbose=0).make_rdm1(); dm_a = ma.RHF().run(verbose=0).make_rdm1()
+        ed, dm_d = rhf(md); ea, dm_a = rhf(ma)
+        ebind = (e_tot - ed - ea) * HART2KCAL
         rho_tot = eval_rhos(mol, [dm], GRID)[0]
         rho_d = eval_rhos(md, [dm_d], GRID)[0]; rho_a = eval_rhos(ma, [dm_a], GRID)[0]
         drho = (rho_tot - rho_d - rho_a).reshape(NX, NY, NZ)
@@ -251,7 +330,7 @@ def build():
         spinPos[k] = sample_field(spin_field, U_spin)
         nucPos[k] = gb
         efield[k] = trace_field3d(mol, dm, gb, SEEDS, LP)      # campo MEP real (rejilla, Li₂-style)
-        print(f"{k:2d}  {R_A:5.2f}  {mf.e_tot:11.5f}  {ebind:8.2f}    {bondMass[k]:.4f}", flush=True)
+        print(f"{k:2d}  {R_A:5.2f}  {e_tot:11.5f}  {ebind:8.2f}    {bondMass[k]:.4f}", flush=True)
 
     # accColor: gradiente ORO→ÁMBAR por densidad radial (como V1), morado cerca de los O (pares).
     # Se fija en el frame de EQUILIBRIO (kEq), como O2. Oro cálido de base + tinte morado en los O.
@@ -266,12 +345,48 @@ def build():
 
 
 OUT_EF = os.path.join(os.path.dirname(__file__), '..', 'public', 'precomputed', f'{BIN_ID}-efield.bin')
+def posq_para(*arrays):
+    """POSQ ADAPTATIVO — el techo del int16 NO puede cortar la nube.
+
+    POR QUÉ (ian, 2026-08-29, viendo el primer still del ALCOHOL: "parece que hay un
+    límite en la simulación, se ve que llegó al límite de la caja que lo contiene"):
+    tenía razón en el síntoma y el culpable era más tonto que la caja. Con POSQ fijo
+    en 5000 el int16 topa en 32767/5000 = 6.5534 bohr POR EJE, y `np.clip` aplasta
+    TODO lo que pase de ahí contra esa cara → un cubo de caras planas. Medido en los
+    .bin ya escritos: agua-agua 0.64 % de coordenadas topadas (invisible, escondido en
+    la periferia rala) y etanol-agua 9.32 % (una pared).
+
+    Es el MISMO defecto que ya se cazó en el anillo abierto y se arregló del lado del
+    LECTOR (CinematicMolecule.tsx parseWAP2 lee posq del encabezado). Arreglar el lector
+    era necesario y NO suficiente: el escritor seguía quemando 5000, así que seguía
+    fabricando .bin cortados. Se arregla en el ORIGEN.
+
+    La escala se elige por los DATOS: cabe el punto más lejano con 2 % de aire. Se topa
+    en 5000 para que las moléculas chicas no pierdan la precisión que ya tenían (a 5000
+    el paso es 0.0002 bohr; ningún ojo ni ningún gate lo distingue).
+    """
+    m = max(float(np.abs(a).max()) for a in arrays if a.size)
+    return min(5000.0, 32767.0 / max(m * 1.02, 1e-6))
+
+
 def write_bin(accPos, depPos, spinPos, bondMass, accColor, nucPos):
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    q = lambda a: np.clip(np.round(a * POSQ), -32767, 32767).astype('<i2')
+    posq = posq_para(accPos, depPos, spinPos, nucPos)
+    q = lambda a: np.clip(np.round(a * posq), -32767, 32767).astype('<i2')
+    # PORTERO: después de cuantizar, NADA puede estar tocando el techo. Si esto truena,
+    # el .bin saldría con caras planas — se para aquí, no se descubre en un still a 4K.
+    for nm, a in (('acc', accPos), ('dep', depPos), ('spin', spinPos), ('nuc', nucPos)):
+        if not a.size:
+            continue
+        sat = float((np.abs(q(a)) >= 32767).mean()) * 100
+        if sat > 0.0:
+            raise SystemExit(f"✗ CAJA: {sat:.3f}% de {nm} topa el int16 con posq={posq:.1f} "
+                             f"(|max|={np.abs(a).max():.2f} bohr). El .bin saldría con caras planas.")
+    print(f"    posq={posq:.1f} → techo ±{32767/posq:.2f} bohr "
+          f"(±{32767/posq*BOHR:.2f} Å) · |max| real {max(np.abs(a).max() for a in (accPos, depPos, spinPos, nucPos)):.2f} bohr · 0% topado", flush=True)
     with open(OUT, 'wb') as fp:                              # WAP2: nubes + núcleos (SIN campo, NL=0)
         fp.write(struct.pack('<4s7i', b'WAP2', N_ACC, N_DEP, N_SPIN, K, NNUC, 0, 0))
-        fp.write(struct.pack('<3f', float(POSQ), float(R_MIN), float(R_MAX)))
+        fp.write(struct.pack('<3f', float(posq), float(R_MIN), float(R_MAX)))
         fp.write(Rvals.astype('<f4').tobytes())
         fp.write(bondMass.astype('<f4').tobytes())
         fp.write(accColor.astype(np.uint8).tobytes())
@@ -338,8 +453,7 @@ def solo_campo():
     def mol_en(R_A):
         gb = geom_at(R_A)
         m = gto.M(atom=[[int(Z[i]), tuple(gb[i])] for i in range(NNUC)], basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE)
-        f = scf.RHF(m); f.max_cycle = 200; f.kernel()
-        return m, f.make_rdm1()
+        return m, rhf(m)[1]      # también por GPU (ver rhf())
 
     # referencia = el dímero PEGADO (el puente formado), igual que en el trímero
     mr, dmr = mol_en(float(Rvals[-1]) * BOHR)

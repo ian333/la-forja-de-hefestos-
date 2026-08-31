@@ -502,6 +502,46 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 0.66, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 5.3, label: 'dos manos, dos sillas: cuatro (l9)' },
     { shot: pullOut({ rTdMul: 0.85 }), dur: 14.0, label: 'tetraedro · flota · y tú · GAIA (l10-12) — mismo arranque que el vertical, cierre MÁS CERCA (1.30→0.85) para no vaciar el cuadro ancho' },
   ],
+  // EL ALCOHOL — el par NO es simétrico como el rey: el etanol es una masa grande (su esqueleto
+  // de carbono) y el agua un blob compacto. Ese contraste ES la historia (un lado grasoso, un
+  // lado con cara de agua), así que las tomas lo USAN en vez de disimularlo: se mira primero
+  // al grande, luego al chico, y el puente nace entre los dos. orbitOne(side:-1) = el ALCOHOL.
+  // Σ = 79 s y NUEVE tomas: la plantilla LITERAL del rey (canon §LAS LEYES DEL REY), no las
+  // 7 tomas de 55 s del primer tanteo. El guion del alcohol tiene DOS payoffs (se mezcla con
+  // el agua · agarra grasa) y en 55 s no cabían: 174 palabras = 79 s a 0.455 s/palabra.
+  // Radios ~20 % más cerrados que el primer intento (los stills daban fill ~0.30 contra el
+  // 0.74-0.82 de los ganadores) y fuera la toma de "el agua sola" a rMul 0.44, que se quedaba
+  // SIN SUJETO en pantalla. El clímax (crashIn) cae en t=62 = 78 % del video, como el rey.
+  wetanol: [
+    // DURACIONES CALIBRADAS a segs.json (2026-08-31), no a los cortes de cámara que puse a
+    // ojo. Cada corte cae en el ARRANQUE de su línea (regla de §LA MECÁNICA DEL O₂). Lo que
+    // lo obligó: con las ventanas provisionales, "Míralas acercarse hasta que el puente se
+    // arma solo" (l10) caía DENTRO de la pantalla negra — la voz pedía mirar algo que no
+    // estaba. Arranques: l1 0.40 · l3 10.01 · l5 18.00 · l7 27.66 · l9 38.10 · l11 46.33 ·
+    // l12 51.45 · l14 59.71 · l16 66.48 · fin 79.00.
+    // ⚠ EL `rMul` DE ESTAS TOMAS NO MANDA — y perder medio día con eso ya estaba advertido en
+    // camera-shots.ts:39. `playShots` aplica la LEY DE ENCUADRE: mide rCore contra TODOS los
+    // `pts` y clava la distancia en dMin = rCore/tan(SAFE·corto). Con el etanol esos puntos
+    // incluyen la cola de carbono entera (~11 Å de punta a punta), así que dMin queda lejísimos
+    // y CUALQUIER rMul por debajo da el MISMO cuadro. Probado: rMul 1.10, 0.605 y 0.08 dan
+    // fill 0.171 idéntico en t=2. Los valores de abajo son los originales, sin maquillar.
+    //
+    // Quien acerque esta pieza tiene dos caminos: declarar `rCore` en la toma (lo que hace
+    // ringOne en el hexámero) o `?zoom=`, que se aplica DESPUÉS de la ley. Aquí se usa zoom
+    // 0.55, declarado en videos/mol-etoh-el-alcohol.json: barrido 0.45/0.55/0.65/0.75 con fill
+    // medido en 7 tiempos. 0.45 llena más pero SACA al agua por el borde y ya no se pueden
+    // CONTAR dos moléculas (canon §LEGIBILIDAD); 0.55 sube el tercio explicativo de 0.06 a
+    // 0.17-0.20, deja el clímax en 0.50, y los dos protagonistas siguen legibles.
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.2, elev: 0.15, rMul: 1.10 }), dur: 10.01, label: 'AZUL: los dos, uno grande y uno chico — el hueco (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.8, rMul: 0.72 }), dur: 7.99, label: 'MAGENTA: EL ALCOHOL, su cola de carbono (l3-4)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.40, rMul: 1.05 }), dur: 9.66, label: 'el hidroxilo: la cara de agua (l5-6)' },
+    { shot: orbitOne({ side: -1, azim0: 2.1, span: 1.2, rMul: 0.60 }), dur: 10.44, label: 'ORO: el corazón dorado y sus dos sillas (l7-8)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.6, elev: 0.20, rMul: 1.05 }), dur: 8.23, label: 'AZUL: el campo real entre las dos (l9-10)' },
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 5.12, label: 'QUITA LAS NUBES: la NADA como argumento (l11)' },
+    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 8.26, label: 'PRÉNDELAS: rampa de looming al puente (l12)' },
+    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 6.77, label: 'CLÍMAX (t=62 = 78 %): el 96 % y por qué se mezcla (l13-15)' },
+    { shot: pullOut({ rTdMul: 0.95 }), dur: 12.52, label: 'payoff: una mano al agua, otra a la grasa + GAIA (l16-18)' },
+  ],
   // LA SAL (2026-08-26): Na⁺ (índice 0, en −x) + agua (O en +x). Hermana literal del rey: mismo
   // eje, mismo régimen (~13 bohr), mismas 9 tomas. `orbitOne(side:-1)` mira al ION, `side:+1` al agua.
   wsal: [
@@ -1119,6 +1159,7 @@ interface MolData { bundle: AtomBundle; nuclei: Nuc[]; extent: number; bonds: [n
 const BASE_META: Record<string, { name: string; formula: string; fact: string }> = {
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
+  wetanol: { name: 'El alcohol', formula: 'C₂H₅OH···H₂O', fact: 'El puente del alcohol vale el 96 % del puente del agua — por eso se mezclan.' },
   wtri: { name: 'El anillo', formula: '(H₂O)₃', fact: 'Tres aguas se agarran MÁS fuerte que la suma de sus pares.' },
   wtet: { name: 'El cuarteto', formula: '(H₂O)₄', fact: 'Tres no encajaban. Cuatro sí: los cuatro puentes salen idénticos.' },
   whex6: { name: 'El hexágono', formula: '(H₂O)₆', fact: 'Cuenta los lados: seis. Es la misma forma que el agua repite al congelarse.' },
@@ -2442,6 +2483,29 @@ const WSILLA_CAPAS: CapasSpec = {
   spin:     { base: 1,    mods: [{ wins: [[25.2, 36.0]], a: 0.9, label: 'ARDE: carga llegando a la silla (l8-9)' }] },
   acc:      { base: 1,    mods: [{ wins: [[7.0, 13.3]], a: 0.5, label: 'ORO: mira el oxígeno de cerca (l3-4)' }] },
 };
+const WETANOL_DURATION = 79;
+// EL ALCOHOL — coreografía de capas, copiada de WSILLA_CAPAS. Ventanas PROVISIONALES (los
+// arranques de CAMERA_SHOTS.wetanol); se recalibran a segs.json después del TTS, porque el
+// corte de capa tiene que caer en el ARRANQUE de la línea (regla de §LA MECÁNICA DEL O₂).
+const WETANOL_CAPAS: CapasSpec = {
+  // Ventanas = arranques REALES de segs.json (ver CAMERA_SHOTS.wetanol). El corte de capa cae
+  // en el ARRANQUE de la línea, no en su final (regla de §LA MECÁNICA DEL O₂).
+  apertura: { base: 0.55, mods: [
+    { wins: [[0, 3.0]], a: -0.30, label: 'arranque: casi pegadas, espectáculo (l1)' },
+    { wins: [[51.45, 79]], a: -0.20, label: 'préndelas: empiezan a cerrar (l12)' },
+    { wins: [[55.79, 79]], a: -0.20, label: '…más cerca (l13)' },
+    { wins: [[59.71, 79]], a: -0.15, label: 'pegadas: el puente armado (l14)' },
+  ] },
+  nubes:    { base: 1,    mods: [{ wins: [[46.33, 51.45]], a: -1.0, label: 'QUITA LAS NUBES: ni palito ni resorte (l11)' }] },
+  campo:    { base: 1,    mods: [
+    { wins: [[10.01, 27.66]], a: -0.85, label: 'MAGENTA: el alcohol de cerca (l3-6) — el campo estorba en el close-up' },
+    { wins: [[46.33, 51.45]], a: -1.0, label: 'la NADA (l11)' },
+    { wins: [[51.45, 59.71]], a: -0.60, label: 'préndelas: el puente es NUBE, campo bajo (l12-13)' },
+  ] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[27.66, 38.10]], a: 0.42, label: 'sus dos nubes, las que no comparte (l7-8)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[51.45, 66.48]], a: 0.9, label: 'ARDE: carga llegando a la silla (l12-15)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[27.66, 32.46]], a: 0.5, label: 'ORO: la palabra-color, el único cálido del video (l7)' }] },
+};
 const WSILLA_DURATION = 50;
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
@@ -2530,6 +2594,13 @@ const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
   // LA SILLA VACÍA: el bin del rey con SU coreografía y SU duración (quick win, 2026-08-27).
   wsilla: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLA_DURATION, capas: WSILLA_CAPAS },
+  // EL ALCOHOL (2026-08-29): etanol (9 átomos, DON) + agua (ACC). Bin NUEVO, no del rey.
+  // `ex` sube a 16 porque el sistema mide ~11 Å de punta a punta contra los ~6 del dímero:
+  // con ex 13 la cámara del rey se metería DENTRO del esqueleto de carbono.
+  // sizeMul 1.7: el sistema mide ~11 Å contra los ~6 del dímero → casi 6× el VOLUMEN con el
+  // mismo número de partículas, así que con el sprite del agua la nube sale como polvo suelto
+  // (medido en los primeros stills). Es la misma cura que pidió la hemoglobina.
+  wetanol: { bin: 'water-ethanol', ef: 'water-ethanol-efield', ex: 16, dur: WETANOL_DURATION, sizeMul: 1.7, capas: WETANOL_CAPAS },
   // LA SAL (2026-08-26): Na⁺ + H₂O con PAR=na de precompute-water-approach.py. Mismo formato WAP2
   // (4 núcleos: Na, O, H, H), mismo eje, mismo régimen. Gate: −24.0 kcal/mol a 2.25 Å = experimento.
   wsal:  { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSAL_CAPAS, dur: WSAL_DURATION },
