@@ -1,23 +1,25 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-31 02:52",
+ "generado": "2026-08-31 22:05",
  "wip": {
   "proximo": 7,
-  "enCurso": 1
+  "enCurso": 1,
+  "imprevisto": 3
  },
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
+  "imprevisto": 1,
   "supertickets": 9,
   "cerrado": 68,
   "probado": 0,
   "porProbar": 34,
-  "sinDesplegar": 1,
+  "sinDesplegar": 0,
   "despues": 17
  },
  "deploy": {
-  "commit": "1753d0e",
-  "fecha": "2026-08-29 18:56"
+  "commit": "cbe8382",
+  "fecha": "2026-08-31 02:52"
  },
  "violaciones": [],
  "columnas": {
@@ -29,6 +31,7 @@
     "fecha": "2026-08-26",
     "estado": "proximo",
     "prioridad": 1,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -57,6 +60,7 @@
     "fecha": "2026-08-27",
     "estado": "proximo",
     "prioridad": 2,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -84,6 +88,7 @@
     "fecha": "2026-08-27",
     "estado": "proximo",
     "prioridad": 3,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -104,6 +109,115 @@
     "despliegue": ""
    }
   ],
+  "imprevisto": [
+   {
+    "file": "ordenes/2026-08-31-x1-el-panel-deja-de-mentir.md",
+    "slug": "2026-08-31-x1-el-panel-deja-de-mentir",
+    "titulo": "X1 · EL PANEL DEJA DE MENTIR — y TEMIS estrena IMPREVISTOS",
+    "fecha": "2026-08-31",
+    "estado": "imprevisto",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x1-titulo-no-miente",
+      "titulo": "El encabezado dice lo que ESTÁS viendo",
+      "herramientas": "contextual",
+      "oraculo": "con una pieza en el visor el panel NO dice \"von Mises\"; dice la pieza y, con el Foco prendido, EL FOCO",
+      "estado": "verde",
+      "checks": "con una pieza en el visor el encabezado dice TU PIEZA, y con el Foco prendido dice EL FOCO. La cadena 'Simulación · von Mises (FEA real)' solo aparece cuando el panel SÍ es eso: un sólido del kernel",
+      "video": "",
+      "still": "con-malla-el-foco.png",
+      "nota": "ian: «esa cosa que dice SIMULACIÓN VON MISES FEA REAL no tiene ni madres que ver con lo que estamos viendo»"
+     },
+     {
+      "id": "x1-solo-lo-que-sirve",
+      "titulo": "Lo que no puede correr, no se pinta",
+      "herramientas": "guardas",
+      "oraculo": "con piezaMalla cargada NO se renderizan FEA, Viento ni Generativo (necesitan caras del kernel); con un sólido del kernel siguen intactos",
+      "estado": "verde",
+      "checks": "con `piezaMalla` cargada NO se renderizan FEA von Mises, Estudio Viento ni Diseño Generativo — los tres exigen caras del kernel (oc + result + feaFixedFace) que un STL no tiene. Además se quitó el botón de LOTE duplicado: vivía dos veces en el mismo panel, a diez centímetros de sí mismo",
+      "video": "",
+      "still": "con-malla-el-foco.png",
+      "nota": "es la regla de PANTALLA LIMPIA (U5) que a este panel se le había escapado: no estaba vacío, estaba LLENO de controles que no aplican"
+     },
+     {
+      "id": "x1-mate",
+      "titulo": "Se ve instrumento, no formulario",
+      "herramientas": "CSS",
+      "oraculo": "el encabezado pierde la barra con caja; queda regla fina + versalita, sin fondo de bloque; el chevron se va al borde y se apaga",
+      "estado": "verde",
+      "checks": "el encabezado pierde la barra de formulario: regla fina cian en vez de gris, versalita con más letra-espaciado, y el chevron se va al borde derecho al 34 % de opacidad (sube a 80 % al pasar el cursor). Sin fondo de bloque",
+      "video": "",
+      "still": "con-malla-el-foco.png",
+      "nota": "ian: «no es mate, no se parece a una interfaz futurista como en Horizon»"
+     },
+     {
+      "id": "x1-sin-regresion",
+      "titulo": "El CAD del kernel no pierde nada",
+      "herramientas": "gate",
+      "oraculo": "ciclo-dado-test.cjs verde y el drive con un STEP muestra FEA/Viento/Generativo como antes",
+      "estado": "verde",
+      "checks": "gate ciclo-dado 260/260. Y al quitar la pieza (rp-quitar) el panel vuelve EXACTO a lo de antes: título von Mises, los 5 botones del ciclo, los pickers de cara fija/carga, Analizar y Estudio de Viento",
+      "video": "",
+      "still": "sin-malla-sin-regresion.png",
+      "nota": ""
+     },
+     {
+      "id": "x1-imprevisto-existe",
+      "titulo": "TEMIS tiene la casilla y su tope",
+      "herramientas": "tablero",
+      "oraculo": "TIPO: imprevisto da una columna propia con tope 3; no cuenta contra EN CURSO; pasado 3 el tablero lo declara violación",
+      "estado": "verde",
+      "checks": "`TIPO: imprevisto` da su propia columna con tope 3 (WIP.imprevisto). No cuenta contra la tapa de EN CURSO, y si se pasa de 3 el tablero lo declara violación: 'lo urgente también lleva orden — cierra uno antes de abrir otro'. El tablero imprime `imprevistos 1/3`",
+      "video": "",
+      "still": "",
+      "nota": "ian: «no sé cómo llamarlos, ¿imprevistos? De esos se deben añadir 1-3 máximo, para seguir llevando un orden. Y ponme límites»"
+     },
+     {
+      "id": "x1-esta-orden-vive-ahi",
+      "titulo": "La prueba es ella misma",
+      "herramientas": "meta",
+      "oraculo": "esta orden sale en la columna IMPREVISTOS del lobby, no en EN CURSO",
+      "estado": "verde",
+      "checks": "esta misma orden lleva TIPO: imprevisto y sale en la columna IMPREVISTOS del lobby, no en EN CURSO. La casilla la creó la orden que la necesitaba",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian probando su pieza real (screw-cap-medical) con el Foco prendido:",
+    "toca": 4,
+    "crea": 2,
+    "evidencia": 7,
+    "evidenciaDeclarada": [
+     "captura del panel CON MALLA: sin \"von Mises\", sin FEA/Viento/Generativo",
+     "captura del panel CON SÓLIDO del kernel: FEA/Viento/Generativo intactos (la no-regresión)",
+     "gate ciclo-dado-test.cjs verde",
+     "el lobby con la columna IMPREVISTOS y esta orden dentro",
+     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
+     "deploy + verificación contra el bundle SERVIDO",
+     "orden-gate VERDE · censo Canvas 8→8"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [
+     "evidencia/2026-08-31-x1-el-panel-deja-de-mentir/con-malla-el-foco.png",
+     "evidencia/2026-08-31-x1-el-panel-deja-de-mentir/sin-malla-sin-regresion.png"
+    ],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   }
+  ],
   "enCurso": [
    {
     "file": "ordenes/2026-08-26-subida-automatizada.md",
@@ -112,6 +226,7 @@
     "fecha": "2026-08-26",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -140,6 +255,7 @@
     "fecha": "2026-08-27",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -340,6 +456,7 @@
     "fecha": "2026-08-28",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -439,6 +556,7 @@
     "fecha": "2026-08-28",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -538,6 +656,7 @@
     "fecha": "2026-08-28",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -637,6 +756,7 @@
     "fecha": "2026-08-28",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -735,6 +855,7 @@
     "fecha": "2026-08-28",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -833,6 +954,7 @@
     "fecha": "2026-08-28",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -932,6 +1054,7 @@
     "fecha": "2026-08-30",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1007,7 +1130,7 @@
      "total": 6
     },
     "objetivo": "ian: «quiero POCs :D con los datos que ya tengamos. El Foco puede ser para ver el sistema de enfriamiento o la temperatura — la idea es que el Foco sea el lugar del análisis y no tengas que pagar extra o esperar».",
-    "toca": 4,
+    "toca": 5,
     "crea": 7,
     "evidencia": 6,
     "evidenciaDeclarada": [
@@ -1039,6 +1162,7 @@
     "fecha": "2026-08-30",
     "estado": "en-curso",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1141,6 +1265,7 @@
     "fecha": "2026-08-29",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1232,7 +1357,7 @@
     "probado": "",
     "falla": "",
     "commit": "3a5f413",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-29-u5-pantalla-limpia.md",
@@ -1241,6 +1366,7 @@
     "fecha": "2026-08-29",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1332,6 +1458,7 @@
     "fecha": "2026-08-29",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1436,6 +1563,7 @@
     "fecha": "2026-08-28",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1541,6 +1669,7 @@
     "fecha": "2026-08-28",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1646,6 +1775,7 @@
     "fecha": "2026-08-28",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1739,6 +1869,7 @@
     "fecha": "2026-08-26",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -1772,6 +1903,7 @@
     "fecha": "2026-08-26",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1842,6 +1974,7 @@
     "fecha": "2026-08-26",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -1959,6 +2092,7 @@
     "fecha": "2026-08-26",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
@@ -2076,6 +2210,7 @@
     "fecha": "2026-08-25",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2106,6 +2241,7 @@
     "fecha": "2026-08-25",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2136,6 +2272,7 @@
     "fecha": "2026-08-25",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2169,6 +2306,7 @@
     "fecha": "2026-08-25",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2202,6 +2340,7 @@
     "fecha": "2026-08-25",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2232,6 +2371,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2265,6 +2405,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2301,6 +2442,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2329,6 +2471,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2357,6 +2500,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2388,6 +2532,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2420,6 +2565,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2451,6 +2597,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2484,6 +2631,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2516,6 +2664,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2548,6 +2697,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2579,6 +2729,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2607,6 +2758,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2636,6 +2788,7 @@
     "fecha": "2026-08-21",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2662,6 +2815,7 @@
     "fecha": "2026-08-18",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2691,6 +2845,7 @@
     "fecha": "2026-08-18",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2720,6 +2875,7 @@
     "fecha": "2026-08-18",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2749,6 +2905,7 @@
     "fecha": "2026-08-18",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2780,6 +2937,7 @@
     "fecha": "2026-08-18",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2809,6 +2967,7 @@
     "fecha": "2026-08-18",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2839,6 +2998,7 @@
     "fecha": "2026-08-17",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2869,6 +3029,7 @@
     "fecha": "2026-08-17",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2899,6 +3060,7 @@
     "fecha": "2026-08-17",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2930,6 +3092,7 @@
     "fecha": "2026-08-14",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2958,6 +3121,7 @@
     "fecha": "2026-08-14",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -2986,6 +3150,7 @@
     "fecha": "2026-08-14",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3017,6 +3182,7 @@
     "fecha": "2026-08-13",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3046,6 +3212,7 @@
     "fecha": "2026-08-13",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3073,6 +3240,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3104,6 +3272,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3137,6 +3306,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3171,6 +3341,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3201,6 +3372,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3229,6 +3401,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3259,6 +3432,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3286,6 +3460,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3317,6 +3492,7 @@
     "fecha": "2026-08-12",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3346,6 +3522,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3375,6 +3552,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3406,6 +3584,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3437,6 +3616,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3472,6 +3652,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3503,6 +3684,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3533,6 +3715,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3567,6 +3750,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3604,6 +3788,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3633,6 +3818,7 @@
     "fecha": "2026-08-11",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3662,6 +3848,7 @@
     "fecha": "2026-08-10",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3692,6 +3879,7 @@
     "fecha": "2026-08-10",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3721,6 +3909,7 @@
     "fecha": "2026-08-10",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3750,6 +3939,7 @@
     "fecha": "2026-08-10",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3778,6 +3968,7 @@
     "fecha": "2026-08-10",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
@@ -3808,6 +3999,7 @@
     "fecha": "2026-08-10",
     "estado": "cerrado",
     "prioridad": 999,
+    "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,

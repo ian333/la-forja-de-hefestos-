@@ -7311,7 +7311,13 @@ export default function ForgeBRepStudio() {
           </aside>)}
           {workspace === 'simulacion' && (
           <aside className={`fb-sim ${collapsed.sim ? 'collapsed' : ''} ${winPos.sim ? 'floating' : ''}`} data-testid="sim-panel" onPointerDown={winDrag('sim')} onDoubleClick={winUndock('sim')} style={winStyle('sim')}>
-            <CollapseHead id="sim" title="Simulación · von Mises (FEA real)" collapsed={!!collapsed.sim}
+            {/* X1 · EL TÍTULO NO MIENTE. ian, con su pieza cargada y el Foco prendido:
+                «esa cosa que dice SIMULACIÓN VON MISES FEA REAL no tiene ni madres que
+                ver con lo que estamos viendo». Tenía razón: con una MALLA no hay FEA que
+                valga (no hay caras de kernel). El encabezado dice lo que el panel ES
+                ahora mismo, no lo que fue cuando se escribió. */}
+            <CollapseHead id="sim" collapsed={!!collapsed.sim} mate={!!piezaMalla}
+              title={piezaMalla ? (focoOn ? 'EL FOCO' : 'TU PIEZA') : 'Simulación · von Mises (FEA real)'}
               onToggle={() => toggleCollapse('sim')} />
             {/* T1 · REVISAR ESTA PIEZA — la revisión de UNA pieza, en el costado del CAD.
                 Va ARRIBA del resto del panel porque es lo que el operador vino a ver
@@ -7369,12 +7375,21 @@ export default function ForgeBRepStudio() {
                 style={{ marginTop: 6, background: GOLD, color: '#1a1206', fontWeight: 700 }}>
                 🏭 LA MÁQUINA — cotizar molde de una pieza
               </button>
-              <button className="fb-fea-run" data-testid="btn-revisar-lote" onClick={() => setRevisarLoteOn(true)}
-                style={{ marginTop: 6 }}>
-                📋 REVISAR EN VOLUMEN — contratos de Kazmer sobre un lote
-              </button>
+              {/* X1 · el botón de LOTE vivía DOS veces en el mismo panel: aquí y dentro
+                  de RevisarPiezaPanel (`rp-abrir-lote`), a diez centímetros. ian ya lo
+                  había degradado a regresiones («B DEGRADA»); tener el duplicado en la
+                  cara mientras usa el Foco es justo el ruido del que se queja. Se queda
+                  el de arriba, que está junto al dictamen al que pertenece. */}
             </div>
 
+            {/* X1 · LO QUE NO PUEDE CORRER, NO SE PINTA. FEA, Estudio Viento y
+                Generativo exigen CARAS del kernel (oc + result + feaFixedFace). Con la
+                malla de un STL no hay caras — la propia barra de estado lo dice: «sin
+                caras de kernel». Antes se pintaban de todos modos: cuatro bloques de
+                controles muertos debajo del Foco, y encima le daban su nombre al panel.
+                Es la regla de PANTALLA LIMPIA (U5) que a este panel se le había escapado
+                — no estaba vacío, estaba LLENO de cosas que no aplican, que es peor. */}
+            {!piezaMalla && (<>
             <p className="fb-hint-txt">
               Resuelve K·u = f en malla tet del sólido (no es heatmap: es FEM).
               σ_vM, factor de seguridad σ_y/σ_max y deflexión máx.
@@ -7561,6 +7576,7 @@ export default function ForgeBRepStudio() {
                 <div className="fb-row"><span className="rk">Estado</span><span className="rv">{feaBusy ? 'calculando…' : 'elige cara fija + Analizar'}</span></div>
               </div>
             )}
+            </>)}
           </aside>
           )}
           </div>
@@ -8623,18 +8639,31 @@ function opSubtitle(op: Op): string {
 // Cabecera de panel COLAPSABLE (▾ abierto / ▸ cerrado). El padre lleva la clase
 // .collapsed que oculta todo menos esta cabecera (CSS), aliviando el encimado de
 // paneles absolutos en pantallas chicas — lo #1 que pidió el fundador.
-function CollapseHead({ id, title, collapsed, onToggle, right }: {
+function CollapseHead({ id, title, collapsed, onToggle, right, mate = false }: {
   id: string; title: string; collapsed: boolean; onToggle: () => void; right?: ReactNode;
+  /** X1 · piel de INSTRUMENTO: sin caja, versalita, y el chevron apagado al borde
+   *  derecho. ian: «no es mate, no se parece a una interfaz futurista como Horizon».
+   *  El de Horizon no es una barra de formulario: es una etiqueta y una regla fina. */
+  mate?: boolean;
 }) {
   return (
-    <div className="fb-collapse-head" onClick={onToggle}>
-      <button className="fb-collapse-btn" data-testid={`collapse-${id}`}
-        onClick={(e) => { e.stopPropagation(); onToggle(); }}
-        title={collapsed ? 'Expandir' : 'Colapsar'} aria-expanded={!collapsed}>
-        {collapsed ? '▸' : '▾'}
-      </button>
+    <div className={`fb-collapse-head${mate ? ' mate' : ''}`} onClick={onToggle}>
+      {!mate && (
+        <button className="fb-collapse-btn" data-testid={`collapse-${id}`}
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
+          title={collapsed ? 'Expandir' : 'Colapsar'} aria-expanded={!collapsed}>
+          {collapsed ? '▸' : '▾'}
+        </button>
+      )}
       <span className="fb-collapse-title">{title}</span>
       {right && <span className="fb-collapse-right">{right}</span>}
+      {mate && (
+        <button className="fb-collapse-btn edge" data-testid={`collapse-${id}`}
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
+          title={collapsed ? 'Expandir' : 'Colapsar'} aria-expanded={!collapsed}>
+          {collapsed ? '▸' : '▾'}
+        </button>
+      )}
     </div>
   );
 }
@@ -8754,6 +8783,17 @@ const CSS = `
 .fb-collapse-title{flex:1;font-size:10px;text-transform:uppercase;letter-spacing:1.4px;
   color:${STEEL};opacity:.72;font-weight:600;}
 .fb-collapse-right{display:flex;align-items:center;}
+/* X1 · PIEL MATE (Horizon). ian: «no es mate, no se parece a una interfaz futurista».
+   La diferencia con una barra de formulario es medible: el chevron deja de encabezar
+   (ya no es lo primero que lees), el título gana aire y peso de versalita, y la regla
+   se afina a la mitad. Nada de fondo de bloque — el Foco es un instrumento, no un
+   acordeón de ajustes. */
+.fb-collapse-head.mate{margin:-2px 0 12px;padding-bottom:7px;
+  border-bottom:1px solid rgba(95,212,245,0.16);}
+.fb-collapse-head.mate .fb-collapse-title{font-size:10.5px;letter-spacing:2.2px;
+  color:#bfeeff;opacity:.62;font-weight:700;}
+.fb-collapse-btn.edge{color:${STEEL};opacity:.34;font-size:10px;margin-left:auto;}
+.fb-collapse-head.mate:hover .fb-collapse-btn.edge{opacity:.8;}
 .fb-count{font-size:10px;font-family:'JetBrains Mono',monospace;color:${GOLD};
   background:${GOLD}14;border:1px solid ${GOLD}33;border-radius:10px;padding:1px 7px;}
 .collapsed{max-height:none!important;padding-top:11px!important;padding-bottom:11px!important;overflow:hidden;}

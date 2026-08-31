@@ -40,7 +40,12 @@ const { execSync } = require('child_process');
 const REPO = path.resolve(__dirname, '..');
 const DIR = path.join(REPO, 'ordenes');
 const OUT = path.join(REPO, 'public', 'temis.json');
-const WIP = { proximo: 7, enCurso: 1 };
+// IMPREVISTO (ian, 2026-08-31): «esos WIP están ahí porque salió algo más urgente… no sé
+// cómo llamarlos, ¿imprevistos? De esos en teoría se deben añadir 1-3 máximo, para seguir
+// llevando un orden. Y ponme límites». El tope ES el límite y aplica a los dos: con 3
+// imprevistos abiertos no entra otro hasta cerrar uno. Sin esta casilla, lo urgente se
+// disfrazaba de EN CURSO y reventaba la tapa de 1 — que fue exactamente lo que pasó.
+const WIP = { proximo: 7, enCurso: 1, imprevisto: 3 };
 
 const lines = (t) => t.split(/\r?\n/);
 /** cuerpo de una sección `## NOMBRE…` hasta el siguiente `## ` */
@@ -150,7 +155,12 @@ const tarjetas = archivos.map((f) => {
   // `FALLA: <nota>` = lo probó y NO pasó → sigue en CERRADO con insignia roja y la nota.
   const probado = campo(txt, 'PROBADO');
   const falla = campo(txt, 'FALLA');
-  const estado = estadoDecl === 'proximo' ? 'proximo' : tieneCierre ? (probado ? 'probado' : 'cerrado') : 'en-curso';
+  // `TIPO: imprevisto` = trabajo que NO estaba planeado y entró por urgencia. Mientras esté
+  // abierto vive en su propia columna; al cerrar, cae en CERRADO como cualquier otra.
+  const tipo = campo(txt, 'TIPO').toLowerCase();
+  const estado = estadoDecl === 'proximo' ? 'proximo'
+    : tieneCierre ? (probado ? 'probado' : 'cerrado')
+    : tipo === 'imprevisto' ? 'imprevisto' : 'en-curso';
   const prioridad = +campo(txt, 'PRIORIDAD') || 999;
   const evidenciaSS = ssDe(slug);
   // fuera las tablas markdown (| a | b |) y sus rayas: aplanadas son ilegibles — la orden completa queda en el .md
@@ -162,7 +172,7 @@ const tarjetas = archivos.map((f) => {
   // es trabajo hecho que falló — la barra lo pinta rojo en vez de esconderlo como 'pendiente'.
   const progreso = superticket ? { verdes: ejercicios.filter((e) => e.estado === 'verde').length, rojos: ejercicios.filter((e) => e.estado === 'rojo').length, total: ejercicios.length } : null;
   return {
-    file: rel, slug, titulo, fecha, estado, prioridad,
+    file: rel, slug, titulo, fecha, estado, prioridad, tipo,
     superticket, ejercicios: ejercicios || [], progreso,
     objetivo: objetivo(txt),
     toca: bullets(seccion(txt, 'TOCA')).length,
@@ -196,6 +206,7 @@ const despues = [];
 
 const proximo = tarjetas.filter((t) => t.estado === 'proximo').sort((a, b) => a.prioridad - b.prioridad);
 const enCurso = tarjetas.filter((t) => t.estado === 'en-curso');
+const imprevistos = tarjetas.filter((t) => t.estado === 'imprevisto');
 const cerrado = tarjetas.filter((t) => t.estado === 'cerrado').sort((a, b) => (b.fecha + b.slug).localeCompare(a.fecha + a.slug));
 const probadas = tarjetas.filter((t) => t.estado === 'probado').sort((a, b) => (b.fecha + b.slug).localeCompare(a.fecha + a.slug));
 
@@ -210,6 +221,8 @@ if (proximo.length > WIP.proximo) violaciones.push(`PRÓXIMO tiene ${proximo.len
 // diseño, y una tapa que siempre está roja no mide nada.
 const enCursoTapa = enCurso.filter((t) => !t.superticket);
 if (enCursoTapa.length > WIP.enCurso) violaciones.push(`EN CURSO tiene ${enCursoTapa.length} > ${WIP.enCurso} (sin contar supertickets): una orden a la vez — cierra o degrada a PRÓXIMO`);
+// El tope de IMPREVISTOS es el que impide que la puerta de atrás se vuelva otro cajón.
+if (imprevistos.length > WIP.imprevisto) violaciones.push(`IMPREVISTOS tiene ${imprevistos.length} > ${WIP.imprevisto}: lo urgente también lleva orden — cierra uno antes de abrir otro`);
 // SÍ O SÍ: una orden que se está CERRANDO en este working tree (su archivo está
 // modificado o nuevo en git) sin carpeta de screenshots = se niega. Las cerradas
 // de antes de Temis solo se marcan "sin evidencia visual" (no se reescribe la historia).
@@ -272,9 +285,9 @@ const cine = (() => {
 
 const json = {
   nombre: 'TEMIS', generado: new Date().toISOString().slice(0, 16).replace('T', ' '),
-  wip: WIP, conteo: { proximo: proximo.length, enCurso: enCursoTapa.length, supertickets: enCurso.length - enCursoTapa.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, sinDesplegar: [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length, despues: despues.length },
+  wip: WIP, conteo: { proximo: proximo.length, enCurso: enCursoTapa.length, imprevisto: imprevistos.length, supertickets: enCurso.length - enCursoTapa.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, sinDesplegar: [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length, despues: despues.length },
   deploy: DEPLOY ? { commit: DEPLOY.commit, fecha: DEPLOY.fecha } : null,
-  violaciones, columnas: { proximo, enCurso, cerrado, probado: probadas }, despues,
+  violaciones, columnas: { proximo, imprevisto: imprevistos, enCurso, cerrado, probado: probadas }, despues,
   cine,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
@@ -282,8 +295,9 @@ fs.writeFileSync(OUT, JSON.stringify(json, null, 1));
 
 const _sd = [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length;
 if (_sd > 0) console.log(`  ⬆ ${_sd} cerrada(s) SIN DESPLEGAR — coordina el deploy (nunca dos a la vez)`);
-console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · en curso ${enCursoTapa.length}/${WIP.enCurso}${enCurso.length - enCursoTapa.length ? ` (+${enCurso.length - enCursoTapa.length} superticket)` : ''} · cerrado ${cerrado.length} (${revisables} con evidencia visual) · probado ${probadas.length} · después ${despues.length}`);
+console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · imprevistos ${imprevistos.length}/${WIP.imprevisto} · en curso ${enCursoTapa.length}/${WIP.enCurso}${enCurso.length - enCursoTapa.length ? ` (+${enCurso.length - enCursoTapa.length} superticket)` : ''} · cerrado ${cerrado.length} (${revisables} con evidencia visual) · probado ${probadas.length} · después ${despues.length}`);
 for (const t of proximo) console.log(`  ${String(t.prioridad).padStart(2)} · ${t.titulo}`);
+for (const t of imprevistos) console.log(`  ⚡ IMPREVISTO · ${t.titulo}${t.superticket ? ` · superticket ${t.progreso.verdes}/${t.progreso.total} ejercicios` : ''}`);
 for (const t of enCurso) console.log(`  ▶ EN CURSO · ${t.titulo}${t.superticket ? ` · superticket ${t.progreso.verdes}/${t.progreso.total} ejercicios${t.progreso.rojos ? ` · ${t.progreso.rojos} rojo` : ''}` : ''}`);
 for (const v of violaciones) console.log(`  ✘ ${v}`);
 console.log(`→ ${path.relative(REPO, OUT)}`);

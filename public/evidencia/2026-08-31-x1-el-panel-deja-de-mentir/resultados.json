@@ -1,0 +1,36 @@
+{
+ "x1-titulo-no-miente": {
+  "estado": "verde",
+  "checks": "con una pieza en el visor el encabezado dice TU PIEZA, y con el Foco prendido dice EL FOCO. La cadena 'Simulación · von Mises (FEA real)' solo aparece cuando el panel SÍ es eso: un sólido del kernel",
+  "video": "", "still": "con-malla-el-foco.png",
+  "nota": "ian: «esa cosa que dice SIMULACIÓN VON MISES FEA REAL no tiene ni madres que ver con lo que estamos viendo»"
+ },
+ "x1-solo-lo-que-sirve": {
+  "estado": "verde",
+  "checks": "con `piezaMalla` cargada NO se renderizan FEA von Mises, Estudio Viento ni Diseño Generativo — los tres exigen caras del kernel (oc + result + feaFixedFace) que un STL no tiene. Además se quitó el botón de LOTE duplicado: vivía dos veces en el mismo panel, a diez centímetros de sí mismo",
+  "video": "", "still": "con-malla-el-foco.png",
+  "nota": "es la regla de PANTALLA LIMPIA (U5) que a este panel se le había escapado: no estaba vacío, estaba LLENO de controles que no aplican"
+ },
+ "x1-mate": {
+  "estado": "verde",
+  "checks": "el encabezado pierde la barra de formulario: regla fina cian en vez de gris, versalita con más letra-espaciado, y el chevron se va al borde derecho al 34 % de opacidad (sube a 80 % al pasar el cursor). Sin fondo de bloque",
+  "video": "", "still": "con-malla-el-foco.png",
+  "nota": "ian: «no es mate, no se parece a una interfaz futurista como en Horizon»"
+ },
+ "x1-sin-regresion": {
+  "estado": "verde",
+  "checks": "gate ciclo-dado 260/260. Y al quitar la pieza (rp-quitar) el panel vuelve EXACTO a lo de antes: título von Mises, los 5 botones del ciclo, los pickers de cara fija/carga, Analizar y Estudio de Viento",
+  "video": "", "still": "sin-malla-sin-regresion.png", "nota": ""
+ },
+ "x1-imprevisto-existe": {
+  "estado": "verde",
+  "checks": "`TIPO: imprevisto` da su propia columna con tope 3 (WIP.imprevisto). No cuenta contra la tapa de EN CURSO, y si se pasa de 3 el tablero lo declara violación: 'lo urgente también lleva orden — cierra uno antes de abrir otro'. El tablero imprime `imprevistos 1/3`",
+  "video": "", "still": "",
+  "nota": "ian: «no sé cómo llamarlos, ¿imprevistos? De esos se deben añadir 1-3 máximo, para seguir llevando un orden. Y ponme límites»"
+ },
+ "x1-esta-orden-vive-ahi": {
+  "estado": "verde",
+  "checks": "esta misma orden lleva TIPO: imprevisto y sale en la columna IMPREVISTOS del lobby, no en EN CURSO. La casilla la creó la orden que la necesitaba",
+  "video": "", "still": "", "nota": ""
+ }
+}

@@ -136,9 +136,9 @@ function Galeria({ fotos }: { fotos: string[] }) {
 
 export interface TemisJson {
   nombre: string; generado: string;
-  wip: { proximo: number; enCurso: number };
+  wip: { proximo: number; enCurso: number; imprevisto?: number };
   /** enCurso = lo que cuenta para la TAPA (espera a ian); supertickets = los que corren solos y se listan aparte del conteo */
-  conteo: { proximo: number; enCurso: number; supertickets?: number; cerrado: number; probado: number; porProbar: number; sinDesplegar: number; despues: number };
+  conteo: { proximo: number; enCurso: number; imprevisto?: number; supertickets?: number; cerrado: number; probado: number; porProbar: number; sinDesplegar: number; despues: number };
   deploy: { commit: string; fecha: string } | null;
   /** CINE — 1 video por día (videos/CRONOGRAMA.json); `publicado` derivado del catálogo de Comando */
   cine: { nota: string; dias: Array<{ fecha: string; id: string; titulo: string; base: string; tipo: string;
@@ -148,7 +148,7 @@ export interface TemisJson {
     /** rendition que Instagram ENTREGA de verdad (ig-calidad-entregada.cjs), no el archivo local */
     entregado: string; falta: string[] }> } | null;
   violaciones: string[];
-  columnas: { proximo: TemisCard[]; enCurso: TemisCard[]; cerrado: TemisCard[]; probado: TemisCard[] };
+  columnas: { proximo: TemisCard[]; imprevisto?: TemisCard[]; enCurso: TemisCard[]; cerrado: TemisCard[]; probado: TemisCard[] };
   despues: Array<{ grupo: string; texto: string }>;
 }
 
@@ -250,6 +250,15 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
           {columnas.proximo.map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
           {columnas.proximo.length === 0 && <div className="tm-vacio">nada en cola — escribe una orden con <code>ESTADO: proximo</code></div>}
         </section>
+        {/* IMPREVISTOS (ian, 2026-08-31): «esos WIP están ahí porque salió algo más
+            urgente… ¿imprevistos? De esos se deben añadir 1-3 máximo, para seguir
+            llevando un orden». Es la puerta de atrás CON tope: sin ella, lo urgente se
+            disfrazaba de EN CURSO y reventaba la tapa de uno. */}
+        <section className="tm-col" data-testid="temis-col-imprevisto">
+          <h4>Imprevistos <b className={(conteo.imprevisto ?? 0) > (wip.imprevisto ?? 3) ? 'bad' : ''}>{conteo.imprevisto ?? 0}/{wip.imprevisto ?? 3}</b></h4>
+          {(columnas.imprevisto ?? []).map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
+          {(columnas.imprevisto ?? []).length === 0 && <div className="tm-vacio">nada urgente — lo de hoy es lo planeado</div>}
+        </section>
         <section className="tm-col" data-testid="temis-col-en-curso">
           <h4>En curso <b className={conteo.enCurso > wip.enCurso ? 'bad' : ''}>{conteo.enCurso}/{wip.enCurso}</b>{(conteo.supertickets ?? 0) > 0 && <span className="tm-sub" title="los supertickets corren solos en iangpu; no cuentan para la tapa">+{conteo.supertickets} superticket</span>}</h4>
           {columnas.enCurso.map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
@@ -302,7 +311,11 @@ export function useTemis(activo: boolean): TemisJson | null | { error: true } {
 export const TEMIS_CSS = `
 .tm{padding:10px 16px 14px;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .tm-viol{border:1px solid rgba(242,122,108,.55);background:rgba(242,122,108,.10);color:#f8b4aa;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:600;display:flex;flex-direction:column;gap:3px}
-.tm-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;align-items:start}
+.tm-cols{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;align-items:start}
+/* minmax(0,1fr) y NO 1fr a secas: 1fr es minmax(auto,1fr) y no baja de su min-content,
+   así que con 5 columnas el tablero se desbordaba en vez de encogerse. Mismo gotcha que
+   ya pagamos en el panel del lobby. (Y ojo: este bloque es un template literal — un
+   acento invertido en un comentario CIERRA la cadena. También lo acabo de pagar.) */
 .tm-col h4 .tm-sub{margin-left:auto;font-size:10px;letter-spacing:0;text-transform:none;color:#FDB813;font-weight:600}
 .tm-badge.falla{color:#f8b4aa;background:rgba(242,122,108,.10);border-color:rgba(242,122,108,.45)}
 .tm-card.probado{border-color:rgba(126,224,160,.35)}
