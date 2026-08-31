@@ -11,18 +11,49 @@
     "cae en el mismo pozo que el de la gente."
   ],
   "ips": [
-    { "prefijo": "187.190.194.239", "quien": "casa/oficina — 173 sesiones al CAD en escritorio" },
-    { "prefijo": "189.217.82.175", "quien": "segunda salida a internet nuestra" },
-    { "prefijo": "201.165.24.", "quien": "rango de pruebas" },
-    { "prefijo": "201.165.25.", "quien": "rango de pruebas" },
-    { "prefijo": "2806:2f0:a0e0:e713", "quien": "IPv6 de casa" }
+    {
+      "prefijo": "187.190.194.239",
+      "quien": "casa/oficina — 173 sesiones al CAD en escritorio"
+    },
+    {
+      "prefijo": "189.217.82.175",
+      "quien": "segunda salida a internet nuestra"
+    },
+    {
+      "prefijo": "201.165.24.",
+      "quien": "rango de pruebas"
+    },
+    {
+      "prefijo": "201.165.25.",
+      "quien": "rango de pruebas"
+    },
+    {
+      "prefijo": "2806:2f0:a0e0:",
+      "quien": "IPv6 de casa",
+      "motivo": "casa de ian (Telmex IPv6). Se guarda el /48 completo, no el 4º grupo: el prefijo ROTA (e713→f9d3→f59b) y con el grupo fijo volvíamos a contarnos como público — 27 sesiones nuestras al CAD se colaron al tablero. Revisado 2026-08-31: 62 sesiones bajo este /48, 57 de escritorio, 39 a /forja-brep.html y 2 al /ig-oauth. Son nuestras."
+    }
   ],
   "bots": [
-    { "prefijo": "66.249.", "quien": "Googlebot" },
-    { "prefijo": "157.55.", "quien": "Bingbot" },
-    { "prefijo": "40.77.", "quien": "Bingbot" },
-    { "prefijo": "17.241.", "quien": "Applebot" },
-    { "prefijo": "2a03:2880:", "quien": "facebookexternalhit" }
+    {
+      "prefijo": "66.249.",
+      "quien": "Googlebot"
+    },
+    {
+      "prefijo": "157.55.",
+      "quien": "Bingbot"
+    },
+    {
+      "prefijo": "40.77.",
+      "quien": "Bingbot"
+    },
+    {
+      "prefijo": "17.241.",
+      "quien": "Applebot"
+    },
+    {
+      "prefijo": "2a03:2880:",
+      "quien": "facebookexternalhit"
+    }
   ],
   "umbral_sospecha": {
     "sesiones_minimas": 8,
