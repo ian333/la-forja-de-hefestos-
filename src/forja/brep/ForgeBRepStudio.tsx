@@ -3590,6 +3590,8 @@ export default function ForgeBRepStudio() {
    * primitivo ya soporta varias marcas y sigue mostrando UNA — que es la doctrina
    * del Foco (atenuar, no agregar).
    */
+  /** X5 · LA LÁMINA: el dictamen se LLAMA, no vive fijo en una columna. */
+  const [laminaOn, setLaminaOn] = useState(false);
   const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
   const fichaRef = useRef<HTMLDivElement | null>(null);
   // X3 · la ficha se ENSEÑA SOLA: al entrar a una lente abre una vez. Si arrancara
@@ -5546,6 +5548,9 @@ export default function ForgeBRepStudio() {
     // libre y cae bajo el meñique. Entra al KEYMAP a propósito: así aparece en el
     // overlay de atajos (S) y se DESCUBRE, en vez de esconderse en un panel.
     { key: 'q', icon: '◉', label: 'EL FOCO · medidas', action: () => setFocoOn((v) => !v) },
+    // X5 · el dictamen dejó de vivir en una columna: se LLAMA. Tecla propia porque un
+    // botón que hay que buscar es un botón que no existe (lección del cargador).
+    { key: 'd', icon: '§', label: 'EL DICTAMEN · los contratos sobre tu pieza', action: () => setLaminaOn((v) => !v) },
   ], [setSketch, addOp, startHole, applyGear, enableFacePick, enableEdgePick]);
   useEffect(() => {
     const onMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
@@ -5553,7 +5558,7 @@ export default function ForgeBRepStudio() {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'Escape') { setShortcutPos(null); setPickMode('none'); placingHoleRef.current = null; setPlacingHole(false); return; }
+      if (e.key === 'Escape') { setLaminaOn(false); setShortcutPos(null); setPickMode('none'); placingHoleRef.current = null; setPlacingHole(false); return; }
       const k = e.key.toLowerCase();
       if (k === 's') { e.preventDefault(); setShortcutPos((p) => (p ? null : { ...mouseRef.current })); return; }
       const item = KEYMAP.find((m) => m.key === k);
@@ -6693,6 +6698,96 @@ export default function ForgeBRepStudio() {
             sólido ya está pintado y las cotas encima serían ruido sobre ruido.
             (Cazado A OJO en el drive de U10: la lente de enfriamiento salía con
             «alto 38.0 mm» flotando encima del campo.) */}
+        {/* ══ X5 · EL PARTE DEL FOCO ══════════════════════════════════════════════
+            Lo que la barra lateral tenía y SÍ hace falta siempre, en dos renglones del
+            borde inferior: las lentes, la clave del color, la identidad de la pieza y su
+            procedencia. Todo lo demás se fue a su casa (la ficha al punto, el dictamen a
+            la lámina). El centro es de la pieza — de Armored Core y Shipbreaker. */}
+        {piezaMalla && (
+          <div data-testid="el-parte-foco" style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 8,
+            display: 'flex', flexDirection: 'column', gap: 5, pointerEvents: 'none',
+            padding: '10px 14px 9px',
+            // el velo: sin él, EL PARTE flotaba sobre el 3D y el renglón de procedencia
+            // era ilegible contra la pieza clara. No es una caja — es un degradado que
+            // muere hacia arriba, como el pie de un instrumento.
+            background: 'linear-gradient(0deg, rgba(6,10,16,0.92) 0%, rgba(6,10,16,0.72) 55%, rgba(6,10,16,0) 100%)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', pointerEvents: 'auto' }}>
+              {([['medidas', 'MEDIDAS'], ['pared', 'PARED'], ['enfriamiento', 'ENFRIAMIENTO'], ['llenado', 'LLENADO']] as const).map(([id, txt]) => {
+                const on = lenteId === id;
+                const c = id === 'medidas' || id === 'pared' ? '#5fd4f5' : '#e061c8';
+                return (
+                  <button key={id} data-testid={`parte-lente-${id}`}
+                    onClick={() => { setFocoOn(true); setLenteId(id); if (id !== 'medidas') calcularLentes(); }}
+                    style={{
+                      cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
+                      font: `${on ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
+                      color: on ? c : '#6f8095', borderBottom: `2px solid ${on ? c : 'transparent'}`,
+                    }}>{txt}</button>
+                );
+              })}
+              {lenteActiva && (
+                <div data-testid="parte-leyenda" style={{ display: 'flex', alignItems: 'center', gap: 9, marginLeft: 6, flexWrap: 'wrap' }}>
+                  {lenteActiva.paradas.map((p, i) => (
+                    <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9.5, color: '#9fb0c4' }}>
+                      <span style={{ width: 14, height: 8, borderRadius: 2, background: p.hex, border: '1px solid rgba(255,255,255,0.16)' }} />
+                      <b style={{ fontVariantNumeric: 'tabular-nums', color: '#dfe7f2' }}>
+                        {(Math.abs(p.v) >= 100 ? p.v.toFixed(0) : p.v.toFixed(1))} {lenteActiva.unidad}
+                      </b>
+                      <span style={{ opacity: 0.55 }}>{p.etiqueta}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {lentesBusy && <span style={{ fontSize: 10, color: '#bfeeff', opacity: 0.85 }}>⏳ midiendo el campo…</span>}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 10.5, color: '#93a4ba', pointerEvents: 'auto' }}>
+              <b data-testid="parte-pieza" style={{ color: '#dfe7f2', fontSize: 11 }}>{piezaMalla.nombre}</b>
+              <span>{piezaMalla.visor.triangleCount.toLocaleString('es-MX')} triángulos</span>
+              {lentes && <span style={{ opacity: 0.72 }}>celda {lentes.campo.celdaMm.toFixed(1)} mm · {lentes.campo.huecos.toLocaleString('es-MX')} vóxeles · {(lentes.ms.total / 1000).toFixed(1)} s</span>}
+              <span style={{ flex: 1 }} />
+              <button data-testid="btn-lamina" onClick={() => setLaminaOn((v) => !v)}
+                title="EL DICTAMEN — los contratos de Kazmer sobre esta pieza (tecla D)"
+                style={{
+                  cursor: 'pointer', background: laminaOn ? 'rgba(201,162,39,0.16)' : 'transparent',
+                  border: `1px solid ${laminaOn ? GOLD : '#2c3a50'}`, borderRadius: 7, padding: '3px 9px',
+                  font: '700 10.5px ui-monospace,Menlo,monospace', letterSpacing: 0.6, color: laminaOn ? '#f0dfa8' : '#9fb0c4',
+                }}>
+                EL DICTAMEN <span style={{ opacity: 0.5, fontWeight: 400 }}>D</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* X5 · LA LÁMINA — el dictamen se LLAMA. No reescribe la lista: re-hospeda el
+            `RevisarPiezaPanel` entero (ian: «está bien hecho»). Lo que cambia es DÓNDE
+            vive, no qué dice. */}
+        {piezaMalla && laminaOn && (
+          <>
+            <div data-testid="lamina-scrim" onClick={() => setLaminaOn(false)}
+              style={{ position: 'absolute', inset: 0, zIndex: 18, background: 'rgba(4,7,12,0.55)', backdropFilter: 'blur(2px)' }} />
+            <div data-testid="lamina-dictamen" style={{
+              position: 'absolute', left: '50%', top: 84, transform: 'translateX(-50%)', zIndex: 19,
+              width: 'min(720px, calc(100% - 48px))', maxHeight: 'calc(100% - 190px)', overflow: 'auto',
+              padding: '14px 18px 16px', borderLeft: `3px solid ${GOLD}`,
+              background: 'linear-gradient(180deg, rgba(10,15,23,0.96), rgba(8,12,18,0.94))',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 8 }}>
+                <div style={{ font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 2.4, color: GOLD, opacity: 0.9 }}>EL DICTAMEN</div>
+                <span style={{ flex: 1 }} />
+                <button data-testid="lamina-cerrar" onClick={() => setLaminaOn(false)}
+                  style={{ cursor: 'pointer', background: 'transparent', border: 0, color: '#7f8fa6', fontSize: 12 }}>✕ Esc</button>
+              </div>
+              <Suspense fallback={<div style={{ fontSize: 11, opacity: 0.6 }}>cargando la revisión…</div>}>
+                <RevisarPiezaPanel
+                  pieza={{ mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas }}
+                  onAbrirLote={() => { setLaminaOn(false); setRevisarLoteOn(true); }} />
+              </Suspense>
+            </div>
+          </>
+        )}
+
         {/* X3 · LA FICHA, anclada al punto que manda. Va FUERA del Canvas (es DOM) pero
             DENTRO del área de trabajo — que es justo la ley: el dato de la pieza vive
             sobre la pieza. `FichaDriver`, adentro del Canvas, le escribe el transform. */}
@@ -6803,7 +6898,10 @@ export default function ForgeBRepStudio() {
           title="Paleta de atajos (o presiona S): C círculo · B rect · L línea · E extruir · F redondeo…"
           style={{
             // bottom-CENTRO: zona libre entre los rieles (nunca los tapa) — regla anti-encimado.
-            position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 48, zIndex: 6, cursor: 'pointer',
+            // X5: con una pieza cargada esa zona YA NO está libre — ahí vive EL PARTE DEL
+            // FOCO. El chip sube para no encimarse (cazado a ojo: tapaba la leyenda y un
+            // pedazo de la ficha). La misma regla anti-encimado, con el mapa actualizado.
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: piezaMalla ? 92 : 48, zIndex: 6, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 8,
             background: 'rgba(13,18,28,0.88)', border: `1px solid ${GOLD}66`, borderRadius: 9,
             padding: '7px 13px', fontSize: 12.5, color: '#e9eef5', fontFamily: "'JetBrains Mono', monospace",
@@ -7398,7 +7496,14 @@ export default function ForgeBRepStudio() {
               ))}
             </div>
           </aside>)}
-          {workspace === 'simulacion' && (
+          {/* X5 · MUERE LA BARRA LATERAL. ian: «esa barra lateral rompe con todo». Medido
+              en producción: 230 px = 14.4 % del ancho, permanente, Y AUN ASÍ solo cabía el
+              78 % de su contenido (1282 px en una pantalla de 1000). No hay forma de
+              arreglarla: o quitas información o la aprietas más.
+              Con una MALLA cargada no se renderiza y la pieza queda a toda pantalla; su
+              dictamen se llama con LA LÁMINA. Con un sólido del kernel sigue igual que
+              siempre — ahí sí es el panel de FEA y ahí sí tiene qué decir. */}
+          {workspace === 'simulacion' && !piezaMalla && (
           <aside className={`fb-sim ${collapsed.sim ? 'collapsed' : ''} ${winPos.sim ? 'floating' : ''}`} data-testid="sim-panel" onPointerDown={winDrag('sim')} onDoubleClick={winUndock('sim')} style={winStyle('sim')}>
             {/* X1 · EL TÍTULO NO MIENTE. ian, con su pieza cargada y el Foco prendido:
                 «esa cosa que dice SIMULACIÓN VON MISES FEA REAL no tiene ni madres que

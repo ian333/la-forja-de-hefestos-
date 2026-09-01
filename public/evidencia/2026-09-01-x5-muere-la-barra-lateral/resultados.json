@@ -1,0 +1,36 @@
+{
+ "x5-sin-barra": {
+  "estado": "verde",
+  "checks": "con una malla cargada `sim-panel` NO se renderiza: el ancho útil pasa de 85.6 % a 100 %. Medido antes en producción: 230 px = 14.4 % permanente, y aun así solo cabía el 78 % de su contenido (1282 px en una pantalla de 1000). Con un sólido del kernel el panel de FEA sigue igual",
+  "video": "", "still": "pieza-a-toda-pantalla.png",
+  "nota": "ian: «esa barra lateral rompe con todo». DECISIÓN: quitarla, no arreglarla — una barra lateral bonita sigue siendo una barra lateral"
+ },
+ "x5-el-parte": {
+  "estado": "verde",
+  "checks": "EL PARTE DEL FOCO en el borde inferior, dos renglones: las 4 lentes + la leyenda del campo activo (3 paradas verificadas) + nombre/triángulos/procedencia + el botón del dictamen",
+  "video": "", "still": "el-parte-con-la-lente.png",
+  "nota": "lleva su propio velo en degradado: sin él, el renglón de procedencia era ilegible contra la pieza clara. No es una caja — muere hacia arriba, como el pie de un instrumento"
+ },
+ "x5-la-lamina": {
+  "estado": "verde",
+  "checks": "el contador es botón y la tecla `D` la abre; `Esc`, el clic fuera y el mismo botón la cierran. Verificado: abre con D, 24 hallazgos dentro, Esc la cierra",
+  "video": "", "still": "la-lamina-del-dictamen.png", "nota": ""
+ },
+ "x5-reusa-el-dictamen": {
+  "estado": "verde",
+  "checks": "la lámina re-hospeda `RevisarPiezaPanel` ENTERO — agrupado por subsistema, colapsable, los 69 criterios, el modo lote. Cero reescritura de la lista",
+  "video": "", "still": "la-lamina-del-dictamen.png",
+  "nota": "ian ya había dicho «está bien hecho»: lo que cambia es DÓNDE vive, no qué dice"
+ },
+ "x5-nada-se-pierde": {
+  "estado": "verde",
+  "checks": "las 7 cosas de la barra siguen alcanzables: identidad y procedencia en EL PARTE, lentes y leyenda en EL PARTE, el titular y el cuerpo en la ficha sobre el punto (X3), el dictamen en la lámina. El toggle del Foco se fue porque no era información: era un modo, y `Q` ya lo hace",
+  "video": "", "still": "", "nota": ""
+ },
+ "x5-sin-regresion": {
+  "estado": "verde",
+  "checks": "gate ciclo-dado 266/266 · drive con drop real: barra MUERTA, EL PARTE sí, leyenda 3 paradas, lámina con D, Esc cierra, cero errores de consola",
+  "video": "", "still": "",
+  "nota": "DEFECTO CAZADO A OJO: el chip «atajos del taller» vivía en bottom-centro «zona libre entre los rieles» — con EL PARTE esa zona ya NO está libre y le tapaba la leyenda. Sube a 92 px cuando hay pieza. La misma regla anti-encimado, con el mapa actualizado"
+ }
+}
