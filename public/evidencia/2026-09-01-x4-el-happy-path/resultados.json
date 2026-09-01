@@ -1,0 +1,36 @@
+{
+ "x4-un-gesto": {
+  "estado": "verde",
+  "checks": "`onDrop`/`onDragOver` en `.fb-root`: sueltas el archivo en cualquier parte de la ventana y carga. No existía arrastrar-y-soltar en NINGUNA parte del CAD (cero onDrop en todo el archivo). Verificado con un DataTransfer REAL de 24,884 bytes",
+  "video": "", "still": "soltado-el-foco-solo.png",
+  "nota": "va en la raíz y no en el viewport porque nadie apunta al viewport cuando arrastra: apunta a la ventana"
+ },
+ "x4-una-sola-verdad": {
+  "estado": "verde",
+  "checks": "`abrirArchivo` es un useCallback que usan LAS DOS puertas (el drop y el input del lobby). Antes el handler vivía inline en el JSX del lobby: copiarlo para el drop habría dejado dos flujos que se desincronizan",
+  "video": "", "still": "", "nota": ""
+ },
+ "x4-ver-de-inmediato": {
+  "estado": "verde",
+  "checks": "al soltar, el Foco se prende SOLO en MEDIDAS y salen 3 cotas sobre la pieza — sin tocar Q y sin esperar el campo. Antes eran SEIS pasos hasta la primera información: tarjeta → lobby → +Abrir → diálogo → carga → Q",
+  "video": "", "still": "soltado-el-foco-solo.png",
+  "nota": "cambia una decisión de U3 (el Foco arrancaba apagado por la regla de Detroit). No la contradice: soltar una pieza ES cuando hace falta. En lienzo vacío sigue apagado"
+ },
+ "x4-sin-cuadrado": {
+  "estado": "verde",
+  "checks": "el lienzo vacío perdió fondo, borde, radio y backdropFilter: quedó tipografía sobre el lienzo. Y dice el camino CORTO (suelta tu pieza) en vez del largo (tres pasos de boceto)",
+  "video": "", "still": "lienzo-sin-cuadrado.png",
+  "nota": "ian: «se sigue viendo el cuadrado, no me termina de gustar»"
+ },
+ "x4-avisa-al-arrastrar": {
+  "estado": "verde",
+  "checks": "mientras arrastras sale un marco fino (no una caja) que dice SUÉLTALO; se va al soltar o al salir. Verificado: el marco aparece con el dragover real",
+  "video": "", "still": "arrastrando-sueltalo.png", "nota": ""
+ },
+ "x4-sin-regresion": {
+  "estado": "verde",
+  "checks": "gate ciclo-dado 266/266 · el lobby sigue abriendo archivos por su input · drive sin errores de consola",
+  "video": "", "still": "",
+  "nota": "DOS DEFECTOS PAGADOS: (1) TDZ — puse `abrirArchivo` antes de `orbitTo` y la pantalla entera se cayó al ModuleErrorBoundary con «Cannot access 'orbitTo' before initialization». esbuild NO lo caza porque no ejecuta; solo aparece manejando la UI. Es la TERCERA vez que este archivo paga el mismo TDZ. (2) el arnés mentía: `page.dispatchEvent` de Playwright no entrega el DataTransfer entre contextos, así que el drop llegaba sin archivos y parecía defecto del producto. Construyéndolo DENTRO de la página funciona. Un test malo te hace arreglar código que estaba bien"
+ }
+}

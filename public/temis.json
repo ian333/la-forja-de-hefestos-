@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-01 21:11",
+ "generado": "2026-09-01 21:40",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -9,12 +9,12 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "imprevisto": 0,
+  "imprevisto": 1,
   "supertickets": 9,
   "cerrado": 71,
   "probado": 0,
   "porProbar": 37,
-  "sinDesplegar": 0,
+  "sinDesplegar": 3,
   "despues": 17
  },
  "deploy": {
@@ -109,7 +109,115 @@
     "despliegue": ""
    }
   ],
-  "imprevisto": [],
+  "imprevisto": [
+   {
+    "file": "ordenes/2026-09-01-x4-el-happy-path.md",
+    "slug": "2026-09-01-x4-el-happy-path",
+    "titulo": "X4 · EL HAPPY PATH — sueltas tu pieza y ya estás viendo",
+    "fecha": "2026-09-01",
+    "estado": "imprevisto",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x4-un-gesto",
+      "titulo": "Sueltas el archivo EN CUALQUIER PARTE y carga",
+      "herramientas": "onDrop en .fb-root",
+      "oraculo": "el drop va en la raíz, no en el viewport: nadie apunta al viewport cuando arrastra, apunta a la ventana",
+      "estado": "verde",
+      "checks": "`onDrop`/`onDragOver` en `.fb-root`: sueltas el archivo en cualquier parte de la ventana y carga. No existía arrastrar-y-soltar en NINGUNA parte del CAD (cero onDrop en todo el archivo). Verificado con un DataTransfer REAL de 24,884 bytes",
+      "video": "",
+      "still": "soltado-el-foco-solo.png",
+      "nota": "va en la raíz y no en el viewport porque nadie apunta al viewport cuando arrastra: apunta a la ventana"
+     },
+     {
+      "id": "x4-una-sola-verdad",
+      "titulo": "Las DOS puertas usan el MISMO código",
+      "herramientas": "abrirArchivo",
+      "oraculo": "el handler estaba inline en el JSX del lobby; se extrae a un useCallback que usan el input y el drop. Copiarlo habría sido tener dos flujos que se desincronizan",
+      "estado": "verde",
+      "checks": "`abrirArchivo` es un useCallback que usan LAS DOS puertas (el drop y el input del lobby). Antes el handler vivía inline en el JSX del lobby: copiarlo para el drop habría dejado dos flujos que se desincronizan",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "x4-ver-de-inmediato",
+      "titulo": "Al cargar ya hay información, sin tocar Q",
+      "herramientas": "el Foco se prende solo",
+      "oraculo": "entra en MEDIDAS, que es instantáneo: las cotas salen sobre la pieza sin pagar el campo. Las lentes se calculan si las pides",
+      "estado": "verde",
+      "checks": "al soltar, el Foco se prende SOLO en MEDIDAS y salen 3 cotas sobre la pieza — sin tocar Q y sin esperar el campo. Antes eran SEIS pasos hasta la primera información: tarjeta → lobby → +Abrir → diálogo → carga → Q",
+      "video": "",
+      "still": "soltado-el-foco-solo.png",
+      "nota": "cambia una decisión de U3 (el Foco arrancaba apagado por la regla de Detroit). No la contradice: soltar una pieza ES cuando hace falta. En lienzo vacío sigue apagado"
+     },
+     {
+      "id": "x4-sin-cuadrado",
+      "titulo": "El lienzo vacío deja de ser una tarjeta",
+      "herramientas": "CSS",
+      "oraculo": "sin fondo, sin borde, sin radio: tipografía sobre el lienzo. Y dice el camino CORTO",
+      "estado": "verde",
+      "checks": "el lienzo vacío perdió fondo, borde, radio y backdropFilter: quedó tipografía sobre el lienzo. Y dice el camino CORTO (suelta tu pieza) en vez del largo (tres pasos de boceto)",
+      "video": "",
+      "still": "lienzo-sin-cuadrado.png",
+      "nota": "ian: «se sigue viendo el cuadrado, no me termina de gustar»"
+     },
+     {
+      "id": "x4-avisa-al-arrastrar",
+      "titulo": "Se ve que la ventana acepta el archivo",
+      "herramientas": "marco",
+      "oraculo": "mientras arrastras sale un marco fino (no una caja) que dice SUÉLTALO; se va al soltar o al salir",
+      "estado": "verde",
+      "checks": "mientras arrastras sale un marco fino (no una caja) que dice SUÉLTALO; se va al soltar o al salir. Verificado: el marco aparece con el dragover real",
+      "video": "",
+      "still": "arrastrando-sueltalo.png",
+      "nota": ""
+     },
+     {
+      "id": "x4-sin-regresion",
+      "titulo": "Nada de lo que ya servía se rompe",
+      "herramientas": "gate",
+      "oraculo": "ciclo-dado-test.cjs verde, el lobby sigue abriendo archivos, y el drive no da errores de consola",
+      "estado": "verde",
+      "checks": "gate ciclo-dado 266/266 · el lobby sigue abriendo archivos por su input · drive sin errores de consola",
+      "video": "",
+      "still": "",
+      "nota": "DOS DEFECTOS PAGADOS: (1) TDZ — puse abrirArchivo antes de orbitTo y la pantalla entera se cayó al ModuleErrorBoundary con «Cannot access 'orbitTo' before initialization». esbuild NO lo caza porque no ejecuta; solo aparece manejando la UI. Es la TERCERA vez que este archivo paga el mismo TDZ. (2) el arnés mentía: page.dispatchEvent de Playwright no entrega el DataTransfer entre contextos, así que el drop llegaba sin archivos y parecía defecto del producto. Construyéndolo DENTRO de la página funciona. Un test malo te hace arreglar código que estaba bien"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, viendo el lienzo vacío: «se sigue viendo el cuadrado, no me termina de gustar. Hagamos el happy path: subir un STL Y EMPEZAR A VER INFORMACIÓN. De ahí nos derivamos a un chingo de cosas».",
+    "toca": 2,
+    "crea": 5,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "captura del lienzo vacío SIN cuadrado",
+     "captura arrastrando: el marco SUÉLTALO",
+     "captura al soltar: la pieza con el Foco prendido y sus cotas, sin haber tocado Q",
+     "prueba de drop REAL (DataTransfer con el archivo), no simulada con el input",
+     "gate ciclo-dado-test.cjs verde · orden-gate VERDE · censo Canvas 8→8",
+     "deploy + verificación contra el bundle SERVIDO"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [
+     "evidencia/2026-09-01-x4-el-happy-path/arrastrando-sueltalo.png",
+     "evidencia/2026-09-01-x4-el-happy-path/lienzo-sin-cuadrado.png",
+     "evidencia/2026-09-01-x4-el-happy-path/soltado-el-foco-solo.png"
+    ],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   }
+  ],
   "enCurso": [
    {
     "file": "ordenes/2026-08-26-subida-automatizada.md",
@@ -1254,8 +1362,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "71379c1",
-    "despliegue": "en-vivo"
+    "commit": "fe1b84c",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-09-01-x2-los-hallazgos-se-leen.md",
@@ -1360,8 +1468,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "2f6a3b0",
-    "despliegue": "en-vivo"
+    "commit": "fe1b84c",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-31-x1-el-panel-deja-de-mentir.md",
@@ -1467,8 +1575,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "58191c1",
-    "despliegue": "en-vivo"
+    "commit": "fe1b84c",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-29-u8-atlas-de-interfaces.md",

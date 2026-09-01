@@ -4701,6 +4701,44 @@ export default function ForgeBRepStudio() {
   const orbitTo = useCallback((az: number, el: number, r: number, tx?: number, ty?: number, tz?: number) =>
     setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1,
       ...(tx !== undefined && ty !== undefined && tz !== undefined ? { target: [tx, tz, -ty] as [number, number, number] } : {}) })), []);
+
+  // ⚠ ESTE BLOQUE VA AQUÍ Y NO ARRIBA: `abrirArchivo` depende de `orbitTo`, y ponerlo
+  //   antes de su declaración revienta en el NAVEGADOR con «Cannot access 'orbitTo'
+  //   before initialization» — la pantalla entera se cae al ModuleErrorBoundary.
+  //   esbuild NO lo caza (no ejecuta), así que solo aparece manejando la UI. Es la
+  //   TERCERA vez que este archivo paga el mismo TDZ.
+  /**
+   * X4 · EL HAPPY PATH — ian: «subir un STL Y EMPEZAR A VER INFORMACIÓN».
+   * Una sola función para las DOS puertas (soltar el archivo encima, o el input del
+   * lobby). Estaba escrita inline dentro del JSX del lobby, así que arrastrar y
+   * soltar habría sido copiarla — y copiar un flujo es tener dos verdades.
+   */
+  const [arrastrando, setArrastrando] = useState(false);
+  const abrirArchivo = useCallback(async (f: File) => {
+    try {
+      const { mesh, notas } = await mallaDesdeArchivo(f.name, await f.arrayBuffer());
+      const nombre = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 28);
+      setErrPieza('');
+      setPiezaMalla({ visor: mallaParaElVisor(mesh), mesh, nombre, notas });
+      // las lentes son de LA pieza anterior — se tiran, no se heredan
+      setLentes(null); lentesDe.current = null; setLenteId('medidas'); setLentesErr('');
+      setWorkspace('simulacion');
+      setCollapsed((c) => ({ ...c, sim: false }));
+      // EL FOCO SE PRENDE SOLO. Arrancaba apagado por la regla de Detroit («el HUD
+      // limpio, la información solo cuando hace falta») — y soltar una pieza ES
+      // cuando hace falta. Entra en MEDIDAS, que es instantáneo: las cotas salen
+      // sobre la pieza sin pagar el campo. Las lentes se calculan si las pides.
+      setFocoOn(true);
+      const bb = bboxDeMalla(mesh);
+      // ENCUADRE DELIBERADO (doctrina de cámara): 3/4 desde ARRIBA, no de canto, con
+      // aire alrededor (1.35× la diagonal). OJO: `orbitTo` recibe GRADOS — pasarle
+      // radianes deja la cámara a medio grado del suelo y toda pieza se ve "de canto".
+      orbitTo(40, 30, Math.max(bb.diagonal * 1.35, 40), bb.centro[0], bb.centro[1], bb.centro[2]);
+    } catch (err) {
+      setPiezaMalla(null);
+      setErrPieza(`no se pudo abrir ${f.name}: ${String(err instanceof Error ? err.message : err).slice(0, 110)}`);
+    }
+  }, [orbitTo]);
   const [gbParts, setGbParts] = useState<GearboxMotionData | null>(null);
   // Construye las piezas separadas (centradas) cuando se enciende el movimiento o
   // cambian los parámetros de la caja. Teselación una vez; la animación solo mueve grupos.
@@ -6210,7 +6248,32 @@ export default function ForgeBRepStudio() {
   }, [sketchOpen, sketchPlaneK, ribbonMin, sketchZoom]);
 
   return (
-    <div className={`fb-root${hideChrome ? ' fb-chrome-off' : ''}${ribbonMin ? ' fb-ribbon-min' : ''}`}>
+    <div className={`fb-root${hideChrome ? ' fb-chrome-off' : ''}${ribbonMin ? ' fb-ribbon-min' : ''}`}
+      /* X4 · EL HAPPY PATH. Sueltas el STL EN CUALQUIER PARTE y ya estás viendo. Antes
+         eran seis pasos hasta la primera información: tarjeta → lobby → ＋Abrir archivo
+         → diálogo → cargar → Q. Ahora es UNO. Va en la raíz y no en el viewport porque
+         nadie apunta al viewport cuando arrastra: apunta a la ventana. */
+      onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setArrastrando(true); } }}
+      onDragLeave={(e) => { if (e.currentTarget === e.target) setArrastrando(false); }}
+      onDrop={(e) => {
+        if (!e.dataTransfer.files?.length) return;
+        e.preventDefault(); setArrastrando(false);
+        const f = e.dataTransfer.files[0];
+        if (!/\.(stl|step|stp)$/i.test(f.name)) { setErrPieza(`«${f.name}» no es .stl, .step ni .stp`); return; }
+        void abrirArchivo(f);
+      }}>
+      {/* el aviso de "suéltalo": un marco fino, no una caja. Solo mientras arrastras. */}
+      {arrastrando && (
+        <div data-testid="zona-soltar" style={{
+          position: 'fixed', inset: 10, zIndex: 60, pointerEvents: 'none', borderRadius: 12,
+          border: '1px solid rgba(95,212,245,0.55)', background: 'rgba(95,212,245,0.05)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ font: '700 13px ui-monospace,Menlo,monospace', letterSpacing: 2.4, color: '#bfeeff' }}>
+            SUÉLTALO
+          </div>
+        </div>
+      )}
       <style>{CSS}</style>
 
       {/* ── CARGANDO (boot del kernel): el .wasm pesa 65 MB — sin esta pantalla el
@@ -6273,21 +6336,35 @@ export default function ForgeBRepStudio() {
         {/* HIGIENE (v1·2): el LIENZO VACÍO guía en vez de gritar "Error". DOM sobre el
             viewport, sin Canvas nuevo. Desaparece con el primer sólido o al bocetar. */}
         {vacio && !building && !sketchOpen && !moldParts.length && !result && !piezaMalla && (
+          /* X4 · SE MURIÓ EL CUADRADO. ian: «se sigue viendo el cuadrado, no me termina
+             de gustar». Tenía razón dos veces: era una caja (fondo + borde + radio) en
+             un lienzo que debería estar vacío, y además enseñaba el camino LARGO —
+             tres pasos de boceto y un botón para abrir el lobby— cuando el happy path
+             que él pidió es UNO: sueltas el STL y ya estás viendo.
+             Ahora no hay tarjeta: hay una invitación. */
           <div data-testid="lienzo-vacio" style={{
-            position: 'absolute', left: '50%', top: '46%', transform: 'translate(-50%,-50%)', zIndex: 4,
-            width: 'min(520px, calc(100% - 48px))', padding: '22px 26px', borderRadius: 14, pointerEvents: 'none',
-            background: 'rgba(9,14,21,0.72)', border: '1px solid rgba(140,180,255,0.16)', backdropFilter: 'blur(3px)',
-            color: '#DCE7F5', textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif',
+            position: 'absolute', left: '50%', top: '47%', transform: 'translate(-50%,-50%)', zIndex: 4,
+            pointerEvents: 'none', textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
           }}>
-            <div style={{ fontSize: 11, letterSpacing: '.18em', textTransform: 'uppercase', color: '#FDB813', fontWeight: 700 }}>Tu primera pieza, tu primer molde</div>
-            <div style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5, color: '#A6B4C8' }}>
-              <b style={{ color: '#DCE7F5' }}>1</b> Boceto — dibuja a ojo y acota &nbsp;·&nbsp; <b style={{ color: '#DCE7F5' }}>2</b> Extruir &nbsp;·&nbsp; <b style={{ color: '#DCE7F5' }}>3</b> Cascarón + Draft
+            <div style={{ font: '700 15px ui-monospace,Menlo,monospace', letterSpacing: 3.5, color: '#bfeeff', opacity: 0.9 }}>
+              SUELTA TU PIEZA AQUÍ
             </div>
-            <div style={{ fontSize: 12.5, marginTop: 6, color: '#7E90A9' }}>La máquina de moldes juzga tu pieza sola en cuanto hay sólido.</div>
-            <button data-testid="lienzo-vacio-abrir" onClick={() => setSwitcherOpen(true)} style={{
-              pointerEvents: 'auto', marginTop: 14, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 700,
-              color: '#1a1206', background: 'linear-gradient(150deg,#FDB813,#d1930b)', border: 0, borderRadius: 9, padding: '8px 14px',
-            }}>o abre un proyecto ▸</button>
+            <div style={{ fontSize: 12, color: '#7E90A9', letterSpacing: 0.2 }}>
+              .stl · .step · .stp &nbsp;—&nbsp; y el Foco se prende solo
+            </div>
+            <div style={{ display: 'flex', gap: 14, marginTop: 4, pointerEvents: 'auto' }}>
+              <button data-testid="lienzo-vacio-abrir" onClick={() => setSwitcherOpen(true)}
+                style={{ cursor: 'pointer', font: 'inherit', fontSize: 11.5, color: '#8fa3ba',
+                  background: 'transparent', border: 0, borderBottom: '1px solid #2c3a50', padding: '2px 1px' }}>
+                o búscalo en tus proyectos
+              </button>
+              <button data-testid="lienzo-vacio-boceto" onClick={() => setSketchOpen(true)}
+                style={{ cursor: 'pointer', font: 'inherit', fontSize: 11.5, color: '#8fa3ba',
+                  background: 'transparent', border: 0, borderBottom: '1px solid #2c3a50', padding: '2px 1px' }}>
+                o dibújala desde cero
+              </button>
+            </div>
           </div>
         )}
         <CadViewport
@@ -6869,29 +6946,7 @@ export default function ForgeBRepStudio() {
             <ProjectSwitcher open={switcherOpen} onClose={() => setSwitcherOpen(false)}
               projects={switcherProjects} starters={switcherStarters}
               onNew={newDoc} onPick={(p) => p.action()}
-              onAbrirArchivo={async (f) => {
-                // T1 · la puerta del lobby ya NO abre el lote (ian: «me estorba»):
-                // el archivo se vuelve LA PIEZA del visor y la revisión sale al costado.
-                try {
-                  const { mesh, notas } = await mallaDesdeArchivo(f.name, await f.arrayBuffer());
-                  const nombre = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 28);
-                  setErrPieza('');
-                  setPiezaMalla({ visor: mallaParaElVisor(mesh), mesh, nombre, notas });
-                  // U10: las lentes son de LA pieza anterior — se tiran, no se heredan.
-                  setLentes(null); lentesDe.current = null; setLenteId('medidas'); setLentesErr('');
-                  setWorkspace('simulacion');
-                  setCollapsed((c) => ({ ...c, sim: false }));      // el panel arranca colapsado: se abre
-                  const bb = bboxDeMalla(mesh);
-                  // ENCUADRE DELIBERADO (doctrina de cámara): 3/4 desde ARRIBA, no de canto,
-                  // con aire alrededor (1.35× la diagonal). OJO: `orbitTo` recibe GRADOS
-                  // (ForgeBRepStudio:2981 hace az*π/180) — pasarle radianes deja la cámara
-                  // a medio grado del suelo y toda pieza se ve "de canto". Cazado a ojo.
-                  orbitTo(40, 30, Math.max(bb.diagonal * 1.35, 40), bb.centro[0], bb.centro[1], bb.centro[2]);
-                } catch (err) {
-                  setPiezaMalla(null);
-                  setErrPieza(`no se pudo abrir ${f.name}: ${String(err instanceof Error ? err.message : err).slice(0, 110)}`);
-                }
-              }} />
+              onAbrirArchivo={abrirArchivo} />
             <div className="fb-ws-tabs" role="tablist">
               <button className={workspace === 'diseno' ? 'on' : ''} data-testid="tab-diseno" role="tab"
                 onClick={() => setWorkspace('diseno')}>DISEÑO</button>
