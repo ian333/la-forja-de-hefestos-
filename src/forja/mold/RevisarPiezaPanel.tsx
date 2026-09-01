@@ -333,19 +333,12 @@ function PanelDeLentes({ foco }: {
 
       {activa && (
         <div data-testid={`ficha-${activa.id}`} style={{ marginTop: 7 }}>
-          {/* LA FICHA — borde izquierdo duro, como la tarjeta de Horizon */}
-          <div style={{
-            borderLeft: `3px solid ${tono(activa.id)}`, paddingLeft: 8,
-            background: 'rgba(255,255,255,0.028)', borderRadius: '0 6px 6px 0', padding: '6px 8px 7px 8px',
-          }}>
-            <div style={{ fontSize: 9, letterSpacing: 0.6, opacity: 0.55, marginBottom: 2 }}>
-              {activa.origen === 'medido' ? 'MEDIDO DE TU PIEZA' : 'SIMULADO — NO ESTÁ EN LA PIEZA, ES UN CÁLCULO'}
-            </div>
-            <div data-testid="ficha-titular" style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.35, marginBottom: 4 }}>
-              {activa.titular}
-            </div>
-            <div style={{ fontSize: 10.5, opacity: 0.78, lineHeight: 1.5 }}>{activa.cuerpo}</div>
-            <div style={{ fontSize: 9.5, opacity: 0.45, marginTop: 5 }}>{activa.ref}</div>
+          {/* X3 · LA FICHA SE MUDÓ AL ÁREA DE TRABAJO. El titular y el cuerpo hablan de
+              UN PUNTO de la pieza, así que ahora viven SOBRE ese punto (ley de ian,
+              2026-09-01) — no se duplican aquí. Lo que se queda es la LEYENDA, que
+              describe todo el campo y no un punto: eso sí es del borde (EL PARTE). */}
+          <div data-testid="ficha-mudada" style={{ fontSize: 10, opacity: 0.5, lineHeight: 1.45, marginBottom: 5 }}>
+            {activa.que}. <b style={{ opacity: 0.85 }}>Apunta la marca sobre la pieza</b> para leer qué pasa ahí.
           </div>
 
           {/* LA LEYENDA — el color ES la clave (Shipbreaker), con valores reales */}

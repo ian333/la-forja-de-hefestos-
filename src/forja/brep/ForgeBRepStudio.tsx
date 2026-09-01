@@ -3583,6 +3583,18 @@ export default function ForgeBRepStudio() {
     () => (lenteId === 'medidas' ? null : lentes?.lentes.find((l) => l.id === lenteId) ?? null),
     [lentes, lenteId],
   );
+  // X3 · la ficha se ENSEÑA SOLA: al entrar a una lente abre una vez. Si arrancara
+  // cerrada, el operador vería una esferita muda y tendría que adivinar que se apunta.
+  /**
+   * X3 · qué FICHA está abierta. Guarda el id de la lente, no un booleano: así el
+   * primitivo ya soporta varias marcas y sigue mostrando UNA — que es la doctrina
+   * del Foco (atenuar, no agregar).
+   */
+  const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
+  const fichaRef = useRef<HTMLDivElement | null>(null);
+  // X3 · la ficha se ENSEÑA SOLA: al entrar a una lente abre una vez. Si arrancara
+  // cerrada, el operador vería una esferita muda y tendría que adivinar que se apunta.
+  useEffect(() => { setFichaAbierta(lenteActiva ? lenteActiva.id : null); }, [lenteActiva?.id]);
   /** el radio de LA MARCA se escala a la pieza: fija en mm, en una tapa tapa todo */
   const marcaR = useMemo(
     () => (piezaMalla ? Math.max(0.8, bboxDeMalla(piezaMalla.mesh).diagonal * 0.012) : 1),
@@ -6316,11 +6328,27 @@ export default function ForgeBRepStudio() {
                     fija el ciclo, el último rincón en llenarse). De Horizon: la ficha
                     señala UN lugar, no toda la pieza. */}
                 {focoOn && lenteActiva?.peor && (
-                  <mesh position={lenteActiva.peor.punto} renderOrder={9}>
-                    <sphereGeometry args={[marcaR, 16, 12]} />
-                    <meshBasicMaterial color={lenteActiva.origen === 'medido' ? '#5fd4f5' : '#ffd3f2'}
-                      toneMapped={false} depthTest={false} transparent opacity={0.9} />
-                  </mesh>
+                  <>
+                    {/* X3 · LA MARCA ES APUNTABLE. Antes era una esferita muda mientras su
+                        frase vivía en la barra lateral — o sea, el dato del área de trabajo
+                        fuera del área de trabajo. Ahora se apunta y se abre. */}
+                    <mesh position={lenteActiva.peor.punto} renderOrder={9}
+                      onPointerOver={(e) => { e.stopPropagation(); setFichaAbierta(lenteActiva.id); }}
+                      onPointerOut={() => { /* se queda abierta: cerrarla al salir haría imposible leerla */ }}>
+                      <sphereGeometry args={[marcaR, 16, 12]} />
+                      <meshBasicMaterial color={lenteActiva.origen === 'medido' ? '#5fd4f5' : '#ffd3f2'}
+                        toneMapped={false} depthTest={false} transparent opacity={0.9} />
+                    </mesh>
+                    {/* el aro del haz: dice "esto se apunta" sin escribirlo */}
+                    <mesh position={lenteActiva.peor.punto} renderOrder={8}>
+                      <sphereGeometry args={[marcaR * 2.1, 20, 14]} />
+                      <meshBasicMaterial color={lenteActiva.origen === 'medido' ? '#5fd4f5' : '#e061c8'}
+                        toneMapped={false} depthTest={false} transparent opacity={0.16} />
+                    </mesh>
+                    {fichaAbierta === lenteActiva.id && (
+                      <FichaDriver punto={lenteActiva.peor.punto} el={fichaRef} />
+                    )}
+                  </>
                 )}
                 {/* EL FOCO · LAS MEDIDAS — hermanas de la malla: MISMO espacio de
                     coordenadas, así que la cota cae donde está la arista. Las cotas
@@ -6588,6 +6616,12 @@ export default function ForgeBRepStudio() {
             sólido ya está pintado y las cotas encima serían ruido sobre ruido.
             (Cazado A OJO en el drive de U10: la lente de enfriamiento salía con
             «alto 38.0 mm» flotando encima del campo.) */}
+        {/* X3 · LA FICHA, anclada al punto que manda. Va FUERA del Canvas (es DOM) pero
+            DENTRO del área de trabajo — que es justo la ley: el dato de la pieza vive
+            sobre la pieza. `FichaDriver`, adentro del Canvas, le escribe el transform. */}
+        {focoOn && lenteActiva?.peor && fichaAbierta === lenteActiva.id && (
+          <FichaEnElMundo lente={lenteActiva} refEl={fichaRef} onCerrar={() => setFichaAbierta(null)} />
+        )}
         {focoOn && !lenteActiva && focoCotas.length > 0 && (
           <CotaLabels sets={focoCotas} refs={focoRefs} paleta={PALETA_FOCO} testid="foco-cotas-overlay" modo="medida" />
         )}
@@ -8639,6 +8673,106 @@ function opSubtitle(op: Op): string {
 // Cabecera de panel COLAPSABLE (▾ abierto / ▸ cerrado). El padre lleva la clase
 // .collapsed que oculta todo menos esta cabecera (CSS), aliviando el encimado de
 // paneles absolutos en pantallas chicas — lo #1 que pidió el fundador.
+/**
+ * X3 · LA FICHA EN EL MUNDO — el primitivo de TODO lo que va dentro del área de trabajo.
+ * ============================================================================
+ * LA LEY, dictada por ian (2026-09-01): «todo lo que se trabaje FUERA del área de
+ * trabajo va fuera; TOOOOODO lo que esté DENTRO del área de trabajo estará dentro».
+ * El dictamen vivía en una barra lateral hablando de un punto de la pieza. Ahora el
+ * texto se MUDA al punto — no se duplica.
+ *
+ * Y LA DOCTRINA, que estaba en el nombre y no la oíamos: se llama **FOCO** porque hay
+ * demasiada información. Un foco no muestra, ENFOCA: **no agrega información, la
+ * ATENÚA.** Todo está ahí; lo que apuntas se enciende y lo demás baja. Por eso Horizon
+ * enseña UNA ficha a la vez — tiene retículo — y nosotros enseñábamos doce renglones
+ * apilados, que es un reporte. Horizon nunca te da un reporte.
+ *
+ * UN primitivo, TRES estados (la respuesta a «¿3 pantallas o 1 reutilizable?»): no son
+ * tres pantallas, son tres distancias al haz.
+ *   · MARCA    — está ahí, no lo apuntas: el punto y su color. Cero texto.
+ *   · ETIQUETA — el haz lo roza: punto + título corto + valor. Una línea.
+ *   · FICHA    — lo apuntas: § chiquito, título, cuerpo en español. UNA a la vez.
+ *
+ * ANATOMÍA (medida de la captura del 5:59 que consiguió ian, atlas §1.5): borde
+ * izquierdo duro, SIN borde de caja, relleno translúcido con **lluvia vertical**,
+ * estado/§ chiquito ARRIBA del título, título grande, cuerpo en lenguaje natural.
+ *
+ * NADA de `drei <Text>`: crashea con EffectComposer. Es DOM proyectado, igual que las
+ * cotas — y el anclaje es el MISMO `useFrame` + `project(camera)` de `CotaDriver`.
+ */
+function FichaDriver({ punto, el }: { punto: [number, number, number]; el: React.MutableRefObject<HTMLDivElement | null> }) {
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+  const anchor = useRef<THREE.Group>(null);
+  const v = useRef(new THREE.Vector3()).current;
+  useFrame(() => {
+    const d = el.current, g = anchor.current;
+    if (!d || !g) return;
+    v.set(punto[0], punto[1], punto[2]);
+    // localToWorld ANTES de proyectar: el punto viene en el marco de la PIEZA, no del
+    // mundo. Copiar `CotaDriver` a medias (sin el ancla) dejaba la ficha clavada en la
+    // esquina 0,0 detrás del panel — invisible, pareciendo que nunca abría.
+    g.localToWorld(v);
+    v.project(camera);
+    if (v.z > 1) { d.style.display = 'none'; return; }   // detrás de la cámara
+    d.style.display = '';
+    const px = (v.x * 0.5 + 0.5) * size.width, py = (-v.y * 0.5 + 0.5) * size.height;
+    d.style.transform = `translate(${px}px,${py}px)`;
+    // EL VOLTEO. Una ficha anclada que siempre sale a la derecha y abajo se corta en
+    // cuanto el punto cae cerca del borde — cazado A OJO con la clip: el punto que
+    // manda el ciclo está en la base y la ficha quedaba medio fuera de pantalla.
+    // Se decide AQUÍ (en el frame) y no con estado de React: un setState por cuadro
+    // mataría el visor.
+    const c = d.firstElementChild as HTMLElement | null;
+    if (!c) return;
+    const aIzquierda = px > size.width * 0.55;
+    const arriba = py > size.height * 0.60;
+    c.style.left = aIzquierda ? 'auto' : '14px';
+    c.style.right = aIzquierda ? '14px' : 'auto';
+    c.style.top = arriba ? 'auto' : '-12px';
+    c.style.bottom = arriba ? '12px' : 'auto';
+  });
+  // ancla vacía: hereda los transforms del grupo donde vive la pieza
+  return <group ref={anchor} />;
+}
+
+function FichaEnElMundo({ lente, refEl, onCerrar }: {
+  lente: { nombre: string; titular: string; cuerpo: string; ref: string; origen: string; unidad: string; maxCampo: number };
+  refEl: React.MutableRefObject<HTMLDivElement | null>;
+  onCerrar: () => void;
+}) {
+  const cian = lente.origen === 'medido';
+  const acento = cian ? '#5fd4f5' : '#e061c8';
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 7 }} data-testid="ficha-en-el-mundo">
+      <div ref={refEl} style={{ position: 'absolute', left: 0, top: 0, willChange: 'transform', display: 'none' }}>
+        {/* el ancla: la ficha sale del punto hacia la derecha y arriba, como en Horizon —
+            junto al objeto, sin línea guía. La cercanía basta. */}
+        <div style={{
+          position: 'absolute', width: 268, pointerEvents: 'auto',
+          borderLeft: `3px solid ${acento}`, padding: '7px 11px 9px 10px', cursor: 'default',
+          /* SIN borde de caja. El relleno es la LLUVIA VERTICAL del escaneo: rayas finas
+             de opacidad variable, no un degradado bonito. Es lo que hace que se lea
+             proyección y no tarjeta de web. */
+          background: `linear-gradient(180deg, rgba(10,16,26,0.90), rgba(10,16,26,0.74)),
+            repeating-linear-gradient(90deg, ${acento}18 0px, ${acento}18 1px, transparent 1px, transparent 4px)`,
+          backdropFilter: 'blur(3px)',
+        }} onClick={(e) => { e.stopPropagation(); onCerrar(); }}>
+          <div style={{ fontSize: 9, letterSpacing: 1.3, color: acento, opacity: 0.85, marginBottom: 3 }}>
+            {lente.origen === 'medido' ? 'MEDIDO' : 'SIMULADO'} · {lente.ref}
+          </div>
+          <div data-testid="ficha-mundo-titular" style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.3, color: '#eaf4ff' }}>
+            {lente.titular}
+          </div>
+          <div style={{ fontSize: 10.5, lineHeight: 1.5, color: '#c3d2e4', opacity: 0.82, marginTop: 5 }}>
+            {lente.cuerpo}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CollapseHead({ id, title, collapsed, onToggle, right, mate = false }: {
   id: string; title: string; collapsed: boolean; onToggle: () => void; right?: ReactNode;
   /** X1 · piel de INSTRUMENTO: sin caja, versalita, y el chevron apagado al borde

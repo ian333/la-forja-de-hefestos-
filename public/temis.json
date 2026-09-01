@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-01 19:18",
+ "generado": "2026-09-01 20:09",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -9,7 +9,7 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "imprevisto": 2,
+  "imprevisto": 3,
   "supertickets": 9,
   "cerrado": 68,
   "probado": 0,
@@ -18,8 +18,8 @@
   "despues": 17
  },
  "deploy": {
-  "commit": "58191c1",
-  "fecha": "2026-08-31 22:10"
+  "commit": "2f6a3b0",
+  "fecha": "2026-09-01 19:19"
  },
  "violaciones": [],
  "columnas": {
@@ -316,6 +316,113 @@
     "evidenciaSS": [
      "evidencia/2026-09-01-x2-los-hallazgos-se-leen/hallazgo-abierto.png",
      "evidencia/2026-09-01-x2-los-hallazgos-se-leen/lista-cerrada.png"
+    ],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-01-x3-la-ficha-vive-en-la-pieza.md",
+    "slug": "2026-09-01-x3-la-ficha-vive-en-la-pieza",
+    "titulo": "X3 · LA FICHA VIVE EN LA PIEZA — el POC del primitivo",
+    "fecha": "2026-09-01",
+    "estado": "imprevisto",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x3-primitivo",
+      "titulo": "UNA ficha reutilizable con sus 3 estados",
+      "herramientas": "componente",
+      "oraculo": "FichaEnElMundo anclada a un punto 3D; el estado lo decide si la apuntas, no un panel",
+      "estado": "verde",
+      "checks": "`FichaEnElMundo` + `FichaDriver`: UN componente anclado a un punto 3D. Guarda el id de la lente abierta (no un booleano), así ya soporta varias marcas mostrando UNA — que es la doctrina del Foco: atenuar, no agregar",
+      "video": "",
+      "still": "ficha-abierta-sobre-el-punto.png",
+      "nota": ""
+     },
+     {
+      "id": "x3-anclada",
+      "titulo": "La ficha se queda PEGADA al punto al girar la pieza",
+      "herramientas": "proyección",
+      "oraculo": "usa el mismo useFrame + project(camera) de CotaDriver; se esconde si el punto queda detrás de la cámara",
+      "estado": "verde",
+      "checks": "reusa el `useFrame` + `localToWorld` + `project(camera)` de CotaDriver. Verificado girando la pieza: la ficha sigue al punto y se esconde si queda detrás de la cámara",
+      "video": "",
+      "still": "ficha-sigue-al-girar.png",
+      "nota": "GOTCHA PAGADO: copié CotaDriver A MEDIAS (sin el <group> ancla) y proyecté la coordenada cruda — la ficha quedaba clavada en 0,0 detrás del panel, invisible, pareciendo que nunca abría. La regla del proyecto es que copiar al ganador es LITERAL"
+     },
+     {
+      "id": "x3-la-ley",
+      "titulo": "El texto SE MUDA, no se duplica",
+      "herramientas": "arquitectura",
+      "oraculo": "el titular y el cuerpo salen del panel lateral y viven sobre la pieza; en el panel se queda SOLO la leyenda y las pestañas (describen el campo, no un punto)",
+      "estado": "verde",
+      "checks": "el titular y el cuerpo SALIERON del panel lateral y viven sobre el punto que describen. No se duplican: en el panel quedó una línea que dice qué es la lente y que hay que apuntar la marca. La leyenda se queda porque describe todo el campo, no un punto",
+      "video": "",
+      "still": "ficha-abierta-sobre-el-punto.png",
+      "nota": "ley de ian (2026-09-01): todo lo del área de trabajo, dentro del área de trabajo"
+     },
+     {
+      "id": "x3-anatomia",
+      "titulo": "Se ve ficha de Horizon, no caja de formulario",
+      "herramientas": "CSS",
+      "oraculo": "borde izquierdo duro, SIN borde de caja, relleno con lluvia vertical, § chiquito arriba, título grande, cuerpo en español",
+      "estado": "verde",
+      "checks": "borde izquierdo duro en el color de la lente, SIN borde de caja, relleno con LLUVIA VERTICAL (repeating-linear-gradient), § y origen chiquitos ARRIBA del título, título grande, cuerpo en español. Medido de la captura del 5:59 que consiguió ian",
+      "video": "",
+      "still": "ficha-abierta-sobre-el-punto.png",
+      "nota": ""
+     },
+     {
+      "id": "x3-se-enseña-sola",
+      "titulo": "No hay que adivinar el mecanismo",
+      "herramientas": "UX",
+      "oraculo": "al prender una lente la ficha abre UNA vez; después se cierra al apuntar a otro lado y se reabre al apuntar la marca",
+      "estado": "verde",
+      "checks": "al entrar a una lente la ficha abre una vez sola; apuntar la marca la reabre; clic en la ficha la cierra. Sin eso el operador vería una esferita muda y tendría que adivinar el mecanismo",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "x3-sin-regresion",
+      "titulo": "Nada de lo que ya servía se rompe",
+      "herramientas": "gate",
+      "oraculo": "ciclo-dado-test.cjs verde y el drive con la pieza controlada sin errores de consola",
+      "estado": "verde",
+      "checks": "gate ciclo-dado 266/266 · drive con naturebytes-clip (496 triángulos, campo en 0.2 s): 5 gestos, 0 errores de consola",
+      "video": "",
+      "still": "",
+      "nota": "SEGUNDO DEFECTO CAZADO A OJO: la ficha se salía del viewport cuando la marca cae cerca del borde — en esta pieza el punto que manda está en la base. Se agregó EL VOLTEO en el driver (decide lado y altura por cuadro, sin setState: un re-render por frame mataría el visor)"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian dictó la ley y aprobó el dibujo:",
+    "toca": 3,
+    "crea": 4,
+    "evidencia": 7,
+    "evidenciaDeclarada": [
+     "captura con la pieza controlada: la ficha ABIERTA sobre el punto que manda el ciclo",
+     "captura con la pieza girada: la ficha SIGUE pegada a su punto",
+     "captura del panel: ya sin el titular, solo pestañas y leyenda",
+     "gate ciclo-dado-test.cjs verde",
+     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
+     "deploy + verificación contra el bundle SERVIDO",
+     "orden-gate VERDE · censo Canvas 8→8"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [
+     "evidencia/2026-09-01-x3-la-ficha-vive-en-la-pieza/ficha-abierta-sobre-el-punto.png",
+     "evidencia/2026-09-01-x3-la-ficha-vive-en-la-pieza/ficha-sigue-al-girar.png"
     ],
     "revisable": false,
     "probado": "",
