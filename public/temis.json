@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-01 22:39",
+ "generado": "2026-09-01 22:46",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -9,17 +9,17 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "imprevisto": 1,
+  "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 72,
+  "cerrado": 73,
   "probado": 0,
-  "porProbar": 38,
-  "sinDesplegar": 1,
+  "porProbar": 39,
+  "sinDesplegar": 0,
   "despues": 17
  },
  "deploy": {
-  "commit": "98496a5",
-  "fecha": "2026-09-01 21:41"
+  "commit": "8b37b21",
+  "fecha": "2026-09-01 22:40"
  },
  "violaciones": [],
  "columnas": {
@@ -109,114 +109,7 @@
     "despliegue": ""
    }
   ],
-  "imprevisto": [
-   {
-    "file": "ordenes/2026-09-01-x5-muere-la-barra-lateral.md",
-    "slug": "2026-09-01-x5-muere-la-barra-lateral",
-    "titulo": "X5 · MUERE LA BARRA LATERAL — la pieza a toda pantalla",
-    "fecha": "2026-09-01",
-    "estado": "imprevisto",
-    "prioridad": 999,
-    "tipo": "imprevisto",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "x5-sin-barra",
-      "titulo": "Con una malla cargada, la columna NO se renderiza",
-      "herramientas": "guarda",
-      "oraculo": "el ancho útil pasa de 85.6 % a 100 %; con un sólido del kernel el panel de FEA sigue igual que siempre",
-      "estado": "verde",
-      "checks": "con una malla cargada `sim-panel` NO se renderiza: el ancho útil pasa de 85.6 % a 100 %. Medido antes en producción: 230 px = 14.4 % permanente, y aun así solo cabía el 78 % de su contenido (1282 px en una pantalla de 1000). Con un sólido del kernel el panel de FEA sigue igual",
-      "video": "",
-      "still": "pieza-a-toda-pantalla.png",
-      "nota": "ian: «esa barra lateral rompe con todo». DECISIÓN: quitarla, no arreglarla — una barra lateral bonita sigue siendo una barra lateral"
-     },
-     {
-      "id": "x5-el-parte",
-      "titulo": "Nace EL PARTE DEL FOCO en el borde inferior",
-      "herramientas": "dos renglones",
-      "oraculo": "lentes + leyenda del campo activo + nombre/score/arquitectura + procedencia + el contador del dictamen",
-      "estado": "verde",
-      "checks": "EL PARTE DEL FOCO en el borde inferior, dos renglones: las 4 lentes + la leyenda del campo activo (3 paradas verificadas) + nombre/triángulos/procedencia + el botón del dictamen",
-      "video": "",
-      "still": "el-parte-con-la-lente.png",
-      "nota": "lleva su propio velo en degradado: sin él, el renglón de procedencia era ilegible contra la pieza clara. No es una caja — muere hacia arriba, como el pie de un instrumento"
-     },
-     {
-      "id": "x5-la-lamina",
-      "titulo": "El dictamen se LLAMA, no vive fijo",
-      "herramientas": "overlay",
-      "oraculo": "el contador ✗n ⚠n es botón y la tecla D lo abre; se cierra con Esc, clic fuera o el mismo botón",
-      "estado": "verde",
-      "checks": "el contador es botón y la tecla `D` la abre; `Esc`, el clic fuera y el mismo botón la cierran. Verificado: abre con D, 24 hallazgos dentro, Esc la cierra",
-      "video": "",
-      "still": "la-lamina-del-dictamen.png",
-      "nota": ""
-     },
-     {
-      "id": "x5-reusa-el-dictamen",
-      "titulo": "La lámina NO reescribe la lista",
-      "herramientas": "RevisarPiezaPanel",
-      "oraculo": "se reusa entero (agrupado, colapsable, los 69) — ian ya dijo «está bien hecho»; lo que cambia es DÓNDE vive, no qué dice",
-      "estado": "verde",
-      "checks": "la lámina re-hospeda `RevisarPiezaPanel` ENTERO — agrupado por subsistema, colapsable, los 69 criterios, el modo lote. Cero reescritura de la lista",
-      "video": "",
-      "still": "la-lamina-del-dictamen.png",
-      "nota": "ian ya había dicho «está bien hecho»: lo que cambia es DÓNDE vive, no qué dice"
-     },
-     {
-      "id": "x5-nada-se-pierde",
-      "titulo": "Ninguna información desaparece",
-      "herramientas": "inventario",
-      "oraculo": "las 7 cosas de la tabla siguen alcanzables, y el gate lo verifica contando testids",
-      "estado": "verde",
-      "checks": "las 7 cosas de la barra siguen alcanzables: identidad y procedencia en EL PARTE, lentes y leyenda en EL PARTE, el titular y el cuerpo en la ficha sobre el punto (X3), el dictamen en la lámina. El toggle del Foco se fue porque no era información: era un modo, y `Q` ya lo hace",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "x5-sin-regresion",
-      "titulo": "El CAD del kernel intacto",
-      "herramientas": "gate",
-      "oraculo": "ciclo-dado-test.cjs verde y el drive sin errores de consola",
-      "estado": "verde",
-      "checks": "gate ciclo-dado 266/266 · drive con drop real: barra MUERTA, EL PARTE sí, leyenda 3 paradas, lámina con D, Esc cierra, cero errores de consola",
-      "video": "",
-      "still": "",
-      "nota": "DEFECTO CAZADO A OJO: el chip «atajos del taller» vivía en bottom-centro «zona libre entre los rieles» — con EL PARTE esa zona ya NO está libre y le tapaba la leyenda. Sube a 92 px cuando hay pieza. La misma regla anti-encimado, con el mapa actualizado"
-     }
-    ],
-    "progreso": {
-     "verdes": 6,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "ian, viendo el Foco sobre su 1594C Lid:",
-    "toca": 2,
-    "crea": 5,
-    "evidencia": 5,
-    "evidenciaDeclarada": [
-     "captura con la pieza a TODA PANTALLA y EL PARTE abajo",
-     "captura de LA LÁMINA abierta con el dictamen",
-     "el ancho útil medido antes/después, en producción",
-     "gate ciclo-dado-test.cjs verde · orden-gate VERDE · censo Canvas 8→8",
-     "deploy + verificación contra el bundle SERVIDO"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [
-     "evidencia/2026-09-01-x5-muere-la-barra-lateral/el-parte-con-la-lente.png",
-     "evidencia/2026-09-01-x5-muere-la-barra-lateral/la-lamina-del-dictamen.png",
-     "evidencia/2026-09-01-x5-muere-la-barra-lateral/pieza-a-toda-pantalla.png"
-    ],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   }
-  ],
+  "imprevisto": [],
   "enCurso": [
    {
     "file": "ordenes/2026-08-26-subida-automatizada.md",
@@ -1258,6 +1151,112 @@
   ],
   "cerrado": [
    {
+    "file": "ordenes/2026-09-01-x5-muere-la-barra-lateral.md",
+    "slug": "2026-09-01-x5-muere-la-barra-lateral",
+    "titulo": "X5 · MUERE LA BARRA LATERAL — la pieza a toda pantalla",
+    "fecha": "2026-09-01",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x5-sin-barra",
+      "titulo": "Con una malla cargada, la columna NO se renderiza",
+      "herramientas": "guarda",
+      "oraculo": "el ancho útil pasa de 85.6 % a 100 %; con un sólido del kernel el panel de FEA sigue igual que siempre",
+      "estado": "verde",
+      "checks": "con una malla cargada `sim-panel` NO se renderiza: el ancho útil pasa de 85.6 % a 100 %. Medido antes en producción: 230 px = 14.4 % permanente, y aun así solo cabía el 78 % de su contenido (1282 px en una pantalla de 1000). Con un sólido del kernel el panel de FEA sigue igual",
+      "video": "",
+      "still": "pieza-a-toda-pantalla.png",
+      "nota": "ian: «esa barra lateral rompe con todo». DECISIÓN: quitarla, no arreglarla — una barra lateral bonita sigue siendo una barra lateral"
+     },
+     {
+      "id": "x5-el-parte",
+      "titulo": "Nace EL PARTE DEL FOCO en el borde inferior",
+      "herramientas": "dos renglones",
+      "oraculo": "lentes + leyenda del campo activo + nombre/score/arquitectura + procedencia + el contador del dictamen",
+      "estado": "verde",
+      "checks": "EL PARTE DEL FOCO en el borde inferior, dos renglones: las 4 lentes + la leyenda del campo activo (3 paradas verificadas) + nombre/triángulos/procedencia + el botón del dictamen",
+      "video": "",
+      "still": "el-parte-con-la-lente.png",
+      "nota": "lleva su propio velo en degradado: sin él, el renglón de procedencia era ilegible contra la pieza clara. No es una caja — muere hacia arriba, como el pie de un instrumento"
+     },
+     {
+      "id": "x5-la-lamina",
+      "titulo": "El dictamen se LLAMA, no vive fijo",
+      "herramientas": "overlay",
+      "oraculo": "el contador ✗n ⚠n es botón y la tecla D lo abre; se cierra con Esc, clic fuera o el mismo botón",
+      "estado": "verde",
+      "checks": "el contador es botón y la tecla `D` la abre; `Esc`, el clic fuera y el mismo botón la cierran. Verificado: abre con D, 24 hallazgos dentro, Esc la cierra",
+      "video": "",
+      "still": "la-lamina-del-dictamen.png",
+      "nota": ""
+     },
+     {
+      "id": "x5-reusa-el-dictamen",
+      "titulo": "La lámina NO reescribe la lista",
+      "herramientas": "RevisarPiezaPanel",
+      "oraculo": "se reusa entero (agrupado, colapsable, los 69) — ian ya dijo «está bien hecho»; lo que cambia es DÓNDE vive, no qué dice",
+      "estado": "verde",
+      "checks": "la lámina re-hospeda `RevisarPiezaPanel` ENTERO — agrupado por subsistema, colapsable, los 69 criterios, el modo lote. Cero reescritura de la lista",
+      "video": "",
+      "still": "la-lamina-del-dictamen.png",
+      "nota": "ian ya había dicho «está bien hecho»: lo que cambia es DÓNDE vive, no qué dice"
+     },
+     {
+      "id": "x5-nada-se-pierde",
+      "titulo": "Ninguna información desaparece",
+      "herramientas": "inventario",
+      "oraculo": "las 7 cosas de la tabla siguen alcanzables, y el gate lo verifica contando testids",
+      "estado": "verde",
+      "checks": "las 7 cosas de la barra siguen alcanzables: identidad y procedencia en EL PARTE, lentes y leyenda en EL PARTE, el titular y el cuerpo en la ficha sobre el punto (X3), el dictamen en la lámina. El toggle del Foco se fue porque no era información: era un modo, y `Q` ya lo hace",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "x5-sin-regresion",
+      "titulo": "El CAD del kernel intacto",
+      "herramientas": "gate",
+      "oraculo": "ciclo-dado-test.cjs verde y el drive sin errores de consola",
+      "estado": "verde",
+      "checks": "gate ciclo-dado 266/266 · drive con drop real: barra MUERTA, EL PARTE sí, leyenda 3 paradas, lámina con D, Esc cierra, cero errores de consola",
+      "video": "",
+      "still": "",
+      "nota": "DEFECTO CAZADO A OJO: el chip «atajos del taller» vivía en bottom-centro «zona libre entre los rieles» — con EL PARTE esa zona ya NO está libre y le tapaba la leyenda. Sube a 92 px cuando hay pieza. La misma regla anti-encimado, con el mapa actualizado"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, viendo el Foco sobre su 1594C Lid:",
+    "toca": 2,
+    "crea": 5,
+    "evidencia": 5,
+    "evidenciaDeclarada": [
+     "captura con la pieza a TODA PANTALLA y EL PARTE abajo",
+     "captura de LA LÁMINA abierta con el dictamen",
+     "el ancho útil medido antes/después, en producción",
+     "gate ciclo-dado-test.cjs verde · orden-gate VERDE · censo Canvas 8→8",
+     "deploy + verificación contra el bundle SERVIDO"
+    ],
+    "cierre": "6/6 EN VERDE · desplegado y verificado contra producción con drop real. barra lateral : MUERTA EL PARTE abajo : SÍ · leyenda con 3 paradas LA LÁMINA con la tecla D : SÍ · 24 hallazgos dentro Esc la c…",
+    "cierreCompleto": "6/6 EN VERDE · desplegado y verificado contra producción con drop real. barra lateral : MUERTA EL PARTE abajo : SÍ · leyenda con 3 paradas LA LÁMINA con la tecla D : SÍ · 24 hallazgos dentro Esc la cierra : SÍ errores de consola : ninguno El ancho útil pasó de 85.6 % a 100 %. La pieza tiene toda la pantalla y el análisis vive sobre ella; abajo quedan dos renglones con lo único que hace falta siempre. Lo que quedó escrito como doctrina (de ian, sin que lo pidiera así): *solo se acepta el gesto de videojuego que ADEMÁS informa.* El barrido informa; los corchetes de visor no. LO QUE FALTA Y ES LO QUE SIGUE: el dictamen todavía es una lámina porque los 69 hallazgos no tienen coordenada. Cuando la tengan (T3), dejan de ser una lista que se llama y se vuelven marcas sobre la pieza — y ahí sí el retículo deja de ser lujo y se vuelve el mecanismo. Riesgo declarado antes de construir y que hay que juzgar con uso real: sin la columna, el dictamen es menos descubrible. Se aguanta con el botón siempre visible y la tecla D; si a ian se le olvida que existe, es mi culpa y se regresa.",
+    "evidenciaSS": [
+     "evidencia/2026-09-01-x5-muere-la-barra-lateral/el-parte-con-la-lente.png",
+     "evidencia/2026-09-01-x5-muere-la-barra-lateral/la-lamina-del-dictamen.png",
+     "evidencia/2026-09-01-x5-muere-la-barra-lateral/pieza-a-toda-pantalla.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "8b37b21",
+    "despliegue": "en-vivo"
+   },
+   {
     "file": "ordenes/2026-09-01-x4-el-happy-path.md",
     "slug": "2026-09-01-x4-el-happy-path",
     "titulo": "X4 · EL HAPPY PATH — sueltas tu pieza y ya estás viendo",
@@ -1362,7 +1361,7 @@
     "probado": "",
     "falla": "",
     "commit": "01cd50c",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-09-01-x3-la-ficha-vive-en-la-pieza.md",

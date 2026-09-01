@@ -101,3 +101,26 @@ y se regresa. Queda escrito para poder juzgarlo, no para taparlo.
 - el ancho útil medido antes/después, en producción
 - gate `ciclo-dado-test.cjs` verde · orden-gate VERDE · censo Canvas 8→8
 - deploy + verificación contra el bundle SERVIDO
+
+## CIERRE (2026-09-01)
+**6/6 EN VERDE · desplegado y verificado contra producción con drop real.**
+
+    barra lateral            : MUERTA
+    EL PARTE abajo           : SÍ · leyenda con 3 paradas
+    LA LÁMINA con la tecla D : SÍ · 24 hallazgos dentro
+    Esc la cierra            : SÍ
+    errores de consola       : ninguno
+
+El ancho útil pasó de **85.6 % a 100 %**. La pieza tiene toda la pantalla y el análisis vive
+sobre ella; abajo quedan dos renglones con lo único que hace falta siempre.
+
+**Lo que quedó escrito como doctrina** (de ian, sin que lo pidiera así): *solo se acepta el
+gesto de videojuego que ADEMÁS informa.* El barrido informa; los corchetes de visor no.
+
+**LO QUE FALTA Y ES LO QUE SIGUE:** el dictamen todavía es una lámina porque los 69 hallazgos
+**no tienen coordenada**. Cuando la tengan (T3), dejan de ser una lista que se llama y se
+vuelven marcas sobre la pieza — y ahí sí el retículo deja de ser lujo y se vuelve el mecanismo.
+
+Riesgo declarado antes de construir y que hay que juzgar con uso real: **sin la columna, el
+dictamen es menos descubrible.** Se aguanta con el botón siempre visible y la tecla `D`; si a
+ian se le olvida que existe, es mi culpa y se regresa.
