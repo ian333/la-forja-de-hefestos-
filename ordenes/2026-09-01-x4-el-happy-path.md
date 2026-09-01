@@ -77,3 +77,26 @@ vacío, que es donde la regla aplicaba.
 - prueba de drop REAL (DataTransfer con el archivo), no simulada con el input
 - gate `ciclo-dado-test.cjs` verde · orden-gate VERDE · censo Canvas 8→8
 - deploy + verificación contra el bundle SERVIDO
+
+## CIERRE (2026-09-01)
+**6/6 EN VERDE · desplegado y verificado con un DROP REAL contra producción.**
+
+De **seis pasos a uno**. Sueltas el STL en cualquier parte de la ventana → la pieza carga,
+el Foco se prende solo en MEDIDAS y las cotas salen sobre la pieza. Sin tocar Q, sin esperar
+el campo. Verificado en producción con un `DataTransfer` real de 24,884 bytes:
+marco SÍ · pieza SÍ (496 triángulos) · Foco solo SÍ · 3 cotas · cero errores de consola.
+
+Y murió el cuadrado: el lienzo vacío perdió fondo, borde, radio y `backdropFilter`. Queda
+tipografía sobre el lienzo, diciendo el camino CORTO.
+
+**Dos defectos pagados, y los dos enseñan algo:**
+1. **TDZ, tercera vez en este archivo.** `abrirArchivo` quedó antes de `orbitTo` y la pantalla
+   entera se cayó al ModuleErrorBoundary. esbuild no lo caza porque **no ejecuta**: solo
+   aparece manejando la UI. Quedó el aviso escrito junto al bloque para que no haya cuarta.
+2. **El arnés mentía.** `page.dispatchEvent` de Playwright no entrega el `DataTransfer` entre
+   contextos, así que el drop llegaba sin archivos y **parecía defecto del producto cuando el
+   producto estaba bien**. Construyéndolo DENTRO de la página entra perfecto. Un test malo te
+   hace "arreglar" código que funcionaba — es el mismo veneno que los gates que miden la etapa
+   equivocada.
+
+Gate 266/266 · orden-gate VERDE · censo Canvas 8→8.
