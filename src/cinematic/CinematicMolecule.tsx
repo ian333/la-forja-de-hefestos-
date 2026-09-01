@@ -3070,8 +3070,8 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
       {bondEf && !efIon && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
       {/* LAS PARTES. Color con el convenio de siempre: POSITIVO cálido, NEGATIVO frío.
           Prendidas a la vez se ven encimadas y apuntando al revés — que es el argumento. */}
-      {efNuc && nucGate > 0.001 && <BondEField data={efNuc} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * nucGate} col={[1.75, 0.52, 0.22]} />}
-      {efEle && eleGate > 0.001 && <BondEField data={efEle} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * eleGate} col={[0.22, 1.05, 1.70]} />}
+      {efNuc && nucGate > 0.001 && <BondEField data={efNuc} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * nucGate} col={[1.75, 0.52, 0.22]} flujo={1} />}
+      {efEle && eleGate > 0.001 && <BondEField data={efEle} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * eleGate} col={[0.22, 1.05, 1.70]} flujo={1} />}
       {/* LA SAL: el campo se parte en DOS instancias del mismo BondEField — las líneas que nacen
           en el ION, celestes (el erizo radial de una carga entera); las del agua, el azul de la
           serie. Cero shader nuevo: es el mismo componente con otro `col` y un subconjunto. */}
@@ -3552,7 +3552,16 @@ function parseBondEField(buf: ArrayBuffer): BondEFieldData {
 // iguales". Antes probé colorear por |E| y lo MEDÍ: bajaba el colorido de 41.2 a 39.4 (el oro
 // competía con el de la carga y el cian desaturaba). Por dirección sí paga, y además enseña.
 // Default 0 = apagada, para no mover el look ya aprobado de O₂/agua.
-function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0, caja }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number; rampa?: number; caja?: number }) {
+function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0, caja, flujo = 0 }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number; rampa?: number; caja?: number; flujo?: number }) {
+  // `flujo` (0 = como siempre, bit-idéntico) convierte el pulso viajero en un COMETA con
+  // cabeza y cola, para que se VEA hacia dónde va la línea.
+  // POR QUÉ (ian, 2026-09-01, viendo los dos campos): "el negativo se ve igual al positivo,
+  // tal vez sea eso, que son el mismo y no lo capto". No era él: era el dibujo. Lo ÚNICO que
+  // distingue los dos campos es la DIRECCIÓN (el positivo sale, el negativo entra) y no la
+  // estábamos dibujando — encima la densidad electrónica también se apiña en los núcleos, así
+  // que hasta la forma les salía parecida. El trazador ya ordena cada línea a favor de E
+  // (trace_field3d apila la pata de atrás invertida + la de adelante), así que el pulso YA
+  // viaja en el sentido bueno: solo había que hacerlo visible.
   const { K, NL, LP, Rvals, frames, inten } = data;
   const cCol = col ?? [0.55, 0.85, 1.0];
   const gl = useThree(s => s.gl);
@@ -3598,7 +3607,7 @@ function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0, caja }
       uniforms: { uOp: { value: 0 }, uCol: { value: new THREE.Color(cCol[0], cCol[1], cCol[2]) },
                   uT: { value: 0 }, uUsaE: { value: inten ? 1 : 0 },
                   uRes: { value: new THREE.Vector2(2160, 3840) }, uW: { value: 4.4 },
-                  uRampa: { value: 0 }, uCaja: { value: 0 } },
+                  uRampa: { value: 0 }, uCaja: { value: 0 }, uFlujo: { value: 0 } },
       // MITER en espacio de PANTALLA: la normal sale de la tangente PROMEDIO de los dos
       // segmentos que llegan al punto, y la anchura se divide entre cos(θ/2) para que la
       // cinta no se adelgace en las curvas. El clamp evita púas en giros muy cerrados.
@@ -3628,7 +3637,7 @@ function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0, caja }
       // EL BRILLO ES |E|. Sin esto la línea se acaba de golpe donde se cortó y se lee
       // "despeinada" (Ian, 2026-07-28); con esto se apaga sola donde el campo ya no importa.
       // vE viene del .bin en escala LOG. uUsaE=0 → .bin viejo: perfil de siempre.
-      fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; uniform float uUsaE; uniform float uRampa;
+      fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; uniform float uUsaE; uniform float uRampa; uniform float uFlujo;
         varying float vS; varying float vL; varying float vE; varying float vLado; varying float vDentro;
         void main(){ float s=clamp(vS,0.0,1.0);
           float perfil=pow(max(sin(3.14159*s),0.0),0.38);
@@ -3637,7 +3646,15 @@ function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0, caja }
           float ph=fract(uT*0.06 + vL*0.13);
           float dd=s-ph; dd=dd-floor(dd+0.5);
           float glow=exp(-dd*dd*7.0);
-          float a=uOp*(base + 0.13*glow*mix(1.0,campo,uUsaE));
+          // COMETAS: VARIOS por línea, cabeza apretada y cola arrastrando por DETRÁS. Un
+          // punto simétrico no dice hacia dónde va; una cola sí. Tres por línea para que el
+          // sentido se lea aunque solo veas un tramo. Con uFlujo=0 queda el glow de siempre.
+          float q      = fract(s*3.0 - uT*0.22 + vL*0.37);   // 0 = la cabeza
+          float dq     = min(q, 1.0 - q);                     // distancia a la cabeza
+          float cabeza = exp(-dq*dq*260.0);
+          float cola   = pow(q, 5.0);                         // se enciende justo DETRÁS
+          float pulso  = mix(glow, cabeza + 0.50*cola, clamp(uFlujo,0.0,1.0));
+          float a=uOp*(base + (0.13 + 0.90*uFlujo)*pulso*mix(1.0,campo,uUsaE));
           // PERFIL A LO ANCHO EN DOS PARTES: núcleo apretado (el filamento nítido) +
           // halo ancho y tenue (la DIFUMINACIÓN que ocupa espacio y brilla).
           float l = abs(vLado);
@@ -3672,6 +3689,7 @@ function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0, caja }
   built.mat.uniforms.uW.value = Math.max(1.0, ancho * ((dib.y || 3840) / 3840));
   built.mat.uniforms.uRampa.value = rampa;
   built.mat.uniforms.uCaja.value = caja ?? 0;
+  built.mat.uniforms.uFlujo.value = flujo;
   // frame por R(t): el campo evoluciona CON los átomos (Rvals desc separado→junto)
   let k = 0;
   if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;

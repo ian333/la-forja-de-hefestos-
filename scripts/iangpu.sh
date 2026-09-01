@@ -41,7 +41,10 @@ case "${1:-}" in
   --push)
     shift
     if via_tailscale; then
-      rsync -az --no-perms --no-owner --no-group "$@" "$TS_HOST:$REPO/${DEST:-}" && echo "✓ push por tailscale"
+      # -R (relativo) CONSERVA la ruta: sin él, `scripts/x.py` aterrizaba en la RAÍZ del
+      # repo y el comando de allá fallaba con "No such file". La rama de Windows sí la
+      # respetaba, así que el bug solo aparecía cuando Tailscale estaba arriba.
+      rsync -azR --no-perms --no-owner --no-group "$@" "$TS_HOST:$REPO/" && echo "✓ push por tailscale (rutas conservadas)"
     else
       # ⚠ cmd.exe topa la línea de comando en ~8 KB, así que el archivo NO puede ir
       # como argumento (27 KB en base64 y falla mudo). Va por STDIN, que el ssh de

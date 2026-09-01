@@ -16,7 +16,8 @@
   "render": {
     "shards": 5,
     "batch": 40,
-    "frames": "dist-video/.camporeyframes"
+    "frames": "dist-video/.camporeyframes",
+    "nota_cometa": "Las lineas llevan COMETAS (uFlujo=1 en BondEField). ian: \"el negativo se ve igual al positivo, tal vez sea eso, que son el mismo y no lo capto\". No era el: era el dibujo. Lo unico que distingue los dos campos es la DIRECCION y no se estaba dibujando. MEDIDO en el .bin (scripts/_dir-campo.py): el campo nuclear va de r=2.86 a r=8.91 bohr (97.6% de las lineas SALEN) y el electronico de 8.91 a 2.81 (97.6% ENTRAN); el total queda en +0.06, ni sale ni entra: CONECTA, que es justo lo que dice el guion."
   },
   "audio": {
     "dir": "dist-video/campo-rey-narracion",
@@ -91,7 +92,7 @@
         "#gaia"
       ]
     },
-    "autorizado": ""
+    "autorizado": "2026-09-01 yt,ig — dicho por ian en sesión: \"sube ese el rey 4k a todo pero igual haces sus 16:9 y 9:16. NO MMS ESTA HERMOSO FELICIDADES\""
   },
   "guion": {
     "archivo": "scripts/guiones/campo-rey.txt",
