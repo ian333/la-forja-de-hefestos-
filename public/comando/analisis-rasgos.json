@@ -1,0 +1,256 @@
+{
+ "generado": "2026-09-01",
+ "n": 78,
+ "nota": "r crudo = correlación directa. r sin época = correlación de los RESIDUOS tras quitar la tendencia temporal de AMBAS series; es la que vale, porque el canal mejoró con el tiempo y eso contamina cualquier rasgo que también haya cambiado. p es aproximado.",
+ "pruebas": {
+  "n_correlaciones": 33,
+  "falsos_esperados_p05": 1.7,
+  "nota": "con 33 pruebas, a p<0.05 se esperan ~1.6 hallazgos por puro azar; solo los p<0.01 pasan esa vara"
+ },
+ "correlaciones": {
+  "log vistas": {
+   "saturacion": {
+    "crudo": 0.476,
+    "sin_epoca": 0.075,
+    "p": 0.5126
+   },
+   "calido": {
+    "crudo": 0.209,
+    "sin_epoca": 0.191,
+    "p": 0.0898
+   },
+   "frio": {
+    "crudo": -0.217,
+    "sin_epoca": -0.124,
+    "p": 0.2769
+   },
+   "magenta": {
+    "crudo": 0.149,
+    "sin_epoca": -0.063,
+    "p": 0.5804
+   },
+   "variedad_color": {
+    "crudo": -0.199,
+    "sin_epoca": -0.134,
+    "p": 0.2397
+   },
+   "luma": {
+    "crudo": 0.119,
+    "sin_epoca": 0.197,
+    "p": 0.0803
+   },
+   "contraste": {
+    "crudo": 0.043,
+    "sin_epoca": 0.318,
+    "p": 0.0035
+   },
+   "quemado": {
+    "crudo": 0.006,
+    "sin_epoca": 0.118,
+    "p": 0.3002
+   },
+   "movimiento": {
+    "crudo": 0.136,
+    "sin_epoca": -0.132,
+    "p": 0.246
+   },
+   "lleno": {
+    "crudo": -0.073,
+    "sin_epoca": -0.245,
+    "p": 0.0274
+   },
+   "dur": {
+    "crudo": 0.704,
+    "sin_epoca": 0.349,
+    "p": 0.0011
+   }
+  },
+  "compartidos/mil": {
+   "saturacion": {
+    "crudo": 0.362,
+    "sin_epoca": 0.078,
+    "p": 0.4949
+   },
+   "calido": {
+    "crudo": 0.124,
+    "sin_epoca": 0.072,
+    "p": 0.529
+   },
+   "frio": {
+    "crudo": -0.13,
+    "sin_epoca": -0.037,
+    "p": 0.7477
+   },
+   "magenta": {
+    "crudo": 0.118,
+    "sin_epoca": -0.017,
+    "p": 0.883
+   },
+   "variedad_color": {
+    "crudo": -0.105,
+    "sin_epoca": -0.028,
+    "p": 0.8072
+   },
+   "luma": {
+    "crudo": 0.056,
+    "sin_epoca": 0.07,
+    "p": 0.5434
+   },
+   "contraste": {
+    "crudo": 0.051,
+    "sin_epoca": 0.191,
+    "p": 0.0893
+   },
+   "quemado": {
+    "crudo": 0.016,
+    "sin_epoca": 0.076,
+    "p": 0.5043
+   },
+   "movimiento": {
+    "crudo": 0.121,
+    "sin_epoca": -0.038,
+    "p": 0.7426
+   },
+   "lleno": {
+    "crudo": -0.136,
+    "sin_epoca": -0.23,
+    "p": 0.0394
+   },
+   "dur": {
+    "crudo": 0.593,
+    "sin_epoca": 0.349,
+    "p": 0.0012
+   }
+  },
+  "guardados/mil": {
+   "saturacion": {
+    "crudo": 0.456,
+    "sin_epoca": 0.152,
+    "p": 0.1813
+   },
+   "calido": {
+    "crudo": 0.181,
+    "sin_epoca": 0.14,
+    "p": 0.2191
+   },
+   "frio": {
+    "crudo": -0.189,
+    "sin_epoca": -0.096,
+    "p": 0.3985
+   },
+   "magenta": {
+    "crudo": 0.077,
+    "sin_epoca": -0.105,
+    "p": 0.3595
+   },
+   "variedad_color": {
+    "crudo": -0.238,
+    "sin_epoca": -0.188,
+    "p": 0.096
+   },
+   "luma": {
+    "crudo": 0.032,
+    "sin_epoca": 0.045,
+    "p": 0.6934
+   },
+   "contraste": {
+    "crudo": 0.061,
+    "sin_epoca": 0.247,
+    "p": 0.026
+   },
+   "quemado": {
+    "crudo": 0.078,
+    "sin_epoca": 0.175,
+    "p": 0.1222
+   },
+   "movimiento": {
+    "crudo": 0.29,
+    "sin_epoca": 0.154,
+    "p": 0.1732
+   },
+   "lleno": {
+    "crudo": -0.129,
+    "sin_epoca": -0.255,
+    "p": 0.0215
+   },
+   "dur": {
+    "crudo": 0.667,
+    "sin_epoca": 0.395,
+    "p": 0.0002
+   }
+  }
+ },
+ "rasgo_vs_epoca": {
+  "saturacion": 0.559,
+  "calido": 0.117,
+  "frio": -0.181,
+  "magenta": 0.24,
+  "variedad_color": -0.149,
+  "luma": -0.004,
+  "contraste": -0.193,
+  "quemado": -0.086,
+  "movimiento": 0.274,
+  "lleno": 0.1,
+  "dur": 0.7
+ },
+ "control_formato": {
+  "corte_s": 40,
+  "n_cortos": 53,
+  "n_largos": 25,
+  "vistas_medianas_cortos": 280,
+  "vistas_medianas_largos": 3545,
+  "solapado_desde": "2026-07-01",
+  "n_sol_cortos": 3,
+  "n_sol_largos": 23,
+  "sol_vistas_cortos": 1518,
+  "sol_vistas_largos": 3653,
+  "sol_cmil_cortos": 3.94,
+  "sol_cmil_largos": 9.2,
+  "dentro_de_largos": {
+   "saturacion": {
+    "log_vistas": 0.142,
+    "c_por_mil": 0.071
+   },
+   "calido": {
+    "log_vistas": -0.14,
+    "c_por_mil": -0.161
+   },
+   "frio": {
+    "log_vistas": 0.137,
+    "c_por_mil": 0.157
+   },
+   "magenta": {
+    "log_vistas": 0.202,
+    "c_por_mil": 0.194
+   },
+   "variedad_color": {
+    "log_vistas": 0.414,
+    "c_por_mil": 0.197
+   },
+   "luma": {
+    "log_vistas": -0.14,
+    "c_por_mil": -0.006
+   },
+   "contraste": {
+    "log_vistas": 0.137,
+    "c_por_mil": 0.149
+   },
+   "quemado": {
+    "log_vistas": -0.188,
+    "c_por_mil": -0.094
+   },
+   "movimiento": {
+    "log_vistas": 0.089,
+    "c_por_mil": 0.004
+   },
+   "lleno": {
+    "log_vistas": -0.182,
+    "c_por_mil": -0.284
+   },
+   "dur": {
+    "log_vistas": -0.123,
+    "c_por_mil": 0.013
+   }
+  }
+ }
+}
