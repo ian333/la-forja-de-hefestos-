@@ -94,3 +94,27 @@ aplicó: **una ventana sin nada que decir no existe.**
 - entrega a `C:/Users/sebas/Downloads` — nada en /tmp
 - deploy + verificación contra el bundle SERVIDO
 - orden-gate VERDE · censo Canvas 8→8
+
+## CIERRE (2026-08-31)
+**6/6 EN VERDE · desplegado y verificado contra el bundle servido.**
+
+El encabezado dice lo que el panel ES (`EL FOCO` / `TU PIEZA`), no lo que fue cuando se
+escribió. FEA von Mises, Estudio Viento y Diseño Generativo **no se pintan con una malla**:
+los tres exigen caras del kernel que un STL no tiene — o sea que eran controles muertos
+ocupando el 70 % del panel y encima le daban su nombre al conjunto. Con un sólido del
+kernel siguen intactos (verificado quitando la pieza: el panel vuelve exacto a lo de antes).
+Fuera también el botón de LOTE duplicado, que vivía dos veces en el mismo panel.
+
+Es la regla de PANTALLA LIMPIA (U5) que a este panel se le había escapado: **no estaba
+vacío, estaba LLENO de cosas que no aplican** — que es peor.
+
+**Y TEMIS estrenó IMPREVISTOS.** ian tenía razón y mi diagnóstico inicial ("desorden") era
+falso: EN CURSO estaba lleno porque él estaba probando y pidiendo cambios urgentes, y **no
+había casilla para trabajo no planeado**, así que lo urgente se disfrazaba de EN CURSO y
+reventaba la tapa de uno. `TIPO: imprevisto` da columna propia con **tope 3**, y el tope
+aplica a los dos. Esta orden fue la primera que vivió en la casilla que ella misma creó.
+
+Gotcha pagado: un acento invertido dentro de un comentario CSS **cierra el template literal**
+que lo contiene. El dev server lo cazó con «Identifier cannot follow number».
+
+Gate 260/260 · orden-gate VERDE · censo Canvas 8→8 · drive de producción sin errores.

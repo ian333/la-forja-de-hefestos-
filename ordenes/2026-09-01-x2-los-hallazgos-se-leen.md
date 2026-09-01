@@ -80,3 +80,27 @@ está ocupando el lugar del título.
 - entrega a `C:/Users/sebas/Downloads` — nada en /tmp
 - deploy + verificación contra el bundle SERVIDO
 - orden-gate VERDE · censo Canvas 8→8
+
+## CIERRE (2026-09-01)
+**6/6 EN VERDE · desplegado y verificado contra el bundle servido.**
+
+Medido con la pieza de ian: el campo `criterio` se usaba como TÍTULO y mide **118 caracteres
+de mediana** — no es un título, es la regla completa del libro. Con el detalle debajo, los 18
+hallazgos ocupaban **~218 renglones ≈ 3,270 px** en una caja de 340: **se veía el 10 %**.
+
+El diagnóstico no era "hay mucho texto": **faltaba el título**, y ya estaba en el dato sin
+inventar nada — los `id` son `subsistema-cosa`. `tituloCorto()` vive en `mold-contratos.ts`
+junto al tipo, no en la UI, para que el gate lo juzgue sobre los 69 y reviente ahí y no en la
+cara de ian. **218 → 45 renglones.**
+
+Defecto cazado A OJO leyendo la lista ya encogida: los títulos cortos **solos no se entienden**
+(DP, LAZO, FUERZA, POSITIVA) y **5 chocan entre sí** — `DP` sale en alimentación y en agua. Por
+eso se agrupó por subsistema: el par subsistema+título sí es único en los 69, y el grupo lo
+dice una vez en vez de repetirlo 18. Los grupos van por su peor severidad, así lo que más duele
+sigue arriba.
+
+Lo que este ticket NO resolvió, y ian lo dijo mirando el resultado: **quedó limpio pero no
+futurista.** Eso no era un problema de estilo del panel — era que fuera un panel. Se atendió
+en X3.
+
+Gate 266/266 · orden-gate VERDE · drive sin errores.

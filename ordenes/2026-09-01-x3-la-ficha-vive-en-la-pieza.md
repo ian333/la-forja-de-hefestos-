@@ -95,6 +95,8 @@ hoy es una esferita muda mientras su frase vive en la barra lateral.
 - scripts/precompute-water-approach.py
 - src/cinematic/CinematicMolecule.tsx
 - scripts/guiones/campo.txt
+- scripts/guiones/campo-rey.txt
+- videos/mol-h2o-los-dos-campos.json
 - videos/mol-campo-los-dos-campos.json
 - public/comando/catalogo.json
 - public/comando/produccion.json
@@ -112,3 +114,30 @@ hoy es una esferita muda mientras su frase vive en la barra lateral.
 - entrega a `C:/Users/sebas/Downloads` — nada en /tmp
 - deploy + verificación contra el bundle SERVIDO
 - orden-gate VERDE · censo Canvas 8→8
+
+## CIERRE (2026-09-01)
+**6/6 EN VERDE · desplegado y verificado contra el bundle servido.**
+
+El primitivo existe: `FichaEnElMundo` + `FichaDriver`, anclado a un punto 3D, con sus tres
+estados (MARCA / ETIQUETA / FICHA). La respuesta a «¿3 pantallas o 1 reutilizable?» es **una**:
+no son tres pantallas, son **tres distancias al haz**.
+
+Y la ley de ian quedó aplicada donde primero se podía: el titular y el cuerpo del enfriamiento
+**se mudaron** del panel lateral al punto que describen. No se duplicaron — en el panel quedó
+solo la leyenda, que sí habla de todo el campo.
+
+**Dos defectos cazados A OJO, ninguno por un gate:**
+1. Copié `CotaDriver` **a medias** (sin el `<group>` ancla) y proyecté la coordenada cruda: la
+   ficha quedaba clavada en 0,0 detrás del panel, invisible, pareciendo que nunca abría.
+   *Copiar al ganador es LITERAL* — regla del proyecto, vuelta a pagar.
+2. La ficha se salía del viewport cuando la marca cae cerca del borde. Se agregó **EL VOLTEO**,
+   decidido por cuadro en el driver y **sin `setState`**: un re-render por frame mataría el visor.
+
+**LO QUE SIGUE ABIERTO Y ES EL TRABAJO GRANDE:** los 69 hallazgos **no tienen coordenada**
+(`Criterio` y `CoordFinding` no la traen; el propio código lo confiesa: «necesitan coordenadas.
+Quien las tenga las pasa» — y nadie las pasa). Hasta que la tengan, el dictamen no se puede
+sacar al mundo. **Ese es T3 y ahora se sabe exactamente qué le falta primero.**
+Tampoco hay perspectiva real de la ficha ni retículo: el haz es el cursor.
+
+Gate 266/266 · orden-gate VERDE · pieza controlada `naturebytes-clip.stl` (496 triángulos,
+campo en 0.2 s, un punto que tarda 7.3× más que el resto).

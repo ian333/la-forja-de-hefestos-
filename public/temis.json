@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-01 20:09",
+ "generado": "2026-09-01 21:11",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -9,17 +9,17 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "imprevisto": 3,
+  "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 68,
+  "cerrado": 71,
   "probado": 0,
-  "porProbar": 34,
+  "porProbar": 37,
   "sinDesplegar": 0,
   "despues": 17
  },
  "deploy": {
-  "commit": "2f6a3b0",
-  "fecha": "2026-09-01 19:19"
+  "commit": "71379c1",
+  "fecha": "2026-09-01 20:10"
  },
  "violaciones": [],
  "columnas": {
@@ -109,328 +109,7 @@
     "despliegue": ""
    }
   ],
-  "imprevisto": [
-   {
-    "file": "ordenes/2026-08-31-x1-el-panel-deja-de-mentir.md",
-    "slug": "2026-08-31-x1-el-panel-deja-de-mentir",
-    "titulo": "X1 · EL PANEL DEJA DE MENTIR — y TEMIS estrena IMPREVISTOS",
-    "fecha": "2026-08-31",
-    "estado": "imprevisto",
-    "prioridad": 999,
-    "tipo": "imprevisto",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "x1-titulo-no-miente",
-      "titulo": "El encabezado dice lo que ESTÁS viendo",
-      "herramientas": "contextual",
-      "oraculo": "con una pieza en el visor el panel NO dice \"von Mises\"; dice la pieza y, con el Foco prendido, EL FOCO",
-      "estado": "verde",
-      "checks": "con una pieza en el visor el encabezado dice TU PIEZA, y con el Foco prendido dice EL FOCO. La cadena 'Simulación · von Mises (FEA real)' solo aparece cuando el panel SÍ es eso: un sólido del kernel",
-      "video": "",
-      "still": "con-malla-el-foco.png",
-      "nota": "ian: «esa cosa que dice SIMULACIÓN VON MISES FEA REAL no tiene ni madres que ver con lo que estamos viendo»"
-     },
-     {
-      "id": "x1-solo-lo-que-sirve",
-      "titulo": "Lo que no puede correr, no se pinta",
-      "herramientas": "guardas",
-      "oraculo": "con piezaMalla cargada NO se renderizan FEA, Viento ni Generativo (necesitan caras del kernel); con un sólido del kernel siguen intactos",
-      "estado": "verde",
-      "checks": "con `piezaMalla` cargada NO se renderizan FEA von Mises, Estudio Viento ni Diseño Generativo — los tres exigen caras del kernel (oc + result + feaFixedFace) que un STL no tiene. Además se quitó el botón de LOTE duplicado: vivía dos veces en el mismo panel, a diez centímetros de sí mismo",
-      "video": "",
-      "still": "con-malla-el-foco.png",
-      "nota": "es la regla de PANTALLA LIMPIA (U5) que a este panel se le había escapado: no estaba vacío, estaba LLENO de controles que no aplican"
-     },
-     {
-      "id": "x1-mate",
-      "titulo": "Se ve instrumento, no formulario",
-      "herramientas": "CSS",
-      "oraculo": "el encabezado pierde la barra con caja; queda regla fina + versalita, sin fondo de bloque; el chevron se va al borde y se apaga",
-      "estado": "verde",
-      "checks": "el encabezado pierde la barra de formulario: regla fina cian en vez de gris, versalita con más letra-espaciado, y el chevron se va al borde derecho al 34 % de opacidad (sube a 80 % al pasar el cursor). Sin fondo de bloque",
-      "video": "",
-      "still": "con-malla-el-foco.png",
-      "nota": "ian: «no es mate, no se parece a una interfaz futurista como en Horizon»"
-     },
-     {
-      "id": "x1-sin-regresion",
-      "titulo": "El CAD del kernel no pierde nada",
-      "herramientas": "gate",
-      "oraculo": "ciclo-dado-test.cjs verde y el drive con un STEP muestra FEA/Viento/Generativo como antes",
-      "estado": "verde",
-      "checks": "gate ciclo-dado 260/260. Y al quitar la pieza (rp-quitar) el panel vuelve EXACTO a lo de antes: título von Mises, los 5 botones del ciclo, los pickers de cara fija/carga, Analizar y Estudio de Viento",
-      "video": "",
-      "still": "sin-malla-sin-regresion.png",
-      "nota": ""
-     },
-     {
-      "id": "x1-imprevisto-existe",
-      "titulo": "TEMIS tiene la casilla y su tope",
-      "herramientas": "tablero",
-      "oraculo": "TIPO: imprevisto da una columna propia con tope 3; no cuenta contra EN CURSO; pasado 3 el tablero lo declara violación",
-      "estado": "verde",
-      "checks": "`TIPO: imprevisto` da su propia columna con tope 3 (WIP.imprevisto). No cuenta contra la tapa de EN CURSO, y si se pasa de 3 el tablero lo declara violación: 'lo urgente también lleva orden — cierra uno antes de abrir otro'. El tablero imprime `imprevistos 1/3`",
-      "video": "",
-      "still": "",
-      "nota": "ian: «no sé cómo llamarlos, ¿imprevistos? De esos se deben añadir 1-3 máximo, para seguir llevando un orden. Y ponme límites»"
-     },
-     {
-      "id": "x1-esta-orden-vive-ahi",
-      "titulo": "La prueba es ella misma",
-      "herramientas": "meta",
-      "oraculo": "esta orden sale en la columna IMPREVISTOS del lobby, no en EN CURSO",
-      "estado": "verde",
-      "checks": "esta misma orden lleva TIPO: imprevisto y sale en la columna IMPREVISTOS del lobby, no en EN CURSO. La casilla la creó la orden que la necesitaba",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 6,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "ian probando su pieza real (screw-cap-medical) con el Foco prendido:",
-    "toca": 4,
-    "crea": 4,
-    "evidencia": 7,
-    "evidenciaDeclarada": [
-     "captura del panel CON MALLA: sin \"von Mises\", sin FEA/Viento/Generativo",
-     "captura del panel CON SÓLIDO del kernel: FEA/Viento/Generativo intactos (la no-regresión)",
-     "gate ciclo-dado-test.cjs verde",
-     "el lobby con la columna IMPREVISTOS y esta orden dentro",
-     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
-     "deploy + verificación contra el bundle SERVIDO",
-     "orden-gate VERDE · censo Canvas 8→8"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [
-     "evidencia/2026-08-31-x1-el-panel-deja-de-mentir/con-malla-el-foco.png",
-     "evidencia/2026-08-31-x1-el-panel-deja-de-mentir/sin-malla-sin-regresion.png"
-    ],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-01-x2-los-hallazgos-se-leen.md",
-    "slug": "2026-09-01-x2-los-hallazgos-se-leen",
-    "titulo": "X2 · LOS HALLAZGOS SE LEEN — el dictamen deja de ser un muro",
-    "fecha": "2026-09-01",
-    "estado": "imprevisto",
-    "prioridad": 999,
-    "tipo": "imprevisto",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "x2-titulo-del-dato",
-      "titulo": "Cada criterio tiene nombre corto, derivado y verificable",
-      "herramientas": "tituloCorto(id) en mold-contratos",
-      "oraculo": "función PURA junto al tipo Criterio; el gate exige que los 69 den título no vacío y ≤ 24 caracteres",
-      "estado": "verde",
-      "checks": "`tituloCorto(id)` vive en mold-contratos.ts, junto al tipo Criterio, y es pura. Los 69 criterios dan título no vacío y ≤24 caracteres: mediana 8, el más largo 'DEFLEXION VS VENTEO' (19)",
-      "video": "",
-      "still": "lista-cerrada.png",
-      "nota": "el título ya estaba en el dato y nadie lo usaba: los id son subsistema-cosa (feed-ciclo, agua-turbulento)"
-     },
-     {
-      "id": "x2-una-linea",
-      "titulo": "Un hallazgo = un renglón",
-      "herramientas": "UI",
-      "oraculo": "la lista pasa de ~218 renglones a 18: ícono + TÍTULO + § por fila, sin el párrafo",
-      "estado": "verde",
-      "checks": "cada hallazgo es una fila: ícono + TÍTULO + § + chevron. El campo `criterio` (118 caracteres de mediana) dejó de hacer de título",
-      "video": "",
-      "still": "lista-cerrada.png",
-      "nota": ""
-     },
-     {
-      "id": "x2-abrir-uno",
-      "titulo": "La regla y los números viven ADENTRO",
-      "herramientas": "acordeón",
-      "oraculo": "al hacer clic se abre ESE hallazgo con su criterio y su detalle; solo uno abierto a la vez, para que el panel no vuelva a crecer",
-      "estado": "verde",
-      "checks": "al hacer clic se abre ESE hallazgo con su regla del libro y su detalle con números; solo uno abierto a la vez. Verificado en la UI real abriendo contr-warpage-topologia",
-      "video": "",
-      "still": "hallazgo-abierto.png",
-      "nota": ""
-     },
-     {
-      "id": "x2-mide-la-mejora",
-      "titulo": "La mejora se MIDE, no se declara",
-      "herramientas": "números",
-      "oraculo": "el gate imprime renglones antes/después con la misma pieza y exige ≥5× de reducción",
-      "estado": "verde",
-      "checks": "medido con screw-cap-medical, la pieza de ian: 218 → 37 renglones = 5.9× sin agrupar, y 218 → 45 = 4.8× con los 8 encabezados de subsistema. Antes: ~3,270 px en una caja de 340 (se veía el 10 %)",
-      "video": "",
-      "still": "",
-      "nota": "el gate lo calcula, no se declara"
-     },
-     {
-      "id": "x2-nada-se-esconde",
-      "titulo": "Ningún hallazgo desaparece",
-      "herramientas": "conteo",
-      "oraculo": "siguen apareciendo los 18 que duelen y el botón de los 69; lo que cambia es el ALTO, no el contenido",
-      "estado": "verde",
-      "checks": "siguen los 69 criterios y los 18 que duelen, todos con su criterio, su detalle y su §. Lo que cambió es el ALTO, no el contenido",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "x2-sin-regresion",
-      "titulo": "El dictamen sigue diciendo lo mismo",
-      "herramientas": "gate",
-      "oraculo": "ciclo-dado-test.cjs verde y el drive con la pieza de ian sin errores de consola",
-      "estado": "verde",
-      "checks": "gate ciclo-dado 266/266 · drive con la pieza de ian: 5 gestos, 0 errores de consola",
-      "video": "",
-      "still": "",
-      "nota": "DEFECTO CAZADO A OJO leyendo la lista ya encogida: los títulos cortos solos NO se entienden (DP, LAZO, FUERZA, POSITIVA) y 5 chocan entre sí — DP sale en alimentación y en agua. Por eso se agrupó por subsistema: el par subsistema+título sí es único en los 69, y el grupo lo dice UNA vez en vez de repetirlo 18"
-     }
-    ],
-    "progreso": {
-     "verdes": 6,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "ian, con su pieza en el visor y el Foco prendido: «el panel está lleno de demasiadas cosas, no es mate, no se parece a una interfaz futurista como en Horizon». El X1 limpió el encabezado y sacó lo que no puede correr. Queda lo último que n…",
-    "toca": 4,
-    "crea": 4,
-    "evidencia": 6,
-    "evidenciaDeclarada": [
-     "los renglones ANTES y DESPUÉS con la MISMA pieza, impresos por el gate",
-     "captura del panel con la pieza de ian: la lista cerrada, y un hallazgo abierto",
-     "gate ciclo-dado-test.cjs verde",
-     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
-     "deploy + verificación contra el bundle SERVIDO",
-     "orden-gate VERDE · censo Canvas 8→8"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [
-     "evidencia/2026-09-01-x2-los-hallazgos-se-leen/hallazgo-abierto.png",
-     "evidencia/2026-09-01-x2-los-hallazgos-se-leen/lista-cerrada.png"
-    ],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-01-x3-la-ficha-vive-en-la-pieza.md",
-    "slug": "2026-09-01-x3-la-ficha-vive-en-la-pieza",
-    "titulo": "X3 · LA FICHA VIVE EN LA PIEZA — el POC del primitivo",
-    "fecha": "2026-09-01",
-    "estado": "imprevisto",
-    "prioridad": 999,
-    "tipo": "imprevisto",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "x3-primitivo",
-      "titulo": "UNA ficha reutilizable con sus 3 estados",
-      "herramientas": "componente",
-      "oraculo": "FichaEnElMundo anclada a un punto 3D; el estado lo decide si la apuntas, no un panel",
-      "estado": "verde",
-      "checks": "`FichaEnElMundo` + `FichaDriver`: UN componente anclado a un punto 3D. Guarda el id de la lente abierta (no un booleano), así ya soporta varias marcas mostrando UNA — que es la doctrina del Foco: atenuar, no agregar",
-      "video": "",
-      "still": "ficha-abierta-sobre-el-punto.png",
-      "nota": ""
-     },
-     {
-      "id": "x3-anclada",
-      "titulo": "La ficha se queda PEGADA al punto al girar la pieza",
-      "herramientas": "proyección",
-      "oraculo": "usa el mismo useFrame + project(camera) de CotaDriver; se esconde si el punto queda detrás de la cámara",
-      "estado": "verde",
-      "checks": "reusa el `useFrame` + `localToWorld` + `project(camera)` de CotaDriver. Verificado girando la pieza: la ficha sigue al punto y se esconde si queda detrás de la cámara",
-      "video": "",
-      "still": "ficha-sigue-al-girar.png",
-      "nota": "GOTCHA PAGADO: copié CotaDriver A MEDIAS (sin el <group> ancla) y proyecté la coordenada cruda — la ficha quedaba clavada en 0,0 detrás del panel, invisible, pareciendo que nunca abría. La regla del proyecto es que copiar al ganador es LITERAL"
-     },
-     {
-      "id": "x3-la-ley",
-      "titulo": "El texto SE MUDA, no se duplica",
-      "herramientas": "arquitectura",
-      "oraculo": "el titular y el cuerpo salen del panel lateral y viven sobre la pieza; en el panel se queda SOLO la leyenda y las pestañas (describen el campo, no un punto)",
-      "estado": "verde",
-      "checks": "el titular y el cuerpo SALIERON del panel lateral y viven sobre el punto que describen. No se duplican: en el panel quedó una línea que dice qué es la lente y que hay que apuntar la marca. La leyenda se queda porque describe todo el campo, no un punto",
-      "video": "",
-      "still": "ficha-abierta-sobre-el-punto.png",
-      "nota": "ley de ian (2026-09-01): todo lo del área de trabajo, dentro del área de trabajo"
-     },
-     {
-      "id": "x3-anatomia",
-      "titulo": "Se ve ficha de Horizon, no caja de formulario",
-      "herramientas": "CSS",
-      "oraculo": "borde izquierdo duro, SIN borde de caja, relleno con lluvia vertical, § chiquito arriba, título grande, cuerpo en español",
-      "estado": "verde",
-      "checks": "borde izquierdo duro en el color de la lente, SIN borde de caja, relleno con LLUVIA VERTICAL (repeating-linear-gradient), § y origen chiquitos ARRIBA del título, título grande, cuerpo en español. Medido de la captura del 5:59 que consiguió ian",
-      "video": "",
-      "still": "ficha-abierta-sobre-el-punto.png",
-      "nota": ""
-     },
-     {
-      "id": "x3-se-enseña-sola",
-      "titulo": "No hay que adivinar el mecanismo",
-      "herramientas": "UX",
-      "oraculo": "al prender una lente la ficha abre UNA vez; después se cierra al apuntar a otro lado y se reabre al apuntar la marca",
-      "estado": "verde",
-      "checks": "al entrar a una lente la ficha abre una vez sola; apuntar la marca la reabre; clic en la ficha la cierra. Sin eso el operador vería una esferita muda y tendría que adivinar el mecanismo",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "x3-sin-regresion",
-      "titulo": "Nada de lo que ya servía se rompe",
-      "herramientas": "gate",
-      "oraculo": "ciclo-dado-test.cjs verde y el drive con la pieza controlada sin errores de consola",
-      "estado": "verde",
-      "checks": "gate ciclo-dado 266/266 · drive con naturebytes-clip (496 triángulos, campo en 0.2 s): 5 gestos, 0 errores de consola",
-      "video": "",
-      "still": "",
-      "nota": "SEGUNDO DEFECTO CAZADO A OJO: la ficha se salía del viewport cuando la marca cae cerca del borde — en esta pieza el punto que manda está en la base. Se agregó EL VOLTEO en el driver (decide lado y altura por cuadro, sin setState: un re-render por frame mataría el visor)"
-     }
-    ],
-    "progreso": {
-     "verdes": 6,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "ian dictó la ley y aprobó el dibujo:",
-    "toca": 3,
-    "crea": 4,
-    "evidencia": 7,
-    "evidenciaDeclarada": [
-     "captura con la pieza controlada: la ficha ABIERTA sobre el punto que manda el ciclo",
-     "captura con la pieza girada: la ficha SIGUE pegada a su punto",
-     "captura del panel: ya sin el titular, solo pestañas y leyenda",
-     "gate ciclo-dado-test.cjs verde",
-     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
-     "deploy + verificación contra el bundle SERVIDO",
-     "orden-gate VERDE · censo Canvas 8→8"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [
-     "evidencia/2026-09-01-x3-la-ficha-vive-en-la-pieza/ficha-abierta-sobre-el-punto.png",
-     "evidencia/2026-09-01-x3-la-ficha-vive-en-la-pieza/ficha-sigue-al-girar.png"
-    ],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   }
-  ],
+  "imprevisto": [],
   "enCurso": [
    {
     "file": "ordenes/2026-08-26-subida-automatizada.md",
@@ -1471,6 +1150,326 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-09-01-x3-la-ficha-vive-en-la-pieza.md",
+    "slug": "2026-09-01-x3-la-ficha-vive-en-la-pieza",
+    "titulo": "X3 · LA FICHA VIVE EN LA PIEZA — el POC del primitivo",
+    "fecha": "2026-09-01",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x3-primitivo",
+      "titulo": "UNA ficha reutilizable con sus 3 estados",
+      "herramientas": "componente",
+      "oraculo": "FichaEnElMundo anclada a un punto 3D; el estado lo decide si la apuntas, no un panel",
+      "estado": "verde",
+      "checks": "`FichaEnElMundo` + `FichaDriver`: UN componente anclado a un punto 3D. Guarda el id de la lente abierta (no un booleano), así ya soporta varias marcas mostrando UNA — que es la doctrina del Foco: atenuar, no agregar",
+      "video": "",
+      "still": "ficha-abierta-sobre-el-punto.png",
+      "nota": ""
+     },
+     {
+      "id": "x3-anclada",
+      "titulo": "La ficha se queda PEGADA al punto al girar la pieza",
+      "herramientas": "proyección",
+      "oraculo": "usa el mismo useFrame + project(camera) de CotaDriver; se esconde si el punto queda detrás de la cámara",
+      "estado": "verde",
+      "checks": "reusa el `useFrame` + `localToWorld` + `project(camera)` de CotaDriver. Verificado girando la pieza: la ficha sigue al punto y se esconde si queda detrás de la cámara",
+      "video": "",
+      "still": "ficha-sigue-al-girar.png",
+      "nota": "GOTCHA PAGADO: copié CotaDriver A MEDIAS (sin el <group> ancla) y proyecté la coordenada cruda — la ficha quedaba clavada en 0,0 detrás del panel, invisible, pareciendo que nunca abría. La regla del proyecto es que copiar al ganador es LITERAL"
+     },
+     {
+      "id": "x3-la-ley",
+      "titulo": "El texto SE MUDA, no se duplica",
+      "herramientas": "arquitectura",
+      "oraculo": "el titular y el cuerpo salen del panel lateral y viven sobre la pieza; en el panel se queda SOLO la leyenda y las pestañas (describen el campo, no un punto)",
+      "estado": "verde",
+      "checks": "el titular y el cuerpo SALIERON del panel lateral y viven sobre el punto que describen. No se duplican: en el panel quedó una línea que dice qué es la lente y que hay que apuntar la marca. La leyenda se queda porque describe todo el campo, no un punto",
+      "video": "",
+      "still": "ficha-abierta-sobre-el-punto.png",
+      "nota": "ley de ian (2026-09-01): todo lo del área de trabajo, dentro del área de trabajo"
+     },
+     {
+      "id": "x3-anatomia",
+      "titulo": "Se ve ficha de Horizon, no caja de formulario",
+      "herramientas": "CSS",
+      "oraculo": "borde izquierdo duro, SIN borde de caja, relleno con lluvia vertical, § chiquito arriba, título grande, cuerpo en español",
+      "estado": "verde",
+      "checks": "borde izquierdo duro en el color de la lente, SIN borde de caja, relleno con LLUVIA VERTICAL (repeating-linear-gradient), § y origen chiquitos ARRIBA del título, título grande, cuerpo en español. Medido de la captura del 5:59 que consiguió ian",
+      "video": "",
+      "still": "ficha-abierta-sobre-el-punto.png",
+      "nota": ""
+     },
+     {
+      "id": "x3-se-enseña-sola",
+      "titulo": "No hay que adivinar el mecanismo",
+      "herramientas": "UX",
+      "oraculo": "al prender una lente la ficha abre UNA vez; después se cierra al apuntar a otro lado y se reabre al apuntar la marca",
+      "estado": "verde",
+      "checks": "al entrar a una lente la ficha abre una vez sola; apuntar la marca la reabre; clic en la ficha la cierra. Sin eso el operador vería una esferita muda y tendría que adivinar el mecanismo",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "x3-sin-regresion",
+      "titulo": "Nada de lo que ya servía se rompe",
+      "herramientas": "gate",
+      "oraculo": "ciclo-dado-test.cjs verde y el drive con la pieza controlada sin errores de consola",
+      "estado": "verde",
+      "checks": "gate ciclo-dado 266/266 · drive con naturebytes-clip (496 triángulos, campo en 0.2 s): 5 gestos, 0 errores de consola",
+      "video": "",
+      "still": "",
+      "nota": "SEGUNDO DEFECTO CAZADO A OJO: la ficha se salía del viewport cuando la marca cae cerca del borde — en esta pieza el punto que manda está en la base. Se agregó EL VOLTEO en el driver (decide lado y altura por cuadro, sin setState: un re-render por frame mataría el visor)"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian dictó la ley y aprobó el dibujo:",
+    "toca": 3,
+    "crea": 4,
+    "evidencia": 7,
+    "evidenciaDeclarada": [
+     "captura con la pieza controlada: la ficha ABIERTA sobre el punto que manda el ciclo",
+     "captura con la pieza girada: la ficha SIGUE pegada a su punto",
+     "captura del panel: ya sin el titular, solo pestañas y leyenda",
+     "gate ciclo-dado-test.cjs verde",
+     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
+     "deploy + verificación contra el bundle SERVIDO",
+     "orden-gate VERDE · censo Canvas 8→8"
+    ],
+    "cierre": "6/6 EN VERDE · desplegado y verificado contra el bundle servido. El primitivo existe: FichaEnElMundo + FichaDriver, anclado a un punto 3D, con sus tres estados (MARCA / ETIQUETA / FICHA). La respuest…",
+    "cierreCompleto": "6/6 EN VERDE · desplegado y verificado contra el bundle servido. El primitivo existe: FichaEnElMundo + FichaDriver, anclado a un punto 3D, con sus tres estados (MARCA / ETIQUETA / FICHA). La respuesta a «¿3 pantallas o 1 reutilizable?» es una: no son tres pantallas, son tres distancias al haz. Y la ley de ian quedó aplicada donde primero se podía: el titular y el cuerpo del enfriamiento se mudaron del panel lateral al punto que describen. No se duplicaron — en el panel quedó solo la leyenda, que sí habla de todo el campo. Dos defectos cazados A OJO, ninguno por un gate: 1. Copié CotaDriver a medias (sin el <group> ancla) y proyecté la coordenada cruda: la ficha quedaba clavada en 0,0 detrás del panel, invisible, pareciendo que nunca abría. *Copiar al ganador es LITERAL* — regla del proyecto, vuelta a pagar. 2. La ficha se salía del viewport cuando la marca cae cerca del borde. Se agregó EL VOLTEO, decidido por cuadro en el driver y sin setState: un re-render por frame mataría el visor. LO QUE SIGUE ABIERTO Y ES EL TRABAJO GRANDE: los 69 hallazgos no tienen coordenada (Criterio y CoordFinding no la traen; el propio código lo confiesa: «necesitan coordenadas. Quien las tenga las pasa» — y nadie las pasa). Hasta que la tengan, el dictamen no se puede sacar al mundo. Ese es T3 y ahora se sabe exactamente qué le falta primero. Tampoco hay perspectiva real de la ficha ni retículo: el haz es el cursor. Gate 266/266 · orden-gate VERDE · pieza controlada naturebytes-clip.stl (496 triángulos, campo en 0.2 s, un punto que tarda 7.3× más que el resto).",
+    "evidenciaSS": [
+     "evidencia/2026-09-01-x3-la-ficha-vive-en-la-pieza/ficha-abierta-sobre-el-punto.png",
+     "evidencia/2026-09-01-x3-la-ficha-vive-en-la-pieza/ficha-sigue-al-girar.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "71379c1",
+    "despliegue": "en-vivo"
+   },
+   {
+    "file": "ordenes/2026-09-01-x2-los-hallazgos-se-leen.md",
+    "slug": "2026-09-01-x2-los-hallazgos-se-leen",
+    "titulo": "X2 · LOS HALLAZGOS SE LEEN — el dictamen deja de ser un muro",
+    "fecha": "2026-09-01",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x2-titulo-del-dato",
+      "titulo": "Cada criterio tiene nombre corto, derivado y verificable",
+      "herramientas": "tituloCorto(id) en mold-contratos",
+      "oraculo": "función PURA junto al tipo Criterio; el gate exige que los 69 den título no vacío y ≤ 24 caracteres",
+      "estado": "verde",
+      "checks": "`tituloCorto(id)` vive en mold-contratos.ts, junto al tipo Criterio, y es pura. Los 69 criterios dan título no vacío y ≤24 caracteres: mediana 8, el más largo 'DEFLEXION VS VENTEO' (19)",
+      "video": "",
+      "still": "lista-cerrada.png",
+      "nota": "el título ya estaba en el dato y nadie lo usaba: los id son subsistema-cosa (feed-ciclo, agua-turbulento)"
+     },
+     {
+      "id": "x2-una-linea",
+      "titulo": "Un hallazgo = un renglón",
+      "herramientas": "UI",
+      "oraculo": "la lista pasa de ~218 renglones a 18: ícono + TÍTULO + § por fila, sin el párrafo",
+      "estado": "verde",
+      "checks": "cada hallazgo es una fila: ícono + TÍTULO + § + chevron. El campo `criterio` (118 caracteres de mediana) dejó de hacer de título",
+      "video": "",
+      "still": "lista-cerrada.png",
+      "nota": ""
+     },
+     {
+      "id": "x2-abrir-uno",
+      "titulo": "La regla y los números viven ADENTRO",
+      "herramientas": "acordeón",
+      "oraculo": "al hacer clic se abre ESE hallazgo con su criterio y su detalle; solo uno abierto a la vez, para que el panel no vuelva a crecer",
+      "estado": "verde",
+      "checks": "al hacer clic se abre ESE hallazgo con su regla del libro y su detalle con números; solo uno abierto a la vez. Verificado en la UI real abriendo contr-warpage-topologia",
+      "video": "",
+      "still": "hallazgo-abierto.png",
+      "nota": ""
+     },
+     {
+      "id": "x2-mide-la-mejora",
+      "titulo": "La mejora se MIDE, no se declara",
+      "herramientas": "números",
+      "oraculo": "el gate imprime renglones antes/después con la misma pieza y exige ≥5× de reducción",
+      "estado": "verde",
+      "checks": "medido con screw-cap-medical, la pieza de ian: 218 → 37 renglones = 5.9× sin agrupar, y 218 → 45 = 4.8× con los 8 encabezados de subsistema. Antes: ~3,270 px en una caja de 340 (se veía el 10 %)",
+      "video": "",
+      "still": "",
+      "nota": "el gate lo calcula, no se declara"
+     },
+     {
+      "id": "x2-nada-se-esconde",
+      "titulo": "Ningún hallazgo desaparece",
+      "herramientas": "conteo",
+      "oraculo": "siguen apareciendo los 18 que duelen y el botón de los 69; lo que cambia es el ALTO, no el contenido",
+      "estado": "verde",
+      "checks": "siguen los 69 criterios y los 18 que duelen, todos con su criterio, su detalle y su §. Lo que cambió es el ALTO, no el contenido",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "x2-sin-regresion",
+      "titulo": "El dictamen sigue diciendo lo mismo",
+      "herramientas": "gate",
+      "oraculo": "ciclo-dado-test.cjs verde y el drive con la pieza de ian sin errores de consola",
+      "estado": "verde",
+      "checks": "gate ciclo-dado 266/266 · drive con la pieza de ian: 5 gestos, 0 errores de consola",
+      "video": "",
+      "still": "",
+      "nota": "DEFECTO CAZADO A OJO leyendo la lista ya encogida: los títulos cortos solos NO se entienden (DP, LAZO, FUERZA, POSITIVA) y 5 chocan entre sí — DP sale en alimentación y en agua. Por eso se agrupó por subsistema: el par subsistema+título sí es único en los 69, y el grupo lo dice UNA vez en vez de repetirlo 18"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, con su pieza en el visor y el Foco prendido: «el panel está lleno de demasiadas cosas, no es mate, no se parece a una interfaz futurista como en Horizon». El X1 limpió el encabezado y sacó lo que no puede correr. Queda lo último que n…",
+    "toca": 4,
+    "crea": 4,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "los renglones ANTES y DESPUÉS con la MISMA pieza, impresos por el gate",
+     "captura del panel con la pieza de ian: la lista cerrada, y un hallazgo abierto",
+     "gate ciclo-dado-test.cjs verde",
+     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
+     "deploy + verificación contra el bundle SERVIDO",
+     "orden-gate VERDE · censo Canvas 8→8"
+    ],
+    "cierre": "6/6 EN VERDE · desplegado y verificado contra el bundle servido. Medido con la pieza de ian: el campo criterio se usaba como TÍTULO y mide 118 caracteres de mediana — no es un título, es la regla com…",
+    "cierreCompleto": "6/6 EN VERDE · desplegado y verificado contra el bundle servido. Medido con la pieza de ian: el campo criterio se usaba como TÍTULO y mide 118 caracteres de mediana — no es un título, es la regla completa del libro. Con el detalle debajo, los 18 hallazgos ocupaban ~218 renglones ≈ 3,270 px en una caja de 340: se veía el 10 %. El diagnóstico no era \"hay mucho texto\": faltaba el título, y ya estaba en el dato sin inventar nada — los id son subsistema-cosa. tituloCorto() vive en mold-contratos.ts junto al tipo, no en la UI, para que el gate lo juzgue sobre los 69 y reviente ahí y no en la cara de ian. 218 → 45 renglones. Defecto cazado A OJO leyendo la lista ya encogida: los títulos cortos solos no se entienden (DP, LAZO, FUERZA, POSITIVA) y 5 chocan entre sí — DP sale en alimentación y en agua. Por eso se agrupó por subsistema: el par subsistema+título sí es único en los 69, y el grupo lo dice una vez en vez de repetirlo 18. Los grupos van por su peor severidad, así lo que más duele sigue arriba. Lo que este ticket NO resolvió, y ian lo dijo mirando el resultado: quedó limpio pero no futurista. Eso no era un problema de estilo del panel — era que fuera un panel. Se atendió en X3. Gate 266/266 · orden-gate VERDE · drive sin errores.",
+    "evidenciaSS": [
+     "evidencia/2026-09-01-x2-los-hallazgos-se-leen/hallazgo-abierto.png",
+     "evidencia/2026-09-01-x2-los-hallazgos-se-leen/lista-cerrada.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "2f6a3b0",
+    "despliegue": "en-vivo"
+   },
+   {
+    "file": "ordenes/2026-08-31-x1-el-panel-deja-de-mentir.md",
+    "slug": "2026-08-31-x1-el-panel-deja-de-mentir",
+    "titulo": "X1 · EL PANEL DEJA DE MENTIR — y TEMIS estrena IMPREVISTOS",
+    "fecha": "2026-08-31",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x1-titulo-no-miente",
+      "titulo": "El encabezado dice lo que ESTÁS viendo",
+      "herramientas": "contextual",
+      "oraculo": "con una pieza en el visor el panel NO dice \"von Mises\"; dice la pieza y, con el Foco prendido, EL FOCO",
+      "estado": "verde",
+      "checks": "con una pieza en el visor el encabezado dice TU PIEZA, y con el Foco prendido dice EL FOCO. La cadena 'Simulación · von Mises (FEA real)' solo aparece cuando el panel SÍ es eso: un sólido del kernel",
+      "video": "",
+      "still": "con-malla-el-foco.png",
+      "nota": "ian: «esa cosa que dice SIMULACIÓN VON MISES FEA REAL no tiene ni madres que ver con lo que estamos viendo»"
+     },
+     {
+      "id": "x1-solo-lo-que-sirve",
+      "titulo": "Lo que no puede correr, no se pinta",
+      "herramientas": "guardas",
+      "oraculo": "con piezaMalla cargada NO se renderizan FEA, Viento ni Generativo (necesitan caras del kernel); con un sólido del kernel siguen intactos",
+      "estado": "verde",
+      "checks": "con `piezaMalla` cargada NO se renderizan FEA von Mises, Estudio Viento ni Diseño Generativo — los tres exigen caras del kernel (oc + result + feaFixedFace) que un STL no tiene. Además se quitó el botón de LOTE duplicado: vivía dos veces en el mismo panel, a diez centímetros de sí mismo",
+      "video": "",
+      "still": "con-malla-el-foco.png",
+      "nota": "es la regla de PANTALLA LIMPIA (U5) que a este panel se le había escapado: no estaba vacío, estaba LLENO de controles que no aplican"
+     },
+     {
+      "id": "x1-mate",
+      "titulo": "Se ve instrumento, no formulario",
+      "herramientas": "CSS",
+      "oraculo": "el encabezado pierde la barra con caja; queda regla fina + versalita, sin fondo de bloque; el chevron se va al borde y se apaga",
+      "estado": "verde",
+      "checks": "el encabezado pierde la barra de formulario: regla fina cian en vez de gris, versalita con más letra-espaciado, y el chevron se va al borde derecho al 34 % de opacidad (sube a 80 % al pasar el cursor). Sin fondo de bloque",
+      "video": "",
+      "still": "con-malla-el-foco.png",
+      "nota": "ian: «no es mate, no se parece a una interfaz futurista como en Horizon»"
+     },
+     {
+      "id": "x1-sin-regresion",
+      "titulo": "El CAD del kernel no pierde nada",
+      "herramientas": "gate",
+      "oraculo": "ciclo-dado-test.cjs verde y el drive con un STEP muestra FEA/Viento/Generativo como antes",
+      "estado": "verde",
+      "checks": "gate ciclo-dado 260/260. Y al quitar la pieza (rp-quitar) el panel vuelve EXACTO a lo de antes: título von Mises, los 5 botones del ciclo, los pickers de cara fija/carga, Analizar y Estudio de Viento",
+      "video": "",
+      "still": "sin-malla-sin-regresion.png",
+      "nota": ""
+     },
+     {
+      "id": "x1-imprevisto-existe",
+      "titulo": "TEMIS tiene la casilla y su tope",
+      "herramientas": "tablero",
+      "oraculo": "TIPO: imprevisto da una columna propia con tope 3; no cuenta contra EN CURSO; pasado 3 el tablero lo declara violación",
+      "estado": "verde",
+      "checks": "`TIPO: imprevisto` da su propia columna con tope 3 (WIP.imprevisto). No cuenta contra la tapa de EN CURSO, y si se pasa de 3 el tablero lo declara violación: 'lo urgente también lleva orden — cierra uno antes de abrir otro'. El tablero imprime `imprevistos 1/3`",
+      "video": "",
+      "still": "",
+      "nota": "ian: «no sé cómo llamarlos, ¿imprevistos? De esos se deben añadir 1-3 máximo, para seguir llevando un orden. Y ponme límites»"
+     },
+     {
+      "id": "x1-esta-orden-vive-ahi",
+      "titulo": "La prueba es ella misma",
+      "herramientas": "meta",
+      "oraculo": "esta orden sale en la columna IMPREVISTOS del lobby, no en EN CURSO",
+      "estado": "verde",
+      "checks": "esta misma orden lleva TIPO: imprevisto y sale en la columna IMPREVISTOS del lobby, no en EN CURSO. La casilla la creó la orden que la necesitaba",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian probando su pieza real (screw-cap-medical) con el Foco prendido:",
+    "toca": 4,
+    "crea": 4,
+    "evidencia": 7,
+    "evidenciaDeclarada": [
+     "captura del panel CON MALLA: sin \"von Mises\", sin FEA/Viento/Generativo",
+     "captura del panel CON SÓLIDO del kernel: FEA/Viento/Generativo intactos (la no-regresión)",
+     "gate ciclo-dado-test.cjs verde",
+     "el lobby con la columna IMPREVISTOS y esta orden dentro",
+     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
+     "deploy + verificación contra el bundle SERVIDO",
+     "orden-gate VERDE · censo Canvas 8→8"
+    ],
+    "cierre": "6/6 EN VERDE · desplegado y verificado contra el bundle servido. El encabezado dice lo que el panel ES (EL FOCO / TU PIEZA), no lo que fue cuando se escribió. FEA von Mises, Estudio Viento y Diseño G…",
+    "cierreCompleto": "6/6 EN VERDE · desplegado y verificado contra el bundle servido. El encabezado dice lo que el panel ES (EL FOCO / TU PIEZA), no lo que fue cuando se escribió. FEA von Mises, Estudio Viento y Diseño Generativo no se pintan con una malla: los tres exigen caras del kernel que un STL no tiene — o sea que eran controles muertos ocupando el 70 % del panel y encima le daban su nombre al conjunto. Con un sólido del kernel siguen intactos (verificado quitando la pieza: el panel vuelve exacto a lo de antes). Fuera también el botón de LOTE duplicado, que vivía dos veces en el mismo panel. Es la regla de PANTALLA LIMPIA (U5) que a este panel se le había escapado: no estaba vacío, estaba LLENO de cosas que no aplican — que es peor. Y TEMIS estrenó IMPREVISTOS. ian tenía razón y mi diagnóstico inicial (\"desorden\") era falso: EN CURSO estaba lleno porque él estaba probando y pidiendo cambios urgentes, y no había casilla para trabajo no planeado, así que lo urgente se disfrazaba de EN CURSO y reventaba la tapa de uno. TIPO: imprevisto da columna propia con tope 3, y el tope aplica a los dos. Esta orden fue la primera que vivió en la casilla que ella misma creó. Gotcha pagado: un acento invertido dentro de un comentario CSS cierra el template literal que lo contiene. El dev server lo cazó con «Identifier cannot follow number». Gate 260/260 · orden-gate VERDE · censo Canvas 8→8 · drive de producción sin errores.",
+    "evidenciaSS": [
+     "evidencia/2026-08-31-x1-el-panel-deja-de-mentir/con-malla-el-foco.png",
+     "evidencia/2026-08-31-x1-el-panel-deja-de-mentir/sin-malla-sin-regresion.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "58191c1",
+    "despliegue": "en-vivo"
+   },
    {
     "file": "ordenes/2026-08-29-u8-atlas-de-interfaces.md",
     "slug": "2026-08-29-u8-atlas-de-interfaces",
