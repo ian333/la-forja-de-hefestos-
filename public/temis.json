@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-31 22:05",
+ "generado": "2026-09-01 19:18",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -9,7 +9,7 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "imprevisto": 1,
+  "imprevisto": 2,
   "supertickets": 9,
   "cerrado": 68,
   "probado": 0,
@@ -18,8 +18,8 @@
   "despues": 17
  },
  "deploy": {
-  "commit": "cbe8382",
-  "fecha": "2026-08-31 02:52"
+  "commit": "58191c1",
+  "fecha": "2026-08-31 22:10"
  },
  "violaciones": [],
  "columnas": {
@@ -194,7 +194,7 @@
     },
     "objetivo": "ian probando su pieza real (screw-cap-medical) con el Foco prendido:",
     "toca": 4,
-    "crea": 2,
+    "crea": 4,
     "evidencia": 7,
     "evidenciaDeclarada": [
      "captura del panel CON MALLA: sin \"von Mises\", sin FEA/Viento/Generativo",
@@ -210,6 +210,112 @@
     "evidenciaSS": [
      "evidencia/2026-08-31-x1-el-panel-deja-de-mentir/con-malla-el-foco.png",
      "evidencia/2026-08-31-x1-el-panel-deja-de-mentir/sin-malla-sin-regresion.png"
+    ],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-01-x2-los-hallazgos-se-leen.md",
+    "slug": "2026-09-01-x2-los-hallazgos-se-leen",
+    "titulo": "X2 · LOS HALLAZGOS SE LEEN — el dictamen deja de ser un muro",
+    "fecha": "2026-09-01",
+    "estado": "imprevisto",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x2-titulo-del-dato",
+      "titulo": "Cada criterio tiene nombre corto, derivado y verificable",
+      "herramientas": "tituloCorto(id) en mold-contratos",
+      "oraculo": "función PURA junto al tipo Criterio; el gate exige que los 69 den título no vacío y ≤ 24 caracteres",
+      "estado": "verde",
+      "checks": "`tituloCorto(id)` vive en mold-contratos.ts, junto al tipo Criterio, y es pura. Los 69 criterios dan título no vacío y ≤24 caracteres: mediana 8, el más largo 'DEFLEXION VS VENTEO' (19)",
+      "video": "",
+      "still": "lista-cerrada.png",
+      "nota": "el título ya estaba en el dato y nadie lo usaba: los id son subsistema-cosa (feed-ciclo, agua-turbulento)"
+     },
+     {
+      "id": "x2-una-linea",
+      "titulo": "Un hallazgo = un renglón",
+      "herramientas": "UI",
+      "oraculo": "la lista pasa de ~218 renglones a 18: ícono + TÍTULO + § por fila, sin el párrafo",
+      "estado": "verde",
+      "checks": "cada hallazgo es una fila: ícono + TÍTULO + § + chevron. El campo `criterio` (118 caracteres de mediana) dejó de hacer de título",
+      "video": "",
+      "still": "lista-cerrada.png",
+      "nota": ""
+     },
+     {
+      "id": "x2-abrir-uno",
+      "titulo": "La regla y los números viven ADENTRO",
+      "herramientas": "acordeón",
+      "oraculo": "al hacer clic se abre ESE hallazgo con su criterio y su detalle; solo uno abierto a la vez, para que el panel no vuelva a crecer",
+      "estado": "verde",
+      "checks": "al hacer clic se abre ESE hallazgo con su regla del libro y su detalle con números; solo uno abierto a la vez. Verificado en la UI real abriendo contr-warpage-topologia",
+      "video": "",
+      "still": "hallazgo-abierto.png",
+      "nota": ""
+     },
+     {
+      "id": "x2-mide-la-mejora",
+      "titulo": "La mejora se MIDE, no se declara",
+      "herramientas": "números",
+      "oraculo": "el gate imprime renglones antes/después con la misma pieza y exige ≥5× de reducción",
+      "estado": "verde",
+      "checks": "medido con screw-cap-medical, la pieza de ian: 218 → 37 renglones = 5.9× sin agrupar, y 218 → 45 = 4.8× con los 8 encabezados de subsistema. Antes: ~3,270 px en una caja de 340 (se veía el 10 %)",
+      "video": "",
+      "still": "",
+      "nota": "el gate lo calcula, no se declara"
+     },
+     {
+      "id": "x2-nada-se-esconde",
+      "titulo": "Ningún hallazgo desaparece",
+      "herramientas": "conteo",
+      "oraculo": "siguen apareciendo los 18 que duelen y el botón de los 69; lo que cambia es el ALTO, no el contenido",
+      "estado": "verde",
+      "checks": "siguen los 69 criterios y los 18 que duelen, todos con su criterio, su detalle y su §. Lo que cambió es el ALTO, no el contenido",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "x2-sin-regresion",
+      "titulo": "El dictamen sigue diciendo lo mismo",
+      "herramientas": "gate",
+      "oraculo": "ciclo-dado-test.cjs verde y el drive con la pieza de ian sin errores de consola",
+      "estado": "verde",
+      "checks": "gate ciclo-dado 266/266 · drive con la pieza de ian: 5 gestos, 0 errores de consola",
+      "video": "",
+      "still": "",
+      "nota": "DEFECTO CAZADO A OJO leyendo la lista ya encogida: los títulos cortos solos NO se entienden (DP, LAZO, FUERZA, POSITIVA) y 5 chocan entre sí — DP sale en alimentación y en agua. Por eso se agrupó por subsistema: el par subsistema+título sí es único en los 69, y el grupo lo dice UNA vez en vez de repetirlo 18"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, con su pieza en el visor y el Foco prendido: «el panel está lleno de demasiadas cosas, no es mate, no se parece a una interfaz futurista como en Horizon». El X1 limpió el encabezado y sacó lo que no puede correr. Queda lo último que n…",
+    "toca": 4,
+    "crea": 4,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "los renglones ANTES y DESPUÉS con la MISMA pieza, impresos por el gate",
+     "captura del panel con la pieza de ian: la lista cerrada, y un hallazgo abierto",
+     "gate ciclo-dado-test.cjs verde",
+     "entrega a C:/Users/sebas/Downloads — nada en /tmp",
+     "deploy + verificación contra el bundle SERVIDO",
+     "orden-gate VERDE · censo Canvas 8→8"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [
+     "evidencia/2026-09-01-x2-los-hallazgos-se-leen/hallazgo-abierto.png",
+     "evidencia/2026-09-01-x2-los-hallazgos-se-leen/lista-cerrada.png"
     ],
     "revisable": false,
     "probado": "",

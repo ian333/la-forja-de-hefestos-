@@ -1551,6 +1551,65 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `${r2.lentes.length} lentes idénticas`);
   }
 
+  // ══ X2 · LOS HALLAZGOS SE LEEN — el dictamen deja de ser un muro ══
+  // ian: «no se parece a una interfaz futurista como en Horizon». El defecto medido:
+  // el campo `criterio` (118 caracteres de mediana) se usaba como TÍTULO, así que 18
+  // hallazgos ocupaban ~218 renglones en una caja de 340 px — el 10 % visible.
+  console.log('── X2 · LOS HALLAZGOS SE LEEN (el dictamen deja de ser un muro)');
+  {
+    const { tituloCorto } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-contratos.ts'));
+    const { revisarModelo } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'revisar-modelo.ts'));
+    const { parseSTL } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'stl.ts'));
+    const bt = readFileSync(path.resolve(__dirname, '..', 'test-parts', 'screw-cap-medical.stl'));
+    const tapa = parseSTL(bt.buffer.slice(bt.byteOffset, bt.byteOffset + bt.byteLength));
+    const r = revisarModelo({ mesh: tapa, nombre: 'screw-cap-medical', annualVolume: 200_000, flowMaxVoxels: 40_000 });
+    const cs = r.contratos.subsistemas.flatMap((s) => s.criterios);
+    const duelen = cs.filter((c) => c.estado === 'VIOLA' || c.estado === 'ADVIERTE');
+
+    const titulos = cs.map((c) => tituloCorto(c.id));
+    const vacios = titulos.filter((t) => !t || !t.trim());
+    const largos = titulos.filter((t) => t.length > 24);
+    check('X2 · los 69 criterios dan título corto, no vacío y ≤24 caracteres',
+      vacios.length === 0 && largos.length === 0,
+      `${titulos.length} títulos · mediana ${titulos.map((t) => t.length).sort((a, b) => a - b)[titulos.length >> 1]} car · el más largo "${titulos.reduce((a, b) => (b.length > a.length ? b : a))}"`);
+
+    // LA MEDIDA DE LA MEJORA: renglones en la columna del panel (~30 car/renglón).
+    const CPR = 30;
+    const ren = (s) => Math.ceil((s || '').length / CPR);
+    const antes = duelen.reduce((n, c) => n + ren(c.criterio) + Math.ceil((c.detalle || '').length / (CPR - 2)), 0);
+    // después: 1 renglón por hallazgo + el ÚNICO abierto (peor caso: el más largo)
+    const peor = Math.max(...duelen.map((c) => ren(c.criterio) + Math.ceil((c.detalle || '').length / (CPR - 2))));
+    const despues = duelen.length + peor;
+    check('X2 · la lista se encoge ≥5× (medido, no declarado)',
+      antes / despues >= 5,
+      `${antes} → ${despues} renglones = ${(antes / despues).toFixed(1)}× · ${duelen.length} hallazgos + el abierto más largo (${peor})`);
+
+    check('X2 · NADA se esconde: siguen los mismos hallazgos y los mismos 69 criterios',
+      cs.length === 69 && duelen.length > 0 && duelen.every((c) => c.criterio && c.detalle && c.cita),
+      `${cs.length} criterios · ${duelen.length} duelen · todos conservan criterio, detalle y §`);
+
+    // El título corto SOLO no basta: `DP` sale dos veces (alimentación y agua) y
+    // `LAZO`/`FUERZA`/`POSITIVA` no dicen de qué hablan. Cazado A OJO leyendo la
+    // lista ya encogida. Con el subsistema como encabezado de grupo, cada fila queda
+    // identificada sin repetir la palabra 18 veces.
+    const pares = new Set(cs.map((c) => `${c.subsistema}|${tituloCorto(c.id)}`));
+    const solos = new Set(cs.map((c) => tituloCorto(c.id)));
+    check('X2 · subsistema + título identifican SIN ambigüedad (el título solo NO basta)',
+      pares.size === cs.length && solos.size < cs.length,
+      `${pares.size}/${cs.length} pares únicos · títulos solos: ${solos.size} (chocan ${cs.length - solos.size})`);
+
+    // el costo de agrupar: un renglón por subsistema presente
+    const subs = new Set(duelen.map((c) => c.subsistema));
+    const conGrupos = duelen.length + subs.size + peor;
+    check('X2 · agrupar cuesta poco: sigue encogiendo ≥4× con los encabezados',
+      antes / conGrupos >= 4,
+      `${antes} → ${conGrupos} renglones = ${(antes / conGrupos).toFixed(1)}× (${duelen.length} hallazgos + ${subs.size} grupos + ${peor} del abierto)`);
+
+    check('X2 · el título NO repite la regla (es un nombre, no un párrafo)',
+      duelen.every((c) => tituloCorto(c.id).length < c.criterio.length / 3),
+      `p.ej. "${tituloCorto(duelen[0].id)}" (${tituloCorto(duelen[0].id).length}) vs criterio de ${duelen[0].criterio.length} car`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

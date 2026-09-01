@@ -1,0 +1,34 @@
+{
+ "x2-titulo-del-dato": {
+  "estado": "verde",
+  "checks": "`tituloCorto(id)` vive en mold-contratos.ts, junto al tipo Criterio, y es pura. Los 69 criterios dan título no vacío y ≤24 caracteres: mediana 8, el más largo 'DEFLEXION VS VENTEO' (19)",
+  "video": "", "still": "lista-cerrada.png",
+  "nota": "el título ya estaba en el dato y nadie lo usaba: los id son subsistema-cosa (feed-ciclo, agua-turbulento)"
+ },
+ "x2-una-linea": {
+  "estado": "verde",
+  "checks": "cada hallazgo es una fila: ícono + TÍTULO + § + chevron. El campo `criterio` (118 caracteres de mediana) dejó de hacer de título",
+  "video": "", "still": "lista-cerrada.png", "nota": ""
+ },
+ "x2-abrir-uno": {
+  "estado": "verde",
+  "checks": "al hacer clic se abre ESE hallazgo con su regla del libro y su detalle con números; solo uno abierto a la vez. Verificado en la UI real abriendo contr-warpage-topologia",
+  "video": "", "still": "hallazgo-abierto.png", "nota": ""
+ },
+ "x2-mide-la-mejora": {
+  "estado": "verde",
+  "checks": "medido con screw-cap-medical, la pieza de ian: 218 → 37 renglones = 5.9× sin agrupar, y 218 → 45 = 4.8× con los 8 encabezados de subsistema. Antes: ~3,270 px en una caja de 340 (se veía el 10 %)",
+  "video": "", "still": "", "nota": "el gate lo calcula, no se declara"
+ },
+ "x2-nada-se-esconde": {
+  "estado": "verde",
+  "checks": "siguen los 69 criterios y los 18 que duelen, todos con su criterio, su detalle y su §. Lo que cambió es el ALTO, no el contenido",
+  "video": "", "still": "", "nota": ""
+ },
+ "x2-sin-regresion": {
+  "estado": "verde",
+  "checks": "gate ciclo-dado 266/266 · drive con la pieza de ian: 5 gestos, 0 errores de consola",
+  "video": "", "still": "",
+  "nota": "DEFECTO CAZADO A OJO leyendo la lista ya encogida: los títulos cortos solos NO se entienden (DP, LAZO, FUERZA, POSITIVA) y 5 chocan entre sí — DP sale en alimentación y en agua. Por eso se agrupó por subsistema: el par subsistema+título sí es único en los 69, y el grupo lo dice UNA vez en vez de repetirlo 18"
+ }
+}

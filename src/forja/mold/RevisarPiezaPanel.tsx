@@ -27,7 +27,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { revisarModelo, type RevisionModelo } from './revisar-modelo';
 import type { MeshLike } from './flowlen-mesh';
-import type { Criterio, ContratoEstado } from './mold-contratos';
+import { tituloCorto, type Criterio, type ContratoEstado } from './mold-contratos';
 import type { Lente, LenteId, LentesFoco } from './foco-lentes';
 
 const GOLD = '#c9a227';
@@ -76,6 +76,8 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
   const [rev, setRev] = useState<RevisionModelo | null>(null);
   const [estado, setEstado] = useState<string>('');
   const [verTodo, setVerTodo] = useState(false);
+  /** X2 · qué hallazgo está ABIERTO. Uno a la vez, o el panel vuelve a crecer. */
+  const [abierto, setAbierto] = useState<string | null>(null);
   const corriendo = useRef(false);
   const clave = pieza ? `${pieza.nombre}·${pieza.mesh.indices.length}` : '';
 
@@ -123,6 +125,22 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
   const ordenados = [...criterios].sort((a, b) => PESO[a.estado] - PESO[b.estado] || a.cita.localeCompare(b.cita));
   const duelen = ordenados.filter((c) => c.estado === 'VIOLA' || c.estado === 'ADVIERTE');
   const mostrar = verTodo ? ordenados : duelen.slice(0, 12);
+  /**
+   * X2 · AGRUPADO POR SUBSISTEMA. Cazado A OJO leyendo la lista ya encogida: los
+   * títulos cortos derivados del id (DP, LAZO, FUERZA, POSITIVA) NO se entienden
+   * solos — y `DP` aparece DOS veces, en alimentación y en agua. El subsistema es
+   * la mitad del significado, y ponerlo en cada fila lo repetiría 18 veces; como
+   * encabezado de grupo se dice una vez y ordena la columna.
+   * Los GRUPOS se ordenan por su peor severidad, así lo que más duele sigue arriba
+   * (era la virtud de la lista plana y no se pierde).
+   */
+  const grupos = (() => {
+    const m = new Map<string, Criterio[]>();
+    for (const c of mostrar) { const k = c.subsistema || '—'; if (!m.has(k)) m.set(k, []); m.get(k)!.push(c); }
+    return [...m.entries()]
+      .map(([nombre, cs]) => ({ nombre, cs, peor: Math.min(...cs.map((c) => PESO[c.estado])) }))
+      .sort((a, b) => a.peor - b.peor || a.nombre.localeCompare(b.nombre));
+  })();
   const t = rev?.contratos.total;
 
   return (
@@ -183,15 +201,43 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
 
       {/* LOS HALLAZGOS, del que más duele al que menos */}
       <div data-testid="rp-hallazgos" style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 340, overflow: 'auto' }}>
-        {mostrar.map((c) => (
-          <div key={c.id} data-testid={`rp-h-${c.id}`} onClick={() => onVerHallazgo?.(c)}
-            style={{ borderLeft: `2px solid ${COLOR[c.estado]}`, padding: '4px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: '0 6px 6px 0', cursor: onVerHallazgo ? 'pointer' : 'default' }}>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-              <span style={{ color: COLOR[c.estado] }}>{ICON[c.estado]}</span>
-              <span style={{ fontWeight: 600 }}>{c.criterio}</span>
-              <span style={{ marginLeft: 'auto', fontSize: 9.5, opacity: 0.5, whiteSpace: 'nowrap' }}>{c.cita}</span>
+        {/* X2 · UN HALLAZGO = UN RENGLÓN. Antes cada fila pintaba el `criterio`
+            completo (118 caracteres de mediana) como si fuera un título, y el
+            `detalle` debajo: 18 hallazgos = ~218 renglones en una caja de 340 px,
+            o sea el 10 % visible. Ahora la fila es ícono + TÍTULO + §, y la regla
+            del libro con sus números se abre al hacer clic. Es la anatomía de la
+            ficha de Horizon: el estado chiquito, el título corto, el cuerpo dentro. */}
+        {grupos.map((g) => (
+          <div key={g.nombre} data-testid={`rp-grupo-${g.nombre}`} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <div style={{ fontSize: 9, letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.42,
+              marginTop: 4, paddingBottom: 2, borderBottom: '1px solid rgba(159,179,200,0.09)' }}>
+              {g.nombre} <span style={{ opacity: 0.7 }}>· {g.cs.length}</span>
             </div>
-            <div style={{ fontSize: 10.5, opacity: 0.72, paddingLeft: 18 }}>{c.detalle}</div>
+            {g.cs.map((c) => {
+          const on = abierto === c.id;
+          return (
+            <div key={c.id} data-testid={`rp-h-${c.id}`}
+              onClick={() => { setAbierto(on ? null : c.id); if (!on) onVerHallazgo?.(c); }}
+              style={{ borderLeft: `2px solid ${COLOR[c.estado]}`, padding: '3px 8px 4px',
+                background: on ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.02)',
+                borderRadius: '0 6px 6px 0', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
+                <span style={{ color: COLOR[c.estado] }}>{ICON[c.estado]}</span>
+                <span data-testid={`rp-h-titulo-${c.id}`}
+                  style={{ fontWeight: 700, fontSize: 10.5, letterSpacing: 0.5, whiteSpace: 'nowrap',
+                    overflow: 'hidden', textOverflow: 'ellipsis' }}>{tituloCorto(c.id)}</span>
+                <span style={{ marginLeft: 'auto', fontSize: 9.5, opacity: 0.45, whiteSpace: 'nowrap' }}>{c.cita}</span>
+                <span style={{ opacity: 0.35, fontSize: 9 }}>{on ? '▾' : '▸'}</span>
+              </div>
+              {on && (
+                <div data-testid={`rp-h-cuerpo-${c.id}`} style={{ paddingLeft: 18, marginTop: 3 }}>
+                  <div style={{ fontSize: 10.5, lineHeight: 1.5 }}>{c.criterio}</div>
+                  <div style={{ fontSize: 10.5, opacity: 0.66, lineHeight: 1.5, marginTop: 3 }}>{c.detalle}</div>
+                </div>
+              )}
+            </div>
+          );
+            })}
           </div>
         ))}
         {rev && !mostrar.length && (

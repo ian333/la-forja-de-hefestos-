@@ -81,6 +81,29 @@ export interface Criterio {
   deuda?: string;
 }
 
+/**
+ * X2 · EL NOMBRE CORTO DE UN CRITERIO — el título que le faltaba al dictamen.
+ * ============================================================================
+ * Medido con la pieza de ian (`screw-cap-medical`): el campo `criterio` se estaba
+ * usando como TÍTULO y mide **118 caracteres de mediana** (máx 145). No es un
+ * título: es la regla completa del libro. Con eso, la lista de 18 hallazgos
+ * ocupaba ~218 renglones (~3,270 px) dentro de una caja de 340 — se veía el 10 %.
+ *
+ * El título ya estaba en el dato y nadie lo usaba: los `id` son `subsistema-cosa`
+ * (`feed-ciclo`, `agua-turbulento`, `vent-flujo-completo`). Derivado del id el
+ * título mide **8 caracteres de mediana, 19 el más largo**, y los 69 criterios
+ * tienen sufijo — ninguno queda vacío. El gate lo verifica sobre los 69, así que
+ * si mañana alguien mete un id raro, revienta ahí y no en la cara de ian.
+ *
+ * Es la anatomía de la ficha de Horizon aplicada a la lista: estado chiquito,
+ * TÍTULO corto, y la regla adentro — no la regla haciendo de título.
+ */
+export function tituloCorto(id: string): string {
+  const p = id.split('-');
+  const cuerpo = p.length > 1 ? p.slice(1).join(' ') : id;
+  return cuerpo.replace(/_/g, ' ').toUpperCase();
+}
+
 export interface ContratoSubsistema {
   subsistema: string;
   criterios: Criterio[];
