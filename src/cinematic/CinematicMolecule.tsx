@@ -512,6 +512,36 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // Radios ~20 % más cerrados que el primer intento (los stills daban fill ~0.30 contra el
   // 0.74-0.82 de los ganadores) y fuera la toma de "el agua sola" a rMul 0.44, que se quedaba
   // SIN SUJETO en pantalla. El clímax (crashIn) cae en t=62 = 78 % del video, como el rey.
+  wcampo: [
+    // DURACIONES CALIBRADAS a segs.json (2026-08-31), no a los cortes de cámara que puse a
+    // ojo. Cada corte cae en el ARRANQUE de su línea (regla de §LA MECÁNICA DEL O₂). Lo que
+    // lo obligó: con las ventanas provisionales, "Míralas acercarse hasta que el puente se
+    // arma solo" (l10) caía DENTRO de la pantalla negra — la voz pedía mirar algo que no
+    // estaba. Arranques: l1 0.40 · l3 10.01 · l5 18.00 · l7 27.66 · l9 38.10 · l11 46.33 ·
+    // l12 51.45 · l14 59.71 · l16 66.48 · fin 79.00.
+    // ⚠ EL `rMul` DE ESTAS TOMAS NO MANDA — y perder medio día con eso ya estaba advertido en
+    // camera-shots.ts:39. `playShots` aplica la LEY DE ENCUADRE: mide rCore contra TODOS los
+    // `pts` y clava la distancia en dMin = rCore/tan(SAFE·corto). Con el etanol esos puntos
+    // incluyen la cola de carbono entera (~11 Å de punta a punta), así que dMin queda lejísimos
+    // y CUALQUIER rMul por debajo da el MISMO cuadro. Probado: rMul 1.10, 0.605 y 0.08 dan
+    // fill 0.171 idéntico en t=2. Los valores de abajo son los originales, sin maquillar.
+    //
+    // Quien acerque esta pieza tiene dos caminos: declarar `rCore` en la toma (lo que hace
+    // ringOne en el hexámero) o `?zoom=`, que se aplica DESPUÉS de la ley. Aquí se usa zoom
+    // 0.55, declarado en videos/mol-etoh-el-alcohol.json: barrido 0.45/0.55/0.65/0.75 con fill
+    // medido en 7 tiempos. 0.45 llena más pero SACA al agua por el borde y ya no se pueden
+    // CONTAR dos moléculas (canon §LEGIBILIDAD); 0.55 sube el tercio explicativo de 0.06 a
+    // 0.17-0.20, deja el clímax en 0.50, y los dos protagonistas siguen legibles.
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.2, elev: 0.15, rMul: 1.10 }), dur: 13.71, label: 'AZUL: los dos, uno grande y uno chico — el hueco (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.8, rMul: 0.72 }), dur: 6.08, label: 'MAGENTA: EL ALCOHOL, su cola de carbono (l3-4)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.40, rMul: 1.05 }), dur: 6.87, label: 'el hidroxilo: la cara de agua (l5-6)' },
+    { shot: orbitOne({ side: -1, azim0: 2.1, span: 1.2, rMul: 0.60 }), dur: 5.78, label: 'ORO: el corazón dorado y sus dos sillas (l7-8)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.6, elev: 0.20, rMul: 1.05 }), dur: 6.5, label: 'AZUL: el campo real entre las dos (l9-10)' },
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 7.32, label: 'QUITA LAS NUBES: la NADA como argumento (l11)' },
+    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 7.57, label: 'PRÉNDELAS: rampa de looming al puente (l12)' },
+    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 8.31, label: 'CLÍMAX (t=62 = 78 %): el 96 % y por qué se mezcla (l13-15)' },
+    { shot: pullOut({ rTdMul: 0.95 }), dur: 7.86, label: 'payoff: una mano al agua, otra a la grasa + GAIA (l16-18)' },
+  ],
   wetanol: [
     // DURACIONES CALIBRADAS a segs.json (2026-08-31), no a los cortes de cámara que puse a
     // ojo. Cada corte cae en el ARRANQUE de su línea (regla de §LA MECÁNICA DEL O₂). Lo que
@@ -1159,6 +1189,7 @@ interface MolData { bundle: AtomBundle; nuclei: Nuc[]; extent: number; bonds: [n
 const BASE_META: Record<string, { name: string; formula: string; fact: string }> = {
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
+  wcampo: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'El campo de los núcleos y el de los electrones se cancelan el 99 % — la química es lo que sobra.' },
   wetanol: { name: 'El alcohol', formula: 'C₂H₅OH···H₂O', fact: 'El puente del alcohol vale el 96 % del puente del agua — por eso se mezclan.' },
   wtri: { name: 'El anillo', formula: '(H₂O)₃', fact: 'Tres aguas se agarran MÁS fuerte que la suma de sus pares.' },
   wtet: { name: 'El cuarteto', formula: '(H₂O)₄', fact: 'Tres no encajaban. Cuatro sí: los cuatro puentes salen idénticos.' },
@@ -2506,6 +2537,40 @@ const WETANOL_CAPAS: CapasSpec = {
   spin:     { base: 1,    mods: [{ wins: [[51.45, 66.48]], a: 0.9, label: 'ARDE: carga llegando a la silla (l12-15)' }] },
   acc:      { base: 1,    mods: [{ wins: [[27.66, 32.46]], a: 0.5, label: 'ORO: la palabra-color, el único cálido del video (l7)' }] },
 };
+const WCAMPO_DURATION = 70;
+// LOS DOS CAMPOS — la coreografía ES el argumento. Se enseña el positivo SOLO, luego el
+// negativo SOLO, luego los dos ENCIMADOS (se ve que apuntan al revés), y al final se apagan
+// los dos y queda la SUMA: la miga con estructura, que es el enlace.
+// Ventanas PROVISIONALES (se recalibran a segs.json después del TTS).
+const WCAMPO_CAPAS: CapasSpec = {
+  // Ventanas = arranques REALES de segs.json. Cada corte cae en el ARRANQUE de su línea.
+  // La coreografía ES el argumento — se enseña una parte a la vez y la frase se prueba sola:
+  //   l04-05  SOLO el positivo (rojo, sale disparado)
+  //   l06-07  SOLO el negativo (cian, cae a la nube)
+  //   l08     NINGUNO: queda la nube pelona mientras la voz dice por qué no lleva líneas
+  //   l09-12  LOS DOS encimados (se ve que apuntan al revés)
+  //   l13-18  se apagan y aparece la SUMA: la miga con estructura = el enlace
+  apertura: { base: 0.55, mods: [{ wins: [[53.83, 70]], a: -0.35, label: 'al final se juntan (l15)' }] },
+  nubes:    { base: 1,    mods: [
+    { wins: [[13.71, 26.66]], a: -0.55, label: 'baja la nube para que se lean las líneas de cada parte' },
+    { wins: [[26.66, 32.44]], a: 0.0,  label: 'l08: la nube SOLA, sin ninguna línea — la frase se prueba aquí' },
+  ] },
+  campo:    { base: 0,    mods: [
+    { wins: [[0, 13.71]], a: 1.0, label: 'lo que siempre te enseñamos: la suma (l01-03)' },
+    { wins: [[46.26, 70]], a: 1.0, label: 'apágalos y esto es lo que queda (l13-18)' },
+  ] },
+  campoNuc: { base: 0,    mods: [
+    { wins: [[13.71, 19.79]], a: 1.0, label: 'SOLO núcleos: positivo, hacia afuera (l04-05)' },
+    { wins: [[32.44, 46.26]], a: 1.0, label: 'los dos encimados (l09-12)' },
+  ] },
+  campoEle: { base: 0,    mods: [
+    { wins: [[19.79, 26.66]], a: 1.0, label: 'SOLO electrones: negativo, hacia la nube (l06-07)' },
+    { wins: [[32.44, 46.26]], a: 1.0, label: 'los dos encimados (l09-12)' },
+  ] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[26.66, 32.44]], a: 0.42, label: 'la nube sola respira (l08)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[46.26, 70]], a: 0.9, label: 'el puente arde: la miga que sobra (l13-15)' }] },
+  acc:      { base: 1,    mods: [] },
+};
 const WSILLA_DURATION = 50;
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
@@ -2569,6 +2634,13 @@ function WaterPairCamera({ time, R, shots, ex, pts }: { time: number; R: number;
 // pieza entregada no cambia.
 type WaterEntry = {
   bin: string; ef: string; ex: number;
+  /** LOS DOS CAMPOS POR SEPARADO (2026-09-01). `ef` es la SUMA — lo único físico y lo
+   *  que la serie dibujó siempre. Estos dos son sus partes: `efNuc` el campo de los
+   *  NÚCLEOS (positivo, sale hacia afuera) y `efEle` el de los ELECTRONES (negativo,
+   *  entra hacia la nube). ian: "QUIERO VER EL CAMPO POSITIVO Y NEGATIVO". Medido en
+   *  el etanol: se cancelan el 94 % a 6 bohr y el 99.4 % a 20, con coseno −0.9989 entre
+   *  ellos. Sin declarar = la pieza queda idéntica a como estaba. */
+  efNuc?: string; efEle?: string;
   anillo?: boolean;          // N-mero cíclico: palitos O–H, dipolos, tipografía y encuadre del ANILLO
   ceros?: string;            // json de los ceros del campo, si la pieza los calculó
   capas?: CapasSpec;         // coreografía (si falta, la de EL PUENTE)
@@ -2593,6 +2665,8 @@ type WaterEntry = {
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
   // LA SILLA VACÍA: el bin del rey con SU coreografía y SU duración (quick win, 2026-08-27).
+  wcampo: { bin: 'water-ethanol', ef: 'water-ethanol-efield', ex: 16, dur: WCAMPO_DURATION, sizeMul: 1.7,
+            efNuc: 'water-ethanol-efield-nuc', efEle: 'water-ethanol-efield-ele', capas: WCAMPO_CAPAS },
   wsilla: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLA_DURATION, capas: WSILLA_CAPAS },
   // EL ALCOHOL (2026-08-29): etanol (9 átomos, DON) + agua (ACC). Bin NUEVO, no del rey.
   // `ex` sube a 16 porque el sistema mide ~11 Å de punta a punta contra los ~6 del dímero:
@@ -2600,7 +2674,8 @@ const WATER_BINS: Record<string, WaterEntry> = {
   // sizeMul 1.7: el sistema mide ~11 Å contra los ~6 del dímero → casi 6× el VOLUMEN con el
   // mismo número de partículas, así que con el sprite del agua la nube sale como polvo suelto
   // (medido en los primeros stills). Es la misma cura que pidió la hemoglobina.
-  wetanol: { bin: 'water-ethanol', ef: 'water-ethanol-efield', ex: 16, dur: WETANOL_DURATION, sizeMul: 1.7, capas: WETANOL_CAPAS },
+  wetanol: { bin: 'water-ethanol', ef: 'water-ethanol-efield', ex: 16, dur: WETANOL_DURATION, sizeMul: 1.7, capas: WETANOL_CAPAS,
+             efNuc: 'water-ethanol-efield-nuc', efEle: 'water-ethanol-efield-ele' },
   // LA SAL (2026-08-26): Na⁺ + H₂O con PAR=na de precompute-water-approach.py. Mismo formato WAP2
   // (4 núcleos: Na, O, H, H), mismo eje, mismo régimen. Gate: −24.0 kcal/mol a 2.25 Å = experimento.
   wsal:  { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSAL_CAPAS, dur: WSAL_DURATION },
@@ -2722,9 +2797,13 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   const anillo = !!W.anillo;          // wtri, wtet… (ver WATER_BINS: el comportamiento es DATO)
   const [wd, setWd] = useState<WAPData | null>(null);
   const [bondEf, setBondEf] = useState<BondEFieldData | null>(null);
+  /** las PARTES del campo: núcleos (positivo) y electrones (negativo). Se cargan solo si
+   *  la pieza las declara; si no, quedan null y no se dibuja nada nuevo. */
+  const [efNuc, setEfNuc] = useState<BondEFieldData | null>(null);
+  const [efEle, setEfEle] = useState<BondEFieldData | null>(null);
   const [ceros, setCeros] = useState<CerosData | null>(null);
   useEffect(() => {
-    let alive = true; setWd(null); setBondEf(null);
+    let alive = true; setWd(null); setBondEf(null); setEfNuc(null); setEfEle(null);
     fetch(`/precomputed/${W.bin}.bin`).then(r => r.arrayBuffer())
       .then(b => { if (alive) { setWd(parseWAP2(b)); onReady?.(true); } })
       .catch(e => console.error('water-approach load failed', e));
@@ -2732,6 +2811,11 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
     fetch(`/precomputed/${W.ef}.bin`).then(r => r.arrayBuffer())
       .then(b => { if (alive) setBondEf(parseBondEField(b)); })
       .catch(e => console.error('water-approach efield load failed', e));
+    // LAS PARTES del campo (solo las piezas que las declaran)
+    if (W.efNuc) fetch(`/precomputed/${W.efNuc}.bin`).then(r => r.arrayBuffer())
+      .then(b => { if (alive) setEfNuc(parseBondEField(b)); }).catch(() => {});
+    if (W.efEle) fetch(`/precomputed/${W.efEle}.bin`).then(r => r.arrayBuffer())
+      .then(b => { if (alive) setEfEle(parseBondEField(b)); }).catch(() => {});
     // los CEROS del campo (solo las piezas que los calcularon los declaran en la tabla)
     if (W.ceros) fetch(`/precomputed/${W.ceros}.json`).then(r => r.json())
       .then(j => { if (alive) setCeros(parseCeros(j)); }).catch(() => {});
@@ -2896,6 +2980,9 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // CAPAS COMO OBJETOS (capas.ts): la coreografía vive en DATOS (WPAIR_CAPAS), no aquí.
   // Matemáticamente idéntica a las constantes que había — verificado frame a frame.
   const cloudGate = C.nubes, fieldGate = C.campo, twk = C.parpadeo, spinB = C.spin, accB = C.acc;
+  // las partes arrancan APAGADAS (base 0 en la coreografía): una pieza que no las pide
+  // no las ve, y la que sí las prende una por una para enseñar de qué está hecha la suma.
+  const nucGate = C.campoNuc ?? 0, eleGate = C.campoEle ?? 0;
   // NADA de líneas de campo (una línea NO es el enlace ni el campo — es una convención que
   // engaña). El enlace ES la NUBE: el Δρ (magenta = electrones que LLEGAN al puente, azul =
   // de dónde salen), densidad electrónica REAL reacomodándose. Ab initio, no dibujado a mano.
@@ -2921,6 +3008,10 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
       {ceros && <FieldNulls data={ceros} R={R} reveal={C.ceros ?? 0} time={time} />}
       {bondEf && !efIon && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
+      {/* LAS PARTES. Color con el convenio de siempre: POSITIVO cálido, NEGATIVO frío.
+          Prendidas a la vez se ven encimadas y apuntando al revés — que es el argumento. */}
+      {efNuc && nucGate > 0.001 && <BondEField data={efNuc} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * nucGate} col={[1.75, 0.52, 0.22]} />}
+      {efEle && eleGate > 0.001 && <BondEField data={efEle} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * eleGate} col={[0.22, 1.05, 1.70]} />}
       {/* LA SAL: el campo se parte en DOS instancias del mismo BondEField — las líneas que nacen
           en el ION, celestes (el erizo radial de una carga entera); las del agua, el azul de la
           serie. Cero shader nuevo: es el mismo componente con otro `col` y un subconjunto. */}

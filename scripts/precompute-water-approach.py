@@ -232,21 +232,44 @@ def sample_field(field, U):
 
 # ── CAMPO ELÉCTRICO del MEP REAL (como Li₂): V = Σ Z/|r−R| − ∫ρ/|r−r'|, E = −∇V.
 # Muchas líneas 3D que brotan de los H (δ+) y se CONECTAN al O vecino al acercarse.
-def esp3d(mol, dm, pts, chunk=4000):
+def esp3d(mol, dm, pts, chunk=4000, parte='total'):
+    """Potencial electrostático. `parte` elige QUÉ campo se devuelve:
+
+      'total' → núcleos + electrones. Es lo único FÍSICO (lo que siente una carga)
+                y es lo que la serie ha dibujado siempre. Default = bit-idéntico.
+      'nuc'   → SOLO los núcleos. Positivo, enorme, sale hacia afuera.
+      'ele'   → SOLO los electrones. Negativo, enorme, entra hacia la nube.
+
+    POR QUÉ (ian, 2026-09-01): "QUIERO VER EL CAMPO POSITIVO Y NEGATIVO, no entiendo
+    cómo es el campo". Tenía razón en el reclamo: le decíamos "el campo" a la SUMA y
+    nunca enseñamos las partes, así que la nube parecía no tener campo propio. Sí lo
+    tiene, y es gigantesco.
+
+    MEDIDO sobre esta misma geometría (etanol+agua pegados, scripts/_split-campo.py):
+    a 6 bohr V_nuc = +8.082 y V_ele = −8.036 → sobra 0.046, el 0.57 %. En campo,
+    |E_nuc| 1.977 contra |E_ele| 1.911 → se cancelan el 94.3 %, y a 20 bohr el 99.4 %.
+    El coseno entre los dos es −0.9989: apuntan casi exactamente al revés. O sea que
+    TODA la química que dibujamos es la miga que queda de dos gigantes que se borran.
+    """
     Zs = mol.atom_charges(); Rn = mol.atom_coords()
     V = np.empty(len(pts))
     for a in range(0, len(pts), chunk):
         p = np.ascontiguousarray(pts[a:a + chunk])
-        Vm = mol.intor('int1e_grids', grids=p)
-        ve = -np.einsum('gij,ij->g', Vm, dm)               # electrónico (negativo)
-        d = np.linalg.norm(p[:, None, :] - Rn[None], axis=2) + 1e-9
-        V[a:a + chunk] = ve + (Zs[None, :] / d).sum(1)      # + nuclear
+        ve = 0.0
+        if parte in ('total', 'ele'):
+            Vm = mol.intor('int1e_grids', grids=p)
+            ve = -np.einsum('gij,ij->g', Vm, dm)           # electrónico (negativo)
+        vn = 0.0
+        if parte in ('total', 'nuc'):
+            d = np.linalg.norm(p[:, None, :] - Rn[None], axis=2) + 1e-9
+            vn = (Zs[None, :] / d).sum(1)                  # nuclear (positivo)
+        V[a:a + chunk] = ve + vn
     return V
 
 
-def E3d(mol, dm, P, h=0.03):
+def E3d(mol, dm, P, h=0.03, parte='total'):
     off = np.array([[h, 0, 0], [-h, 0, 0], [0, h, 0], [0, -h, 0], [0, 0, h], [0, 0, -h]])
-    V = esp3d(mol, dm, (P[:, None, :] + off[None, :, :]).reshape(-1, 3)).reshape(len(P), 6)
+    V = esp3d(mol, dm, (P[:, None, :] + off[None, :, :]).reshape(-1, 3), parte=parte).reshape(len(P), 6)
     return np.stack([-(V[:, 0] - V[:, 1]), -(V[:, 2] - V[:, 3]), -(V[:, 4] - V[:, 5])], 1) / (2 * h)
 
 
@@ -265,7 +288,7 @@ def _smooth(p, k=5):                                        # media móvil → l
     return p
 
 
-def trace_field3d(mol, dm, gb, seeds, LP, maxlen=9.0, h=0.19, THR=0.003):
+def trace_field3d(mol, dm, gb, seeds, LP, maxlen=9.0, h=0.19, THR=0.003, parte='total'):
     Rn = gb                                                # los 6 núcleos (sumideros/fuentes)
     NS = len(seeds); HALF = LP
 
@@ -273,7 +296,7 @@ def trace_field3d(mol, dm, gb, seeds, LP, maxlen=9.0, h=0.19, THR=0.003):
         P = seeds.copy(); paths = np.zeros((NS, HALF, 3)); dead = np.full(NS, HALF); alive = np.ones(NS, bool)
         for st in range(HALF):
             paths[:, st] = P
-            E = E3d(mol, dm, P); n = np.linalg.norm(E, axis=1, keepdims=True)
+            E = E3d(mol, dm, P, parte=parte); n = np.linalg.norm(E, axis=1, keepdims=True)
             u = np.where(n > THR, sign * E / np.maximum(n, 1e-9), 0.0)
             newP = P + u * h
             near = np.zeros(NS, bool)
@@ -478,7 +501,54 @@ def solo_campo():
     write_efield(ef, len(ia_r), LP)
 
 
+def campo_partido():
+    """LOS DOS CAMPOS POR SEPARADO — el positivo de los núcleos y el negativo de los electrones.
+
+    Reusa la MISMA geometría y el MISMO trazador que hizo el campo total de la pieza,
+    así que los tres juegos de líneas son comparables cuadro a cuadro: lo único que
+    cambia es qué parte del potencial se deriva. Escribe dos .bin hermanos del que ya
+    existe, con el mismo formato, para que la escena los cargue sin código nuevo.
+
+    NO re-simula la nube: eso ya está en {BIN_ID}.bin y no se toca.
+    """
+    from pyscf import gto
+    import time
+    LP = 40; SEEDS = field_grid(); NL = len(SEEDS)
+    salidas = {}
+    for parte in ('nuc', 'ele'):
+        salidas[parte] = np.zeros((K, NL, LP, 3))
+    print(f"=== CAMPO PARTIDO · {K} separaciones · {NL} líneas × {LP} pts ===", flush=True)
+    for k in range(K):
+        t0 = time.time()
+        R_A = float(Rvals[k]) * BOHR
+        gb = geom_at(R_A)
+        mol = gto.M(atom=[[int(Z[i]), tuple(gb[i])] for i in range(NNUC)],
+                    basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE)
+        _, dm = rhf(mol)
+        for parte in ('nuc', 'ele'):
+            salidas[parte][k] = trace_field3d(mol, dm, gb, SEEDS, LP, parte=parte)
+        print(f"  {k+1}/{K}  R {R_A:.2f} Å · {time.time()-t0:.0f} s", flush=True)
+
+    for parte, suf in (('nuc', 'nuc'), ('ele', 'ele')):
+        ruta = os.path.join(os.path.dirname(__file__), '..', 'public', 'precomputed', f'{BIN_ID}-efield-{suf}.bin')
+        with open(ruta, 'wb') as fp:
+            fp.write(struct.pack('<3i', K, NL, LP))
+            fp.write(Rvals.astype('<f4').tobytes())
+            fp.write(np.clip(np.round(salidas[parte] * 2000), -32767, 32767).astype('<i2').tobytes())
+        # PORTERO: el int16 de ESTE formato topa en 32767/2000 = 16.38 bohr. Es el mismo
+        # defecto que cortó la nube del alcohol (ver scripts/bin-gate.py); aquí se revisa
+        # antes de escribir nada más, no después de mirar un still a 4K.
+        sat = float((np.abs(np.clip(np.round(salidas[parte] * 2000), -32767, 32767)) >= 32767).mean()) * 100
+        estado = 'ok' if sat == 0.0 else f'✗ {sat:.3f}% TOPADO'
+        print(f"OK  {ruta}  {os.path.getsize(ruta)/1024/1024:.2f} MB · |max| {np.abs(salidas[parte]).max():.2f} bohr · {estado}", flush=True)
+        if sat > 0.0:
+            raise SystemExit(f"✗ el campo '{parte}' topa el int16 — saldría con caras planas")
+    print("CAMPO_PARTIDO_LISTO", flush=True)
+
+
 if __name__ == '__main__':
+    if '--campo-partido' in sys.argv:
+        campo_partido(); sys.exit(0)
     if '--solo-campo' in sys.argv:
         solo_campo(); sys.exit(0)
     accPos, depPos, spinPos, bondMass, accColor, nucPos, efield, NL_EF, LP = build()
