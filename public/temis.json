@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-02 18:58",
+ "generado": "2026-09-02 19:09",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -14,12 +14,12 @@
   "cerrado": 74,
   "probado": 0,
   "porProbar": 40,
-  "sinDesplegar": 1,
+  "sinDesplegar": 0,
   "despues": 17
  },
  "deploy": {
-  "commit": "8b37b21",
-  "fecha": "2026-09-01 22:40"
+  "commit": "37700e5",
+  "fecha": "2026-09-02 18:59"
  },
  "violaciones": [],
  "columnas": {
@@ -1253,8 +1253,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "37700e5",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-09-01-x5-muere-la-barra-lateral.md",
@@ -1360,7 +1360,7 @@
     "probado": "",
     "falla": "",
     "commit": "5da2c51",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-09-01-x4-el-happy-path.md",
