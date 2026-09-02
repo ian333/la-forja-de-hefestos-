@@ -508,6 +508,83 @@ datos de horarios de publicación 2026 (9.6M posts).
 
 ---
 
+## 🧠 LA NEUROLOGÍA DEL CHISME — quién decide compartir, el cerebro rápido o el lento (2026-09-02)
+
+ian: *"investiguemos el chisme neurológicamente, debe haber una relación cerebro lento /
+cerebro rápido, ¿cuál afectará más la decisión?"*. La respuesta está medida, y con fMRI.
+
+### GANA EL RÁPIDO. Sin discusión.
+
+> *"La decisión de compartir opera de forma relativamente automática. La gente hace juicios
+> rápidos sobre si algo es compartible… el impulso surge de una evaluación intuitiva, no de
+> una reflexión prolongada."* — Falk et al., neurociencia del compartir (UPenn)
+
+Es **Sistema 1** (Kahneman): automático, asociativo, emocional. El Sistema 2 solo *interviene*
+si se toma la molestia, y casi nunca se la toma porque cuesta energía.
+
+**Consecuencia dura para nosotros: nuestros videos están construidos para el Sistema 2.** Son
+explicaciones, con la conclusión al final. El aparato que decide mandarlo por DM no lee
+argumentos: reconoce patrones y siente.
+
+### DE QUÉ ESTÁ HECHA LA DECISIÓN (el modelo de VIRALIDAD POR VALOR)
+
+El cerebro integra dos cosas en una sola señal de valor (vmPFC + estriado ventral), y esa
+señal predice el compartido **poblacional** mejor que lo que la gente DICE que compartiría:
+
+```
+valor PROPIO    ¿qué dice esto de mí si lo mando?
+valor SOCIAL    ¿a quién se lo mando, y qué me gano con esa persona?
+```
+
+Se comparte por lo que dice de UNO, no por lo bueno que sea el contenido. Un video puede ser
+impecable y no dar nada que decir de quien lo manda.
+
+### LA EMOCIÓN QUE MÁS COMPARTE ES EL ASOMBRO — y es nuestro terreno
+
+Berger & Milkman (todos los artículos del NYT en 3 meses): el contenido que provoca emociones
+de **ALTA ACTIVACIÓN** se comparte más — **asombro** (la positiva más fuerte), enojo, ansiedad.
+Las de **BAJA activación**, como la tristeza, se comparten MENOS. Y se sostiene incluso
+controlando por qué tan sorprendente, interesante o útil es el contenido.
+
+**Esto es lo mejor que nos ha pasado en toda la investigación:** el asombro es nativo de lo que
+hacemos. No hay que fabricarlo, hay que no estorbarlo. Y da una regla negativa clara: **nada de
+tono melancólico, contemplativo o "qué bonito"** — eso es baja activación y apaga el compartido.
+
+### HIPÓTESIS (no hallazgo): REVELACIÓN le gana a EXPLICACIÓN
+
+Clasificando la primera frase de los 24 captions largos por su marco:
+
+```
+REVELACIÓN    n=4   7,942 vistas medianas · 12.73 comp/mil · skip 43.8
+EXPLICACIÓN   n=4   4,996                 ·  8.67          · skip 48.5
+otro          n=16  3,442                 ·  7.88          · skip 45.6
+```
+
+*"Nunca habías visto NACER un enlace"* (el rey, 94k) contra *"Por qué el hielo flota"* (2.7k).
+Encaja con el Sistema 1: "nunca habías visto" es valor PROPIO y alta activación; "por qué X"
+es una promesa de razonamiento, o sea una invitación al Sistema 2.
+
+⚠ **n=4 por grupo y la clasificación la hice YO después de ver los resultados.** Es hipótesis
+para diseñar el experimento, NO evidencia. Anotado aquí para que nadie lo cite como hallazgo.
+
+### QUÉ SE HACE CON ESTO (traducción a decisiones)
+
+1. **El gancho vende asombro, no tema.** "Nunca habías visto" / "Mira esto" antes que "Por qué".
+2. **Dale al espectador algo que DECIR.** Si no puede completar *"te mando esto porque…"* en
+   una frase, no hay valor propio y no lo manda.
+3. **Nada de baja activación.** Cero tono melancólico o contemplativo.
+4. **El asombro va temprano y va otra vez al final** — el rey ya lo hace (§LAS LEYES DEL REY,
+   peak-end), y ahora sabemos por qué funciona.
+5. Y la que ya sabíamos por dato propio: la señal de Instagram es *sends per reach*
+   (§EL RITMO), que es exactamente el output de esta maquinaria.
+
+**Fuentes:** Falk et al., *The neuroscience of information sharing* y *A neural model of
+valuation and information virality* (PNAS) · Baek, Scholz, O'Donnell & Falk, *The Value of
+Sharing Information* · Berger & Milkman, *What Makes Online Content Viral?* (JMR 2012) ·
+Kahneman, dual-process.
+
+---
+
 ## 👁️ LEGIBILIDAD: si se puede contar mal, el encuadre falló
 
 **Narración correcta + visual ambiguo = el público cree lo que VE.** En "El puente" la voz dice
