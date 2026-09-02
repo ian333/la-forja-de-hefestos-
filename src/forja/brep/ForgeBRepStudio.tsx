@@ -3592,6 +3592,10 @@ export default function ForgeBRepStudio() {
    */
   /** X5 · LA LÁMINA: el dictamen se LLAMA, no vive fijo en una columna. */
   const [laminaOn, setLaminaOn] = useState(false);
+  /** X6 · LA LÁMINA VIVA: los conteos tiñen la pantalla y marcan su ritmo. */
+  const [dictamen, setDictamen] = useState<{ viola: number; advierte: number; cumple: number } | null>(null);
+  /** las olas del clic: nacen donde tocaste, con el color del estado que tocaste */
+  const [olas, setOlas] = useState<Array<{ id: number; x: number; y: number; color: string }>>([]);
   const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
   const fichaRef = useRef<HTMLDivElement | null>(null);
   // X3 · la ficha se ENSEÑA SOLA: al entrar a una lente abre una vez. Si arrancara
@@ -6767,24 +6771,80 @@ export default function ForgeBRepStudio() {
           <>
             <div data-testid="lamina-scrim" onClick={() => setLaminaOn(false)}
               style={{ position: 'absolute', inset: 0, zIndex: 18, background: 'rgba(4,7,12,0.55)', backdropFilter: 'blur(2px)' }} />
-            <div data-testid="lamina-dictamen" style={{
+            {/* X6 · LA LÁMINA VIVA. ian: «que el solo mirarla me dé información». El
+                COLOR del cristal lo pone el dictamen (viola → rojizo, advierte → ámbar,
+                limpia → verde) sobre una pizarra fría translúcida; el FONDO respira con
+                tres manchas difusas cuyo ritmo es la severidad (más violaciones → más
+                inquieto); y al tocar un hallazgo nace una OLA desde el clic con el color
+                de su estado. Nada de esto decora: todo es dato. Cero Canvas: DOM + CSS. */}
+            {(() => {
+              const tinte = !dictamen ? '#6db3f2' : dictamen.viola > 0 ? '#ff5c5c' : dictamen.advierte > 0 ? '#ffb347' : '#59d98c';
+              const ritmo = !dictamen ? 20 : dictamen.viola >= 4 ? 9 : dictamen.viola > 0 ? 14 : dictamen.advierte > 0 ? 20 : 28;
+              const chip = !dictamen ? 'MIDIENDO' : dictamen.viola > 0 ? `${dictamen.viola} VIOLAN` : dictamen.advierte > 0 ? `${dictamen.advierte} ADVIERTEN` : 'LIMPIA';
+              return (
+            <div data-testid="lamina-dictamen" data-tinte={tinte}
+              onClickCapture={(e) => {
+                // LA OLA: el color del hallazgo que tocaste (su borde izquierdo) nace del punto del clic
+                const fila = (e.target as HTMLElement).closest('[data-testid^="rp-h-"]') as HTMLElement | null;
+                if (!fila) return;
+                const color = fila.style.borderLeftColor || tinte;
+                // TODO lo del evento se lee AQUÍ, síncrono: React vacía `currentTarget`
+                // en cuanto termina el handler, y el updater de setOlas corre después.
+                // Leerlo adentro tiraba la pantalla entera al ErrorBoundary con
+                // «Cannot read properties of null (reading 'scrollTop')». Cazado a cuadros.
+                const r = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - r.left, y = e.clientY - r.top + e.currentTarget.scrollTop;
+                const id = Date.now() + Math.random();
+                setOlas((o) => [...o.slice(-3), { id, x, y, color }]);
+                // y LA FILA se tiñe de su color un instante (clase + variable CSS: no toca
+                // el inline que React maneja, así no hay carrera con el re-render del toggle)
+                fila.style.setProperty('--ola', color);
+                fila.classList.remove('fb-fila-ola'); void fila.offsetWidth; fila.classList.add('fb-fila-ola');
+                window.setTimeout(() => fila.classList.remove('fb-fila-ola'), 750);
+              }}
+              style={{
               position: 'absolute', left: '50%', top: 84, transform: 'translateX(-50%)', zIndex: 19,
               width: 'min(720px, calc(100% - 48px))', maxHeight: 'calc(100% - 190px)', overflow: 'auto',
-              padding: '14px 18px 16px', borderLeft: `3px solid ${GOLD}`,
-              background: 'linear-gradient(180deg, rgba(10,15,23,0.96), rgba(8,12,18,0.94))',
+              padding: '14px 18px 16px',
+              border: `1px solid ${rgbaDe(tinte, 0.30)}`, borderLeftWidth: 3, borderLeftColor: tinte,
+              /* CRISTAL: se ve la pieza y sus marcas detrás. La base es pizarra fría, el
+                 tinte de arriba es el estado. */
+              background: `linear-gradient(160deg, ${rgbaDe(tinte, 0.16)} 0%, rgba(26,36,52,0.38) 55%, rgba(18,26,40,0.42) 100%)`,
+              backdropFilter: 'blur(7px) saturate(1.25)', WebkitBackdropFilter: 'blur(7px) saturate(1.25)',
+              boxShadow: `0 24px 70px rgba(0,0,0,0.45), inset 0 0 0 1px ${rgbaDe(tinte, 0.08)}`,
+              isolation: 'isolate',
             }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 8 }}>
+              {/* EL FONDO QUE RESPIRA: tres manchas difusas, el ritmo es la severidad */}
+              <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+                <div className="fb-lamina-mancha" style={{ background: rgbaDe(tinte, 0.55), left: '-10%', top: '-20%', animationDuration: `${ritmo}s` }} />
+                <div className="fb-lamina-mancha m2" style={{ background: 'rgba(109,179,242,0.40)', right: '-15%', top: '20%', animationDuration: `${ritmo * 1.35}s` }} />
+                <div className="fb-lamina-mancha m3" style={{ background: rgbaDe(tinte, 0.35), left: '30%', bottom: '-30%', animationDuration: `${ritmo * 1.7}s` }} />
+                <div className="fb-lamina-barrido" style={{ animationDuration: `${Math.max(7, ritmo * 0.8)}s` }} />
+                {olas.map((o) => (
+                  <div key={o.id} className="fb-lamina-ola" onAnimationEnd={() => setOlas((s) => s.filter((k) => k.id !== o.id))}
+                    style={{ left: o.x, top: o.y, boxShadow: `0 0 0 2px ${rgbaDe(o.color, 0.85)}`,
+                      background: `radial-gradient(circle, rgba(255,255,255,0.45) 0%, ${rgbaDe(o.color, 0.62)} 22%, ${rgbaDe(o.color, 0.22)} 50%, transparent 72%)` }} />
+                ))}
+              </div>
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
                 <div style={{ font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 2.4, color: GOLD, opacity: 0.9 }}>EL DICTAMEN</div>
+                {/* DE UN VISTAZO: el chip late en el color del estado */}
+                <span data-testid="lamina-chip" className="fb-lamina-chip" style={{ color: tinte, borderColor: rgbaDe(tinte, 0.55), background: 'rgba(8,12,18,0.78)', animationDuration: `${Math.max(1.6, ritmo / 5)}s` }}>{chip}</span>
                 <span style={{ flex: 1 }} />
                 <button data-testid="lamina-cerrar" onClick={() => setLaminaOn(false)}
                   style={{ cursor: 'pointer', background: 'transparent', border: 0, color: '#7f8fa6', fontSize: 12 }}>✕ Esc</button>
               </div>
+              <div style={{ position: 'relative', zIndex: 1 }}>
               <Suspense fallback={<div style={{ fontSize: 11, opacity: 0.6 }}>cargando la revisión…</div>}>
                 <RevisarPiezaPanel
                   pieza={{ mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas }}
+                  onDictamen={(f) => setDictamen({ viola: f.viola, advierte: f.advierte, cumple: f.cumple })}
                   onAbrirLote={() => { setLaminaOn(false); setRevisarLoteOn(true); }} />
               </Suspense>
+              </div>
             </div>
+              );
+            })()}
           </>
         )}
 
@@ -6792,7 +6852,7 @@ export default function ForgeBRepStudio() {
             DENTRO del área de trabajo — que es justo la ley: el dato de la pieza vive
             sobre la pieza. `FichaDriver`, adentro del Canvas, le escribe el transform. */}
         {focoOn && lenteActiva?.peor && fichaAbierta === lenteActiva.id && (
-          <FichaEnElMundo lente={lenteActiva} refEl={fichaRef} onCerrar={() => setFichaAbierta(null)} />
+          <FichaEnElMundo lente={lenteActiva} refEl={fichaRef} onCerrar={() => setFichaAbierta(null)} atenuada={laminaOn} />
         )}
         {focoOn && !lenteActiva && focoCotas.length > 0 && (
           <CotaLabels sets={focoCotas} refs={focoRefs} paleta={PALETA_FOCO} testid="foco-cotas-overlay" modo="medida" />
@@ -8896,15 +8956,17 @@ function FichaDriver({ punto, el }: { punto: [number, number, number]; el: React
   return <group ref={anchor} />;
 }
 
-function FichaEnElMundo({ lente, refEl, onCerrar }: {
+function FichaEnElMundo({ lente, refEl, onCerrar, atenuada = false }: {
   lente: { nombre: string; titular: string; cuerpo: string; ref: string; origen: string; unidad: string; maxCampo: number };
   refEl: React.MutableRefObject<HTMLDivElement | null>;
   onCerrar: () => void;
+  /** X6 · con la lámina abierta la ficha baja a penumbra: el Foco enseña UNA cosa a la vez */
+  atenuada?: boolean;
 }) {
   const cian = lente.origen === 'medido';
   const acento = cian ? '#5fd4f5' : '#e061c8';
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 7 }} data-testid="ficha-en-el-mundo">
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 7, opacity: atenuada ? 0.12 : 1, transition: 'opacity .35s ease' }} data-testid="ficha-en-el-mundo">
       <div ref={refEl} style={{ position: 'absolute', left: 0, top: 0, willChange: 'transform', display: 'none' }}>
         {/* el ancla: la ficha sale del punto hacia la derecha y arriba, como en Horizon —
             junto al objeto, sin línea guía. La cercanía basta. */}
@@ -8931,6 +8993,19 @@ function FichaEnElMundo({ lente, refEl, onCerrar }: {
       </div>
     </div>
   );
+}
+
+/** X6 · color → rgba, para teñir cristal con el color de un estado.
+ *  Acepta hex Y `rgb(r, g, b)`: el DOM devuelve los estilos inline NORMALIZADOS a
+ *  rgb() (el borde de una fila llega como "rgb(255, 92, 92)", no como #ff5c5c). Con
+ *  solo hex salía rgba(NaN,…), CSS inválido, y la ola nacía invisible. Tercera vez
+ *  hoy que el navegador normaliza y yo no. */
+function rgbaDe(color: string, a: number): string {
+  const m = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (m) return `rgba(${m[1]},${m[2]},${m[3]},${a})`;
+  const h = color.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
 }
 
 function CollapseHead({ id, title, collapsed, onToggle, right, mate = false }: {
@@ -9087,6 +9162,30 @@ const CSS = `
 .fb-collapse-head.mate .fb-collapse-title{font-size:10.5px;letter-spacing:2.2px;
   color:#bfeeff;opacity:.62;font-weight:700;}
 .fb-collapse-btn.edge{color:${STEEL};opacity:.34;font-size:10px;margin-left:auto;}
+/* X6 · LA LAMINA VIVA — el movimiento es el dato. Las manchas derivan (duracion = severidad),
+   el barrido escanea, el chip late, la ola nace del clic. Todo GPU-friendly: transform/opacity. */
+.fb-lamina-mancha{position:absolute;width:62%;height:70%;border-radius:50%;filter:blur(48px);opacity:.9;
+  animation:fb-lamina-deriva linear infinite alternate;will-change:transform;}
+.fb-lamina-mancha.m2{animation-name:fb-lamina-deriva2;}
+.fb-lamina-mancha.m3{animation-name:fb-lamina-deriva3;}
+@keyframes fb-lamina-deriva{from{transform:translate(0,0) scale(1);}to{transform:translate(18%,12%) scale(1.25);}}
+@keyframes fb-lamina-deriva2{from{transform:translate(0,0) scale(1.1);}to{transform:translate(-22%,-10%) scale(.85);}}
+@keyframes fb-lamina-deriva3{from{transform:translate(0,0) scale(.9);}to{transform:translate(-12%,-26%) scale(1.3);}}
+.fb-lamina-barrido{position:absolute;top:-20%;bottom:-20%;width:34%;left:-40%;pointer-events:none;
+  background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,0.05) 45%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.05) 55%,transparent 100%);
+  animation:fb-lamina-barre linear infinite;}
+@keyframes fb-lamina-barre{from{transform:translateX(0);}to{transform:translateX(420%);}}
+.fb-lamina-chip{font:700 9.5px ui-monospace,Menlo,monospace;letter-spacing:1.6px;padding:2px 8px;border-radius:9px;border:1px solid;
+  animation:fb-lamina-latido ease-in-out infinite;}
+@keyframes fb-lamina-latido{0%,100%{opacity:.78;}50%{opacity:1;}}
+.fb-lamina-ola{position:absolute;width:26px;height:26px;border-radius:50%;transform:translate(-50%,-50%) scale(1);
+  animation:fb-lamina-onda .9s cubic-bezier(.2,.8,.2,1) forwards;pointer-events:none;}
+/* la fila que tocaste se tiñe de su color un instante: overlay por ::after con la variable --ola */
+.fb-fila-ola{position:relative;}
+.fb-fila-ola::after{content:'';position:absolute;inset:0;border-radius:inherit;background:var(--ola);pointer-events:none;
+  animation:fb-fila-tinte .75s ease-out forwards;}
+@keyframes fb-fila-tinte{0%{opacity:.42;}100%{opacity:0;}}
+@keyframes fb-lamina-onda{from{transform:translate(-50%,-50%) scale(1);opacity:1;}to{transform:translate(-50%,-50%) scale(60);opacity:0;}}
 .fb-collapse-head.mate:hover .fb-collapse-btn.edge{opacity:.8;}
 .fb-count{font-size:10px;font-family:'JetBrains Mono',monospace;color:${GOLD};
   background:${GOLD}14;border:1px solid ${GOLD}33;border-radius:10px;padding:1px 7px;}

@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-01 22:46",
+ "generado": "2026-09-02 18:58",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -11,10 +11,10 @@
   "enCurso": 1,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 73,
+  "cerrado": 74,
   "probado": 0,
-  "porProbar": 39,
-  "sinDesplegar": 0,
+  "porProbar": 40,
+  "sinDesplegar": 1,
   "despues": 17
  },
  "deploy": {
@@ -1151,6 +1151,112 @@
   ],
   "cerrado": [
    {
+    "file": "ordenes/2026-09-02-x6-la-lamina-viva.md",
+    "slug": "2026-09-02-x6-la-lamina-viva",
+    "titulo": "X6 · LA LÁMINA VIVA — mirarla ya informa",
+    "fecha": "2026-09-02",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "x6-cristal",
+      "titulo": "La lámina es translúcida: la pieza y sus marcas se ven detrás",
+      "herramientas": "glass",
+      "oraculo": "fondo con alpha ≤0.45 + backdrop-filter; nada de placa opaca",
+      "estado": "verde",
+      "checks": "la lámina es translúcida: base pizarra fría rgba(26,36,52,0.38→0.42) + backdrop-filter blur(7px) saturate(1.25); la pieza y sus marcas se ven detrás. Y la ficha del punto baja a opacidad 0.12 mientras la lámina está abierta: el Foco enseña UNA cosa a la vez",
+      "video": "",
+      "still": "abierta-t0.png",
+      "nota": ""
+     },
+     {
+      "id": "x6-tinte-es-estado",
+      "titulo": "El color base LO PONE el dictamen",
+      "herramientas": "semántica",
+      "oraculo": "viola → rojizo, advierte → ámbar, limpia → verde; sobre una base pizarra fría (el «azul traslúcido» de ian), no navy-cian",
+      "estado": "verde",
+      "checks": "el color lo pone el dictamen vía onDictamen(fila): 1594C Lid tiene 6 violaciones → tinte #ff5c5c, chip «6 VIOLAN». Con solo advertencias sería ámbar; limpia, verde. La base no es navy-cian: pizarra fría desaturada",
+      "video": "",
+      "still": "abierta-t0.png",
+      "nota": "ian: «el solo mirarla me dé información»"
+     },
+     {
+      "id": "x6-respira",
+      "titulo": "El fondo se mueve y su RITMO es la severidad",
+      "herramientas": "keyframes",
+      "oraculo": "3 manchas difusas derivan; duración 9 s con ≥4 violaciones, 14 s con alguna, 20 s solo advertencias, 28 s limpia; más un barrido diagonal lento (el escaneo)",
+      "estado": "verde",
+      "checks": "tres manchas difusas (blur 48px) derivan con keyframes; duración = severidad (9 s con ≥4 violaciones, 14 con alguna, 20 solo advertencias, 28 limpia) + barrido diagonal. MEDIDO: la mancha 1 en t=0/0.6/1.6 s → left 371→374→378, ancho 455→468→483. Se mueve",
+      "video": "",
+      "still": "abierta-t1600.png",
+      "nota": "DOM + CSS transform/opacity: cero Canvas, censo 8→8"
+     },
+     {
+      "id": "x6-ola-del-clic",
+      "titulo": "Tocar algo lo tiñe de SU color",
+      "herramientas": "interacción",
+      "oraculo": "al hacer clic en un hallazgo nace una ola desde el punto del clic con el color de su estado (verde/ámbar/rojo) y la sección se abre",
+      "estado": "verde",
+      "checks": "al hacer clic en un hallazgo nace una ola desde el punto del clic con el color de SU estado (borde de la fila): tras un ✗ → rgba(255,92,92); tras un ✓ → rgba(89,217,140). Núcleo claro + anillo, y la fila tocada se tiñe 0.75 s por ::after con la variable --ola. La sección se abre (ya lo hacía)",
+      "video": "",
+      "still": "clic-verde-t400.png",
+      "nota": "el color del borde llega como rgb(), no hex: rgbaDe() aprendió a leerlo"
+     },
+     {
+      "id": "x6-de-un-vistazo",
+      "titulo": "Sin leer, ya sabes cómo está la pieza",
+      "herramientas": "cabecera",
+      "oraculo": "chip con «6 VIOLAN» / «13 ADVIERTEN» / «LIMPIA» latiendo en su color",
+      "estado": "verde",
+      "checks": "chip «6 VIOLAN» / «n ADVIERTEN» / «LIMPIA» en la cabecera, latiendo en el color del estado sobre fondo oscuro fijo (rojo sobre rojo no se leía; cazado a ojo)",
+      "video": "",
+      "still": "abierta-t0.png",
+      "nota": ""
+     },
+     {
+      "id": "x6-se-ve-moverse",
+      "titulo": "La animación se verifica, no se declara",
+      "herramientas": "3 cuadros",
+      "oraculo": "capturas a t=0 / 0.6 s / 1.6 s de abierta muestran el fondo en posiciones distintas; y a t=80 ms / 400 ms de un clic, la ola creciendo",
+      "estado": "verde",
+      "checks": "verificado a CUADROS (protocolo: no puedo ver video): abierta t=0/0.6/1.6 s con la mancha en posiciones distintas; clic rojo y clic verde a 80 y 400 ms con la ola creciendo en su color. 7 cuadros + hoja de contactos en Downloads. Cero errores de consola",
+      "video": "",
+      "still": "clic-rojo-t80.png",
+      "nota": "3 errores pagados, todos el mismo: el navegador NORMALIZA (hex→rgb, currentTarget→null tras el handler) y yo asumía que devolvía lo que puse. Quedan escritos en el código"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, después de ver la lámina de papel y el acero café: «no me late. Preferiría algo diferente, algo que considere todo el CAD industrial súper aburrido y tengamos pantallas que verdaderamente transmitan la información. Como es un dictamen…",
+    "toca": 3,
+    "crea": 6,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "3 cuadros de la lámina abierta (t=0 / 0.6 s / 1.6 s) — el fondo en posiciones distintas",
+     "2 cuadros tras un clic en un hallazgo (t=80 ms / 400 ms) — la ola creciendo en SU color",
+     "hoja de contactos en Downloads; deploy solo con el visto de ian",
+     "gate ciclo-dado verde · orden-gate VERDE · censo Canvas 8→8"
+    ],
+    "cierre": "6/6 EN VERDE · verificado a cuadros · gate 266/266. ian, al ver los cuadros: «me mama, ahora sí cierra este ticket y sube todo». La lámina dejó de ser una placa: es cristal teñido por el dictamen (6 …",
+    "cierreCompleto": "6/6 EN VERDE · verificado a cuadros · gate 266/266. ian, al ver los cuadros: «me mama, ahora sí cierra este ticket y sube todo». La lámina dejó de ser una placa: es cristal teñido por el dictamen (6 violaciones → rojizo, chip «6 VIOLAN»), con un fondo que respira al ritmo de la severidad (medido: la mancha se movió 371→374→378 px en 1.6 s) y una ola que nace del clic con el color de lo que tocaste (rojo tras un ✗, verde tras un ✓) mientras la fila se tiñe. La pieza y sus marcas se ven detrás; la ficha del punto baja a penumbra mientras la lámina está abierta. Pasa la línea de la doctrina porque nada decora: el color es el estado y el ritmo es la severidad. Cero funcionalidad nueva, cero Canvas — DOM + CSS. Tres errores pagados, y los tres son el mismo: el navegador NORMALIZA lo que le das (hex → rgb(), currentTarget → null en cuanto termina el handler) y yo asumía que me devolvía lo que puse. Uno tiró la pantalla entera al ErrorBoundary; otro hizo nacer la ola invisible. Quedan escritos junto al código. Lo que queda para después, dicho: la ola sobre un cristal ya rojo sigue siendo la menos visible de las tres (rojo sobre rojo); si molesta con uso real, la salida es un anillo más claro, no más rojo.",
+    "evidenciaSS": [
+     "evidencia/2026-09-02-x6-la-lamina-viva/abierta-t0.png",
+     "evidencia/2026-09-02-x6-la-lamina-viva/abierta-t1600.png",
+     "evidencia/2026-09-02-x6-la-lamina-viva/clic-rojo-t80.png",
+     "evidencia/2026-09-02-x6-la-lamina-viva/clic-verde-t400.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-09-01-x5-muere-la-barra-lateral.md",
     "slug": "2026-09-01-x5-muere-la-barra-lateral",
     "titulo": "X5 · MUERE LA BARRA LATERAL — la pieza a toda pantalla",
@@ -1253,8 +1359,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "8b37b21",
-    "despliegue": "en-vivo"
+    "commit": "5da2c51",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-09-01-x4-el-happy-path.md",
