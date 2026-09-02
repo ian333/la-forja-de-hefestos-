@@ -1,0 +1,152 @@
+{
+ "generado": "2026-09-02",
+ "n_piezas_largas": 24,
+ "veredicto": "NO hay todavía una característica controlable de la IMAGEN que prediga a los reyes. Lo que más se relaciona con las vistas son reacciones del público (skip a los 3 s r=-0.72, compartidos/mil r=+0.75), y ninguna de ellas se decide antes de grabar. Y un buen gancho ACOTA pero no decide: partiendo por la mediana de skip3s, la mitad buena da apenas 1.3x las vistas medianas de la mala. La causa más probable de que no aparezca la palanca es que cada pieza cambia molécula, guion, cámara, color y duración A LA VEZ: nada es atribuible. Para encontrarla hay que dejar de variar todo y hacer A/B de una sola cosa.",
+ "palancas_con_evidencia": [
+  {
+   "rasgo": "variedad_color",
+   "vs_vistas": 0.433,
+   "p_vistas": 0.0244,
+   "vs_skip3s": -0.228,
+   "p_skip3s": 0.2716,
+   "vs_seg_vistos": -0.242,
+   "p_seg_vistos": 0.2417,
+   "n_para_probarlo": 40
+  },
+  {
+   "rasgo": "lleno",
+   "vs_vistas": -0.183,
+   "p_vistas": 0.383,
+   "vs_skip3s": 0.15,
+   "p_skip3s": 0.4779,
+   "vs_seg_vistos": -0.409,
+   "p_seg_vistos": 0.0358,
+   "n_para_probarlo": 45
+  }
+ ],
+ "termometros": {
+  "skip3s": {
+   "vs_log_vistas": -0.715,
+   "p": 0.0
+  },
+  "c_por_mil": {
+   "vs_log_vistas": 0.748,
+   "p": 0.0
+  },
+  "g_por_mil": {
+   "vs_log_vistas": 0.757,
+   "p": 0.0
+  },
+  "seg_vistos": {
+   "vs_log_vistas": 0.531,
+   "p": 0.0033
+  }
+ },
+ "termometro_util": {
+  "metrica": "skip3s",
+  "mediana_pct": 46.5,
+  "vistas_medianas_mitad_buena": 4367,
+  "vistas_medianas_mitad_mala": 3444,
+  "factor": 1.27,
+  "nota": "se mide en HORAS: sirve para saber temprano si una pieza va a volar, no para diseñarla"
+ },
+ "descartados": [
+  {
+   "rasgo": "saturacion",
+   "vs_vistas": 0.185,
+   "p_vistas": 0.3782,
+   "vs_skip3s": 0.103,
+   "p_skip3s": 0.6281,
+   "vs_seg_vistos": 0.186,
+   "p_seg_vistos": 0.3745,
+   "n_para_probarlo": 225
+  },
+  {
+   "rasgo": "calido",
+   "vs_vistas": -0.158,
+   "p_vistas": 0.4539,
+   "vs_skip3s": -0.09,
+   "p_skip3s": 0.6728,
+   "vs_seg_vistos": 0.238,
+   "p_seg_vistos": 0.2507,
+   "n_para_probarlo": 137
+  },
+  {
+   "rasgo": "frio",
+   "vs_vistas": 0.153,
+   "p_vistas": 0.4669,
+   "vs_skip3s": -0.021,
+   "p_skip3s": 0.9207,
+   "vs_seg_vistos": -0.145,
+   "p_seg_vistos": 0.4918,
+   "n_para_probarlo": 332
+  },
+  {
+   "rasgo": "magenta",
+   "vs_vistas": 0.218,
+   "p_vistas": 0.295,
+   "vs_skip3s": 0.081,
+   "p_skip3s": 0.7044,
+   "vs_seg_vistos": -0.091,
+   "p_seg_vistos": 0.6668,
+   "n_para_probarlo": 163
+  },
+  {
+   "rasgo": "luma",
+   "vs_vistas": -0.172,
+   "p_vistas": 0.4137,
+   "vs_skip3s": 0.006,
+   "p_skip3s": 0.9789,
+   "vs_seg_vistos": -0.117,
+   "p_seg_vistos": 0.58,
+   "n_para_probarlo": 264
+  },
+  {
+   "rasgo": "contraste",
+   "vs_vistas": 0.1,
+   "p_vistas": 0.6367,
+   "vs_skip3s": -0.293,
+   "p_skip3s": 0.15,
+   "vs_seg_vistos": 0.229,
+   "p_seg_vistos": 0.2709,
+   "n_para_probarlo": 89
+  },
+  {
+   "rasgo": "quemado",
+   "vs_vistas": -0.224,
+   "p_vistas": 0.2809,
+   "vs_skip3s": 0.003,
+   "p_skip3s": 0.9889,
+   "vs_seg_vistos": -0.042,
+   "p_seg_vistos": 0.8455,
+   "n_para_probarlo": 154
+  },
+  {
+   "rasgo": "movimiento",
+   "vs_vistas": 0.086,
+   "p_vistas": 0.6869,
+   "vs_skip3s": 0.058,
+   "p_skip3s": 0.787,
+   "vs_seg_vistos": -0.097,
+   "p_seg_vistos": 0.6475,
+   "n_para_probarlo": 831
+  },
+  {
+   "rasgo": "dur",
+   "vs_vistas": -0.109,
+   "p_vistas": 0.6061,
+   "vs_skip3s": 0.052,
+   "p_skip3s": 0.8081,
+   "vs_seg_vistos": 0.312,
+   "p_seg_vistos": 0.1238,
+   "n_para_probarlo": 79
+  }
+ ],
+ "el_corte": {
+  "pico_dia_mediana": 0,
+  "corte_dia_mediana": 3,
+  "vida_util_mediana": 3,
+  "cola_pct_mediana": 3.5,
+  "nota": "YouTube decide en ~48 h y no vuelve. Solo el 6.1 % de las vistas del canal llega tras el corte."
+ }
+}
