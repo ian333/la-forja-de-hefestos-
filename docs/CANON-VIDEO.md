@@ -585,6 +585,67 @@ Kahneman, dual-process.
 
 ---
 
+## 🚦 EL CAMINO CANON — TODOS los porteros, y cuáles de verdad bloquean (auditado 2026-09-02)
+
+ian: *"¿cuáles son todas las métricas y gates? Se supone que si no se cumplen no sale el
+video, ¿no? Quiero ver cómo va el camino canon con todas estas métricas que estás añadiendo."*
+
+Auditado **leyendo el código**, no la memoria. Y la distinción importa, porque no todo lo que
+llamamos "gate" reprueba: hay cosas que solo imprimen.
+
+### BLOQUEAN DE VERDAD (salen con código ≠ 0 y la etapa aborta)
+
+| # | portero | qué mide | dónde |
+|---|---|---|---|
+| 1 | `salud.sh` | disco, chromes zombis, vite vivo, GPU real (no SwiftShader) | `video.sh salud` |
+| 2 | `posq_para()` | ni UNA coordenada puede topar el int16 al escribir el .bin | `precompute-water-approach.py` |
+| 3 | `bin-gate.py` | saturación del .bin, ∫Δρ>0 monótono, cuadros muertos | antes de render |
+| 4 | `color-hirshfeld.py` | el reparto por elemento no se aleja >12 pts de los electrones aportados | al recolorear |
+| 5 | **fit-check** | el guion CABE en `formato.dur` — antes de gastar TTS | `video.sh voz` |
+| 6 | **`voz-check.py`** | whisper transcribe y la voz DICE el guion | `video.sh voz` |
+| 7 | `critic-gate.cjs` | morado, confeti, frame-negro | antes del 4K |
+| 8 | `pantalla-verify.py` | ventanas de void muerto | pre-vuelo |
+| 9 | render completo | ≥ NFRAMES−2 cuadros | `video.sh render` |
+| 10 | cuadros negros | cero negros no declarados (ver `render.ventanasNegras`) | `video.sh ensamble` |
+| 11 | cápsula completa | bins + guion + scripts + escenaSrc presentes | `video.sh capsula` |
+| 12 | **`publicar.autorizado`** | sin la frase de ian, NO sube. El más importante de todos | ambos subidores |
+| 13 | `gate_calidad` | ≥2160p y ≥15 Mbps (LEY ABSOLUTA) | `subir-youtube.py` |
+| 14 | `specs_reel` | 13 comprobaciones de formato IG | `subir-instagram.py` |
+| 15 | peso IG | ≤300 MB (el tope REAL medido, no el de la doc) | `reels-1080.py` |
+
+### NO BLOQUEAN — solo reportan (y está bien que así sea)
+
+- **`atencion-verify.py`** — el "verificador de atención" **NO TIENE UN SOLO `sys.exit`**.
+  Imprime score, gancho, valles y sparkline, y siempre sale 0. El `|| return 1` de `video.sh`
+  solo atrapa que el script se caiga. ⚠ **Y hay que dejarlo así**: le da 55-58 al REY, o sea
+  que como portero reprobaría al mejor video del canal. Ley del canon: *un gate que reprueba
+  al rey no decide nada*. Lo que faltaba era **decirlo en voz alta**, no arreglarlo.
+- **`still-alarma.py`** — mide llenado, quemado y morado y pinta la hoja; solo truena si no
+  hay PNGs. Sus banderas son para el OJO, no para el pipeline.
+- **`motion-verify.cjs`** — sale ≠0 solo por errores de uso.
+- **Todo el análisis nuevo** (`senales`, `ritmo`, `rasgos-reels`, `curvas-dia`,
+  `analisis-rasgos`) es ESTRATEGIA, no portería. No bloquea nada y no debe: son para decidir
+  QUÉ hacer, no para aprobar lo hecho.
+
+### LO QUE FALTA, y es el hueco que explica todo lo demás
+
+Ningún portero exige que la pieza **DECLARE SU TRATAMIENTO**. Por eso llevamos 24 experimentos
+sin poder atribuir nada (§EL RITMO). El portero que sí hace falta no es de calidad: es de
+**registro**.
+
+```
+videos/<id>.json debe declarar, y el pre-vuelo debe exigir:
+    ritmo.cortes_por_min      calculado de CAMERA_SHOTS
+    ritmo.silabas_por_seg     calculado del guion + VEL
+    ritmo.brazo               "A" | "B"   ← a qué brazo del experimento pertenece
+    copy.marco                "revelacion" | "explicacion"
+```
+
+Eso no reprueba a nadie: obliga a **anotar la perilla**. Sin eso, cada pieza nueva vuelve a
+ser un dato perdido.
+
+---
+
 ## 👁️ LEGIBILIDAD: si se puede contar mal, el encuadre falló
 
 **Narración correcta + visual ambiguo = el público cree lo que VE.** En "El puente" la voz dice
