@@ -91,3 +91,9 @@ firmware/**/build/
 *.fdb_latexmk
 *.synctex.gz
 docs/*.out
+
+# PDFs de investigación/datasheets: viven fuera de git (igual que los 33 de docs/forja-research)
+docs/forja-research/datasheets-fuente-corriente/*.pdf
+docs/la-fuente-esquematico.pdf
+# scrape transitorio del buscador de precios (ML) — se regenera, no se versiona
+ml-resultados.json
