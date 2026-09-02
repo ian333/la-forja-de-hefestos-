@@ -1,0 +1,836 @@
+{
+ "generado": "2026-09-02",
+ "referencia_externa": {
+  "cortes_por_min": {
+   "bajo": 20,
+   "alto": 40,
+   "fuente": "benchmarks de retención: un cambio visual cada 1.5-3 s"
+  },
+  "palabras_por_min": {
+   "bajo": 150,
+   "alto": 190,
+   "fuente": "ritmo natural del habla en español"
+  }
+ },
+ "nuestro_rango": {
+  "cortes_por_min": {
+   "min": 5.22,
+   "max": 10.44,
+   "mediana": 6.32,
+   "sd": 1.08,
+   "n": 19
+  },
+  "palabras_por_min": {
+   "min": 113.2,
+   "max": 129.9,
+   "mediana": 124.3,
+   "sd": 4.42,
+   "n": 111
+  }
+ },
+ "diagnostico": "Las dos variables que la literatura señala están CLAVADAS en nuestro catálogo. Cortes/min: vivimos en 5.2-10.4 contra un rango de referencia de 20-40. Palabras/min: sd = 4.42 sobre 111 guiones, o sea CERO varianza — es una constante del pipeline (0.455 s/palabra), no una decisión por pieza. Sin varianza no puede haber correlación: el análisis no falló por falta de datos, falló porque nunca movimos la perilla.",
+ "experimento": {
+  "porque": "Es la unica forma de convertir \"hacemos videos a ver cual pega\" en un experimento.",
+  "diseno": "Piezas HERMANAS: mismo bin, mismo guion, misma voz. Solo cambia el ritmo.",
+  "brazos": [
+   {
+    "nombre": "A · como hoy",
+    "cortes_por_min": 6.5,
+    "palabras_por_min": 132
+   },
+   {
+    "nombre": "B · rapido",
+    "cortes_por_min": 20,
+    "palabras_por_min": 165,
+    "como": "partir cada toma larga en 3 + VEL del TTS a ~1.25"
+   }
+  ],
+  "n_por_brazo": 3,
+  "metrica_de_corte": "skip3s y compartidos/mil — se leen en HORAS, no hay que esperar el ciclo completo",
+  "coste": "solo raster: el bin, la voz y el guion ya existen"
+ },
+ "piezas": {
+  "cargas": {
+   "tomas": 11,
+   "dur": 83.2,
+   "cortes_por_min": 7.21,
+   "s_por_toma": 7.6
+  },
+  "faraday": {
+   "tomas": 5,
+   "dur": 46.0,
+   "cortes_por_min": 5.22,
+   "s_por_toma": 9.2
+  },
+  "h2o": {
+   "tomas": 9,
+   "dur": 64.5,
+   "cortes_por_min": 7.44,
+   "s_por_toma": 7.2
+  },
+  "wpair": {
+   "tomas": 9,
+   "dur": 77.0,
+   "cortes_por_min": 6.23,
+   "s_por_toma": 8.6
+  },
+  "wpair-viaje": {
+   "tomas": 7,
+   "dur": 50.0,
+   "cortes_por_min": 7.2,
+   "s_por_toma": 7.1
+  },
+  "wsilla": {
+   "tomas": 7,
+   "dur": 50.0,
+   "cortes_por_min": 7.2,
+   "s_por_toma": 7.1
+  },
+  "wsilla-w": {
+   "tomas": 7,
+   "dur": 50.0,
+   "cortes_por_min": 7.2,
+   "s_por_toma": 7.1
+  },
+  "wcampor": {
+   "tomas": 9,
+   "dur": 75.0,
+   "cortes_por_min": 6.4,
+   "s_por_toma": 8.3
+  },
+  "wcolor": {
+   "tomas": 9,
+   "dur": 76.0,
+   "cortes_por_min": 6.32,
+   "s_por_toma": 8.4
+  },
+  "wcampo": {
+   "tomas": 9,
+   "dur": 70.0,
+   "cortes_por_min": 6.86,
+   "s_por_toma": 7.8
+  },
+  "wetanol": {
+   "tomas": 9,
+   "dur": 79.0,
+   "cortes_por_min": 6.08,
+   "s_por_toma": 8.8
+  },
+  "wsal": {
+   "tomas": 9,
+   "dur": 77.0,
+   "cortes_por_min": 6.23,
+   "s_por_toma": 8.6
+  },
+  "hemo": {
+   "tomas": 8,
+   "dur": 77.0,
+   "cortes_por_min": 5.45,
+   "s_por_toma": 9.6
+  },
+  "wtri": {
+   "tomas": 9,
+   "dur": 77.7,
+   "cortes_por_min": 6.18,
+   "s_por_toma": 8.6
+  },
+  "wtet": {
+   "tomas": 12,
+   "dur": 88.0,
+   "cortes_por_min": 7.5,
+   "s_por_toma": 7.3
+  },
+  "butirico": {
+   "tomas": 7,
+   "dur": 60.4,
+   "cortes_por_min": 5.96,
+   "s_por_toma": 8.6
+  },
+  "whex6": {
+   "tomas": 18,
+   "dur": 97.7,
+   "cortes_por_min": 10.44,
+   "s_por_toma": 5.4
+  },
+  "wpair-b": {
+   "tomas": 9,
+   "dur": 77.0,
+   "cortes_por_min": 6.23,
+   "s_por_toma": 8.6
+  },
+  "wpair-c": {
+   "tomas": 9,
+   "dur": 77.0,
+   "cortes_por_min": 6.23,
+   "s_por_toma": 8.6
+  }
+ },
+ "guiones": {
+  "_prueba-voz": {
+   "lineas": 6,
+   "palabras": 51,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 119.5
+  },
+  "a1-l1": {
+   "lineas": 7,
+   "palabras": 404,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.9
+  },
+  "a1-l4": {
+   "lineas": 7,
+   "palabras": 265,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.9
+  },
+  "aero1": {
+   "lineas": 17,
+   "palabras": 301,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 125.6
+  },
+  "alcohol": {
+   "lineas": 18,
+   "palabras": 166,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.4
+  },
+  "atomo-c": {
+   "lineas": 8,
+   "palabras": 56,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 117.2
+  },
+  "atomo-cr": {
+   "lineas": 7,
+   "palabras": 55,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 118.6
+  },
+  "atomo-cu": {
+   "lineas": 7,
+   "palabras": 56,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 118.8
+  },
+  "atomo-ne": {
+   "lineas": 7,
+   "palabras": 55,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 118.6
+  },
+  "atomo-si": {
+   "lineas": 8,
+   "palabras": 57,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 117.4
+  },
+  "brujula-lineas": {
+   "lineas": 8,
+   "palabras": 68,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 119.5
+  },
+  "brujula": {
+   "lineas": 40,
+   "palabras": 473,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 122.7
+  },
+  "butirico": {
+   "lineas": 16,
+   "palabras": 128,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 118.8
+  },
+  "c2v1": {
+   "lineas": 15,
+   "palabras": 140,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.5
+  },
+  "c2v2": {
+   "lineas": 15,
+   "palabras": 142,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.7
+  },
+  "campo-rey": {
+   "lineas": 19,
+   "palabras": 149,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 118.6
+  },
+  "campo": {
+   "lineas": 18,
+   "palabras": 148,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 119.1
+  },
+  "cargas": {
+   "lineas": 19,
+   "palabras": 167,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 119.9
+  },
+  "co": {
+   "lineas": 9,
+   "palabras": 135,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.6
+  },
+  "color": {
+   "lineas": 18,
+   "palabras": 149,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 119.2
+  },
+  "curso-l1": {
+   "lineas": 8,
+   "palabras": 404,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.6
+  },
+  "f2v1": {
+   "lineas": 15,
+   "palabras": 134,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.1
+  },
+  "f2v2": {
+   "lineas": 15,
+   "palabras": 133,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.0
+  },
+  "h2o": {
+   "lineas": 9,
+   "palabras": 142,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.9
+  },
+  "h2v1": {
+   "lineas": 15,
+   "palabras": 141,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.6
+  },
+  "hcl": {
+   "lineas": 9,
+   "palabras": 138,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.7
+  },
+  "hemo-v1-proteina-entera": {
+   "lineas": 20,
+   "palabras": 146,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 117.7
+  },
+  "hemo": {
+   "lineas": 20,
+   "palabras": 151,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 118.1
+  },
+  "hf": {
+   "lineas": 9,
+   "palabras": 110,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 123.0
+  },
+  "hielo": {
+   "lineas": 31,
+   "palabras": 172,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 113.8
+  },
+  "imprenta-lineas": {
+   "lineas": 8,
+   "palabras": 57,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 117.4
+  },
+  "imprenta": {
+   "lineas": 18,
+   "palabras": 178,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 121.1
+  },
+  "li2": {
+   "lineas": 9,
+   "palabras": 78,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 119.7
+  },
+  "mec-sim-l1": {
+   "lineas": 10,
+   "palabras": 277,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 127.8
+  },
+  "mec-u1-l1": {
+   "lineas": 16,
+   "palabras": 243,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.7
+  },
+  "mec-u1-l2": {
+   "lineas": 10,
+   "palabras": 159,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 125.0
+  },
+  "mec-u1-l3": {
+   "lineas": 15,
+   "palabras": 188,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 123.2
+  },
+  "mec-u10-l1": {
+   "lineas": 6,
+   "palabras": 103,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 125.4
+  },
+  "mec-u10-l2": {
+   "lineas": 8,
+   "palabras": 134,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 125.3
+  },
+  "mec-u10-l3": {
+   "lineas": 9,
+   "palabras": 240,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 127.7
+  },
+  "mec-u10-l5": {
+   "lineas": 11,
+   "palabras": 252,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 127.0
+  },
+  "mec-u10-l6": {
+   "lineas": 8,
+   "palabras": 312,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.0
+  },
+  "mec-u11-l1": {
+   "lineas": 5,
+   "palabras": 66,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 123.6
+  },
+  "mec-u11-l3": {
+   "lineas": 7,
+   "palabras": 297,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.2
+  },
+  "mec-u2-l1": {
+   "lineas": 8,
+   "palabras": 110,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 123.9
+  },
+  "mec-u2-l2": {
+   "lineas": 7,
+   "palabras": 88,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 123.2
+  },
+  "mec-u2-l3": {
+   "lineas": 9,
+   "palabras": 344,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.9
+  },
+  "mec-u2-l4": {
+   "lineas": 6,
+   "palabras": 97,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 125.1
+  },
+  "mec-u2-l5": {
+   "lineas": 5,
+   "palabras": 81,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 125.1
+  },
+  "mec-u2-l6": {
+   "lineas": 6,
+   "palabras": 80,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 123.7
+  },
+  "mec-u3-l1": {
+   "lineas": 6,
+   "palabras": 85,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.2
+  },
+  "mec-u3-l2": {
+   "lineas": 9,
+   "palabras": 267,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.1
+  },
+  "mec-u3-l3": {
+   "lineas": 5,
+   "palabras": 90,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 125.7
+  },
+  "mec-u3-l4": {
+   "lineas": 9,
+   "palabras": 130,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.3
+  },
+  "mec-u3-l5": {
+   "lineas": 5,
+   "palabras": 79,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.9
+  },
+  "mec-u3-l6": {
+   "lineas": 5,
+   "palabras": 77,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.7
+  },
+  "mec-u3-l7": {
+   "lineas": 5,
+   "palabras": 69,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.0
+  },
+  "mec-u3-l8": {
+   "lineas": 6,
+   "palabras": 85,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.2
+  },
+  "mec-u4-l2": {
+   "lineas": 6,
+   "palabras": 82,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 123.9
+  },
+  "mec-u4-l3": {
+   "lineas": 6,
+   "palabras": 87,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.3
+  },
+  "mec-u4-l4": {
+   "lineas": 7,
+   "palabras": 321,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.4
+  },
+  "mec-u4-l5": {
+   "lineas": 8,
+   "palabras": 297,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.8
+  },
+  "mec-u5-l1": {
+   "lineas": 10,
+   "palabras": 138,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.0
+  },
+  "mec-u5-l2": {
+   "lineas": 6,
+   "palabras": 246,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.1
+  },
+  "mec-u5-l3": {
+   "lineas": 7,
+   "palabras": 283,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.1
+  },
+  "mec-u5-l4": {
+   "lineas": 9,
+   "palabras": 277,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.2
+  },
+  "mec-u5-l5": {
+   "lineas": 8,
+   "palabras": 320,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.0
+  },
+  "mec-u5-l6": {
+   "lineas": 9,
+   "palabras": 311,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.6
+  },
+  "mec-u6-l2": {
+   "lineas": 9,
+   "palabras": 231,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 127.5
+  },
+  "mec-u6-l3": {
+   "lineas": 7,
+   "palabras": 274,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.0
+  },
+  "mec-u6-l4": {
+   "lineas": 10,
+   "palabras": 349,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.6
+  },
+  "mec-u6-l5": {
+   "lineas": 8,
+   "palabras": 253,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.3
+  },
+  "mec-u7-l1": {
+   "lineas": 9,
+   "palabras": 283,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.3
+  },
+  "mec-u7-l2": {
+   "lineas": 9,
+   "palabras": 316,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.6
+  },
+  "mec-u7-l3": {
+   "lineas": 9,
+   "palabras": 315,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.6
+  },
+  "mec-u7-l4": {
+   "lineas": 9,
+   "palabras": 324,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.7
+  },
+  "mec-u7-l5": {
+   "lineas": 8,
+   "palabras": 303,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.9
+  },
+  "mec-u7-l6": {
+   "lineas": 7,
+   "palabras": 311,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.3
+  },
+  "mec-u8-l1": {
+   "lineas": 9,
+   "palabras": 261,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.0
+  },
+  "mec-u8-l2": {
+   "lineas": 9,
+   "palabras": 292,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.4
+  },
+  "mec-u8-l3": {
+   "lineas": 9,
+   "palabras": 317,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.7
+  },
+  "mec-u8-l4": {
+   "lineas": 10,
+   "palabras": 339,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.5
+  },
+  "mec-u8-l5": {
+   "lineas": 8,
+   "palabras": 346,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.2
+  },
+  "mec-u8-l6": {
+   "lineas": 8,
+   "palabras": 267,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.5
+  },
+  "mec-u8-l7": {
+   "lineas": 8,
+   "palabras": 258,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 128.4
+  },
+  "mec-u8-l8": {
+   "lineas": 9,
+   "palabras": 357,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.0
+  },
+  "mec-u9-l1": {
+   "lineas": 5,
+   "palabras": 84,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 125.3
+  },
+  "mec-u9-l2": {
+   "lineas": 10,
+   "palabras": 243,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 127.3
+  },
+  "mec-u9-l3": {
+   "lineas": 9,
+   "palabras": 250,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 127.8
+  },
+  "molde-l1": {
+   "lineas": 11,
+   "palabras": 434,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 129.0
+  },
+  "n2": {
+   "lineas": 14,
+   "palabras": 130,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.5
+  },
+  "n2v2": {
+   "lineas": 15,
+   "palabras": 146,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.9
+  },
+  "nacl": {
+   "lineas": 9,
+   "palabras": 103,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 122.5
+  },
+  "no": {
+   "lineas": 9,
+   "palabras": 133,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.5
+  },
+  "o2v2": {
+   "lineas": 15,
+   "palabras": 148,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 121.1
+  },
+  "o2v3": {
+   "lineas": 15,
+   "palabras": 165,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 122.1
+  },
+  "o2v4": {
+   "lineas": 15,
+   "palabras": 139,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 120.4
+  },
+  "ostrom": {
+   "lineas": 13,
+   "palabras": 106,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 119.0
+  },
+  "sal-fluido": {
+   "lineas": 21,
+   "palabras": 167,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 118.7
+  },
+  "sal": {
+   "lineas": 21,
+   "palabras": 140,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 116.5
+  },
+  "silicio-corte": {
+   "lineas": 9,
+   "palabras": 126,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 124.1
+  },
+  "silla": {
+   "lineas": 12,
+   "palabras": 104,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 119.7
+  },
+  "sudor": {
+   "lineas": 21,
+   "palabras": 147,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 117.2
+  },
+  "transistor-lineas": {
+   "lineas": 12,
+   "palabras": 125,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 121.6
+  },
+  "transistor": {
+   "lineas": 23,
+   "palabras": 264,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 122.5
+  },
+  "whex6-v1": {
+   "lineas": 31,
+   "palabras": 165,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 113.2
+  },
+  "whex6": {
+   "lineas": 31,
+   "palabras": 174,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 114.0
+  },
+  "wpair-el-puente": {
+   "lineas": 8,
+   "palabras": 154,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 126.1
+  },
+  "wpair": {
+   "lineas": 20,
+   "palabras": 149,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 117.9
+  },
+  "wtet": {
+   "lineas": 27,
+   "palabras": 156,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 114.5
+  },
+  "wtri": {
+   "lineas": 25,
+   "palabras": 146,
+   "palabras_por_min_voz": 131.9,
+   "palabras_por_min_real": 114.6
+  }
+ }
+}
