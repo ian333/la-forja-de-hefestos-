@@ -394,8 +394,18 @@ paso_subir() {
     $PY "$ROOT/scripts/subir-instagram.py" "$ID" || return 1;; esac
 }
 
+paso_ritmo() {
+  echo "── RITMO (portero de REGISTRO: la pieza declara su tratamiento) ──"
+  # Auditoría del 2026-09-02: ningún portero exigía anotar CON QUÉ se hizo la pieza, y por eso
+  # llevábamos 24 experimentos sin poder atribuir nada (canon §EL RITMO, §EL CAMINO CANON).
+  # Este bloquea por NO DECLARAR, no por salirse del rango: el rango de afuera es referencia,
+  # no un óptimo medido aquí.
+  python3 "$ROOT/scripts/ritmo-pieza.py" "$ID" --escribir || return 1
+}
+
 case "$PASO" in
   salud)     paso_salud ;;
+  ritmo)     paso_ritmo ;;
   voz)       paso_voz ;;
   entrega)   paso_entrega ;;
   subs)      paso_subs ;;
@@ -406,6 +416,6 @@ case "$PASO" in
   verificar) paso_verificar ;;
   publicar)  paso_publicar ;;
   subir)     paso_subir "$@" ;;
-  todo)      paso_salud && paso_voz && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
-  *) echo "paso inválido: $PASO (subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
+  todo)      paso_salud && paso_ritmo && paso_voz && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
+  *) echo "paso inválido: $PASO (salud|ritmo|voz|subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
 esac

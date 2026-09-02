@@ -53,7 +53,11 @@
         "#aprendeentiktok",
         "#4k",
         "#gaia"
-      ]
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque te enseñaron que lo de todos se destruye y una señora fue a comprobar que no",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
     "subidas": {
       "yt": {
@@ -71,5 +75,11 @@
     },
     "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-ostrom.mp4?v=e758c46ba0",
     "nota_gotcha": "El poll de status_code devuelve None en v25.0 y aun así media_publish funciona (el loop cae al publish al agotar los 10 intentos). Pasó igual con LA SILLA. Pendiente: revisar qué campo trae el estado real en esta versión."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO).",
+    "cortes_por_min": 4.6,
+    "nota_cortes": "DECLARADO a mano: es una clase con metraje existente, no usa CAMERA_SHOTS. 4 cortes en 52 s contados de la línea de tiempo."
   }
 }

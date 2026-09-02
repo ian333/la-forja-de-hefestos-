@@ -633,16 +633,33 @@ Ningún portero exige que la pieza **DECLARE SU TRATAMIENTO**. Por eso llevamos 
 sin poder atribuir nada (§EL RITMO). El portero que sí hace falta no es de calidad: es de
 **registro**.
 
+**IMPLEMENTADO el 2026-09-02** como `scripts/ritmo-pieza.py`, conectado a `video.sh ritmo` y
+metido en `todo` **antes del render** (para no enterarte después de gastar 45 min).
+
 ```
-videos/<id>.json debe declarar, y el pre-vuelo debe exigir:
-    ritmo.cortes_por_min      calculado de CAMERA_SHOTS
-    ritmo.silabas_por_seg     calculado del guion + VEL
-    ritmo.brazo               "A" | "B"   ← a qué brazo del experimento pertenece
-    copy.marco                "revelacion" | "explicacion"
+MIDE SOLO (nadie teclea números):
+    ritmo.cortes_por_min      de CAMERA_SHOTS · si la pieza no usa el registro (clases,
+                              metraje existente) se EXIGE declararlo a mano
+    ritmo.silabas_por_seg     de segs.json si ya hay voz (REAL); del guion si aún no (estimado)
+
+SE DECLARA A MANO (juicios, una línea cada uno):
+    ritmo.brazo               "A" (como hoy) | "B" (rápido)
+    copy.marco                "revelacion" | "explicacion"      §LA NEUROLOGÍA DEL CHISME
+    copy.activacion           "alta" | "baja"                   la baja comparte MENOS
+    copy.valor_propio         completa "te mando esto porque…"  el valor PROPIO del modelo
 ```
 
-Eso no reprueba a nadie: obliga a **anotar la perilla**. Sin eso, cada pieza nueva vuelve a
-ser un dato perdido.
+**LA REGLA, y es a propósito: BLOQUEA por no declarar, AVISA por salirse del rango.** No
+sabemos cuál es el valor correcto — sabemos que hay que anotarlo. Un portero que impusiera el
+rango de afuera estaría inventando un óptimo que nadie ha medido AQUÍ, y ya sabemos cómo
+termina eso (§un gate que reprueba al rey no decide nada).
+
+`copy.valor_propio` no es burocracia: es la prueba del modelo de viralidad por valor. Si no
+puedes completar *"te mando esto porque…"* en una frase, el espectador tampoco va a poder — y
+sin valor propio no hay DM.
+
+Línea base ya rellenada: **las 7 piezas con manifiesto son brazo A**. Ahí está, escrito, el
+porqué de que no haya varianza.
 
 ---
 

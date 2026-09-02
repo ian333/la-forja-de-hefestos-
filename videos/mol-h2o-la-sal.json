@@ -75,7 +75,11 @@
         "#aprendeentiktok",
         "#4k",
         "#gaia"
-      ]
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque nunca habías visto a dónde se va la sal cuando desaparece",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
     "subidas": {
       "yt": {
@@ -110,5 +114,9 @@
       "drho_monotono": true
     },
     "color_ion": "celeste = EVOCATIVO (Na⁺ es incoloro; la línea D amarilla es del átomo neutro)"
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO)."
   }
 }

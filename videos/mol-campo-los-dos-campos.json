@@ -2,23 +2,61 @@
   "id": "mol-campo-los-dos-campos",
   "titulo": "Los dos campos — E⁺ y E⁻ (por qué la química es lo que sobra)",
   "nota": "QUICK WIN del alcohol: MISMO bin (water-ethanol), cero simulación de geometría nueva. Lo único nuevo son dos .bin de campo — el de los NÚCLEOS y el de los ELECTRONES por separado — sacados del mismo potencial que ya se calculaba, partiendo esp3d() en sus dos términos. Nació de una pregunta de ian: 'QUIERO VER EL CAMPO POSITIVO Y NEGATIVO, no entiendo cómo es el campo'. Tenía razón en el reclamo: le decíamos 'el campo' a la SUMA y nunca enseñamos las partes.",
-  "escena": { "html": "cinematic-molecule.html", "query": "m=wcampo&zoom=0.55", "hook": "__cinematicAtom" },
-  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": 70 },
-  "render": { "shards": 5, "batch": 40, "frames": "dist-video/.campoframes" },
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wcampo&zoom=0.55",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 70
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.campoframes"
+  },
   "audio": {
     "dir": "dist-video/campo-narracion",
     "narracion": "campo-narracion.mp3",
     "musica": "wpair-music.wav",
     "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
-    "musicaVol": 0.17, "musicaFadeIn": 2.5, "musicaFadeOutAt": 66,
-    "segs": "segs.json", "ass": "campo.ass", "voz": "XTTS Matilda, TAKES=4 (mediana)"
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 66,
+    "segs": "segs.json",
+    "ass": "campo.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
   },
-  "salida": { "dir": "dist-video/masters", "master": "campo-los-dos-campos-4k-master.mp4", "h264": "campo-los-dos-campos-4k.mp4" },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "campo-los-dos-campos-4k-master.mp4",
+    "h264": "campo-los-dos-campos-4k.mp4"
+  },
   "capsula": {
-    "bins": ["water-ethanol.bin", "water-ethanol-efield.bin", "water-ethanol-efield-nuc.bin", "water-ethanol-efield-ele.bin"],
+    "bins": [
+      "water-ethanol.bin",
+      "water-ethanol-efield.bin",
+      "water-ethanol-efield-nuc.bin",
+      "water-ethanol-efield-ele.bin"
+    ],
     "guion": "campo.txt",
-    "scripts": ["render-clip.cjs", "video.sh", "video-subs.py", "narracion-gen.py", "assemble-narracion.py", "precompute-water-approach.py", "bin-gate.py"],
-    "escenaSrc": ["CinematicMolecule.tsx", "camera-shots.ts", "capas.ts"]
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py",
+      "precompute-water-approach.py",
+      "bin-gate.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
   },
   "fisica": {
     "metodo": "RHF/aug-cc-pVDZ, SCF en GPU (gpu4pyscf). V = V_nuclear + V_electronico, E = -grad(V), trazado con el MISMO tracer que el campo total para que los tres sean comparables cuadro a cuadro.",
@@ -39,9 +77,34 @@
     "copy": {
       "titulo": "Hay dos campos eléctricos, no uno (y casi se borran entre ellos)",
       "descripcion": "Cuando ves las líneas azules en estos videos, estás viendo una RESTA. 🔬 En realidad hay dos campos, y los dos son enormes: el de los núcleos, positivo, que sale disparado hacia afuera; y el de los electrones, negativo, que cae hacia adentro. Aquí los ves por separado por primera vez. Ocupan el mismo espacio y apuntan al revés. Lo medimos sobre etanol y agua resueltos con física cuántica (ab initio, RHF/aug-cc-pVDZ): a 6 bohr se cancelan el 94%, y a 20 bohr el 99.4%. El coseno entre los dos campos es -0.9989, o sea que son casi exactamente opuestos. Y esto es lo importante: lo que sobra de esa cancelación, esa miga, es el enlace químico. Es el puente del agua. Es tu cuerpo. Toda la química que existe es el residuo de dos gigantes que casi se borran. Y de paso: una línea de campo es la ruta que seguiría una carga soltada ahí. Por eso la nube de electrones no lleva líneas: no es una ruta, es cuánta cosa hay. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
-      "hashtags": ["#física", "#campoeléctrico", "#química", "#cuántica", "#electrones", "#ciencia", "#enlacequímico", "#abinitio", "#aprendeentiktok", "#4k", "#gaia"]
+      "hashtags": [
+        "#física",
+        "#campoeléctrico",
+        "#química",
+        "#cuántica",
+        "#electrones",
+        "#ciencia",
+        "#enlacequímico",
+        "#abinitio",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque hay dos campos eléctricos y casi se borran entre ellos",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
     "autorizado": ""
   },
-  "guion": { "archivo": "scripts/guiones/campo.txt", "lineas": 18, "palabras": 149, "nota": "70 s. La estructura ES el argumento: positivo solo -> negativo solo -> los dos encimados -> apagar los dos y queda la suma. Es la figura 3 de la mecanica del O2 (apagar una capa para PROBAR la frase) aplicada tres veces." }
+  "guion": {
+    "archivo": "scripts/guiones/campo.txt",
+    "lineas": 18,
+    "palabras": 149,
+    "nota": "70 s. La estructura ES el argumento: positivo solo -> negativo solo -> los dos encimados -> apagar los dos y queda la suma. Es la figura 3 de la mecanica del O2 (apagar una capa para PROBAR la frase) aplicada tres veces."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO)."
+  }
 }

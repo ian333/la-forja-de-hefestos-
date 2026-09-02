@@ -90,7 +90,11 @@
         "#4k",
         "#gaia"
       ],
-      "nota": "El copy se escribe en el paso del GUION, no al final (canon)."
+      "nota": "El copy se escribe en el paso del GUION, no al final (canon).",
+      "marco": "explicacion",
+      "activacion": "alta",
+      "valor_propio": "porque el alcohol tiene dos caras y una de ellas ES agua",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
     "autorizado": "2026-08-31 yt,ig — dicho por ian en sesión: \"me mama subelo\" y \"a calidad absoluta el master Y HACES LA VERSION 16:9 PORFA\"",
     "subidas": {
@@ -123,5 +127,9 @@
     "lineas": 18,
     "palabras": 174,
     "nota": "79 s a 0.455 s/palabra. Plantilla del rey: DOS protagonistas distintos, cotidiano en las manos del público (gel), hueco abierto en l2 y cerrado con IMAGEN, palabra-color (dorado) en l7, apagar la capa para probar la frase en l11, clímax al 78 %, y el sello GAIA al final."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO)."
   }
 }

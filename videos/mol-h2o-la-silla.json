@@ -78,7 +78,11 @@
         "#4k",
         "#gaia"
       ],
-      "nota": "El copy se escribe en el paso del GUION, no al final (canon)."
+      "nota": "El copy se escribe en el paso del GUION, no al final (canon).",
+      "marco": "explicacion",
+      "activacion": "alta",
+      "valor_propio": "porque el hielo flota por una razón que nunca te contaron, y se VE",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
     "autorizado": "2026-08-27 yt,ig — dicho por ian en sesión: \"me mama, está bien verga, súbelo a youtube y a instagram, estrenemos\"",
     "subidas": {
@@ -129,5 +133,9 @@
       "void_max": 0.236,
       "nota": "2026-08-27: render 1500/1500 en 1070 s, cero negros; 12 cuadros por toda la línea juzgados (Downloads/la-silla/RENDER-HOJA.png). Tramo más flojo 36-44 s (dentro de la nube bajo el payoff hablado)."
     }
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO)."
   }
 }

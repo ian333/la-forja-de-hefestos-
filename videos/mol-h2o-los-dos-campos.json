@@ -90,7 +90,11 @@
         "#aprendeentiktok",
         "#4k",
         "#gaia"
-      ]
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque hay dos campos eléctricos y casi se borran entre ellos: la química es lo que sobra",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
     "autorizado": "2026-09-01 yt,ig — dicho por ian en sesión: \"sube ese el rey 4k a todo pero igual haces sus 16:9 y 9:16. NO MMS ESTA HERMOSO FELICIDADES\"",
     "subidas": {
@@ -123,5 +127,15 @@
     "lineas": 19,
     "palabras": 149,
     "nota": "70 s. ESTRUCTURA INVERTIDA respecto de la versión del alcohol: abre con los DOS campos encimados (el cuadro más fuerte va en el frame 0, no a la mitad) y de ahí los separa. Enseñar primero y descomponer después."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO).",
+    "cortes_por_min": 6.4,
+    "tomas": 9,
+    "silabas_por_seg": 4.01,
+    "silabas_por_seg_del_video": 3.61,
+    "fuente_habla": "estimado (aún sin TTS)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }

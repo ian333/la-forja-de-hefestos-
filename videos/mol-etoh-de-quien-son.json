@@ -2,23 +2,59 @@
   "id": "mol-etoh-de-quien-son",
   "titulo": "De quién son los electrones — el alcohol pintado por elemento (Hirshfeld)",
   "nota": "Cierra el pendiente del alcohol. MISMO bin (water-ethanol), cero simulación nueva: lo único que cambia es el COLOR de la nube, recalculado con la partición de Hirshfeld (1977) en scripts/color-hirshfeld.py. Nació del pedido de ian del 2026-09-01: 'necesitamos añadirle variedad de colores, por decir el carbono pudo tener sus electrones de otro color'. NO se hizo la versión de los dos campos sobre el etanol porque el rey ya publicó esa lección el 2026-09-01 y habría sido un duplicado; esta pieza enseña algo distinto con el mismo material.",
-  "escena": { "html": "cinematic-molecule.html", "query": "m=wcolor&zoom=0.55", "hook": "__cinematicAtom" },
-  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": 76 },
-  "render": { "shards": 5, "batch": 40, "frames": "dist-video/.colorframes" },
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wcolor&zoom=0.55",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 76
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.colorframes"
+  },
   "audio": {
     "dir": "dist-video/color-narracion",
     "narracion": "color-narracion.mp3",
     "musica": "wpair-music.wav",
     "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
-    "musicaVol": 0.17, "musicaFadeIn": 2.5, "musicaFadeOutAt": 72,
-    "segs": "segs.json", "ass": "color.ass", "voz": "XTTS Matilda, TAKES=4 (mediana)"
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 72,
+    "segs": "segs.json",
+    "ass": "color.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
   },
-  "salida": { "dir": "dist-video/masters", "master": "etoh-de-quien-son-4k-master.mp4", "h264": "etoh-de-quien-son-4k.mp4" },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "etoh-de-quien-son-4k-master.mp4",
+    "h264": "etoh-de-quien-son-4k.mp4"
+  },
   "capsula": {
-    "bins": ["water-ethanol.bin", "water-ethanol-efield.bin"],
+    "bins": [
+      "water-ethanol.bin",
+      "water-ethanol-efield.bin"
+    ],
     "guion": "color.txt",
-    "scripts": ["render-clip.cjs", "video.sh", "video-subs.py", "narracion-gen.py", "assemble-narracion.py", "color-hirshfeld.py", "bin-gate.py"],
-    "escenaSrc": ["CinematicMolecule.tsx", "camera-shots.ts", "capas.ts"]
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py",
+      "color-hirshfeld.py",
+      "bin-gate.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
   },
   "fisica": {
     "metodo": "Particion de Hirshfeld (Theor. Chim. Acta 44, 129, 1977): w_A(r) = rho_A_libre(|r-R_A|) / SUMA_B rho_B_libre(|r-R_B|). Las densidades de atomo libre se calculan con pyscf (UHF/cc-pVDZ) y se promedian esfericamente sobre 64 direcciones, porque C y O en su estado base NO son esfericos.",
@@ -34,9 +70,34 @@
     "copy": {
       "titulo": "¿De quién son los electrones? (el alcohol, pintado átomo por átomo)",
       "descripcion": "En una molécula los electrones no son de nadie: esa es justamente la idea del enlace. Pero existe una regla publicada en 1977 para repartirlos, y aquí la ves aplicada. 🔬 A cada punto del espacio se le pregunta de quién es, comparando la densidad que tendría ahí cada átomo por separado. Es la partición de Hirshfeld, y la prueba de que está bien aplicada es que el reparto que sale cuadra solo con los electrones que cada elemento aporta: el carbono se queda con el 32% de la nube y aporta el 33% de los electrones. Nadie se lo dijo. Verde es carbono, oro es oxígeno, blanco es hidrógeno. Y con los colores puestos, el alcohol se lee de un vistazo: de un lado puro verde, que es grasa; del otro el oro del oxígeno, que es exactamente la punta que trae el agua. Por eso se mezcla con agua y también levanta la grasa. Mira dónde se tocan las dos moléculas: ahí los colores se mezclan. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
-      "hashtags": ["#química", "#electrones", "#alcohol", "#cuántica", "#hirshfeld", "#ciencia", "#abinitio", "#física", "#aprendeentiktok", "#4k", "#gaia"]
+      "hashtags": [
+        "#química",
+        "#electrones",
+        "#alcohol",
+        "#cuántica",
+        "#hirshfeld",
+        "#ciencia",
+        "#abinitio",
+        "#física",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque puedes ver de qué átomo salió cada electrón, y no está pintado a ojo",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
     "autorizado": ""
   },
-  "guion": { "archivo": "scripts/guiones/color.txt", "lineas": 18, "palabras": 149, "nota": "76 s. El gancho es EL COLOR mismo (frame 0 con la molécula entera pintada). Estructura: nombrar los colores -> de dónde salen (la regla) -> la prueba -> y entonces la molécula se lee sola (verde=grasa, oro=agua) -> el enlace, donde se mezclan." }
+  "guion": {
+    "archivo": "scripts/guiones/color.txt",
+    "lineas": 18,
+    "palabras": 149,
+    "nota": "76 s. El gancho es EL COLOR mismo (frame 0 con la molécula entera pintada). Estructura: nombrar los colores -> de dónde salen (la regla) -> la prueba -> y entonces la molécula se lee sola (verde=grasa, oro=agua) -> el enlace, donde se mezclan."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO)."
+  }
 }
