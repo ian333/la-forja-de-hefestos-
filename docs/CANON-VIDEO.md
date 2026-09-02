@@ -410,6 +410,104 @@ CONSECUENCIA de la distribución, no solo causa — la flecha va en los dos sent
 2 outliers: cualquier modelo está dominado por esos dos puntos. Sirven para DECIDIR, no para
 predecir. Ver [[feedback_gates_no_miden_verdad]].
 
+## ⏱️ EL RITMO — las dos perillas que nunca movimos (2026-09-02, con datos de AFUERA)
+
+ian, harto de que las copias no reproduzcan a los reyes: *"estamos haciendo un chingo de
+videos bien vergas para ver cuál pega, ya tenemos 2 que pegaron chingón, tratamos de
+reproducirlos y no imitan para nada a los reyes"*. Y después: *"ve allá afuera a investigar"*.
+
+**El diagnóstico que salió no fue una correlación: fue que NO PUEDE HABERLA.** Las 24 piezas
+largas viven todas en la MISMA banda estrecha de las dos variables que la literatura señala.
+Sin varianza no hay correlación posible — el análisis no falló por falta de datos, falló
+porque llevamos 24 experimentos con el mismo tratamiento.
+
+### 1. HABLAMOS A LA MITAD DE VELOCIDAD (lo más grave, y es de idioma)
+
+El español se habla a **7.82 sílabas/segundo** (Université de Lyon, 2011) — de los idiomas
+más rápidos medidos, **26 % más sílabas por segundo que el inglés** (6.19). Nuestro público
+es hispanohablante.
+
+```
+nuestra narración      3.79 síl/s   (4.04 sin los huecos de 0.40 s)   ← 111 guiones medidos
+español natural        7.82 síl/s
+inglés natural         6.19 síl/s
+                       → vamos al 49 % del ritmo natural del español
+```
+
+Somos más lentos que el inglés natural, narrando en español. Y no es una decisión por pieza:
+`0.455 s/palabra` está QUEMADO en el fit-check de `video.sh` — sd de 4.4 pal/min sobre 111
+guiones, o sea una constante, no una variable. (Aviso honesto: el contador usa grupos
+vocálicos y subestima los hiatos; el ritmo real anda en 4.2-4.5 síl/s, o sea ~55 %.)
+
+**Por qué importa para los COMPARTIDOS**, que es la métrica que ian persigue: en 2,511 videos
+de TikTok, la velocidad del habla tuvo **efecto positivo y significativo sobre los compartidos
+— y solo sobre esos**, no sobre likes ni comentarios.
+
+### 2. CORTAMOS 3-6 VECES MENOS DE LO RECOMENDADO
+
+```
+nuestro catálogo    5.2 – 10.4 cortes/min   (sd 1.08)
+referencia          20 – 40 cortes/min      (un cambio visual cada 1.5-3 s)
+```
+
+El número de cortes tiene relación en **U INVERTIDA** con el engagement — hay un óptimo, no es
+"más es mejor". Y las escenas frecuentes dan **+32 % de retención** contra plano estático. El
+contenido educativo pide sostener algo más que un baile, así que nuestro óptimo estará por
+debajo de 40; pero no en 6.
+
+### 3. LA SEÑAL DE INSTAGRAM ES *SENDS PER REACH* — y nuestro dato ya lo decía
+
+Afuera: la señal más importante de Instagram en 2026 es cuántas veces mandan tu reel por DM,
+normalizado por alcance. En casa, medido: `c_por_mil` es lo que más correlaciona con las
+vistas (**r = +0.748**, n=24 largas), y los DOS reyes son los únicos que se salen del rango de
+sus diez seguidores (**25.2 y 29.6 contra una mediana de ~8**). Las dos fuentes apuntan al
+mismo lugar. **Optimizar para que alguien te lo MANDE a un amigo es optimizar para el
+algoritmo.**
+
+### 4. LO QUE SE DESCARTÓ CON DATOS (vale tanto como un hallazgo)
+
+Medidos los PÍXELES de los 78 reels que Instagram publicó (`scripts/rasgos-reels.py`,
+unión por id de medio) y cruzados controlando por ÉPOCA y por FORMATO:
+
+**saturación · cálido · frío · magenta · luma · contraste · quemado · movimiento · duración**
+— ninguna predice nada. La correlación cruda saturación↔vistas (+0.476) **era la ÉPOCA**: la
+saturación subió con el tiempo (r=+0.56 con la fecha) y el canal mejoró con el tiempo; al
+quitar la tendencia se cae a +0.075 (p=0.51).
+
+Quedan dos candidatas VIVAS y ninguna probada: `variedad_color` (+0.433 con vistas, aguanta
+quitar a los reyes con +0.317) y `lleno` (**−0.409 con segundos vistos**, p=0.036 — y va
+CONTRA lo que se ha estado optimizando con `?zoom=`). Hacen falta 40 y 45 piezas comparables;
+hay 24.
+
+⚠ **Disciplina de pruebas:** 11 rasgos × 3 métricas = 33 correlaciones. A p<0.05 se esperan
+~1.6 hallazgos por puro azar. Solo cuentan los p<0.01.
+
+### 5. EL EXPERIMENTO (declarado en `public/comando/ritmo.json`)
+
+Piezas **HERMANAS**: mismo bin, mismo guion, misma voz. Cambia SOLO el ritmo.
+
+```
+A · como hoy    6.5 cortes/min · 132 pal/min (3.8 síl/s)
+B · rápido       20 cortes/min · 165 pal/min (≈6 síl/s)
+                 partir cada toma larga en 3 · VEL del TTS ≈ 1.25
+3 por brazo · se corta con skip3s y compartidos/mil (se leen en HORAS)
+cuesta solo RASTER: el bin, la voz y el guion ya existen
+```
+
+### 6. CUÁNDO PUBLICAR (LATAM)
+
+América Latina y el Caribe pican a las **14-16 h**; las horas muertas son 8-10 h. Para Reels
+en general la ventana fuerte es **18-23 h**, y **miércoles y jueves** son los días. Los
+públicos brasileños se estiran más tarde que los mexicanos. ⚠ Ojo con nuestro caso: la
+campaña pagada del rey trajo público **es_US, no es_MX** (ver `project_funnel_ig_pagado`), así
+que el huso que manda puede no ser el de México.
+
+**Fuentes:** el estudio de 2,511 videos de TikTok (visual-audio, engagement) · Université de
+Lyon 2011 sobre velocidad del habla por idioma · benchmarks de retención en video corto 2026 ·
+datos de horarios de publicación 2026 (9.6M posts).
+
+---
+
 ## 👁️ LEGIBILIDAD: si se puede contar mal, el encuadre falló
 
 **Narración correcta + visual ambiguo = el público cree lo que VE.** En "El puente" la voz dice

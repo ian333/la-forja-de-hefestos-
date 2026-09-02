@@ -832,5 +832,28 @@
    "palabras_por_min_voz": 131.9,
    "palabras_por_min_real": 114.6
   }
+ },
+ "idioma": {
+  "silabas_por_segundo_nosotros": 3.79,
+  "silabas_por_segundo_solo_voz": 4.04,
+  "espanol_natural": 7.82,
+  "ingles_natural": 6.19,
+  "pct_del_ritmo_natural": 49,
+  "n_guiones": 111,
+  "fuente": "Universite de Lyon 2011: el espanol va a 7.82 sil/s, 26 % mas silabas por segundo que el ingles",
+  "aviso": "el contador usa grupos vocalicos y subestima hiatos; el ritmo real anda en 4.2-4.5 sil/s (~55 %)",
+  "por_que_importa": "en 2,511 videos de TikTok la velocidad del habla tuvo efecto POSITIVO y SIGNIFICATIVO sobre los COMPARTIDOS, y solo sobre esos"
+ },
+ "senal_de_instagram": {
+  "externo": "la senal mas importante de Instagram en 2026 es sends per reach (cuantas veces mandan el reel por DM)",
+  "nuestro_dato": "c_por_mil es lo que mas correlaciona con vistas (r=+0.748, n=24) y los DOS reyes son los unicos fuera del rango de sus diez seguidores (25.2 y 29.6 contra mediana ~8)",
+  "conclusion": "las dos fuentes apuntan al mismo lugar: optimizar para que alguien te lo MANDE es optimizar para el algoritmo"
+ },
+ "horarios_latam": {
+  "latam_pico": "14-16 h",
+  "latam_muerto": "08-10 h",
+  "reels_ventana_fuerte": "18-23 h",
+  "mejores_dias": "miercoles y jueves",
+  "aviso": "la campana pagada del rey trajo publico es_US, NO es_MX — el huso que manda puede no ser el de Mexico"
  }
 }
