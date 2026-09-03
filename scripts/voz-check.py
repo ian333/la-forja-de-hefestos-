@@ -63,6 +63,13 @@ def _num(tok):
         cab = 'cien' if n == 100 else ('ciento' if c == 1 else
               {5: 'quinientos', 7: 'setecientos', 9: 'novecientos'}.get(c, UNI[c] + 'cientos'))
         return cab if r == 0 else f'{cab} {_num(str(r))}'
+    # MILES: mismo falso positivo por FORMATO que ya mordió con el 29 y con el 179, ahora con
+    # los AÑOS. Whisper escribe "1977" y el guion dice "mil novecientos setenta y siete";
+    # sin esta rama el gate reprobaba una voz que decía exactamente lo correcto.
+    if n < 1000000:
+        m, r = n // 1000, n % 1000
+        cab = 'mil' if m == 1 else f'{_num(str(m))} mil'
+        return cab if r == 0 else f'{cab} {_num(str(r))}'
     return tok
 
 

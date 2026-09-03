@@ -562,15 +562,15 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // medido en 7 tiempos. 0.45 llena más pero SACA al agua por el borde y ya no se pueden
     // CONTAR dos moléculas (canon §LEGIBILIDAD); 0.55 sube el tercio explicativo de 0.06 a
     // 0.17-0.20, deja el clímax en 0.50, y los dos protagonistas siguen legibles.
-    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.2, elev: 0.15, rMul: 1.10 }), dur: 7.12, label: 'AZUL: los dos, uno grande y uno chico — el hueco (l1-2)' },
-    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.8, rMul: 0.72 }), dur: 12.57, label: 'MAGENTA: EL ALCOHOL, su cola de carbono (l3-4)' },
-    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.40, rMul: 1.05 }), dur: 10.35, label: 'el hidroxilo: la cara de agua (l5-6)' },
-    { shot: orbitOne({ side: -1, azim0: 2.1, span: 1.2, rMul: 0.60 }), dur: 11.67, label: 'ORO: el corazón dorado y sus dos sillas (l7-8)' },
-    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.6, elev: 0.20, rMul: 1.05 }), dur: 8.53, label: 'AZUL: el campo real entre las dos (l9-10)' },
-    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 4.5, label: 'QUITA LAS NUBES: la NADA como argumento (l11)' },
-    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 7.62, label: 'PRÉNDELAS: rampa de looming al puente (l12)' },
-    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 9.45, label: 'CLÍMAX (t=62 = 78 %): el 96 % y por qué se mezcla (l13-15)' },
-    { shot: pullOut({ rTdMul: 0.95 }), dur: 4.19, label: 'payoff: una mano al agua, otra a la grasa + GAIA (l16-18)' },
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.2, elev: 0.15, rMul: 1.10 }), dur: 7.5, label: 'AZUL: los dos, uno grande y uno chico — el hueco (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.8, rMul: 0.72 }), dur: 7.61, label: 'MAGENTA: EL ALCOHOL, su cola de carbono (l3-4)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.40, rMul: 1.05 }), dur: 9.14, label: 'el hidroxilo: la cara de agua (l5-6)' },
+    { shot: orbitOne({ side: -1, azim0: 2.1, span: 1.2, rMul: 0.60 }), dur: 8.95, label: 'ORO: el corazón dorado y sus dos sillas (l7-8)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.6, elev: 0.20, rMul: 1.05 }), dur: 6.6, label: 'AZUL: el campo real entre las dos (l9-10)' },
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 4.85, label: 'QUITA LAS NUBES: la NADA como argumento (l11)' },
+    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 6.68, label: 'PRÉNDELAS: rampa de looming al puente (l12)' },
+    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 6.69, label: 'CLÍMAX (t=62 = 78 %): el 96 % y por qué se mezcla (l13-15)' },
+    { shot: pullOut({ rTdMul: 0.95 }), dur: 13.98, label: 'payoff: una mano al agua, otra a la grasa + GAIA (l16-18)' },
   ],
   wcampo: [
     // DURACIONES CALIBRADAS a segs.json (2026-08-31), no a los cortes de cámara que puse a
@@ -2626,23 +2626,20 @@ const WCAMPOR_CAPAS: CapasSpec = {
   spin:     { base: 1,    mods: [{ wins: [[49.67, 75]], a: 0.9, label: 'el puente arde: la miga que sobra (l14-16)' }] },
   acc:      { base: 1,    mods: [] },
 };
-const WCOLOR_DURATION = 76;
+const WCOLOR_DURATION = 72;
 // DE QUIÉN SON LOS ELECTRONES — la nube pintada POR ELEMENTO (Hirshfeld 1977, ver
-// scripts/color-hirshfeld.py). Aquí el sujeto es LA NUBE, no el campo: las líneas se
-// mantienen bajas todo el video para que el color se lea, y solo suben un poco al final,
-// cuando la voz habla del enlace. Ventanas PROVISIONALES (estimadas a 0.455 s/palabra);
-// se recalibran a segs.json en cuanto corra el TTS.
+// scripts/color-hirshfeld.py). El sujeto es LA NUBE, no el campo: las líneas se mantienen
+// bajas para que el color se lea, y solo suben al final, cuando la voz habla del enlace.
+// Ventanas = arranques REALES de segs.json.
 const WCOLOR_CAPAS: CapasSpec = {
-  apertura: { base: 0.55, mods: [{ wins: [[62.4, 76]], a: -0.35, label: 'se tocan las dos (l16-17)' }] },
+  apertura: { base: 0.55, mods: [{ wins: [[58.02, 72]], a: -0.35, label: 'se tocan las dos (l16-17)' }] },
   nubes:    { base: 1,    mods: [] },
-  // el campo ESTORBA a esta pieza: tapa el color con azul. Se deja bajo y solo asoma al
-  // final, donde la voz dice que en un enlace nadie es dueño.
-  campo:    { base: 0.22, mods: [{ wins: [[62.4, 76]], a: 0.55, label: 'el enlace: ahí se mezclan los colores (l16-17)' }] },
+  campo:    { base: 0.22, mods: [{ wins: [[58.02, 72]], a: 0.55, label: 'el enlace: ahí se mezclan los colores (l16-17)' }] },
   campoNuc: { base: 0,    mods: [] },
   campoEle: { base: 0,    mods: [] },
-  parpadeo: { base: 0.42, mods: [{ wins: [[7.1, 14.7]], a: 0.35, label: 'los tres colores, nombrados (l03-04)' }] },
-  spin:     { base: 0.55, mods: [{ wins: [[62.4, 76]], a: 0.8, label: 'el puente arde al final' }] },
-  acc:      { base: 1,    mods: [{ wins: [[41.7, 54.7]], a: 0.35, label: 'ORO: la punta de oxígeno, la cara de agua (l12-13)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[7.50, 15.11]], a: 0.35, label: 'los tres colores, nombrados (l03-04)' }] },
+  spin:     { base: 0.55, mods: [{ wins: [[58.02, 72]], a: 0.8, label: 'el puente arde al final' }] },
+  acc:      { base: 1,    mods: [{ wins: [[39.80, 51.33]], a: 0.35, label: 'ORO: la punta de oxígeno, la cara de agua (l11-13)' }] },
 };
 const WCAMPO_DURATION = 70;
 // LOS DOS CAMPOS — la coreografía ES el argumento. Se enseña el positivo SOLO, luego el
@@ -2774,8 +2771,11 @@ const WATER_BINS: Record<string, WaterEntry> = {
   // LA SILLA VACÍA: el bin del rey con SU coreografía y SU duración (quick win, 2026-08-27).
   wcampor: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WCAMPOR_DURATION,
              efNuc: 'water-approach-efield-nuc', efEle: 'water-approach-efield-ele', capas: WCAMPOR_CAPAS },
+  // binColors: SIN esta bandera la escena ignora accColor del .bin y usa su paleta cálida
+  // (línea del O2Cloud: colors={W.binColors ? wd.accColor : accColorWarm}). Cazado con stills
+  // ANTES de gastar voz y render: la nube salía toda roja y no se veía ni el carbono verde.
   wcolor: { bin: 'water-ethanol', ef: 'water-ethanol-efield', ex: 16, dur: WCOLOR_DURATION, sizeMul: 1.7,
-            capas: WCOLOR_CAPAS },
+            binColors: true, capas: WCOLOR_CAPAS },
   wcampo: { bin: 'water-ethanol', ef: 'water-ethanol-efield', ex: 16, dur: WCAMPO_DURATION, sizeMul: 1.7,
             efNuc: 'water-ethanol-efield-nuc', efEle: 'water-ethanol-efield-ele', capas: WCAMPO_CAPAS },
   wsilla: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLA_DURATION, capas: WSILLA_CAPAS },

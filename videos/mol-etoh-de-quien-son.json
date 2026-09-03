@@ -11,7 +11,7 @@
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 76
+    "dur": 72
   },
   "render": {
     "shards": 5,
@@ -25,7 +25,7 @@
     "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
     "musicaVol": 0.17,
     "musicaFadeIn": 2.5,
-    "musicaFadeOutAt": 72,
+    "musicaFadeOutAt": 68,
     "segs": "segs.json",
     "ass": "color.ass",
     "voz": "XTTS Matilda, TAKES=4 (mediana)"
