@@ -83,7 +83,21 @@ def gate_calidad(archivo, plataforma=None):
     print(f'   ✓ calidad: {h}p @ {br/1e6:.1f} Mbps (ley: ≥2160p, ≥15 Mbps)')
 
 def registrar(p, d, plataforma, info):
-    """Escribe el resultado en el manifiesto (publicar.subidas.<plataforma>) = la evidencia."""
-    d.setdefault('publicar', {}).setdefault('subidas', {})[plataforma] = {**info, 'fecha': dt.datetime.now().isoformat(timespec='minutes')}
-    guardar_manifiesto(p, d)
+    """Escribe el resultado en el manifiesto (publicar.subidas.<plataforma>) = la evidencia.
+
+    ⚠ RELEE EL ARCHIVO ANTES DE ESCRIBIR. `d` se leyó al ARRANCAR la subida, que pueden ser
+    10+ minutos antes (Instagram tarda eso en procesar el contenedor). Sin releer, todo lo que
+    otro proceso haya escrito en el manifiesto mientras tanto se pierde en silencio.
+
+    MORDIÓ DOS VECES antes de que lo arregláramos: se comió el registro de `yt16x9`
+    (2026-09-01, subidor de IG terminando después del de YouTube) y las medidas de ritmo
+    (2026-09-02). En los dos casos el dato se había escrito BIEN y desapareció.
+    """
+    try:
+        fresco = json.load(open(p, encoding='utf-8'))
+    except Exception:
+        fresco = d
+    fresco.setdefault('publicar', {}).setdefault('subidas', {})[plataforma] = {**info, 'fecha': dt.datetime.now().isoformat(timespec='minutes')}
+    guardar_manifiesto(p, fresco)
+    d.clear(); d.update(fresco)        # el llamador ve lo mismo que quedó en disco
     print(f'✓ registrado en el manifiesto: publicar.subidas.{plataforma} = {json.dumps(info, ensure_ascii=False)}')

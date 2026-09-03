@@ -88,7 +88,31 @@
       "valor_propio": "porque puedes ver de qué átomo salió cada electrón, y no está pintado a ojo",
       "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
-    "autorizado": ""
+    "autorizado": "2026-09-02 yt,ig — dicho por ian en sesión: \"volvió iangpu, sube el alcohol\"",
+    "subidas": {
+      "yt": {
+        "id": "XZ6Mo6ppde4",
+        "url": "https://youtu.be/XZ6Mo6ppde4",
+        "privacidad": "public",
+        "publishAt": "",
+        "captions": "AUieDabMG-_CTc5Z_7gtxTCdvbGSV6m3shYBAXMlNPKGzXPLcAPLnS_hdQ",
+        "fecha": "2026-09-02T19:57"
+      },
+      "ig": {
+        "id": "18147522199541985",
+        "url": "https://www.instagram.com/reel/DczsqrtCFF-/",
+        "fecha": "2026-09-02T20:15"
+      },
+      "yt16x9": {
+        "id": "fwkfxRzAj6Q",
+        "url": "https://youtu.be/fwkfxRzAj6Q",
+        "privacidad": "public",
+        "publishAt": "",
+        "captions": "AUieDabtccqsJ_O3Vv3B-gIA2lZzGfLvuYDPyS9SpDypt0H42RyVwFPHYw",
+        "fecha": "2026-09-02T20:18"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-etoh-de-quien-son.mp4?v=11522a5918"
   },
   "guion": {
     "archivo": "scripts/guiones/color.txt",
@@ -98,6 +122,12 @@
   },
   "ritmo": {
     "brazo": "A",
-    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO)."
+    "nota_brazo": "A = el ritmo de siempre. Todas las piezas hasta 2026-09-02 son A: por eso no hay varianza (canon §EL RITMO).",
+    "cortes_por_min": 6.67,
+    "tomas": 9,
+    "silabas_por_seg": 4.41,
+    "silabas_por_seg_del_video": 3.95,
+    "fuente_habla": "segs.json (REAL)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }
