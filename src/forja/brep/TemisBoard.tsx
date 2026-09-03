@@ -140,6 +140,9 @@ export interface TemisJson {
   /** enCurso = lo que cuenta para la TAPA (espera a ian); supertickets = los que corren solos y se listan aparte del conteo */
   conteo: { proximo: number; enCurso: number; imprevisto?: number; supertickets?: number; cerrado: number; probado: number; porProbar: number; sinDesplegar: number; despues: number };
   deploy: { commit: string; fecha: string } | null;
+  /** EL CAMINO — la promesa hecha pasos (caminos/<slug>.md). Estado por paso: ok | falla | parcial | bloqueado */
+  caminos?: Array<{ slug: string; titulo: string; actor: string; promesa: string; pieza: string; nota: string;
+    pasos: Array<{ n: number; gesto: string; seVe: string; estado: string; ticket: string }>; verdes: number; total: number; rompeEn: number }>;
   /** CINE — 1 video por día (videos/CRONOGRAMA.json); `publicado` derivado del catálogo de Comando */
   cine: { nota: string; dias: Array<{ fecha: string; id: string; titulo: string; base: string; tipo: string;
     estado: 'hecho' | 'hoy' | 'proximo'; manifiesto: boolean; publicado: boolean;
@@ -196,10 +199,18 @@ function TemisCardView({ c, onOpen }: { c: TemisCard; onOpen: (c: TemisCard) => 
 export function TemisBoard({ data }: { data: TemisJson | null | { error: true } }) {
   const [verCerradas, setVerCerradas] = useState(false);
   const [detalle, setDetalle] = useState<TemisCard | null>(null);
+  // La franja de arriba es el CRONOGRAMA: del camino (la Forja) o del cine (el video).
+  // ian: «se puede poner el happy path en lugar de cine». No se borra el cine: se elige.
+  // (hook ANTES de los returns tempranos — si no, React cuenta más hooks al cargar temis.json)
+  const [franjaSel, setFranja] = useState<'camino' | 'cine' | null>(null);
   if (!data) return <div className="ps-empty">Temis está leyendo las órdenes…</div>;
   if ('error' in data) return <div className="ps-empty">No encontré <code>temis.json</code> — corre <code>node scripts/temis-tablero.cjs</code>.</div>;
   if (detalle) return <div className="tm"><TemisDetalle c={detalle} onVolver={() => setDetalle(null)} /></div>;
   const { columnas, wip, conteo, violaciones, despues, deploy, cine } = data;
+  const caminos = data.caminos ?? [];
+  const franja: 'camino' | 'cine' = franjaSel ?? (caminos.length ? 'camino' : 'cine');
+  const todas = [...columnas.proximo, ...(columnas.imprevisto ?? []), ...columnas.enCurso, ...columnas.cerrado, ...(columnas.probado ?? [])];
+  const ticketDe = (slug: string) => todas.find((c) => c.slug === slug) ?? null;
   const cerradasVis = verCerradas ? columnas.cerrado : columnas.cerrado.slice(0, 6);
   const grupos = Array.from(new Set(despues.map((d) => d.grupo)));
   return (
@@ -218,7 +229,44 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
           {violaciones.map((v, i) => <div key={i}>✘ {v}</div>)}
         </div>
       )}
-      {cine && cine.dias.length > 0 && (
+      {(caminos.length > 0 || (cine && cine.dias.length > 0)) && (
+        <div className="tm-franja-tabs" data-testid="temis-franja-tabs">
+          {caminos.length > 0 && <button className={franja === 'camino' ? 'on' : ''} data-testid="franja-camino" onClick={() => setFranja('camino')}>⚭ EL CAMINO</button>}
+          {cine && cine.dias.length > 0 && <button className={franja === 'cine' ? 'on' : ''} data-testid="franja-cine" onClick={() => setFranja('cine')}>🎬 CINE</button>}
+        </div>
+      )}
+      {/* EL CAMINO — el hilo de las Moiras. Una tarjeta por paso, misma tira que el cine.
+          Verde = pasa hoy · rojo = se rompe · ámbar = a medias · gris = bloqueado por otro.
+          El chip del ticket abre su detalle: eso es «conectar todo». */}
+      {franja === 'camino' && caminos.map((cam) => (
+        <section className="tm-cine tm-camino" key={cam.slug} data-testid={`temis-camino-${cam.slug}`}>
+          <h4>El camino · {cam.titulo} <span>{cam.verdes}/{cam.total} ✓{cam.rompeEn ? <> · <b className="tm-pend">se rompe en el paso {cam.rompeEn}</b></> : ' · completo'}</span></h4>
+          <div className="tm-camino-promesa"><b>{cam.actor}</b> — {cam.promesa}{cam.pieza ? <span className="tm-camino-pieza"> · pieza: {cam.pieza.replace(/^.*\//, '')}</span> : null}</div>
+          <div className="tm-cine-tira">
+            {cam.pasos.map((p) => {
+              const t = p.ticket ? ticketDe(p.ticket) : null;
+              const ic = p.estado === 'ok' ? '✓' : p.estado === 'falla' ? '✗' : p.estado === 'bloqueado' ? '⏸' : '◐';
+              return (
+                <div key={p.n} className={`tm-dia paso-${p.estado}`} data-testid={`temis-paso-${cam.slug}-${p.n}`} title={p.seVe}>
+                  <div className="tm-dia-f">PASO {p.n} <b>{ic}</b></div>
+                  <div className="tm-dia-t">{p.gesto}</div>
+                  <div className="tm-dia-m">{p.seVe}</div>
+                  {p.ticket && (
+                    <div className="tm-dia-plats">
+                      <button className={`tm-chip ticket ${t ? '' : 'huerfano'}`} data-testid={`temis-paso-ticket-${cam.slug}-${p.n}`}
+                        onClick={() => { if (t) setDetalle(t); }} title={t ? `${t.titulo}${t.superticket && t.progreso ? ` · ${t.progreso.verdes}/${t.progreso.total}` : ''}` : `ticket no encontrado: ${p.ticket}`}>
+                        {t ? (t.titulo.split(' — ')[0].split(' · ').slice(0, 2).join(' · ')) : p.ticket}{t && t.superticket && t.progreso ? ` ${t.progreso.verdes}/${t.progreso.total}` : ''}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {cam.nota && <div className="tm-camino-nota">{cam.nota}</div>}
+        </section>
+      ))}
+      {franja === 'cine' && cine && cine.dias.length > 0 && (
         <section className="tm-cine" data-testid="temis-cine">
           <h4>Cine · 1 por día <span>{cine.dias.filter((d) => d.publicado).length} publicados · {cine.dias.filter((d) => d.estado === 'proximo').length} en cola{' '}
             {cine.dias.reduce((n, d) => n + d.falta.length, 0) > 0 &&
@@ -274,11 +322,6 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
           )}
         </section>
         {/* PROBADO (ian): lo que ya probó y acepta. Se marca con `PROBADO:` en la orden. */}
-        <section className="tm-col" data-testid="temis-col-probado">
-          <h4>Probado <b>{conteo.probado ?? 0}</b></h4>
-          {(columnas.probado ?? []).map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
-          {(columnas.probado ?? []).length === 0 && <div className="tm-vacio">nada probado aún — di "probado &lt;ticket&gt;" y la orden recibe <code>PROBADO:</code></div>}
-        </section>
       </div>
       <details className="tm-despues" data-testid="temis-despues">
         <summary>Después de v1 <b>{conteo.despues}</b> <span>— congelado, no muerto. No recibe orden.</span></summary>
@@ -311,7 +354,7 @@ export function useTemis(activo: boolean): TemisJson | null | { error: true } {
 export const TEMIS_CSS = `
 .tm{padding:10px 16px 14px;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .tm-viol{border:1px solid rgba(242,122,108,.55);background:rgba(242,122,108,.10);color:#f8b4aa;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:600;display:flex;flex-direction:column;gap:3px}
-.tm-cols{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;align-items:start}
+.tm-cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
 /* minmax(0,1fr) y NO 1fr a secas: 1fr es minmax(auto,1fr) y no baja de su min-content,
    así que con 5 columnas el tablero se desbordaba en vez de encogerse. Mismo gotcha que
    ya pagamos en el panel del lobby. (Y ojo: este bloque es un template literal — un
@@ -385,6 +428,20 @@ export const TEMIS_CSS = `
 .tm-cine h4{margin:0 0 8px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ds-faint,#7E90A9);font-weight:700;display:flex;gap:8px;align-items:center}
 .tm-cine h4 span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--ds-dim,#A6B4C8);font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px}
 .tm-cine-tira{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+/* EL CAMINO: la promesa hecha pasos. PROBADO murio como columna — el probado real es que el paso pase. */
+.tm-franja-tabs{display:flex;gap:6px;margin-bottom:6px}
+.tm-franja-tabs button{cursor:pointer;background:transparent;border:0;padding:3px 2px;font:700 10px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:1.6px;color:var(--ds-faint,#7E90A9);border-bottom:2px solid transparent}
+.tm-franja-tabs button.on{color:#FDB813;border-bottom-color:#FDB813}
+.tm-camino-promesa{font-size:11px;color:var(--ds-dim,#A6B4C8);margin:-4px 0 8px}
+.tm-camino-promesa b{color:var(--ds-text,#DCE7F5)}
+.tm-camino-pieza{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--ds-faint,#7E90A9)}
+.tm-camino-nota{font-size:10px;color:var(--ds-faint,#7E90A9);margin-top:7px;line-height:1.45}
+.tm-dia.paso-ok{border-color:rgba(126,224,160,.45)} .tm-dia.paso-ok .tm-dia-f b{color:#7ee0a0}
+.tm-dia.paso-falla{border-color:rgba(242,122,108,.65);background:rgba(242,122,108,.07)} .tm-dia.paso-falla .tm-dia-f b{color:#f27a6c}
+.tm-dia.paso-parcial{border-color:rgba(253,184,19,.5)} .tm-dia.paso-parcial .tm-dia-f b{color:#FDB813}
+.tm-dia.paso-bloqueado{opacity:.55;border-style:dashed} .tm-dia.paso-bloqueado .tm-dia-f b{color:var(--ds-faint,#7E90A9)}
+.tm-chip.ticket{cursor:pointer;background:rgba(253,184,19,.08);border:1px solid rgba(253,184,19,.35);color:#f0dfa8;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;padding:1px 6px;border-radius:6px}
+.tm-chip.ticket.huerfano{opacity:.5;cursor:default}
 .tm-dia{border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:9px;padding:7px 9px;background:var(--ds-panel2,#16202F);min-width:0}
 .tm-dia.hoy{border-color:rgba(253,184,19,.6);background:rgba(253,184,19,.08)}
 .tm-dia.hecho{opacity:.8}

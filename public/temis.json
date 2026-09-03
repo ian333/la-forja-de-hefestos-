@@ -1,19 +1,19 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-02 19:09",
+ "generado": "2026-09-03 01:42",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 3,
+  "proximo": 4,
   "enCurso": 1,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 74,
+  "cerrado": 75,
   "probado": 0,
-  "porProbar": 40,
+  "porProbar": 41,
   "sinDesplegar": 0,
   "despues": 17
  },
@@ -98,6 +98,105 @@
     "evidencia": 1,
     "evidenciaDeclarada": [
      "Dos sesiones distintas de Claude leyendo el mismo tablero y una tomando un ticket"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-02-el-banco-no-encanta.md",
+    "slug": "2026-09-02-el-banco-no-encanta",
+    "titulo": "EL BANCO — el lobby no encanta (y tiene otro estilo que el Foco)",
+    "fecha": "2026-09-02",
+    "estado": "proximo",
+    "prioridad": 4,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "banco-idioma",
+      "titulo": "El Banco tiene su propio idioma visual, escrito",
+      "herramientas": "doctrina",
+      "oraculo": "una sección en DOCTRINA-FOCO.md que diga qué es el Banco y cómo se ve (sólido, callado, ¿latón/madera/papel?), con referencias del atlas",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "banco-lobby",
+      "titulo": "El lobby se re-viste con ese idioma",
+      "herramientas": "UI",
+      "oraculo": "proyectos, plantillas y Abrir archivo sin tarjetas genéricas; ian lo ve y no dice «meee»",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "banco-temis",
+      "titulo": "Temis vive en el mismo idioma",
+      "herramientas": "UI",
+      "oraculo": "la franja del camino y las columnas comparten paleta y tipografía con el lobby",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "banco-no-foco",
+      "titulo": "Nada del Banco imita al Foco",
+      "herramientas": "regla",
+      "oraculo": "cero cristal, cero lluvia, cero tinte por estado en el Banco: son dos idiomas",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "banco-medido",
+      "titulo": "Se mide la mejora, no se declara",
+      "herramientas": "antes/después",
+      "oraculo": "capturas del mismo lobby antes y después, y el conteo de cajas con borde (hoy: cada tarjeta)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "banco-sin-regresion",
+      "titulo": "Nada del lobby deja de funcionar",
+      "herramientas": "gate",
+      "oraculo": "abrir archivo, plantillas y Temis siguen manejables por el arnés",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, con la lámina viva y el lobby lado a lado (2026-09-02): «no tienen nada que ver, y está bien — una es el Banco y otro es el Foco; pero aunque se entiende que son diferentes, tienen estilos MEEE. El Banco actual no me termina de encant…",
+    "toca": 4,
+    "crea": 1,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "mocks de 2-3 direcciones sobre el lobby REAL, en Downloads, antes de decidir",
+     "capturas antes/después · gate verde · deploy + verificación"
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1255,6 +1354,110 @@
     "falla": "",
     "commit": "37700e5",
     "despliegue": "en-vivo"
+   },
+   {
+    "file": "ordenes/2026-09-02-el-camino-en-temis.md",
+    "slug": "2026-09-02-el-camino-en-temis",
+    "titulo": "EL CAMINO EN TEMIS — el proyecto se lleva a sí mismo como proyecto",
+    "fecha": "2026-09-02",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "camino-declarado",
+      "titulo": "Un camino es un archivo, no un guion · caminos/<slug>.md · actor + promesa + pieza + PASOS (n · gesto · se ve",
+      "herramientas": "estado",
+      "oraculo": "ticket); el primero es LA CARCASA DE MITSUBISHI con 8 pasos",
+      "estado": "verde",
+      "checks": "caminos/la-carcasa-de-mitsubishi.md: ACTOR + PROMESA + PIEZA (1594C Box.stp) + 8 PASOS «n · gesto · se ve · estado · ticket» + MEDIDO (20/20 importan · 17/20 cotizan · 2/20 parten). temis-tablero.cjs lo parsea a caminos[] y lo imprime: «⚭ CAMINO · LA CARCASA DE MITSUBISHI · 4/8 ✓ · se rompe en el paso 5»",
+      "video": "",
+      "still": "temis-camino.png",
+      "nota": ""
+     },
+     {
+      "id": "camino-en-el-tablero",
+      "titulo": "La franja de arriba lo muestra como cronograma · UI",
+      "herramientas": "pestañas CAMINO | CINE (el cine NO se borra: es de la otra sesión); una tarjeta por paso con su estado; cabecera «n/N ✓",
+      "oraculo": "se rompe en el paso k»",
+      "estado": "verde",
+      "checks": "pestañas medidas en el DOM: ['⚭ EL CAMINO','🎬 CINE']; 8 tarjetas paso-* con clases [ok,ok,ok,ok,falla,bloqueado,bloqueado,parcial]; cabecera «4/8 ✓ · se rompe en el paso 5». Al abrir se ve EL CAMINO (cine=0); la pestaña CINE lo trae de vuelta (cine=1). El cine no se borró.",
+      "video": "",
+      "still": "temis-camino.png",
+      "nota": "primer render tiró «Rendered more hooks than during the previous render»: el useState de la franja estaba después de los returns tempranos — hoisted, cero errores de página en la corrida final"
+     },
+     {
+      "id": "camino-conecta",
+      "titulo": "Cada paso rojo enlaza al ticket que lo debe",
+      "herramientas": "vínculo",
+      "oraculo": "clic en el chip del paso abre el detalle del ticket (T7, T6, T5) — «conectar todo»",
+      "estado": "verde",
+      "checks": "clic en el chip del PASO 5 (rojo) → temis-detalle=1 con título «T7 · LA LÍNEA DE PARTICIÓN — hoy dice SIN CABLEAR en la cara del cliente», ejercicios 0/6. Pasos 6→T6, 7→T7, 8→T5 traen su chip; el paso 1 no tiene dueño y no lo inventa.",
+      "video": "",
+      "still": "temis-paso-ticket.png",
+      "nota": ""
+     },
+     {
+      "id": "probado-muere",
+      "titulo": "La columna PROBADO deja de existir",
+      "herramientas": "tablero",
+      "oraculo": "ian: «ahí dice probado XD»; el «probado» real es que su paso pase en el camino. Se quita la columna, la rejilla vuelve a 4",
+      "estado": "verde",
+      "checks": "temis-col-probado=0 en el DOM; la rejilla .tm-cols volvió a repeat(4, minmax(0,1fr)): PRÓXIMO 4/7 · IMPREVISTOS 0/3 · EN CURSO 1/1 · CERRADO 74 (40 por probar sigue como contador, no como columna).",
+      "video": "",
+      "still": "temis-camino.png",
+      "nota": ""
+     },
+     {
+      "id": "quick-win-chiquito",
+      "titulo": "Estado a mano hoy, automático mañana · alcance · esta orden pinta el estado DECLARADO (lo que ya medimos: 20/20",
+      "herramientas": "17/20",
+      "oraculo": "2/20); el runner que recorre producción y actualiza los pasos es el siguiente quick win, declarado aquí",
+      "estado": "verde",
+      "checks": "el estado de cada paso viene DECLARADO en el .md (lo medido a mano: 20/20 importan, 17/20 cotizan, 2/20 parten). El runner que recorre producción con forja-drive.cjs (gesto drop nuevo) y reescribe los estados es el siguiente quick win, declarado en la orden; no se hizo aquí.",
+      "video": "",
+      "still": "",
+      "nota": "el tablero no tiene forma de saber si el estado declarado envejeció — eso es lo que resuelve el runner"
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada del tablero se rompe",
+      "herramientas": "gate",
+      "oraculo": "temis-tablero corre, orden-gate VERDE, el lobby se ve en producción con la franja",
+      "estado": "verde",
+      "checks": "temis-tablero.cjs corre (próximo 4/7 · imprevistos 0/3 · en curso 1/1 +10 superticket); vite transforma TemisBoard.tsx (200); orden-gate VERDE con censo Canvas 8→8; drive del lobby sin errores de página. Producción se verifica tras el deploy (bundle servido con tm-franja-tabs y temis-camino-).",
+      "video": "",
+      "still": "temis-cine-tab.png",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian (2026-09-02): «necesito tener esto visualmente en Temis. Al final del día es un proyecto, y aquí el proyecto es hacer que el proyecto pueda llevarse a sí mismo como proyecto. Se alcanza a leer el cine, el cronograma de trabajo — se pue…",
+    "toca": 3,
+    "crea": 7,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "captura del lobby → Temis con la franja EL CAMINO y sus 8 pasos",
+     "captura de un paso rojo abriendo su ticket",
+     "deploy + verificación contra el bundle servido · orden-gate VERDE"
+    ],
+    "cierre": "6/6 EN VERDE · medido en el DOM del lobby · orden-gate VERDE · censo Canvas 8→8. Temis ya hila. Arriba del tablero vive EL CAMINO — LA CARCASA DE MITSUBISHI, 8 pasos, «4/8 ✓ · se rompe en el paso 5» …",
+    "cierreCompleto": "6/6 EN VERDE · medido en el DOM del lobby · orden-gate VERDE · censo Canvas 8→8. Temis ya hila. Arriba del tablero vive EL CAMINO — LA CARCASA DE MITSUBISHI, 8 pasos, «4/8 ✓ · se rompe en el paso 5» — como cronograma, con CINE a un clic (no se borró: es de la otra sesión). Cada paso trae su estado (verde/rojo/ámbar/gris) y su chip de ticket: el paso 5 (PARTIR) abre T7 · LA LÍNEA DE PARTICIÓN, el 6 abre T6, el 8 abre T5. Eso es «conectar todo»: un paso rojo ya no es una queja, es un ticket con dueño. La columna PROBADO murió («ahí dice probado XD»); probado es que el paso pase. Un bug pagado: el useState de la franja quedó debajo de los returns tempranos y React tiró «Rendered more hooks than during the previous render» al llegar temis.json. Hoisted; comentado. Lo que NO hace esta orden y queda declarado como siguiente quick win: los estados son los DECLARADOS (lo medido a mano en X4/U10/X6 y en el pliego: 20/20 importan, 17/20 cotizan, 2/20 parten). El runner que recorre producción paso a paso con forja-drive.cjs y reescribe los estados del camino es la orden que sigue.",
+    "evidenciaSS": [
+     "evidencia/2026-09-02-el-camino-en-temis/temis-camino.png",
+     "evidencia/2026-09-02-el-camino-en-temis/temis-cine-tab.png",
+     "evidencia/2026-09-02-el-camino-en-temis/temis-paso-ticket.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    },
    {
     "file": "ordenes/2026-09-01-x5-muere-la-barra-lateral.md",
@@ -4771,5 +4974,76 @@
     "falta": []
    }
   ]
- }
+ },
+ "caminos": [
+  {
+   "slug": "la-carcasa-de-mitsubishi",
+   "titulo": "LA CARCASA DE MITSUBISHI",
+   "actor": "el ingeniero más pro de Mitsubishi, con la carcasa de la siguiente consola en STEP",
+   "promesa": "sube su archivo y sale con su molde DISEÑADO Y COTIZADO — sin aprender nuestro CAD",
+   "pieza": "test-parts/inyeccion-reales/1594C Box.stp  (una carcasa de consola de verdad: postes, labio, nervios)",
+   "nota": "el ingeniero diseñó moldeable (draft, sin undercuts). Los mecanismos son OTRO camino. El video del enfriamiento va en el expediente, no en la caminata.",
+   "pasos": [
+    {
+     "n": 1,
+     "gesto": "abrir la Forja",
+     "seVe": "lienzo limpio, sin cuadrado",
+     "estado": "ok",
+     "ticket": ""
+    },
+    {
+     "n": 2,
+     "gesto": "soltar el STEP en cualquier parte",
+     "seVe": "carga, el Foco se prende solo, 3 cotas sobre la pieza",
+     "estado": "ok",
+     "ticket": "2026-09-01-x4-el-happy-path"
+    },
+    {
+     "n": 3,
+     "gesto": "ENFRIAMIENTO",
+     "seVe": "el campo pintado en ≤2.5 s y LA FICHA sobre el punto que manda el ciclo",
+     "estado": "ok",
+     "ticket": "2026-08-30-u10-el-foco-es-el-analisis"
+    },
+    {
+     "n": 4,
+     "gesto": "D → EL DICTAMEN",
+     "seVe": "qué viola, qué cambiar, teñido por el estado",
+     "estado": "ok",
+     "ticket": "2026-09-02-x6-la-lamina-viva"
+    },
+    {
+     "n": 5,
+     "gesto": "PARTIR",
+     "seVe": "la línea de partición sobre la carcasa",
+     "estado": "falla",
+     "ticket": "2026-08-28-t7-linea-de-particion"
+    },
+    {
+     "n": 6,
+     "gesto": "EL MOLDE",
+     "seVe": "placas, colada, agua, expulsores sobre ESA pieza",
+     "estado": "bloqueado",
+     "ticket": "2026-08-28-t6-piezas-complejas"
+    },
+    {
+     "n": 7,
+     "gesto": "LOS PLANOS",
+     "seVe": "el juego de planos del molde",
+     "estado": "bloqueado",
+     "ticket": "2026-08-28-t7-linea-de-particion"
+    },
+    {
+     "n": 8,
+     "gesto": "EL EXPEDIENTE",
+     "seVe": "dictamen + planos + cotización en un archivo (y el video, después)",
+     "estado": "parcial",
+     "ticket": "2026-08-28-t5-expediente-que-se-ve"
+    }
+   ],
+   "verdes": 4,
+   "total": 8,
+   "rompeEn": 5
+  }
+ ]
 }

@@ -239,6 +239,33 @@ const revisables = cerrado.filter((t) => t.revisable).length;
 
 // ── CINE: 1 video por día (videos/CRONOGRAMA.json). `publicado` se DERIVA del catálogo de
 // Comando (public/comando/catalogo.json): si la pieza está ahí, está en vivo. Nadie lo teclea.
+// ══ EL CAMINO — el hilo de las Moiras (2026-09-02) ═══════════════════════════════════
+// Temis tenía unidades de TRABAJO (orden, superticket, imprevisto) y ninguna unidad de USO.
+// Un camino es una PROMESA hecha pasos: `caminos/<slug>.md` con ACTOR/PROMESA/PIEZA y
+// `## PASOS` (- n · gesto · se ve · estado · ticket-slug). Se lee, no se calcula: el estado
+// de cada paso hoy lo declara el archivo con lo que ya medimos; el runner que recorre
+// producción y lo actualiza solo es el siguiente quick win. Estados: ok | falla | parcial |
+// bloqueado (depende de un paso que falla).
+const caminos = (() => {
+  const dir = path.join(REPO, 'caminos');
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((f) => f.endsWith('.md')).sort().map((f) => {
+    const txt = fs.readFileSync(path.join(dir, f), 'utf8');
+    const slug = f.replace(/\.md$/, '');
+    const titulo = (txt.match(/^# CAMINO:\s*(.+)$/m) || [, slug])[1].trim();
+    const pasos = bullets(seccion(txt, 'PASOS')).map((l) => {
+      const [n, gesto, seVe, estado, ticket] = l.split(' · ').map((x) => x.trim());
+      return { n: +n || 0, gesto: gesto || '', seVe: seVe || '', estado: (estado || 'parcial').toLowerCase(), ticket: ticket && ticket !== '-' ? ticket : '' };
+    }).filter((p) => p.n > 0);
+    const verdes = pasos.filter((p) => p.estado === 'ok').length;
+    const rompe = pasos.find((p) => p.estado === 'falla');
+    return {
+      slug, titulo, actor: campo(txt, 'ACTOR'), promesa: campo(txt, 'PROMESA'), pieza: campo(txt, 'PIEZA'), nota: campo(txt, 'NOTA'),
+      pasos, verdes, total: pasos.length, rompeEn: rompe ? rompe.n : 0,
+    };
+  });
+})();
+
 const cine = (() => {
   try {
     const cr = JSON.parse(fs.readFileSync(path.join(REPO, 'videos', 'CRONOGRAMA.json'), 'utf8'));
@@ -288,7 +315,7 @@ const json = {
   wip: WIP, conteo: { proximo: proximo.length, enCurso: enCursoTapa.length, imprevisto: imprevistos.length, supertickets: enCurso.length - enCursoTapa.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, sinDesplegar: [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length, despues: despues.length },
   deploy: DEPLOY ? { commit: DEPLOY.commit, fecha: DEPLOY.fecha } : null,
   violaciones, columnas: { proximo, imprevisto: imprevistos, enCurso, cerrado, probado: probadas }, despues,
-  cine,
+  cine, caminos,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(json, null, 1));
@@ -299,6 +326,7 @@ console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · imprevistos $
 for (const t of proximo) console.log(`  ${String(t.prioridad).padStart(2)} · ${t.titulo}`);
 for (const t of imprevistos) console.log(`  ⚡ IMPREVISTO · ${t.titulo}${t.superticket ? ` · superticket ${t.progreso.verdes}/${t.progreso.total} ejercicios` : ''}`);
 for (const t of enCurso) console.log(`  ▶ EN CURSO · ${t.titulo}${t.superticket ? ` · superticket ${t.progreso.verdes}/${t.progreso.total} ejercicios${t.progreso.rojos ? ` · ${t.progreso.rojos} rojo` : ''}` : ''}`);
+for (const c of caminos) console.log(`  ⚭ CAMINO · ${c.titulo} · ${c.verdes}/${c.total} ✓${c.rompeEn ? ` · se rompe en el paso ${c.rompeEn}` : ''}`);
 for (const v of violaciones) console.log(`  ✘ ${v}`);
 console.log(`→ ${path.relative(REPO, OUT)}`);
 process.exit(violaciones.length ? 1 : 0);
