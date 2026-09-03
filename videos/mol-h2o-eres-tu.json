@@ -1,0 +1,94 @@
+{
+  "id": "mol-h2o-eres-tu",
+  "titulo": "Eres tú, de cerca — H₂O···H₂O (el 60 % de tu cuerpo, molécula por molécula)",
+  "nota": "QUICK WIN del rey (mismo bin water-approach, cámara wpair-b, guion nuevo). Primera pieza escrita con la doctrina del 2026-09-02: REVELACIÓN + valor PROPIO máximo (el espectador ES el sujeto). El rey habla del agua; esta habla de TI.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wpair&cam=b",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.erestuframes"
+  },
+  "audio": {
+    "dir": "dist-video/erestu-narracion",
+    "narracion": "erestu-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "segs": "segs.json",
+    "ass": "erestu.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-eres-tu-4k-master.mp4",
+    "h264": "agua-eres-tu-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
+    "guion": "erestu.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-eres-tu.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-eres-tu-capsula.tar.gz",
+    "pieza": "mol h2o-eres-tu",
+    "nueva": true,
+    "copy": {
+      "titulo": "Esto no es agua. Eres tú, de cerca.",
+      "descripcion": "Seis de cada diez partes de tu cuerpo son exactamente esto: dos moléculas de agua y el puente entre ellas. 💧 Esto no es una animación: son las dos moléculas resueltas con física cuántica (ab initio), y lo que ves es lo que dicen las ecuaciones. Mira el hidrógeno de una buscando el oxígeno de la otra. Esas líneas son el campo real que las jala, calculado y no dibujado. Y cuando se tocan, la nube se reacomoda: ahí nace el puente de hidrógeno. Ese puente se arma y se rompe un billón de veces por segundo, en cada gota, en tu sangre, en tus ojos ahora mismo. Nunca te habías visto tan de cerca. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#agua",
+        "#cuerpohumano",
+        "#química",
+        "#cuántica",
+        "#enlacedehidrógeno",
+        "#ciencia",
+        "#física",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque esto es literalmente el 60 % de mí, visto de cerca — y nunca lo había visto"
+    },
+    "autorizado": "",
+    "subidas": {}
+  },
+  "guion": {
+    "archivo": "scripts/guiones/erestu.txt",
+    "lineas": 11,
+    "palabras": 114,
+    "nota": "Escrito con §LA NEUROLOGÍA DEL CHISME: marco de REVELACIÓN (no \"por qué\"), asombro en la primera línea y otra vez al final, alta activación, y valor_propio declarado ANTES de la primera línea."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar."
+  }
+}

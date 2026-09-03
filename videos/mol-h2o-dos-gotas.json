@@ -1,0 +1,94 @@
+{
+  "id": "mol-h2o-dos-gotas",
+  "titulo": "Dos gotas se vuelven una — H₂O···H₂O (el instante en que nace un puente)",
+  "nota": "QUICK WIN del rey (mismo bin, cámara wpair-b). Es la estructura del rey de 94k (\"nunca habías visto NACER un enlace\") aplicada al evento cotidiano más visible: dos gotas juntándose. Marco de REVELACIÓN de evento, no de propiedad.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wpair&cam=b",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.dosgotasframes"
+  },
+  "audio": {
+    "dir": "dist-video/dosgotas-narracion",
+    "narracion": "dosgotas-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "segs": "segs.json",
+    "ass": "dosgotas.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-dos-gotas-4k-master.mp4",
+    "h264": "agua-dos-gotas-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
+    "guion": "dosgotas.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-dos-gotas.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-dos-gotas-capsula.tar.gz",
+    "pieza": "mol h2o-dos-gotas",
+    "nueva": true,
+    "copy": {
+      "titulo": "Nunca habías visto el instante en que dos gotas se vuelven una",
+      "descripcion": "Aquí está, molécula por molécula. 💧 Dos aguas separadas, el hueco entre ellas, y las líneas del campo real que las jala — calculado con física cuántica (ab initio), no dibujado. El hidrógeno de una apunta al oxígeno de la otra y avanza. En el momento en que se tocan, la nube cambia de forma: eso que acaba de nacer es un puente de hidrógeno. Una gota son un billón de puentes así, armándose y rompiéndose. Por eso el agua se junta sola, y por eso una gota se sostiene redonda. Lo acabas de ver nacer. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#agua",
+        "#gota",
+        "#química",
+        "#cuántica",
+        "#enlacedehidrógeno",
+        "#ciencia",
+        "#física",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque acabo de ver NACER algo que pasa un billón de veces por segundo dentro de mí"
+    },
+    "autorizado": "",
+    "subidas": {}
+  },
+  "guion": {
+    "archivo": "scripts/guiones/dosgotas.txt",
+    "lineas": 11,
+    "palabras": 112,
+    "nota": "Escrito con §LA NEUROLOGÍA DEL CHISME: marco de REVELACIÓN (no \"por qué\"), asombro en la primera línea y otra vez al final, alta activación, y valor_propio declarado ANTES de la primera línea."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar."
+  }
+}

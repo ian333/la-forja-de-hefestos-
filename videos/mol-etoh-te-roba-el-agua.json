@@ -1,0 +1,94 @@
+{
+  "id": "mol-etoh-te-roba-el-agua",
+  "titulo": "El alcohol te roba el agua — C₂H₅OH···H₂O (por qué el gel te reseca las manos)",
+  "nota": "QUICK WIN del alcohol (mismo bin water-ethanol recoloreado por Hirshfeld, escena wcolor). REVELACIÓN con villano cotidiano: el gel que te reseca. Alta activación (un jalón que te quita algo), payoff en las manos del público.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wcolor&zoom=0.55",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.robaframes"
+  },
+  "audio": {
+    "dir": "dist-video/roba-narracion",
+    "narracion": "roba-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "segs": "segs.json",
+    "ass": "roba.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "etoh-te-roba-el-agua-4k-master.mp4",
+    "h264": "etoh-te-roba-el-agua-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
+    "guion": "roba.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-etoh-te-roba-el-agua.mp4",
+    "capsulaRel": "moleculas/_code/mol-etoh-te-roba-el-agua-capsula.tar.gz",
+    "pieza": "mol etoh-te-roba-el-agua",
+    "nueva": true,
+    "copy": {
+      "titulo": "Esto es lo que te hace el gel de manos (y por qué te reseca)",
+      "descripcion": "El alcohol del gel tiene una punta idéntica a la del agua: un oxígeno con un hidrógeno colgando. 🔬 Esto no es una animación: es etanol y agua resueltos con física cuántica (ab initio, RHF/aug-cc-pVDZ). Esa punta busca al agua de tu piel y le arma un puente que vale casi lo mismo que el del agua consigo misma (medido: 96 %). Por eso, cuando el alcohol se evapora, se lleva el agua con él — y por eso después del gel sientes las manos resecas. No te las secó el aire: te las secó este puente. Los colores son por elemento (verde carbono, oro oxígeno, blanco hidrógeno), repartidos con la regla de Hirshfeld, no a ojo. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#alcohol",
+        "#geldemanos",
+        "#química",
+        "#cuántica",
+        "#enlacedehidrógeno",
+        "#piel",
+        "#ciencia",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque explica algo que me pasa todos los días y nadie me había dicho por qué"
+    },
+    "autorizado": "",
+    "subidas": {}
+  },
+  "guion": {
+    "archivo": "scripts/guiones/roba.txt",
+    "lineas": 11,
+    "palabras": 114,
+    "nota": "Escrito con §LA NEUROLOGÍA DEL CHISME: marco de REVELACIÓN (no \"por qué\"), asombro en la primera línea y otra vez al final, alta activación, y valor_propio declarado ANTES de la primera línea."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar."
+  }
+}
