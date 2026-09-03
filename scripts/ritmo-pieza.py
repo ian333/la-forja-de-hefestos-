@@ -69,9 +69,10 @@ def habla(d):
                     'silabas_por_seg_del_video': round(sil / fin, 2) if fin else None}
         except Exception:
             pass
-    voz = sum(len(l.split()) for l in ls) * 0.455
+    vel = float((d.get('audio') or {}).get('vel') or 1.0)     # VEL del TTS: la estimación la respeta
+    voz = sum(len(l.split()) for l in ls) * 0.455 / vel
     real = voz + len(ls) * 0.40
-    return {'silabas': sil, 'fuente': 'estimado (aún sin TTS)',
+    return {'silabas': sil, 'fuente': f'estimado (aún sin TTS, VEL {vel})',
             'silabas_por_seg_hablando': round(sil / voz, 2),
             'silabas_por_seg_del_video': round(sil / real, 2)}
 

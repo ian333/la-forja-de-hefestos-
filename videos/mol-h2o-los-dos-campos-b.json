@@ -1,0 +1,113 @@
+{
+  "id": "mol-h2o-los-dos-campos-b",
+  "titulo": "Los dos campos — EL REY · BRAZO B (ritmo rápido)",
+  "nota": "BRAZO B del experimento de RITMO (canon §EL RITMO). Pieza HERMANA de mol-h2o-los-dos-campos: mismo bin, mismo guion, misma voz. Cambian SOLO dos perillas: 21 tomas en 62 s (19.4 cortes/min contra 6.4) y VEL del TTS 1.25 (la voz pasa de 73.6 a ~59 s). Se compara contra A con skip3s y compartidos/mil. El guion es copia literal (campo-rey-b.txt) solo para que la caché del TTS no reuse tomas grabadas a VEL 1.0.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wcamporb",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 62
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.camporeybframes",
+    "nota_cometa": "Las lineas llevan COMETAS (uFlujo=1 en BondEField). ian: \"el negativo se ve igual al positivo, tal vez sea eso, que son el mismo y no lo capto\". No era el: era el dibujo. Lo unico que distingue los dos campos es la DIRECCION y no se estaba dibujando. MEDIDO en el .bin (scripts/_dir-campo.py): el campo nuclear va de r=2.86 a r=8.91 bohr (97.6% de las lineas SALEN) y el electronico de 8.91 a 2.81 (97.6% ENTRAN); el total queda en +0.06, ni sale ni entra: CONECTA, que es justo lo que dice el guion."
+  },
+  "audio": {
+    "dir": "dist-video/campo-rey-b-narracion",
+    "narracion": "campo-rey-b-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 58,
+    "segs": "segs.json",
+    "ass": "campo-rey-b.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)",
+    "vel": 1.25
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "h2o-los-dos-campos-b-4k-master.mp4",
+    "h264": "h2o-los-dos-campos-b-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin",
+      "water-approach-efield-nuc.bin",
+      "water-approach-efield-ele.bin"
+    ],
+    "guion": "campo-rey-b.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py",
+      "precompute-water-approach.py",
+      "bin-gate.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "fisica": {
+    "metodo": "RHF/aug-cc-pVDZ, SCF en GPU (gpu4pyscf). V = V_nuclear + V_electronico, E = -grad(V), trazado con el MISMO tracer que el campo total para que los tres sean comparables cuadro a cuadro.",
+    "medido_en": "etanol+agua (scripts/_split-campo.py). Los porcentajes son del mismo cálculo; el rey es el mismo método y la misma máquina.",
+    "V_nuc_6bohr": 8.0824,
+    "V_ele_6bohr": -8.0364,
+    "residuo_pct_6bohr": 0.568,
+    "cancelacion_campo_6bohr_pct": 94.35,
+    "cancelacion_campo_20bohr_pct": 99.42,
+    "coseno_entre_campos": -0.9989,
+    "nota": "El coseno -0.9989 dice que los dos campos apuntan casi exactamente al reves. Las tres afirmaciones del guion (sale hacia afuera / entra a la nube / se cancelan) son las tres medibles y las tres se VEN en pantalla."
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-los-dos-campos-b.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-los-dos-campos-b-capsula.tar.gz",
+    "pieza": "mol-h2o los dos campos b",
+    "nueva": true,
+    "copy": {
+      "titulo": "Hay dos campos eléctricos, no uno (y casi se borran entre ellos)",
+      "descripcion": "Cuando ves las líneas azules en estos videos, estás viendo una RESTA. 🔬 En realidad hay dos campos, y los dos son enormes: el de los núcleos, positivo, que sale disparado hacia afuera; y el de los electrones, negativo, que cae hacia adentro. Aquí los ves por separado por primera vez. Ocupan el mismo espacio y apuntan al revés. Lo medimos sobre etanol y agua resueltos con física cuántica (ab initio, RHF/aug-cc-pVDZ): a 6 bohr se cancelan el 94%, y a 20 bohr el 99.4%. El coseno entre los dos campos es -0.9989, o sea que son casi exactamente opuestos. Y esto es lo importante: lo que sobra de esa cancelación, esa miga, es el enlace químico. Es el puente del agua. Es tu cuerpo. Toda la química que existe es el residuo de dos gigantes que casi se borran. Y de paso: una línea de campo es la ruta que seguiría una carga soltada ahí. Por eso la nube de electrones no lleva líneas: no es una ruta, es cuánta cosa hay. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#física",
+        "#campoeléctrico",
+        "#química",
+        "#cuántica",
+        "#electrones",
+        "#ciencia",
+        "#enlacequímico",
+        "#abinitio",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque hay dos campos eléctricos y casi se borran entre ellos: la química es lo que sobra",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
+    },
+    "autorizado": "",
+    "subidas": {}
+  },
+  "guion": {
+    "archivo": "scripts/guiones/campo-rey-b.txt",
+    "lineas": 19,
+    "palabras": 149,
+    "nota": "70 s. ESTRUCTURA INVERTIDA respecto de la versión del alcohol: abre con los DOS campos encimados (el cuadro más fuerte va en el frame 0, no a la mitad) y de ahí los separa. Enseñar primero y descomponer después."
+  },
+  "ritmo": {
+    "brazo": "B",
+    "nota_brazo": "B = rápido. Hermana de mol-h2o-los-dos-campos (brazo A). Solo cambian cortes/min y VEL."
+  }
+}

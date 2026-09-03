@@ -512,6 +512,45 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // Radios ~20 % más cerrados que el primer intento (los stills daban fill ~0.30 contra el
   // 0.74-0.82 de los ganadores) y fuera la toma de "el agua sola" a rMul 0.44, que se quedaba
   // SIN SUJETO en pantalla. El clímax (crashIn) cae en t=62 = 78 % del video, como el rey.
+  // ═══ BRAZO B del experimento de RITMO (canon §EL RITMO, 2026-09-03) ═══
+  // MISMO bin, MISMO guion, MISMA voz que wcampor (brazo A). Cambian SOLO dos perillas:
+  //   · 21 tomas en 62 s = 19.4 cortes/min (A: 9 en 75 s = 6.4). Referencia externa 20-40.
+  //   · VEL del TTS 1.25 (en el manifiesto) → la voz pasa de 73.6 s a ~59 s.
+  // Los cortes se hacen ALTERNANDO ángulo (dir ±1, azim desfasado, side ±1) para que un corte
+  // se LEA como corte y no como el mismo plano partido. Los beats son los de A escalados ×0.8;
+  // se recalibran a segs.json en cuanto haya TTS. Duraciones PROVISIONALES.
+  // La toma de "quita las nubes" (l09) se deja UNA sola a propósito: la NADA necesita quietud
+  // — y así queda declarado que ahí el brazo B no corta, para no confundir el efecto.
+  wcamporb: [
+    // l01-04 · EL GANCHO: los dos campos encimados (0 → 11.5)
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 0.5, elev: 0.15, rMul: 1.10 }), dur: 2.9, label: 'B · gancho 1/4' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 2.9, label: 'B · gancho 2/4 (ángulo opuesto)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 0.4, elevTo: -0.40, rMul: 1.05 }), dur: 2.9, label: 'B · gancho 3/4 (grúa)' },
+    { shot: twoShot({ dir: 1, azim0: 3.9, span: 0.5, elev: 0.10, rMul: 1.10 }), dur: 2.8, label: 'B · gancho 4/4' },
+    // l05-06 · SOLO el positivo (11.5 → 16.4)
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 0.6, rMul: 0.72 }), dur: 2.45, label: 'B · rojo, molécula A' },
+    { shot: orbitOne({ side: 1, azim0: 2.5, span: 0.6, rMul: 0.72 }), dur: 2.45, label: 'B · rojo, molécula B' },
+    // l07-08 · SOLO el negativo (16.4 → 22.2)
+    { shot: orbitOne({ side: 1, azim0: 1.6, span: 0.6, rMul: 0.60 }), dur: 2.9, label: 'B · cian, cerca' },
+    { shot: craneOverPair({ azim0: 2.6, span: 0.4, elevTo: -0.35, rMul: 1.05 }), dur: 2.9, label: 'B · cian, grúa' },
+    // l09 · la nube PELADA — una sola toma, a propósito (22.2 → 26.5)
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 4.3, label: 'B · la NADA (sin cortar: la quietud es el argumento)' },
+    // l10-13 · los dos otra vez + los números (26.5 → 37.9)
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 2.85, label: 'B · los dos 1/4' },
+    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 0.4, elev: 0.06 }), dur: 2.85, label: 'B · los dos 2/4 (crash)' },
+    { shot: twoShot({ dir: 1, azim0: 0.4, span: 0.5, elev: 0.12, rMul: 1.10 }), dur: 2.85, label: 'B · los dos 3/4' },
+    { shot: orbitOne({ side: -1, azim0: 3.0, span: 0.6, rMul: 0.72 }), dur: 2.85, label: 'B · los dos 4/4 (íntima)' },
+    // l14-16 · la SUMA: lo que sobra (37.9 → 47.7)
+    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 3.27, label: 'B · suma 1/3 (looming)' },
+    { shot: crashIn({ rMul: 0.80, azim0: 2.8, span: 0.4, elev: 0.06 }), dur: 3.27, label: 'B · suma 2/3' },
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 2.4 }), dur: 3.26, label: 'B · suma 3/3 (conecta)' },
+    // l17-19 · payoff (47.7 → 62.0)
+    { shot: pullOut({ rFromMul: 0.62, rTdMul: 0.95 }), dur: 2.86, label: 'B · payoff 1/5' },
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 0.5, elev: 0.15, rMul: 1.10 }), dur: 2.86, label: 'B · payoff 2/5' },
+    { shot: orbitOne({ side: 1, azim0: 0.9, span: 0.6, rMul: 0.72 }), dur: 2.86, label: 'B · payoff 3/5' },
+    { shot: twoShot({ dir: -1, azim0: 2.9, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 2.86, label: 'B · payoff 4/5' },
+    { shot: pullOut({ rFromMul: 0.62, rTdMul: 0.95 }), dur: 2.86, label: 'B · payoff 5/5 + GAIA' },
+  ],
   wcampor: [
     // DURACIONES CALIBRADAS a segs.json (2026-08-31), no a los cortes de cámara que puse a
     // ojo. Cada corte cae en el ARRANQUE de su línea (regla de §LA MECÁNICA DEL O₂). Lo que
@@ -1250,6 +1289,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
   wcolor: { name: 'De quién son', formula: 'C · O · H', fact: 'Cada color es un elemento, repartido por la regla de Hirshfeld — no a ojo.' },
+  wcamporb: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'Se cancelan el 99 % entre ellos. El puente del agua es lo que sobra.' },
   wcampor: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'Se cancelan el 99 % entre ellos. El puente del agua es lo que sobra.' },
   wcampo: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'El campo de los núcleos y el de los electrones se cancelan el 99 % — la química es lo que sobra.' },
   wetanol: { name: 'El alcohol', formula: 'C₂H₅OH···H₂O', fact: 'El puente del alcohol vale el 96 % del puente del agua — por eso se mezclan.' },
@@ -2599,6 +2639,19 @@ const WETANOL_CAPAS: CapasSpec = {
   spin:     { base: 1,    mods: [{ wins: [[51.45, 66.48]], a: 0.9, label: 'ARDE: carga llegando a la silla (l12-15)' }] },
   acc:      { base: 1,    mods: [{ wins: [[27.66, 32.46]], a: 0.5, label: 'ORO: la palabra-color, el único cálido del video (l7)' }] },
 };
+const WCAMPORB_DURATION = 62;
+// BRAZO B: los mismos beats que WCAMPOR_CAPAS con las ventanas ×0.8 (la voz va 25 % más
+// rápida por VEL 1.25). PROVISIONAL: se recalibra a segs.json en cuanto corra el TTS.
+const WCAMPORB_CAPAS: CapasSpec = {
+  apertura: { base: 0.55, mods: [{ wins: [[47.7, 62]], a: -0.35, label: 'al final se juntan' }] },
+  nubes:    { base: 1,    mods: [{ wins: [[11.5, 22.2]], a: -0.55, label: 'baja la nube mientras se leen las partes' }] },
+  campo:    { base: 0,    mods: [{ wins: [[37.9, 62]], a: 1.0, label: 'la suma: lo que queda' }] },
+  campoNuc: { base: 0,    mods: [{ wins: [[0, 16.4]], a: 1.0, label: 'gancho + positivo solo' }, { wins: [[26.5, 37.9]], a: 1.0, label: 'los dos otra vez' }] },
+  campoEle: { base: 0,    mods: [{ wins: [[0, 11.5]], a: 1.0, label: 'gancho' }, { wins: [[16.4, 22.2]], a: 1.0, label: 'negativo solo' }, { wins: [[26.5, 37.9]], a: 1.0, label: 'los dos otra vez' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[22.2, 26.5]], a: 0.42, label: 'la nube sola respira' }] },
+  spin:     { base: 1,    mods: [{ wins: [[37.9, 62]], a: 0.9, label: 'el puente arde' }] },
+  acc:      { base: 1,    mods: [] },
+};
 const WCAMPOR_DURATION = 75;
 // LOS DOS CAMPOS · EL REY. Estructura INVERTIDA respecto de la versión del alcohol: ian vio
 // el cuadro de los dos campos encimados y dijo "ESTO DEBE DE SER LA PRIMERA IMAGEN". Tiene
@@ -2769,6 +2822,8 @@ type WaterEntry = {
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
   // LA SILLA VACÍA: el bin del rey con SU coreografía y SU duración (quick win, 2026-08-27).
+  wcamporb: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WCAMPORB_DURATION,
+              efNuc: 'water-approach-efield-nuc', efEle: 'water-approach-efield-ele', capas: WCAMPORB_CAPAS },
   wcampor: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WCAMPOR_DURATION,
              efNuc: 'water-approach-efield-nuc', efEle: 'water-approach-efield-ele', capas: WCAMPOR_CAPAS },
   // binColors: SIN esta bandera la escena ignora accColor del .bin y usa su paleta cálida
