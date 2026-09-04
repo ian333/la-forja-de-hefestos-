@@ -81,9 +81,27 @@
       "valor_propio": "porque acabo de ver NACER algo que pasa un billón de veces por segundo dentro de mí"
     },
     "autorizado": "2026-09-04 yt,ig — dicho por ian en sesión: \"ya vi los 4 me atraparon mas tienen mas dinamismo… quiero que hoy se suba algo, estan autorizados todos :D\"",
-    "subidas": {},
+    "subidas": {
+      "yt": {
+        "id": "l6EuXA1fLGU",
+        "url": "https://youtu.be/l6EuXA1fLGU",
+        "privacidad": "private",
+        "publishAt": "2026-09-07T18:45:00-06:00",
+        "captions": "AUieDabTuM2mDYv-W96Sw8owi0nX4BeY1GQ58PPtz3qRx9L-jtF8QOCEaA",
+        "fecha": "2026-09-04T16:09"
+      },
+      "yt16x9": {
+        "id": "e73O8SyCsWc",
+        "url": "https://youtu.be/e73O8SyCsWc",
+        "privacidad": "private",
+        "publishAt": "2026-09-07T18:45:00-06:00",
+        "captions": "AUieDabhYROA0B_Y-rjwtPFLiD5P3eJggoGdyUKH9MAkgM7I76OjC6xx6g",
+        "fecha": "2026-09-04T16:11"
+      }
+    },
     "programar": "2026-09-07T18:45:00-06:00",
-    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora.",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-dos-gotas.mp4?v=05c9c172c4"
   },
   "guion": {
     "archivo": "scripts/guiones/dosgotas.txt",
@@ -95,7 +113,11 @@
     "brazo": "A",
     "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar.",
     "cortes_por_min": 8.73,
+    "tomas": 9,
     "silabas_por_seg": 4.41,
+    "silabas_por_seg_del_video": 4.03,
+    "fuente_habla": "segs.json (REAL)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO.",
     "nota_medida": "medido por ritmo-pieza.py --escribir en iangpu (segs.json real) el 2026-09-04; copiado a la laptop porque el manifiesto de iangpu estaba en uso por el render 16:9"
   }
 }
