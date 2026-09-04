@@ -70,14 +70,24 @@
       "nota": "16:9 en vivo"
     },
     {
-      "fecha": "2026-09-05",
+      "fecha": "2026-09-04",
       "hora": "18:45",
       "id": "mol-h2o-los-dos-campos-b",
       "titulo": "Los dos campos — BRAZO B (21 tomas, VEL 1.25)",
       "base": "mismo bin y guion que el REY del 09-01 · wcamporb · 64 s",
       "tipo": "experimento A/B",
+      "estado": "hoy",
+      "nota": "viernes, HOY (ian 2026-09-04: \"quiero que hoy se suba algo\"). Veredicto vs brazo A a las 48 h (09-06)."
+    },
+    {
+      "fecha": "2026-09-05",
+      "hora": "18:45",
+      "id": "mol-h2o-eres-tu",
+      "titulo": "Eres tú — seis de cada diez partes de tu cuerpo",
+      "base": "water-approach · weres · 55 s · guion REVELACIÓN",
+      "tipo": "revelación",
       "estado": "proximo",
-      "nota": "sábado. Veredicto vs brazo A a las 48 h (09-07): skip3s y compartidos por mil. Master en Downloads/los-dos-campos-REY-brazoB-4K.mp4"
+      "nota": "sábado"
     },
     {
       "fecha": "2026-09-06",
@@ -87,14 +97,14 @@
       "base": "water-ethanol · wroba · Hirshfeld · 55 s · guion REVELACIÓN",
       "tipo": "revelación",
       "estado": "proximo",
-      "nota": "domingo = el día más fuerte de la audiencia; el gancho más cotidiano de los tres"
+      "nota": "domingo = el día más fuerte de la audiencia; el gancho más cotidiano"
     },
     {
       "fecha": "2026-09-07",
       "hora": "18:45",
-      "id": "mol-h2o-eres-tu",
-      "titulo": "Eres tú — seis de cada diez partes de tu cuerpo",
-      "base": "water-approach · weres · 55 s · guion REVELACIÓN",
+      "id": "mol-h2o-dos-gotas",
+      "titulo": "Dos gotas — el puente naciendo",
+      "base": "water-approach · wgotas · 55 s · guion REVELACIÓN",
       "tipo": "revelación",
       "estado": "proximo",
       "nota": "lunes, segundo día más fuerte"
@@ -102,91 +112,82 @@
     {
       "fecha": "2026-09-08",
       "hora": "18:45",
-      "id": "mol-h2o-dos-gotas",
-      "titulo": "Dos gotas — el puente naciendo",
-      "base": "water-approach · wgotas · 55 s · guion REVELACIÓN",
-      "tipo": "revelación",
-      "estado": "proximo"
-    },
-    {
-      "fecha": "2026-09-09",
-      "hora": "18:45",
       "id": "mol-h2o-el-hexamero-b",
       "titulo": "El hexámero — recorte al ritmo (12k vistas IG)",
       "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
       "tipo": "recorte-ritmo",
       "estado": "proximo",
-      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+      "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación."
     },
     {
-      "fecha": "2026-09-10",
+      "fecha": "2026-09-09",
       "hora": "18:45",
       "id": "mol-h2o-el-anillo-b",
       "titulo": "El anillo — recorte al ritmo (6k)",
       "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
       "tipo": "recorte-ritmo",
       "estado": "proximo",
-      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+      "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación."
     },
     {
-      "fecha": "2026-09-11",
+      "fecha": "2026-09-10",
       "hora": "18:45",
       "id": "mol-h2o-el-sudor-b",
       "titulo": "El sudor — recorte al ritmo (4.6k)",
       "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
       "tipo": "recorte-ritmo",
       "estado": "proximo",
-      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+      "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación."
     },
     {
-      "fecha": "2026-09-12",
+      "fecha": "2026-09-11",
       "hora": "18:45",
       "id": "mol-h2o-la-sal-b",
       "titulo": "La sal — recorte al ritmo (2.8k)",
       "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
       "tipo": "recorte-ritmo",
       "estado": "proximo",
-      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+      "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación."
     },
     {
-      "fecha": "2026-09-13",
+      "fecha": "2026-09-12",
       "hora": "18:45",
       "id": "mol-grasa-butirico-b",
       "titulo": "Mantequilla — recorte al ritmo (3.6k)",
       "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
       "tipo": "recorte-ritmo",
       "estado": "proximo",
-      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+      "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación."
     },
     {
-      "fecha": "2026-09-14",
+      "fecha": "2026-09-13",
       "hora": "18:45",
       "id": "mol-h2o-el-cuarteto-b",
       "titulo": "El cuarteto — recorte al ritmo",
       "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
       "tipo": "recorte-ritmo",
       "estado": "proximo",
-      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+      "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación."
     },
     {
-      "fecha": "2026-09-15",
+      "fecha": "2026-09-14",
       "hora": "18:45",
       "id": "mol-h2o-el-hielo-b",
       "titulo": "El hielo — recorte al ritmo (2.4k)",
       "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
       "tipo": "recorte-ritmo",
       "estado": "proximo",
-      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+      "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación."
     },
     {
-      "fecha": "2026-09-16",
+      "fecha": "2026-09-15",
       "hora": "18:45",
       "id": "mol-h2o-la-silla-b",
       "titulo": "La silla — recorte al ritmo",
       "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
       "tipo": "recorte-ritmo",
       "estado": "proximo",
-      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+      "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación."
     }
   ],
   "despues": [
