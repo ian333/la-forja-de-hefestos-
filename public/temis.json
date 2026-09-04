@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-04 21:40",
+ "generado": "2026-09-04 21:53",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -5429,7 +5429,7 @@
     "rasgos": {
      "brazo": "A",
      "cortes_min": 8.73,
-     "sil_s": 3.84,
+     "sil_s": 4.24,
      "dur": 55,
      "vel": 1,
      "marco": "revelacion"
@@ -5450,7 +5450,7 @@
     "estado": "proximo",
     "nota": "domingo = el día más fuerte de la audiencia; el gancho más cotidiano",
     "manifiesto": true,
-    "publicado": false,
+    "publicado": true,
     "programar": "2026-09-06T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
@@ -5460,9 +5460,14 @@
      "vel": 1,
      "marco": "revelacion"
     },
-    "yt": null,
+    "yt": {
+     "url": "https://youtu.be/o4mX3NDfUcI",
+     "privacidad": "private"
+    },
     "ig": null,
-    "ancho": null,
+    "ancho": {
+     "url": "https://youtu.be/XX58b5VoHeE"
+    },
     "entregado": "",
     "falta": []
    },

@@ -81,9 +81,27 @@
       "valor_propio": "porque explica algo que me pasa todos los días y nadie me había dicho por qué"
     },
     "autorizado": "2026-09-04 yt,ig — dicho por ian en sesión: \"ya vi los 4 me atraparon mas tienen mas dinamismo… quiero que hoy se suba algo, estan autorizados todos :D\"",
-    "subidas": {},
+    "subidas": {
+      "yt": {
+        "id": "o4mX3NDfUcI",
+        "url": "https://youtu.be/o4mX3NDfUcI",
+        "privacidad": "private",
+        "publishAt": "2026-09-06T18:45:00-06:00",
+        "captions": "AUieDaYinSmk7kT-v312woo3s8Lrz7Bpsj_Exfb9E_9EvejMY16LiKlzyg",
+        "fecha": "2026-09-04T15:47"
+      },
+      "yt16x9": {
+        "id": "XX58b5VoHeE",
+        "url": "https://youtu.be/XX58b5VoHeE",
+        "privacidad": "private",
+        "publishAt": "2026-09-06T18:45:00-06:00",
+        "captions": "AUieDabOzdqHIIIKC4bnOpQIs1AH9qDVuHwQOL2zYvyhgF0Xx7t_-jQuMQ",
+        "fecha": "2026-09-04T15:48"
+      }
+    },
     "programar": "2026-09-06T18:45:00-06:00",
-    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora.",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-etoh-te-roba-el-agua.mp4?v=4bb7074306"
   },
   "guion": {
     "archivo": "scripts/guiones/roba.txt",
