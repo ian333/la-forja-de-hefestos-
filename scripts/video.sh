@@ -296,7 +296,10 @@ paso_publicar() {
   node "$ROOT/scripts/comando-scan.cjs" > /dev/null 2>&1 && node "$ROOT/scripts/comando-catalogo.cjs" | tail -1
   rsync -a -e "$RE" "$ROOT/public/comando/catalogo.json" "$ROOT/public/comando/produccion.json" "$A:/mnt/hdd/forja-dist/comando/" && echo "   ✓ JSONs en ATLAS"
   local PIEZA; PIEZA=$(m publicar.pieza)
-  if curl -s --max-time 10 "https://university.gaiaprime.com.mx/comando/catalogo.json" | grep -q "\"id\": \"$PIEZA\""; then
+  # el JSON en vivo puede venir MINIFICADO ("id":"x") o con espacio ("id": "x") según quién lo
+  # sirvió (2026-09-04: la release de vite lo dejó minificado y este check frenó el programar de B
+  # dos veces con la pieza YA en vivo) → las dos formas valen.
+  if curl -s --max-time 10 "https://university.gaiaprime.com.mx/comando/catalogo.json" | grep -qE "\"id\": ?\"$PIEZA\""; then
     echo "   ✓ EN VIVO: la pieza $PIEZA está en el catálogo de producción"
   else
     echo "   ✗ la pieza $PIEZA NO aparece en producción — revisar"
