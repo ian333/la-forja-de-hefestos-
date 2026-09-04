@@ -42,7 +42,14 @@ const path = require('path');            // ruta del archivo a subir (acción 'u
 const URL = process.env.URL || 'http://localhost:5001/forja-brep.html';
 const ACTIONS = process.argv[2] || '/tmp/forja-drive/actions.json';
 const OUT = process.argv[3] || '/tmp/forja-drive/out';
-const W = 1600, H = 1000;
+const W = +process.env.W || 1600, H = +process.env.H || 1000;
+// DPR=2 → las CAPTURAS salen a 2× (1920×1080 CSS = 3840×2160 px). La GRABACIÓN no: el screencast
+// de Playwright entrega cuadros en píxeles CSS aunque el DPR sea 2 — medido 2026-09-04 con un
+// webm «3840×2160» que traía la página en el cuarto superior izquierdo y gris el resto. Por eso
+// el video se graba a W×H y el 4K se ESCALA después (lanczos) y se declara como escalado.
+// Las coordenadas de los gestos van en CSS px: un actions.json de 1600×1000 NO sirve a otro W/H;
+// los gestos por testid (tclick/drop/expect) sí son independientes del tamaño.
+const DPR = +process.env.DPR || 1;
 fs.mkdirSync(OUT, { recursive: true });
 const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'utf8')) : [];
 
@@ -57,7 +64,7 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
   // La Forja ejecutando el tutorial. Sin REC, comportamiento idéntico al anterior.
   const REC = process.env.REC || '';
   const context = await browser.newContext({
-    viewport: { width: W, height: H }, deviceScaleFactor: 1,
+    viewport: { width: W, height: H }, deviceScaleFactor: DPR,
     ...(REC ? { recordVideo: { dir: REC, size: { width: W, height: H } } } : {}),
   });
   const recT0 = Date.now();            // marca de inicio de grabación (para recortar el lead-in muerto)
@@ -158,6 +165,25 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
           await page.locator(`[data-testid="${a.testid}"]`).setInputFiles(abs, { timeout: 15000 });
         }
         // Selección/cota PROGRAMÁTICA por nombre de método del hook (fiable, sin pixeles).
+        // LETRERO (orden 2026-09-04-el-video-del-camino): un overlay DOM para que el video se
+        // explique solo — «PASO 2 DE 8 · SUELTA EL STEP» + lo que debe verse. `expect` le cuelga
+        // el veredicto (✓ se ve / ✗ hoy no existe) al letrero vigente. text vacío = quitarlo.
+        else if (a.type === 'caption') {
+          await page.evaluate(({ text, sub }) => {
+            let c = document.getElementById('__cap');
+            if (!text) { if (c) c.remove(); return; }
+            if (!c) {
+              c = document.createElement('div'); c.id = '__cap';
+              c.style.cssText = 'position:fixed;left:22px;top:150px;z-index:2147483644;pointer-events:none;max-width:min(560px,44vw);padding:14px 20px 14px 18px;border-radius:12px;background:rgba(8,12,18,.86);border:1px solid #33404f;border-left:4px solid #ffcc33;box-shadow:0 8px 26px rgba(0,0,0,.55);font-family:Inter,system-ui,sans-serif;color:#e8eef6;backdrop-filter:blur(6px);';
+              c.innerHTML = '<div id="__capt" style="font:700 22px/1.15 Inter,system-ui,sans-serif;letter-spacing:.3px;color:#ffcc33"></div><div id="__caps" style="margin-top:6px;font:500 15px/1.35 Inter,system-ui,sans-serif;color:#c7d2df"></div><div id="__capv" style="margin-top:8px;font:700 13px/1.2 ui-monospace,Menlo,monospace;letter-spacing:1.2px;min-height:14px"></div>';
+              document.body.appendChild(c);
+            }
+            c.style.borderLeftColor = '#ffcc33';
+            document.getElementById('__capt').textContent = text;
+            document.getElementById('__caps').textContent = sub || '';
+            const v = document.getElementById('__capv'); v.textContent = ''; v.dataset.okN = '0'; v.dataset.failN = '0';
+          }, { text: a.text || '', sub: a.sub || '' });
+        }
         // SOLTAR UN ARCHIVO como lo hace un humano (orden 2026-09-04-el-runner-del-camino).
         // x4 lo pagó: `page.dispatchEvent` de Playwright NO entrega el DataTransfer entre
         // contextos y el drop llegaba VACÍO — parecía defecto del producto y el producto
@@ -200,6 +226,16 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
           if (ok && a.js) { try { detail = String(await page.evaluate(`(() => { try { return String(${a.js}); } catch (e) { return 'ERR ' + e; } })()`)).slice(0, 160); } catch (e) {} }
           if (ok && a.selector) { try { detail = 'n=' + await page.evaluate(`document.querySelectorAll(${JSON.stringify(a.selector)}).length`); } catch (e) {} }
           checks.push({ label: a.label || `expect_${i}`, ok, ms, detail, testid: a.testid, selector: a.selector, js: a.js, maxMs: a.maxMs });
+          // el veredicto se cuelga del letrero vigente (si hay): un ✗ manda sobre los ✓ del mismo paso
+          try {
+            await page.evaluate(({ ok }) => {
+              const v = document.getElementById('__capv'); const c = document.getElementById('__cap'); if (!v || !c) return;
+              v.dataset.okN = String((+v.dataset.okN || 0) + (ok ? 1 : 0)); v.dataset.failN = String((+v.dataset.failN || 0) + (ok ? 0 : 1));
+              const okN = +v.dataset.okN, failN = +v.dataset.failN;
+              const [txt, col] = failN === 0 ? ['✓ SE VE', '#7ee2a8'] : okN === 0 ? ['✗ HOY NO EXISTE', '#f27a6c'] : ['◐ A MEDIAS', '#ffb347'];
+              v.textContent = txt; v.style.color = col; c.style.borderLeftColor = col;
+            }, { ok });
+          } catch (e) {}
           const line = `expect[${a.label || i}]: ${ok ? 'OK' : 'FALLA'} · ${ms} ms${detail ? ' · ' + detail : ''}`;
           log.push(line); console.log(line);
         }

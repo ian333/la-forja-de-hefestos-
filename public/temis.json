@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-04 21:53",
+ "generado": "2026-09-04 21:58",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -10,10 +10,10 @@
   "proximo": 6,
   "enCurso": 0,
   "imprevisto": 0,
-  "supertickets": 10,
-  "cerrado": 78,
+  "supertickets": 9,
+  "cerrado": 79,
   "probado": 0,
-  "porProbar": 43,
+  "porProbar": 44,
   "sinDesplegar": 2,
   "despues": 18
  },
@@ -1276,13 +1276,15 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
-   },
+   }
+  ],
+  "cerrado": [
    {
     "file": "ordenes/2026-09-04-el-video-del-camino.md",
     "slug": "2026-09-04-el-video-del-camino",
     "titulo": "EL VIDEO DEL CAMINO — el happy path se ve en un video antes de que ian lo camine",
     "fecha": "2026-09-04",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 999,
     "tipo": "",
     "superticket": true,
@@ -1292,75 +1294,75 @@
       "titulo": "El arnés sabe poner un letrero en pantalla · forja-drive.cjs gesto caption · {type:'caption', text, sub} pinta un overlay DOM (n de N",
       "herramientas": "gesto",
       "oraculo": "«se ve»); expect le cuelga el veredicto ✓/✗ al letrero vigente; caption vacío lo quita",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "gesto `caption` en forja-drive.cjs: overlay DOM «PASO n DE N · gesto» + «se ve: …»; `expect` le cuelga ✓ SE VE / ✗ HOY NO EXISTE / ◐ A MEDIAS (cuenta oks y fallas del mismo letrero). Verificado en el video: 9 letreros (8 pasos + «HOY SE ROMPE EN EL PASO 5 · PARTIR · lo debe el ticket T7 · LA LÍNEA DE PARTICIÓN»)",
       "video": "",
-      "still": "",
-      "nota": ""
+      "still": "paso-2-letrero.png",
+      "nota": "el ticket dueño sale con su NOMBRE leyendo public/temis.json, no con el slug"
      },
      {
       "id": "el-paseo",
       "titulo": "El runner tiene modo paseo",
       "herramientas": "camino-runner.cjs --paseo <dir>",
       "oraculo": "arma las mismas acciones del ## RUNNER pero con letrero por paso, settles humanos (1.2-2.6 s) y REC= para forja-drive; NO reescribe el camino (es un paseo, no una medición)",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "`camino-runner.cjs --paseo <dir>` arma las MISMAS acciones del ## RUNNER con letrero por paso, settles 1.2-2.6 s y REC= para el arnés; no reescribe el camino. Corrido desde iangpu contra producción (servido 0b26101): 4/8 ok · se rompe en el paso 5 — igual que la medición",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "para que los pasos rojos enseñen la PIEZA y no el dictamen, el paso 5 ahora lleva Escape y el paso 8 vuelve a abrir D (también en la medición: mismos resultados)"
      },
      {
       "id": "cuatro-k",
       "titulo": "Sale en 4K de verdad",
       "herramientas": "W= H= DPR= en el arnés",
       "oraculo": "viewport 1920×1080 a DPR 2 → grabación 3840×2160; ffprobe del webm dice 3840×2160 (si Playwright no lo da, se declara y se escala con lanczos — pero se MIDE, no se supone)",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "rojo",
+      "checks": "MEDIDO, no supuesto: con DPR=2 y size 3840×2160 ffprobe dijo «3840×2160» pero la página ocupaba el cuarto superior izquierdo y el resto era gris — el screencast de Playwright entrega cuadros en píxeles CSS y rellena. El master 4K es ESCALADO (lanczos) desde 1080 y así se declara en el LEEME. 4K nativo del arnés: no existe todavía",
       "video": "",
       "still": "",
-      "nota": ""
+      "nota": "el número pasó y los ojos lo cazaron (hoja de contactos). Ruta a 4K real: zoom CSS 2× en un viewport 3840 o cuadros por screenshot — otra orden"
      },
      {
       "id": "master-nvenc",
       "titulo": "El master es hevc 10-bit NVENC en iangpu",
       "herramientas": "hevc_nvenc yuv420p10le",
       "oraculo": "recorte del lead-in (meta.leadMs) y de la cola; duración ≈ 60-90 s; el h264 para compartir sale del mismo webm",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
+      "estado": "verde",
+      "checks": "22-EL-CAMINO-paseo.mp4: hevc · 3840×2160 · yuv420p10le · 30 fps · 92.6 s (ffprobe); + 22-EL-CAMINO-paseo-1080.mp4 h264 (7.9 MB). Lead-in recortado con meta.leadMs (34.4 s). DEFECTO PAGADO: el screencast ENCOGE cuadros bajo carga (cada captura pesada del arnés) y Playwright los rellena con negro → 147 cuadros en 8 ráfagas <1 s; se detectan por cuadrante inferior derecho negro (blackframe 99/20, umbral afinado: con 24 se comía el lienzo vacío) y se quitan; verificación final 0 restantes",
+      "video": "22-EL-CAMINO-paseo.mp4",
+      "still": "contactos.png",
+      "nota": "para la próxima: DPR=1 en la corrida de video reduce las capturas pesadas y las ráfagas"
      },
      {
       "id": "revisado-con-ojos",
       "titulo": "Antes de entregar se ve TODA la línea de tiempo",
       "herramientas": "hoja de contactos",
       "oraculo": "12 cuadros repartidos en el video en un solo PNG, juzgados con Read; se cazan letreros tapando la pieza, pasos sin resultado visible, cursor perdido",
-      "estado": "pendiente",
-      "checks": "",
+      "estado": "verde",
+      "checks": "3 hojas de contactos juzgadas con Read: v2 (cazó el cuarto gris), v3 (cazó el encogido de 2 s en el paso 3), v3b final (12 cuadros + zona 20-50 s a 1 cuadro/s): letreros legibles, pieza visible en los pasos rojos, cursor presente, cero cuadros encogidos",
       "video": "",
-      "still": "",
-      "nota": ""
+      "still": "contactos.png",
+      "nota": "ruido conocido: la hint bar del arnés enseña testids (viewport-canvas, rp-h-…) — es del arnés, no del producto"
      },
      {
       "id": "entregado-dos-pcs",
       "titulo": "Está en Downloads de las DOS PCs",
       "herramientas": "FORJA-LENTES-DEL-FOCO/22-EL-CAMINO-paseo.mp4",
       "oraculo": "laptop (/mnt/c) + iangpu (sshd de Windows, sebas@100.116.134.86) + LEEME; sin eso, no existe",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
+      "estado": "verde",
+      "checks": "laptop: /mnt/c/Users/sebas/Downloads/FORJA-LENTES-DEL-FOCO/22-EL-CAMINO-paseo.mp4 (24.6 MB) + -1080.mp4 (7.9 MB) + sección en LEEME.txt; PC de iangpu (ian-1, sshd de Windows): misma carpeta creada + los dos mp4 + LEEME-22-EL-CAMINO.txt",
+      "video": "22-EL-CAMINO-paseo.mp4",
       "still": "",
-      "nota": ""
+      "nota": "desde iangpu el scp a Windows cerró la conexión (llave en BatchMode); desde la laptop entró"
      }
     ],
     "progreso": {
-     "verdes": 0,
-     "rojos": 0,
+     "verdes": 5,
+     "rojos": 1,
      "total": 6
     },
     "objetivo": "ian (2026-09-04): «aún no me queda claro el happy path… puedes crear un video, así lo haces tú y luego lo hago yo, es más rápido corregir que crear». Al final de esta orden existe UN comando que graba el camino tal como está hoy en producc…",
-    "toca": 4,
+    "toca": 5,
     "crea": 4,
     "evidencia": 4,
     "evidenciaDeclarada": [
@@ -1369,17 +1371,18 @@
      "el mp4 en Downloads de las dos PCs (ls en ambas) + LEEME",
      "orden-gate VERDE · censo Canvas 8→8 (no se toca la UI)"
     ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
+    "cierre": "5/6 · uno ROJO a propósito (cuatro-k) · el video existe, revisado con ojos, en Downloads de las dos PCs. Un comando graba el camino desde el mismo archivo que lee Temis: W=1920 H=1080 MAQUINA=iangpu …",
+    "cierreCompleto": "5/6 · uno ROJO a propósito (cuatro-k) · el video existe, revisado con ojos, en Downloads de las dos PCs. Un comando graba el camino desde el mismo archivo que lee Temis: W=1920 H=1080 MAQUINA=iangpu URL=<prod> node scripts/camino-runner.cjs caminos/la-carcasa-de-mitsubishi.md --paseo <dir> → webm 1920×1080 → encode-paseo.sh (quita cuadros encogidos, recorta lead-in, escala, hevc 10-bit NVENC) → 22-EL-CAMINO-paseo.mp4 3840×2160 · 92.6 s (+ h264 1080). El paso 5 ahora lleva Escape y el 8 vuelve a abrir D, para que los pasos rojos enseñen la pieza. - números: 4/8 ok · se rompe en el 5 (igual que la medición) · 9 letreros · 147 cuadros encogidos quitados en 8 ráfagas · 0 restantes · lead 34.4 s recortado. - evidencia: public/evidencia/2026-09-04-el-video-del-camino/ contactos.png (12 cuadros del master), paso-2-letrero.png (captura 4K→1080 del letrero con la pieza y sus 3 cotas), resultados.json. - defectos pagados (los dos los cazaron los OJOS, no los números): (1) ffprobe dijo 3840×2160 y la página estaba en un cuarto del cuadro — el screencast de Playwright ignora el DPR; (2) el screencast ENCOGE cuadros bajo carga y Playwright rellena con negro: 8 ráfagas <1 s, una por captura pesada; el primer detector (umbral 24) se comía el lienzo vacío (oscuro, no negro) — afinado a 20/99. - lo que el video enseña de la Forja (para ian): el paso 1 en producción tarda ~35 s en dar el lienzo (carga + kernel) — un ingeniero de Mitsubishi ve una pantalla de carga medio minuto; y después de soltar, nada dice qué sigue (ticket QUÉ SIGUE). - preguntas abiertas: ¿voz de Matilda sobre el paseo?…",
+    "evidenciaSS": [
+     "evidencia/2026-09-04-el-video-del-camino/contactos.png",
+     "evidencia/2026-09-04-el-video-del-camino/paso-2-letrero.png"
+    ],
+    "revisable": true,
     "probado": "",
     "falla": "",
     "commit": "",
     "despliegue": ""
-   }
-  ],
-  "cerrado": [
+   },
    {
     "file": "ordenes/2026-09-04-el-runner-del-camino.md",
     "slug": "2026-09-04-el-runner-del-camino",

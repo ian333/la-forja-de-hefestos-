@@ -1,0 +1,32 @@
+{
+ "letrero-por-paso": {
+  "estado": "verde",
+  "checks": "gesto `caption` en forja-drive.cjs: overlay DOM «PASO n DE N · gesto» + «se ve: …»; `expect` le cuelga ✓ SE VE / ✗ HOY NO EXISTE / ◐ A MEDIAS (cuenta oks y fallas del mismo letrero). Verificado en el video: 9 letreros (8 pasos + «HOY SE ROMPE EN EL PASO 5 · PARTIR · lo debe el ticket T7 · LA LÍNEA DE PARTICIÓN»)",
+  "video": "", "still": "paso-2-letrero.png", "nota": "el ticket dueño sale con su NOMBRE leyendo public/temis.json, no con el slug"
+ },
+ "el-paseo": {
+  "estado": "verde",
+  "checks": "`camino-runner.cjs --paseo <dir>` arma las MISMAS acciones del ## RUNNER con letrero por paso, settles 1.2-2.6 s y REC= para el arnés; no reescribe el camino. Corrido desde iangpu contra producción (servido 0b26101): 4/8 ok · se rompe en el paso 5 — igual que la medición",
+  "video": "", "still": "", "nota": "para que los pasos rojos enseñen la PIEZA y no el dictamen, el paso 5 ahora lleva Escape y el paso 8 vuelve a abrir D (también en la medición: mismos resultados)"
+ },
+ "cuatro-k": {
+  "estado": "rojo",
+  "checks": "MEDIDO, no supuesto: con DPR=2 y size 3840×2160 ffprobe dijo «3840×2160» pero la página ocupaba el cuarto superior izquierdo y el resto era gris — el screencast de Playwright entrega cuadros en píxeles CSS y rellena. El master 4K es ESCALADO (lanczos) desde 1080 y así se declara en el LEEME. 4K nativo del arnés: no existe todavía",
+  "video": "", "still": "", "nota": "el número pasó y los ojos lo cazaron (hoja de contactos). Ruta a 4K real: zoom CSS 2× en un viewport 3840 o cuadros por screenshot — otra orden"
+ },
+ "master-nvenc": {
+  "estado": "verde",
+  "checks": "22-EL-CAMINO-paseo.mp4: hevc · 3840×2160 · yuv420p10le · 30 fps · 92.6 s (ffprobe); + 22-EL-CAMINO-paseo-1080.mp4 h264 (7.9 MB). Lead-in recortado con meta.leadMs (34.4 s). DEFECTO PAGADO: el screencast ENCOGE cuadros bajo carga (cada captura pesada del arnés) y Playwright los rellena con negro → 147 cuadros en 8 ráfagas <1 s; se detectan por cuadrante inferior derecho negro (blackframe 99/20, umbral afinado: con 24 se comía el lienzo vacío) y se quitan; verificación final 0 restantes",
+  "video": "22-EL-CAMINO-paseo.mp4", "still": "contactos.png", "nota": "para la próxima: DPR=1 en la corrida de video reduce las capturas pesadas y las ráfagas"
+ },
+ "revisado-con-ojos": {
+  "estado": "verde",
+  "checks": "3 hojas de contactos juzgadas con Read: v2 (cazó el cuarto gris), v3 (cazó el encogido de 2 s en el paso 3), v3b final (12 cuadros + zona 20-50 s a 1 cuadro/s): letreros legibles, pieza visible en los pasos rojos, cursor presente, cero cuadros encogidos",
+  "video": "", "still": "contactos.png", "nota": "ruido conocido: la hint bar del arnés enseña testids (viewport-canvas, rp-h-…) — es del arnés, no del producto"
+ },
+ "entregado-dos-pcs": {
+  "estado": "verde",
+  "checks": "laptop: /mnt/c/Users/sebas/Downloads/FORJA-LENTES-DEL-FOCO/22-EL-CAMINO-paseo.mp4 (24.6 MB) + -1080.mp4 (7.9 MB) + sección en LEEME.txt; PC de iangpu (ian-1, sshd de Windows): misma carpeta creada + los dos mp4 + LEEME-22-EL-CAMINO.txt",
+  "video": "22-EL-CAMINO-paseo.mp4", "still": "", "nota": "desde iangpu el scp a Windows cerró la conexión (llave en BatchMode); desde la laptop entró"
+ }
+}

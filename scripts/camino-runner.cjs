@@ -42,7 +42,10 @@ const OUT = arg('--out') || path.join(os.tmpdir(), 'camino-runner', path.basenam
 const EVID = arg('--evidencia');
 const MAQUINA = process.env.MAQUINA || os.hostname();   // los dos WSL de ian se llaman igual: MAQUINA=iangpu lo desambigua
 const DRY = flag('--dry');
-const ESCRIBIR = !flag('--no-escribir');
+// --paseo <dir>: el mismo recorrido pero PARA VERSE — letrero por paso, ritmo humano, grabado a
+// video (REC=<dir> del arnés). No reescribe el camino: es un paseo, no una medición.
+const PASEO = arg('--paseo');
+const ESCRIBIR = !flag('--no-escribir') && !PASEO;
 
 // ── leer el camino ────────────────────────────────────────────────────────────
 const mdPath = path.resolve(REPO, CAMINO);
@@ -89,10 +92,19 @@ const actions = [];
 const ultimaAccionDe = {};   // n → índice (1-based) de su última acción → step_XX
 for (const p of pasos) {
   const r = runner.find((x) => x.n === p.n);
-  for (const g of r.gestos) actions.push(g);
+  if (PASEO) actions.push({ type: 'caption', text: `PASO ${p.n} DE ${pasos.length} · ${p.gesto.toUpperCase()}`, sub: `se ve: ${p.seVe}`, settle: 1600 });
+  for (const g of r.gestos) actions.push(PASEO ? { ...g, settle: Math.max(g.settle ?? 0, 1200) } : g);
   for (const c of r.checks) actions.push(c);
   if (!r.gestos.length && !r.checks.length) actions.push({ type: 'move', x: 800, y: 500, settle: 200 });   // paso sin nada: al menos una captura
+  if (PASEO) actions.push({ type: 'move', x: Math.round(0.55 * (+process.env.W || 1600)), y: Math.round(0.5 * (+process.env.H || 1000)), settle: 2600 });   // que se vea el resultado
   ultimaAccionDe[p.n] = actions.length;
+}
+if (PASEO) {
+  const rompe = pasos.find((p) => p.estado === 'falla');
+  // el ticket con su NOMBRE (public/temis.json ya lo sabe), no con su slug
+  let duenio = rompe ? rompe.ticket : '';
+  try { const tj = JSON.parse(fs.readFileSync(path.join(REPO, 'public', 'temis.json'), 'utf8')); const todas = Object.values(tj.columnas || {}).flat(); const t = todas.find((x) => x && x.slug === duenio); if (t && t.titulo) duenio = t.titulo.split(' — ')[0]; } catch (e) {}
+  actions.push({ type: 'caption', text: rompe ? `HOY SE ROMPE EN EL PASO ${rompe.n} · ${rompe.gesto.toUpperCase()}` : 'EL CAMINO COMPLETO', sub: rompe ? `lo debe el ticket ${duenio}` : '', settle: 3200 });
 }
 fs.mkdirSync(OUT, { recursive: true });
 const actionsPath = path.join(OUT, 'actions.json');
@@ -104,7 +116,7 @@ if (DRY) { console.log(JSON.stringify(actions, null, 1)); process.exit(0); }
 // ── correr el arnés (mismo motor, cero copia) ─────────────────────────────────
 const t0 = Date.now();
 const r = spawnSync(process.execPath, [path.join(__dirname, 'forja-drive.cjs'), actionsPath, OUT], {
-  stdio: 'inherit', env: { ...process.env, URL, TURNTABLE: '0' }, timeout: 15 * 60 * 1000,
+  stdio: 'inherit', env: { ...process.env, URL, TURNTABLE: '0', ...(PASEO ? { REC: PASEO } : {}) }, timeout: 15 * 60 * 1000,
 });
 const dur = ((Date.now() - t0) / 1000).toFixed(0);
 const metaPath = path.join(OUT, 'meta.json');
@@ -158,6 +170,7 @@ for (const p of resultado) {
 if (meta.errors && meta.errors.length) console.log(`  errores de consola/arnés: ${meta.errors.length}\n    ` + meta.errors.slice(0, 6).join('\n    '));
 
 // ── reescribir el camino: SOLO la columna estado + ## MEDIDO ──────────────────
+if (PASEO) { const vp = path.join(OUT, 'video-path.txt'); console.log(`\n→ paseo grabado: ${fs.existsSync(vp) ? fs.readFileSync(vp, 'utf8') : '(sin video-path.txt: ¿REC falló?)'} · leadMs ${meta.leadMs ?? '?'}`); }
 if (ESCRIBIR) {
   let nuevo = md;
   for (const p of resultado) {
