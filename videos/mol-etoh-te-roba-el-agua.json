@@ -4,8 +4,9 @@
   "nota": "QUICK WIN del alcohol (mismo bin water-ethanol recoloreado por Hirshfeld, escena wcolor). REVELACIÓN con villano cotidiano: el gel que te reseca. Alta activación (un jalón que te quita algo), payoff en las manos del público.",
   "escena": {
     "html": "cinematic-molecule.html",
-    "query": "m=wcolor&zoom=0.55",
-    "hook": "__cinematicAtom"
+    "query": "m=wroba&zoom=0.55",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wroba): render-clip exige formato.dur == duracion de la escena; wcolor dura 72 y esta pieza 55. Tiempos provisionales hasta segs.json."
   },
   "formato": {
     "w": 2160,

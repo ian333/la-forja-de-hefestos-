@@ -581,6 +581,39 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 8.31, label: 'CLÍMAX (t=62 = 78 %): el 96 % y por qué se mezcla (l13-15)' },
     { shot: pullOut({ rFromMul: 0.62, rTdMul: 0.95 }), dur: 9.65, label: 'payoff: una mano al agua, otra a la grasa + GAIA (l16-18)' },
   ],
+  // EL ALCOHOL TE ROBA EL AGUA (2026-09-04): la cámara de wcolor re-cronometrada a roba.txt. molKey
+  // propio porque render-clip exige formato.dur == duración de la escena (wcolor: 72; esta: 55).
+  // ⚠ Tiempos PROVISIONALES (0.455 s/palabra + 0.40 de hueco) — se recalibran a segs.json con la voz.
+  wroba: [
+    // DURACIONES CALIBRADAS a segs.json (2026-08-31), no a los cortes de cámara que puse a
+    // ojo. Cada corte cae en el ARRANQUE de su línea (regla de §LA MECÁNICA DEL O₂). Lo que
+    // lo obligó: con las ventanas provisionales, "Míralas acercarse hasta que el puente se
+    // arma solo" (l10) caía DENTRO de la pantalla negra — la voz pedía mirar algo que no
+    // estaba. Arranques: l1 0.40 · l3 10.01 · l5 18.00 · l7 27.66 · l9 38.10 · l11 46.33 ·
+    // l12 51.45 · l14 59.71 · l16 66.48 · fin 79.00.
+    // ⚠ EL `rMul` DE ESTAS TOMAS NO MANDA — y perder medio día con eso ya estaba advertido en
+    // camera-shots.ts:39. `playShots` aplica la LEY DE ENCUADRE: mide rCore contra TODOS los
+    // `pts` y clava la distancia en dMin = rCore/tan(SAFE·corto). Con el etanol esos puntos
+    // incluyen la cola de carbono entera (~11 Å de punta a punta), así que dMin queda lejísimos
+    // y CUALQUIER rMul por debajo da el MISMO cuadro. Probado: rMul 1.10, 0.605 y 0.08 dan
+    // fill 0.171 idéntico en t=2. Los valores de abajo son los originales, sin maquillar.
+    //
+    // Quien acerque esta pieza tiene dos caminos: declarar `rCore` en la toma (lo que hace
+    // ringOne en el hexámero) o `?zoom=`, que se aplica DESPUÉS de la ley. Aquí se usa zoom
+    // 0.55, declarado en videos/mol-etoh-el-alcohol.json: barrido 0.45/0.55/0.65/0.75 con fill
+    // medido en 7 tiempos. 0.45 llena más pero SACA al agua por el borde y ya no se pueden
+    // CONTAR dos moléculas (canon §LEGIBILIDAD); 0.55 sube el tercio explicativo de 0.06 a
+    // 0.17-0.20, deja el clímax en 0.50, y los dos protagonistas siguen legibles.
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.2, elev: 0.15, rMul: 1.10 }), dur: 11.21, label: 'AZUL: los dos, uno grande y uno chico — el hueco (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.8, rMul: 0.72 }), dur: 5.41, label: 'MAGENTA: EL ALCOHOL, su cola de carbono (l3-4)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.40, rMul: 1.05 }), dur: 4.49, label: 'el hidroxilo: la cara de agua (l5-6)' },
+    { shot: orbitOne({ side: -1, azim0: 2.1, span: 1.2, rMul: 0.60 }), dur: 4.5, label: 'ORO: el corazón dorado y sus dos sillas (l7-8)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.6, elev: 0.20, rMul: 1.05 }), dur: 11.26, label: 'AZUL: el campo real entre las dos (l9-10)' },
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 6.32, label: 'QUITA LAS NUBES: la NADA como argumento (l11)' },
+    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 4.49, label: 'PRÉNDELAS: rampa de looming al puente (l12)' },
+    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 5.41, label: 'CLÍMAX (t=62 = 78 %): el 96 % y por qué se mezcla (l13-15)' },
+    { shot: pullOut({ rTdMul: 0.95 }), dur: 1.91, label: 'payoff: una mano al agua, otra a la grasa + GAIA (l16-18)' },
+  ],
   wcolor: [
     // DURACIONES CALIBRADAS a segs.json (2026-08-31), no a los cortes de cámara que puse a
     // ojo. Cada corte cae en el ARRANQUE de su línea (regla de §LA MECÁNICA DEL O₂). Lo que
@@ -1320,6 +1353,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
   wcolor: { name: 'De quién son', formula: 'C · O · H', fact: 'Cada color es un elemento, repartido por la regla de Hirshfeld — no a ojo.' },
+  wroba: { name: 'Te roba el agua', formula: 'C₂H₅OH···H₂O', fact: 'La punta del alcohol es la del agua: por eso el gel te reseca las manos.' },
   weres: { name: 'Eres tú', formula: 'H₂O···H₂O', fact: 'Seis de cada diez partes de tu cuerpo son exactamente esto.' },
   wgotas: { name: 'Dos gotas', formula: 'H₂O···H₂O', fact: 'El instante en que dos gotas se vuelven una es un puente de hidrógeno naciendo.' },
   wcamporb: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'Se cancelan el 99 % entre ellos. El puente del agua es lo que sobra.' },
@@ -2672,6 +2706,19 @@ const WETANOL_CAPAS: CapasSpec = {
   spin:     { base: 1,    mods: [{ wins: [[51.45, 66.48]], a: 0.9, label: 'ARDE: carga llegando a la silla (l12-15)' }] },
   acc:      { base: 1,    mods: [{ wins: [[27.66, 32.46]], a: 0.5, label: 'ORO: la palabra-color, el único cálido del video (l7)' }] },
 };
+const WROBA_DURATION = 55;
+// ROBA — la nube por elemento (Hirshfeld) contando el villano cotidiano. PROVISIONAL hasta segs.json.
+// El evento es l06 ("se acercan, y el alcohol le arma un puente al agua"): ahí arde el spin.
+const WROBA_CAPAS: CapasSpec = {
+  apertura: { base: 0.55, mods: [{ wins: [[25.61, 55]], a: -0.35, label: 'le arma un puente al agua (l06)' }] },
+  nubes:    { base: 1,    mods: [] },
+  campo:    { base: 0.22, mods: [{ wins: [[21.11, 31.01]], a: 0.55, label: 'estas líneas son el jalón real (l05-06)' }] },
+  campoNuc: { base: 0,    mods: [] },
+  campoEle: { base: 0,    mods: [] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[11.21, 21.11]], a: 0.35, label: 'mira la punta del alcohol (l03-04)' }] },
+  spin:     { base: 0.55, mods: [{ wins: [[25.61, 47.68]], a: 0.8, label: 'ARDE: el puente que se lleva el agua (l06-09)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[11.21, 25.61]], a: 0.35, label: 'ORO: la punta de oxígeno, la misma del agua (l03-05)' }] },
+};
 const WERES_DURATION = 55;
 // ERES TÚ — el espectador ES el sujeto. El evento es l06 ("cuando se tocan… ahí está el puente"):
 // ahí arde el spin y se cierra la apertura. Oro en l04 ("mira el hidrógeno buscando el oxígeno").
@@ -2888,6 +2935,7 @@ type WaterEntry = {
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
   // LA SILLA VACÍA: el bin del rey con SU coreografía y SU duración (quick win, 2026-08-27).
+  wroba: { bin: 'water-ethanol', ef: 'water-ethanol-efield', ex: 16, dur: WROBA_DURATION, sizeMul: 1.7, binColors: true, capas: WROBA_CAPAS },
   weres: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WERES_DURATION, capas: WERES_CAPAS },
   wgotas: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WGOTAS_DURATION, capas: WGOTAS_CAPAS },
   wcamporb: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WCAMPORB_DURATION,
