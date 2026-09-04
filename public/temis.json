@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-04 21:15",
+ "generado": "2026-09-04 21:40",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -10,7 +10,7 @@
   "proximo": 6,
   "enCurso": 0,
   "imprevisto": 0,
-  "supertickets": 9,
+  "supertickets": 10,
   "cerrado": 78,
   "probado": 0,
   "porProbar": 43,
@@ -1267,6 +1267,107 @@
      "las 5 capturas leídas con ojos (no descritas de memoria) y lo leído escrito en el atlas",
      "copia autocontenida en el Downloads de Windows de ian — nada en /tmp, él lo va a abrir",
      "orden-gate VERDE · Temis n/6"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-04-el-video-del-camino.md",
+    "slug": "2026-09-04-el-video-del-camino",
+    "titulo": "EL VIDEO DEL CAMINO — el happy path se ve en un video antes de que ian lo camine",
+    "fecha": "2026-09-04",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "letrero-por-paso",
+      "titulo": "El arnés sabe poner un letrero en pantalla · forja-drive.cjs gesto caption · {type:'caption', text, sub} pinta un overlay DOM (n de N",
+      "herramientas": "gesto",
+      "oraculo": "«se ve»); expect le cuelga el veredicto ✓/✗ al letrero vigente; caption vacío lo quita",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "el-paseo",
+      "titulo": "El runner tiene modo paseo",
+      "herramientas": "camino-runner.cjs --paseo <dir>",
+      "oraculo": "arma las mismas acciones del ## RUNNER pero con letrero por paso, settles humanos (1.2-2.6 s) y REC= para forja-drive; NO reescribe el camino (es un paseo, no una medición)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "cuatro-k",
+      "titulo": "Sale en 4K de verdad",
+      "herramientas": "W= H= DPR= en el arnés",
+      "oraculo": "viewport 1920×1080 a DPR 2 → grabación 3840×2160; ffprobe del webm dice 3840×2160 (si Playwright no lo da, se declara y se escala con lanczos — pero se MIDE, no se supone)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "master-nvenc",
+      "titulo": "El master es hevc 10-bit NVENC en iangpu",
+      "herramientas": "hevc_nvenc yuv420p10le",
+      "oraculo": "recorte del lead-in (meta.leadMs) y de la cola; duración ≈ 60-90 s; el h264 para compartir sale del mismo webm",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "revisado-con-ojos",
+      "titulo": "Antes de entregar se ve TODA la línea de tiempo",
+      "herramientas": "hoja de contactos",
+      "oraculo": "12 cuadros repartidos en el video en un solo PNG, juzgados con Read; se cazan letreros tapando la pieza, pasos sin resultado visible, cursor perdido",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "entregado-dos-pcs",
+      "titulo": "Está en Downloads de las DOS PCs",
+      "herramientas": "FORJA-LENTES-DEL-FOCO/22-EL-CAMINO-paseo.mp4",
+      "oraculo": "laptop (/mnt/c) + iangpu (sshd de Windows, sebas@100.116.134.86) + LEEME; sin eso, no existe",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian (2026-09-04): «aún no me queda claro el happy path… puedes crear un video, así lo haces tú y luego lo hago yo, es más rápido corregir que crear». Al final de esta orden existe UN comando que graba el camino tal como está hoy en producc…",
+    "toca": 4,
+    "crea": 4,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "ffprobe del webm y del mp4: 3840×2160, hevc, yuv420p10le, ~60-90 s",
+     "hoja de contactos de 12 cuadros del mp4 juzgada con ojos",
+     "el mp4 en Downloads de las dos PCs (ls en ambas) + LEEME",
+     "orden-gate VERDE · censo Canvas 8→8 (no se toca la UI)"
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -5289,23 +5390,28 @@
     "estado": "hoy",
     "nota": "viernes, HOY (ian 2026-09-04: \"quiero que hoy se suba algo\"). Veredicto vs brazo A a las 48 h (09-06).",
     "manifiesto": true,
-    "publicado": false,
+    "publicado": true,
     "programar": "2026-09-04T18:45:00-06:00",
     "rasgos": {
      "brazo": "B",
      "cortes_min": 18.75,
-     "sil_s": 5.02,
+     "sil_s": 5.01,
      "dur": 64,
      "vel": 1.25,
      "marco": "revelacion"
     },
-    "yt": null,
+    "yt": {
+     "url": "https://youtu.be/IXuVRv0zJac",
+     "privacidad": "private"
+    },
     "ig": null,
-    "ancho": null,
+    "ancho": {
+     "url": "https://youtu.be/2YEnILzh3sE"
+    },
     "entregado": "",
     "falta": [
-     "sin publicar",
-     "16:9"
+     "YouTube private",
+     "Instagram"
     ]
    },
    {

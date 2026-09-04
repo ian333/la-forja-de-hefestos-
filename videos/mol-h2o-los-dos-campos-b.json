@@ -101,9 +101,27 @@
       "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy hecha al implementar el portero de registro (2026-09-02); ian puede corregirlos."
     },
     "autorizado": "2026-09-04 yt,ig — dicho por ian en sesión: \"ya vi los 4 me atraparon mas tienen mas dinamismo… quiero que hoy se suba algo, estan autorizados todos :D\"",
-    "subidas": {},
+    "subidas": {
+      "yt": {
+        "id": "IXuVRv0zJac",
+        "url": "https://youtu.be/IXuVRv0zJac",
+        "privacidad": "private",
+        "publishAt": "2026-09-04T18:45:00-06:00",
+        "captions": "AUieDabuU5yFDrUuoYiIJFVT3rUIS4PfYB5_MTntyd6j9W3gZNjH-ygOeA",
+        "fecha": "2026-09-04T15:31"
+      },
+      "yt16x9": {
+        "id": "2YEnILzh3sE",
+        "url": "https://youtu.be/2YEnILzh3sE",
+        "privacidad": "private",
+        "publishAt": "2026-09-04T18:45:00-06:00",
+        "captions": "AUieDaZBO_PHy6AlChky5k4kI_4FBiSj3DPw_jYW0uE1Xk3_I2wReC_AFg",
+        "fecha": "2026-09-04T15:33"
+      }
+    },
     "programar": "2026-09-04T18:45:00-06:00",
-    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora.",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-los-dos-campos-b.mp4?v=11185cd991"
   },
   "guion": {
     "archivo": "scripts/guiones/campo-rey-b.txt",
@@ -117,9 +135,9 @@
     "confusor_declarado": "Las 4 tomas cortas del gancho arrancan cada orbita desde su inicio (span 0.5) y dejan la camara MAS CERCA: fill del gancho 0.87 en B contra 0.50 en A. O sea que B no cambia solo cortes y velocidad, tambien densidad de encuadre. Queda declarado para no atribuirle al ritmo lo que sea del encuadre.",
     "cortes_por_min": 18.75,
     "tomas": 21,
-    "silabas_por_seg": 5.02,
+    "silabas_por_seg": 5.01,
     "silabas_por_seg_del_video": 4.4,
-    "fuente_habla": "estimado (aún sin TTS, VEL 1.25)",
+    "fuente_habla": "segs.json (REAL)",
     "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }
