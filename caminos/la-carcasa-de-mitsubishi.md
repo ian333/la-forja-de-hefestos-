@@ -15,6 +15,14 @@ NOTA: el ingeniero diseñó moldeable (draft, sin undercuts). Los mecanismos son
 - 7 · LOS PLANOS · el juego de planos del molde · bloqueado · 2026-08-28-t7-linea-de-particion
 - 8 · EL EXPEDIENTE · dictamen + planos + cotización en un archivo (y el video, después) · parcial · 2026-08-28-t5-expediente-que-se-ve
 
+## PARA CERRARLO (el orden, decidido 2026-09-04 tras el primer paseo)
+El muro es el paso 5 y se derriba en este orden, un ticket a la vez, cada uno medido por el runner y con su paseo:
+1. QUÉ SIGUE — después de soltar, la tira dice el siguiente paso, y P es el gesto de PARTIR sobre la pieza soltada (hoy no hay puerta).
+2. T7 por MALLA — la silueta de partición y la dirección de apertura desde la malla (part-silueta, part-direccion, part-en-la-lamina): el paso 5 pasa a verde en su forma de malla, y la lámina deja de decir SIN CABLEAR.
+3. El drop CONSERVA EL SÓLIDO cuando el archivo es STEP (memoria del navegador, no servidores): malla para el Foco, B-Rep para partir/molde/planos.
+4. T7 de VERDAD + T6 — el acero se separa en dos cuerpos con la pieza real; el molde sobre ESA pieza: pasos 6 y 7.
+5. T5 — el expediente que se ve: paso 8 completo. Entonces el camino está verde y el pipeline lo publica.
+
 ## RUNNER
 Lo que la máquina hace y mide por paso (lo lee `scripts/camino-runner.cjs`; el tablero lo ignora).
 Formato: `n · gestos del arnés (JSON) · check · check…` con `testid:<id>[@timeoutMs][<=maxMs]`, `count:<selector>>=n`, `js:<expr>`.

@@ -7,7 +7,7 @@
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 6,
+  "proximo": 7,
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
@@ -15,7 +15,7 @@
   "probado": 0,
   "porProbar": 44,
   "sinDesplegar": 0,
-  "despues": 18
+  "despues": 19
  },
  "deploy": {
   "commit": "4d28106",
@@ -256,6 +256,36 @@
      "captura en el paso 4: «sigue PARTIR (P)» — y P hace algo, aunque sea la silueta por malla (T7)",
      "el runner corre solo y el paso 5 deja de ser «sin gesto»; orden-gate VERDE; censo Canvas 8→8",
      "deploy + verificación contra el bundle servido"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-04-el-pipeline-del-camino.md",
+    "slug": "2026-09-04-el-pipeline-del-camino",
+    "titulo": "EL PIPELINE DEL CAMINO — cada happy path lleva su video, y el video se sube",
+    "fecha": "2026-09-04",
+    "estado": "proximo",
+    "prioridad": 7,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-04), al ver el primer paseo: «QUE QUEDE COMO PIPELINE, CADA HAPPY PATH LLEVA SU VIDEO… ya automatizamos Instagram y YouTube con su API, entonces estos videos se subirán». Al final de esta orden, cada caminos/<slug>.md produce …",
+    "toca": 3,
+    "crea": 2,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "un deploy termina y, sin tocar nada, aparecen: estados nuevos en el camino, dist-video/caminos/",
+     "el video se revisa con hoja de contactos ANTES de quedar en el catálogo (0 cuadros encogidos)",
+     "la subida NO ocurre sin «autorizado» de ian (control negativo: sin autorización, no sube)",
+     "orden-gate VERDE · censo igual"
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -5141,6 +5171,10 @@
   {
    "grupo": "El Foco",
    "texto": "El enfriamiento ANIMADO en vivo en el CAD (ian, 2026-09-04: «me gustaría poder ver la animación en vivo en el cad»). Hoy el campo T(z,t) transitorio solo existe como video offline (`scripts/cooling-sim-video.cjs`, serie exacta 40 términos) y el ▶ del ciclo anima llenado/apertura/expulsión pero NO la temperatura cayendo sobre la pieza. Es la lente ENFRIAMIENTO del Foco con un eje de tiempo: el mismo `centerlineTemperature` de cooling.ts, término a término, pintado sobre la pieza mientras corre el reloj del ciclo. Cuando entre, el video del expediente sale de la MISMA animación, no de otra."
+  },
+  {
+   "grupo": "El Foco",
+   "texto": "4K NATIVO del arnés de video (ian, 2026-09-04: «no me preocupa aún lo del 4K, dejémoslo hasta el final»). Hoy el paseo se graba a 1080 CSS (el screencast de Playwright ignora el DPR) y el master se escala. Rutas medibles: zoom CSS 2× en un viewport 3840, o cuadros por screenshot a DPR 2."
   }
  ],
  "cine": {

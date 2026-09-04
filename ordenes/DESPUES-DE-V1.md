@@ -51,3 +51,6 @@
   la lente ENFRIAMIENTO del Foco con un eje de tiempo: el mismo `centerlineTemperature`
   de cooling.ts, término a término, pintado sobre la pieza mientras corre el reloj del
   ciclo. Cuando entre, el video del expediente sale de la MISMA animación, no de otra.
+- 4K NATIVO del arnés de video (ian, 2026-09-04: «no me preocupa aún lo del 4K, dejémoslo hasta el
+  final»). Hoy el paseo se graba a 1080 CSS (el screencast de Playwright ignora el DPR) y el master
+  se escala. Rutas medibles: zoom CSS 2× en un viewport 3840, o cuadros por screenshot a DPR 2.
