@@ -903,7 +903,7 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: twoShot({ dir: 1, azim0: 0.5, span: 2.3, elev: -0.12, rMul: 1.42 }), dur: 4.71, label: 'el campo — barrido bajo opuesto (l12-14)' },
     { shot: pushToBridge({ rFrom: 1.95, rTo: 0.8, azim: 2.6, elev: 0.12 }), dur: 5.83, label: 'se acercan — looming otro lado (l15-16)' },
     { shot: crashIn({ rMul: 1.05, azim0: 2.7, span: 1.5, elev: 0.2 }), dur: 5.92, label: 'el puente=nube — otro ángulo de choque (l17-18)' },
-    { shot: pullOut({ azim0: 1.0, span: 1.4 }), dur: 9.54, label: 'payoff con órbita (l19-20)' },
+    { shot: pullOut({ rFromMul: 0.62, azim0: 1.0, span: 1.4 }), dur: 9.54, label: 'payoff con órbita (l19-20)' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
