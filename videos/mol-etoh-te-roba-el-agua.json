@@ -59,7 +59,7 @@
   "publicar": {
     "biblioteca": "moleculas/mol-etoh-te-roba-el-agua.mp4",
     "capsulaRel": "moleculas/_code/mol-etoh-te-roba-el-agua-capsula.tar.gz",
-    "pieza": "mol etoh-te-roba-el-agua",
+    "pieza": "mol-etoh te roba el agua",
     "nueva": true,
     "copy": {
       "titulo": "Esto es lo que te hace el gel de manos (y por qué te reseca)",
@@ -95,7 +95,11 @@
     "brazo": "A",
     "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar.",
     "cortes_por_min": 8.73,
+    "tomas": 9,
     "silabas_por_seg": 4.31,
+    "silabas_por_seg_del_video": 3.9,
+    "fuente_habla": "segs.json (REAL)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO.",
     "nota_medida": "medido por ritmo-pieza.py --escribir en iangpu (segs.json real) el 2026-09-04; copiado a la laptop porque el manifiesto de iangpu estaba en uso por el render 16:9"
   }
 }

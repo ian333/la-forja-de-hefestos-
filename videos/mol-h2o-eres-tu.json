@@ -59,7 +59,7 @@
   "publicar": {
     "biblioteca": "moleculas/mol-h2o-eres-tu.mp4",
     "capsulaRel": "moleculas/_code/mol-h2o-eres-tu-capsula.tar.gz",
-    "pieza": "mol h2o-eres-tu",
+    "pieza": "mol-h2o eres tu",
     "nueva": true,
     "copy": {
       "titulo": "Esto no es agua. Eres tú, de cerca.",
@@ -96,9 +96,9 @@
     "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar.",
     "cortes_por_min": 8.73,
     "tomas": 9,
-    "silabas_por_seg": 3.84,
-    "silabas_por_seg_del_video": 3.54,
-    "fuente_habla": "estimado (aún sin TTS, VEL 1.0)",
+    "silabas_por_seg": 4.24,
+    "silabas_por_seg_del_video": 3.88,
+    "fuente_habla": "segs.json (REAL)",
     "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }

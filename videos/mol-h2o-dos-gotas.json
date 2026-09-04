@@ -59,7 +59,7 @@
   "publicar": {
     "biblioteca": "moleculas/mol-h2o-dos-gotas.mp4",
     "capsulaRel": "moleculas/_code/mol-h2o-dos-gotas-capsula.tar.gz",
-    "pieza": "mol h2o-dos-gotas",
+    "pieza": "mol-h2o dos gotas",
     "nueva": true,
     "copy": {
       "titulo": "Nunca habías visto el instante en que dos gotas se vuelven una",
