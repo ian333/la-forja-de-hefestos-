@@ -257,6 +257,31 @@ def cosechar(vid=None):
         registrar(p, d, 'ig', h['ig']); n += 1
         marcar_hecho(h['id'])
     print(f'✓ cosechados {n}')
+    publicos_youtube(vid)
+
+
+def publicos_youtube(vid=None):
+    """YouTube hace público el video solo (publishAt) pero el manifiesto se quedaba en "private" y la
+    tira CINE decía «YouTube private» para siempre. Pasada la hora, se anota público (YouTube lo
+    garantiza; no hace falta gastar cuota preguntándole)."""
+    import glob
+    sys.path.insert(0, os.path.join(ROOT, 'scripts'))
+    from pub_comun import guardar_manifiesto
+    n = ahora()
+    for p in sorted(glob.glob(os.path.join(ROOT, 'videos', '*.json'))):
+        if 'CRONOGRAMA' in p or (vid and os.path.basename(p) != f'{vid}.json'): continue
+        try: d = json.load(open(p, encoding='utf-8'))
+        except Exception: continue
+        sub = (d.get('publicar') or {}).get('subidas') or {}; cambio = False
+        for k in ('yt', 'yt16x9'):
+            e = sub.get(k) or {}
+            if e.get('privacidad') == 'private' and e.get('publishAt'):
+                try: t = cuando(e['publishAt'])
+                except SystemExit: continue
+                if t <= n:
+                    e['privacidad'] = 'public'; e['publico_desde'] = e['publishAt']; cambio = True
+                    print(f'   {os.path.basename(p)[:-5]}: {k} público desde {e["publishAt"]}')
+        if cambio: guardar_manifiesto(p, d)
 
 
 def marcar_hecho(vid):
