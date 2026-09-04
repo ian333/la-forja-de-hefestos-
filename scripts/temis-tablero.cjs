@@ -259,9 +259,17 @@ const caminos = (() => {
     }).filter((p) => p.n > 0);
     const verdes = pasos.filter((p) => p.estado === 'ok').length;
     const rompe = pasos.find((p) => p.estado === 'falla');
+    // MEDIDO POR LA MÁQUINA (orden 2026-09-04-el-runner-del-camino): `camino-runner.cjs` deja en
+    // `## MEDIDO` una línea `- runner · <fecha> UTC · <url> · servido <commit> · <máquina> · …`.
+    // Si existe, el tablero dice CUÁNDO y DÓNDE se midió; si no, los estados son declarados a mano.
+    const lRunner = bullets(seccion(txt, 'MEDIDO')).find((l) => /^runner · /.test(l));
+    const medido = lRunner ? (() => {
+      const c = lRunner.split(' · ').map((x) => x.trim());
+      return { fecha: (c[1] || '').replace(/ UTC$/, ''), url: c[2] || '', servido: (c[3] || '').replace(/^servido /, ''), maquina: c[4] || '' };
+    })() : null;
     return {
       slug, titulo, actor: campo(txt, 'ACTOR'), promesa: campo(txt, 'PROMESA'), pieza: campo(txt, 'PIEZA'), nota: campo(txt, 'NOTA'),
-      pasos, verdes, total: pasos.length, rompeEn: rompe ? rompe.n : 0,
+      pasos, verdes, total: pasos.length, rompeEn: rompe ? rompe.n : 0, medido,
     };
   });
 })();

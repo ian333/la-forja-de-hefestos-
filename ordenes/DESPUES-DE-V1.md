@@ -42,3 +42,12 @@
   con material que ya está pagado.
 - El master sale etiquetado `color_space=bt470bg` (BT.601 de PAL) y `profile=Main`.
   Decidir con ian si se corrige: arreglarlo MUEVE el color de toda la serie.
+
+## El Foco
+- El enfriamiento ANIMADO en vivo en el CAD (ian, 2026-09-04: «me gustaría poder ver la
+  animación en vivo en el cad»). Hoy el campo T(z,t) transitorio solo existe como video
+  offline (`scripts/cooling-sim-video.cjs`, serie exacta 40 términos) y el ▶ del ciclo
+  anima llenado/apertura/expulsión pero NO la temperatura cayendo sobre la pieza. Es
+  la lente ENFRIAMIENTO del Foco con un eje de tiempo: el mismo `centerlineTemperature`
+  de cooling.ts, término a término, pintado sobre la pieza mientras corre el reloj del
+  ciclo. Cuando entre, el video del expediente sale de la MISMA animación, no de otra.

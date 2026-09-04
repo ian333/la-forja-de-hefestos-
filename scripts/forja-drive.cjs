@@ -63,6 +63,7 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
   const recT0 = Date.now();            // marca de inicio de grabación (para recortar el lead-in muerto)
   const page = await context.newPage();
   const errors = [];
+  const checks = [];   // veredictos del gesto 'expect' (runner del camino): {label, ok, ms, detail}
   // Los 404 de recursos son ruido conocido y LLENABAN el buffer de errores, tapando los
   // errores REALES (PAGEERR de React que resetea el doc). Se filtran.
   page.on('console', (m) => { const t = m.text(); if (m.type() === 'error' && !/404 \(Not Found\)/.test(t)) errors.push(t.slice(0, 220)); });
@@ -157,6 +158,51 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
           await page.locator(`[data-testid="${a.testid}"]`).setInputFiles(abs, { timeout: 15000 });
         }
         // Selección/cota PROGRAMÁTICA por nombre de método del hook (fiable, sin pixeles).
+        // SOLTAR UN ARCHIVO como lo hace un humano (orden 2026-09-04-el-runner-del-camino).
+        // x4 lo pagó: `page.dispatchEvent` de Playwright NO entrega el DataTransfer entre
+        // contextos y el drop llegaba VACÍO — parecía defecto del producto y el producto
+        // estaba bien. Aquí el archivo viaja en base64 y el DataTransfer se construye
+        // DENTRO de la página. `target` = selector que recibe el drop (default `.fb-root`,
+        // la raíz: nadie apunta al viewport cuando arrastra, apunta a la ventana).
+        else if (a.type === 'drop') {
+          const abs = path.isAbsolute(a.file) ? a.file : path.resolve(__dirname, '..', a.file);
+          if (!fs.existsSync(abs)) throw new Error(`drop: no existe ${abs}`);
+          const b64 = fs.readFileSync(abs).toString('base64');
+          const res = await page.evaluate(({ b64, name, sel }) => {
+            const el = document.querySelector(sel); if (!el) return 'NO_TARGET';
+            const bin = atob(b64); const u8 = new Uint8Array(bin.length);
+            for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+            const dt = new DataTransfer(); dt.items.add(new File([u8], name));
+            for (const t of ['dragenter', 'dragover', 'drop']) el.dispatchEvent(new DragEvent(t, { bubbles: true, cancelable: true, dataTransfer: dt }));
+            return `ok ${u8.length} bytes → ${sel}`;
+          }, { b64, name: path.basename(abs), sel: a.target || '.fb-root' });
+          if (res === 'NO_TARGET') throw new Error(`drop: no existe el target ${a.target || '.fb-root'}`);
+          log.push(`drop: ${res}`); console.log(`drop: ${res}`);
+        }
+        // EXPECT = el veredicto (runner del camino). Espera hasta `timeout` ms a que se
+        // cumpla una condición y la anota en meta.json → checks[] {label, ok, ms, detail}.
+        //   {type:'expect', label, testid:'x'}            existe y tiene tamaño (visible)
+        //   {type:'expect', label, selector:'…', min:3}   ≥ min elementos
+        //   {type:'expect', label, js:'expresión'}        truthy dentro de la página
+        //   + maxMs: además de cumplirse debe cumplirse en ≤ maxMs (se mide desde que
+        //     empieza a esperar — pon settle:0 en el gesto anterior para no inflarlo).
+        // NO lanza: un check que falla es un DATO del camino, no un error del arnés.
+        else if (a.type === 'expect') {
+          const t0 = Date.now();
+          const cond = a.js ? `(() => { try { return !!(${a.js}); } catch (e) { return false; } })()`
+            : a.selector ? `document.querySelectorAll(${JSON.stringify(a.selector)}).length >= ${a.min || 1}`
+            : `(() => { const el = document.querySelector('[data-testid="${a.testid}"]'); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; })()`;
+          let ok = true, detail = '';
+          try { await page.waitForFunction(cond, null, { timeout: a.timeout ?? 15000, polling: 100 }); }
+          catch (e) { ok = false; detail = 'no se cumplió en ' + (a.timeout ?? 15000) + ' ms'; }
+          const ms = Date.now() - t0;
+          if (ok && a.maxMs != null && ms > a.maxMs) { ok = false; detail = `tardó ${ms} ms > ${a.maxMs} ms`; }
+          if (ok && a.js) { try { detail = String(await page.evaluate(`(() => { try { return String(${a.js}); } catch (e) { return 'ERR ' + e; } })()`)).slice(0, 160); } catch (e) {} }
+          if (ok && a.selector) { try { detail = 'n=' + await page.evaluate(`document.querySelectorAll(${JSON.stringify(a.selector)}).length`); } catch (e) {} }
+          checks.push({ label: a.label || `expect_${i}`, ok, ms, detail, testid: a.testid, selector: a.selector, js: a.js, maxMs: a.maxMs });
+          const line = `expect[${a.label || i}]: ${ok ? 'OK' : 'FALLA'} · ${ms} ms${detail ? ' · ' + detail : ''}`;
+          log.push(line); console.log(line);
+        }
         // Ej: {type:'hook',fn:'pick',args:['line',0]} o {fn:'dimAngle',args:[0,1]}.
         else if (a.type === 'hook') {
           await page.evaluate(({ fn, args }) => {
@@ -290,10 +336,10 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
       });
     } catch (e) {}
     if (sketchState) inv = { ...(inv || {}), sketch: sketchState };
-    fs.writeFileSync(`${OUT}/meta.json`, JSON.stringify({ url: URL, viewport: { w: W, h: H }, leadMs, steps: log, mirror_invariants: inv, errors: errors.slice(0, 14) }, null, 2));
+    fs.writeFileSync(`${OUT}/meta.json`, JSON.stringify({ url: URL, viewport: { w: W, h: H }, leadMs, steps: log, mirror_invariants: inv, checks, errors: errors.slice(0, 14) }, null, 2));
     console.log('DRIVE_OK steps=' + log.length);
   } catch (e) {
-    fs.writeFileSync(`${OUT}/meta.json`, JSON.stringify({ fatal: String((e && e.stack) || e).slice(0, 600), steps: log, errors: errors.slice(0, 14) }, null, 2));
+    fs.writeFileSync(`${OUT}/meta.json`, JSON.stringify({ fatal: String((e && e.stack) || e).slice(0, 600), steps: log, checks, errors: errors.slice(0, 14) }, null, 2));
     console.log('DRIVE_FAIL ' + String(e).slice(0, 200));
   } finally {
     // Cerrar la página y el CONTEXTO vacía (flush) el archivo de video al disco.

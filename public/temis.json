@@ -1,25 +1,25 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-03 01:42",
+ "generado": "2026-09-04 20:21",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 4,
+  "proximo": 5,
   "enCurso": 1,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 75,
+  "cerrado": 76,
   "probado": 0,
-  "porProbar": 41,
+  "porProbar": 42,
   "sinDesplegar": 0,
-  "despues": 17
+  "despues": 18
  },
  "deploy": {
-  "commit": "37700e5",
-  "fecha": "2026-09-02 18:59"
+  "commit": "f81ec7a",
+  "fecha": "2026-09-04 20:13"
  },
  "violaciones": [],
  "columnas": {
@@ -197,6 +197,35 @@
     "evidenciaDeclarada": [
      "mocks de 2-3 direcciones sobre el lobby REAL, en Downloads, antes de decidir",
      "capturas antes/después · gate verde · deploy + verificación"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-04-la-forja-sin-luz.md",
+    "slug": "2026-09-04-la-forja-sin-luz",
+    "titulo": "LA FORJA SIN LUZ — el único producto que muere cuando se va la luz de casa",
+    "fecha": "2026-09-04",
+    "estado": "proximo",
+    "prioridad": 5,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "que university.gaiaprime.com.mx siga en 200 cuando ATLAS se apaga. Hoy no: el 2026-09-03 se fue la luz en casa (Site 2) y La Forja cayó con Error 1033 durante ~2 h mientras Orkesta siguió viva.",
+    "toca": 2,
+    "crea": 0,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "LA PRUEBA DEL APAGÓN: con cloudflared de ATLAS detenido a propósito, curl -sI",
+     "La réplica se actualiza en el MISMO deploy (un deploy, dos destinos) — probado con un",
+     "censo esperado: canvas/vite/html igual (esto es infra, no UI)."
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1250,6 +1279,117 @@
   ],
   "cerrado": [
    {
+    "file": "ordenes/2026-09-04-el-runner-del-camino.md",
+    "slug": "2026-09-04-el-runner-del-camino",
+    "titulo": "EL RUNNER DEL CAMINO — los estados del happy path los escribe la máquina, no yo",
+    "fecha": "2026-09-04",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "drop-real",
+      "titulo": "El arnés suelta un archivo como lo hace un humano",
+      "herramientas": "forja-drive.cjs gesto drop",
+      "oraculo": "el DataTransfer se construye DENTRO de la página (x4 lo pagó: page.dispatchEvent no cruza contextos y el drop llega vacío); el archivo va por base64 al evaluate. upload (input) y loadstep (hook) siguen existiendo: son otras puertas, no la del ingeniero",
+      "estado": "verde",
+      "checks": "gesto `drop` en forja-drive.cjs: el archivo viaja en base64 y el DataTransfer se construye DENTRO de la página (dragenter/dragover/drop sobre `.fb-root`). Contra producción: 1594C Box.stp (912,495 bytes) carga, el Foco se prende solo y salen 3 cotas (alto 33.3 · largo 106.5 · ancho 66.0 mm)",
+      "video": "",
+      "still": "paso-2.png",
+      "nota": "x4 lo pagó con page.dispatchEvent (drop vacío); ahora el gesto vive en el arnés y no se pierde dos veces"
+     },
+     {
+      "id": "ve-o-no-ve",
+      "titulo": "Cada paso declara lo que se ve como algo MEDIBLE · ## RUNNER en el camino + gesto expect en el arnés · una línea por paso n",
+      "herramientas": "gestos JSON",
+      "oraculo": "ve: <testid | expresión>; expect escribe pasa/falla con su label en meta.json. Lo que no se puede medir no es un paso, es un deseo",
+      "estado": "verde",
+      "checks": "sección `## RUNNER` del camino: 8 líneas `n · gestos JSON · check…` con testid:/count:/js:; gesto `expect` del arnés escribe checks[] {label, ok, ms, detail} en meta.json. 14 checks medidos. CONTROL NEGATIVO: un testid inexistente a propósito en el paso 2 lo bajó a PARCIAL (1/2) — el runner no es un sí automático",
+      "video": "",
+      "still": "",
+      "nota": "el contrato para T5/T6/T7 quedó escrito en el camino: linea-particion · molde-de-la-pieza · planos-del-molde · expediente-de-la-pieza"
+     },
+     {
+      "id": "el-camino-se-recorre",
+      "titulo": "Un comando recorre los 8 pasos contra producción",
+      "herramientas": "scripts/camino-runner.cjs",
+      "oraculo": "URL=… node scripts/camino-runner.cjs caminos/<slug>.md → arma el actions.json desde ## RUNNER, corre forja-drive (spawn, mismo motor, cero copia), lee meta.json y saca la lista de pasos con veredicto y una captura por paso",
+      "estado": "verde",
+      "checks": "`URL=… node scripts/camino-runner.cjs caminos/la-carcasa-de-mitsubishi.md` arma 17 acciones desde ## RUNNER, corre forja-drive (spawn, mismo motor), lee meta.json y saca 8 veredictos + 8 capturas. Laptop 69 s · iangpu 55 s",
+      "video": "",
+      "still": "paso-3.png",
+      "nota": "un bug propio cazado en la 1ª corrida: waitForFunction(cond, opts) ignora opts (la firma es cond, arg, opts) → todos los timeouts eran 30 s"
+     },
+     {
+      "id": "el-archivo-se-reescribe",
+      "titulo": "Los estados del camino los escribe la máquina",
+      "herramientas": "caminos/*.md",
+      "oraculo": "ok = pasa; falla = el primer paso que no pasa; bloqueado = no pasa y hay un falla antes; parcial = pasa parte de sus checks. Reescribe ## PASOS sin tocar gesto/se-ve/ticket y deja ## MEDIDO con fecha, URL, commit servido y máquina. Luego corre temis-tablero",
+      "estado": "verde",
+      "checks": "el runner reescribió SOLO la columna estado de ## PASOS y dejó `- runner · 2026-09-04 20:11 UTC · <url> · servido 6026a20 · iangpu · 4/8 ok · se rompe en el paso 5 · 1:2/2 2:2/2 3:3/3 4:2/2 5:0/1 6:0/1 7:0/1 8:1/2` en ## MEDIDO; temis-tablero regenerado; el tablero imprime «medido 2026-09-04 20:11 en iangpu · 6026a20»",
+      "video": "",
+      "still": "temis-medido.png",
+      "nota": "lo medido coincidió con lo declarado a mano (4/8, rompe en 5): el archivo no mentía — pero ahora lo sabemos porque una máquina lo dijo"
+     },
+     {
+      "id": "medido-donde-hay-gpu",
+      "titulo": "El paso 3 (campo en ≤2.5 s) se mide en iangpu, no en SwiftShader",
+      "herramientas": "iangpu",
+      "oraculo": "el runner corre desde iangpu con la receta GPU del CLAUDE.md contra la URL de producción; la laptop solo desarrolla y mide presencia. Un rojo por lentitud de la laptop sería un rojo falso — el veneno de x4 otra vez",
+      "estado": "verde",
+      "checks": "corrida oficial desde iangpu (DISPLAY=:0 GALLIUM_DRIVER=d3d12 …NVIDIA, MAQUINA=iangpu) contra producción: ENFRIAMIENTO en 0.3 s declarados por el módulo (celda 1.4 mm · 21,305 vóxeles); la laptop dio 0.7 s. El check lee el número que el módulo imprime en EL PARTE, no un cronómetro del arnés",
+      "video": "",
+      "still": "paso-3.png",
+      "nota": "el campo es CPU, no GPU: por eso la laptop también pasa; iangpu sigue siendo la máquina oficial de medida"
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "El tablero muestra lo medido y nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "temis-tablero corre, orden-gate VERDE, censo Canvas 8→8, deploy y captura del lobby en producción con los estados que puso la máquina",
+      "estado": "verde",
+      "checks": "deploy #1 desde el working tree (227 s) · el lobby en producción muestra «medido 2026-09-04 20:11 en iangpu · 6026a20» (testid temis-camino-medido-la-carcasa-de-mitsubishi), estados ok·ok·ok·ok·falla·bloqueado·bloqueado·parcial, cero pageerror; chunk servido TemisBoard-zSMmeSbk.js trae temis-camino-medido- y tm-medido; orden-gate VERDE; censo Canvas 8→8",
+      "video": "",
+      "still": "temis-medido.png",
+      "nota": "la franja CINE sigue intacta (es de la otra sesión)"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian (2026-09-04): «abre la orden del runner». Hoy caminos/la-carcasa-de-mitsubishi.md trae los 8 estados escritos a MANO con lo que medimos una vez; mañana alguien arregla la partición y el tablero sigue diciendo «falla» hasta que alguien …",
+    "toca": 9,
+    "crea": 13,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "URL=https://university.gaiaprime.com.mx node scripts/camino-runner.cjs caminos/la-carcasa-de-mitsubishi.md",
+     "Prueba de que el runner NO es un sí automático: un check cambiado a propósito a un testid",
+     "node scripts/temis-tablero.cjs imprime el camino con los estados nuevos; node",
+     "deploy + captura del lobby en producción con la franja EL CAMINO mostrando medido <fecha>."
+    ],
+    "cierre": "6/6 EN VERDE · medido por la máquina en producción desde iangpu · orden-gate VERDE · censo Canvas 8→8. Un comando recorre el happy path y escribe lo que vio: URL=https://university.gaiaprime.com.mx/f…",
+    "cierreCompleto": "6/6 EN VERDE · medido por la máquina en producción desde iangpu · orden-gate VERDE · censo Canvas 8→8. Un comando recorre el happy path y escribe lo que vio: URL=https://university.gaiaprime.com.mx/forja-brep.html MAQUINA=iangpu node scripts/camino-runner.cjs caminos/la-carcasa-de-mitsubishi.md --evidencia public/evidencia/<orden> → 8 pasos · 17 acciones · 14 checks · 55 s en iangpu (69 s en la laptop) → ## PASOS reescrito + - runner · 2026-09-04 20:11 UTC · … · servido 6026a20 · iangpu · 4/8 ok · se rompe en el paso 5 · 1:2/2 2:2/2 3:3/3 4:2/2 5:0/1 6:0/1 7:0/1 8:1/2 → el tablero en producción dice «medido 2026-09-04 20:11 en iangpu · 6026a20» junto al camino. de ian se llaman «Ian» y os.hostname() no distinguía iangpu de la laptop) y el tablero enseña «declarado a mano» cuando un camino no tiene línea del runner (para que nunca se confunda lo medido con lo recordado). - números: lo MEDIDO coincidió con lo DECLARADO a mano (4/8 · rompe en 5 · 6-7 bloqueados · 8 parcial). El archivo no mentía; ahora lo sabemos porque una máquina lo dijo. ENFRIAMIENTO: 0.3 s declarados por el módulo en iangpu (0.7 s en la laptop — el campo es CPU, no GPU). CONTROL NEGATIVO: un testid inexistente a propósito en el paso 2 lo bajó a PARCIAL (1/2). - evidencia: public/evidencia/2026-09-04-el-runner-del-camino/ paso-1..8.png (capturas de iangpu contra producción: lienzo limpio · pieza con 3 cotas · campo violeta + LA FICHA · dictamen 5 VIOLAN · y 5-8 solo el dictamen, sin partición ni expediente — rojo honesto) + temis-medido.png (lobby en producción) + resultados.json. - defectos pagados: (1) w…",
+    "evidenciaSS": [
+     "evidencia/2026-09-04-el-runner-del-camino/paso-1.png",
+     "evidencia/2026-09-04-el-runner-del-camino/paso-2.png",
+     "evidencia/2026-09-04-el-runner-del-camino/paso-3.png",
+     "evidencia/2026-09-04-el-runner-del-camino/paso-4.png",
+     "evidencia/2026-09-04-el-runner-del-camino/paso-5.png",
+     "evidencia/2026-09-04-el-runner-del-camino/paso-6.png",
+     "evidencia/2026-09-04-el-runner-del-camino/paso-7.png",
+     "evidencia/2026-09-04-el-runner-del-camino/paso-8.png",
+     "evidencia/2026-09-04-el-runner-del-camino/temis-medido.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-09-02-x6-la-lamina-viva.md",
     "slug": "2026-09-02-x6-la-lamina-viva",
     "titulo": "X6 · LA LÁMINA VIVA — mirarla ya informa",
@@ -1456,8 +1596,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "6026a20",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-09-01-x5-muere-la-barra-lateral.md",
@@ -4826,6 +4966,10 @@
   {
    "grupo": "Video ya publicado — recuperar calidad (ian, 2026-08-27)",
    "texto": "El master sale etiquetado `color_space=bt470bg` (BT.601 de PAL) y `profile=Main`. Decidir con ian si se corrige: arreglarlo MUEVE el color de toda la serie."
+  },
+  {
+   "grupo": "El Foco",
+   "texto": "El enfriamiento ANIMADO en vivo en el CAD (ian, 2026-09-04: «me gustaría poder ver la animación en vivo en el cad»). Hoy el campo T(z,t) transitorio solo existe como video offline (`scripts/cooling-sim-video.cjs`, serie exacta 40 términos) y el ▶ del ciclo anima llenado/apertura/expulsión pero NO la temperatura cayendo sobre la pieza. Es la lente ENFRIAMIENTO del Foco con un eje de tiempo: el mismo `centerlineTemperature` de cooling.ts, término a término, pintado sobre la pieza mientras corre el reloj del ciclo. Cuando entre, el video del expediente sale de la MISMA animación, no de otra."
   }
  ],
  "cine": {
@@ -4982,7 +5126,7 @@
    "actor": "el ingeniero más pro de Mitsubishi, con la carcasa de la siguiente consola en STEP",
    "promesa": "sube su archivo y sale con su molde DISEÑADO Y COTIZADO — sin aprender nuestro CAD",
    "pieza": "test-parts/inyeccion-reales/1594C Box.stp  (una carcasa de consola de verdad: postes, labio, nervios)",
-   "nota": "el ingeniero diseñó moldeable (draft, sin undercuts). Los mecanismos son OTRO camino. El video del enfriamiento va en el expediente, no en la caminata.",
+   "nota": "el ingeniero diseñó moldeable (draft, sin undercuts). Los mecanismos son OTRO camino. El video del enfriamiento va en el expediente, no en la caminata. DECIDIDO por ian (2026-09-04): la promesa es DISEÑADO Y COTIZADO («de creado obviamente no»); el video va en el expediente; 1594C Box es la pieza controlada. Deseo registrado: ver el enfriamiento ANIMADO en vivo en el CAD, no solo en el video (vive en DESPUES-DE-V1).",
    "pasos": [
     {
      "n": 1,
@@ -5043,7 +5187,13 @@
    ],
    "verdes": 4,
    "total": 8,
-   "rompeEn": 5
+   "rompeEn": 5,
+   "medido": {
+    "fecha": "2026-09-04 20:11",
+    "url": "https://university.gaiaprime.com.mx/forja-brep.html",
+    "servido": "6026a20",
+    "maquina": "iangpu"
+   }
   }
  ]
 }

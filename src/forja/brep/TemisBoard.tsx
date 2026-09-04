@@ -142,7 +142,9 @@ export interface TemisJson {
   deploy: { commit: string; fecha: string } | null;
   /** EL CAMINO — la promesa hecha pasos (caminos/<slug>.md). Estado por paso: ok | falla | parcial | bloqueado */
   caminos?: Array<{ slug: string; titulo: string; actor: string; promesa: string; pieza: string; nota: string;
-    pasos: Array<{ n: number; gesto: string; seVe: string; estado: string; ticket: string }>; verdes: number; total: number; rompeEn: number }>;
+    pasos: Array<{ n: number; gesto: string; seVe: string; estado: string; ticket: string }>; verdes: number; total: number; rompeEn: number;
+    /** lo dejó camino-runner.cjs en ## MEDIDO; null = estados declarados a mano */
+    medido: { fecha: string; url: string; servido: string; maquina: string } | null }>;
   /** CINE — 1 video por día (videos/CRONOGRAMA.json); `publicado` derivado del catálogo de Comando */
   cine: { nota: string; dias: Array<{ fecha: string; id: string; titulo: string; base: string; tipo: string;
     estado: 'hecho' | 'hoy' | 'proximo'; manifiesto: boolean; publicado: boolean;
@@ -240,7 +242,10 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
           El chip del ticket abre su detalle: eso es «conectar todo». */}
       {franja === 'camino' && caminos.map((cam) => (
         <section className="tm-cine tm-camino" key={cam.slug} data-testid={`temis-camino-${cam.slug}`}>
-          <h4>El camino · {cam.titulo} <span>{cam.verdes}/{cam.total} ✓{cam.rompeEn ? <> · <b className="tm-pend">se rompe en el paso {cam.rompeEn}</b></> : ' · completo'}</span></h4>
+          <h4>El camino · {cam.titulo} <span>{cam.verdes}/{cam.total} ✓{cam.rompeEn ? <> · <b className="tm-pend">se rompe en el paso {cam.rompeEn}</b></> : ' · completo'}
+            {/* la máquina lo midió, no alguien lo recordó: fecha + máquina + commit servido */}
+            {cam.medido ? <span className="tm-medido" data-testid={`temis-camino-medido-${cam.slug}`}> · medido {cam.medido.fecha} en {cam.medido.maquina}{cam.medido.servido ? ` · ${cam.medido.servido}` : ''}</span> : <span className="tm-medido" data-testid={`temis-camino-declarado-${cam.slug}`}> · declarado a mano</span>}
+          </span></h4>
           <div className="tm-camino-promesa"><b>{cam.actor}</b> — {cam.promesa}{cam.pieza ? <span className="tm-camino-pieza"> · pieza: {cam.pieza.replace(/^.*\//, '')}</span> : null}</div>
           <div className="tm-cine-tira">
             {cam.pasos.map((p) => {
@@ -464,6 +469,7 @@ export const TEMIS_CSS = `
 .tm-chip.falta{background:transparent;border-style:dashed;border-color:rgba(242,122,108,.55);color:#f27a6c;font-weight:600}
 .tm-chip:hover{filter:brightness(1.25)}
 .tm-pend{text-transform:none;letter-spacing:0;color:#f27a6c;font-weight:700;margin-left:2px}
+.tm-medido{text-transform:none;letter-spacing:0;font-weight:500;color:#7f93a8;margin-left:2px}
 .tm code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--ds-dim,#A6B4C8)}
 /* SUPERTICKET: barra n/N en la tarjeta + lista de ejercicios en el detalle */
 .tm-barra{display:flex;align-items:center;gap:8px;margin-top:2px;min-width:0}

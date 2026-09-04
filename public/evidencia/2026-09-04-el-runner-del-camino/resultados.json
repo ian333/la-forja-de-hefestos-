@@ -1,0 +1,44 @@
+{
+ "drop-real": {
+  "estado": "verde",
+  "checks": "gesto `drop` en forja-drive.cjs: el archivo viaja en base64 y el DataTransfer se construye DENTRO de la página (dragenter/dragover/drop sobre `.fb-root`). Contra producción: 1594C Box.stp (912,495 bytes) carga, el Foco se prende solo y salen 3 cotas (alto 33.3 · largo 106.5 · ancho 66.0 mm)",
+  "video": "",
+  "still": "paso-2.png",
+  "nota": "x4 lo pagó con page.dispatchEvent (drop vacío); ahora el gesto vive en el arnés y no se pierde dos veces"
+ },
+ "ve-o-no-ve": {
+  "estado": "verde",
+  "checks": "sección `## RUNNER` del camino: 8 líneas `n · gestos JSON · check…` con testid:/count:/js:; gesto `expect` del arnés escribe checks[] {label, ok, ms, detail} en meta.json. 14 checks medidos. CONTROL NEGATIVO: un testid inexistente a propósito en el paso 2 lo bajó a PARCIAL (1/2) — el runner no es un sí automático",
+  "video": "",
+  "still": "",
+  "nota": "el contrato para T5/T6/T7 quedó escrito en el camino: linea-particion · molde-de-la-pieza · planos-del-molde · expediente-de-la-pieza"
+ },
+ "el-camino-se-recorre": {
+  "estado": "verde",
+  "checks": "`URL=… node scripts/camino-runner.cjs caminos/la-carcasa-de-mitsubishi.md` arma 17 acciones desde ## RUNNER, corre forja-drive (spawn, mismo motor), lee meta.json y saca 8 veredictos + 8 capturas. Laptop 69 s · iangpu 55 s",
+  "video": "",
+  "still": "paso-3.png",
+  "nota": "un bug propio cazado en la 1ª corrida: waitForFunction(cond, opts) ignora opts (la firma es cond, arg, opts) → todos los timeouts eran 30 s"
+ },
+ "el-archivo-se-reescribe": {
+  "estado": "verde",
+  "checks": "el runner reescribió SOLO la columna estado de ## PASOS y dejó `- runner · 2026-09-04 20:11 UTC · <url> · servido 6026a20 · iangpu · 4/8 ok · se rompe en el paso 5 · 1:2/2 2:2/2 3:3/3 4:2/2 5:0/1 6:0/1 7:0/1 8:1/2` en ## MEDIDO; temis-tablero regenerado; el tablero imprime «medido 2026-09-04 20:11 en iangpu · 6026a20»",
+  "video": "",
+  "still": "temis-medido.png",
+  "nota": "lo medido coincidió con lo declarado a mano (4/8, rompe en 5): el archivo no mentía — pero ahora lo sabemos porque una máquina lo dijo"
+ },
+ "medido-donde-hay-gpu": {
+  "estado": "verde",
+  "checks": "corrida oficial desde iangpu (DISPLAY=:0 GALLIUM_DRIVER=d3d12 …NVIDIA, MAQUINA=iangpu) contra producción: ENFRIAMIENTO en 0.3 s declarados por el módulo (celda 1.4 mm · 21,305 vóxeles); la laptop dio 0.7 s. El check lee el número que el módulo imprime en EL PARTE, no un cronómetro del arnés",
+  "video": "",
+  "still": "paso-3.png",
+  "nota": "el campo es CPU, no GPU: por eso la laptop también pasa; iangpu sigue siendo la máquina oficial de medida"
+ },
+ "sin-regresion": {
+  "estado": "verde",
+  "checks": "deploy #1 desde el working tree (227 s) · el lobby en producción muestra «medido 2026-09-04 20:11 en iangpu · 6026a20» (testid temis-camino-medido-la-carcasa-de-mitsubishi), estados ok·ok·ok·ok·falla·bloqueado·bloqueado·parcial, cero pageerror; chunk servido TemisBoard-zSMmeSbk.js trae temis-camino-medido- y tm-medido; orden-gate VERDE; censo Canvas 8→8",
+  "video": "",
+  "still": "temis-medido.png",
+  "nota": "la franja CINE sigue intacta (es de la otra sesión)"
+ }
+}
