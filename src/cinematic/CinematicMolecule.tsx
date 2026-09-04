@@ -905,6 +905,21 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 1.05, azim0: 2.7, span: 1.5, elev: 0.2 }), dur: 5.92, label: 'el puente=nube — otro ángulo de choque (l17-18)' },
     { shot: pullOut({ rFromMul: 0.62, azim0: 1.0, span: 1.4 }), dur: 9.54, label: 'payoff con órbita (l19-20)' },
   ],
+  // ERES TÚ (2026-09-04): la cámara de wpair-b re-cronometrada a la voz de erestu.txt. molKey
+  // propio porque render-clip exige formato.dur == duración de la escena (el rey: 77; esta: 55).
+  // Cortes en arranques reales: l01 0.40 · l03 9.45 · l04 14.63 · l05 18.78 · l06 24.70 ·
+  // l07 30.15 · l08 34.86 · l09 40.04 · l10 44.61 · fin 55. pullOut con rFromMul (gotcha del anillo).
+  weres: [
+    { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 9.45, label: 'espectáculo — plano alto opuesto (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 5.18, label: 'electrones de la OTRA, close bajo (l3-4)' },
+    { shot: orbitOne({ side: 1, azim0: 0.3, span: 1.7, rMul: 0.42, elev: 0.2 }), dur: 4.15, label: 'probabilidad — flip de molécula (l5-6)' },
+    { shot: orbitOne({ side: 1, azim0: 2.2, span: 2.2, rMul: 0.48, elev: 0.35 }), dur: 5.92, label: 'el corazón dorado O — elevado (l7-8)' },
+    { shot: craneOverPair({ azim0: 2.9, span: 1.5, elevFrom: 0.5, elevTo: -0.55, rMul: 1.35 }), dur: 5.45, label: 'cargas parciales — grúa profunda otro azimut (l9-11)' },
+    { shot: twoShot({ dir: 1, azim0: 0.5, span: 2.3, elev: -0.12, rMul: 1.42 }), dur: 4.71, label: 'el campo — barrido bajo opuesto (l12-14)' },
+    { shot: pushToBridge({ rFrom: 1.95, rTo: 0.8, azim: 2.6, elev: 0.12 }), dur: 5.18, label: 'se acercan — looming otro lado (l15-16)' },
+    { shot: crashIn({ rMul: 1.05, azim0: 2.7, span: 1.5, elev: 0.2 }), dur: 4.57, label: 'el puente=nube — otro ángulo de choque (l17-18)' },
+    { shot: pullOut({ rFromMul: 0.62, azim0: 1.0, span: 1.4 }), dur: 10.39, label: 'payoff con órbita (l19-20)' },
+  ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
     { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 9, label: 'electrones de la OTRA, close bajo (l3-4)' },
@@ -1305,6 +1320,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
   wcolor: { name: 'De quién son', formula: 'C · O · H', fact: 'Cada color es un elemento, repartido por la regla de Hirshfeld — no a ojo.' },
+  weres: { name: 'Eres tú', formula: 'H₂O···H₂O', fact: 'Seis de cada diez partes de tu cuerpo son exactamente esto.' },
   wgotas: { name: 'Dos gotas', formula: 'H₂O···H₂O', fact: 'El instante en que dos gotas se vuelven una es un puente de hidrógeno naciendo.' },
   wcamporb: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'Se cancelan el 99 % entre ellos. El puente del agua es lo que sobra.' },
   wcampor: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'Se cancelan el 99 % entre ellos. El puente del agua es lo que sobra.' },
@@ -2656,6 +2672,22 @@ const WETANOL_CAPAS: CapasSpec = {
   spin:     { base: 1,    mods: [{ wins: [[51.45, 66.48]], a: 0.9, label: 'ARDE: carga llegando a la silla (l12-15)' }] },
   acc:      { base: 1,    mods: [{ wins: [[27.66, 32.46]], a: 0.5, label: 'ORO: la palabra-color, el único cálido del video (l7)' }] },
 };
+const WERES_DURATION = 55;
+// ERES TÚ — el espectador ES el sujeto. El evento es l06 ("cuando se tocan… ahí está el puente"):
+// ahí arde el spin y se cierra la apertura. Oro en l04 ("mira el hidrógeno buscando el oxígeno").
+const WERES_CAPAS: CapasSpec = {
+  apertura: { base: 0.55, mods: [
+    { wins: [[24.70, 55]], a: -0.25, label: 'se tocan (l06)' },
+    { wins: [[30.15, 55]], a: -0.20, label: 'se arma y se rompe (l07)' },
+  ] },
+  nubes:    { base: 1,    mods: [] },
+  campo:    { base: 1,    mods: [{ wins: [[9.45, 14.63]], a: -0.60, label: 'close-up: dos moléculas y un puente (l03)' }] },
+  campoNuc: { base: 0,    mods: [] },
+  campoEle: { base: 0,    mods: [] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[9.45, 14.63]], a: 0.35, label: 'las nubes respiran (l03)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[24.70, 47.88]], a: 0.9, label: 'ARDE: el puente, en cada gota, en tu sangre (l06-l10)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[14.63, 18.78]], a: 0.4, label: 'ORO: el hidrógeno busca el oxígeno (l04)' }] },
+};
 const WGOTAS_DURATION = 55;
 // DOS GOTAS — coreografía calibrada a segs.json. El evento es l06-l07 ("se tocan… acaba de nacer"):
 // ahí arde el spin y se cierra la apertura. Las líneas bajan en el close-up de l03 para que se lea
@@ -2856,6 +2888,7 @@ type WaterEntry = {
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
   // LA SILLA VACÍA: el bin del rey con SU coreografía y SU duración (quick win, 2026-08-27).
+  weres: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WERES_DURATION, capas: WERES_CAPAS },
   wgotas: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WGOTAS_DURATION, capas: WGOTAS_CAPAS },
   wcamporb: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WCAMPORB_DURATION,
               efNuc: 'water-approach-efield-nuc', efEle: 'water-approach-efield-ele', capas: WCAMPORB_CAPAS },

@@ -4,8 +4,9 @@
   "nota": "QUICK WIN del rey (mismo bin water-approach, cámara wpair-b, guion nuevo). Primera pieza escrita con la doctrina del 2026-09-02: REVELACIÓN + valor PROPIO máximo (el espectador ES el sujeto). El rey habla del agua; esta habla de TI.",
   "escena": {
     "html": "cinematic-molecule.html",
-    "query": "m=wpair&cam=b",
-    "hook": "__cinematicAtom"
+    "query": "m=weres",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (weres): render-clip exige formato.dur == duracion de la escena; el rey dura 77 y esta pieza 55."
   },
   "formato": {
     "w": 2160,

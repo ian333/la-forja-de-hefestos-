@@ -627,6 +627,15 @@ llamamos "gate" reprueba: hay cosas que solo imprimen.
   `analisis-rasgos`) es ESTRATEGIA, no portería. No bloquea nada y no debe: son para decidir
   QUÉ hacer, no para aprobar lo hecho.
 
+### PORTERO 16 — y la ley que lo acompaña (cazado 2026-09-04)
+
+`render-clip.cjs` **rechaza** si `formato.dur` ≠ la duración de la ESCENA (`window.__cinematic*.duration`),
+y el loop de reintento de `video.sh render` se queda girando `0/N` sin decirlo. Costó cinco
+intentos y una sesión ssh. **Ley:** un quick win con OTRA duración que su escena madre necesita
+**molKey propio** (`WATER_BINS` con su `dur` + sus capas + su lista de tomas calibrada a su
+`segs.json`). `m=wpair&cam=b` solo sirve para piezas de 77 s exactos. Así nacieron `wgotas`,
+`weres` y `wroba`.
+
 ### LO QUE FALTA, y es el hueco que explica todo lo demás
 
 Ningún portero exige que la pieza **DECLARE SU TRATAMIENTO**. Por eso llevamos 24 experimentos
