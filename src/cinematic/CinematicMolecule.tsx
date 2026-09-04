@@ -523,33 +523,33 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // — y así queda declarado que ahí el brazo B no corta, para no confundir el efecto.
   wcamporb: [
     // l01-04 · EL GANCHO: los dos campos encimados (0 → 11.5)
-    { shot: twoShot({ dir: 1, azim0: 0.7, span: 0.5, elev: 0.15, rMul: 1.10 }), dur: 2.9, label: 'B · gancho 1/4' },
-    { shot: twoShot({ dir: -1, azim0: 2.4, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 2.9, label: 'B · gancho 2/4 (ángulo opuesto)' },
-    { shot: craneOverPair({ azim0: 1.3, span: 0.4, elevTo: -0.40, rMul: 1.05 }), dur: 2.9, label: 'B · gancho 3/4 (grúa)' },
-    { shot: twoShot({ dir: 1, azim0: 3.9, span: 0.5, elev: 0.10, rMul: 1.10 }), dur: 2.8, label: 'B · gancho 4/4' },
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 0.5, elev: 0.15, rMul: 1.10 }), dur: 3.51, label: 'B · gancho 1/4' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 3.51, label: 'B · gancho 2/4 (ángulo opuesto)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 0.4, elevTo: -0.40, rMul: 1.05 }), dur: 3.51, label: 'B · gancho 3/4 (grúa)' },
+    { shot: twoShot({ dir: 1, azim0: 3.9, span: 0.5, elev: 0.10, rMul: 1.10 }), dur: 3.51, label: 'B · gancho 4/4' },
     // l05-06 · SOLO el positivo (11.5 → 16.4)
-    { shot: orbitOne({ side: -1, azim0: 0.8, span: 0.6, rMul: 0.72 }), dur: 2.45, label: 'B · rojo, molécula A' },
-    { shot: orbitOne({ side: 1, azim0: 2.5, span: 0.6, rMul: 0.72 }), dur: 2.45, label: 'B · rojo, molécula B' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 0.6, rMul: 0.72 }), dur: 2.765, label: 'B · rojo, molécula A' },
+    { shot: orbitOne({ side: 1, azim0: 2.5, span: 0.6, rMul: 0.72 }), dur: 2.765, label: 'B · rojo, molécula B' },
     // l07-08 · SOLO el negativo (16.4 → 22.2)
-    { shot: orbitOne({ side: 1, azim0: 1.6, span: 0.6, rMul: 0.60 }), dur: 2.9, label: 'B · cian, cerca' },
-    { shot: craneOverPair({ azim0: 2.6, span: 0.4, elevTo: -0.35, rMul: 1.05 }), dur: 2.9, label: 'B · cian, grúa' },
+    { shot: orbitOne({ side: 1, azim0: 1.6, span: 0.6, rMul: 0.60 }), dur: 3.09, label: 'B · cian, cerca' },
+    { shot: craneOverPair({ azim0: 2.6, span: 0.4, elevTo: -0.35, rMul: 1.05 }), dur: 3.09, label: 'B · cian, grúa' },
     // l09 · la nube PELADA — una sola toma, a propósito (22.2 → 26.5)
-    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 4.3, label: 'B · la NADA (sin cortar: la quietud es el argumento)' },
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 4.67, label: 'B · la NADA (sin cortar: la quietud es el argumento)' },
     // l10-13 · los dos otra vez + los números (26.5 → 37.9)
-    { shot: twoShot({ dir: -1, azim0: 2.4, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 2.85, label: 'B · los dos 1/4' },
-    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 0.4, elev: 0.06 }), dur: 2.85, label: 'B · los dos 2/4 (crash)' },
-    { shot: twoShot({ dir: 1, azim0: 0.4, span: 0.5, elev: 0.12, rMul: 1.10 }), dur: 2.85, label: 'B · los dos 3/4' },
-    { shot: orbitOne({ side: -1, azim0: 3.0, span: 0.6, rMul: 0.72 }), dur: 2.85, label: 'B · los dos 4/4 (íntima)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 2.99, label: 'B · los dos 1/4' },
+    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 0.4, elev: 0.06 }), dur: 2.99, label: 'B · los dos 2/4 (crash)' },
+    { shot: twoShot({ dir: 1, azim0: 0.4, span: 0.5, elev: 0.12, rMul: 1.10 }), dur: 2.99, label: 'B · los dos 3/4' },
+    { shot: orbitOne({ side: -1, azim0: 3.0, span: 0.6, rMul: 0.72 }), dur: 3.0, label: 'B · los dos 4/4 (íntima)' },
     // l14-16 · la SUMA: lo que sobra (37.9 → 47.7)
-    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 3.27, label: 'B · suma 1/3 (looming)' },
-    { shot: crashIn({ rMul: 0.80, azim0: 2.8, span: 0.4, elev: 0.06 }), dur: 3.27, label: 'B · suma 2/3' },
-    { shot: eyeLevelLock({ rMul: 0.78, azim: 2.4 }), dur: 3.26, label: 'B · suma 3/3 (conecta)' },
+    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 3.24, label: 'B · suma 1/3 (looming)' },
+    { shot: crashIn({ rMul: 0.80, azim0: 2.8, span: 0.4, elev: 0.06 }), dur: 3.24, label: 'B · suma 2/3' },
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 2.4 }), dur: 3.24, label: 'B · suma 3/3 (conecta)' },
     // l17-19 · payoff (47.7 → 62.0)
-    { shot: pullOut({ rFromMul: 0.62, rTdMul: 0.95 }), dur: 2.86, label: 'B · payoff 1/5' },
-    { shot: twoShot({ dir: 1, azim0: 0.7, span: 0.5, elev: 0.15, rMul: 1.10 }), dur: 2.86, label: 'B · payoff 2/5' },
-    { shot: orbitOne({ side: 1, azim0: 0.9, span: 0.6, rMul: 0.72 }), dur: 2.86, label: 'B · payoff 3/5' },
-    { shot: twoShot({ dir: -1, azim0: 2.9, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 2.86, label: 'B · payoff 4/5' },
-    { shot: pullOut({ rFromMul: 0.62, rTdMul: 0.95 }), dur: 2.86, label: 'B · payoff 5/5 + GAIA' },
+    { shot: pullOut({ rFromMul: 0.62, rTdMul: 0.95 }), dur: 2.378, label: 'B · payoff 1/5' },
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 0.5, elev: 0.15, rMul: 1.10 }), dur: 2.378, label: 'B · payoff 2/5' },
+    { shot: orbitOne({ side: 1, azim0: 0.9, span: 0.6, rMul: 0.72 }), dur: 2.378, label: 'B · payoff 3/5' },
+    { shot: twoShot({ dir: -1, azim0: 2.9, span: 0.5, elev: 0.20, rMul: 1.05 }), dur: 2.378, label: 'B · payoff 4/5' },
+    { shot: pullOut({ rFromMul: 0.62, rTdMul: 0.95 }), dur: 2.378, label: 'B · payoff 5/5 + GAIA' },
   ],
   wcampor: [
     // DURACIONES CALIBRADAS a segs.json (2026-08-31), no a los cortes de cámara que puse a
@@ -2639,17 +2639,17 @@ const WETANOL_CAPAS: CapasSpec = {
   spin:     { base: 1,    mods: [{ wins: [[51.45, 66.48]], a: 0.9, label: 'ARDE: carga llegando a la silla (l12-15)' }] },
   acc:      { base: 1,    mods: [{ wins: [[27.66, 32.46]], a: 0.5, label: 'ORO: la palabra-color, el único cálido del video (l7)' }] },
 };
-const WCAMPORB_DURATION = 62;
-// BRAZO B: los mismos beats que WCAMPOR_CAPAS con las ventanas ×0.8 (la voz va 25 % más
-// rápida por VEL 1.25). PROVISIONAL: se recalibra a segs.json en cuanto corra el TTS.
+const WCAMPORB_DURATION = 64;
+// BRAZO B: los mismos beats que WCAMPOR_CAPAS, ventanas = arranques REALES de segs.json a
+// VEL 1.25 (calibrado 2026-09-04; la voz termina en 61.81 s).
 const WCAMPORB_CAPAS: CapasSpec = {
-  apertura: { base: 0.55, mods: [{ wins: [[47.7, 62]], a: -0.35, label: 'al final se juntan' }] },
-  nubes:    { base: 1,    mods: [{ wins: [[11.5, 22.2]], a: -0.55, label: 'baja la nube mientras se leen las partes' }] },
-  campo:    { base: 0,    mods: [{ wins: [[37.9, 62]], a: 1.0, label: 'la suma: lo que queda' }] },
-  campoNuc: { base: 0,    mods: [{ wins: [[0, 16.4]], a: 1.0, label: 'gancho + positivo solo' }, { wins: [[26.5, 37.9]], a: 1.0, label: 'los dos otra vez' }] },
-  campoEle: { base: 0,    mods: [{ wins: [[0, 11.5]], a: 1.0, label: 'gancho' }, { wins: [[16.4, 22.2]], a: 1.0, label: 'negativo solo' }, { wins: [[26.5, 37.9]], a: 1.0, label: 'los dos otra vez' }] },
-  parpadeo: { base: 0.42, mods: [{ wins: [[22.2, 26.5]], a: 0.42, label: 'la nube sola respira' }] },
-  spin:     { base: 1,    mods: [{ wins: [[37.9, 62]], a: 0.9, label: 'el puente arde' }] },
+  apertura: { base: 0.55, mods: [{ wins: [[52.11, 64]], a: -0.35, label: 'al final se juntan (l17)' }] },
+  nubes:    { base: 1,    mods: [{ wins: [[14.04, 25.75]], a: -0.55, label: 'baja la nube mientras se leen las partes (l05-08)' }] },
+  campo:    { base: 0,    mods: [{ wins: [[42.39, 64]], a: 1.0, label: 'la suma: lo que queda (l14-19)' }] },
+  campoNuc: { base: 0,    mods: [{ wins: [[0, 19.57]], a: 1.0, label: 'gancho + positivo solo (l01-06)' }, { wins: [[30.42, 42.39]], a: 1.0, label: 'los dos otra vez (l10-13)' }] },
+  campoEle: { base: 0,    mods: [{ wins: [[0, 14.04]], a: 1.0, label: 'gancho (l01-04)' }, { wins: [[19.57, 25.75]], a: 1.0, label: 'negativo solo (l07-08)' }, { wins: [[30.42, 42.39]], a: 1.0, label: 'los dos otra vez (l10-13)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[25.75, 30.42]], a: 0.42, label: 'la nube sola respira (l09)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[42.39, 64]], a: 0.9, label: 'el puente arde (l14-16)' }] },
   acc:      { base: 1,    mods: [] },
 };
 const WCAMPOR_DURATION = 75;

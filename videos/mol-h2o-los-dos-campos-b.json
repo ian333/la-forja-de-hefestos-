@@ -11,13 +11,15 @@
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 62
+    "dur": 64
   },
   "render": {
     "shards": 5,
     "batch": 40,
     "frames": "dist-video/.camporeybframes",
-    "nota_cometa": "Las lineas llevan COMETAS (uFlujo=1 en BondEField). ian: \"el negativo se ve igual al positivo, tal vez sea eso, que son el mismo y no lo capto\". No era el: era el dibujo. Lo unico que distingue los dos campos es la DIRECCION y no se estaba dibujando. MEDIDO en el .bin (scripts/_dir-campo.py): el campo nuclear va de r=2.86 a r=8.91 bohr (97.6% de las lineas SALEN) y el electronico de 8.91 a 2.81 (97.6% ENTRAN); el total queda en +0.06, ni sale ni entra: CONECTA, que es justo lo que dice el guion."
+    "nota_cometa": "Las lineas llevan COMETAS (uFlujo=1 en BondEField). ian: \"el negativo se ve igual al positivo, tal vez sea eso, que son el mismo y no lo capto\". No era el: era el dibujo. Lo unico que distingue los dos campos es la DIRECCION y no se estaba dibujando. MEDIDO en el .bin (scripts/_dir-campo.py): el campo nuclear va de r=2.86 a r=8.91 bohr (97.6% de las lineas SALEN) y el electronico de 8.91 a 2.81 (97.6% ENTRAN); el total queda en +0.06, ni sale ni entra: CONECTA, que es justo lo que dice el guion.",
+    "ventanasNegras": "25.7-30.4",
+    "nota_negras": "l09 \"por eso la nube no lleva lineas\": los dos campos apagados a proposito y la nube baja. En B queda mas vacio que en A (still t28 fill 0.06) porque la toma es mas corta; se declara para que el portero de cuadros negros no lo tome por defecto."
   },
   "audio": {
     "dir": "dist-video/campo-rey-b-narracion",
@@ -26,7 +28,7 @@
     "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
     "musicaVol": 0.17,
     "musicaFadeIn": 2.5,
-    "musicaFadeOutAt": 58,
+    "musicaFadeOutAt": 60,
     "segs": "segs.json",
     "ass": "campo-rey-b.ass",
     "voz": "XTTS Matilda, TAKES=4 (mediana)",
@@ -108,6 +110,7 @@
   },
   "ritmo": {
     "brazo": "B",
-    "nota_brazo": "B = rápido. Hermana de mol-h2o-los-dos-campos (brazo A). Solo cambian cortes/min y VEL."
+    "nota_brazo": "B = rápido. Hermana de mol-h2o-los-dos-campos (brazo A). Solo cambian cortes/min y VEL.",
+    "confusor_declarado": "Las 4 tomas cortas del gancho arrancan cada orbita desde su inicio (span 0.5) y dejan la camara MAS CERCA: fill del gancho 0.87 en B contra 0.50 en A. O sea que B no cambia solo cortes y velocidad, tambien densidad de encuadre. Queda declarado para no atribuirle al ritmo lo que sea del encuadre."
   }
 }
