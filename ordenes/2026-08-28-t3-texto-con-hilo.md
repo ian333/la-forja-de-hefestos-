@@ -51,3 +51,15 @@ del cine). No se negocia.
 - orden-gate VERDE · Temis n/6
 
 ## CIERRE (se llena al terminar)
+
+## IAN (2026-09-04) — «NECESITO EVIDENCIA. Acá no hay evidencia, solo un reporte»
+ian abrió el hallazgo DP de su engrane en producción: «ΔP sprue 0.8 MPa vs límite 0.3 MPa
+(50 % de 0.5 MPa de cavidad, tope 50) · ⌀33.95 mm, sprue L=55.4 mm». Es texto. Evidencia
+sería el sprue DIBUJADO sobre su pieza con su ⌀ y su L, y el punto donde la presión se cae —
+exactamente el hilo de este ticket. La lámina lo confiesa en su último renglón («Falta aquí: el
+hilo de cada § a su lugar en la pieza…»).
+Y un ejemplo de por qué el hilo no es adorno: **«0.5 MPa de presión de cavidad» es 60-160×
+menos que cualquier inyección real (30-80 MPa)**. `fillMPa` en `mold-contratos.ts` (feed-dp)
+está devolviendo otra cosa o trae unidades cruzadas. Sin evidencia sobre la pieza ese número
+pasa como verdad. VERIFICAR antes de afirmar cuál de las dos — y es candidato a control negativo
+del ticket: un hallazgo cuyo número no se puede señalar en la geometría no es un hallazgo.

@@ -1,25 +1,25 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-04 20:21",
+ "generado": "2026-09-04 21:09",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 5,
+  "proximo": 6,
   "enCurso": 1,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 76,
+  "cerrado": 77,
   "probado": 0,
   "porProbar": 42,
   "sinDesplegar": 0,
   "despues": 18
  },
  "deploy": {
-  "commit": "f81ec7a",
-  "fecha": "2026-09-04 20:13"
+  "commit": "fc306ff",
+  "fecha": "2026-09-04 20:22"
  },
  "violaciones": [],
  "columnas": {
@@ -235,29 +235,27 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
-   }
-  ],
-  "imprevisto": [],
-  "enCurso": [
+   },
    {
-    "file": "ordenes/2026-08-26-subida-automatizada.md",
-    "slug": "2026-08-26-subida-automatizada",
-    "titulo": "SUBIDA AUTOMATIZADA — Instagram · YouTube · TikTok desde la PC de ian (con autorización por video)",
-    "fecha": "2026-08-26",
-    "estado": "en-curso",
-    "prioridad": 999,
+    "file": "ordenes/2026-09-04-que-sigue.md",
+    "slug": "2026-09-04-que-sigue",
+    "titulo": "QUÉ SIGUE — después de soltar, la Forja te lleva de la mano al siguiente paso",
+    "fecha": "2026-09-04",
+    "estado": "proximo",
+    "prioridad": 6,
     "tipo": "",
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
-    "objetivo": "Que subir un video ya aprobado (el master + el copy del manifiesto) a IG, YouTube y TikTok sea UN comando que corre solo — ian solo dice \"autorizado <pieza> <plataformas>\". Con evidencia (screenshot/URL del post publicado) que cae en el re…",
-    "toca": 4,
-    "crea": 7,
-    "evidencia": 3,
+    "objetivo": "ian, caminando el happy path con su engrane en producción (2026-09-04): «acá en la interfaz no sé ni qué sigue después de dropear». El camino vive en Temis, no en el producto. Después de soltar, la Forja no dice «paso 2 de 8 · sigue ENFRIA…",
+    "toca": 2,
+    "crea": 0,
+    "evidencia": 4,
     "evidenciaDeclarada": [
-     "Un video subido a YouTube por API con su URL en el registro de Comando.",
-     "Un Reel subido a IG (API o Brave) con screenshot del post.",
-     "registro.json marcado solo (sin togglePlat a mano)."
+     "captura tras el drop: la tira dice «2/8 ✓ · sigue ENFRIAMIENTO» y cada paso hecho queda marcado",
+     "captura en el paso 4: «sigue PARTIR (P)» — y P hace algo, aunque sea la silueta por malla (T7)",
+     "el runner corre solo y el paso 5 deja de ser «sin gesto»; orden-gate VERDE; censo Canvas 8→8",
+     "deploy + verificación contra el bundle servido"
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -267,7 +265,10 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
-   },
+   }
+  ],
+  "imprevisto": [],
+  "enCurso": [
    {
     "file": "ordenes/2026-08-27-roadmap-suite-desde-libros.md",
     "slug": "2026-08-27-roadmap-suite-desde-libros",
@@ -1275,6 +1276,41 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-04-el-cine-programado.md",
+    "slug": "2026-09-04-el-cine-programado",
+    "titulo": "EL CINE PROGRAMADO — cada video con su hora, sus rasgos y sus métricas; PRIME lo sube solo",
+    "fecha": "2026-09-04",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-04): «quiero que estén los tickets con su cronograma, cada ticket es subir un video… cada uno llevará sus características y métricas para que después podamos hacer machine learning… dejar todo por adelantado, que se queden pro…",
+    "toca": 12,
+    "crea": 10,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "node scripts/orden-gate.cjs → VERDE",
+     "node scripts/temis-tablero.cjs → exit 0, cero violaciones, cine.dias con hora y rasgos",
+     "python3 scripts/cola-publicar.py tick --dry en PRIME con una entrada de prueba → imprime",
+     "python3 scripts/horarios.py → public/comando/horarios.json con n_sesiones, tz_pct,",
+     "captura de la tira 🎬 CINE del lobby (forja-brep.html → TEMIS) mostrando hora + rasgos",
+     "censo esperado: canvas igual, vite igual, html igual"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [
+     "evidencia/2026-09-04-el-cine-programado/01-tira-cine.png",
+     "evidencia/2026-09-04-el-cine-programado/02-cola-prime.png"
+    ],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -1386,8 +1422,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "fc306ff",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-09-02-x6-la-lamina-viva.md",
@@ -1491,7 +1527,7 @@
     ],
     "revisable": true,
     "probado": "",
-    "falla": "",
+    "falla": "2026-09-04 · ian la probó con su engrane en producción: «el color no varía, siempre está en rojo, si le doy click a algo verde no cambia». La animación sí gusta («ya está bien verga»): la quiere un poco más grande. Pendiente: medir la ola con SU pieza antes de tocar nada (por default solo se ven los que duelen; los verdes están bajo «los 69 criterios»).",
     "commit": "37700e5",
     "despliegue": "en-vivo"
    },
@@ -3076,6 +3112,37 @@
     "falla": "",
     "commit": "4304262",
     "despliegue": "en-vivo"
+   },
+   {
+    "file": "ordenes/2026-08-26-subida-automatizada.md",
+    "slug": "2026-08-26-subida-automatizada",
+    "titulo": "SUBIDA AUTOMATIZADA — Instagram · YouTube · TikTok desde la PC de ian (con autorización por video)",
+    "fecha": "2026-08-26",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "Que subir un video ya aprobado (el master + el copy del manifiesto) a IG, YouTube y TikTok sea UN comando que corre solo — ian solo dice \"autorizado <pieza> <plataformas>\". Con evidencia (screenshot/URL del post publicado) que cae en el re…",
+    "toca": 4,
+    "crea": 7,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "Un video subido a YouTube por API con su URL en el registro de Comando.",
+     "Un Reel subido a IG (API o Brave) con screenshot del post.",
+     "registro.json marcado solo (sin togglePlat a mano)."
+    ],
+    "cierre": "reels-1080.py --subir publican por API oficial con el gate publicar.autorizado, y pub_comun.registrar() deja la evidencia en publicar.subidas.* del manifiesto. Desviación: TikTok NO se implementó (si…",
+    "cierreCompleto": "reels-1080.py --subir publican por API oficial con el gate publicar.autorizado, y pub_comun.registrar() deja la evidencia en publicar.subidas.* del manifiesto. Desviación: TikTok NO se implementó (sin API aprobada); --resumable de Instagram quedó como experimento (Instagram Login exige video_url). - números: 6 piezas publicadas por API y registradas (la-sal 08-26, la-silla 08-28, ostrom 08-28, el-alcohol 08-31, los-dos-campos 09-01, de-quién-son 09-02); 4 de ellas con 16:9 (yt16x9). Race del manifiesto cazado y arreglado (registrar relee antes de escribir, commit 700cfa6). - evidencia: public/evidencia/2026-08-26-subida-automatizada/01-cine-chips-yt-ig.png (la tira 🎬 CINE con los chips YT/IG/16:9 que enlazan a cada subida real). - preguntas abiertas: la programación (hora) quedó fuera de esta orden y vive en 2026-09-04-el-cine-programado.",
+    "evidenciaSS": [
+     "evidencia/2026-08-26-subida-automatizada/01-cine-chips-yt-ig.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "156a142",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
@@ -4973,7 +5040,7 @@
   }
  ],
  "cine": {
-  "nota": "CINE: 1 video por día, SIN desviarnos (Ian, 2026-08-26). El rey y la base NO se mueven: todo sale del mismo motor, mismos bins, guion cotidiano + sello GAIA. `estado` lo pone la mano (hoy/proximo/hecho); `publicado` lo DERIVA temis-tablero.cjs del catálogo de Comando (public/comando/catalogo.json). Regla: no hay dos 'hoy'.",
+  "nota": "CINE: 1 video por día a las 18:45 CDMX (= 21:45 AR/CL, 20:45 CO): la hora sale de public/comando/horarios.json (telemetría propia, 3,490 sesiones desde IG: pico 21-23 h local, domingo y lunes fuertes). `estado` lo pone la mano (hoy/proximo/hecho); `publicado`, la hora programada y los rasgos (brazo, cortes/min, síl/s, VEL, marco) los DERIVA temis-tablero.cjs del manifiesto videos/<id>.json. Regla: no hay dos 'hoy'. Programar = publicar.programar + publicar.autorizado en el manifiesto y `bash scripts/video.sh <id> programar` (ver caminos/el-cine-programado.md).",
   "dias": [
    {
     "fecha": "2026-08-25",
@@ -4982,8 +5049,14 @@
     "base": "puente (dímero) · cam=c",
     "tipo": "quick-win",
     "estado": "hecho",
+    "hora": "",
     "manifiesto": true,
     "publicado": true,
+    "programar": "",
+    "rasgos": {
+     "dur": 77,
+     "vel": 1
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
@@ -5000,8 +5073,14 @@
     "base": "hexágono (6 aguas)",
     "tipo": "quick-win",
     "estado": "hecho",
+    "hora": "",
     "manifiesto": true,
     "publicado": true,
+    "programar": "",
+    "rasgos": {
+     "dur": 97.74,
+     "vel": 1
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
@@ -5018,8 +5097,16 @@
     "base": "dímero NUEVO: Na⁺ + H₂O (PAR=na)",
     "tipo": "sim (RHF/aug-cc-pVDZ, gate −24.0 kcal/mol)",
     "estado": "hecho",
+    "hora": "",
     "manifiesto": true,
     "publicado": true,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "dur": 77,
+     "vel": 1,
+     "marco": "revelacion"
+    },
     "yt": {
      "url": "https://youtu.be/IcQmByHafE0",
      "privacidad": "public"
@@ -5040,8 +5127,16 @@
     "tipo": "quick-win",
     "estado": "hecho",
     "nota": "Ian 2026-08-27: 'viajemos entre los átomos… expliquemos las nubes… la mecánica del O₂ de apagar y prender'. Enseña lo que h2o.txt no: el jalón cae en los pares solitarios (las sillas) → cuatro por agua → tetraedro → flota. §LA MECÁNICA DEL O₂ canonizada.",
+    "hora": "",
     "manifiesto": true,
     "publicado": true,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "dur": 50,
+     "vel": 1,
+     "marco": "explicacion"
+    },
     "yt": {
      "url": "https://youtu.be/9QpQJ5mcuYg",
      "privacidad": "public"
@@ -5057,60 +5152,385 @@
    },
    {
     "fecha": "2026-08-28",
-    "id": "mol-h2o-la-gota",
-    "titulo": "La gota — por qué es redonda",
-    "base": "puente (dímero) · cam nueva",
-    "tipo": "quick-win",
-    "estado": "proximo",
-    "nota": "corrida al 28 (el 27 salió LA SILLA)",
-    "manifiesto": false,
-    "publicado": false,
-    "yt": null,
-    "ig": null,
+    "id": "econ-ostrom",
+    "titulo": "Ostrom — la tragedia que no fue",
+    "base": "clase → reel 52 s",
+    "tipo": "clase",
+    "estado": "hecho",
+    "hora": "",
+    "manifiesto": true,
+    "publicado": true,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 4.6,
+     "dur": 52,
+     "vel": 1,
+     "marco": "revelacion"
+    },
+    "yt": {
+     "url": "https://youtu.be/zJnB9rVugrU",
+     "privacidad": "public"
+    },
+    "ig": {
+     "url": "https://www.instagram.com/reel/Dcmd1EmDBZN/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
-   },
-   {
-    "fecha": "2026-08-29",
-    "id": "mol-h2o-el-cloro",
-    "titulo": "El cloro — la otra cara del agua (Cl⁻)",
-    "base": "dímero NUEVO: Cl⁻ + H₂O (PAR=cl)",
-    "tipo": "sim (gate −13.1 kcal/mol)",
-    "estado": "proximo",
-    "manifiesto": false,
-    "publicado": false,
-    "yt": null,
-    "ig": null,
-    "ancho": null,
-    "entregado": "",
-    "falta": []
-   },
-   {
-    "fecha": "2026-08-30",
-    "id": "mol-h2o-el-hervor",
-    "titulo": "Hervir — por qué tarda tanto",
-    "base": "cuarteto (4 aguas)",
-    "tipo": "quick-win",
-    "estado": "proximo",
-    "manifiesto": false,
-    "publicado": false,
-    "yt": null,
-    "ig": null,
-    "ancho": null,
-    "entregado": "",
-    "falta": []
+    "falta": [
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-08-31",
-    "id": "mol-h2o-la-sal-completa",
-    "titulo": "La sal completa — Na⁺ y Cl⁻ separados por el agua",
-    "base": "los dos bins de la sal",
-    "tipo": "montaje",
+    "id": "mol-etoh-el-alcohol",
+    "titulo": "El alcohol — por qué se mezcla con el agua y con la grasa",
+    "base": "water-ethanol (bin nuevo, adaptive posq) · wetanol · 79 s",
+    "tipo": "sim",
+    "estado": "hecho",
+    "nota": "16:9 también en vivo",
+    "hora": "",
+    "manifiesto": true,
+    "publicado": true,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "dur": 79,
+     "vel": 1,
+     "marco": "explicacion"
+    },
+    "yt": {
+     "url": "https://youtu.be/g2QMjWyo4HI",
+     "privacidad": "public"
+    },
+    "ig": {
+     "url": "https://www.instagram.com/reel/DcuKMnHHYhs/"
+    },
+    "ancho": {
+     "url": "https://youtu.be/grCKYOTGIFY"
+    },
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-01",
+    "id": "mol-h2o-los-dos-campos",
+    "titulo": "Los dos campos — el REY con el campo + y el campo − (brazo A)",
+    "base": "puente (dímero) · wcampor · campo partido nuc/ele · 75 s",
+    "tipo": "quick-win",
+    "estado": "hecho",
+    "nota": "brazo A del experimento de ritmo; 16:9 en vivo",
+    "hora": "",
+    "manifiesto": true,
+    "publicado": true,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 6.4,
+     "sil_s": 4.01,
+     "dur": 75,
+     "vel": 1,
+     "marco": "revelacion"
+    },
+    "yt": {
+     "url": "https://youtu.be/Cj7M_ngeHT4",
+     "privacidad": "public"
+    },
+    "ig": {
+     "url": "https://www.instagram.com/reel/DcwsHmBkZhe/"
+    },
+    "ancho": {
+     "url": "https://youtu.be/Rgb0HimKrYY"
+    },
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-02",
+    "id": "mol-etoh-de-quien-son",
+    "titulo": "De quién son los electrones — la nube por elemento (Hirshfeld)",
+    "base": "water-ethanol · wcolor · binColors · 72 s",
+    "tipo": "sim",
+    "estado": "hecho",
+    "nota": "16:9 en vivo",
+    "hora": "",
+    "manifiesto": true,
+    "publicado": true,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 6.67,
+     "sil_s": 4.41,
+     "dur": 72,
+     "vel": 1,
+     "marco": "revelacion"
+    },
+    "yt": {
+     "url": "https://youtu.be/XZ6Mo6ppde4",
+     "privacidad": "public"
+    },
+    "ig": {
+     "url": "https://www.instagram.com/reel/DczsqrtCFF-/"
+    },
+    "ancho": {
+     "url": "https://youtu.be/fwkfxRzAj6Q"
+    },
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-05",
+    "hora": "18:45",
+    "id": "mol-h2o-los-dos-campos-b",
+    "titulo": "Los dos campos — BRAZO B (21 tomas, VEL 1.25)",
+    "base": "mismo bin y guion que el REY del 09-01 · wcamporb · 64 s",
+    "tipo": "experimento A/B",
     "estado": "proximo",
-    "nota": "IDEA DE IAN (2026-08-26): pintar la NUBE por el POTENCIAL que siente cada punto (signo y fuerza del MEP), en vez de por distancia al O (cosmético). Aquí es donde significa algo: dos iones opuestos y el agua entre ellos, el potencial cambia de signo en medio de la nube. Regla: cada color es dueño de UNA cantidad — reemplaza al oro-por-distancia, no se suma.",
+    "nota": "sábado. Veredicto vs brazo A a las 48 h (09-07): skip3s y compartidos por mil. Master en Downloads/los-dos-campos-REY-brazoB-4K.mp4",
+    "manifiesto": true,
+    "publicado": false,
+    "programar": "",
+    "rasgos": {
+     "brazo": "B",
+     "cortes_min": 18.75,
+     "sil_s": 5.02,
+     "dur": 64,
+     "vel": 1.25,
+     "marco": "revelacion"
+    },
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": [
+     "sin programar"
+    ]
+   },
+   {
+    "fecha": "2026-09-06",
+    "hora": "18:45",
+    "id": "mol-etoh-te-roba-el-agua",
+    "titulo": "Te roba el agua — el gel de manos y el puente",
+    "base": "water-ethanol · wroba · Hirshfeld · 55 s · guion REVELACIÓN",
+    "tipo": "revelación",
+    "estado": "proximo",
+    "nota": "domingo = el día más fuerte de la audiencia; el gancho más cotidiano de los tres",
+    "manifiesto": true,
+    "publicado": false,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "dur": 55,
+     "vel": 1,
+     "marco": "revelacion"
+    },
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": [
+     "sin programar"
+    ]
+   },
+   {
+    "fecha": "2026-09-07",
+    "hora": "18:45",
+    "id": "mol-h2o-eres-tu",
+    "titulo": "Eres tú — seis de cada diez partes de tu cuerpo",
+    "base": "water-approach · weres · 55 s · guion REVELACIÓN",
+    "tipo": "revelación",
+    "estado": "proximo",
+    "nota": "lunes, segundo día más fuerte",
+    "manifiesto": true,
+    "publicado": false,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 8.73,
+     "sil_s": 3.84,
+     "dur": 55,
+     "vel": 1,
+     "marco": "revelacion"
+    },
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": [
+     "sin programar"
+    ]
+   },
+   {
+    "fecha": "2026-09-08",
+    "hora": "18:45",
+    "id": "mol-h2o-dos-gotas",
+    "titulo": "Dos gotas — el puente naciendo",
+    "base": "water-approach · wgotas · 55 s · guion REVELACIÓN",
+    "tipo": "revelación",
+    "estado": "proximo",
+    "manifiesto": true,
+    "publicado": false,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "dur": 55,
+     "vel": 1,
+     "marco": "revelacion"
+    },
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": [
+     "sin programar"
+    ]
+   },
+   {
+    "fecha": "2026-09-09",
+    "hora": "18:45",
+    "id": "mol-h2o-el-hexamero-b",
+    "titulo": "El hexámero — recorte al ritmo (12k vistas IG)",
+    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+    "tipo": "recorte-ritmo",
+    "estado": "proximo",
+    "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación.",
     "manifiesto": false,
     "publicado": false,
+    "programar": "",
+    "rasgos": null,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-10",
+    "hora": "18:45",
+    "id": "mol-h2o-el-anillo-b",
+    "titulo": "El anillo — recorte al ritmo (6k)",
+    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+    "tipo": "recorte-ritmo",
+    "estado": "proximo",
+    "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "manifiesto": false,
+    "publicado": false,
+    "programar": "",
+    "rasgos": null,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-11",
+    "hora": "18:45",
+    "id": "mol-h2o-el-sudor-b",
+    "titulo": "El sudor — recorte al ritmo (4.6k)",
+    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+    "tipo": "recorte-ritmo",
+    "estado": "proximo",
+    "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "manifiesto": false,
+    "publicado": false,
+    "programar": "",
+    "rasgos": null,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-12",
+    "hora": "18:45",
+    "id": "mol-h2o-la-sal-b",
+    "titulo": "La sal — recorte al ritmo (2.8k)",
+    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+    "tipo": "recorte-ritmo",
+    "estado": "proximo",
+    "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "manifiesto": false,
+    "publicado": false,
+    "programar": "",
+    "rasgos": null,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-13",
+    "hora": "18:45",
+    "id": "mol-grasa-butirico-b",
+    "titulo": "Mantequilla — recorte al ritmo (3.6k)",
+    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+    "tipo": "recorte-ritmo",
+    "estado": "proximo",
+    "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "manifiesto": false,
+    "publicado": false,
+    "programar": "",
+    "rasgos": null,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-14",
+    "hora": "18:45",
+    "id": "mol-h2o-el-cuarteto-b",
+    "titulo": "El cuarteto — recorte al ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+    "tipo": "recorte-ritmo",
+    "estado": "proximo",
+    "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "manifiesto": false,
+    "publicado": false,
+    "programar": "",
+    "rasgos": null,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-15",
+    "hora": "18:45",
+    "id": "mol-h2o-el-hielo-b",
+    "titulo": "El hielo — recorte al ritmo (2.4k)",
+    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+    "tipo": "recorte-ritmo",
+    "estado": "proximo",
+    "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "manifiesto": false,
+    "publicado": false,
+    "programar": "",
+    "rasgos": null,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-16",
+    "hora": "18:45",
+    "id": "mol-h2o-la-silla-b",
+    "titulo": "La silla — recorte al ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+    "tipo": "recorte-ritmo",
+    "estado": "proximo",
+    "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "manifiesto": false,
+    "publicado": false,
+    "programar": "",
+    "rasgos": null,
     "yt": null,
     "ig": null,
     "ancho": null,
@@ -5120,6 +5540,76 @@
   ]
  },
  "caminos": [
+  {
+   "slug": "el-cine-programado",
+   "titulo": "EL CINE PROGRAMADO",
+   "actor": "ian, con un master 4K verificado en Downloads y cero ganas de subir a mano",
+   "promesa": "dice «autorizo X para el domingo» y el video sale SOLO a las 18:45 CDMX en YouTube (9:16 y 16:9) y en Instagram — y queda registrado con sus rasgos (brazo, cortes/min, síl/s, VEL, marco) y sus métricas a las 48 h, listo para el dataset",
+   "pieza": "videos/mol-etoh-te-roba-el-agua.json (la primera que recorre el camino completo)",
+   "nota": "la hora sale de la telemetría propia (public/comando/horarios.json): 43 % Argentina, 15 % Chile, 15 % Colombia, 15 % México; pico 21-23 h local = 19-21 h CDMX; domingo y lunes fuertes. YouTube se programa solo (`publishAt`); Instagram NO tiene programación, así que PRIME (fuera de casa, cron cada 5 min) publica el reel a la hora con un script de biblioteca estándar. iangpu solo trabaja al ARMAR (gates, ffprobe, hospedar el reel). La verdad vive en el manifiesto; la tira 🎬 CINE de TEMIS la refleja.",
+   "pasos": [
+    {
+     "n": 1,
+     "gesto": "RENDER + VERIFICAR + ENTREGAR (`video.sh <id> todo`)",
+     "seVe": "master 4K en Downloads con MD5, stills sin bandera, subtítulos sobre su toma",
+     "estado": "ok",
+     "ticket": ""
+    },
+    {
+     "n": 2,
+     "gesto": "AUTORIZAR (ian): `publicar.autorizado` con sus palabras + `publicar.programar` con la hora ISO",
+     "seVe": "el manifiesto trae los dos campos; sin ellos nada se sube",
+     "estado": "parcial",
+     "ticket": "2026-09-04-el-cine-programado"
+    },
+    {
+     "n": 3,
+     "gesto": "ARMAR (`video.sh <id> programar` en iangpu): biblioteca+catálogo, YouTube 9:16 y 16:9 subidos PRIVADOS con publishAt, reel hospedado y verificado por HEAD, entrada en la cola de PRIME con el token fresco",
+     "seVe": "`publicar.subidas.yt.publishAt`, `publicar.reel_url`, `cola.json` en PRIME",
+     "estado": "parcial",
+     "ticket": "2026-09-04-el-cine-programado"
+    },
+    {
+     "n": 4,
+     "gesto": "A LA HORA (PRIME, `cola-publicar.py tick` por cron): contenedor por URL → FINISHED → media_publish → permalink",
+     "seVe": "`hecho/<id>.json` en PRIME con la URL del reel; YouTube se hace público solo",
+     "estado": "parcial",
+     "ticket": "2026-09-04-el-cine-programado"
+    },
+    {
+     "n": 5,
+     "gesto": "COSECHAR (`video.sh <id> cosechar`): el permalink entra al manifiesto y el día pasa a hecho",
+     "seVe": "`publicar.subidas.ig` registrado; la tira CINE muestra ● publicado sin «falta»",
+     "estado": "parcial",
+     "ticket": "2026-09-04-el-cine-programado"
+    },
+    {
+     "n": 6,
+     "gesto": "A LAS 48 H: métricas (`metricas-instagram.py`, `metricas-youtube.py` por cron en iangpu)",
+     "seVe": "skip3s, seg_vistos, c_por_mil, g_por_mil por pieza en metricas.json",
+     "estado": "parcial",
+     "ticket": ""
+    },
+    {
+     "n": 7,
+     "gesto": "EL DATASET (`dataset-cine.py`): una fila por pieza publicada = rasgos (ritmo, copy, píxel, hora, día) + métricas",
+     "seVe": "`public/comando/dataset.json`",
+     "estado": "parcial",
+     "ticket": "2026-09-04-el-cine-programado"
+    },
+    {
+     "n": 8,
+     "gesto": "EL VEREDICTO A/B (brazo B vs REY): con n≥2 por brazo decide si los recortes van con B",
+     "seVe": "nota en canon §EL RITMO con los números",
+     "estado": "bloqueado",
+     "ticket": ""
+    }
+   ],
+   "verdes": 1,
+   "total": 8,
+   "rompeEn": 0,
+   "medido": null
+  },
   {
    "slug": "la-carcasa-de-mitsubishi",
    "titulo": "LA CARCASA DE MITSUBISHI",

@@ -1,5 +1,7 @@
 # ORDEN: X6 · LA LÁMINA VIVA — mirarla ya informa
 
+FALLA: 2026-09-04 · ian la probó con su engrane en producción: «el color no varía, siempre está en rojo, si le doy click a algo verde no cambia». La animación sí gusta («ya está bien verga»): la quiere un poco más grande. Pendiente: medir la ola con SU pieza antes de tocar nada (por default solo se ven los que duelen; los verdes están bajo «los 69 criterios»).
+
 BASE: 6152e3f
 TIPO: imprevisto
 
