@@ -6,7 +6,7 @@
     "html": "cinematic-molecule.html",
     "query": "m=wroba&zoom=0.55",
     "hook": "__cinematicAtom",
-    "nota_molkey": "molKey propio (wroba): render-clip exige formato.dur == duracion de la escena; wcolor dura 72 y esta pieza 55. Tiempos provisionales hasta segs.json."
+    "nota_molkey": "molKey propio (wroba): render-clip exige formato.dur == duracion de la escena; wcolor dura 72 y esta pieza 55. Tomas y capas calibradas a segs.json (2026-09-04)."
   },
   "formato": {
     "w": 2160,

@@ -49,6 +49,21 @@ if [ "${LIBRE:-0}" -lt 60 ]; then
 else
   echo "✓ disco: ${LIBRE}G libres"
 fi
+# C: DEL HOST (2026-09-04, tercera caída por lo mismo): el df de arriba MIENTE — mide el ext4
+# virtual de 1007 G, no el disco físico donde vive el vhdx. Con C: en 15 MB este script decía
+# "✓ todo listo" y el siguiente `vite build` mató la VM. Se mide por la puerta sshd de Windows
+# (la llave de ian@WSL está en administrators_authorized_keys). Sin respuesta = aviso, no falla.
+CHOST=$(ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 sebas@100.116.134.86 'fsutil volume diskfree C:' 2>/dev/null | tr -d '\000\r' | head -1 | grep -oE '\( *[0-9.]+ [KMGT]B\)' | tr -dc '0-9.KMGTB')
+if [ -z "$CHOST" ]; then
+  echo "⚠ C: del host: no se pudo medir (¿sshd de Windows caído?)"
+else
+  CGB=$(python3 -c "import re,sys;n,u=re.match(r'([0-9.]+)([KMGT])B',sys.argv[1]).groups();print(round(float(n)*{'K':1e-6,'M':1e-3,'G':1,'T':1e3}[u],1))" "$CHOST")
+  if python3 -c "import sys;sys.exit(0 if float(sys.argv[1])<30 else 1)" "$CGB"; then
+    echo "✗ C: del host: ${CGB} GB libres — el vhdx no puede crecer; limpiar ANTES de build/render (ver memoria c_lleno)"; FALLAS=$((FALLAS+1))
+  else
+    echo "✓ C: del host: ${CGB} GB libres"
+  fi
+fi
 # montajes de Windows: INFORMATIVO (ya no bloquean — la entrega encola en ext4)
 ls /mnt/c/Users/sebas/Downloads >/dev/null 2>&1 && echo "✓ C: montado" || echo "⚠ C: MUERTO (las entregas se encolan; revivir con wsl --shutdown desde Windows)"
 ls /mnt/e/forja-videos       >/dev/null 2>&1 && echo "✓ E: montado" || echo "⚠ E: MUERTO (ídem)"
