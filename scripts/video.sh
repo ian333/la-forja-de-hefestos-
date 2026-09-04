@@ -336,13 +336,17 @@ paso_voz() {
   # FIT-CHECK ANTES DE GASTAR TTS: 0.455 s/palabra medido de los ensambles reales con
   # VEL=1.10 y gap 0.40. Un guion que no cabe = video CONGELADO en el último cuadro
   # (habría pasado en 3 de 4 átomos del lote del 2026-08-12; se cazó a mano — ahora es gate).
-  python3 - "$GARCH" "$DUR" <<'PYFIT' || return 1
+  # ⚠ el fit-check DIVIDE entre VEL (2026-09-04). Antes estimaba a 1.0 siempre y bloqueó el
+  # brazo B del experimento de ritmo (149 palabras a VEL 1.25 = 54 s, no 68): es el mismo bug
+  # que ritmo-pieza.py tuvo un día antes. 0.455 s/palabra está medido a VEL 1.0.
+  python3 - "$GARCH" "$DUR" "$VEL" <<'PYFIT' || return 1
 import sys
 ls = [l.strip() for l in open(sys.argv[1], encoding='utf-8') if l.strip()]
 w = sum(len(l.split()) for l in ls)
-est = w * 0.455
+vel = float(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3] else 1.0
+est = w * 0.455 / vel
 tope = float(sys.argv[2]) - 1.5
-print(f"   guion: {len(ls)} líneas · {w} palabras · voz estimada {est:.1f}s · cabe hasta {tope:.1f}s")
+print(f"   guion: {len(ls)} líneas · {w} palabras · VEL {vel} · voz estimada {est:.1f}s · cabe hasta {tope:.1f}s")
 if est > tope:
     print(f"   ✗ NO CABE (se pasa {est-tope:.1f}s): recorta el guion o alarga formato.dur ANTES de gastar TTS")
     sys.exit(1)
