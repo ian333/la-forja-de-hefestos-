@@ -19,7 +19,11 @@ Un solo archivo, dos máquinas:
     estado          imprime la cola y lo hecho en PRIME.
     quitar <id>     saca la entrada de la cola (no toca lo publicado).
 
-  PRIME (cron: */5 * * * * flock -n /tmp/forja-cola.lock python3 $COLA/cola-publicar.py tick)
+  PRIME (cron: */5 * * * * flock -n /tmp/forja-cola.lock python3 $COLA/cola-publicar.py tick
+         cron: 17 3 * * 0 python3 $COLA/cola-publicar.py refresh)
+    refresh         renueva el token de Instagram (60 días) EN LA PI: la publicación ya no depende
+                    de que iangpu o la laptop estén prendidas. `token` (en iangpu) sincroniza el
+                    más nuevo entre PRIME e iangpu; `armar` lo hace solo.
     tick [--dry]    para cada entrada con programar <= ahora (y no más de VENTANA_H tarde) y sin
                     hecho/<id>.json: contenedor por URL → FINISHED → media_publish → permalink →
                     hecho/<id>.json. Errores transitorios reintentan (3); pasado el plazo se
@@ -130,6 +134,22 @@ def tick(dry=False):
     if cambio: json.dump(cola, open(pc, 'w'), indent=1, ensure_ascii=False)
 
 
+def refresh():
+    """PRIME renueva SU token (60 días) cada semana por cron — ya no depende de que iangpu o la
+    laptop estén prendidas (ian, 2026-09-04: «que no dependa solo de que iangpu esté prendido,
+    que el API key esté en las rasp»). Mismo endpoint que subir-instagram.py refresh."""
+    tok_p = os.path.join(COLA, 'instagram-token.json')
+    if not os.path.exists(tok_p): log(f'✗ refresh: falta {tok_p}'); sys.exit(1)
+    t = json.load(open(tok_p))
+    r = api('GET', 'https://graph.instagram.com/refresh_access_token',
+            {'grant_type': 'ig_refresh_token', 'access_token': t['access_token']})
+    if 'access_token' not in r: log(f'✗ refresh: {r}'); sys.exit(1)
+    t.update({'access_token': r['access_token'], 'expires_in': r.get('expires_in'),
+              'obtenido': time.strftime('%F %H:%M'), 'renovado_en': 'PRIME'})
+    json.dump(t, open(tok_p, 'w'), indent=1); os.chmod(tok_p, 0o600)
+    log(f'✓ token renovado en PRIME: {(r.get("expires_in") or 0) // 86400} días')
+
+
 # ───────────────────────── laptop / iangpu: armar, cosechar, estado ─────────────────────────
 
 def ssh(cmd, entrada=None):
@@ -154,6 +174,26 @@ def head(url):
         return r.status, int(r.headers.get('content-length', -1)), r.headers.get('cf-cache-status', '?')
 
 
+def sincronizar_token(local):
+    """El token más NUEVO (`obtenido`) manda. PRIME se renueva solo cada semana (cron refresh), así
+    que lo normal es que BAJE de PRIME a iangpu; si iangpu hizo login nuevo, SUBE."""
+    r = ssh(f'cat {COLA}/instagram-token.json 2>/dev/null')
+    try: remoto = json.loads(r.stdout) if r.stdout.strip() else None
+    except Exception: remoto = None
+    loc = json.load(open(local)) if os.path.exists(local) else None
+    if not loc and not remoto: sys.exit('✗ sin token de Instagram ni aquí ni en PRIME: corre `subir-instagram.py login`')
+    if remoto and (not loc or remoto.get('obtenido', '') > loc.get('obtenido', '')):
+        os.makedirs(os.path.dirname(local), exist_ok=True)
+        json.dump(remoto, open(local, 'w'), indent=1); os.chmod(local, 0o600)
+        print(f'   token: PRIME → aquí (obtenido {remoto.get("obtenido")}, más nuevo)')
+    elif loc and (not remoto or loc.get('obtenido', '') > remoto.get('obtenido', '')):
+        r = ssh(f'cat > {COLA}/instagram-token.json && chmod 600 {COLA}/instagram-token.json', json.dumps(loc, indent=1))
+        if r.returncode: sys.exit(f'✗ no pude copiar el token a PRIME: {r.stderr.strip()}')
+        print(f'   token: aquí → PRIME (obtenido {loc.get("obtenido")})')
+    else:
+        print(f'   token: igual en los dos lados (obtenido {loc.get("obtenido")})')
+
+
 def armar(vid):
     sys.path.insert(0, os.path.join(ROOT, 'scripts'))
     from pub_comun import manifiesto, copy_de, CONF
@@ -176,12 +216,13 @@ def armar(vid):
     caption = (c['titulo'] + '\n\n' + c.get('descripcion', '') + '\n\n' + ' '.join(c.get('hashtags', [])[:30]))[:2200]
     entrada = {'id': vid, 'programar': pub['programar'], 'video_url': url, 'caption': caption,
                'armado': ahora().isoformat(timespec='seconds'), 'autorizado': aut[:120]}
-    # token fresco + el script mismo → PRIME (se despliega solo; el cron solo necesita existir)
-    tok = os.path.join(CONF, 'instagram-token.json')
-    if not os.path.exists(tok): sys.exit(f'✗ falta {tok} (armar corre en iangpu, donde vive el token)')
-    for src, dst in ((tok, f'{COLA}/instagram-token.json'), (os.path.abspath(__file__), f'{COLA}/cola-publicar.py')):
-        r = ssh(f'mkdir -p {COLA}/hecho && cat > {dst} && chmod 600 {dst}', open(src).read())
-        if r.returncode: sys.exit(f'✗ no pude copiar {os.path.basename(src)} a PRIME: {r.stderr.strip()}')
+    # el script mismo → PRIME (se despliega solo; el cron solo necesita existir) + token SINCRONIZADO
+    r = ssh(f'mkdir -p {COLA}/hecho && cat > {COLA}/cola-publicar.py && chmod 600 {COLA}/cola-publicar.py', open(os.path.abspath(__file__)).read())
+    if r.returncode: sys.exit(f'✗ no pude copiar el script a PRIME: {r.stderr.strip()}')
+    sincronizar_token(os.path.join(CONF, 'instagram-token.json'))
+    app = os.path.join(CONF, 'instagram-app.json')     # la app (id/secret) también vive en la Pi, por si hay que re-loguear desde ahí
+    if os.path.exists(app) and ssh(f'test -s {COLA}/instagram-app.json').returncode:
+        ssh(f'cat > {COLA}/instagram-app.json && chmod 600 {COLA}/instagram-app.json', open(app).read())
     cola = [e for e in cola_remota() if e['id'] != vid] + [entrada]
     escribir_cola(cola)
     ssh(f'rm -f {COLA}/hecho/{vid}.json')   # re-armar = borrón y cuenta nueva para ESTA pieza
@@ -251,4 +292,6 @@ if __name__ == '__main__':
     elif cmd == 'cosechar': cosechar(a[1] if len(a) > 1 else None)
     elif cmd == 'estado': estado()
     elif cmd == 'quitar': quitar(a[1])
+    elif cmd == 'refresh': refresh()
+    elif cmd == 'token': sincronizar_token(os.path.join(os.path.expanduser('~/.config/gaia-pub'), 'instagram-token.json'))
     else: sys.exit(__doc__)

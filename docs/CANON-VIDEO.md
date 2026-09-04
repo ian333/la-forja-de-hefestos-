@@ -935,6 +935,8 @@ El Centro de Comando cura los videos crudos (`produccion.json`) en piezas public
    YouTube se publica solo a la hora (`publishAt`). Instagram no tiene programación en la API: PRIME
    (`~/forja-cola/cola-publicar.py tick`, cron cada 5 min, biblioteca estándar) crea el contenedor por
    URL y publica a la hora; si iangpu está apagado no importa, porque el reel ya vive en PRIME+ATLAS.
+   El token de Instagram vive en la Pi y SE RENUEVA AHÍ (`cola-publicar.py refresh`, cron semanal
+   en PRIME): ni iangpu ni la laptop tienen que estar prendidas; `armar` sincroniza el más nuevo.
    Tarde más de 6 h = `vencida`: lo decide un humano. La tira 🎬 CINE de TEMIS muestra hora, brazo,
    cortes/min, síl/s, VEL, marco y lo que falta (`sin programar`, `sin autorizar`, `falta 16:9`).
 

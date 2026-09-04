@@ -81,9 +81,27 @@
       "valor_propio": "porque esto es literalmente el 60 % de mí, visto de cerca — y nunca lo había visto"
     },
     "autorizado": "2026-09-04 yt,ig — dicho por ian en sesión: \"ya vi los 4 me atraparon mas tienen mas dinamismo… quiero que hoy se suba algo, estan autorizados todos :D\"",
-    "subidas": {},
+    "subidas": {
+      "yt": {
+        "id": "yMqDoztHcrA",
+        "url": "https://youtu.be/yMqDoztHcrA",
+        "privacidad": "private",
+        "publishAt": "2026-09-05T18:45:00-06:00",
+        "captions": "AUieDab9Obzpo5lu-TEcbqhS_5PO5heaklGcLvLqfe7hge45hj_guwDrhg",
+        "fecha": "2026-09-04T15:58"
+      },
+      "yt16x9": {
+        "id": "ojNz0-enbyE",
+        "url": "https://youtu.be/ojNz0-enbyE",
+        "privacidad": "private",
+        "publishAt": "2026-09-05T18:45:00-06:00",
+        "captions": "AUieDaaY4hT7q0WE3dlwnC5H0wgkNWqtkyiDcUaQ0GzK51a_LZKFwMsNjw",
+        "fecha": "2026-09-04T15:59"
+      }
+    },
     "programar": "2026-09-05T18:45:00-06:00",
-    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora.",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-eres-tu.mp4?v=bdd37eda74"
   },
   "guion": {
     "archivo": "scripts/guiones/erestu.txt",

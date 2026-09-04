@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-04 21:58",
+ "generado": "2026-09-04 22:05",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -14,12 +14,12 @@
   "cerrado": 79,
   "probado": 0,
   "porProbar": 44,
-  "sinDesplegar": 2,
+  "sinDesplegar": 0,
   "despues": 18
  },
  "deploy": {
-  "commit": "fe24a61",
-  "fecha": "2026-09-04 21:10"
+  "commit": "4d28106",
+  "fecha": "2026-09-04 21:58"
  },
  "violaciones": [],
  "columnas": {
@@ -1380,8 +1380,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "4d28106",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-09-04-el-runner-del-camino.md",
@@ -1527,7 +1527,7 @@
     "probado": "",
     "falla": "",
     "commit": "eedc44f",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-09-02-x6-la-lamina-viva.md",
@@ -3246,7 +3246,7 @@
     "probado": "",
     "falla": "",
     "commit": "eedc44f",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
@@ -5427,7 +5427,7 @@
     "estado": "proximo",
     "nota": "sábado",
     "manifiesto": true,
-    "publicado": false,
+    "publicado": true,
     "programar": "2026-09-05T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
@@ -5437,9 +5437,14 @@
      "vel": 1,
      "marco": "revelacion"
     },
-    "yt": null,
+    "yt": {
+     "url": "https://youtu.be/yMqDoztHcrA",
+     "privacidad": "private"
+    },
     "ig": null,
-    "ancho": null,
+    "ancho": {
+     "url": "https://youtu.be/ojNz0-enbyE"
+    },
     "entregado": "",
     "falta": []
    },
