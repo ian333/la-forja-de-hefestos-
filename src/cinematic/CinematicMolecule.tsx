@@ -889,6 +889,22 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: heroOrbit({ rMul: 3.10, elev: 0.28, azim0: 2.10, span: 0.65, fov: 34 }), dur: 8, label: 'gira: el codo no se endereza desde ningún ángulo' },
     { shot: heroOrbit({ rMul: 3.60, elev: 0.05, azim0: 0.60, span: 0.42, fov: 32 }), dur: 7, label: 'de canto — se ve dónde vive el doble enlace' },
   ],
+  // DOS GOTAS (2026-09-04): la cámara de wpair-b re-cronometrada a la voz de dosgotas.txt.
+  // Por qué molKey propio y no `m=wpair&cam=b`: render-clip exige formato.dur == duración de
+  // la ESCENA, y la del rey es 77 s; una pieza de 55 s sobre el molKey del rey NO renderiza.
+  // Cortes en arranques reales: l01 0.40 · l03 8.25 · l04 13.24 · l05 19.58 · l06 24.43 ·
+  // l07 29.00 · l08 33.71 · l09 39.54 · l10 45.46 · fin 55.
+  wgotas: [
+    { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 8.25, label: 'espectáculo — plano alto opuesto (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 4.99, label: 'electrones de la OTRA, close bajo (l3-4)' },
+    { shot: orbitOne({ side: 1, azim0: 0.3, span: 1.7, rMul: 0.42, elev: 0.2 }), dur: 6.34, label: 'probabilidad — flip de molécula (l5-6)' },
+    { shot: orbitOne({ side: 1, azim0: 2.2, span: 2.2, rMul: 0.48, elev: 0.35 }), dur: 4.85, label: 'el corazón dorado O — elevado (l7-8)' },
+    { shot: craneOverPair({ azim0: 2.9, span: 1.5, elevFrom: 0.5, elevTo: -0.55, rMul: 1.35 }), dur: 4.57, label: 'cargas parciales — grúa profunda otro azimut (l9-11)' },
+    { shot: twoShot({ dir: 1, azim0: 0.5, span: 2.3, elev: -0.12, rMul: 1.42 }), dur: 4.71, label: 'el campo — barrido bajo opuesto (l12-14)' },
+    { shot: pushToBridge({ rFrom: 1.95, rTo: 0.8, azim: 2.6, elev: 0.12 }), dur: 5.83, label: 'se acercan — looming otro lado (l15-16)' },
+    { shot: crashIn({ rMul: 1.05, azim0: 2.7, span: 1.5, elev: 0.2 }), dur: 5.92, label: 'el puente=nube — otro ángulo de choque (l17-18)' },
+    { shot: pullOut({ azim0: 1.0, span: 1.4 }), dur: 9.54, label: 'payoff con órbita (l19-20)' },
+  ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
     { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 9, label: 'electrones de la OTRA, close bajo (l3-4)' },
@@ -1289,6 +1305,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
   wcolor: { name: 'De quién son', formula: 'C · O · H', fact: 'Cada color es un elemento, repartido por la regla de Hirshfeld — no a ojo.' },
+  wgotas: { name: 'Dos gotas', formula: 'H₂O···H₂O', fact: 'El instante en que dos gotas se vuelven una es un puente de hidrógeno naciendo.' },
   wcamporb: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'Se cancelan el 99 % entre ellos. El puente del agua es lo que sobra.' },
   wcampor: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'Se cancelan el 99 % entre ellos. El puente del agua es lo que sobra.' },
   wcampo: { name: 'Los dos campos', formula: 'E⁺ + E⁻', fact: 'El campo de los núcleos y el de los electrones se cancelan el 99 % — la química es lo que sobra.' },
@@ -2639,6 +2656,23 @@ const WETANOL_CAPAS: CapasSpec = {
   spin:     { base: 1,    mods: [{ wins: [[51.45, 66.48]], a: 0.9, label: 'ARDE: carga llegando a la silla (l12-15)' }] },
   acc:      { base: 1,    mods: [{ wins: [[27.66, 32.46]], a: 0.5, label: 'ORO: la palabra-color, el único cálido del video (l7)' }] },
 };
+const WGOTAS_DURATION = 55;
+// DOS GOTAS — coreografía calibrada a segs.json. El evento es l06-l07 ("se tocan… acaba de nacer"):
+// ahí arde el spin y se cierra la apertura. Las líneas bajan en el close-up de l03 para que se lea
+// la nube, y suben con l04 ("estas líneas son el campo que las jala").
+const WGOTAS_CAPAS: CapasSpec = {
+  apertura: { base: 0.55, mods: [
+    { wins: [[24.43, 55]], a: -0.25, label: 'se tocan (l06)' },
+    { wins: [[29.00, 55]], a: -0.20, label: 'acaba de nacer el puente (l07)' },
+  ] },
+  nubes:    { base: 1,    mods: [] },
+  campo:    { base: 1,    mods: [{ wins: [[8.25, 13.24]], a: -0.60, label: 'close-up: mira el hueco (l03)' }] },
+  campoNuc: { base: 0,    mods: [] },
+  campoEle: { base: 0,    mods: [] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[8.25, 13.24]], a: 0.35, label: 'todavía separadas (l03)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[24.43, 47.85]], a: 0.9, label: 'ARDE: nace el puente (l06-l10)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[19.58, 24.43]], a: 0.4, label: 'ORO: el hidrógeno apunta al oxígeno (l05)' }] },
+};
 const WCAMPORB_DURATION = 64;
 // BRAZO B: los mismos beats que WCAMPOR_CAPAS, ventanas = arranques REALES de segs.json a
 // VEL 1.25 (calibrado 2026-09-04; la voz termina en 61.81 s).
@@ -2822,6 +2856,7 @@ type WaterEntry = {
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
   // LA SILLA VACÍA: el bin del rey con SU coreografía y SU duración (quick win, 2026-08-27).
+  wgotas: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WGOTAS_DURATION, capas: WGOTAS_CAPAS },
   wcamporb: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WCAMPORB_DURATION,
               efNuc: 'water-approach-efield-nuc', efEle: 'water-approach-efield-ele', capas: WCAMPORB_CAPAS },
   wcampor: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WCAMPOR_DURATION,

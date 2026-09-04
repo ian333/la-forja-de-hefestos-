@@ -4,8 +4,9 @@
   "nota": "QUICK WIN del rey (mismo bin, cámara wpair-b). Es la estructura del rey de 94k (\"nunca habías visto NACER un enlace\") aplicada al evento cotidiano más visible: dos gotas juntándose. Marco de REVELACIÓN de evento, no de propiedad.",
   "escena": {
     "html": "cinematic-molecule.html",
-    "query": "m=wpair&cam=b",
-    "hook": "__cinematicAtom"
+    "query": "m=wgotas",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wgotas): render-clip exige formato.dur == duracion de la escena; el rey dura 77 y esta pieza 55."
   },
   "formato": {
     "w": 2160,
