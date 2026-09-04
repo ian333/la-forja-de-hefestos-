@@ -134,6 +134,22 @@ function Galeria({ fotos }: { fotos: string[] }) {
   );
 }
 
+/** rasgos de una pieza de cine, LEÍDOS del manifiesto por temis-tablero.cjs (ritmo/formato/audio/copy) */
+export interface TemisRasgos { brazo?: string; cortes_min?: number; sil_s?: number; dur?: number; vel?: number; marco?: string }
+
+/** rasgos → una línea mono `B · 18.8 c/min · 5.0 síl/s · 64 s · VEL 1.25 · revelacion`; omite lo que el manifiesto no trae */
+function rasgosTxt(r: TemisRasgos | null | undefined): string {
+  if (!r) return '';
+  const p: string[] = [];
+  if (r.brazo) p.push(String(r.brazo));
+  if (typeof r.cortes_min === 'number') p.push(`${r.cortes_min.toFixed(1)} c/min`);
+  if (typeof r.sil_s === 'number') p.push(`${r.sil_s.toFixed(1)} síl/s`);
+  if (typeof r.dur === 'number') p.push(`${r.dur} s`);
+  if (typeof r.vel === 'number') p.push(`VEL ${r.vel}`);
+  if (r.marco) p.push(r.marco);
+  return p.join(' · ');
+}
+
 export interface TemisJson {
   nombre: string; generado: string;
   wip: { proximo: number; enCurso: number; imprevisto?: number };
@@ -148,6 +164,8 @@ export interface TemisJson {
   /** CINE — 1 video por día (videos/CRONOGRAMA.json); `publicado` derivado del catálogo de Comando */
   cine: { nota: string; dias: Array<{ fecha: string; id: string; titulo: string; base: string; tipo: string;
     estado: 'hecho' | 'hoy' | 'proximo'; manifiesto: boolean; publicado: boolean;
+    /** hora del cronograma (la mano) · programar = ISO con huso de publicar.programar · rasgos = null sin manifiesto */
+    hora?: string; programar?: string; rasgos?: TemisRasgos | null;
     /** dónde vive la pieza: se LEE de publicar.subidas del manifiesto (lo escribe la subida por API) */
     yt: { url: string; privacidad: string } | null; ig: { url: string } | null; ancho: { url: string } | null;
     /** rendition que Instagram ENTREGA de verdad (ig-calidad-entregada.cjs), no el archivo local */
@@ -279,11 +297,16 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
           <div className="tm-cine-tira">
             {cine.dias.map((d) => (
               <div key={d.id} className={`tm-dia ${d.estado} ${d.publicado ? 'pub' : ''}`} data-testid={`temis-cine-${d.id}`} title={`${d.id} · ${d.base} · ${d.tipo}`}>
-                <div className="tm-dia-f">{d.fecha.slice(5)}{d.estado === 'hoy' && <b> HOY</b>}</div>
+                <div className="tm-dia-f">{d.fecha.slice(5)}{d.hora ? ` · ${d.hora}` : ''}{d.estado === 'hoy' && <b> HOY</b>}</div>
                 <div className="tm-dia-t">{d.titulo}</div>
                 <div className="tm-dia-m">{d.publicado ? '● publicado' : d.estado === 'hecho' ? '✓ hecho · sin publicar' : d.manifiesto ? '▶ manifiesto listo' : d.tipo}</div>
-                {(d.yt || d.ig || d.ancho || d.falta.length > 0) && (
+                {/* LOS RASGOS (ian: «cada video con sus características y métricas»): brazo · cortes/min ·
+                    síl/s · dur · VEL · marco, del manifiesto. Sin manifiesto no hay línea: no se inventan. */}
+                {d.rasgos && rasgosTxt(d.rasgos) && <div className="tm-dia-r" data-testid={`temis-cine-rasgos-${d.id}`}>{rasgosTxt(d.rasgos)}</div>}
+                {(d.yt || d.ig || d.ancho || (d.programar && !d.publicado) || d.falta.length > 0) && (
                   <div className="tm-dia-plats">
+                    {/* ⏰ = ya tiene hora ISO en el manifiesto (la cola de PRIME la lee); se apaga al publicarse */}
+                    {d.programar && !d.publicado && <span className="tm-chip prog" data-testid={`temis-cine-prog-${d.id}`} title={d.programar}>⏰ programado</span>}
                     {d.yt && <a className={`tm-chip yt ${d.yt.privacidad !== 'public' ? 'tibio' : ''}`} href={d.yt.url} target="_blank" rel="noreferrer"
                                 title={`YouTube · ${d.yt.privacidad || 'público'}`}>YT</a>}
                     {d.ig && <a className="tm-chip ig" href={d.ig.url} target="_blank" rel="noreferrer" title={`Instagram${d.entregado ? ` · entrega ${d.entregado}` : ''}`}>IG</a>}
@@ -456,6 +479,7 @@ export const TEMIS_CSS = `
 .tm-dia-t{font-size:11.5px;font-weight:700;line-height:1.25;color:var(--ds-text,#DCE7F5);margin:3px 0}
 .tm-dia-m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--ds-dim,#A6B4C8)}
 .tm-dia.pub .tm-dia-m{color:#7ee0a0}
+.tm-dia-r{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;color:var(--ds-faint,#7E90A9);margin-top:3px;line-height:1.3;overflow-wrap:anywhere}
 /* DÓNDE VIVE CADA PIEZA: chips con enlace a lo publicado + en rojo lo que falta. El dato sale
    de publicar.subidas del manifiesto (lo escribe la subida por API) — cero doble captura. */
 .tm-dia-plats{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
@@ -465,6 +489,7 @@ export const TEMIS_CSS = `
 .tm-chip.yt.tibio{background:rgba(253,184,19,.13);border-color:rgba(253,184,19,.45);color:#FDB813}
 .tm-chip.ig{background:rgba(214,110,220,.14);border-color:rgba(214,110,220,.45);color:#e29bea}
 .tm-chip.w{background:rgba(126,224,160,.13);border-color:rgba(126,224,160,.4);color:#7ee0a0}
+.tm-chip.prog{background:rgba(120,170,255,.13);border-color:rgba(120,170,255,.45);color:#9dbfff}
 /* el hueco NO puede parecerse al enlace: punteado, sin relleno y rotulado 'falta' */
 .tm-chip.falta{background:transparent;border-style:dashed;border-color:rgba(242,122,108,.55);color:#f27a6c;font-weight:600}
 .tm-chip:hover{filter:brightness(1.25)}

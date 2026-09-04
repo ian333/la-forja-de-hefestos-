@@ -6,7 +6,8 @@
     "html": "cinematic-molecule.html",
     "query": "m=wroba&zoom=0.55",
     "hook": "__cinematicAtom",
-    "nota_molkey": "molKey propio (wroba): render-clip exige formato.dur == duracion de la escena; wcolor dura 72 y esta pieza 55. Tomas y capas calibradas a segs.json (2026-09-04)."
+    "nota_molkey": "molKey propio (wroba): render-clip exige formato.dur == duracion de la escena; wcolor dura 72 y esta pieza 55. Tomas y capas calibradas a segs.json (2026-09-04).",
+    "nota_16x9": "QUERY=\"m=wroba&zoom=0.38\" W=3840 H=2160 (como el alcohol: 0.55 vacía el 16:9; 0.38 da fill 0.12-0.24)"
   },
   "formato": {
     "w": 2160,
@@ -80,7 +81,9 @@
       "valor_propio": "porque explica algo que me pasa todos los días y nadie me había dicho por qué"
     },
     "autorizado": "",
-    "subidas": {}
+    "subidas": {},
+    "programar": "2026-09-06T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
   },
   "guion": {
     "archivo": "scripts/guiones/roba.txt",
@@ -90,6 +93,9 @@
   },
   "ritmo": {
     "brazo": "A",
-    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar."
+    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar.",
+    "cortes_por_min": 8.73,
+    "silabas_por_seg": 4.31,
+    "nota_medida": "medido por ritmo-pieza.py --escribir en iangpu (segs.json real) el 2026-09-04; copiado a la laptop porque el manifiesto de iangpu estaba en uso por el render 16:9"
   }
 }

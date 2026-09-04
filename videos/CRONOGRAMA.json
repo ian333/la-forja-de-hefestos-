@@ -1,5 +1,5 @@
 {
-  "nota": "CINE: 1 video por día, SIN desviarnos (Ian, 2026-08-26). El rey y la base NO se mueven: todo sale del mismo motor, mismos bins, guion cotidiano + sello GAIA. `estado` lo pone la mano (hoy/proximo/hecho); `publicado` lo DERIVA temis-tablero.cjs del catálogo de Comando (public/comando/catalogo.json). Regla: no hay dos 'hoy'.",
+  "nota": "CINE: 1 video por día a las 18:45 CDMX (= 21:45 AR/CL, 20:45 CO): la hora sale de public/comando/horarios.json (telemetría propia, 3,490 sesiones desde IG: pico 21-23 h local, domingo y lunes fuertes). `estado` lo pone la mano (hoy/proximo/hecho); `publicado`, la hora programada y los rasgos (brazo, cortes/min, síl/s, VEL, marco) los DERIVA temis-tablero.cjs del manifiesto videos/<id>.json. Regla: no hay dos 'hoy'. Programar = publicar.programar + publicar.autorizado en el manifiesto y `bash scripts/video.sh <id> programar` (ver caminos/el-cine-programado.md).",
   "dias": [
     {
       "fecha": "2026-08-25",
@@ -36,11 +36,167 @@
     },
     {
       "fecha": "2026-08-28",
+      "id": "econ-ostrom",
+      "titulo": "Ostrom — la tragedia que no fue",
+      "base": "clase → reel 52 s",
+      "tipo": "clase",
+      "estado": "hecho"
+    },
+    {
+      "fecha": "2026-08-31",
+      "id": "mol-etoh-el-alcohol",
+      "titulo": "El alcohol — por qué se mezcla con el agua y con la grasa",
+      "base": "water-ethanol (bin nuevo, adaptive posq) · wetanol · 79 s",
+      "tipo": "sim",
+      "estado": "hecho",
+      "nota": "16:9 también en vivo"
+    },
+    {
+      "fecha": "2026-09-01",
+      "id": "mol-h2o-los-dos-campos",
+      "titulo": "Los dos campos — el REY con el campo + y el campo − (brazo A)",
+      "base": "puente (dímero) · wcampor · campo partido nuc/ele · 75 s",
+      "tipo": "quick-win",
+      "estado": "hecho",
+      "nota": "brazo A del experimento de ritmo; 16:9 en vivo"
+    },
+    {
+      "fecha": "2026-09-02",
+      "id": "mol-etoh-de-quien-son",
+      "titulo": "De quién son los electrones — la nube por elemento (Hirshfeld)",
+      "base": "water-ethanol · wcolor · binColors · 72 s",
+      "tipo": "sim",
+      "estado": "hecho",
+      "nota": "16:9 en vivo"
+    },
+    {
+      "fecha": "2026-09-05",
+      "hora": "18:45",
+      "id": "mol-h2o-los-dos-campos-b",
+      "titulo": "Los dos campos — BRAZO B (21 tomas, VEL 1.25)",
+      "base": "mismo bin y guion que el REY del 09-01 · wcamporb · 64 s",
+      "tipo": "experimento A/B",
+      "estado": "proximo",
+      "nota": "sábado. Veredicto vs brazo A a las 48 h (09-07): skip3s y compartidos por mil. Master en Downloads/los-dos-campos-REY-brazoB-4K.mp4"
+    },
+    {
+      "fecha": "2026-09-06",
+      "hora": "18:45",
+      "id": "mol-etoh-te-roba-el-agua",
+      "titulo": "Te roba el agua — el gel de manos y el puente",
+      "base": "water-ethanol · wroba · Hirshfeld · 55 s · guion REVELACIÓN",
+      "tipo": "revelación",
+      "estado": "proximo",
+      "nota": "domingo = el día más fuerte de la audiencia; el gancho más cotidiano de los tres"
+    },
+    {
+      "fecha": "2026-09-07",
+      "hora": "18:45",
+      "id": "mol-h2o-eres-tu",
+      "titulo": "Eres tú — seis de cada diez partes de tu cuerpo",
+      "base": "water-approach · weres · 55 s · guion REVELACIÓN",
+      "tipo": "revelación",
+      "estado": "proximo",
+      "nota": "lunes, segundo día más fuerte"
+    },
+    {
+      "fecha": "2026-09-08",
+      "hora": "18:45",
+      "id": "mol-h2o-dos-gotas",
+      "titulo": "Dos gotas — el puente naciendo",
+      "base": "water-approach · wgotas · 55 s · guion REVELACIÓN",
+      "tipo": "revelación",
+      "estado": "proximo"
+    },
+    {
+      "fecha": "2026-09-09",
+      "hora": "18:45",
+      "id": "mol-h2o-el-hexamero-b",
+      "titulo": "El hexámero — recorte al ritmo (12k vistas IG)",
+      "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+      "tipo": "recorte-ritmo",
+      "estado": "proximo",
+      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+    },
+    {
+      "fecha": "2026-09-10",
+      "hora": "18:45",
+      "id": "mol-h2o-el-anillo-b",
+      "titulo": "El anillo — recorte al ritmo (6k)",
+      "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+      "tipo": "recorte-ritmo",
+      "estado": "proximo",
+      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+    },
+    {
+      "fecha": "2026-09-11",
+      "hora": "18:45",
+      "id": "mol-h2o-el-sudor-b",
+      "titulo": "El sudor — recorte al ritmo (4.6k)",
+      "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+      "tipo": "recorte-ritmo",
+      "estado": "proximo",
+      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+    },
+    {
+      "fecha": "2026-09-12",
+      "hora": "18:45",
+      "id": "mol-h2o-la-sal-b",
+      "titulo": "La sal — recorte al ritmo (2.8k)",
+      "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+      "tipo": "recorte-ritmo",
+      "estado": "proximo",
+      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+    },
+    {
+      "fecha": "2026-09-13",
+      "hora": "18:45",
+      "id": "mol-grasa-butirico-b",
+      "titulo": "Mantequilla — recorte al ritmo (3.6k)",
+      "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+      "tipo": "recorte-ritmo",
+      "estado": "proximo",
+      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+    },
+    {
+      "fecha": "2026-09-14",
+      "hora": "18:45",
+      "id": "mol-h2o-el-cuarteto-b",
+      "titulo": "El cuarteto — recorte al ritmo",
+      "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+      "tipo": "recorte-ritmo",
+      "estado": "proximo",
+      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+    },
+    {
+      "fecha": "2026-09-15",
+      "hora": "18:45",
+      "id": "mol-h2o-el-hielo-b",
+      "titulo": "El hielo — recorte al ritmo (2.4k)",
+      "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+      "tipo": "recorte-ritmo",
+      "estado": "proximo",
+      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+    },
+    {
+      "fecha": "2026-09-16",
+      "hora": "18:45",
+      "id": "mol-h2o-la-silla-b",
+      "titulo": "La silla — recorte al ritmo",
+      "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
+      "tipo": "recorte-ritmo",
+      "estado": "proximo",
+      "nota": "condición: el brazo B gana el A/B del REY (09-07). Si pierde, va con brazo A y solo cambia el guion a revelación."
+    }
+  ],
+  "despues": [
+    {
+      "fecha": "2026-08-28",
       "id": "mol-h2o-la-gota",
       "titulo": "La gota — por qué es redonda",
       "base": "puente (dímero) · cam nueva",
       "tipo": "quick-win",
-      "estado": "proximo",
+      "estado": "despues",
       "nota": "corrida al 28 (el 27 salió LA SILLA)"
     },
     {
@@ -49,7 +205,7 @@
       "titulo": "El cloro — la otra cara del agua (Cl⁻)",
       "base": "dímero NUEVO: Cl⁻ + H₂O (PAR=cl)",
       "tipo": "sim (gate −13.1 kcal/mol)",
-      "estado": "proximo"
+      "estado": "despues"
     },
     {
       "fecha": "2026-08-30",
@@ -57,7 +213,7 @@
       "titulo": "Hervir — por qué tarda tanto",
       "base": "cuarteto (4 aguas)",
       "tipo": "quick-win",
-      "estado": "proximo"
+      "estado": "despues"
     },
     {
       "fecha": "2026-08-31",
@@ -65,15 +221,29 @@
       "titulo": "La sal completa — Na⁺ y Cl⁻ separados por el agua",
       "base": "los dos bins de la sal",
       "tipo": "montaje",
-      "estado": "proximo",
+      "estado": "despues",
       "nota": "IDEA DE IAN (2026-08-26): pintar la NUBE por el POTENCIAL que siente cada punto (signo y fuerza del MEP), en vez de por distancia al O (cosmético). Aquí es donde significa algo: dos iones opuestos y el agua entre ellos, el potencial cambia de signo en medio de la nube. Regla: cada color es dueño de UNA cantidad — reemplaza al oro-por-distancia, no se suma."
+    },
+    {
+      "id": "mol-o2-b",
+      "titulo": "O₂ — recorte al ritmo del rey de todos (92k vistas IG)",
+      "nota": "no tiene manifiesto: vive en cápsula (dist-video/_capsulas). Hay que resucitarlo como videos/<id>.json antes de recortarlo"
+    },
+    {
+      "id": "mol-h2o-el-puente-b",
+      "titulo": "El puente — recorte al ritmo (65k)",
+      "nota": "ídem: el REY vive en cápsula + mol-h2o-el-puente.json sin guion declarado (narración congelada)"
+    },
+    {
+      "id": "mol-h2o-agua-v2-b",
+      "titulo": "El agua doblada — recorte (10k)",
+      "nota": "sin manifiesto"
     }
   ],
-  "despues": [
-    {
-      "id": "mol-h2o-aceite",
-      "titulo": "El agua contra el aceite",
-      "por_que": "RHF no tiene dispersión: CH₄···H₂O da +5.7…−0.1 kcal/mol y lo real (−0.5…−1.0) ES dispersión. Necesita DFT-D3/MP2 = otro motor. Medido 2026-08-26."
-    }
-  ]
+  "regla": {
+    "hora_cdmx": "18:45",
+    "huso": "America/Mexico_City",
+    "fuente": "public/comando/horarios.json",
+    "cadencia": "1 por día; nunca dos cortes del mismo contenido seguidos (canon)"
+  }
 }

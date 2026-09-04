@@ -494,13 +494,27 @@ B · rápido       20 cortes/min · 165 pal/min (≈6 síl/s)
 cuesta solo RASTER: el bin, la voz y el guion ya existen
 ```
 
-### 6. CUÁNDO PUBLICAR (LATAM)
+### 6. CUÁNDO PUBLICAR — medido en NUESTRA audiencia (2026-09-04), no en la tabla de afuera
 
-América Latina y el Caribe pican a las **14-16 h**; las horas muertas son 8-10 h. Para Reels
-en general la ventana fuerte es **18-23 h**, y **miércoles y jueves** son los días. Los
-públicos brasileños se estiran más tarde que los mexicanos. ⚠ Ojo con nuestro caso: la
-campaña pagada del rey trajo público **es_US, no es_MX** (ver `project_funnel_ig_pagado`), así
-que el huso que manda puede no ser el de México.
+La tabla de afuera decía 14-16 h y miércoles/jueves. Nuestra telemetría (3,490 sesiones que
+llegan del reel al sitio; `scripts/horarios.py` → `public/comando/horarios.json`) dice otra cosa:
+
+| quién | % |
+|---|---|
+| Argentina (BA, Córdoba, Salta, Mendoza) | 43 |
+| Chile | 15 |
+| Colombia | 15 |
+| México | 15 |
+| Uruguay | 3 |
+
+Hora LOCAL del visitante: la rampa arranca a las 19 h y el pico es **21-23 h** (en CDMX: 19-21 h).
+Días: **domingo y lunes** fuertes; miércoles y jueves flojos. Aviso honesto: mide clics del reel al
+sitio, no vistas del reel, y está confundido por las horas a las que hemos publicado.
+
+**La hora canon: 18:45 CDMX** (= 21:45 AR/CL, 20:45 CO). Entra en la rampa de TODOS los husos
+antes del pico, y YouTube/IG deciden en las primeras horas (§EL CORTE). Vive en
+`videos/CRONOGRAMA.json → regla.hora_cdmx` y en cada `publicar.programar` como ISO con huso:
+`2026-09-06T18:45:00-06:00`.
 
 **Fuentes:** el estudio de 2,511 videos de TikTok (visual-audio, engagement) · Université de
 Lyon 2011 sobre velocidad del habla por idioma · benchmarks de retención en video corto 2026 ·
@@ -910,6 +924,19 @@ El Centro de Comando cura los videos crudos (`produccion.json`) en piezas public
    `/mnt/hdd/forja-dist/comando/` (sin build, sin riesgo). El registro de subidas (qué plataforma,
    ediciones de copy) vive en el server (`registro.json`), la página lo fusiona por id.
 5. Responder comentarios escépticos con el MÉTODO (PySCF/Schrödinger) — es marketing, fija autoridad GAIA.
+6. **PROGRAMAR (2026-09-04, orden el-cine-programado)** — nada se sube a mano ni se espera despierto:
+   ```
+   # en el manifiesto: publicar.autorizado = las palabras de ian · publicar.programar = 2026-09-06T18:45:00-06:00
+   bash scripts/video.sh <id> programar     # en iangpu: biblioteca+catálogo, YouTube 9:16 y 16:9 PRIVADOS con
+                                            # publishAt, reel hospedado y verificado, entrada en la cola de PRIME
+   python3 scripts/cola-publicar.py estado  # qué hay en la cola de PRIME y qué ya salió
+   bash scripts/video.sh <id> cosechar      # el permalink de Instagram entra al manifiesto y el día pasa a hecho
+   ```
+   YouTube se publica solo a la hora (`publishAt`). Instagram no tiene programación en la API: PRIME
+   (`~/forja-cola/cola-publicar.py tick`, cron cada 5 min, biblioteca estándar) crea el contenedor por
+   URL y publica a la hora; si iangpu está apagado no importa, porque el reel ya vive en PRIME+ATLAS.
+   Tarde más de 6 h = `vencida`: lo decide un humano. La tira 🎬 CINE de TEMIS muestra hora, brazo,
+   cortes/min, síl/s, VEL, marco y lo que falta (`sin programar`, `sin autorizar`, `falta 16:9`).
 
 ---
 

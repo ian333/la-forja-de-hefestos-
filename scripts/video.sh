@@ -398,6 +398,37 @@ paso_subir() {
     $PY "$ROOT/scripts/subir-instagram.py" "$ID" || return 1;; esac
 }
 
+paso_programar() {
+  # EL CINE PROGRAMADO (orden 2026-09-04): la hora vive en el manifiesto (publicar.programar, ISO
+  # con huso; canon 18:45 CDMX = public/comando/horarios.json) y las palabras de ian en
+  # publicar.autorizado. YouTube se programa SOLO (publishAt, subir-youtube.py:57); Instagram no
+  # tiene programación en la API → el reel se hospeda aquí (reels-1080.py --subir) y PRIME lo
+  # publica a la hora por cron (scripts/cola-publicar.py tick). Corre en iangpu (venv + secretos).
+  echo "── PROGRAMAR (YouTube con publishAt · reel hospedado · cola de PRIME para Instagram) ──"
+  local CUANDO; CUANDO="$(m publicar.programar)"
+  [ -n "$CUANDO" ] || { echo "   ✗ falta publicar.programar (p.ej. 2026-09-06T18:45:00-06:00)"; return 1; }
+  [ -n "$(m publicar.autorizado)" ] || { echo "   ✗ falta publicar.autorizado (las palabras de ian)"; return 1; }
+  local PY=/home/ian/pub-venv/bin/python
+  [ -x "$PY" ] || { echo "   ✗ falta $PY (esto corre en iangpu)"; return 1; }
+  paso_publicar || return 1
+  [ -n "$(m publicar.subidas.yt.publishAt)" ] && echo "   (YouTube 9:16 ya programado: $(m publicar.subidas.yt.publishAt))" \
+    || $PY "$ROOT/scripts/subir-youtube.py" "$ID" --publico --programar "$CUANDO" || return 1
+  local H264="$ROOT/$(m salida.dir)/$(m salida.h264)"; local ANCHO="${H264%.mp4}-3840x2160.mp4"
+  if [ -s "$ANCHO" ]; then
+    [ -n "$(m publicar.subidas.yt16x9.publishAt)" ] && echo "   (YouTube 16:9 ya programado)" \
+      || ARCHIVO="$ANCHO" CLAVE=yt16x9 $PY "$ROOT/scripts/subir-youtube.py" "$ID" --publico --programar "$CUANDO" || return 1
+  else
+    echo "   ⚠ sin master 16:9 ($(basename "$ANCHO")): YouTube ancho NO programado — renderízalo y vuelve a correr programar"
+  fi
+  [ -n "$(m publicar.reel_url)" ] || python3 "$ROOT/scripts/reels-1080.py" "$ID" --subir || return 1
+  python3 "$ROOT/scripts/cola-publicar.py" armar "$ID" || return 1
+}
+
+paso_cosechar() {
+  echo "── COSECHAR (lo que PRIME publicó → manifiesto + cronograma) ──"
+  python3 "$ROOT/scripts/cola-publicar.py" cosechar "$ID"
+}
+
 paso_ritmo() {
   echo "── RITMO (portero de REGISTRO: la pieza declara su tratamiento) ──"
   # Auditoría del 2026-09-02: ningún portero exigía anotar CON QUÉ se hizo la pieza, y por eso
@@ -420,6 +451,8 @@ case "$PASO" in
   verificar) paso_verificar ;;
   publicar)  paso_publicar ;;
   subir)     paso_subir "$@" ;;
+  programar) paso_programar ;;
+  cosechar)  paso_cosechar ;;
   todo)      paso_salud && paso_ritmo && paso_voz && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
-  *) echo "paso inválido: $PASO (salud|ritmo|voz|subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
+  *) echo "paso inválido: $PASO (salud|ritmo|voz|subs|render|ensamble|verificar|capsula|publicar|subir|programar|cosechar|todo)"; exit 2 ;;
 esac

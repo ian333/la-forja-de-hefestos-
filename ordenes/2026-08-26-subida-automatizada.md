@@ -56,3 +56,15 @@ hay muchos que ya vi y no he subido (tutoriales de GAIA)".
 - Un video subido a YouTube por API con su URL en el registro de Comando.
 - Un Reel subido a IG (API o Brave) con screenshot del post.
 - `registro.json` marcado solo (sin togglePlat a mano).
+
+## CIERRE (2026-09-04, cerrada desde la orden el-cine-programado)
+- orden vs entregado: lo prometido funciona desde el 2026-08-28: `subir-youtube.py` + `subir-instagram.py` +
+  `reels-1080.py --subir` publican por API oficial con el gate `publicar.autorizado`, y `pub_comun.registrar()`
+  deja la evidencia en `publicar.subidas.*` del manifiesto. Desviación: TikTok NO se implementó (sin API
+  aprobada); `--resumable` de Instagram quedó como experimento (Instagram Login exige `video_url`).
+- números: 6 piezas publicadas por API y registradas (la-sal 08-26, la-silla 08-28, ostrom 08-28, el-alcohol
+  08-31, los-dos-campos 09-01, de-quién-son 09-02); 4 de ellas con 16:9 (`yt16x9`). Race del manifiesto
+  cazado y arreglado (registrar relee antes de escribir, commit 700cfa6).
+- evidencia: public/evidencia/2026-08-26-subida-automatizada/01-cine-chips-yt-ig.png (la tira 🎬 CINE con los
+  chips YT/IG/16:9 que enlazan a cada subida real).
+- preguntas abiertas: la programación (hora) quedó fuera de esta orden y vive en 2026-09-04-el-cine-programado.

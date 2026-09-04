@@ -286,8 +286,8 @@ const cine = (() => {
     // que convierte la tira en un tablero de control en vez de un calendario bonito.
     const dias = (cr.dias || []).map((d) => {
       const mp = path.join(REPO, 'videos', `${d.id}.json`);
-      let pieza = '', pub = {};
-      try { pub = JSON.parse(fs.readFileSync(mp, 'utf8')).publicar || {}; pieza = pub.pieza || ''; } catch {}
+      let pieza = '', pub = {}, man = null;
+      try { man = JSON.parse(fs.readFileSync(mp, 'utf8')); pub = man.publicar || {}; pieza = pub.pieza || ''; } catch {}
       const sub = pub.subidas || {};
       const yt = sub.yt ? { url: sub.yt.url, privacidad: sub.yt.privacidad || '' } : null;
       const ig = sub.ig && sub.ig.url ? { url: sub.ig.url } : null;
@@ -299,6 +299,14 @@ const cine = (() => {
       // Solo con el catálogo, LA SILLA salía 'sin publicar' mientras enseñaba sus chips de
       // YouTube e Instagram — el tablero se contradecía a sí mismo (cazado a ojo en la captura).
       const enVivo = !!(pieza && ids.has(pieza)) || !!(sub.yt || sub.ig);
+      // LOS RASGOS SALEN DEL MANIFIESTO (orden 2026-09-04-el-cine-programado): ian quiere «cada
+      // video con sus características y métricas» para después hacer ML. Aquí no se captura nada:
+      // brazo/cortes/síl vienen de `ritmo`, la duración de `formato`, VEL de `audio`, el marco del
+      // copy. Sin manifiesto → null: la tarjeta no inventa rasgos que no existen.
+      const rasgos = man ? {
+        brazo: man.ritmo?.brazo, cortes_min: man.ritmo?.cortes_por_min, sil_s: man.ritmo?.silabas_por_seg,
+        dur: man.formato?.dur, vel: man.audio?.vel ?? 1.0, marco: pub.copy?.marco,
+      } : null;
       const falta = [];
       if (d.estado === 'hecho' || d.estado === 'hoy') {
         if (!yt && !ig) falta.push(enVivo ? 'sin registrar' : 'sin publicar');
@@ -309,7 +317,17 @@ const cine = (() => {
         }
         if (!ancho) falta.push('16:9');
       }
-      return { ...d, manifiesto: fs.existsSync(mp), publicado: enVivo,
+      // PROGRAMADO ≠ LISTO: un próximo con manifiesto pero sin `publicar.programar` no tiene hora
+      // en la cola de PRIME; con hora pero sin `publicar.autorizado` PRIME no lo sube (el gate de
+      // publicación exige la palabra de ian). Los dos son pendientes, y se ven en la tira.
+      if (d.estado === 'proximo' && man) {
+        if (!pub.programar) falta.push('sin programar');
+        else if (!pub.autorizado) falta.push('sin autorizar');
+      }
+      // `hora` la pone el cronograma (la mano); `programar` es la ISO con huso del manifiesto —
+      // cuando coinciden, el tablero y la cola de PRIME dicen lo mismo.
+      return { ...d, hora: d.hora || '', manifiesto: fs.existsSync(mp), publicado: enVivo,
+               programar: pub.programar || '', rasgos,
                yt, ig, ancho, entregado: pub.entregado_ig?.rendition || '', falta };
     });
     const hoy = dias.filter((d) => d.estado === 'hoy');

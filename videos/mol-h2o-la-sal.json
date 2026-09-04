@@ -91,9 +91,10 @@
         "fecha": "2026-08-26T21:27"
       },
       "ig": {
-        "borrado": "2026-08-27 — publicado con el archivo VIEJO de 35 MB (Cloudflare servia cache de 24 h); ian lo borro a mano: se veia pixeleado. La API de IG no soporta DELETE.",
-        "id_borrado": "18018733205870780",
-        "url_borrada": "https://www.instagram.com/reel/Dch9QqXjppK/"
+        "id": "18113120308916888",
+        "url": "https://www.instagram.com/reel/Dch_p2wh3tz/",
+        "fecha": "2026-08-27T00:00",
+        "nota": "registro vacío al subir (2026-08-26, antes de registrar()); completado el 2026-09-04 desde analisis-ig.json"
       }
     },
     "autorizado": "2026-08-26 yt,ig — dicho por ian en sesión: \"el de la sal está perfecto, ese súbelo\"",

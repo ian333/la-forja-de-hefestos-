@@ -6,7 +6,8 @@
     "html": "cinematic-molecule.html",
     "query": "m=wgotas",
     "hook": "__cinematicAtom",
-    "nota_molkey": "molKey propio (wgotas): render-clip exige formato.dur == duracion de la escena; el rey dura 77 y esta pieza 55."
+    "nota_molkey": "molKey propio (wgotas): render-clip exige formato.dur == duracion de la escena; el rey dura 77 y esta pieza 55.",
+    "nota_16x9": "QUERY=\"m=wgotas&zoom=0.5\" W=3840 H=2160 (ídem eres-tú: 0.13-0.24)"
   },
   "formato": {
     "w": 2160,
@@ -80,7 +81,9 @@
       "valor_propio": "porque acabo de ver NACER algo que pasa un billón de veces por segundo dentro de mí"
     },
     "autorizado": "",
-    "subidas": {}
+    "subidas": {},
+    "programar": "2026-09-08T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
   },
   "guion": {
     "archivo": "scripts/guiones/dosgotas.txt",
@@ -90,6 +93,9 @@
   },
   "ritmo": {
     "brazo": "A",
-    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar."
+    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar.",
+    "cortes_por_min": 8.73,
+    "silabas_por_seg": 4.41,
+    "nota_medida": "medido por ritmo-pieza.py --escribir en iangpu (segs.json real) el 2026-09-04; copiado a la laptop porque el manifiesto de iangpu estaba en uso por el render 16:9"
   }
 }

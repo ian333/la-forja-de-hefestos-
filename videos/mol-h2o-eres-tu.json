@@ -6,7 +6,8 @@
     "html": "cinematic-molecule.html",
     "query": "m=weres",
     "hook": "__cinematicAtom",
-    "nota_molkey": "molKey propio (weres): render-clip exige formato.dur == duracion de la escena; el rey dura 77 y esta pieza 55."
+    "nota_molkey": "molKey propio (weres): render-clip exige formato.dur == duracion de la escena; el rey dura 77 y esta pieza 55.",
+    "nota_16x9": "QUERY=\"m=weres&zoom=0.5\" W=3840 H=2160 (sin zoom el dímero sale VOID fill 0.06-0.07; 0.5 da 0.13-0.22 con las dos moléculas enteras)"
   },
   "formato": {
     "w": 2160,
@@ -80,7 +81,9 @@
       "valor_propio": "porque esto es literalmente el 60 % de mí, visto de cerca — y nunca lo había visto"
     },
     "autorizado": "",
-    "subidas": {}
+    "subidas": {},
+    "programar": "2026-09-07T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
   },
   "guion": {
     "archivo": "scripts/guiones/erestu.txt",
@@ -90,6 +93,12 @@
   },
   "ritmo": {
     "brazo": "A",
-    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar."
+    "nota_brazo": "A hasta que exista una lista de tomas rápida para este molKey; el brazo se asigna al renderizar.",
+    "cortes_por_min": 8.73,
+    "tomas": 9,
+    "silabas_por_seg": 3.84,
+    "silabas_por_seg_del_video": 3.54,
+    "fuente_habla": "estimado (aún sin TTS, VEL 1.0)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }

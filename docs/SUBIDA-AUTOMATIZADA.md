@@ -56,7 +56,7 @@ Lo que dice la doc y lo que implica:
 6. Yo corro `subir-youtube.py` la primera vez: imprime una URL → la abres, aceptas con la cuenta del canal → listo, token guardado.
 
 **Después, por video:** `bash scripts/video.sh <id> subir yt` (o `yt,ig`). Sube el master 4K, los subtítulos de `segs.json`
-como captions reales, y programa si `publicar.programar` trae una fecha. Registra `publicar.subidas.yt` (id + URL) en el
+como captions reales. **Programar** (real desde 2026-09-04): `publicar.programar` (ISO con huso) + `bash scripts/video.sh <id> programar` → YouTube PRIVADO con `publishAt` (9:16 y 16:9) y el reel en la cola de PRIME (`scripts/cola-publicar.py`), que lo publica en Instagram a la hora por cron. Registra `publicar.subidas.yt` (id + URL) en el
 manifiesto = evidencia. Métricas: `metricas-youtube.py` diario (cron) → `public/comando/metricas.json` con la **curva de
 retención** (`audienceWatchRatio` por `elapsedVideoTimeRatio`) por pieza.
 

@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-04 21:09",
+ "generado": "2026-09-04 21:12",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -8,18 +8,18 @@
  },
  "conteo": {
   "proximo": 6,
-  "enCurso": 1,
+  "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 77,
+  "cerrado": 78,
   "probado": 0,
-  "porProbar": 42,
+  "porProbar": 43,
   "sinDesplegar": 0,
   "despues": 18
  },
  "deploy": {
-  "commit": "fc306ff",
-  "fecha": "2026-09-04 20:22"
+  "commit": "fe24a61",
+  "fecha": "2026-09-04 21:10"
  },
  "violaciones": [],
  "columnas": {
@@ -1276,41 +1276,6 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-04-el-cine-programado.md",
-    "slug": "2026-09-04-el-cine-programado",
-    "titulo": "EL CINE PROGRAMADO — cada video con su hora, sus rasgos y sus métricas; PRIME lo sube solo",
-    "fecha": "2026-09-04",
-    "estado": "en-curso",
-    "prioridad": 999,
-    "tipo": "",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "ian (2026-09-04): «quiero que estén los tickets con su cronograma, cada ticket es subir un video… cada uno llevará sus características y métricas para que después podamos hacer machine learning… dejar todo por adelantado, que se queden pro…",
-    "toca": 12,
-    "crea": 10,
-    "evidencia": 6,
-    "evidenciaDeclarada": [
-     "node scripts/orden-gate.cjs → VERDE",
-     "node scripts/temis-tablero.cjs → exit 0, cero violaciones, cine.dias con hora y rasgos",
-     "python3 scripts/cola-publicar.py tick --dry en PRIME con una entrada de prueba → imprime",
-     "python3 scripts/horarios.py → public/comando/horarios.json con n_sesiones, tz_pct,",
-     "captura de la tira 🎬 CINE del lobby (forja-brep.html → TEMIS) mostrando hora + rasgos",
-     "censo esperado: canvas igual, vite igual, html igual"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [
-     "evidencia/2026-09-04-el-cine-programado/01-tira-cine.png",
-     "evidencia/2026-09-04-el-cine-programado/02-cola-prime.png"
-    ],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -1426,6 +1391,41 @@
     "despliegue": "en-vivo"
    },
    {
+    "file": "ordenes/2026-09-04-el-cine-programado.md",
+    "slug": "2026-09-04-el-cine-programado",
+    "titulo": "EL CINE PROGRAMADO — cada video con su hora, sus rasgos y sus métricas; PRIME lo sube solo",
+    "fecha": "2026-09-04",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-04): «quiero que estén los tickets con su cronograma, cada ticket es subir un video… cada uno llevará sus características y métricas para que después podamos hacer machine learning… dejar todo por adelantado, que se queden pro…",
+    "toca": 13,
+    "crea": 10,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "node scripts/orden-gate.cjs → VERDE",
+     "node scripts/temis-tablero.cjs → exit 0, cero violaciones, cine.dias con hora y rasgos",
+     "python3 scripts/cola-publicar.py tick --dry en PRIME con una entrada de prueba → imprime",
+     "python3 scripts/horarios.py → public/comando/horarios.json con n_sesiones, tz_pct,",
+     "captura de la tira 🎬 CINE del lobby (forja-brep.html → TEMIS) mostrando hora + rasgos",
+     "censo esperado: canvas igual, vite igual, html igual"
+    ],
+    "cierre": "AUTOMATIZADA (EN CURSO desde el 08-26, ya cumplida) se cerró con su CIERRE y evidencia para respetar la tapa de EN CURSO=1; (2) videos/mol-h2o-la-sal.json recibió su subidas.ig (estaba vacío) porque …",
+    "cierreCompleto": "AUTOMATIZADA (EN CURSO desde el 08-26, ya cumplida) se cerró con su CIERRE y evidencia para respetar la tapa de EN CURSO=1; (2) videos/mol-h2o-la-sal.json recibió su subidas.ig (estaba vacío) porque el dataset la tenía partida en dos filas. Lo que NO se hizo por ser decisión de ian: escribir publicar.autorizado (sus palabras) en las 4 piezas — programar ya está (09-05 B · 09-06 roba · 09-07 eres-tú · 09-08 dos gotas, 18:45 CDMX) y la tira lo muestra como ⏰ programado · sin autorizar. - números: orden-gate VERDE (censo 8/41/46 igual) · temis-tablero.cjs exit 0, cero violaciones, 20 días en la tira (8 hechos, 12 próximos, 0 hoy), 4 con rasgos completos · PRIME: tick --dry con entrada vencida por 2 min → «publicaría …» sin tocar la API; cron */5 instalado con flock · horarios.json: 3,490 sesiones IG, tz AR 43 % / CL 15 % / CO 15 % / MX 15 %, pico local [22, 23, 21], pico CDMX [20, 21, 19], días Sun 726 / Mon 685 · dataset.json: 102 filas, 79 con IG, 30 con YT, 27 con manifiesto, 11 con ritmo declarado; uniones IG por id 3 / título 1 / sin unir 23 (21 nunca subidas a IG, 2 más nuevas que las fuentes) · build en iangpu 32.6 s. - evidencia: public/evidencia/2026-09-04-el-cine-programado/01-tira-cine.png (la tira con hora + rasgos + chips) · 02-cola-prime.png (cron + tick en seco en PRIME) · public/evidencia/2026-08-26-subida-automatizada/01-cine-chips-yt-ig.png. - preguntas abiertas: (a) las palabras de autorización por pieza; (b) el orden/fechas propuestos son mi propuesta (domingo = roba por ser el día fuerte y el gancho más cotidiano); (c) los 8 recortes al ritmo están CONDIC…",
+    "evidenciaSS": [
+     "evidencia/2026-09-04-el-cine-programado/01-tira-cine.png",
+     "evidencia/2026-09-04-el-cine-programado/02-cola-prime.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-09-02-x6-la-lamina-viva.md",
     "slug": "2026-09-02-x6-la-lamina-viva",
     "titulo": "X6 · LA LÁMINA VIVA — mirarla ya informa",
@@ -1528,7 +1528,7 @@
     "revisable": true,
     "probado": "",
     "falla": "2026-09-04 · ian la probó con su engrane en producción: «el color no varía, siempre está en rojo, si le doy click a algo verde no cambia». La animación sí gusta («ya está bien verga»): la quiere un poco más grande. Pendiente: medir la ola con SU pieza antes de tocar nada (por default solo se ven los que duelen; los verdes están bajo «los 69 criterios»).",
-    "commit": "37700e5",
+    "commit": "fe24a61",
     "despliegue": "en-vivo"
    },
    {
@@ -5111,11 +5111,12 @@
      "url": "https://youtu.be/IcQmByHafE0",
      "privacidad": "public"
     },
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/Dch_p2wh3tz/"
+    },
     "ancho": null,
     "entregado": "",
     "falta": [
-     "Instagram",
      "16:9"
     ]
    },
@@ -5289,7 +5290,7 @@
     "nota": "sábado. Veredicto vs brazo A a las 48 h (09-07): skip3s y compartidos por mil. Master en Downloads/los-dos-campos-REY-brazoB-4K.mp4",
     "manifiesto": true,
     "publicado": false,
-    "programar": "",
+    "programar": "2026-09-05T18:45:00-06:00",
     "rasgos": {
      "brazo": "B",
      "cortes_min": 18.75,
@@ -5303,7 +5304,7 @@
     "ancho": null,
     "entregado": "",
     "falta": [
-     "sin programar"
+     "sin autorizar"
     ]
    },
    {
@@ -5317,9 +5318,11 @@
     "nota": "domingo = el día más fuerte de la audiencia; el gancho más cotidiano de los tres",
     "manifiesto": true,
     "publicado": false,
-    "programar": "",
+    "programar": "2026-09-06T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
+     "cortes_min": 8.73,
+     "sil_s": 4.31,
      "dur": 55,
      "vel": 1,
      "marco": "revelacion"
@@ -5329,7 +5332,7 @@
     "ancho": null,
     "entregado": "",
     "falta": [
-     "sin programar"
+     "sin autorizar"
     ]
    },
    {
@@ -5343,7 +5346,7 @@
     "nota": "lunes, segundo día más fuerte",
     "manifiesto": true,
     "publicado": false,
-    "programar": "",
+    "programar": "2026-09-07T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 8.73,
@@ -5357,7 +5360,7 @@
     "ancho": null,
     "entregado": "",
     "falta": [
-     "sin programar"
+     "sin autorizar"
     ]
    },
    {
@@ -5370,9 +5373,11 @@
     "estado": "proximo",
     "manifiesto": true,
     "publicado": false,
-    "programar": "",
+    "programar": "2026-09-08T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
+     "cortes_min": 8.73,
+     "sil_s": 4.41,
      "dur": 55,
      "vel": 1,
      "marco": "revelacion"
@@ -5382,7 +5387,7 @@
     "ancho": null,
     "entregado": "",
     "falta": [
-     "sin programar"
+     "sin autorizar"
     ]
    },
    {
