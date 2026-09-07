@@ -1,0 +1,24 @@
+{
+ "modelo_acto1": "Bouchaud & Mezard (2000), Wealth condensation in a simple model of economy",
+ "modelo_acto2": "Schelling (1971)",
+ "N": 40000,
+ "K": 120,
+ "J_intercambio": 0.03,
+ "sigma": 0.25,
+ "tolerancia": 0.3333333333333333,
+ "vecinos": 8,
+ "semilla": 20260907,
+ "gini_inicio": 0.0,
+ "gini_final": 0.4868,
+ "top1_pct": 11.14,
+ "mas_rico_x_media": 63.59,
+ "vecinos_mismo_quintil_inicio_pct": 28.22,
+ "vecinos_mismo_quintil_final_pct": 77.97,
+ "licencia_visual": "acto 1: riqueza→cercanía al centro. acto 2: el espacio social se dibuja en 3D (la gente se agrupa en muchas dimensiones; aquí van tres). Las dos son LECTURAS declaradas, no resultados.",
+ "reparto": {
+  "acc": "quintil bajo",
+  "dep": "quintiles medios",
+  "spin": "quintil alto",
+  "nucleos": "top 0.1 %"
+ }
+}

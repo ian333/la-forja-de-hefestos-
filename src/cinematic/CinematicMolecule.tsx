@@ -41,6 +41,20 @@ const CARGAS_DURATION = 83.2;
 const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz todavía)   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
 const WTRI_DURATION = 77.7;
 const WTET_DURATION = 88.0;   // EL CUARTETO: voz 85.51s (segs.json, 27 líneas) + 2.5s de cola
+const EGRUPOS_DURATION = 55;
+// ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
+// dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
+const EGRUPOS_CAPAS: CapasSpec = {
+  campo:    { base: 0, mods: [] },
+  nubes:    { base: 1, mods: [] },
+  parpadeo: { base: 0.18, mods: [] },
+  spin:     { base: 1, mods: [] },
+  acc:      { base: 1, mods: [] },
+  enlaces:  { base: 0, mods: [] },
+  dipolo:   { base: 0, mods: [] },
+  ceros:    { base: 0, mods: [] },
+  apertura: { base: 0.10, mods: [] },
+};
 const WHEX6B_DURATION = 55;
 // HEXÁMERO IDENTIDAD — el evento es l9-l10 ("tú también eres agua… dentro de tus células"):
 // ahí arde el spin y el campo. PROVISIONAL hasta segs.json.
@@ -910,6 +924,17 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: whipParallax({ rMul: 1.62, elevAmp: 0.26, azim0: 2.60, span: 2.4, fov: 37 }), dur: 7.29, label: 'BARRIDO con parallax: "las líneas son el campo real" (l14)' },
     { shot: ringFaceOn({ rMul: 1.72, azim0: 1.50, span: 0.30, elev: 0.10 }), dur: 6.85, label: 'EL REMATE: "el olor de la mantequilla es esta forma" (l15-16)' },
   ],
+  egrupos: [
+    // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
+    // agentes y su posición sale de dos modelos publicados (Bouchaud-Mézard 2000 + Schelling
+    // 1971), no de un SCF. El renderizador no sabe la diferencia: lee el mismo .bin de nubes.
+    // Tomas del vocabulario existente, sin inventar cámara. PROVISIONAL: es para MIRAR la
+    // simulación (regla §sim primero), todavía sin guion ni voz.
+    { shot: eyeLevelLock({ rMul: 1.30, azim: 0.9 }), dur: 14, label: 'TODOS: la población entera, plana y pareja' },
+    { shot: loomPush({ rFrom: 1.45, rTo: 0.95, elev: 0.30, azim: 1.2, fov: 34 }), dur: 14, label: 'sube la torre: la cola que no se acaba' },
+    { shot: crashIn({ rMul: 0.85, azim0: 1.3, span: 1.1, elev: 0.10 }), dur: 13, label: 'los de arriba, de cerca' },
+    { shot: pullOut({ azim0: 1.0, span: 1.0, rFromMul: 0.80, rTdMul: 1.60 }), dur: 14, label: 'los grupos ya separados' },
+  ],
   whex6b: [
     // RECORTE DE IDENTIDAD del hexámero (2026-09-07, canon §EL VEREDICTO A/B). Mismas tomas del
     // ganador —ringFaceOn/ringToBridge/ringEdgeToFace/loomPush/pullOut, sin inventar cámara— pero
@@ -1397,6 +1422,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
   wcolor: { name: 'De quién son', formula: 'C · O · H', fact: 'Cada color es un elemento, repartido por la regla de Hirshfeld — no a ojo.' },
+  egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
   whex6b: { name: 'No te pueden congelar', formula: '(H₂O)₆', fact: 'El hexágono que hace bonito a un copo de nieve es el que te reventaría las células.' },
   wtrib: { name: 'La gota que no cae', formula: '(H₂O)₃', fact: 'Tres aguas juntas jalan 12 % más que por separado: esa es la piel del agua.' },
   wroba: { name: 'Te roba el agua', formula: 'C₂H₅OH···H₂O', fact: 'La punta del alcohol es la del agua: por eso el gel te reseca las manos.' },
@@ -3009,6 +3035,8 @@ const WATER_BINS: Record<string, WaterEntry> = {
   // (4 núcleos: Na, O, H, H), mismo eje, mismo régimen. Gate: −24.0 kcal/mol a 2.25 Å = experimento.
   wsal:  { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSAL_CAPAS, dur: WSAL_DURATION },
   // nube ±6.6 bohr: ex=15 dejaba void muerto
+  egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
+             capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 3.0 },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
             capas: WHEX6B_CAPAS, dur: WHEX6B_DURATION },
   wtrib: { bin: 'water-trimer', ef: 'water-trimer-efield', ex: 10, anillo: true,
