@@ -35,7 +35,17 @@
       ]
     },
     "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
-    "programar": "2026-09-13T18:45:00-06:00",
-    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+    "programar": "2026-09-10T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 5 por día desde 2026-09-08",
+    "subidas": {
+      "yt": {
+        "id": "6jfVE2lqzoo",
+        "url": "https://youtu.be/6jfVE2lqzoo",
+        "privacidad": "private",
+        "publishAt": "2026-09-13T18:45:00-06:00",
+        "captions": "AUieDaZ-dP7QReo4lH_sI2KtGeS0qc6bu9MakVbPBGPWzuU_e4YiGv1ttg",
+        "fecha": "2026-09-07T15:12"
+      }
+    }
   }
 }

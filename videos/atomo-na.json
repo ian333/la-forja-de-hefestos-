@@ -127,8 +127,8 @@
     "capsulaRel": "atomos/_code/atomo-na-capsula.tar.gz",
     "pieza": "atomo-011",
     "nueva": true,
-    "autorizado": "",
-    "programar": "",
+    "autorizado": "2026-09-07 yt,ig — dicho por ian en sesión, después de verlas todas: \"ya las vi todas, te mamaste, todo autorizado\"",
+    "programar": "2026-09-16T18:45:00-06:00",
     "subidas": {},
     "copy": {
       "titulo": "Cada vez que sientes algo, este átomo entra corriendo a un nervio (Sodio)",
@@ -148,7 +148,8 @@
       "activacion": "alta",
       "valor_propio": "porque une dos cosas que nadie junta: la sal del plato y sentir",
       "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada: el sujeto del gancho y del payoff es el cuerpo de quien ve."
-    }
+    },
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json"
   },
   "ritmo": {
     "brazo": "A",

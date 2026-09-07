@@ -148,8 +148,8 @@
     "capsulaRel": "atomos/_code/atomo-p-capsula.tar.gz",
     "pieza": "atomo-015",
     "nueva": true,
-    "autorizado": "",
-    "programar": "",
+    "autorizado": "2026-09-07 yt,ig — dicho por ian en sesión, después de verlas todas: \"ya las vi todas, te mamaste, todo autorizado\"",
+    "programar": "2026-09-13T18:45:00-06:00",
     "subidas": {},
     "copy": {
       "titulo": "Cada día gastas tu propio peso en una sola molécula (Fósforo)",
@@ -169,7 +169,8 @@
       "activacion": "alta",
       "valor_propio": "porque el número es absurdo y es verdad: hoy gastaste tu propio peso en una molécula",
       "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada: el sujeto del gancho y del payoff es el cuerpo de quien ve."
-    }
+    },
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json"
   },
   "ritmo": {
     "brazo": "A",

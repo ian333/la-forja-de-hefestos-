@@ -89,6 +89,12 @@
   },
   "ritmo": {
     "brazo": "A",
-    "nota_brazo": "brazo A por VEREDICTO 2026-09-07."
+    "nota_brazo": "brazo A por VEREDICTO 2026-09-07.",
+    "cortes_por_min": 8.73,
+    "tomas": 9,
+    "silabas_por_seg": 4.23,
+    "silabas_por_seg_del_video": 3.82,
+    "fuente_habla": "segs.json (REAL)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }
