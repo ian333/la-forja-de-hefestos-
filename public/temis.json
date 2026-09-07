@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-07 17:40",
+ "generado": "2026-09-07 18:36",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -9,8 +9,8 @@
  "conteo": {
   "proximo": 7,
   "enCurso": 0,
-  "imprevisto": 0,
-  "supertickets": 10,
+  "imprevisto": 1,
+  "supertickets": 11,
   "cerrado": 80,
   "probado": 0,
   "porProbar": 45,
@@ -297,7 +297,36 @@
     "despliegue": ""
    }
   ],
-  "imprevisto": [],
+  "imprevisto": [
+   {
+    "file": "ordenes/2026-09-07-iangpu-c-lleno-cuarta-vez.md",
+    "slug": "2026-09-07-iangpu-c-lleno-cuarta-vez",
+    "titulo": "iangpu C: LLENO, CUARTA VEZ — el WSL se apagó a media prueba del paso 6",
+    "fecha": "2026-09-07",
+    "estado": "imprevisto",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "iangpu vuelve a servir (WSL arriba, ssh y tailscaled vivos, ≥40 GB libres en C:) y queda una regla que impida la quinta vez.",
+    "toca": 1,
+    "crea": 1,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "fsutil volume diskfree C: ≥ 40 GB · wsl -l -v Running · ssh ian@100.65.173.85 uptime responde",
+     "/home/ian/forja-dev ya no existe · el vhdx es sparse (wsl --manage Ubuntu --set-sparse sin error)"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   }
+  ],
   "enCurso": [
    {
     "file": "ordenes/2026-08-27-roadmap-suite-desde-libros.md",
@@ -1397,6 +1426,106 @@
      "drive contra el dev de iangpu: drop del 1594C Box → invariants.vol_kernel > 0 y ≈ volKernelMm3 de la nota; captura con la barra de estado nueva",
      "drive con un .stl → importedStep null, Foco vivo",
      "runner completo: sigue 5/8 · se rompe en el 6 · orden-gate VERDE"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-07-el-paso-6-existe.md",
+    "slug": "2026-09-07-el-paso-6-existe",
+    "titulo": "EL PASO 6 EXISTE — EL MOLDE de la pieza soltada se arma solo, hasta donde la máquina llega hoy",
+    "fecha": "2026-09-07",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "molde-gesto",
+      "titulo": "Hay puerta para el molde junto a la pieza",
+      "herramientas": "pestaña parte-lente-molde",
+      "oraculo": "color oro; toggle independiente de lentes y de PARTIR",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "pared-medida",
+      "titulo": "La pared la mide el Foco, nadie la teclea",
+      "herramientas": "intake.wallMm = p50 de la lente PARED",
+      "oraculo": "el driver llama calcularLentes si hace falta; la leyenda dice «pared N mm (medida)»; control: sin pared no avanza a E2",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "ciclo-solo",
+      "titulo": "El ciclo avanza solo hasta E5",
+      "herramientas": "efecto por estación",
+      "oraculo": "E1 (PUENTE) → E2 → E3 → E4 → E5, una estación por render, cursoBusy respetado; la leyenda enseña E<n>/5 mientras arma",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "molde-se-ve",
+      "titulo": "El visor enseña el molde de ESA pieza",
+      "herramientas": "render",
+      "oraculo": "con MOLDE encendido y placas construidas, el Canvas cambia de la malla al moldParts (cavidad + núcleo + pieza tallada + partición + colada); juzgado con ojos sobre el 1594C Box",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "honesto",
+      "titulo": "La leyenda dice lo que no hay · molde-de-la-pieza data-roles",
+      "herramientas": "«✗ agua (E8 cubo)",
+      "oraculo": "✗ expulsores (E10 cubo)» en rojo; el runner marca el paso 6 PARCIAL (placas ✓ colada ✓ agua ✗ expulsores ✗), no verde",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror, el dado y los demos siguen igual (el driver solo corre con piezaMalla y ciclo.pieza)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "golpe 4 (parte T6) de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el molde de TU pieza existe por dentro (EL PUENTE arma E1 cuando el sólido entra al kernel; E2 y E3 tallan el acero de la pieza real; E4 y E5 ponen llenad…",
+    "toca": 4,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "drive contra el dev aislado de iangpu: drop → MOLDE → molde-de-la-pieza con estacion ≥3 y roles cavidad/nucleo/pieza (+colada si E4/E5 pasan); captura del visor con las placas y la pieza tallada",
+     "runner completo: paso 6 PARCIAL (no falla), el muro se mueve al 7 · orden-gate VERDE",
+     "paseo v3 regrabado con el paso 6 en pantalla"
     ],
     "cierre": "",
     "cierreCompleto": "",
