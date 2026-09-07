@@ -1,0 +1,158 @@
+{
+  "id": "atomo-na",
+  "titulo": "Cada vez que sientes algo, este átomo entra corriendo a un nervio",
+  "subtitulo": "Sodio · Na · Z=11",
+  "nota": "ÁTOMO DE IDENTIDAD (2026-09-07, canon §EL VEREDICTO A/B): el formato del cromo —que retuvo 54 % del video y 1.5 bucles por persona— con lo que le faltaba: el sujeto. El gancho ya no es el átomo, es el cuerpo de quien mira.",
+  "proposito": {
+    "wtf": "Las capas del cromo TOMAN TURNO: cada subcapa se enciende sola mientras las demás se opacan, y la cámara viaja a la escala de la que toca.",
+    "hayQueMostrar": [
+      "que la nube NO es una bola: son bandas, y cada una tiene su tamaño y su forma",
+      "que la forma sale del cálculo — no se dibuja ningún orbital a mano",
+      "el campo eléctrico del núcleo y, si el átomo lo tiene, el magnético"
+    ],
+    "noHacer": [
+      "decir que los electrones son bolitas en órbita — son densidad de probabilidad",
+      "prometer lóbulos donde la subcapa está llena o a medio llenar: ahí es ESFÉRICA por teorema"
+    ]
+  },
+  "fisica": {
+    "metodo": "SCF real (UHF, base def2-tzvp), densidad de CADA ORBITAL (n,l,m) muestreada en malla 3D esférica (170 anillos × 900 direcciones, 110001 puntos). Sin promedio esférico: es lo que conserva los lóbulos.",
+    "configuracion": "1s2 2s2 2p6 3s1",
+    "verificacion_config": "COINCIDE con el estado base experimental (NIST ASD), verificado 2026-09-07 contra public/precomputed/atoms/manifest.json. Núcleo COMPLETO: suma de electrones == Z (11). Los dos porteros del canon §Los dos porteros de un átomo nuevo.",
+    "energia_fiable": true,
+    "canales": 6,
+    "bandas": [
+      {
+        "i": 0,
+        "ventana": [
+          4.2,
+          7.87
+        ]
+      },
+      {
+        "i": 1,
+        "ventana": [
+          7.87,
+          11.53
+        ]
+      },
+      {
+        "i": 2,
+        "ventana": [
+          11.53,
+          15.2
+        ]
+      },
+      {
+        "i": 3,
+        "ventana": [
+          15.2,
+          18.87
+        ]
+      },
+      {
+        "i": 4,
+        "ventana": [
+          18.87,
+          22.53
+        ]
+      },
+      {
+        "i": 5,
+        "ventana": [
+          22.53,
+          26.2
+        ]
+      }
+    ]
+  },
+  "escena": {
+    "html": "cinematic-atom.html",
+    "query": "z=11",
+    "hook": "__cinematicAtom",
+    "wiring": "bandaMask/bandaRadio/camDirOrbital/rotNube en CinematicAtom.tsx. Un canal por ORBITAL (.bin ATM3). La cámara se pone DE PERFIL a cada orbital y la nube deja de girar en el barrido: mirada a lo largo de su eje, una mancuerna es un círculo.",
+    "gancho": "CUADRO 0 = el trébol 3d_x²−y² lleno de pantalla (el orbital de mayor l, orbGancho). Ian 2026-08-11: \"toda la coreografía del segundo 16 es lo que debería estar en el 0\"."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 29.6,
+    "nota_dur": "gancho 0-2.6 + clavado 2.6-4.2 + 6 orbitales × 3.67s + 3.4s de cola (durationForShells en CinematicAtom.tsx)"
+  },
+  "render": {
+    "shards": 4,
+    "batch": 40,
+    "frames": "dist-video/.atnaframes",
+    "nota_shards": "4 shards + captura cdp-jpeg (2026-08-17): el 97% del cuadro era el PNG, no la GPU. Medido en o2 1080: 1191s→261s (4.6×), calidad dif 1.34 < piso de encode 2.8, cero vacíos. El crash histórico de 5 shards fue con PNG (I/O 5× mayor); con jpeg el I/O baja a 1/5. SHARDS= lo overridea.",
+    "captura": "cdp-jpeg"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/atomo-na.txt"
+  },
+  "audio": {
+    "dir": "dist-video/atomo-na-narracion",
+    "narracion": "atomo-na-narracion.mp3",
+    "segs": "segs.json",
+    "ass": "atomo-na.ass",
+    "voz": "XTTS Matilda, VEL=1.10. ⚠ pasar scripts/voz-check.py ANTES de rendir.",
+    "musica": null,
+    "marginv": 1450,
+    "nota_marginv": "El canon vertical ancla el subtítulo a MarginV 1120, pero esta escena ya tiene texto abajo: nombre + símbolo/Z + la fila de bandas ocupan hasta ~1020 desde el borde inferior. Medido en un recorte 1:1 del cuadro 4K de atomo-c (t=23.2s): el subtítulo caía a ~1160 y \"Carbono\" arrancaba en ~970 — 100 px de separación, que se lee encimado. 1450 deja ~430 px de aire. Las moléculas NO se tocan: sin este campo, video-subs.py usa el canon.",
+    "vel": 1.1
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "atomo-na-4k-master.mp4",
+    "h264": "atomo-na-4k.mp4",
+    "nota": "ext4 (2026-08-17): E: fuera del camino crítico — un drvfs muerto rompía el ensamble. El paso `entrega` copia a E:/Downloads si viven, o encola en dist-video/entregas/."
+  },
+  "capsula": {
+    "bins": [
+      "atoms/z011-v2.bin"
+    ],
+    "guion": "atomo-na.txt",
+    "scripts": [
+      "precompute-atom-orbitals.py",
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py"
+    ],
+    "escenaSrc": [
+      "CinematicAtom.tsx"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "atomos/atom-011-Na.mp4",
+    "capsulaRel": "atomos/_code/atomo-na-capsula.tar.gz",
+    "pieza": "atomo-011",
+    "nueva": true,
+    "autorizado": "",
+    "programar": "",
+    "subidas": {},
+    "copy": {
+      "titulo": "Cada vez que sientes algo, este átomo entra corriendo a un nervio (Sodio)",
+      "descripcion": "Tocar, oír, el frío en la mano: todo empieza con sodio entrando de golpe a una célula nerviosa. ⚡ Es el mismo átomo que es la mitad de la sal que le pones a la comida. Lo que ves es su densidad electrónica calculada con física cuántica real (SCF, def2-tzvp), orbital por orbital. Un electrón solo, muy lejos del núcleo: lo suelta sin pensarlo. Y lo que queda ya no es un metal que arde en el agua — es sabor.",
+      "hashtags": [
+        "#átomo",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible",
+        "#sodio"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque une dos cosas que nadie junta: la sal del plato y sentir",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada: el sujeto del gancho y del payoff es el cuerpo de quien ve."
+    }
+  },
+  "ritmo": {
+    "brazo": "A",
+    "cortes_por_min": 12.16,
+    "nota_brazo": "la escena de átomos no usa CAMERA_SHOTS: el \"corte\" es el cambio de cámara por orbital (6 orbitales en 29.6s). Se DECLARA a mano como exige ritmo-pieza.py. VEL 1.10 se conserva del cromo: el VEREDICTO A/B midió el ritmo en piezas narrativas de 55-75 s, no en este formato."
+  }
+}

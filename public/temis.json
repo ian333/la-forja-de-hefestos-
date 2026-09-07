@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-07 18:36",
+ "generado": "2026-09-07 18:50",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -10,7 +10,7 @@
   "proximo": 7,
   "enCurso": 0,
   "imprevisto": 1,
-  "supertickets": 11,
+  "supertickets": 13,
   "cerrado": 80,
   "probado": 0,
   "porProbar": 45,
@@ -1526,6 +1526,204 @@
      "drive contra el dev aislado de iangpu: drop → MOLDE → molde-de-la-pieza con estacion ≥3 y roles cavidad/nucleo/pieza (+colada si E4/E5 pasan); captura del visor con las placas y la pieza tallada",
      "runner completo: paso 6 PARCIAL (no falla), el muro se mueve al 7 · orden-gate VERDE",
      "paseo v3 regrabado con el paso 6 en pantalla"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-07-el-paso-7-existe.md",
+    "slug": "2026-09-07-el-paso-7-existe",
+    "titulo": "EL PASO 7 EXISTE — LOS PLANOS del molde de la pieza soltada, en pantalla y en PDF",
+    "fecha": "2026-09-07",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "planos-gesto",
+      "titulo": "Hay puerta para los planos junto a la pieza",
+      "herramientas": "pestaña parte-lente-planos",
+      "oraculo": "si aún no hay E2, prende MOLDE y los genera al llegar el paquete",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "planos-de-esta-pieza",
+      "titulo": "Las láminas salen del paquete E2 de la pieza y de SU sólido · buildMoldLaminas(OCC, oc, packageToAssemblySpec(e2.pkg), rows, arbol.shape)",
+      "herramientas": "la lámina «Pieza moldeada",
+      "oraculo": "4 vistas» enseña la carcasa, no un preset",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "planos-se-ven",
+      "titulo": "Overlay con pestañas por lámina",
+      "herramientas": "planos-del-molde data-paginas",
+      "oraculo": "≥3 láminas (ensamble, análisis, placas); juzgado con ojos sobre el 1594C Box",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "planos-pdf",
+      "titulo": "Todas las láminas a una ventana imprimible",
+      "herramientas": "btn-planos-molde-pdf",
+      "oraculo": "el mismo laminasToPrintHTML de La Máquina",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "paso-7-verde",
+      "titulo": "El runner mide el paso 7",
+      "herramientas": "## RUNNER",
+      "oraculo": "gesto PLANOS + 3 checks; el muro se mueve al 8",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "orden-gate VERDE, censo Canvas 8→8 (el overlay reusa .fb-plano-overlay), cero pageerror",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "golpe 4 de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el juego de láminas del molde (buildMoldLaminas: ensamble, análisis, 5 placas acotadas + 4 vistas, la pieza moldeada) existe pero solo lo alimenta el FORMULARIO NUMÉ…",
+    "toca": 4,
+    "crea": 3,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "drive contra el dev aislado (symlinks) de iangpu: drop → MOLDE → PLANOS → overlay con ≥3 láminas; captura de la lámina de la pieza",
+     "runner completo · orden-gate VERDE · paseo regrabado"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-07-el-paso-8-existe.md",
+    "slug": "2026-09-07-el-paso-8-existe",
+    "titulo": "EL PASO 8 EXISTE — EL EXPEDIENTE de la pieza: dictamen, decisiones, cotización y planos en UN archivo",
+    "fecha": "2026-09-07",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "expediente-gesto",
+      "titulo": "Hay puerta para el expediente junto a la pieza",
+      "herramientas": "pestaña parte-lente-expediente",
+      "oraculo": "overlay con las 4 secciones en verde/rojo según existan",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dictamen-completo",
+      "titulo": "El expediente recibe el dictamen ENTERO",
+      "herramientas": "onRevision en RevisarPiezaPanel",
+      "oraculo": "no solo la fila: criterios con § y detalle, y las decisiones §13.10 con opciones reales y firmas pendientes",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "un-archivo",
+      "titulo": "Dictamen → decisiones → cotización → planos → tryout en UN HTML imprimible",
+      "herramientas": "expedienteHTML + btn-expediente-descargar / btn-expediente-imprimir",
+      "oraculo": "lo que falta se DICE en el archivo («sin planos: no se generó…»), no se rellena",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "cotizacion-de-la-pieza",
+      "titulo": "La hoja de cotización es la de ESTA pieza",
+      "herramientas": "cotizacionPieza(ciclo.pieza)",
+      "oraculo": "la misma hoja que el panel del ciclo, adentro del archivo",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "paso-8-verde",
+      "titulo": "El runner mide el paso 8",
+      "herramientas": "## RUNNER",
+      "oraculo": "gesto EXPEDIENTE + 3 checks (dictamen, cotización, ≥3 planos) → el camino queda 8/8 en su forma de hoy, con lo que falta dicho",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "golpe 5 de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el expediente §13.10 (decisiones + tryout) se calcula en revisarModelo pero solo se ve en el modo lote; el dictamen de la pieza soltada no lo enseña ni lo exporta; l…",
+    "toca": 5,
+    "crea": 3,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "drive contra el dev aislado (symlinks) de iangpu: drop → MOLDE → PLANOS → EXPEDIENTE → overlay con 4 secciones en verde; el HTML descargado se abre y trae las 4",
+     "runner completo · orden-gate VERDE · paseo regrabado"
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -5946,15 +6144,23 @@
     "tipo": "atomo-identidad",
     "estado": "proximo",
     "nota": "cada disparo de una neurona tuya deja salir potasio. 4s¹: un electrón solo, se va facilísimo.",
-    "manifiesto": false,
-    "publicado": false,
+    "manifiesto": true,
+    "publicado": true,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 20.27,
+     "dur": 29.6,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    },
    {
     "fecha": "2026-09-11",
@@ -5965,15 +6171,23 @@
     "tipo": "atomo-identidad",
     "estado": "proximo",
     "nota": "el 1 % citoplásmico dispara la contracción muscular. 4s².",
-    "manifiesto": false,
-    "publicado": false,
+    "manifiesto": true,
+    "publicado": true,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 20.27,
+     "dur": 29.6,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    },
    {
     "fecha": "2026-09-12",
@@ -6003,15 +6217,23 @@
     "tipo": "atomo-identidad",
     "estado": "proximo",
     "nota": "DOMINGO = día fuerte. El ATP se recicla ~el peso corporal al día y lleva 3 fósforos. 3p³ = tres pétalos, un electrón cada uno.",
-    "manifiesto": false,
-    "publicado": false,
+    "manifiesto": true,
+    "publicado": true,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 18.24,
+     "dur": 29.6,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    },
    {
     "fecha": "2026-09-14",
@@ -6022,15 +6244,23 @@
     "tipo": "atomo-identidad",
     "estado": "proximo",
     "nota": "LUNES = día fuerte. 65 % de la masa corporal, casi todo por el AGUA, no por el aire. 2p⁴: le faltan dos.",
-    "manifiesto": false,
-    "publicado": false,
+    "manifiesto": true,
+    "publicado": true,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 10.14,
+     "dur": 29.6,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    },
    {
     "fecha": "2026-09-15",
@@ -6041,15 +6271,23 @@
     "tipo": "atomo-identidad",
     "estado": "proximo",
     "nota": "la deficiencia de zinc quita gusto y olfato; ~300 enzimas lo usan. 3d¹⁰4s².",
-    "manifiesto": false,
-    "publicado": false,
+    "manifiesto": true,
+    "publicado": true,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 29.9,
+     "dur": 30.1,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    },
    {
     "fecha": "2026-09-16",
@@ -6079,15 +6317,23 @@
     "tipo": "atomo-identidad",
     "estado": "proximo",
     "nota": "el impulso nervioso empieza con Na⁺ entrando. 3s¹.",
-    "manifiesto": false,
-    "publicado": false,
+    "manifiesto": true,
+    "publicado": true,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 12.16,
+     "dur": 29.6,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    },
    {
     "fecha": "2026-09-18",
@@ -6098,15 +6344,23 @@
     "tipo": "atomo-identidad",
     "estado": "proximo",
     "nota": "los puentes disulfuro de la queratina deciden la forma del pelo; romperlos y volver a atarlos ES el permanente. 3p⁴: dos electrones sin pareja. (El YODO salió del plan: su bin usa pseudopotencial y le FALTA el núcleo — ver gate_atomos.)",
-    "manifiesto": false,
-    "publicado": false,
+    "manifiesto": true,
+    "publicado": true,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 18.24,
+     "dur": 29.6,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    },
    {
     "fecha": "2026-09-19",

@@ -1,0 +1,179 @@
+{
+  "id": "atomo-p",
+  "titulo": "Cada día gastas tu propio peso en una sola molécula",
+  "subtitulo": "Fósforo · P · Z=15",
+  "nota": "ÁTOMO DE IDENTIDAD (2026-09-07, canon §EL VEREDICTO A/B): el formato del cromo —que retuvo 54 % del video y 1.5 bucles por persona— con lo que le faltaba: el sujeto. El gancho ya no es el átomo, es el cuerpo de quien mira.",
+  "proposito": {
+    "wtf": "Las capas del cromo TOMAN TURNO: cada subcapa se enciende sola mientras las demás se opacan, y la cámara viaja a la escala de la que toca.",
+    "hayQueMostrar": [
+      "que la nube NO es una bola: son bandas, y cada una tiene su tamaño y su forma",
+      "que la forma sale del cálculo — no se dibuja ningún orbital a mano",
+      "el campo eléctrico del núcleo y, si el átomo lo tiene, el magnético"
+    ],
+    "noHacer": [
+      "decir que los electrones son bolitas en órbita — son densidad de probabilidad",
+      "prometer lóbulos donde la subcapa está llena o a medio llenar: ahí es ESFÉRICA por teorema"
+    ]
+  },
+  "fisica": {
+    "metodo": "SCF real (UHF, base def2-tzvp), densidad de CADA ORBITAL (n,l,m) muestreada en malla 3D esférica (170 anillos × 900 direcciones, 110001 puntos). Sin promedio esférico: es lo que conserva los lóbulos.",
+    "configuracion": "1s2 2s2 2p6 3s2 3p3",
+    "verificacion_config": "COINCIDE con el estado base experimental (NIST ASD), verificado 2026-09-07 contra public/precomputed/atoms/manifest.json. Núcleo COMPLETO: suma de electrones == Z (15). Los dos porteros del canon §Los dos porteros de un átomo nuevo.",
+    "energia_fiable": true,
+    "canales": 9,
+    "bandas": [
+      {
+        "i": 0,
+        "ventana": [
+          4.2,
+          6.64
+        ]
+      },
+      {
+        "i": 1,
+        "ventana": [
+          6.64,
+          9.09
+        ]
+      },
+      {
+        "i": 2,
+        "ventana": [
+          9.09,
+          11.53
+        ]
+      },
+      {
+        "i": 3,
+        "ventana": [
+          11.53,
+          13.98
+        ]
+      },
+      {
+        "i": 4,
+        "ventana": [
+          13.98,
+          16.42
+        ]
+      },
+      {
+        "i": 5,
+        "ventana": [
+          16.42,
+          18.87
+        ]
+      },
+      {
+        "i": 6,
+        "ventana": [
+          18.87,
+          21.31
+        ]
+      },
+      {
+        "i": 7,
+        "ventana": [
+          21.31,
+          23.76
+        ]
+      },
+      {
+        "i": 8,
+        "ventana": [
+          23.76,
+          26.2
+        ]
+      }
+    ]
+  },
+  "escena": {
+    "html": "cinematic-atom.html",
+    "query": "z=15",
+    "hook": "__cinematicAtom",
+    "wiring": "bandaMask/bandaRadio/camDirOrbital/rotNube en CinematicAtom.tsx. Un canal por ORBITAL (.bin ATM3). La cámara se pone DE PERFIL a cada orbital y la nube deja de girar en el barrido: mirada a lo largo de su eje, una mancuerna es un círculo.",
+    "gancho": "CUADRO 0 = el trébol 3d_x²−y² lleno de pantalla (el orbital de mayor l, orbGancho). Ian 2026-08-11: \"toda la coreografía del segundo 16 es lo que debería estar en el 0\"."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 29.6,
+    "nota_dur": "gancho 0-2.6 + clavado 2.6-4.2 + 9 orbitales × 2.44s + 3.4s de cola (durationForShells en CinematicAtom.tsx)"
+  },
+  "render": {
+    "shards": 4,
+    "batch": 40,
+    "frames": "dist-video/.atpframes",
+    "nota_shards": "4 shards + captura cdp-jpeg (2026-08-17): el 97% del cuadro era el PNG, no la GPU. Medido en o2 1080: 1191s→261s (4.6×), calidad dif 1.34 < piso de encode 2.8, cero vacíos. El crash histórico de 5 shards fue con PNG (I/O 5× mayor); con jpeg el I/O baja a 1/5. SHARDS= lo overridea.",
+    "captura": "cdp-jpeg"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/atomo-p.txt"
+  },
+  "audio": {
+    "dir": "dist-video/atomo-p-narracion",
+    "narracion": "atomo-p-narracion.mp3",
+    "segs": "segs.json",
+    "ass": "atomo-p.ass",
+    "voz": "XTTS Matilda, VEL=1.10. ⚠ pasar scripts/voz-check.py ANTES de rendir.",
+    "musica": null,
+    "marginv": 1450,
+    "nota_marginv": "El canon vertical ancla el subtítulo a MarginV 1120, pero esta escena ya tiene texto abajo: nombre + símbolo/Z + la fila de bandas ocupan hasta ~1020 desde el borde inferior. Medido en un recorte 1:1 del cuadro 4K de atomo-c (t=23.2s): el subtítulo caía a ~1160 y \"Carbono\" arrancaba en ~970 — 100 px de separación, que se lee encimado. 1450 deja ~430 px de aire. Las moléculas NO se tocan: sin este campo, video-subs.py usa el canon.",
+    "vel": 1.1
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "atomo-p-4k-master.mp4",
+    "h264": "atomo-p-4k.mp4",
+    "nota": "ext4 (2026-08-17): E: fuera del camino crítico — un drvfs muerto rompía el ensamble. El paso `entrega` copia a E:/Downloads si viven, o encola en dist-video/entregas/."
+  },
+  "capsula": {
+    "bins": [
+      "atoms/z015-v2.bin"
+    ],
+    "guion": "atomo-p.txt",
+    "scripts": [
+      "precompute-atom-orbitals.py",
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py"
+    ],
+    "escenaSrc": [
+      "CinematicAtom.tsx"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "atomos/atom-015-P.mp4",
+    "capsulaRel": "atomos/_code/atomo-p-capsula.tar.gz",
+    "pieza": "atomo-015",
+    "nueva": true,
+    "autorizado": "",
+    "programar": "",
+    "subidas": {},
+    "copy": {
+      "titulo": "Cada día gastas tu propio peso en una sola molécula (Fósforo)",
+      "descripcion": "Tu cuerpo fabrica y consume, cada día, aproximadamente su propio peso en ATP. 🔋 Y el ATP lleva tres átomos de fósforo: es la moneda con la que pagas cada latido, cada paso y cada pensamiento. No la almacenas: la fabricas y la gastas miles de veces al día. Lo que ves es la densidad electrónica del fósforo, resuelta con física cuántica real (SCF, def2-tzvp), orbital por orbital. Mira sus tres pétalos: tres electrones solos, cada uno listo para amarrar.",
+      "hashtags": [
+        "#átomo",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible",
+        "#fósforo"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque el número es absurdo y es verdad: hoy gastaste tu propio peso en una molécula",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada: el sujeto del gancho y del payoff es el cuerpo de quien ve."
+    }
+  },
+  "ritmo": {
+    "brazo": "A",
+    "cortes_por_min": 18.24,
+    "nota_brazo": "la escena de átomos no usa CAMERA_SHOTS: el \"corte\" es el cambio de cámara por orbital (9 orbitales en 29.6s). Se DECLARA a mano como exige ritmo-pieza.py. VEL 1.10 se conserva del cromo: el VEREDICTO A/B midió el ritmo en piezas narrativas de 55-75 s, no en este formato."
+  }
+}
