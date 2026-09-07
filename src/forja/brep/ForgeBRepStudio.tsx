@@ -52,6 +52,7 @@ import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, PALETA_FOCO, type CotaSet } from './MoldCotas3D';
 import { medidasDeLaPieza } from '../mold/foco-medidas';   // U3 · EL FOCO: el plano, encima de la pieza
 import { lentesDelFoco, type LentesFoco, type LenteId } from '../mold/foco-lentes';   // U10 · EL FOCO: el ANÁLISIS, encima de la pieza
+import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
@@ -2857,6 +2858,32 @@ function GenerativeSurface({ result, threshold }: { result: TopOptResult; thresh
   );
 }
 
+// T7 · LA LÍNEA DE PARTICIÓN, sobre la pieza (2026-09-04). Los lazos de `partingLoops`
+// (cerrados, en coords de la malla) se dibujan como segmentos brillantes que IGNORAN
+// profundidad (depthTest false + renderOrder alto): la línea se ve aunque la pieza sea
+// translúcida y quede por delante. Va DENTRO del grupo de la pieza, así hereda su rotación.
+function PartingLine3D({ loops }: { loops: PartingLoop[] }) {
+  const geo = useMemo(() => {
+    const segs: number[] = [];
+    for (const l of loops) {
+      const n = l.pts.length;
+      for (let i = 0; i < n; i++) {
+        const a = l.pts[i], b = l.pts[(i + 1) % n];   // cierra último→primero
+        segs.push(a[0], a[1], a[2], b[0], b[1], b[2]);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(segs, 3));
+    return g;
+  }, [loops]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  return (
+    <lineSegments geometry={geo} renderOrder={12}>
+      <lineBasicMaterial color="#ff5a3c" transparent opacity={0.98} depthTest={false} toneMapped={false} />
+    </lineSegments>
+  );
+}
+
 function ProfileGhost({ pts }: { pts: Pt2[] }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -3557,6 +3584,8 @@ export default function ForgeBRepStudio() {
   // lecturas; la activa entra por el canal `feaColors` que el SolidMesh YA pinta
   // con `toneMapped:false` — o sea que el colormap sale como DATO, no maquillado.
   const [lenteId, setLenteId] = useState<LenteId | 'medidas'>('medidas');
+  // T7 · PARTIR (2026-09-04): modo aparte de las lentes — no es un campo, es UNA línea.
+  const [particionOn, setParticion] = useState(false);
   const [lentes, setLentes] = useState<LentesFoco | null>(null);
   const [lentesBusy, setLentesBusy] = useState(false);
   const [lentesErr, setLentesErr] = useState('');
@@ -3591,6 +3620,37 @@ export default function ForgeBRepStudio() {
    * del Foco (atenuar, no agregar).
    */
   /** X5 · LA LÁMINA: el dictamen se LLAMA, no vive fijo en una columna. */
+  // T7 · la línea de partición SALE de la malla (pull +Z, el eje del motor). `partingLoops`
+  // ya existe y se usa en el ciclo del dado; aquí se llama sobre la PIEZA soltada y se dibuja
+  // encima, en sus MISMAS coordenadas (como las cotas). Barato (~malla), se memoiza por pieza.
+  const particion = useMemo(() => {
+    if (!piezaMalla) return null;
+    try {
+      const m = piezaMalla.mesh as unknown as { positions: Float32Array | number[]; indices: Uint32Array | number[] };
+      const { loops, warnings } = partingLoops({ positions: m.positions, indices: m.indices });
+      // rango en el eje de apertura (+Z): la línea de partición REAL es ~horizontal (el borde
+      // de la carcasa), su z-span es chico; las costuras de pared vertical abarcan toda la altura.
+      let zLo = Infinity, zHi = -Infinity;
+      for (let k = 2; k < m.positions.length; k += 3) { const z = m.positions[k]; if (z < zLo) zLo = z; if (z > zHi) zHi = z; }
+      const zRange = Math.max(1e-6, zHi - zLo);
+      const perimDe = (l: PartingLoop) => {
+        let p = 0;
+        for (let i = 0; i < l.pts.length; i++) {
+          const a = l.pts[i], b = l.pts[(i + 1) % l.pts.length];
+          p += Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+        }
+        return p;
+      };
+      // Dos filtros: (1) perímetro ≥ 8 mm (mata el picoteo numérico); (2) z-span < 40% de la
+      // altura (mata las costuras verticales de pared, que la clasificación por signo de n_z
+      // inventa donde n·pull≈0). Queda el borde y los aros de features planos (barrenos, postes).
+      const sig = loops.map((l) => ({ l, p: perimDe(l), span: l.zMax - l.zMin }))
+        .filter((x) => x.p >= 8 && x.span < 0.40 * zRange)
+        .sort((a, b) => b.p - a.p);
+      const perim = sig.reduce((s, x) => s + x.p, 0);
+      return { loops: sig.map((x) => x.l), total: loops.length, perim, warnings };
+    } catch { return null; }
+  }, [piezaMalla]);
   const [laminaOn, setLaminaOn] = useState(false);
   /** X6 · LA LÁMINA VIVA: los conteos tiñen la pantalla y marcan su ritmo. */
   const [dictamen, setDictamen] = useState<{ viola: number; advierte: number; cumple: number } | null>(null);
@@ -6446,6 +6506,10 @@ export default function ForgeBRepStudio() {
                     <CotaDriver sets={focoCotas} refs={focoRefs} />
                   </>
                 )}
+                {/* T7 · PARTIR: la línea de partición sobre la carcasa, calculada de la malla */}
+                {particionOn && particion && particion.loops.length > 0 && (
+                  <PartingLine3D loops={particion.loops} />
+                )}
               </>
             ) : moldParts.length ? (
               // MOLDE EN VIVO: cada PLACA es un componente separado (aislar/ocultar/
@@ -6731,6 +6795,15 @@ export default function ForgeBRepStudio() {
                     }}>{txt}</button>
                 );
               })}
+              {/* T7 · PARTIR — no es una lente (campo), es UNA línea. Color acero para separarla
+                  del cian (medido) y el magenta (simulado) de las lentes. */}
+              <button data-testid="parte-lente-particion"
+                onClick={() => { setFocoOn(true); setParticion((v) => !v); }}
+                style={{
+                  cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
+                  font: `${particionOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
+                  color: particionOn ? '#ff8a5c' : '#6f8095', borderBottom: `2px solid ${particionOn ? '#ff8a5c' : 'transparent'}`,
+                }}>PARTIR</button>
               {lenteActiva && (
                 <div data-testid="parte-leyenda" style={{ display: 'flex', alignItems: 'center', gap: 9, marginLeft: 6, flexWrap: 'wrap' }}>
                   {lenteActiva.paradas.map((p, i) => (
@@ -6742,6 +6815,18 @@ export default function ForgeBRepStudio() {
                       <span style={{ opacity: 0.55 }}>{p.etiqueta}</span>
                     </span>
                   ))}
+                </div>
+              )}
+              {/* T7 · la leyenda de PARTIR ES el testid que el runner verifica: sin línea, no hay paso 5 */}
+              {particionOn && particion && (
+                <div data-testid="linea-particion" style={{ display: 'flex', alignItems: 'center', gap: 7, marginLeft: 6, fontSize: 9.5, color: '#9fb0c4' }}>
+                  <span style={{ width: 16, height: 3, borderRadius: 2, background: '#ff5a3c' }} />
+                  <b style={{ color: '#ffd0c0' }}>línea de partición</b>
+                  <span style={{ opacity: 0.7 }}>
+                    {particion.loops.length === 0 ? 'no cierra sobre esta malla' :
+                     `${particion.loops.length} lazo${particion.loops.length > 1 ? 's' : ''} · ${particion.perim.toFixed(0)} mm · pull +Z`}
+                    {particion.total > particion.loops.length ? ` (de ${particion.total}; se filtró el ruido de pared)` : ''}
+                  </span>
                 </div>
               )}
               {lentesBusy && <span style={{ fontSize: 10, color: '#bfeeff', opacity: 0.85 }}>⏳ midiendo el campo…</span>}

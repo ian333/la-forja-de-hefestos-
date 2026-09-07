@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-07 16:33",
+ "generado": "2026-09-07 16:50",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -10,7 +10,7 @@
   "proximo": 7,
   "enCurso": 0,
   "imprevisto": 0,
-  "supertickets": 9,
+  "supertickets": 10,
   "cerrado": 79,
   "probado": 0,
   "porProbar": 44,
@@ -1301,6 +1301,110 @@
     "cierre": "",
     "cierreCompleto": "",
     "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-07-el-paso-5-existe.md",
+    "slug": "2026-09-07-el-paso-5-existe",
+    "titulo": "EL PASO 5 EXISTE — PARTIR sobre la pieza soltada, la línea de partición desde la malla",
+    "fecha": "2026-09-07",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "partir-gesto",
+      "titulo": "Hay puerta para partir en la pantalla del Foco",
+      "herramientas": "pestaña parte-lente-particion",
+      "oraculo": "junto a MEDIDAS/PARED/ENFRIAMIENTO/LLENADO, color acero (ni cian medido ni magenta simulado): PARTIR no es un campo, es UNA línea",
+      "estado": "verde",
+      "checks": "pestaña PARTIR (`parte-lente-particion`) en EL PARTE, color acero #ff8a5c; toggle independiente de las lentes (setParticion)",
+      "video": "",
+      "still": "paso-5-partir.png",
+      "nota": "PARTIR no es lente: no pinta campo, dibuja una línea"
+     },
+     {
+      "id": "partir-linea",
+      "titulo": "La línea cae sobre el borde de la carcasa",
+      "herramientas": "PartingLine3D dentro del grupo de la pieza",
+      "oraculo": "mismas coordenadas que las cotas; depthTest off para verse a través de la pieza translúcida; el 1594C Box da 1 lazo de 340 mm = el perímetro del borde (2×(106.5+66) ≈ 345)",
+      "estado": "verde",
+      "checks": "`PartingLine3D` (lineSegments, depthTest off, renderOrder 12) dentro del grupo rotado de la pieza, en coords de piezaMalla.mesh — las mismas de las cotas. 1594C Box: 1 lazo · 340 mm ≈ perímetro del borde 2×(106.5+66)=345 mm",
+      "video": "",
+      "still": "paso-5-partir.png",
+      "nota": "juzgado con ojos: la línea sigue el borde superior completo, sin desfase respecto a la pieza"
+     },
+     {
+      "id": "partir-ruido",
+      "titulo": "El ruido de pared se filtra, y se DECLARA",
+      "herramientas": "dos filtros",
+      "oraculo": "partingLoops crudo dio 208 lazos (las paredes verticales, n·pull≈0, hacen parpadear el signo de n_z); perímetro ≥ 8 mm mata el picoteo y z-span < 40 % de la altura mata las costuras verticales de esquinas y postes; la leyenda dice «de 208; se filtró el ruido de pared»",
+      "estado": "verde",
+      "checks": "crudo: 208 lazos · 795 mm con costuras verticales por paredes y postes (n·pull≈0 → signo de n_z parpadea). Filtro 1 perímetro ≥ 8 mm → 7 lazos (quedaban 4 esquinas + 2 postes). Filtro 2 z-span < 40 % altura → 1 lazo. La leyenda declara «de 208; se filtró el ruido de pared»",
+      "video": "",
+      "still": "paso-5-antes-del-filtro.png",
+      "nota": "tres iteraciones con captura cada una: 208 → 7 → 1; el número solo no bastaba, había que VER las costuras"
+     },
+     {
+      "id": "partir-testid",
+      "titulo": "El runner lo mide, no lo cree",
+      "herramientas": "linea-particion",
+      "oraculo": "la leyenda ES el testid; el gesto del paso 5 en el camino es Escape (cierra el dictamen del paso 4, que tapaba la pestaña) + tclick PARTIR — sin el Escape el arnés abortaba en el paso 5 y 6-8 quedaban «sin medir»",
+      "estado": "verde",
+      "checks": "leyenda `linea-particion` visible con PARTIR activo; gesto del paso 5 = Escape + tclick (el dictamen del paso 4 tapaba la pestaña: sin Escape, ABORTED_AT_step_13 y 5-8 «sin medir»)",
+      "video": "",
+      "still": "",
+      "nota": "el arnés abortando fue el hallazgo: un gesto que asume la pantalla limpia miente cuando el paso anterior dejó algo abierto"
+     },
+     {
+      "id": "paso-5-verde",
+      "titulo": "El camino mide 5/8 y el muro se mueve · runner contra dev en iangpu · 5/8 ok",
+      "herramientas": "se rompe en el paso 6 (EL MOLDE, decía bloqueado y ahora es el primero que falla)",
+      "oraculo": "63 s; lo oficial contra producción cuando el cron despliegue",
+      "estado": "verde",
+      "checks": "runner completo contra http://localhost:5192 (dev en iangpu, GPU): 5/8 ok · se rompe en el paso 6 · 63 s. Paso 5 OK (decía falla); paso 6 EL MOLDE pasa de bloqueado a FALLA (es el nuevo muro); 8 parcial",
+      "video": "",
+      "still": "",
+      "nota": "medición oficial contra producción pendiente del deploy por cron (acuerdo con la otra sesión: sin FORZAR)"
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror en el drive; el dictamen sigue diciendo «SIN CABLEAR» en V4.3 — eso es T7 part-en-la-lamina y NO se toca aquí (se declara)",
+      "estado": "verde",
+      "checks": "cero pageerror en el drive; censo Canvas 8→8 (la línea vive en el Canvas existente); orden-gate se corre al cerrar. V4.3 del dictamen sigue «SIN CABLEAR» a propósito: es T7 part-en-la-lamina",
+      "video": "",
+      "still": "",
+      "nota": "el aviso de React «shorthand/non-shorthand style» sale en dev y es del patrón preexistente de los botones (border:0 + borderBottom), no de esta orden"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian (2026-09-04, viendo el video del camino): «entiendo que se parte en el 5 :D realmente ahí va la línea de partición? si es así arreglemos eso». El paso 5 del camino decía «HOY NO EXISTE» por dos razones: no había GESTO para partir en la…",
+    "toca": 4,
+    "crea": 4,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "captura del Foco con PARTIR activo: UN lazo naranja sobre el borde de la carcasa, leyenda «1 lazo · 340 mm · pull +Z (de 208; se filtró el ruido de pared)»",
+     "captura ANTES del filtro (208 lazos, costuras verticales) como testigo de por qué se filtra",
+     "runner completo contra el dev de iangpu: 5/8 · se rompe en el 6; cero abortos del arnés",
+     "orden-gate VERDE · censo Canvas 8→8"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [
+     "evidencia/2026-09-07-el-paso-5-existe/paso-5-antes-del-filtro.png",
+     "evidencia/2026-09-07-el-paso-5-existe/paso-5-partir.png"
+    ],
     "revisable": false,
     "probado": "",
     "falla": "",
@@ -5815,14 +5919,14 @@
      "n": 5,
      "gesto": "PARTIR",
      "seVe": "la línea de partición sobre la carcasa",
-     "estado": "falla",
+     "estado": "ok",
      "ticket": "2026-08-28-t7-linea-de-particion"
     },
     {
      "n": 6,
      "gesto": "EL MOLDE",
      "seVe": "placas, colada, agua, expulsores sobre ESA pieza",
-     "estado": "bloqueado",
+     "estado": "falla",
      "ticket": "2026-08-28-t6-piezas-complejas"
     },
     {
@@ -5840,13 +5944,13 @@
      "ticket": "2026-08-28-t5-expediente-que-se-ve"
     }
    ],
-   "verdes": 4,
+   "verdes": 5,
    "total": 8,
-   "rompeEn": 5,
+   "rompeEn": 6,
    "medido": {
-    "fecha": "2026-09-04 20:11",
-    "url": "https://university.gaiaprime.com.mx/forja-brep.html",
-    "servido": "6026a20",
+    "fecha": "2026-09-07 16:46",
+    "url": "http://localhost:5192/forja-brep.html",
+    "servido": "6f70032",
     "maquina": "iangpu"
    }
   }

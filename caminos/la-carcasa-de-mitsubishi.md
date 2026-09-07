@@ -10,8 +10,8 @@ NOTA: el ingeniero diseñó moldeable (draft, sin undercuts). Los mecanismos son
 - 2 · soltar el STEP en cualquier parte · carga, el Foco se prende solo, 3 cotas sobre la pieza · ok · 2026-09-01-x4-el-happy-path
 - 3 · ENFRIAMIENTO · el campo pintado en ≤2.5 s y LA FICHA sobre el punto que manda el ciclo · ok · 2026-08-30-u10-el-foco-es-el-analisis
 - 4 · D → EL DICTAMEN · qué viola, qué cambiar, teñido por el estado · ok · 2026-09-02-x6-la-lamina-viva
-- 5 · PARTIR · la línea de partición sobre la carcasa · falla · 2026-08-28-t7-linea-de-particion
-- 6 · EL MOLDE · placas, colada, agua, expulsores sobre ESA pieza · bloqueado · 2026-08-28-t6-piezas-complejas
+- 5 · PARTIR · la línea de partición sobre la carcasa · ok · 2026-08-28-t7-linea-de-particion
+- 6 · EL MOLDE · placas, colada, agua, expulsores sobre ESA pieza · falla · 2026-08-28-t6-piezas-complejas
 - 7 · LOS PLANOS · el juego de planos del molde · bloqueado · 2026-08-28-t7-linea-de-particion
 - 8 · EL EXPEDIENTE · dictamen + planos + cotización en un archivo (y el video, después) · parcial · 2026-08-28-t5-expediente-que-se-ve
 
@@ -31,11 +31,11 @@ CONTRATO para los tickets que deben pasos rojos: T7 expone `linea-particion` sob
 - 2 · [{"type":"drop","file":"test-parts/inyeccion-reales/1594C Box.stp","settle":0}] · testid:el-parte-foco@90000 · count:[data-testid="foco-cotas-overlay"] [data-testid^="cota-"]>=3
 - 3 · [{"type":"tclick","testid":"parte-lente-enfriamiento","settle":0}] · testid:parte-leyenda@60000 · js:(function(){var v=parseFloat((document.querySelector('[data-testid="el-parte-foco"]').textContent.match(/vóxeles\s·\s([\d.]+) s/)||[])[1]);return v<=2.5&&(v+' s declarados por el módulo')})() · testid:ficha-en-el-mundo
 - 4 · [{"type":"key","key":"d","settle":700}] · testid:lamina-dictamen · js:!!document.querySelector('[data-testid="lamina-dictamen"]').dataset.tinte
-- 5 · [{"type":"key","key":"Escape","settle":600}] · testid:linea-particion@3000
+- 5 · [{"type":"key","key":"Escape","settle":500},{"type":"tclick","testid":"parte-lente-particion","settle":900}] · testid:linea-particion@5000
 - 6 · [] · testid:molde-de-la-pieza@3000
 - 7 · [] · testid:planos-del-molde@3000
 - 8 · [{"type":"key","key":"d","settle":700}] · testid:lamina-dictamen · testid:expediente-de-la-pieza@3000
 
 ## MEDIDO
 - 20 Hammond reales (v1-gate): importan 20/20 · cotizan 17/20 · parten 2/20. El paso 5 es el muro; 6 y 7 existen y funcionan en el dado, pero dependen de 5.
-- runner · 2026-09-04 20:11 UTC · https://university.gaiaprime.com.mx/forja-brep.html · servido 6026a20 · iangpu · 4/8 ok · se rompe en el paso 5 · 1:2/2 2:2/2 3:3/3 4:2/2 5:0/1 6:0/1 7:0/1 8:1/2
+- runner · 2026-09-07 16:46 UTC · http://localhost:5192/forja-brep.html · servido 6f70032 · iangpu · 5/8 ok · se rompe en el paso 6 · 1:2/2 2:2/2 3:3/3 4:2/2 5:1/1 6:0/1 7:0/1 8:1/2
