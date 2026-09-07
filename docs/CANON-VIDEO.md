@@ -522,6 +522,62 @@ datos de horarios de publicación 2026 (9.6M posts).
 
 ---
 
+## ⚖️ EL VEREDICTO A/B — el brazo B PERDIÓ, y el compartir no vive en la velocidad (2026-09-07)
+
+Primer experimento controlado de la casa. Dos cortes de **la misma pieza** (EL REY, LOS DOS
+CAMPOS): mismo bin, mismo guion palabra por palabra, mismo copy, misma hora de publicación
+(18:45 CDMX). Lo ÚNICO que cambió fue el tratamiento de ritmo.
+
+| | brazo A (09-01) | brazo B (09-04) |
+|---|---|---|
+| tomas · cortes/min | 9 · 6.4 | 21 · 18.75 |
+| sílabas/s · VEL | 4.01 · 1.00 | 5.01 · 1.25 |
+| duración | 75 s | 64 s |
+| edad al medir | 6 días | 3 días |
+| vistas | 2,093 | 2,175 |
+| **compartidos por mil** | **4.8** | **1.4** |
+| guardados por mil | 14.8 | 8.3 |
+| skip a 3 s | 49.6 % | 50.5 % |
+| segundos vistos / duración | 19.7 / 75 = 26 % | 16.7 / 64 = 26 % |
+
+**Triplicar los cortes y acelerar la voz un 25 % no movió la retención (26 % en los dos) y
+hundió el compartir 3.4 veces.** Y el resultado es aún más duro de lo que se lee: B es tres días
+MÁS JOVEN, o sea que juega con ventaja (las vistas tempranas vienen del público caliente, que
+comparte más) y aun así pierde. La banda de 20-40 cortes/min que traíamos de afuera es de otro
+producto: aquí el espectador no está contando cortes, está entendiendo algo que le importa.
+
+**REGLA:** el ritmo se queda en brazo A (6-9 cortes/min, VEL 1.0). No se vuelve a gastar una
+pieza en subirlo. Si alguien quiere reabrirlo, que sea con la perilla al REVÉS (menos cortes,
+más aire), que es la dirección que este dato no explora.
+
+### Dónde SÍ está el compartir: el espectador es el sujeto
+
+Las tres piezas de marco REVELACIÓN del 09-05 al 09-07 contra las demás (compartidos por mil):
+
+| pieza | día | c/mil | de qué habla |
+|---|---|---|---|
+| ERES TÚ | 2 | **10.9** | *seis de cada diez partes de TU cuerpo* |
+| TE ROBA EL AGUA | 1 | **10.7** | *por eso, después del gel, sientes TUS manos resecas* |
+| LOS DOS CAMPOS (A) | 6 | 4.8 | el campo + y el campo − |
+| EL ALCOHOL | 7 | 3.1 | por qué se mezcla |
+| LA SILLA | 10 | 3.0 | por qué flota el hielo |
+| DE QUIÉN SON | 5 | 2.9 | de quién son los electrones |
+| OSTROM | 10 | 0.6 | la tragedia que no fue |
+
+⚠ **Sesgo declarado:** las dos de arriba tienen 1-2 días y las de abajo 5-10. El compartir por
+mil CAE con la edad (las vistas tardías vienen de público frío). Por eso se creó
+`scripts/historia-metricas.py` → `public/comando/historia.json`: congela la foto de cada día
+para poder comparar A EDAD PAREJA. **El veredicto A/B de arriba NO tiene ese problema** (B es el
+joven y aun así pierde); el de esta tabla hay que releerlo el 09-11 con las dos piezas al día 6.
+
+Lo que la tabla insinúa y hay que probar: **no basta el marco «revelación» — DE QUIÉN SON también
+lo es y comparte como una explicación.** La diferencia de las dos de arriba es que el sujeto del
+video es el CUERPO DE QUIEN LO VE (tu cuerpo, tus manos), no la molécula. Eso cuadra con
+§LA NEUROLOGÍA DEL CHISME: se comparte lo que dice algo de UNO. Próxima perilla a mover: la
+IDENTIDAD en segunda persona, no la velocidad.
+
+---
+
 ## 🧠 LA NEUROLOGÍA DEL CHISME — quién decide compartir, el cerebro rápido o el lento (2026-09-02)
 
 ian: *"investiguemos el chisme neurológicamente, debe haber una relación cerebro lento /

@@ -1,0 +1,598 @@
+{
+ "mol-h2o-la-sal": {
+  "yt": {
+   "fecha": "2026-08-28",
+   "id": "IcQmByHafE0",
+   "url": "https://youtu.be/IcQmByHafE0",
+   "publico": {
+    "viewCount": "728",
+    "likeCount": "41",
+    "dislikeCount": "0",
+    "favoriteCount": "0",
+    "commentCount": "1"
+   },
+   "views": 27,
+   "estimatedMinutesWatched": 15,
+   "averageViewDuration": 56,
+   "averageViewPercentage": 72.14,
+   "likes": 1,
+   "comments": 0,
+   "shares": 0,
+   "subscribersGained": 0,
+   "retencion": [
+    [
+     0.01,
+     1.375
+    ],
+    [
+     0.02,
+     1.375
+    ],
+    [
+     0.03,
+     1.375
+    ],
+    [
+     0.04,
+     1.3125
+    ],
+    [
+     0.05,
+     1.3125
+    ],
+    [
+     0.06,
+     1.3125
+    ],
+    [
+     0.07,
+     1.125
+    ],
+    [
+     0.08,
+     1.125
+    ],
+    [
+     0.09,
+     1.125
+    ],
+    [
+     0.1,
+     1.125
+    ],
+    [
+     0.11,
+     1.125
+    ],
+    [
+     0.12,
+     1.0625
+    ],
+    [
+     0.13,
+     1.0625
+    ],
+    [
+     0.14,
+     1
+    ],
+    [
+     0.15,
+     1
+    ],
+    [
+     0.16,
+     1
+    ],
+    [
+     0.17,
+     1
+    ],
+    [
+     0.18,
+     1
+    ],
+    [
+     0.19,
+     0.9375
+    ],
+    [
+     0.2,
+     0.9375
+    ],
+    [
+     0.21,
+     0.9375
+    ],
+    [
+     0.22,
+     0.875
+    ],
+    [
+     0.23,
+     0.875
+    ],
+    [
+     0.24,
+     0.875
+    ],
+    [
+     0.25,
+     0.875
+    ],
+    [
+     0.26,
+     0.875
+    ],
+    [
+     0.27,
+     0.875
+    ],
+    [
+     0.28,
+     0.875
+    ],
+    [
+     0.29,
+     0.8125
+    ],
+    [
+     0.3,
+     0.8125
+    ],
+    [
+     0.31,
+     0.8125
+    ],
+    [
+     0.32,
+     0.8125
+    ],
+    [
+     0.33,
+     0.8125
+    ],
+    [
+     0.34,
+     0.8125
+    ],
+    [
+     0.35,
+     0.8125
+    ],
+    [
+     0.36,
+     0.8125
+    ],
+    [
+     0.37,
+     0.8125
+    ],
+    [
+     0.38,
+     0.8125
+    ],
+    [
+     0.39,
+     0.8125
+    ],
+    [
+     0.4,
+     0.8125
+    ],
+    [
+     0.41,
+     0.8125
+    ],
+    [
+     0.42,
+     0.8125
+    ],
+    [
+     0.43,
+     0.8125
+    ],
+    [
+     0.44,
+     0.75
+    ],
+    [
+     0.45,
+     0.75
+    ],
+    [
+     0.46,
+     0.75
+    ],
+    [
+     0.47,
+     0.75
+    ],
+    [
+     0.48,
+     0.75
+    ],
+    [
+     0.49,
+     0.6875
+    ],
+    [
+     0.5,
+     0.6875
+    ],
+    [
+     0.51,
+     0.6875
+    ],
+    [
+     0.52,
+     0.6875
+    ],
+    [
+     0.53,
+     0.6875
+    ],
+    [
+     0.54,
+     0.6875
+    ],
+    [
+     0.55,
+     0.6875
+    ],
+    [
+     0.56,
+     0.6875
+    ],
+    [
+     0.57,
+     0.6875
+    ],
+    [
+     0.58,
+     0.6875
+    ],
+    [
+     0.59,
+     0.6875
+    ],
+    [
+     0.6,
+     0.6875
+    ],
+    [
+     0.61,
+     0.6875
+    ],
+    [
+     0.62,
+     0.625
+    ],
+    [
+     0.63,
+     0.625
+    ],
+    [
+     0.64,
+     0.625
+    ],
+    [
+     0.65,
+     0.5625
+    ],
+    [
+     0.66,
+     0.5625
+    ],
+    [
+     0.67,
+     0.5625
+    ],
+    [
+     0.68,
+     0.5625
+    ],
+    [
+     0.69,
+     0.5625
+    ],
+    [
+     0.7,
+     0.5625
+    ],
+    [
+     0.71,
+     0.5625
+    ],
+    [
+     0.72,
+     0.5625
+    ],
+    [
+     0.73,
+     0.5625
+    ],
+    [
+     0.74,
+     0.5625
+    ],
+    [
+     0.75,
+     0.5
+    ],
+    [
+     0.76,
+     0.4375
+    ],
+    [
+     0.77,
+     0.4375
+    ],
+    [
+     0.78,
+     0.4375
+    ],
+    [
+     0.79,
+     0.4375
+    ],
+    [
+     0.8,
+     0.4375
+    ],
+    [
+     0.81,
+     0.4375
+    ],
+    [
+     0.82,
+     0.4375
+    ],
+    [
+     0.83,
+     0.4375
+    ],
+    [
+     0.84,
+     0.4375
+    ],
+    [
+     0.85,
+     0.4375
+    ],
+    [
+     0.86,
+     0.4375
+    ],
+    [
+     0.87,
+     0.4375
+    ],
+    [
+     0.88,
+     0.4375
+    ],
+    [
+     0.89,
+     0.4375
+    ],
+    [
+     0.9,
+     0.4375
+    ],
+    [
+     0.91,
+     0.4375
+    ],
+    [
+     0.92,
+     0.4375
+    ],
+    [
+     0.93,
+     0.4375
+    ],
+    [
+     0.94,
+     0.4375
+    ],
+    [
+     0.95,
+     0.4375
+    ],
+    [
+     0.96,
+     0.4375
+    ],
+    [
+     0.97,
+     0.4375
+    ],
+    [
+     0.98,
+     0.375
+    ],
+    [
+     0.99,
+     0.375
+    ],
+    [
+     1,
+     0.375
+    ]
+   ]
+  }
+ },
+ "mol-h2o-la-silla": {
+  "yt": {
+   "fecha": "2026-08-28",
+   "id": "9QpQJ5mcuYg",
+   "url": "https://youtu.be/9QpQJ5mcuYg",
+   "publico": {
+    "viewCount": "11",
+    "likeCount": "0",
+    "dislikeCount": "0",
+    "favoriteCount": "0",
+    "commentCount": "0"
+   },
+   "views": 0,
+   "estimatedMinutesWatched": 0,
+   "averageViewDuration": 0,
+   "averageViewPercentage": 0,
+   "likes": 0,
+   "comments": 0,
+   "shares": 0,
+   "subscribersGained": 0,
+   "retencion": []
+  },
+  "ig": {
+   "fecha": "2026-09-07",
+   "id": "18147040033550977",
+   "url": "https://www.instagram.com/reel/Dcl3S1Ugnfu/",
+   "views": 2978,
+   "reach": 2258,
+   "likes": 173,
+   "comments": 3,
+   "shares": 9,
+   "saved": 38,
+   "total_interactions": 231,
+   "ig_reels_avg_watch_time": 17016,
+   "ig_reels_video_view_total_time": 40091189,
+   "reels_skip_rate": 52.5,
+   "n_comentarios": 0
+  }
+ },
+ "_cuenta_ig": {
+  "followers_count": 7042,
+  "media_count": 84,
+  "username": "gaiaprime_mx",
+  "id": "28409091825391142",
+  "fecha": "2026-09-07"
+ },
+ "econ-ostrom": {
+  "ig": {
+   "fecha": "2026-09-07",
+   "id": "18127350592690555",
+   "url": "https://www.instagram.com/reel/Dcmd1EmDBZN/",
+   "views": 1557,
+   "reach": 1231,
+   "likes": 54,
+   "comments": 1,
+   "shares": 1,
+   "saved": 10,
+   "total_interactions": 70,
+   "ig_reels_avg_watch_time": 16421,
+   "ig_reels_video_view_total_time": 20247155,
+   "reels_skip_rate": 42.8,
+   "n_comentarios": 0
+  }
+ },
+ "mol-etoh-de-quien-son": {
+  "ig": {
+   "fecha": "2026-09-07",
+   "id": "18147522199541985",
+   "url": "https://www.instagram.com/reel/DczsqrtCFF-/",
+   "views": 1726,
+   "reach": 1273,
+   "likes": 123,
+   "comments": 1,
+   "shares": 5,
+   "saved": 21,
+   "total_interactions": 156,
+   "ig_reels_avg_watch_time": 21055,
+   "ig_reels_video_view_total_time": 28067138,
+   "reels_skip_rate": 49.2,
+   "n_comentarios": 0
+  }
+ },
+ "mol-etoh-el-alcohol": {
+  "ig": {
+   "fecha": "2026-09-07",
+   "id": "17904402600508591",
+   "url": "https://www.instagram.com/reel/DcuKMnHHYhs/",
+   "views": 1917,
+   "reach": 1440,
+   "likes": 110,
+   "comments": 0,
+   "shares": 6,
+   "saved": 19,
+   "total_interactions": 146,
+   "ig_reels_avg_watch_time": 26246,
+   "ig_reels_video_view_total_time": 39290989,
+   "reels_skip_rate": 50.3,
+   "n_comentarios": 0
+  }
+ },
+ "mol-etoh-te-roba-el-agua": {
+  "ig": {
+   "fecha": "2026-09-07",
+   "id": "18115902118758099",
+   "url": "https://www.instagram.com/reel/Dc92xuDlZ85/",
+   "views": 1865,
+   "reach": 1556,
+   "likes": 125,
+   "comments": 0,
+   "shares": 20,
+   "saved": 26,
+   "total_interactions": 179,
+   "ig_reels_avg_watch_time": 14672,
+   "ig_reels_video_view_total_time": 22933208,
+   "reels_skip_rate": 50.2,
+   "n_comentarios": 0
+  }
+ },
+ "mol-h2o-eres-tu": {
+  "ig": {
+   "fecha": "2026-09-07",
+   "id": "17922690456206101",
+   "url": "https://www.instagram.com/reel/Dc7R5CAkaQ4/",
+   "views": 3493,
+   "reach": 2788,
+   "likes": 269,
+   "comments": 4,
+   "shares": 38,
+   "saved": 46,
+   "total_interactions": 376,
+   "ig_reels_avg_watch_time": 16294,
+   "ig_reels_video_view_total_time": 46342543,
+   "reels_skip_rate": 50.7,
+   "n_comentarios": 0
+  }
+ },
+ "mol-h2o-los-dos-campos-b": {
+  "ig": {
+   "fecha": "2026-09-07",
+   "id": "18108857804125698",
+   "url": "https://www.instagram.com/reel/Dc4tJzVkwtI/",
+   "views": 2175,
+   "reach": 1744,
+   "likes": 115,
+   "comments": 2,
+   "shares": 3,
+   "saved": 18,
+   "total_interactions": 151,
+   "ig_reels_avg_watch_time": 16726,
+   "ig_reels_video_view_total_time": 29404420,
+   "reels_skip_rate": 50.5,
+   "n_comentarios": 0
+  }
+ },
+ "mol-h2o-los-dos-campos": {
+  "ig": {
+   "fecha": "2026-09-07",
+   "id": "18108337694150394",
+   "url": "https://www.instagram.com/reel/DcwsHmBkZhe/",
+   "views": 2093,
+   "reach": 1639,
+   "likes": 127,
+   "comments": 1,
+   "shares": 10,
+   "saved": 31,
+   "total_interactions": 176,
+   "ig_reels_avg_watch_time": 19661,
+   "ig_reels_video_view_total_time": 32716554,
+   "reels_skip_rate": 49.6,
+   "n_comentarios": 0
+  }
+ }
+}

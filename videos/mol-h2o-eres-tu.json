@@ -85,18 +85,25 @@
       "yt": {
         "id": "yMqDoztHcrA",
         "url": "https://youtu.be/yMqDoztHcrA",
-        "privacidad": "private",
+        "privacidad": "public",
         "publishAt": "2026-09-05T18:45:00-06:00",
         "captions": "AUieDab9Obzpo5lu-TEcbqhS_5PO5heaklGcLvLqfe7hge45hj_guwDrhg",
-        "fecha": "2026-09-04T15:58"
+        "fecha": "2026-09-04T15:58",
+        "publico_desde": "2026-09-05T18:45:00-06:00"
       },
       "yt16x9": {
         "id": "ojNz0-enbyE",
         "url": "https://youtu.be/ojNz0-enbyE",
-        "privacidad": "private",
+        "privacidad": "public",
         "publishAt": "2026-09-05T18:45:00-06:00",
         "captions": "AUieDaaY4hT7q0WE3dlwnC5H0wgkNWqtkyiDcUaQ0GzK51a_LZKFwMsNjw",
-        "fecha": "2026-09-04T15:59"
+        "fecha": "2026-09-04T15:59",
+        "publico_desde": "2026-09-05T18:45:00-06:00"
+      },
+      "ig": {
+        "id": "17922690456206101",
+        "url": "https://www.instagram.com/reel/Dc7R5CAkaQ4/",
+        "fecha": "2026-09-07T10:28"
       }
     },
     "programar": "2026-09-05T18:45:00-06:00",

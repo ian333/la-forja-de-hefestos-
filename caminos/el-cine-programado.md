@@ -11,9 +11,9 @@ NOTA: la hora sale de la telemetría propia (public/comando/horarios.json): 43 %
 - 3 · ARMAR (`video.sh <id> programar` en iangpu): biblioteca+catálogo, YouTube 9:16 y 16:9 subidos PRIVADOS con publishAt, reel hospedado y verificado por HEAD, entrada en la cola de PRIME con el token fresco · `publicar.subidas.yt.publishAt`, `publicar.reel_url`, `cola.json` en PRIME · parcial · 2026-09-04-el-cine-programado
 - 4 · A LA HORA (PRIME, `cola-publicar.py tick` por cron): contenedor por URL → FINISHED → media_publish → permalink · `hecho/<id>.json` en PRIME con la URL del reel; YouTube se hace público solo · parcial · 2026-09-04-el-cine-programado
 - 5 · COSECHAR (`video.sh <id> cosechar`): el permalink entra al manifiesto y el día pasa a hecho · `publicar.subidas.ig` registrado; la tira CINE muestra ● publicado sin «falta» · parcial · 2026-09-04-el-cine-programado
-- 6 · A LAS 48 H: métricas (`metricas-instagram.py`, `metricas-youtube.py` por cron en iangpu) · skip3s, seg_vistos, c_por_mil, g_por_mil por pieza en metricas.json · parcial · -
+- 6 · A LAS 48 H: métricas por cron en iangpu + `historia-metricas.py` que las CONGELA por día (comparar a edad pareja) · skip3s, c_por_mil, g_por_mil por pieza y por día en metricas.json + historia.json · ok · 2026-09-04-el-cine-programado
 - 7 · EL DATASET (`dataset-cine.py`): una fila por pieza publicada = rasgos (ritmo, copy, píxel, hora, día) + métricas · `public/comando/dataset.json` · parcial · 2026-09-04-el-cine-programado
-- 8 · EL VEREDICTO A/B (brazo B vs REY): con n≥2 por brazo decide si los recortes van con B · nota en canon §EL RITMO con los números · bloqueado · -
+- 8 · EL VEREDICTO A/B (brazo B vs REY): decide el tratamiento de los recortes · canon §EL VEREDICTO A/B: B PIERDE (c/mil 1.4 vs 4.8) → brazo A + identidad en 2ª persona · ok · 2026-09-04-el-cine-programado
 
 ## RUNNER
 - 1 · ls /mnt/c/Users/sebas/Downloads/*-4K.mp4

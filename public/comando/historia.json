@@ -1,0 +1,133 @@
+{
+ "nota": "LA HISTORIA — congela las métricas de hoy para poder comparar A EDAD PAREJA.",
+ "filas": [
+  {
+   "id": "econ-ostrom",
+   "fecha": "2026-09-07",
+   "sale": "2026-08-28",
+   "edad": 10,
+   "views": 1557,
+   "reach": 1231,
+   "likes": 54,
+   "comments": 1,
+   "shares": 1,
+   "saved": 10,
+   "total_interactions": 70,
+   "reels_skip_rate": 42.8,
+   "ig_reels_avg_watch_time": 16421
+  },
+  {
+   "id": "mol-etoh-de-quien-son",
+   "fecha": "2026-09-07",
+   "sale": "2026-09-02",
+   "edad": 5,
+   "views": 1726,
+   "reach": 1273,
+   "likes": 123,
+   "comments": 1,
+   "shares": 5,
+   "saved": 21,
+   "total_interactions": 156,
+   "reels_skip_rate": 49.2,
+   "ig_reels_avg_watch_time": 21055
+  },
+  {
+   "id": "mol-etoh-el-alcohol",
+   "fecha": "2026-09-07",
+   "sale": "2026-08-31",
+   "edad": 7,
+   "views": 1917,
+   "reach": 1440,
+   "likes": 110,
+   "comments": 0,
+   "shares": 6,
+   "saved": 19,
+   "total_interactions": 146,
+   "reels_skip_rate": 50.3,
+   "ig_reels_avg_watch_time": 26246
+  },
+  {
+   "id": "mol-etoh-te-roba-el-agua",
+   "fecha": "2026-09-07",
+   "sale": "2026-09-06",
+   "edad": 1,
+   "views": 1865,
+   "reach": 1556,
+   "likes": 125,
+   "comments": 0,
+   "shares": 20,
+   "saved": 26,
+   "total_interactions": 179,
+   "reels_skip_rate": 50.2,
+   "ig_reels_avg_watch_time": 14672
+  },
+  {
+   "id": "mol-h2o-eres-tu",
+   "fecha": "2026-09-07",
+   "sale": "2026-09-05",
+   "edad": 2,
+   "views": 3493,
+   "reach": 2788,
+   "likes": 269,
+   "comments": 4,
+   "shares": 38,
+   "saved": 46,
+   "total_interactions": 376,
+   "reels_skip_rate": 50.7,
+   "ig_reels_avg_watch_time": 16294
+  },
+  {
+   "id": "mol-h2o-la-silla",
+   "fecha": "2026-09-07",
+   "sale": "2026-08-28",
+   "edad": 10,
+   "views": 2978,
+   "reach": 2258,
+   "likes": 173,
+   "comments": 3,
+   "shares": 9,
+   "saved": 38,
+   "total_interactions": 231,
+   "reels_skip_rate": 52.5,
+   "ig_reels_avg_watch_time": 17016
+  },
+  {
+   "id": "mol-h2o-los-dos-campos",
+   "fecha": "2026-09-07",
+   "sale": "2026-09-01",
+   "edad": 6,
+   "views": 2093,
+   "reach": 1639,
+   "likes": 127,
+   "comments": 1,
+   "shares": 10,
+   "saved": 31,
+   "total_interactions": 176,
+   "reels_skip_rate": 49.6,
+   "ig_reels_avg_watch_time": 19661
+  },
+  {
+   "id": "mol-h2o-los-dos-campos-b",
+   "fecha": "2026-09-07",
+   "sale": "2026-09-04",
+   "edad": 3,
+   "views": 2175,
+   "reach": 1744,
+   "likes": 115,
+   "comments": 2,
+   "shares": 3,
+   "saved": 18,
+   "total_interactions": 151,
+   "reels_skip_rate": 50.5,
+   "ig_reels_avg_watch_time": 16726
+  }
+ ],
+ "cuenta": [
+  {
+   "fecha": "2026-09-07",
+   "seguidores": 7042,
+   "reels": 84
+  }
+ ],
+ "generado": "2026-09-07"
+}

@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-04 22:16",
+ "generado": "2026-09-07 16:33",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -18,8 +18,8 @@
   "despues": 19
  },
  "deploy": {
-  "commit": "4d28106",
-  "fecha": "2026-09-04 21:58"
+  "commit": "36e8e93",
+  "fecha": "2026-09-04 22:17"
  },
  "violaciones": [],
  "columnas": {
@@ -5424,7 +5424,7 @@
     "titulo": "Los dos campos — BRAZO B (21 tomas, VEL 1.25)",
     "base": "mismo bin y guion que el REY del 09-01 · wcamporb · 64 s",
     "tipo": "experimento A/B",
-    "estado": "hoy",
+    "estado": "hecho",
     "nota": "viernes, HOY (ian 2026-09-04: \"quiero que hoy se suba algo\"). Veredicto vs brazo A a las 48 h (09-06).",
     "manifiesto": true,
     "publicado": true,
@@ -5439,17 +5439,16 @@
     },
     "yt": {
      "url": "https://youtu.be/IXuVRv0zJac",
-     "privacidad": "private"
+     "privacidad": "public"
     },
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/Dc4tJzVkwtI/"
+    },
     "ancho": {
      "url": "https://youtu.be/2YEnILzh3sE"
     },
     "entregado": "",
-    "falta": [
-     "YouTube private",
-     "Instagram"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-09-05",
@@ -5458,7 +5457,7 @@
     "titulo": "Eres tú — seis de cada diez partes de tu cuerpo",
     "base": "water-approach · weres · 55 s · guion REVELACIÓN",
     "tipo": "revelación",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "sábado",
     "manifiesto": true,
     "publicado": true,
@@ -5473,9 +5472,11 @@
     },
     "yt": {
      "url": "https://youtu.be/yMqDoztHcrA",
-     "privacidad": "private"
+     "privacidad": "public"
     },
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/Dc7R5CAkaQ4/"
+    },
     "ancho": {
      "url": "https://youtu.be/ojNz0-enbyE"
     },
@@ -5489,7 +5490,7 @@
     "titulo": "Te roba el agua — el gel de manos y el puente",
     "base": "water-ethanol · wroba · Hirshfeld · 55 s · guion REVELACIÓN",
     "tipo": "revelación",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "domingo = el día más fuerte de la audiencia; el gancho más cotidiano",
     "manifiesto": true,
     "publicado": true,
@@ -5504,9 +5505,11 @@
     },
     "yt": {
      "url": "https://youtu.be/o4mX3NDfUcI",
-     "privacidad": "private"
+     "privacidad": "public"
     },
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/Dc92xuDlZ85/"
+    },
     "ancho": {
      "url": "https://youtu.be/XX58b5VoHeE"
     },
@@ -5520,7 +5523,7 @@
     "titulo": "Dos gotas — el puente naciendo",
     "base": "water-approach · wgotas · 55 s · guion REVELACIÓN",
     "tipo": "revelación",
-    "estado": "proximo",
+    "estado": "hoy",
     "nota": "lunes, segundo día más fuerte",
     "manifiesto": true,
     "publicado": true,
@@ -5542,17 +5545,20 @@
      "url": "https://youtu.be/e73O8SyCsWc"
     },
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube private",
+     "Instagram"
+    ]
    },
    {
     "fecha": "2026-09-08",
     "hora": "18:45",
     "id": "mol-h2o-el-hexamero-b",
     "titulo": "El hexámero — recorte al ritmo (12k vistas IG)",
-    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
-    "tipo": "recorte-ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B).",
     "manifiesto": false,
     "publicado": false,
     "programar": "",
@@ -5568,10 +5574,10 @@
     "hora": "18:45",
     "id": "mol-h2o-el-anillo-b",
     "titulo": "El anillo — recorte al ritmo (6k)",
-    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
-    "tipo": "recorte-ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B).",
     "manifiesto": false,
     "publicado": false,
     "programar": "",
@@ -5587,10 +5593,10 @@
     "hora": "18:45",
     "id": "mol-h2o-el-sudor-b",
     "titulo": "El sudor — recorte al ritmo (4.6k)",
-    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
-    "tipo": "recorte-ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B).",
     "manifiesto": false,
     "publicado": false,
     "programar": "",
@@ -5606,10 +5612,10 @@
     "hora": "18:45",
     "id": "mol-h2o-la-sal-b",
     "titulo": "La sal — recorte al ritmo (2.8k)",
-    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
-    "tipo": "recorte-ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B).",
     "manifiesto": false,
     "publicado": false,
     "programar": "",
@@ -5625,10 +5631,10 @@
     "hora": "18:45",
     "id": "mol-grasa-butirico-b",
     "titulo": "Mantequilla — recorte al ritmo (3.6k)",
-    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
-    "tipo": "recorte-ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B).",
     "manifiesto": false,
     "publicado": false,
     "programar": "",
@@ -5644,10 +5650,10 @@
     "hora": "18:45",
     "id": "mol-h2o-el-cuarteto-b",
     "titulo": "El cuarteto — recorte al ritmo",
-    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
-    "tipo": "recorte-ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B).",
     "manifiesto": false,
     "publicado": false,
     "programar": "",
@@ -5663,10 +5669,10 @@
     "hora": "18:45",
     "id": "mol-h2o-el-hielo-b",
     "titulo": "El hielo — recorte al ritmo (2.4k)",
-    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
-    "tipo": "recorte-ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B).",
     "manifiesto": false,
     "publicado": false,
     "programar": "",
@@ -5682,10 +5688,10 @@
     "hora": "18:45",
     "id": "mol-h2o-la-silla-b",
     "titulo": "La silla — recorte al ritmo",
-    "base": "MISMO bin y misma belleza · guion nuevo de REVELACIÓN · 20+ tomas · VEL 1.25 · 55-64 s",
-    "tipo": "recorte-ritmo",
+    "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "condición: el brazo B gana el A/B del REY (veredicto 09-06). Si pierde, va con brazo A y solo cambia el guion a revelación.",
+    "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B).",
     "manifiesto": false,
     "publicado": false,
     "programar": "",
@@ -5744,10 +5750,10 @@
     },
     {
      "n": 6,
-     "gesto": "A LAS 48 H: métricas (`metricas-instagram.py`, `metricas-youtube.py` por cron en iangpu)",
-     "seVe": "skip3s, seg_vistos, c_por_mil, g_por_mil por pieza en metricas.json",
-     "estado": "parcial",
-     "ticket": ""
+     "gesto": "A LAS 48 H: métricas por cron en iangpu + `historia-metricas.py` que las CONGELA por día (comparar a edad pareja)",
+     "seVe": "skip3s, c_por_mil, g_por_mil por pieza y por día en metricas.json + historia.json",
+     "estado": "ok",
+     "ticket": "2026-09-04-el-cine-programado"
     },
     {
      "n": 7,
@@ -5758,13 +5764,13 @@
     },
     {
      "n": 8,
-     "gesto": "EL VEREDICTO A/B (brazo B vs REY): con n≥2 por brazo decide si los recortes van con B",
-     "seVe": "nota en canon §EL RITMO con los números",
-     "estado": "bloqueado",
-     "ticket": ""
+     "gesto": "EL VEREDICTO A/B (brazo B vs REY): decide el tratamiento de los recortes",
+     "seVe": "canon §EL VEREDICTO A/B: B PIERDE (c/mil 1.4 vs 4.8) → brazo A + identidad en 2ª persona",
+     "estado": "ok",
+     "ticket": "2026-09-04-el-cine-programado"
     }
    ],
-   "verdes": 1,
+   "verdes": 3,
    "total": 8,
    "rompeEn": 0,
    "medido": null
