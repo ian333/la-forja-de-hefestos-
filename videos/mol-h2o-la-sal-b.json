@@ -1,0 +1,94 @@
+{
+  "id": "mol-h2o-la-sal-b",
+  "titulo": "Por esto te da sed cuando comes salado — La sal",
+  "nota": "RECORTE DE IDENTIDAD de mol-h2o-la-sal (mismo bin, misma belleza, tomas COPIADAS de su escena). Guion nuevo en 2ª persona, brazo A. Canon §EL VEREDICTO A/B.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wsalb",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wsalb): render-clip exige formato.dur == duración de la escena. Tomas provisionales hasta segs.json.",
+    "nota_16x9": "QUERY=\"m=wsalb&zoom=0.5\" W=3840 H=2160 (medir fill antes de renderizar)"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.salbframes"
+  },
+  "audio": {
+    "dir": "dist-video/salb-narracion",
+    "narracion": "salb-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "copiada de dist-video/sal-narracion",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "segs": "segs.json",
+    "ass": "salb.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-sal-identidad-4k-master.mp4",
+    "h264": "agua-sal-identidad-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-sodium.bin",
+      "water-sodium-efield.bin"
+    ],
+    "guion": "salb.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-la-sal-b.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-la-sal-b-capsula.tar.gz",
+    "pieza": "mol-h2o la sal b",
+    "nueva": true,
+    "copy": {
+      "titulo": "Por esto te da sed cuando comes algo salado",
+      "descripcion": "Echas sal al agua y desaparece. No se fue: se rompió. 🧂 Aquí está un pedazo, calculado con física cuántica real (RHF/aug-cc-pVDZ, energía de unión −24.0 kcal/mol, exacta al experimento): un sodio al que le falta un electrón, once protones contra diez electrones, una carga entera de más. Y el agua tiene un lado negativo. Así que el agua lo rodea y no lo suelta: cada sodio se lleva su propia jaula de agua. Eso está pasando en tu sangre ahora mismo, y si comes de más, el agua se va con la sal y tu cuerpo pide más. La sed no es capricho: es física.",
+      "hashtags": [
+        "#agua",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque convierte la sed en un mecanismo que puedes ver",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B)."
+    },
+    "autorizado": "",
+    "subidas": {},
+    "programar": "",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/salb.txt"
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "brazo A por VEREDICTO 2026-09-07."
+  }
+}

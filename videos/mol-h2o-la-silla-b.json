@@ -1,0 +1,94 @@
+{
+  "id": "mol-h2o-la-silla-b",
+  "titulo": "Traes dos sillas vacías en cada gota — La silla",
+  "nota": "RECORTE DE IDENTIDAD de mol-h2o-la-silla (mismo bin, misma belleza, tomas COPIADAS de su escena). Guion nuevo en 2ª persona, brazo A. Canon §EL VEREDICTO A/B.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wsillab",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wsillab): render-clip exige formato.dur == duración de la escena. Tomas provisionales hasta segs.json.",
+    "nota_16x9": "QUERY=\"m=wsillab&zoom=0.5\" W=3840 H=2160 (medir fill antes de renderizar)"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.sillabframes"
+  },
+  "audio": {
+    "dir": "dist-video/sillab-narracion",
+    "narracion": "sillab-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "copiada de dist-video/silla-narracion",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "segs": "segs.json",
+    "ass": "sillab.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-silla-identidad-4k-master.mp4",
+    "h264": "agua-silla-identidad-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
+    "guion": "sillab.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-la-silla-b.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-la-silla-b-capsula.tar.gz",
+    "pieza": "mol-h2o la silla b",
+    "nueva": true,
+    "copy": {
+      "titulo": "En cada molécula de agua que traes adentro hay dos sillas vacías",
+      "descripcion": "El oxígeno del agua guarda dos nubes de electrones que no comparte con nadie: dos sillas vacías. 🪑 Y el hidrógeno de la molécula vecina apunta justo ahí, no a otro lado — por eso el jalón tiene domicilio y siempre el mismo. Dos sillas más dos hidrógenos son cuatro lugares por molécula, y cuatro lugares arman un tetraedro. Un tetraedro deja huecos, los huecos ocupan más espacio, y por eso el hielo flota y hay peces vivos bajo un lago congelado. Todo eso está en dos sillas vacías que traes en cada gota. Física cuántica real, no animación.",
+      "hashtags": [
+        "#agua",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque enseña que el jalón del agua tiene DOMICILIO, y de ahí sale que el hielo flote",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B)."
+    },
+    "autorizado": "",
+    "subidas": {},
+    "programar": "",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/sillab.txt"
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "brazo A por VEREDICTO 2026-09-07."
+  }
+}

@@ -41,6 +41,55 @@ const CARGAS_DURATION = 83.2;
 const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz todavía)   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
 const WTRI_DURATION = 77.7;
 const WTET_DURATION = 88.0;   // EL CUARTETO: voz 85.51s (segs.json, 27 líneas) + 2.5s de cola
+// ── CAPAS PROPIAS DE LOS RECORTES DE IDENTIDAD (2026-09-07) ─────────────────────────────────
+// NO se reusan las del ganador: sus ventanas están en SU reloj (77, 88 y 50 s) y aquí la pieza
+// dura 55. Medido: con las capas del original la sal reventaba de blanco (fill 0.66 y 0.71 en
+// t=2 y t=30) porque el campo del ion encendía en el momento equivocado. Las bases se copian
+// tal cual del ganador; lo que cambia son los TIEMPOS, atados a segs.json de cada recorte.
+const WSUDORB_CAPAS: CapasSpec = {
+  // sudor · l1 0.40 l2 5.48 l3 9.03 l4 12.95 l5 17.62 l6 20.02 l7 24.08 l8 28.55 l9 33.82 l10 37.64 l11 41.01
+  apertura: { base: 0.55, mods: [{ wins: [[24.08, 55]], a: -0.30, label: 'la energía sale de ti (l7-9)' }] },
+  nubes:    { base: 1,    mods: [] },
+  campo:    { base: 1,    mods: [{ wins: [[9.03, 17.62]], a: -0.55, label: 'mira lo que cuesta soltar UNA: deja leer el puente (l3-4)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[9.03, 17.62]], a: 0.42, label: 'los electrones cuando se nombra el puente' }] },
+  spin:     { base: 1,    mods: [{ wins: [[17.62, 37.64]], a: 0.9, label: 'ARDE: romperlo cuesta energía, y esa energía es tuya (l5-9)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[24.08, 33.82]], a: 0.5, label: 'ORO: el calor que se va (l7-8)' }] },
+};
+const WSALB_CAPAS: CapasSpec = {
+  // sal · l1 0.40 l2 4.46 l3 9.59 l4 14.35 l5 19.61 l6 23.63 l7 27.60 l8 31.39 l9 34.99 l10 40.07 l11 43.58
+  apertura: { base: 0.55, mods: [{ wins: [[23.63, 55]], a: -0.30, label: 'el agua lo rodea y no lo suelta (l6-7)' }] },
+  nubes:    { base: 1,    mods: [] },
+  campo:    { base: 1,    mods: [{ wins: [[0.0, 9.59]], a: -0.72, label: 'BAJA el campo del ion en el gancho: a plena potencia QUEMA el cuadro (medido fill 0.66)' },
+                                 { wins: [[19.61, 27.60]], a: -0.35, label: 'el lado negativo del agua: que se lea la nube, no el resplandor (l5-6)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[9.59, 19.61]], a: 0.42, label: 'once protones, diez electrones (l3-4)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[23.63, 40.07]], a: 0.9, label: 'ARDE: la jaula de agua y tu sangre (l6-9)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[9.59, 19.61]], a: 0.5, label: 'ORO: el sodio al que le falta un electrón (l3-4)' }] },
+};
+const WTETB_CAPAS: CapasSpec = {
+  // cuarteto · l1 0.40 l2 5.21 l3 8.10 l4 12.18 l5 15.40 l6 20.39 l7 25.34 l8 29.16 l9 33.32 l10 38.87 l11 42.51
+  campo:    { base: 0.55, mods: [{ wins: [[15.40, 25.34]], a: 0.45, label: 'presta y recibe: los cuatro puentes (l5-6)' }] },
+  nubes:    { base: 1,    mods: [] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[8.10, 15.40]], a: 0.42, label: 'se alternan, el anillo es plano (l3-4)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[20.39, 38.87]], a: 0.85, label: 'ARDE: jalan 19 % más juntas (l6-9)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[8.10, 15.40]], a: 0.45, label: 'ORO del oxígeno' }] },
+  enlaces:  { base: 0,    mods: [{ wins: [[0.0, 8.10]], a: 1.0, label: 'los átomos contables en el gancho' }] },
+  dipolo:   { base: 0,    mods: [] },
+  ceros:    { base: 0,    mods: [] },
+  apertura: { base: 0.10, mods: [] },
+};
+const WSILLAB_CAPAS: CapasSpec = {
+  // silla · l1 0.40 l2 6.04 l3 11.22 l4 15.98 l5 20.51 l6 25.55 l7 28.92 l8 34.51 l9 39.73 l10 44.54
+  apertura: { base: 0.55, mods: [{ wins: [[25.55, 55]], a: -0.30, label: 'cuatro lugares hacen un tetraedro (l6-8)' }] },
+  nubes:    { base: 1,    mods: [] },
+  campo:    { base: 1,    mods: [{ wins: [[11.22, 20.51]], a: -0.55, label: 'deja LEER las dos sillas (l3-4)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[6.04, 15.98]], a: 0.42, label: 'las dos nubes que no comparte (l2-3)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[20.51, 39.73]], a: 0.9, label: 'ARDE: el jalón con domicilio (l5-8)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[11.22, 20.51]], a: 0.5, label: 'ORO: el oxígeno de cerca (l3-4)' }] },
+};
+const WSUDORB_DURATION = 55;
+const WSALB_DURATION = 55;
+const WTETB_DURATION = 55;
+const WSILLAB_DURATION = 55;
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
 // dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
@@ -924,6 +973,60 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: whipParallax({ rMul: 1.62, elevAmp: 0.26, azim0: 2.60, span: 2.4, fov: 37 }), dur: 7.29, label: 'BARRIDO con parallax: "las líneas son el campo real" (l14)' },
     { shot: ringFaceOn({ rMul: 1.72, azim0: 1.50, span: 0.30, elev: 0.10 }), dur: 6.85, label: 'EL REMATE: "el olor de la mantequilla es esta forma" (l15-16)' },
   ],
+  wsudorb: [
+    // RECORTE DE IDENTIDAD de SUDOR (2026-09-07, canon §EL VEREDICTO A/B). Tomas COPIADAS del
+    // ganador 'wpair' sin inventar cámara: 9 en 55 s = 8.73 cortes/min (brazo A).
+    // CALIBRADAS a segs.json (11 líneas, 44.69 s): l3 9.03 · l4 12.95 · l5 17.62 · l7 24.08 · l8 28.55 · l9 33.82 · l10 37.64 · l11 41.01.
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.4, elev: 0.15, rMul: 1.58 }), dur: 9.03, label: 'espectáculo — plano de dos (l1-2)' },
+    { shot: orbitOne({ side: 1, azim0: 0.8, span: 2.0, rMul: 0.5 }), dur: 3.92, label: 'electrones de UNA, close (l3-4)' },
+    { shot: orbitOne({ side: -1, azim0: 2.5, span: 1.3, rMul: 0.5 }), dur: 4.67, label: 'probabilidad — nube de UNA, close (l5-6)' },
+    { shot: orbitOne({ side: -1, azim0: 1.6, span: 1.8, rMul: 0.5 }), dur: 6.46, label: 'el corazón dorado O (l7-8)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 4.47, label: 'cargas parciales — ángulo bajo (l9-11)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.7, elev: 0.22, rMul: 1.5 }), dur: 5.27, label: 'el campo — órbita (l12-14)' },
+    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 3.82, label: 'se acercan — looming al puente (l15-16)' },
+    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 3.37, label: 'el puente=nube — el enlace llena el cuadro (l17-18)' },
+    { shot: pullOut({}), dur: 13.99, label: 'payoff (l19-20)' },
+  ],
+  wsalb: [
+    // RECORTE DE IDENTIDAD de SAL (2026-09-07, canon §EL VEREDICTO A/B). Tomas COPIADAS del
+    // ganador 'wsal' sin inventar cámara: 9 en 55 s = 8.73 cortes/min (brazo A).
+    // CALIBRADAS a segs.json (11 líneas, 47.31 s): l3 9.59 · l4 14.35 · l5 19.61 · l6 23.63 · l7 27.60 · l8 31.39 · l9 34.99 · l10 40.07.
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.4, elev: 0.15, rMul: 1.58 }), dur: 9.59, label: 'espectáculo — el ion y el agua (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 2.0, rMul: 0.5 }), dur: 4.76, label: 'EL ION solo: un electrón de menos (l3-4)' },
+    { shot: orbitOne({ side: 1, azim0: 2.5, span: 1.3, rMul: 0.5 }), dur: 5.26, label: 'el agua (l5-6)' },
+    { shot: orbitOne({ side: 1, azim0: 1.6, span: 1.8, rMul: 0.5 }), dur: 4.02, label: 'el corazón dorado O (l7-8)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 3.97, label: 'el campo del ion — ángulo bajo (l9-11)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.7, elev: 0.22, rMul: 1.5 }), dur: 3.79, label: 'el agua se voltea — órbita (l12-14)' },
+    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 3.6, label: 'se acercan — looming (l15-16)' },
+    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 5.08, label: 'se pega — la nube llena el cuadro (l17-18)' },
+    { shot: pullOut({}), dur: 14.93, label: 'payoff (l19-20)' },
+  ],
+  wtetb: [
+    // RECORTE DE IDENTIDAD de CUARTETO (2026-09-07, canon §EL VEREDICTO A/B). Tomas COPIADAS del
+    // ganador 'wtet' sin inventar cámara: 9 en 55 s = 8.73 cortes/min (brazo A).
+    // CALIBRADAS a segs.json (11 líneas, 46.20 s): l3 8.10 · l4 12.18 · l5 15.40 · l6 20.39 · l7 25.34 · l8 29.16 · l9 33.32 · l10 38.87.
+    { shot: ringEdgeToFace({ rMul: 1.72, elev: 0.10, span: 0.34 }), dur: 8.1, label: 'EL GANCHO — de canto, cerrado, las 4 flechas (era el segundo 40)' },
+    { shot: ringEdgeToFace({ rMul: 1.95, elev: 0.03, span: 0.42 }), dur: 4.08, label: 'de canto y MÁS LEJOS: se ve que es plano de verdad' },
+    { shot: ringFaceOn({ rMul: 1.46, azim0: 0.2, span: 0.55, elev: 0.24 }), dur: 3.22, label: 'la otra vez viste tres / tres no encajaban — el anillo se ABRE' },
+    { shot: ringFaceOn({ rMul: 1.30, azim0: 2.4, span: 0.7, elev: 0.36 }), dur: 4.99, label: 'impar, una al revés, con cuatro no' },
+    { shot: ringOne({ which: 0, rMul: 0.98, azim0: 0.7, span: 1.5, fov: 21 }), dur: 4.95, label: 'LEGIBILIDAD: un O y dos H = UNA molécula' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 3.82, label: 'se acomodan: presta y recibe — el puente es NUBE' },
+    { shot: ringFaceOn({ rMul: 1.24, azim0: 1.35, span: 0.5, elev: 0.10 }), dur: 4.16, label: 'los 4 puentes — el cálculo los da IDÉNTICOS' },
+    { shot: ringFaceOn({ rMul: 1.44, azim0: 3.3, span: 0.45, elev: 0.30 }), dur: 5.55, label: 'contraste: en el trímero ninguno medía igual' },
+    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 16.13, label: 'COOPERATIVIDAD: se viene encima' },
+  ],
+  wsillab: [
+    // RECORTE DE IDENTIDAD de SILLA (2026-09-07, canon §EL VEREDICTO A/B). Tomas COPIADAS del
+    // ganador 'wsilla' sin inventar cámara: 7 en 55 s = 6.55 cortes/min (brazo A).
+    // CALIBRADAS a segs.json (10 líneas, 48.56 s): l3 11.22 · l4 15.98 · l5 20.51 · l7 28.92 · l8 34.51 · l9 39.73.
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.0, elev: 0.15, rMul: 1.58 }), dur: 11.22, label: 'las dos se jalan · el jalón tiene domicilio (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.6, rMul: 0.5 }), dur: 4.76, label: 'MAGENTA: el oxígeno de cerca, sus dos nubes, las sillas (l3-5)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 4.53, label: 'el hidrógeno de la otra apunta justo ahí (l6)' },
+    { shot: eyeLevelLock({ rMul: 1.15, azim: 1.2 }), dur: 8.41, label: 'QUITA LAS NUBES: nada, ni palito ni resorte (l7)' },
+    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 5.59, label: 'PRÉNDELAS: looming al puente, carga llegando a la silla (l8)' },
+    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 5.22, label: 'dos manos, dos sillas: cuatro (l9)' },
+    { shot: pullOut({}), dur: 15.27, label: 'tetraedro · flota · y tú · GAIA (l10-12)' },
+  ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
     // agentes y su posición sale de dos modelos publicados (Bouchaud-Mézard 2000 + Schelling
@@ -1422,6 +1525,10 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
   wcolor: { name: 'De quién son', formula: 'C · O · H', fact: 'Cada color es un elemento, repartido por la regla de Hirshfeld — no a ojo.' },
+  wsudorb: { name: 'El sudor', formula: 'H₂O···H₂O', fact: 'Romper el puente cuesta energía, y esa energía sale de tu piel.' },
+  wsalb: { name: 'Por qué te da sed', formula: 'Na⁺···H₂O', fact: 'Cada sodio se lleva su propia jaula de agua — y por eso pides más.' },
+  wtetb: { name: 'Ninguna está sola', formula: '(H₂O)₄', fact: 'A tres no les cuadraba; a cuatro sí, y jalan 19 % más que por separado.' },
+  wsillab: { name: 'Dos sillas vacías', formula: 'H₂O···H₂O', fact: 'Dos sillas y dos hidrógenos = cuatro lugares por molécula: el tetraedro del hielo.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
   whex6b: { name: 'No te pueden congelar', formula: '(H₂O)₆', fact: 'El hexágono que hace bonito a un copo de nieve es el que te reventaría las células.' },
   wtrib: { name: 'La gota que no cae', formula: '(H₂O)₃', fact: 'Tres aguas juntas jalan 12 % más que por separado: esa es la piel del agua.' },
@@ -3035,6 +3142,10 @@ const WATER_BINS: Record<string, WaterEntry> = {
   // (4 núcleos: Na, O, H, H), mismo eje, mismo régimen. Gate: −24.0 kcal/mol a 2.25 Å = experimento.
   wsal:  { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSAL_CAPAS, dur: WSAL_DURATION },
   // nube ±6.6 bohr: ex=15 dejaba void muerto
+  wsudorb: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSUDORB_DURATION, capas: WSUDORB_CAPAS },
+  wsalb: { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSALB_CAPAS, dur: WSALB_DURATION },
+  wtetb: { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true, capas: WTETB_CAPAS, dur: WTETB_DURATION },
+  wsillab: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLAB_DURATION, capas: WSILLAB_CAPAS },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 3.0 },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
