@@ -49,6 +49,15 @@ ESP = {10: 'diez', 11: 'once', 12: 'doce', 13: 'trece', 14: 'catorce', 15: 'quin
 
 def _num(tok):
     """'2.82' → 'dos punto ocho dos' · '25' → 'veinticinco' (como lo LEE una persona)."""
+    # SEPARADOR DE MILES vs PUNTO DECIMAL (2026-09-07): Whisper escribe los miles A LA ESPAÑOLA
+    # ("86.000 millones") y esta función lo leía como decimal → "ochenta y seis PUNTO CERO CERO
+    # CERO" contra un guion que dice "ochenta y seis mil millones". Reprobó una voz correcta —
+    # el mismo falso positivo por FORMATO que ya mordió con el 29, el 179 y los años.
+    # Es agrupación de miles si hay más de un grupo (1.234.567) o si el grupo es 3 ceros (86.000);
+    # "2.82" y "2.821" siguen siendo decimales, que es como los dice el canon.
+    _g = re.fullmatch(r'(\d{1,3})((?:\.\d{3})+)', tok.replace(',', '.'))
+    if _g and (_g.group(2).count('.') > 1 or set(_g.group(2).replace('.', '')) == {'0'}):
+        return _num(tok.replace(',', '').replace('.', ''))
     if '.' in tok or ',' in tok:
         ent, _, dec = tok.replace(',', '.').partition('.')
         return ' '.join([_num(ent), 'punto'] + [UNI[int(d)] for d in dec if d.isdigit()])
@@ -69,6 +78,12 @@ def _num(tok):
     if n < 1000000:
         m, r = n // 1000, n % 1000
         cab = 'mil' if m == 1 else f'{_num(str(m))} mil'
+        return cab if r == 0 else f'{cab} {_num(str(r))}'
+    # MILLONES: sin esta rama un número de 7 cifras se devolvía TAL CUAL (dígitos) y el gate
+    # comparaba "1234567" contra palabras — reprobaba en silencio (cazado 2026-09-07).
+    if n < 1000000000:
+        M, r = n // 1000000, n % 1000000
+        cab = 'un millon' if M == 1 else f'{_num(str(M))} millones'
         return cab if r == 0 else f'{cab} {_num(str(r))}'
     return tok
 
