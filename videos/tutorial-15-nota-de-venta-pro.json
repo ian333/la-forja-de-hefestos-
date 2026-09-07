@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-15-nota-de-venta-pro",
+  "titulo": "15. Nota de venta PRO (atajos y pro-tips)",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/nota-venta-pro.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "15-nota-de-venta-pro.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "15-nota-de-venta-pro-4k-10bit.mp4",
+    "h264": "15-nota-de-venta-pro-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "NOTA DE VENTA PRO: descuentos, series, vendedores y más — HERMES",
+      "descripcion": "El punto de venta a fondo: descuentos por línea, precios por cliente, vendedor asignado, observaciones e impresión. Todo lo que la venta diaria real necesita, en un solo flujo.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#PuntoDeVenta #Ventas #PyME",
+      "hashtags": [
+        "#puntodeventaavanzado",
+        "#descuentos",
+        "#preciosporcliente",
+        "#vendedores",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-15T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

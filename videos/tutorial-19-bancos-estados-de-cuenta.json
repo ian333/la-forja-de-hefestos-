@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-19-bancos-estados-de-cuenta",
+  "titulo": "19. Bancos y estados de cuenta",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/mini-bancos.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "19-bancos-estados-de-cuenta.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "19-bancos-estados-de-cuenta-4k-10bit.mp4",
+    "h264": "19-bancos-estados-de-cuenta-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "BANCOS en orden: sube tu estado de cuenta y concilia — HERMES",
+      "descripcion": "Importa tu estado de cuenta, concilia movimientos contra ventas y pagos, y ve tu flujo real de dinero. La contabilidad de tu negocio por fin conectada a tus bancos.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#Bancos #Conciliación #Finanzas #PyME",
+      "hashtags": [
+        "#estadodecuenta",
+        "#conciliaciónbancaria",
+        "#bancos",
+        "#flujodeefectivo",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-16T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

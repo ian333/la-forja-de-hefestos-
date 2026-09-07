@@ -1,0 +1,52 @@
+{
+  "id": "tutorial-04-cotizacion",
+  "titulo": "04. Cómo hacer una cotización",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/proc-cotizacion.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "04-cotizacion.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "04-cotizacion-4k-10bit.mp4",
+    "h264": "04-cotizacion-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "COTIZACIONES profesionales en 1 minuto (y conviértelas en venta) — HERMES",
+      "descripcion": "Arma una cotización con tus productos, mándala en PDF con tu logo, y cuando el cliente diga que sí, conviértela en nota de venta o factura con un clic. Cero recaptura.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#Cotización #Ventas #PyME #México",
+      "hashtags": [
+        "#cotización",
+        "#presupuesto",
+        "#pdf",
+        "#convertircotizaciónenfactura",
+        "#HERMES",
+        "#GAIA",
+        "#ventaspyme"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-09T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08",
+    "subidas": {
+      "yt": {
+        "id": "o9B4Cpd5Ns4",
+        "url": "https://youtu.be/o9B4Cpd5Ns4",
+        "privacidad": "private",
+        "publishAt": "2026-09-09T18:45:00-06:00",
+        "captions": "AUieDaZ-0svio4MlaSJ19_55l9Wsf9dEA-zm5sISSzZJk4V0z2wDqHBuUw",
+        "fecha": "2026-09-07T13:51"
+      }
+    }
+  }
+}

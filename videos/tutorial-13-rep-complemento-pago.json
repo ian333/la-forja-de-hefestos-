@@ -1,0 +1,42 @@
+{
+  "id": "tutorial-13-rep-complemento-pago",
+  "titulo": "13. Cómo timbrar un REP (Complemento de Pago)",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/proc-rep.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "13-rep-complemento-pago.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "13-rep-complemento-pago-4k-10bit.mp4",
+    "h264": "13-rep-complemento-pago-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "REP / COMPLEMENTO DE PAGO sin miedo (PPD explicado) — HERMES",
+      "descripcion": "¿Facturaste en PPD y te pagaron después? Aprende a emitir el Recibo Electrónico de Pago (complemento de pago) en HERMES, ligado a la factura original — el SAT feliz y tú tranquilo.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#ComplementoDePago #REP #SAT #CFDI",
+      "hashtags": [
+        "#complementodepago",
+        "#rep",
+        "#ppd",
+        "#reciboelectrónicodepago",
+        "#sat",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-14T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

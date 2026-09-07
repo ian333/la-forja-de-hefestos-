@@ -153,6 +153,10 @@
   "ritmo": {
     "brazo": "A",
     "cortes_por_min": 12.16,
-    "nota_brazo": "la escena de átomos no usa CAMERA_SHOTS: el \"corte\" es el cambio de cámara por orbital (6 orbitales en 29.6s). Se DECLARA a mano como exige ritmo-pieza.py. VEL 1.10 se conserva del cromo: el VEREDICTO A/B midió el ritmo en piezas narrativas de 55-75 s, no en este formato."
+    "nota_brazo": "la escena de átomos no usa CAMERA_SHOTS: el \"corte\" es el cambio de cámara por orbital (6 orbitales en 29.6s). Se DECLARA a mano como exige ritmo-pieza.py. VEL 1.10 se conserva del cromo: el VEREDICTO A/B midió el ritmo en piezas narrativas de 55-75 s, no en este formato.",
+    "silabas_por_seg": 3.86,
+    "silabas_por_seg_del_video": 3.53,
+    "fuente_habla": "estimado (aún sin TTS, VEL 1.1)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }

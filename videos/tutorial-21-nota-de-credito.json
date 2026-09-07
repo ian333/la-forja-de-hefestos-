@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-21-nota-de-credito",
+  "titulo": "21. Devoluciones sin dolor: la nota de crédito",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/mini-nota-de-credito.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "21-nota-de-credito.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "21-nota-de-credito-4k-10bit.mp4",
+    "h264": "21-nota-de-credito-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "DEVOLUCIONES sin dolor: la Nota de Crédito — HERMES",
+      "descripcion": "¿Te regresaron producto? Regístralo en un minuto: eliges qué piezas regresan, el inventario se ajusta solo y el saldo del cliente queda al día. Si era factura, la nota de crédito cumple con el SAT.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#NotaDeCrédito #Devoluciones #CFDI #PyME",
+      "hashtags": [
+        "#notadecrédito",
+        "#devolución",
+        "#cfdiegreso",
+        "#inventario",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-17T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

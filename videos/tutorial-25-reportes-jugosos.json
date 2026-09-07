@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-25-reportes-jugosos",
+  "titulo": "25. Los dos reportes que responden todo",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/mini-reportes-jugosos.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "25-reportes-jugosos.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "25-reportes-jugosos-4k-10bit.mp4",
+    "h264": "25-reportes-jugosos-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Los 2 REPORTES que responden todo: Más Vendidos y Existencias — HERMES",
+      "descripcion": "¿Qué se vende más? ¿Qué deja más margen? ¿Cuánto vale tu almacén? Dos reportes, dos clics: Más Vendidos (piezas, margen, rotación) y Existencias (stock valuado, filtros por marca, Excel para tu contador).\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#Reportes #KPIs #Inventario #PyME",
+      "hashtags": [
+        "#reportedeventas",
+        "#másvendidos",
+        "#existencias",
+        "#inventariovaluado",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-19T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

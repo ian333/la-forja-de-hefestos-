@@ -1,0 +1,52 @@
+{
+  "id": "tutorial-02-alta-de-producto",
+  "titulo": "02. Cómo dar de alta un producto",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/alta-producto.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "02-alta-de-producto.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "02-alta-de-producto-4k-10bit.mp4",
+    "h264": "02-alta-de-producto-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Da de ALTA tus PRODUCTOS con precio, costo e inventario — HERMES",
+      "descripcion": "Aprende a registrar un producto en HERMES: nombre, clave SAT, precio, costo, unidad e inventario inicial. Con esto tu catálogo queda listo para vender y facturar sin capturar dos veces.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#PyME #Inventario #CFDI #México",
+      "hashtags": [
+        "#altadeproducto",
+        "#catálogodeproductos",
+        "#clavesat",
+        "#inventario",
+        "#HERMES",
+        "#GAIA",
+        "#pyme"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-08T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08",
+    "subidas": {
+      "yt": {
+        "id": "_SQ52hgRsUQ",
+        "url": "https://youtu.be/_SQ52hgRsUQ",
+        "privacidad": "private",
+        "publishAt": "2026-09-08T18:45:00-06:00",
+        "captions": "AUieDabYL0XWOIOU6XXgqQRQ0o6ABJsoLaLjvY1h3qmomj95QLG4oYkhTg",
+        "fecha": "2026-09-07T13:50"
+      }
+    }
+  }
+}

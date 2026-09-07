@@ -91,6 +91,12 @@
   },
   "ritmo": {
     "brazo": "A",
-    "nota_brazo": "brazo A por VEREDICTO 2026-09-07: el B (21 tomas, VEL 1.25) perdió 3.4× en compartidos contra el A de la misma pieza."
+    "nota_brazo": "brazo A por VEREDICTO 2026-09-07: el B (21 tomas, VEL 1.25) perdió 3.4× en compartidos contra el A de la misma pieza.",
+    "cortes_por_min": 8.73,
+    "tomas": 9,
+    "silabas_por_seg": 4.36,
+    "silabas_por_seg_del_video": 3.93,
+    "fuente_habla": "segs.json (REAL)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }

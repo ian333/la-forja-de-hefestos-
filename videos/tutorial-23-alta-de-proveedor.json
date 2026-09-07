@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-23-alta-de-proveedor",
+  "titulo": "23. Da de alta un proveedor con sus datos fiscales",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/mini-alta-proveedor.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "23-alta-de-proveedor.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "23-alta-de-proveedor-4k-10bit.mp4",
+    "h264": "23-alta-de-proveedor-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Alta de PROVEEDORES con datos fiscales — HERMES",
+      "descripcion": "Registra a tus proveedores una sola vez: razón social, RFC y contacto. Cada orden de compra, factura y pago queda ligado a su expediente — y sus XML cuadran solos.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#Proveedores #Compras #PyME #México",
+      "hashtags": [
+        "#altadeproveedor",
+        "#compras",
+        "#rfc",
+        "#expedienteproveedor",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-18T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

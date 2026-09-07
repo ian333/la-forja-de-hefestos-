@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-24-buscar-clave-sat",
+  "titulo": "24. Encuentra la clave SAT correcta en segundos",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/mini-buscar-clave-sat.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "24-buscar-clave-sat.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "24-buscar-clave-sat-4k-10bit.mp4",
+    "h264": "24-buscar-clave-sat-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Encuentra la CLAVE SAT correcta en segundos — HERMES",
+      "descripcion": "Sin catálogos en PDF ni adivinanzas: escribes lo que vendes con tus palabras y el buscador te trae las claves del catálogo oficial. Clave correcta = facturas que el SAT acepta a la primera.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#ClaveSAT #CFDI40 #Facturación #PyME",
+      "hashtags": [
+        "#clavesat",
+        "#claveproductoservicio",
+        "#cfdi4.0",
+        "#facturarsinerrores",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-19T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

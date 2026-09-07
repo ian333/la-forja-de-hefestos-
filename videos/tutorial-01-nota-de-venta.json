@@ -1,0 +1,52 @@
+{
+  "id": "tutorial-01-nota-de-venta",
+  "titulo": "01. Cómo hacer una nota de venta",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/proc-nota-venta.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "01-nota-de-venta.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "01-nota-de-venta-4k-10bit.mp4",
+    "h264": "01-nota-de-venta-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Cómo hacer una NOTA DE VENTA en segundos — HERMES (tutorial 2026)",
+      "descripcion": "Haz tu primera nota de venta en HERMES en menos de un minuto: agrega productos, cobra y entrega el ticket — todo desde el navegador. En este video ves el flujo completo de venta rápida para tu negocio.\n\nHERMES es el sistema de administración y facturación de GAIA, hecho para PyMEs mexicanas: ventas, inventario, facturación CFDI 4.0 y bancos en un solo lugar.\n▶ Pruébalo: https://gaiaprime.com.mx\nSerie completa: tutorial 01 al 19 en esta lista de reproducción.\n#PyME #PuntoDeVenta #FacturaciónElectrónica #México",
+      "hashtags": [
+        "#notadeventa",
+        "#puntodeventa",
+        "#HERMES",
+        "#GAIA",
+        "#pymemexico",
+        "#sistemadeventas",
+        "#tutorialespañol"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-08T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08",
+    "subidas": {
+      "yt": {
+        "id": "Sm4c_Dwejbg",
+        "url": "https://youtu.be/Sm4c_Dwejbg",
+        "privacidad": "private",
+        "publishAt": "2026-09-08T18:45:00-06:00",
+        "captions": "AUieDaYNnv7Q0lUbAln4iSJ2o2DFA46ExH7J4UjBcyZcVODj-y0_ByQA_g",
+        "fecha": "2026-09-07T13:49"
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-05-facturacion-portal",
+  "titulo": "05. Tus clientes se facturan solos (Portal)",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/proc-facturar-portal.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "05-facturacion-portal.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "05-facturacion-portal-4k-10bit.mp4",
+    "h264": "05-facturacion-portal-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Tu cliente se AUTOFACTURA desde el portal (tú no haces nada) — HERMES",
+      "descripcion": "Activa el portal de autofacturación: tu cliente entra con su ticket, captura su RFC y genera su propia factura CFDI 4.0. Tú te olvidas de las facturas de mostrador.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#Autofacturación #CFDI #SAT #PyME",
+      "hashtags": [
+        "#portaldefacturación",
+        "#autofactura",
+        "#facturaconticket",
+        "#cfdi4.0",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-10T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

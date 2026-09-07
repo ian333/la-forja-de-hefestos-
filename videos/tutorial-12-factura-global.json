@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-12-factura-global",
+  "titulo": "12. Cómo hacer una Factura Global",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/proc-global.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "12-factura-global.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "12-factura-global-4k-10bit.mp4",
+    "h264": "12-factura-global-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "FACTURA GLOBAL al público en general (requisito SAT) — HERMES",
+      "descripcion": "Todas tus ventas de mostrador sin factura se agrupan en una factura global: mira cómo HERMES la genera por periodo con un clic, cumpliendo el requisito del SAT sin dolores de cabeza.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#FacturaGlobal #SAT #CFDI #PyME",
+      "hashtags": [
+        "#facturaglobal",
+        "#públicoengeneral",
+        "#ventasmostrador",
+        "#sat",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-13T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "tutorial-26-nota-venta-abarrotes",
+  "titulo": "26. Nota de venta de abarrotes",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/tlazala-nota-venta.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "26-nota-venta-abarrotes.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "26-nota-venta-abarrotes-4k-10bit.mp4",
+    "h264": "26-nota-venta-abarrotes-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Cobra con LECTOR de código de barras: la nota de venta de tu tienda — HERMES",
+      "descripcion": "La venta de mostrador de una tienda de abarrotes: sin cliente, sin teclear precios. Pasas el producto por el lector, sube al ticket con su precio, y generas la nota. El inventario baja solo.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#PyME #ERP #Facturación #México",
+      "hashtags": [
+        "#puntodeventa",
+        "#códigodebarras",
+        "#abarrotes",
+        "#tienda",
+        "#lector",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-20T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

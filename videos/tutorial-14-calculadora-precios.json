@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-14-calculadora-precios",
+  "titulo": "14. La calculadora de precios (4 funciones)",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/proc-calculadora.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "14-calculadora-precios.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "14-calculadora-precios-4k-10bit.mp4",
+    "h264": "14-calculadora-precios-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "CALCULADORA DE PRECIOS: deja de perder margen sin saberlo — HERMES",
+      "descripcion": "Costo + gastos + margen deseado = tu precio correcto. Usa la calculadora de precios de HERMES para fijar precios con utilidad real (y ver cuánto ganas de verdad en cada producto).\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#Precios #Márgenes #Utilidad #PyME",
+      "hashtags": [
+        "#calculadoradeprecios",
+        "#margendeganancia",
+        "#costos",
+        "#preciodeventa",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-14T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

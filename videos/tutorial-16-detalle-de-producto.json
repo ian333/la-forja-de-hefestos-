@@ -1,0 +1,51 @@
+{
+  "id": "tutorial-16-detalle-de-producto",
+  "titulo": "16. El detalle de producto: precios, fotos y clave SAT",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/mini-detalle-producto.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "16-detalle-de-producto.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "16-detalle-de-producto-4k-10bit.mp4",
+    "h264": "16-detalle-de-producto-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Todo sobre un PRODUCTO en una pantalla: kárdex, costos y ventas — HERMES",
+      "descripcion": "La ficha completa de cada producto: existencias, movimientos (kárdex), historial de ventas y compras, márgenes. Deja de adivinar qué se vende y qué te está costando.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#Inventario #Kárdex #PyME",
+      "hashtags": [
+        "#detalledeproducto",
+        "#kárdex",
+        "#existencias",
+        "#historialdeventas",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-15T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08",
+    "subidas": {
+      "yt": {
+        "id": "HdrbIcrjkS8",
+        "url": "https://youtu.be/HdrbIcrjkS8",
+        "privacidad": "private",
+        "publishAt": "2026-09-15T18:45:00-06:00",
+        "captions": "AUieDaZTLRT3TNmw3X3rWCX2CKKkd6pSQnRKCtyOINTE3NV4DF_hDFCTAw",
+        "fecha": "2026-09-07T13:53"
+      }
+    }
+  }
+}

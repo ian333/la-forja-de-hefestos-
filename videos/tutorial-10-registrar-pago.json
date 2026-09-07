@@ -1,0 +1,41 @@
+{
+  "id": "tutorial-10-registrar-pago",
+  "titulo": "10. Cómo registrar un pago (cobranza)",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/proc-pago.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "10-registrar-pago.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "10-registrar-pago-4k-10bit.mp4",
+    "h264": "10-registrar-pago-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "REGISTRA PAGOS y controla cuentas por cobrar — HERMES",
+      "descripcion": "Cliente que te paga en partes: registra abonos, métodos de pago y saldos pendientes. HERMES te dice quién te debe, cuánto y desde cuándo.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#CuentasPorCobrar #Cobranza #PyME",
+      "hashtags": [
+        "#registrarpago",
+        "#abonos",
+        "#cuentasporcobrar",
+        "#créditoclientes",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-12T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08"
+  }
+}

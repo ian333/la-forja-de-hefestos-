@@ -1,0 +1,51 @@
+{
+  "id": "tutorial-08-orden-de-compra",
+  "titulo": "08. Cómo hacer una orden de compra",
+  "familia": "tutorial",
+  "tema": "hermes",
+  "receta": "Orkesta/scripts/videotutoriales/recipes/proc-compras.json",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 60,
+    "nota": "16:9 nativo (captura de pantalla 1920x1080 @ DPR 2). No hay 9:16."
+  },
+  "audio": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "segs": "08-orden-de-compra.segs.json",
+    "voz": "XTTS Matilda v2 (batch_voices_v2.py, 3 tomas mediana + portero whisper)"
+  },
+  "salida": {
+    "dir": "/home/ian/Orkesta/scripts/videotutoriales/renders-final",
+    "master": "08-orden-de-compra-4k-10bit.mp4",
+    "h264": "08-orden-de-compra-4k-10bit.mp4",
+    "nota": "HEVC 10-bit CBR 30 Mbps: pasa gate_calidad (≥2160p, ≥15 Mbps). YouTube prefiere el 10-bit."
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "ÓRDENES DE COMPRA a proveedores + entrada de inventario — HERMES",
+      "descripcion": "Levanta órdenes de compra, recibe la mercancía y deja que HERMES actualice tu inventario y tus costos. Control de compras sin hojas de Excel.\n\nHERMES es el sistema de administración y facturación de GAIA para PyMEs mexicanas.\n▶ Pruébalo: https://gaiaprime.com.mx\n#Compras #Proveedores #Inventario #PyME",
+      "hashtags": [
+        "#ordendecompra",
+        "#proveedores",
+        "#entradadealmacén",
+        "#costos",
+        "#HERMES",
+        "#GAIA"
+      ]
+    },
+    "autorizado": "2026-09-04 yt — ian en sesión: \"súbelos por favor con descripción y todo\" (programados 2/día)",
+    "programar": "2026-09-11T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 2 por día desde 2026-09-08",
+    "subidas": {
+      "yt": {
+        "id": "d48FjG5NDVg",
+        "url": "https://youtu.be/d48FjG5NDVg",
+        "privacidad": "private",
+        "publishAt": "2026-09-11T18:45:00-06:00",
+        "captions": "AUieDaaqeoEoxoHzG_3Z7gW50yvOqmy0_wE3aUsH6S1ag6qCRgU1eV8ZXw",
+        "fecha": "2026-09-07T13:52"
+      }
+    }
+  }
+}
