@@ -11,9 +11,9 @@ NOTA: el ingeniero diseñó moldeable (draft, sin undercuts). Los mecanismos son
 - 3 · ENFRIAMIENTO · el campo pintado en ≤2.5 s y LA FICHA sobre el punto que manda el ciclo · ok · 2026-08-30-u10-el-foco-es-el-analisis
 - 4 · D → EL DICTAMEN · qué viola, qué cambiar, teñido por el estado · ok · 2026-09-02-x6-la-lamina-viva
 - 5 · PARTIR · la línea de partición sobre la carcasa · ok · 2026-08-28-t7-linea-de-particion
-- 6 · EL MOLDE · placas, colada, agua, expulsores sobre ESA pieza · falla · 2026-08-28-t6-piezas-complejas
-- 7 · LOS PLANOS · el juego de planos del molde · bloqueado · 2026-08-28-t7-linea-de-particion
-- 8 · EL EXPEDIENTE · dictamen + planos + cotización en un archivo (y el video, después) · parcial · 2026-08-28-t5-expediente-que-se-ve
+- 6 · EL MOLDE · placas, colada, agua, expulsores sobre ESA pieza · parcial · 2026-08-28-t6-piezas-complejas
+- 7 · LOS PLANOS · el juego de planos del molde · ok · 2026-08-28-t7-linea-de-particion
+- 8 · EL EXPEDIENTE · dictamen + planos + cotización en un archivo (y el video, después) · ok · 2026-08-28-t5-expediente-que-se-ve
 
 ## PARA CERRARLO (el orden, decidido 2026-09-04 tras el primer paseo)
 El muro es el paso 5 y se derriba en este orden, un ticket a la vez, cada uno medido por el runner y con su paseo:
@@ -28,14 +28,14 @@ Lo que la máquina hace y mide por paso (lo lee `scripts/camino-runner.cjs`; el 
 Formato: `n · gestos del arnés (JSON) · check · check…` con `testid:<id>[@timeoutMs][<=maxMs]`, `count:<selector>>=n`, `js:<expr>`.
 CONTRATO para los tickets que deben pasos rojos: T7 expone `linea-particion` sobre la pieza; T6 expone `molde-de-la-pieza`; T7/T5 exponen `planos-del-molde` y `expediente-de-la-pieza`. Cuando existan, el runner los pone en verde solo.
 - 1 · [] · testid:lienzo-vacio@60000 · js:(function(){var cs=getComputedStyle(document.querySelector('[data-testid="lienzo-vacio"]'));return cs.borderWidth==='0px'&&cs.backgroundColor==='rgba(0, 0, 0, 0)'&&cs.backdropFilter==='none'})()
-- 2 · [{"type":"drop","file":"test-parts/inyeccion-reales/1594C Box.stp","settle":0}] · testid:el-parte-foco@90000 · count:[data-testid="foco-cotas-overlay"] [data-testid^="cota-"]>=3
+- 2 · [{"type":"drop","file":"test-parts/inyeccion-reales/1594C Box.stp","settle":0}] · testid:el-parte-foco@90000 · count:[data-testid="foco-cotas-overlay"] [data-testid^="cota-"]>=3 · js:(function(){var i=window.__forgeBrep&&window.__forgeBrep.invariants;return !!(i&&i.vol_kernel>0)&&('sólido en el kernel: '+i.n_faces+' caras, '+i.vol_kernel.toFixed(0)+' mm³')})()@60000
 - 3 · [{"type":"tclick","testid":"parte-lente-enfriamiento","settle":0}] · testid:parte-leyenda@60000 · js:(function(){var v=parseFloat((document.querySelector('[data-testid="el-parte-foco"]').textContent.match(/vóxeles\s·\s([\d.]+) s/)||[])[1]);return v<=2.5&&(v+' s declarados por el módulo')})() · testid:ficha-en-el-mundo
 - 4 · [{"type":"key","key":"d","settle":700}] · testid:lamina-dictamen · js:!!document.querySelector('[data-testid="lamina-dictamen"]').dataset.tinte
 - 5 · [{"type":"key","key":"Escape","settle":500},{"type":"tclick","testid":"parte-lente-particion","settle":900}] · testid:linea-particion@5000
-- 6 · [] · testid:molde-de-la-pieza@3000
-- 7 · [] · testid:planos-del-molde@3000
-- 8 · [{"type":"key","key":"d","settle":700}] · testid:lamina-dictamen · testid:expediente-de-la-pieza@3000
+- 6 · [{"type":"tclick","testid":"parte-lente-molde","settle":1500}] · js:(function(){var m=document.querySelector('[data-testid="molde-de-la-pieza"]');return !!m&&+m.dataset.estacion>=3&&('E'+m.dataset.estacion+' | pared '+m.dataset.pared+' mm | '+m.dataset.roles)})()@150000 · js:(function(){var r=(document.querySelector('[data-testid="molde-de-la-pieza"]')||{dataset:{}}).dataset.roles||'';return /cavidad/.test(r)&&/nucleo/.test(r)&&'placas: cavidad + núcleo'})() · js:(function(){var r=(document.querySelector('[data-testid="molde-de-la-pieza"]')||{dataset:{}}).dataset.roles||'';return /colada/.test(r)&&'colada'})()@60000 · js:(function(){var r=(document.querySelector('[data-testid="molde-de-la-pieza"]')||{dataset:{}}).dataset.roles||'';return /agua|canal/.test(r)&&'agua'})() · js:(function(){var r=(document.querySelector('[data-testid="molde-de-la-pieza"]')||{dataset:{}}).dataset.roles||'';return /expulsor|pin/.test(r)&&'expulsores'})()
+- 7 · [{"type":"tclick","testid":"parte-lente-planos","force":true,"settle":1500}] · testid:planos-del-molde@120000 · js:(function(){var p=document.querySelector('[data-testid="planos-del-molde"]');return !!p&&+p.dataset.paginas>=3&&(p.dataset.paginas+' láminas')})()@120000 · testid:planos-del-molde-svg@30000
+- 8 · [{"type":"tclick","testid":"btn-planos-molde-close","force":true,"settle":600},{"type":"tclick","testid":"parte-lente-expediente","force":true,"settle":1500}] · testid:expediente-de-la-pieza@30000 · js:(function(){var e=document.querySelector('[data-testid="expediente-de-la-pieza"]');return !!e&&e.dataset.dictamen==='1'&&'dictamen | '+e.dataset.decisiones+' decisiones'})() · js:(function(){var e=document.querySelector('[data-testid="expediente-de-la-pieza"]');return !!e&&e.dataset.cotizacion==='1'&&'cotización'})() · js:(function(){var e=document.querySelector('[data-testid="expediente-de-la-pieza"]');return !!e&&+e.dataset.planos>=3&&(e.dataset.planos+' planos')})()
 
 ## MEDIDO
 - 20 Hammond reales (v1-gate): importan 20/20 · cotizan 17/20 · parten 2/20. El paso 5 es el muro; 6 y 7 existen y funcionan en el dado, pero dependen de 5.
-- runner · 2026-09-07 16:46 UTC · http://localhost:5192/forja-brep.html · servido 6f70032 · iangpu · 5/8 ok · se rompe en el paso 6 · 1:2/2 2:2/2 3:3/3 4:2/2 5:1/1 6:0/1 7:0/1 8:1/2
+- runner · 2026-09-07 22:13 UTC · http://localhost:5194/forja-brep.html · servido 6f70032 · iangpu · 7/8 ok · 1:2/2 2:3/3 3:3/3 4:2/2 5:1/1 6:3/5 7:3/3 8:4/4

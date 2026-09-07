@@ -69,6 +69,12 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
   });
   const recT0 = Date.now();            // marca de inicio de grabación (para recortar el lead-in muerto)
   const page = await context.newPage();
+  // NO_PERF_MEASURE=1: en vite DEV, React perfila cada render con performance.measure(detail=props)
+  // y con props gigantes (moldParts: Float32Arrays de millones) el clon estructurado tira
+  // «DataCloneError: out of memory» y React muere («Should not already be working»). Es un
+  // artefacto del build de DESARROLLO — el build de producción no perfila. Se anula solo aquí,
+  // solo si se pide, y se declara: la medición oficial sigue siendo contra producción.
+  if (process.env.NO_PERF_MEASURE === '1') await page.addInitScript(() => { try { performance.measure = () => undefined; } catch (e) {} });
   const errors = [];
   const checks = [];   // veredictos del gesto 'expect' (runner del camino): {label, ok, ms, detail}
   // Los 404 de recursos son ruido conocido y LLENABAN el buffer de errores, tapando los
@@ -76,7 +82,14 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
   page.on('console', (m) => { const t = m.text(); if (m.type() === 'error' && !/404 \(Not Found\)/.test(t)) errors.push(t.slice(0, 220)); });
   page.on('pageerror', (e) => errors.push('PAGEERR: ' + String(e).slice(0, 220)));
   const log = [];
-  const shot = async (name) => { await page.screenshot({ path: `${OUT}/${name}.png`, timeout: 30000 }); log.push(name); };
+  // La captura tiene timeout FINITO (30 s) por doctrina, pero NO mata el drive: si el hilo
+  // principal está bloqueado (E3 tallando el acero de un STEP real: >30 s de WASM síncrono),
+  // se anota SHOT_TIMEOUT y se sigue — el siguiente `expect` espera a que la página vuelva.
+  // Medido 2026-09-07: un drive de 8 pasos moría entero en la captura tras tocar MOLDE.
+  const shot = async (name) => {
+    try { await page.screenshot({ path: `${OUT}/${name}.png`, timeout: 30000 }); log.push(name); }
+    catch (e) { log.push(`${name} (SIN CAPTURA: ${String(e).slice(0, 60)})`); errors.push(`SHOT_TIMEOUT_${name}`); }
+  };
 
   try {
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -154,7 +167,10 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
         // tutoriales llenos de campos numéricos: 'fill' teclea en un input; 'tclick' hace clic.
         // El cursor GLIDE al elemento antes, para que se vea en el video.
         else if (a.type === 'fill') { const loc = await glideEl(a.testid); await loc.fill(String(a.text), { timeout: 8000 }); }
-        else if (a.type === 'tclick') { const loc = await glideEl(a.testid); await loc.click({ timeout: 8000 }); }
+        // `force: true` salta las comprobaciones de accionabilidad de Playwright (estable/hit-target).
+        // Medido 2026-09-07: tras armar el molde (212k tris), locator.click a PLANOS vencía 15 s y un
+        // click crudo por coordenadas abría los planos en 7 ms — el botón era clickeable, la espera no.
+        else if (a.type === 'tclick') { const loc = await glideEl(a.testid); await loc.click({ timeout: 8000, ...(a.force ? { force: true } : {}) }); }
         // SUBIR UN ARCHIVO REAL a un <input type="file"> (orden 2026-08-28-cargador-mi-pieza).
         // El input del cargador vive oculto (display:none) dentro de su <label>, así que NO se
         // le puede dar clic: setInputFiles lo alimenta directo, que es lo que hace el navegador
@@ -183,6 +199,15 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
             document.getElementById('__caps').textContent = sub || '';
             const v = document.getElementById('__capv'); v.textContent = ''; v.dataset.okN = '0'; v.dataset.failN = '0';
           }, { text: a.text || '', sub: a.sub || '' });
+        }
+        // EVAL (diagnóstico): corre una expresión en la página y ANOTA su resultado (await si es
+        // promesa). No juzga — para medir cosas como la cadencia de rAF o si el WebGL perdió contexto.
+        else if (a.type === 'eval') {
+          let out;
+          try { out = await page.evaluate(`(async () => { try { return await (${a.js}); } catch (e) { return 'ERR ' + e; } })()`); }
+          catch (e) { out = 'EVAL_FAIL ' + String(e).slice(0, 120); }
+          const line = `eval[${a.label || i}]: ${String(out).slice(0, 300)}`;
+          log.push(line); console.log(line);
         }
         // SOLTAR UN ARCHIVO como lo hace un humano (orden 2026-09-04-el-runner-del-camino).
         // x4 lo pagó: `page.dispatchEvent` de Playwright NO entrega el DataTransfer entre
@@ -322,7 +347,7 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
           try {
             await page.waitForTimeout(6000);
             const loc = page.locator(`[data-testid="${a.testid}"]`);
-            if (a.type === 'tclick') await loc.click({ timeout: 15000 });
+            if (a.type === 'tclick') await loc.click({ timeout: 15000, ...(a.force ? { force: true } : {}) });
             else await loc.fill(String(a.text), { timeout: 15000 });
             errors.push(`RETRY_OK_${tag}`);
           } catch (ge2) {

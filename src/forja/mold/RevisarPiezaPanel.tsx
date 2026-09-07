@@ -52,11 +52,13 @@ export interface PiezaEnRevision {
   annualVolume?: number;
 }
 
-export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, foco, onDictamen }: {
+export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, foco, onDictamen, onRevision }: {
   pieza: PiezaEnRevision | null;
   /** X6 · avisa los conteos (viola/advierte/cumple) en cuanto hay dictamen. La lámina
    *  viva los usa para TEÑIRSE y para su ritmo: el color de la pantalla es el estado. */
   onDictamen?: (fila: FilaRevision) => void;
+  /** PASO 8 · el dictamen COMPLETO, para el expediente (la fila sola no alcanza para el archivo) */
+  onRevision?: (rev: RevisionModelo) => void;
   /** el lote DEGRADADO: sigue existiendo para regresiones, ya no es la puerta */
   onAbrirLote?: () => void;
   /** T3: llevar la cámara al hallazgo. Todavía no hay anclas — se declara el hueco. */
@@ -100,7 +102,7 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
         });
         if (!vivo) return;
         setRev(r); setEstado('');
-        onDictamen?.(r.fila);
+        onDictamen?.(r.fila); onRevision?.(r);
       } catch (e) {
         if (!vivo) return;
         setEstado(`no se pudo revisar: ${String(e instanceof Error ? e.message : e).slice(0, 120)}`);

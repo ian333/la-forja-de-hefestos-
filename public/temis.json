@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-07 20:00",
+ "generado": "2026-09-07 22:26",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -10,10 +10,10 @@
   "proximo": 7,
   "enCurso": 0,
   "imprevisto": 0,
-  "supertickets": 13,
-  "cerrado": 81,
+  "supertickets": 9,
+  "cerrado": 85,
   "probado": 0,
-  "porProbar": 45,
+  "porProbar": 49,
   "sinDesplegar": 2,
   "despues": 19
  },
@@ -1306,404 +1306,6 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-07-el-drop-conserva-el-solido.md",
-    "slug": "2026-09-07-el-drop-conserva-el-solido",
-    "titulo": "EL DROP CONSERVA EL SÓLIDO — el STEP soltado vive también en el kernel",
-    "fecha": "2026-09-07",
-    "estado": "en-curso",
-    "prioridad": 999,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "drop-conserva",
-      "titulo": "Tras soltar un STEP, el kernel tiene el sólido",
-      "herramientas": "window.__forgeBrep.invariants.vol_kernel > 0",
-      "oraculo": "el mismo texto del STEP entra por importStepText (la puerta de DISEÑO ya lo hacía); el volumen del kernel coincide con el volKernelMm3 que ya declaraba la nota de la malla (±0.1 %)",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "foco-intacto",
-      "titulo": "El Foco sigue sobre la malla",
-      "herramientas": "sin regresión",
-      "oraculo": "las 3 cotas, ENFRIAMIENTO (≤2.5 s) y el dictamen siguen saliendo igual; el visor sigue dibujando UNA pieza (la rama piezaMalla del render manda)",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "stl-sigue-malla",
-      "titulo": "Un STL no inventa sólido",
-      "herramientas": "control negativo",
-      "oraculo": "soltar un .stl deja importedStep en null (se limpia el de la pieza anterior) y el Foco funciona igual",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "barra-honesta",
-      "titulo": "La barra de estado deja de decir «importa un STEP» cuando ya lo importaste",
-      "herramientas": "texto",
-      "oraculo": "con sólido en el kernel dice cuántas caras trae; sin sólido (STL) sigue avisando",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "runner-lo-mide",
-      "titulo": "El paso 2 del camino gana el check del sólido",
-      "herramientas": "## RUNNER",
-      "oraculo": "js: sobre invariants tras el drop; el runner sigue 5/8 (el sólido solo se aprovecha en 6-7, que son las órdenes siguientes)",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "sin-regresion",
-      "titulo": "Nada se rompe",
-      "herramientas": "gate",
-      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror; TDZ vigilado (importStepText se define ANTES de abrirArchivo)",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "golpe 3 de PARA CERRARLO (camino de la carcasa). ian (2026-09-04): «que el drop guarde el sólido, me gusta» — en memoria del navegador, no en servidores. Hoy abrirArchivo abre el STEP con el kernel, lo tesela a malla y TIRA el sólido; la b…",
-    "toca": 4,
-    "crea": 3,
-    "evidencia": 3,
-    "evidenciaDeclarada": [
-     "drive contra el dev de iangpu: drop del 1594C Box → invariants.vol_kernel > 0 y ≈ volKernelMm3 de la nota; captura con la barra de estado nueva",
-     "drive con un .stl → importedStep null, Foco vivo",
-     "runner completo: sigue 5/8 · se rompe en el 6 · orden-gate VERDE"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-07-el-paso-6-existe.md",
-    "slug": "2026-09-07-el-paso-6-existe",
-    "titulo": "EL PASO 6 EXISTE — EL MOLDE de la pieza soltada se arma solo, hasta donde la máquina llega hoy",
-    "fecha": "2026-09-07",
-    "estado": "en-curso",
-    "prioridad": 999,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "molde-gesto",
-      "titulo": "Hay puerta para el molde junto a la pieza",
-      "herramientas": "pestaña parte-lente-molde",
-      "oraculo": "color oro; toggle independiente de lentes y de PARTIR",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "pared-medida",
-      "titulo": "La pared la mide el Foco, nadie la teclea",
-      "herramientas": "intake.wallMm = p50 de la lente PARED",
-      "oraculo": "el driver llama calcularLentes si hace falta; la leyenda dice «pared N mm (medida)»; control: sin pared no avanza a E2",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "ciclo-solo",
-      "titulo": "El ciclo avanza solo hasta E5",
-      "herramientas": "efecto por estación",
-      "oraculo": "E1 (PUENTE) → E2 → E3 → E4 → E5, una estación por render, cursoBusy respetado; la leyenda enseña E<n>/5 mientras arma",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "molde-se-ve",
-      "titulo": "El visor enseña el molde de ESA pieza",
-      "herramientas": "render",
-      "oraculo": "con MOLDE encendido y placas construidas, el Canvas cambia de la malla al moldParts (cavidad + núcleo + pieza tallada + partición + colada); juzgado con ojos sobre el 1594C Box",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "honesto",
-      "titulo": "La leyenda dice lo que no hay · molde-de-la-pieza data-roles",
-      "herramientas": "«✗ agua (E8 cubo)",
-      "oraculo": "✗ expulsores (E10 cubo)» en rojo; el runner marca el paso 6 PARCIAL (placas ✓ colada ✓ agua ✗ expulsores ✗), no verde",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "sin-regresion",
-      "titulo": "Nada se rompe",
-      "herramientas": "gate",
-      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror, el dado y los demos siguen igual (el driver solo corre con piezaMalla y ciclo.pieza)",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "golpe 4 (parte T6) de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el molde de TU pieza existe por dentro (EL PUENTE arma E1 cuando el sólido entra al kernel; E2 y E3 tallan el acero de la pieza real; E4 y E5 ponen llenad…",
-    "toca": 4,
-    "crea": 3,
-    "evidencia": 3,
-    "evidenciaDeclarada": [
-     "drive contra el dev aislado de iangpu: drop → MOLDE → molde-de-la-pieza con estacion ≥3 y roles cavidad/nucleo/pieza (+colada si E4/E5 pasan); captura del visor con las placas y la pieza tallada",
-     "runner completo: paso 6 PARCIAL (no falla), el muro se mueve al 7 · orden-gate VERDE",
-     "paseo v3 regrabado con el paso 6 en pantalla"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-07-el-paso-7-existe.md",
-    "slug": "2026-09-07-el-paso-7-existe",
-    "titulo": "EL PASO 7 EXISTE — LOS PLANOS del molde de la pieza soltada, en pantalla y en PDF",
-    "fecha": "2026-09-07",
-    "estado": "en-curso",
-    "prioridad": 999,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "planos-gesto",
-      "titulo": "Hay puerta para los planos junto a la pieza",
-      "herramientas": "pestaña parte-lente-planos",
-      "oraculo": "si aún no hay E2, prende MOLDE y los genera al llegar el paquete",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "planos-de-esta-pieza",
-      "titulo": "Las láminas salen del paquete E2 de la pieza y de SU sólido · buildMoldLaminas(OCC, oc, packageToAssemblySpec(e2.pkg), rows, arbol.shape)",
-      "herramientas": "la lámina «Pieza moldeada",
-      "oraculo": "4 vistas» enseña la carcasa, no un preset",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "planos-se-ven",
-      "titulo": "Overlay con pestañas por lámina",
-      "herramientas": "planos-del-molde data-paginas",
-      "oraculo": "≥3 láminas (ensamble, análisis, placas); juzgado con ojos sobre el 1594C Box",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "planos-pdf",
-      "titulo": "Todas las láminas a una ventana imprimible",
-      "herramientas": "btn-planos-molde-pdf",
-      "oraculo": "el mismo laminasToPrintHTML de La Máquina",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "paso-7-verde",
-      "titulo": "El runner mide el paso 7",
-      "herramientas": "## RUNNER",
-      "oraculo": "gesto PLANOS + 3 checks; el muro se mueve al 8",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "sin-regresion",
-      "titulo": "Nada se rompe",
-      "herramientas": "gate",
-      "oraculo": "orden-gate VERDE, censo Canvas 8→8 (el overlay reusa .fb-plano-overlay), cero pageerror",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "golpe 4 de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el juego de láminas del molde (buildMoldLaminas: ensamble, análisis, 5 placas acotadas + 4 vistas, la pieza moldeada) existe pero solo lo alimenta el FORMULARIO NUMÉ…",
-    "toca": 4,
-    "crea": 3,
-    "evidencia": 2,
-    "evidenciaDeclarada": [
-     "drive contra el dev aislado (symlinks) de iangpu: drop → MOLDE → PLANOS → overlay con ≥3 láminas; captura de la lámina de la pieza",
-     "runner completo · orden-gate VERDE · paseo regrabado"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-07-el-paso-8-existe.md",
-    "slug": "2026-09-07-el-paso-8-existe",
-    "titulo": "EL PASO 8 EXISTE — EL EXPEDIENTE de la pieza: dictamen, decisiones, cotización y planos en UN archivo",
-    "fecha": "2026-09-07",
-    "estado": "en-curso",
-    "prioridad": 999,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "expediente-gesto",
-      "titulo": "Hay puerta para el expediente junto a la pieza",
-      "herramientas": "pestaña parte-lente-expediente",
-      "oraculo": "overlay con las 4 secciones en verde/rojo según existan",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "dictamen-completo",
-      "titulo": "El expediente recibe el dictamen ENTERO",
-      "herramientas": "onRevision en RevisarPiezaPanel",
-      "oraculo": "no solo la fila: criterios con § y detalle, y las decisiones §13.10 con opciones reales y firmas pendientes",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "un-archivo",
-      "titulo": "Dictamen → decisiones → cotización → planos → tryout en UN HTML imprimible",
-      "herramientas": "expedienteHTML + btn-expediente-descargar / btn-expediente-imprimir",
-      "oraculo": "lo que falta se DICE en el archivo («sin planos: no se generó…»), no se rellena",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "cotizacion-de-la-pieza",
-      "titulo": "La hoja de cotización es la de ESTA pieza",
-      "herramientas": "cotizacionPieza(ciclo.pieza)",
-      "oraculo": "la misma hoja que el panel del ciclo, adentro del archivo",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "paso-8-verde",
-      "titulo": "El runner mide el paso 8",
-      "herramientas": "## RUNNER",
-      "oraculo": "gesto EXPEDIENTE + 3 checks (dictamen, cotización, ≥3 planos) → el camino queda 8/8 en su forma de hoy, con lo que falta dicho",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "sin-regresion",
-      "titulo": "Nada se rompe",
-      "herramientas": "gate",
-      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "golpe 5 de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el expediente §13.10 (decisiones + tryout) se calcula en revisarModelo pero solo se ve en el modo lote; el dictamen de la pieza soltada no lo enseña ni lo exporta; l…",
-    "toca": 5,
-    "crea": 3,
-    "evidencia": 2,
-    "evidenciaDeclarada": [
-     "drive contra el dev aislado (symlinks) de iangpu: drop → MOLDE → PLANOS → EXPEDIENTE → overlay con 4 secciones en verde; el HTML descargado se abre y trae las 4",
-     "runner completo · orden-gate VERDE · paseo regrabado"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -1734,6 +1336,312 @@
     "falla": "",
     "commit": "03b5488",
     "despliegue": "sin-desplegar"
+   },
+   {
+    "file": "ordenes/2026-09-07-el-paso-8-existe.md",
+    "slug": "2026-09-07-el-paso-8-existe",
+    "titulo": "EL PASO 8 EXISTE — EL EXPEDIENTE de la pieza: dictamen, decisiones, cotización y planos en UN archivo",
+    "fecha": "2026-09-07",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "expediente-gesto",
+      "titulo": "Hay puerta para el expediente junto a la pieza",
+      "herramientas": "pestaña parte-lente-expediente",
+      "oraculo": "overlay con las 4 secciones en verde/rojo según existan",
+      "estado": "verde",
+      "checks": "pestaña EXPEDIENTE (`parte-lente-expediente`); overlay `expediente-de-la-pieza` con 4 tarjetas verde/rojo según existan (data-dictamen/cotizacion/planos/decisiones)",
+      "video": "",
+      "still": "expediente-de-la-pieza.png",
+      "nota": ""
+     },
+     {
+      "id": "dictamen-completo",
+      "titulo": "El expediente recibe el dictamen ENTERO",
+      "herramientas": "onRevision en RevisarPiezaPanel",
+      "oraculo": "no solo la fila: criterios con § y detalle, y las decisiones §13.10 con opciones reales y firmas pendientes",
+      "estado": "verde",
+      "checks": "`onRevision` en RevisarPiezaPanel (los 2 montajes) entrega el `RevisionModelo` entero: 72/100 · 5 violan · 12 advierten · 7 decisiones §13.10 con opciones reales · 5 pendientes de firma · plan de tryout",
+      "video": "",
+      "still": "expediente-de-la-pieza.png",
+      "nota": "la fila sola (onDictamen) no alcanzaba para el archivo"
+     },
+     {
+      "id": "un-archivo",
+      "titulo": "Dictamen → decisiones → cotización → planos → tryout en UN HTML imprimible",
+      "herramientas": "expedienteHTML + btn-expediente-descargar / btn-expediente-imprimir",
+      "oraculo": "lo que falta se DICE en el archivo («sin planos: no se generó…»), no se rellena",
+      "estado": "verde",
+      "checks": "`expedienteHTML`: dictamen (criterios que violan/advierten con § y detalle) → decisiones §13.10 (tabla con opciones y firma) → cotización (hoja SVG) → 17 planos (A3) → tryout → nota del video; `btn-expediente-descargar` (HTML) y `btn-expediente-imprimir`. Lo que falta se dice en el archivo, no se rellena",
+      "video": "",
+      "still": "",
+      "nota": "el HTML descargado no se abrió en el drive (descarga); se verificó la composición por las tarjetas y el data-*"
+     },
+     {
+      "id": "cotizacion-de-la-pieza",
+      "titulo": "La hoja de cotización es la de ESTA pieza",
+      "herramientas": "cotizacionPieza(ciclo.pieza)",
+      "oraculo": "la misma hoja que el panel del ciclo, adentro del archivo",
+      "estado": "verde",
+      "checks": "`cotizacionPieza(ciclo.pieza)` → `cotizacionSvg` dentro del archivo; tarjeta «hoja de la pieza incluida»",
+      "video": "",
+      "still": "expediente-de-la-pieza.png",
+      "nota": ""
+     },
+     {
+      "id": "paso-8-verde",
+      "titulo": "El runner mide el paso 8",
+      "herramientas": "## RUNNER",
+      "oraculo": "gesto EXPEDIENTE + 3 checks (dictamen, cotización, ≥3 planos) → el camino queda 8/8 en su forma de hoy, con lo que falta dicho",
+      "estado": "verde",
+      "checks": "runner: paso 8 OK 4/4 (overlay · dictamen · cotización · 17 planos) → el camino queda **7/8, 1 a medias** (el 6, por agua y expulsores). Primera corrida: 3/4 porque cerrar el overlay de planos tiraba las láminas — arreglado",
+      "video": "",
+      "still": "",
+      "nota": "«8/8 en su forma de hoy» no se cumple: el paso 6 es parcial y se dice"
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror",
+      "estado": "verde",
+      "checks": "cero pageerror · censo 8→8 · orden-gate al cerrar",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "golpe 5 de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el expediente §13.10 (decisiones + tryout) se calcula en revisarModelo pero solo se ve en el modo lote; el dictamen de la pieza soltada no lo enseña ni lo exporta; l…",
+    "toca": 9,
+    "crea": 14,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "drive contra el dev aislado (symlinks) de iangpu: drop → MOLDE → PLANOS → EXPEDIENTE → overlay con 4 secciones en verde; el HTML descargado se abre y trae las 4",
+     "runner completo · orden-gate VERDE · paseo regrabado"
+    ],
+    "cierre": "6/6 EN VERDE · el expediente de la pieza en UN archivo · el runner mide el paso 8 OK (4/4) · el camino queda 7/8, 1 a medias. con opciones reales y 5 firmas pendientes + hoja de cotización de la piez…",
+    "cierreCompleto": "6/6 EN VERDE · el expediente de la pieza en UN archivo · el runner mide el paso 8 OK (4/4) · el camino queda 7/8, 1 a medias. con opciones reales y 5 firmas pendientes + hoja de cotización de la pieza + 17 planos + plan de tryout, en un HTML imprimible que DICE lo que falta en vez de rellenarlo. El video del enfriamiento va después. - números: runner 4/4 (overlay · dictamen · cotización · 17 planos). La primera corrida dio 3/4 porque cerrar el overlay de planos tiraba las láminas — arreglado en el paso 7. - evidencia: expediente-de-la-pieza.png (4 tarjetas en verde) · resultados.json. - lo que NO cumple (declarado): «8/8» no, porque el paso 6 es PARCIAL (agua/expulsores). El camino de la carcasa mide 7/8 · 1 a medias, medido por la máquina, y así lo enseña Temis.",
+    "evidenciaSS": [
+     "evidencia/2026-09-07-el-paso-8-existe/expediente-de-la-pieza.png",
+     "evidencia/2026-09-07-el-paso-8-existe/paseo-v4-contactos.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-07-el-paso-7-existe.md",
+    "slug": "2026-09-07-el-paso-7-existe",
+    "titulo": "EL PASO 7 EXISTE — LOS PLANOS del molde de la pieza soltada, en pantalla y en PDF",
+    "fecha": "2026-09-07",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "planos-gesto",
+      "titulo": "Hay puerta para los planos junto a la pieza",
+      "herramientas": "pestaña parte-lente-planos",
+      "oraculo": "si aún no hay E2, prende MOLDE y los genera al llegar el paquete",
+      "estado": "verde",
+      "checks": "pestaña PLANOS (`parte-lente-planos`); sin E2 prende MOLDE y genera al llegar el paquete (`planosPend`)",
+      "video": "",
+      "still": "planos-del-molde.png",
+      "nota": "el runner necesita force:true en el tclick: tras el molde (212k tris) locator.click vencía 15 s y un click crudo abría los planos en 7 ms — la espera de estabilidad de Playwright, no el botón"
+     },
+     {
+      "id": "planos-de-esta-pieza",
+      "titulo": "Las láminas salen del paquete E2 de la pieza y de SU sólido · buildMoldLaminas(OCC, oc, packageToAssemblySpec(e2.pkg), rows, arbol.shape)",
+      "herramientas": "la lámina «Pieza moldeada",
+      "oraculo": "4 vistas» enseña la carcasa, no un preset",
+      "estado": "verde",
+      "checks": "`buildMoldLaminas(OCC, oc, packageToAssemblySpec(e2.pkg), rows, arbol.shape)` → **17 láminas**: Ensamble (sección A-A con BOM de 12 renglones, MLD-1594CB, 246×262), Análisis, 5 placas acotadas + 5 a 4 vistas, y «Pieza moldeada · 4 vistas» con la carcasa",
+      "video": "",
+      "still": "planos-del-molde.png",
+      "nota": "antes ninguna llamada recibía el sólido de la pieza; el partSolid opcional nunca se pasaba"
+     },
+     {
+      "id": "planos-se-ven",
+      "titulo": "Overlay con pestañas por lámina",
+      "herramientas": "planos-del-molde data-paginas",
+      "oraculo": "≥3 láminas (ensamble, análisis, placas); juzgado con ojos sobre el 1594C Box",
+      "estado": "verde",
+      "checks": "overlay `planos-del-molde` data-paginas=17 con pestañas por lámina; juzgado con ojos sobre el 1594C Box (lámina Ensamble legible: cotas 246.0 / 262.0, globos 1-12, BOM)",
+      "video": "",
+      "still": "planos-del-molde.png",
+      "nota": ""
+     },
+     {
+      "id": "planos-pdf",
+      "titulo": "Todas las láminas a una ventana imprimible",
+      "herramientas": "btn-planos-molde-pdf",
+      "oraculo": "el mismo laminasToPrintHTML de La Máquina",
+      "estado": "verde",
+      "checks": "`btn-planos-molde-pdf` → `laminasToPrintHTML` (A3 apaisado) en ventana imprimible",
+      "video": "",
+      "still": "",
+      "nota": "no se abrió la ventana en el drive (window.open) — es el mismo helper que La Máquina ya usa"
+     },
+     {
+      "id": "paso-7-verde",
+      "titulo": "El runner mide el paso 7",
+      "herramientas": "## RUNNER",
+      "oraculo": "gesto PLANOS + 3 checks; el muro se mueve al 8",
+      "estado": "verde",
+      "checks": "runner: paso 7 OK 3/3 (overlay · ≥3 láminas: 17 · svg). El muro del camino desaparece: 7/8, 1 a medias",
+      "video": "",
+      "still": "",
+      "nota": "cerrar el overlay ya NO tira las láminas (estado planosOn aparte): el expediente las necesita"
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "orden-gate VERDE, censo Canvas 8→8 (el overlay reusa .fb-plano-overlay), cero pageerror",
+      "estado": "verde",
+      "checks": "overlay reusa `.fb-plano-overlay` (cero Canvas) · censo 8→8 · cero pageerror · orden-gate al cerrar",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "golpe 4 de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el juego de láminas del molde (buildMoldLaminas: ensamble, análisis, 5 placas acotadas + 4 vistas, la pieza moldeada) existe pero solo lo alimenta el FORMULARIO NUMÉ…",
+    "toca": 4,
+    "crea": 3,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "drive contra el dev aislado (symlinks) de iangpu: drop → MOLDE → PLANOS → overlay con ≥3 láminas; captura de la lámina de la pieza",
+     "runner completo · orden-gate VERDE · paseo regrabado"
+    ],
+    "cierre": "6/6 EN VERDE · 17 láminas del molde de ESTA pieza, en pantalla y a PDF · el runner mide el paso 7 OK. STEP): la lámina «Pieza moldeada · 4 vistas» enseña la carcasa. Ensamble con sección A-A y BOM de…",
+    "cierreCompleto": "6/6 EN VERDE · 17 láminas del molde de ESTA pieza, en pantalla y a PDF · el runner mide el paso 7 OK. STEP): la lámina «Pieza moldeada · 4 vistas» enseña la carcasa. Ensamble con sección A-A y BOM de 12 renglones (MLD-1594CB), Análisis, 5 placas acotadas y 5 a 4 vistas. - números: 17 láminas · el runner 3/3 · abrir los planos tras el molde: 7 ms con click crudo. - evidencia: planos-del-molde.png (lámina Ensamble legible) · resultados.json. - defecto pagado: locator.click de Playwright vencía 15 s en PLANOS tras armar el molde (212k tris) por su espera de estabilidad; un click crudo entraba en 7 ms → force:true en el gesto, declarado en el camino. Y cerrar el overlay tiraba las láminas (el expediente las perdía) → estado planosOn aparte.",
+    "evidenciaSS": [
+     "evidencia/2026-09-07-el-paso-7-existe/planos-del-molde.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-07-el-paso-6-existe.md",
+    "slug": "2026-09-07-el-paso-6-existe",
+    "titulo": "EL PASO 6 EXISTE — EL MOLDE de la pieza soltada se arma solo, hasta donde la máquina llega hoy",
+    "fecha": "2026-09-07",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "molde-gesto",
+      "titulo": "Hay puerta para el molde junto a la pieza",
+      "herramientas": "pestaña parte-lente-molde",
+      "oraculo": "color oro; toggle independiente de lentes y de PARTIR",
+      "estado": "verde",
+      "checks": "pestaña MOLDE (`parte-lente-molde`) en EL PARTE, color oro, toggle independiente",
+      "video": "",
+      "still": "molde-de-la-pieza.png",
+      "nota": ""
+     },
+     {
+      "id": "pared-medida",
+      "titulo": "La pared la mide el Foco, nadie la teclea",
+      "herramientas": "intake.wallMm = p50 de la lente PARED",
+      "oraculo": "el driver llama calcularLentes si hace falta; la leyenda dice «pared N mm (medida)»; control: sin pared no avanza a E2",
+      "estado": "verde",
+      "checks": "`intake.wallMm` = p50 de la lente PARED = **2.75 mm** (medida, nadie la tecleó); la leyenda dice «pared 2.75 mm (medida)»; sin pared el driver no avanza a E2 (control implícito: se quedó en «midiendo la pared» cuando la ruta a la lente estaba mal)",
+      "video": "",
+      "still": "",
+      "nota": "bug pagado: las lentes son un ARREGLO con id, no un objeto — lentes.find(l => l.id === 'pared')"
+     },
+     {
+      "id": "ciclo-solo",
+      "titulo": "El ciclo avanza solo hasta E5",
+      "herramientas": "efecto por estación",
+      "oraculo": "E1 (PUENTE) → E2 → E3 → E4 → E5, una estación por render, cursoBusy respetado; la leyenda enseña E<n>/5 mientras arma",
+      "estado": "verde",
+      "checks": "E1 (PUENTE) → E2 → E3 → E4 → E5 sin botones, una estación por render con un tick de aire; la leyenda enseña E<n>/5. E3 con el sólido real: 19.5 s en una corrida y 108-109 s en otras tres (misma pieza)",
+      "video": "",
+      "still": "",
+      "nota": "E3 bloquea el hilo principal: es T6 cplx-tiempo («ninguna pieza del banco pasa de 20 s»), aquí 5×. Declarado, no escondido; el arnés ya no muere en la captura"
+     },
+     {
+      "id": "molde-se-ve",
+      "titulo": "El visor enseña el molde de ESA pieza",
+      "herramientas": "render",
+      "oraculo": "con MOLDE encendido y placas construidas, el Canvas cambia de la malla al moldParts (cavidad + núcleo + pieza tallada + partición + colada); juzgado con ojos sobre el 1594C Box",
+      "estado": "verde",
+      "checks": "con MOLDE encendido el Canvas cambia a `moldParts` (7 partes, 212,148 triángulos). Se ve el molde completo de la carcasa en E5: placas A/B translúcidas, inserto de cavidad con la pieza adentro, bebedero (colada) y las cotas de verificación del acero (boca Y 106.52 ✓ · cavidad X 132 ✓ · pared 2.75 ≠ 3.109 ✗ · partición 160 ≠ 159.972 ✗ …). Tres defectos pagados para llegar: (1) la cámara del drop quedaba DENTRO del bloque de 246 mm (el acero vive en la base, no donde cayó el STEP); (2) E4 baja las placas a 0.08 para el frente de llenado → al llegar a E5 se restauran las de E3; (3) E4/E5 REEMPLAZAN las partes y las colocan en otro sitio (E3 bbox centro 129,0,−17 · E5 centro 123,123,158, medido con data-bbox) → el reencuadre va en CADA cambio de moldParts, no una vez por sólido",
+      "video": "",
+      "still": "molde-de-la-pieza.png",
+      "nota": "juzgado con ojos en 6 corridas: vacío → vacío → placa oscura → placa oscura → (opacidad ok, cámara adentro) → MOLDE VISIBLE. El testigo del antes: molde-antes-del-reencuadre.png"
+     },
+     {
+      "id": "honesto",
+      "titulo": "La leyenda dice lo que no hay · molde-de-la-pieza data-roles",
+      "herramientas": "«✗ agua (E8 cubo)",
+      "oraculo": "✗ expulsores (E10 cubo)» en rojo; el runner marca el paso 6 PARCIAL (placas ✓ colada ✓ agua ✗ expulsores ✗), no verde",
+      "estado": "verde",
+      "checks": "leyenda `molde-de-la-pieza`: «✓ placas ✓ colada ✗ agua (E8 cubo) ✗ expulsores (E10 cubo)»; el runner mide el paso 6 PARCIAL (3/5), no verde",
+      "video": "",
+      "still": "molde-de-la-pieza.png",
+      "nota": "data-roles/data-partes/data-tris/data-bbox para que el runner y yo midamos sin adivinar"
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror, el dado y los demos siguen igual (el driver solo corre con piezaMalla y ciclo.pieza)",
+      "estado": "verde",
+      "checks": "cero pageerror en el drive final (el «DataCloneError out of memory» era el perfilador de React en DEV clonando props gigantes: se anula solo en el arnés con NO_PERF_MEASURE=1, producción no perfila) · censo Canvas 8→8 · orden-gate al cerrar",
+      "video": "",
+      "still": "",
+      "nota": "defectos MÍOS pagados en el camino: TDZ de setView/orbitTo (cuarta vez en el archivo, movido debajo), ' · ' dentro de un js del RUNNER"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "golpe 4 (parte T6) de PARA CERRARLO. ian (2026-09-07): «COMPLETA EL HAPPY PATH». Hoy el molde de TU pieza existe por dentro (EL PUENTE arma E1 cuando el sólido entra al kernel; E2 y E3 tallan el acero de la pieza real; E4 y E5 ponen llenad…",
+    "toca": 4,
+    "crea": 4,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "drive contra el dev aislado de iangpu: drop → MOLDE → molde-de-la-pieza con estacion ≥3 y roles cavidad/nucleo/pieza (+colada si E4/E5 pasan); captura del visor con las placas y la pieza tallada",
+     "runner completo: paso 6 PARCIAL (no falla), el muro se mueve al 7 · orden-gate VERDE",
+     "paseo v3 regrabado con el paso 6 en pantalla"
+    ],
+    "cierre": "6/6 EN VERDE · el molde de la carcasa se arma solo hasta E5 y SE VE · el runner mide el paso 6 PARCIAL (3/5), que es la verdad. Pestaña MOLDE → la pared la mide el Foco (p50 = 2.75 mm) → E1 (PUENTE) …",
+    "cierreCompleto": "6/6 EN VERDE · el molde de la carcasa se arma solo hasta E5 y SE VE · el runner mide el paso 6 PARCIAL (3/5), que es la verdad. Pestaña MOLDE → la pared la mide el Foco (p50 = 2.75 mm) → E1 (PUENTE) → E2 → E3 → E4 → E5, una estación por render. Salen 7 partes (cavidad, núcleo, pieza tallada, partición, placas A/B ghost, colada; 212,148 triángulos) y el visor enseña el bloque de 246 mm con la carcasa adentro, el bebedero y las cotas de verificación del acero. Leyenda honesta: «✓ placas ✓ colada ✗ agua (E8 cubo) ✗ expulsores (E10 cubo)». - números: E3 con el sólido real = 19.5 s en una corrida, 108-110 s en cuatro (misma pieza) — T6 cplx-tiempo dice ≤20 s; aquí hasta 5×. Se declara. Runner: paso 6 PARCIAL 3/5 en todas las corridas. - evidencia: molde-de-la-pieza.png (E5 visible) · molde-antes-del-reencuadre.png (el testigo negro) · resultados.json. - defectos pagados (todos cazados con OJOS, ninguno con números): cámara dentro del bloque; opacidad 0.08 de E4; E4/E5 recolocan las partes (bbox E3 ≠ bbox E5) → reencuadre en cada cambio; lentes = arreglo con id; TDZ de setView/orbitTo (cuarta vez en el archivo); el perfilador de React en DEV clonando props gigantes (artefacto del dev, no del producto). - lo que NO hace (declarado): agua (E8) y expulsores (E10) siguen cableados al cubo; el bloqueo del hilo en E3 es real para el humano (la leyenda pinta «armando…» antes, pero la pestaña se detiene).",
+    "evidenciaSS": [
+     "evidencia/2026-09-07-el-paso-6-existe/molde-antes-del-reencuadre.png",
+     "evidencia/2026-09-07-el-paso-6-existe/molde-de-la-pieza.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    },
    {
     "file": "ordenes/2026-09-07-el-paso-5-existe.md",
@@ -1840,6 +1748,108 @@
     "falla": "",
     "commit": "b62aa27",
     "despliegue": "sin-desplegar"
+   },
+   {
+    "file": "ordenes/2026-09-07-el-drop-conserva-el-solido.md",
+    "slug": "2026-09-07-el-drop-conserva-el-solido",
+    "titulo": "EL DROP CONSERVA EL SÓLIDO — el STEP soltado vive también en el kernel",
+    "fecha": "2026-09-07",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "drop-conserva",
+      "titulo": "Tras soltar un STEP, el kernel tiene el sólido",
+      "herramientas": "window.__forgeBrep.invariants.vol_kernel > 0",
+      "oraculo": "el mismo texto del STEP entra por importStepText (la puerta de DISEÑO ya lo hacía); el volumen del kernel coincide con el volKernelMm3 que ya declaraba la nota de la malla (±0.1 %)",
+      "estado": "verde",
+      "checks": "tras soltar 1594C Box.stp: `invariants.vol_kernel` = 55,822 mm³ · 472 caras (runner p2-3, 16 ms tras el drop). El mismo texto del STEP entra por `importStepText` (la puerta de DISEÑO). El chip «STEP importado» aparece en el título",
+      "video": "",
+      "still": "drop-con-solido.png",
+      "nota": "la nota de la malla declara volumen exacto del kernel 55821.9 mm³: coincide (misma función K.volume)"
+     },
+     {
+      "id": "foco-intacto",
+      "titulo": "El Foco sigue sobre la malla",
+      "herramientas": "sin regresión",
+      "oraculo": "las 3 cotas, ENFRIAMIENTO (≤2.5 s) y el dictamen siguen saliendo igual; el visor sigue dibujando UNA pieza (la rama piezaMalla del render manda)",
+      "estado": "verde",
+      "checks": "las 3 cotas (alto 33.3 · largo 106.5 · ancho 66.0), ENFRIAMIENTO (0.3-0.6 s declarados por el módulo) y el dictamen (72/100) siguen saliendo igual; el visor dibuja UNA pieza (rama piezaMalla)",
+      "video": "",
+      "still": "drop-con-solido.png",
+      "nota": "en una corrida con el kernel importando a la vez, ENFRIAMIENTO dio 3.4 s (>2.5): el import compite por CPU; con el check del sólido en el paso 2 el paso 3 arranca cuando el kernel terminó y vuelve a 0.3-0.6 s"
+     },
+     {
+      "id": "stl-sigue-malla",
+      "titulo": "Un STL no inventa sólido",
+      "herramientas": "control negativo",
+      "oraculo": "soltar un .stl deja importedStep en null (se limpia el de la pieza anterior) y el Foco funciona igual",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": "no se corrió el control negativo con .stl hoy (3dbenchy.stl existe); el código lo hace (clearImportedStep() si no es STEP) — queda para el pipeline"
+     },
+     {
+      "id": "barra-honesta",
+      "titulo": "La barra de estado deja de decir «importa un STEP» cuando ya lo importaste",
+      "herramientas": "texto",
+      "oraculo": "con sólido en el kernel dice cuántas caras trae; sin sólido (STL) sigue avisando",
+      "estado": "verde",
+      "checks": "con sólido: «sólido en el kernel: 472 caras, 55822 mm³ — listo para partir y moldear»; sin sólido (STL): «…suelta un STEP (no un STL)»",
+      "video": "",
+      "still": "",
+      "nota": "el texto viejo decía «importa un STEP» aunque SÍ era un STEP"
+     },
+     {
+      "id": "runner-lo-mide",
+      "titulo": "El paso 2 del camino gana el check del sólido",
+      "herramientas": "## RUNNER",
+      "oraculo": "js: sobre invariants tras el drop; el runner sigue 5/8 (el sólido solo se aprovecha en 6-7, que son las órdenes siguientes)",
+      "estado": "verde",
+      "checks": "paso 2 del camino: 3 checks (parte, 3 cotas, sólido) · el runner sigue 7/8 (el sólido se aprovecha en 6-8)",
+      "video": "",
+      "still": "",
+      "nota": "el check js del sólido lleva @60000: el import del kernel tarda hasta ~20 s en producción"
+     },
+     {
+      "id": "sin-regresion",
+      "titulo": "Nada se rompe",
+      "herramientas": "gate",
+      "oraculo": "orden-gate VERDE, censo Canvas 8→8, cero pageerror; TDZ vigilado (importStepText se define ANTES de abrirArchivo)",
+      "estado": "verde",
+      "checks": "orden-gate al cerrar · censo Canvas 8→8 · cero pageerror en el drive final · TDZ vigilado (`importStepText` en 4229 < `abrirArchivo` en 4783)",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 5,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "golpe 3 de PARA CERRARLO (camino de la carcasa). ian (2026-09-04): «que el drop guarde el sólido, me gusta» — en memoria del navegador, no en servidores. Hoy abrirArchivo abre el STEP con el kernel, lo tesela a malla y TIRA el sólido; la b…",
+    "toca": 4,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "drive contra el dev de iangpu: drop del 1594C Box → invariants.vol_kernel > 0 y ≈ volKernelMm3 de la nota; captura con la barra de estado nueva",
+     "drive con un .stl → importedStep null, Foco vivo",
+     "runner completo: sigue 5/8 · se rompe en el 6 · orden-gate VERDE"
+    ],
+    "cierre": "5/6 EN VERDE (1 pendiente declarado) · el STEP soltado vive en el kernel: 472 caras, 55,822 mm³ · el Foco sigue igual. (la puerta de DISEÑO); un STL limpia el sólido anterior. La barra dice la verdad…",
+    "cierreCompleto": "5/6 EN VERDE (1 pendiente declarado) · el STEP soltado vive en el kernel: 472 caras, 55,822 mm³ · el Foco sigue igual. (la puerta de DISEÑO); un STL limpia el sólido anterior. La barra dice la verdad en ambos casos. - números: runner p2-3 = «sólido en el kernel: 472 caras, 55822 mm³» a 16 ms del drop (el import tarda hasta ~20 s en el dev: por eso el check lleva @60000 y el paso 3 arranca cuando terminó). Costo medido del golpe: en una corrida el import compitió con la lente y ENFRIAMIENTO dio 3.4 s (>2.5); con el orden correcto vuelve a 0.3-0.6 s. - evidencia: drop-con-solido.png (chip «STEP importado», topología V846−E1284+F472=34, volumen). - pendiente declarado: el control negativo con .stl (3dbenchy.stl) no se corrió hoy — va con el pipeline. - lo que abrió: gracias a esto existen los pasos 6, 7 y 8 (EL PUENTE arma E1 solo cuando el sólido entra).",
+    "evidenciaSS": [
+     "evidencia/2026-09-07-el-drop-conserva-el-solido/drop-con-solido.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    },
    {
     "file": "ordenes/2026-09-04-el-video-del-camino.md",
@@ -6093,7 +6103,7 @@
     "nota": "martes. LISTO hoy: voz verificada, tomas calibradas.",
     "manifiesto": true,
     "publicado": false,
-    "programar": "",
+    "programar": "2026-09-08T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 8.73,
@@ -6106,9 +6116,7 @@
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-09-09",
@@ -6121,7 +6129,7 @@
     "nota": "miércoles. LISTO hoy.",
     "manifiesto": true,
     "publicado": false,
-    "programar": "",
+    "programar": "2026-09-09T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 8.73,
@@ -6134,40 +6142,10 @@
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-09-10",
-    "hora": "18:45",
-    "id": "atomo-k",
-    "titulo": "Estás leyendo esto gracias a este átomo — Potasio (Z=19)",
-    "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
-    "tipo": "atomo-identidad",
-    "estado": "proximo",
-    "nota": "cada disparo de una neurona tuya deja salir potasio. 4s¹: un electrón solo, se va facilísimo.",
-    "manifiesto": true,
-    "publicado": true,
-    "programar": "",
-    "rasgos": {
-     "brazo": "A",
-     "cortes_min": 20.27,
-     "sil_s": 4.84,
-     "dur": 29.6,
-     "vel": 1.1,
-     "marco": "revelacion"
-    },
-    "yt": null,
-    "ig": null,
-    "ancho": null,
-    "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
-   },
-   {
-    "fecha": "2026-09-11",
     "hora": "18:45",
     "id": "atomo-ca",
     "titulo": "El 99 % lo traes en los huesos; el 1 % que sobra es el que te mueve — Calcio (Z=20)",
@@ -6177,7 +6155,7 @@
     "nota": "el 1 % citoplásmico dispara la contracción muscular. 4s².",
     "manifiesto": true,
     "publicado": true,
-    "programar": "",
+    "programar": "2026-09-10T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 20.27,
@@ -6190,23 +6168,54 @@
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-11",
+    "hora": "18:45",
+    "id": "atomo-s",
+    "titulo": "Tu pelo es lacio o rizado por culpa de este átomo — Azufre (Z=16)",
+    "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+    "tipo": "atomo-identidad",
+    "estado": "proximo",
+    "nota": "los puentes disulfuro de la queratina deciden la forma del pelo; romperlos y volver a atarlos ES el permanente. 3p⁴: dos electrones sin pareja. (El YODO salió del plan: su bin usa pseudopotencial y le FALTA el núcleo — ver gate_atomos.)",
+    "manifiesto": true,
+    "publicado": true,
+    "programar": "2026-09-11T18:45:00-06:00",
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 18.24,
+     "sil_s": 4.23,
+     "dur": 29.6,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
    },
    {
     "fecha": "2026-09-12",
     "hora": "18:45",
-    "id": "mol-h2o-el-sudor-b",
-    "titulo": "Lo que te enfría no es el aire — El sudor",
-    "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
-    "tipo": "recorte-identidad",
+    "id": "atomo-zn",
+    "titulo": "Si la comida dejó de saberte, te falta este átomo — Zinc (Z=30)",
+    "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+    "tipo": "atomo-identidad",
     "estado": "proximo",
-    "nota": "sábado. Recorte del sudor (4,580 vistas) con el sujeto en su piel.",
-    "manifiesto": false,
-    "publicado": false,
-    "programar": "",
-    "rasgos": null,
+    "nota": "la deficiencia de zinc quita gusto y olfato; ~300 enzimas lo usan. 3d¹⁰4s².",
+    "manifiesto": true,
+    "publicado": true,
+    "programar": "2026-09-12T18:45:00-06:00",
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 29.9,
+     "sil_s": 4.61,
+     "dur": 30.1,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
@@ -6224,7 +6233,7 @@
     "nota": "DOMINGO = día fuerte. El ATP se recicla ~el peso corporal al día y lleva 3 fósforos. 3p³ = tres pétalos, un electrón cada uno.",
     "manifiesto": true,
     "publicado": true,
-    "programar": "",
+    "programar": "2026-09-13T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 18.24,
@@ -6237,12 +6246,36 @@
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-09-14",
+    "hora": "18:45",
+    "id": "atomo-k",
+    "titulo": "Estás leyendo esto gracias a este átomo — Potasio (Z=19)",
+    "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+    "tipo": "atomo-identidad",
+    "estado": "proximo",
+    "nota": "cada disparo de una neurona tuya deja salir potasio. 4s¹: un electrón solo, se va facilísimo.",
+    "manifiesto": true,
+    "publicado": true,
+    "programar": "2026-09-14T18:45:00-06:00",
+    "rasgos": {
+     "brazo": "A",
+     "cortes_min": 20.27,
+     "sil_s": 4.84,
+     "dur": 29.6,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-15",
     "hora": "18:45",
     "id": "atomo-o",
     "titulo": "Dos terceras partes de tu peso son este átomo — Oxígeno (Z=8)",
@@ -6252,7 +6285,7 @@
     "nota": "LUNES = día fuerte. 65 % de la masa corporal, casi todo por el AGUA, no por el aire. 2p⁴: le faltan dos.",
     "manifiesto": true,
     "publicado": true,
-    "programar": "",
+    "programar": "2026-09-15T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 10.14,
@@ -6265,59 +6298,10 @@
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
-   },
-   {
-    "fecha": "2026-09-15",
-    "hora": "18:45",
-    "id": "atomo-zn",
-    "titulo": "Si la comida dejó de saberte, te falta este átomo — Zinc (Z=30)",
-    "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
-    "tipo": "atomo-identidad",
-    "estado": "proximo",
-    "nota": "la deficiencia de zinc quita gusto y olfato; ~300 enzimas lo usan. 3d¹⁰4s².",
-    "manifiesto": true,
-    "publicado": true,
-    "programar": "",
-    "rasgos": {
-     "brazo": "A",
-     "cortes_min": 29.9,
-     "sil_s": 4.61,
-     "dur": 30.1,
-     "vel": 1.1,
-     "marco": "revelacion"
-    },
-    "yt": null,
-    "ig": null,
-    "ancho": null,
-    "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
-   },
-   {
-    "fecha": "2026-09-16",
-    "hora": "18:45",
-    "id": "mol-h2o-la-sal-b",
-    "titulo": "Por qué tu sangre sabe a mar — La sal",
-    "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
-    "tipo": "recorte-identidad",
-    "estado": "proximo",
-    "nota": "recorte de LA SAL con el sujeto adentro.",
-    "manifiesto": false,
-    "publicado": false,
-    "programar": "",
-    "rasgos": null,
-    "yt": null,
-    "ig": null,
-    "ancho": null,
-    "entregado": "",
     "falta": []
    },
    {
-    "fecha": "2026-09-17",
+    "fecha": "2026-09-16",
     "hora": "18:45",
     "id": "atomo-na",
     "titulo": "Cada vez que sientes algo, entra este átomo — Sodio (Z=11)",
@@ -6327,13 +6311,37 @@
     "nota": "el impulso nervioso empieza con Na⁺ entrando. 3s¹.",
     "manifiesto": true,
     "publicado": true,
-    "programar": "",
+    "programar": "2026-09-16T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 12.16,
      "sil_s": 3.86,
      "dur": 29.6,
      "vel": 1.1,
+     "marco": "revelacion"
+    },
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
+   },
+   {
+    "fecha": "2026-09-17",
+    "hora": "18:45",
+    "id": "mol-h2o-el-sudor-b",
+    "titulo": "Lo que te enfría no es el aire — El sudor",
+    "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
+    "tipo": "recorte-identidad",
+    "estado": "proximo",
+    "nota": "sábado. Recorte del sudor (4,580 vistas) con el sujeto en su piel.",
+    "manifiesto": true,
+    "publicado": false,
+    "programar": "",
+    "rasgos": {
+     "brazo": "A",
+     "dur": 55,
+     "vel": 1,
      "marco": "revelacion"
     },
     "yt": null,
@@ -6347,21 +6355,19 @@
    {
     "fecha": "2026-09-18",
     "hora": "18:45",
-    "id": "atomo-s",
-    "titulo": "Tu pelo es lacio o rizado por culpa de este átomo — Azufre (Z=16)",
-    "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
-    "tipo": "atomo-identidad",
+    "id": "mol-h2o-la-sal-b",
+    "titulo": "Por qué tu sangre sabe a mar — La sal",
+    "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
+    "tipo": "recorte-identidad",
     "estado": "proximo",
-    "nota": "los puentes disulfuro de la queratina deciden la forma del pelo; romperlos y volver a atarlos ES el permanente. 3p⁴: dos electrones sin pareja. (El YODO salió del plan: su bin usa pseudopotencial y le FALTA el núcleo — ver gate_atomos.)",
+    "nota": "recorte de LA SAL con el sujeto adentro.",
     "manifiesto": true,
-    "publicado": true,
+    "publicado": false,
     "programar": "",
     "rasgos": {
      "brazo": "A",
-     "cortes_min": 18.24,
-     "sil_s": 4.23,
-     "dur": 29.6,
-     "vel": 1.1,
+     "dur": 55,
+     "vel": 1,
      "marco": "revelacion"
     },
     "yt": null,
@@ -6400,15 +6406,22 @@
     "tipo": "recorte-identidad",
     "estado": "proximo",
     "nota": "DOMINGO = día fuerte.",
-    "manifiesto": false,
+    "manifiesto": true,
     "publicado": false,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "dur": 55,
+     "vel": 1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    },
    {
     "fecha": "2026-09-21",
@@ -6419,15 +6432,22 @@
     "tipo": "recorte-identidad",
     "estado": "proximo",
     "nota": "LUNES = día fuerte.",
-    "manifiesto": false,
+    "manifiesto": true,
     "publicado": false,
     "programar": "",
-    "rasgos": null,
+    "rasgos": {
+     "brazo": "A",
+     "dur": 55,
+     "vel": 1,
+     "marco": "revelacion"
+    },
     "yt": null,
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "sin programar"
+    ]
    }
   ]
  },
@@ -6500,6 +6520,7 @@
    "verdes": 3,
    "total": 8,
    "rompeEn": 0,
+   "parciales": 5,
    "medido": null
   },
   {
@@ -6549,30 +6570,31 @@
      "n": 6,
      "gesto": "EL MOLDE",
      "seVe": "placas, colada, agua, expulsores sobre ESA pieza",
-     "estado": "falla",
+     "estado": "parcial",
      "ticket": "2026-08-28-t6-piezas-complejas"
     },
     {
      "n": 7,
      "gesto": "LOS PLANOS",
      "seVe": "el juego de planos del molde",
-     "estado": "bloqueado",
+     "estado": "ok",
      "ticket": "2026-08-28-t7-linea-de-particion"
     },
     {
      "n": 8,
      "gesto": "EL EXPEDIENTE",
      "seVe": "dictamen + planos + cotización en un archivo (y el video, después)",
-     "estado": "parcial",
+     "estado": "ok",
      "ticket": "2026-08-28-t5-expediente-que-se-ve"
     }
    ],
-   "verdes": 5,
+   "verdes": 7,
    "total": 8,
-   "rompeEn": 6,
+   "rompeEn": 0,
+   "parciales": 1,
    "medido": {
-    "fecha": "2026-09-07 16:46",
-    "url": "http://localhost:5192/forja-brep.html",
+    "fecha": "2026-09-07 22:13",
+    "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "iangpu"
    }

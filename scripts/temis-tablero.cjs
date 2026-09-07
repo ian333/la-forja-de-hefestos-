@@ -269,7 +269,7 @@ const caminos = (() => {
     })() : null;
     return {
       slug, titulo, actor: campo(txt, 'ACTOR'), promesa: campo(txt, 'PROMESA'), pieza: campo(txt, 'PIEZA'), nota: campo(txt, 'NOTA'),
-      pasos, verdes, total: pasos.length, rompeEn: rompe ? rompe.n : 0, medido,
+      pasos, verdes, total: pasos.length, rompeEn: rompe ? rompe.n : 0, parciales: pasos.filter((p) => p.estado === 'parcial').length, medido,
     };
   });
 })();

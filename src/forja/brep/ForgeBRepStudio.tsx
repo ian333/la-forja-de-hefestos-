@@ -38,7 +38,9 @@ const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL
 import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
 import * as OCC from './occt';                                   // namespace del kernel para armar el molde
-import { buildMoldParts, packageToAssemblySpec, plateStackZ, type MoldPart } from '../mold/mold-plano-set';
+import { buildMoldParts, packageToAssemblySpec, plateStackZ, buildMoldLaminas, laminasToPrintHTML, type MoldPart, type DrawingPage } from '../mold/mold-plano-set';
+import { cotizacionPieza, cotizacionSvg } from '../mold/estudio-molde-datos';   // PASO 8 · la hoja de cotización de la pieza, dentro del expediente
+import type { RevisionModelo } from '../mold/revisar-modelo';   // PASO 8 · el dictamen completo (no solo la fila) para el expediente
 import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
 import { flanera } from '../mold/flanera';   // el VASO de la flanera (producto de revolución)
 import { splitMold, shapeBBox, scaleForShrinkage } from '../mold/mold';    // core/cavidad genérico (probado en el banco: cup/lid/…)
@@ -3586,6 +3588,20 @@ export default function ForgeBRepStudio() {
   const [lenteId, setLenteId] = useState<LenteId | 'medidas'>('medidas');
   // T7 · PARTIR (2026-09-04): modo aparte de las lentes — no es un campo, es UNA línea.
   const [particionOn, setParticion] = useState(false);
+  // PASO 6 · EL MOLDE de la pieza soltada (2026-09-07): un modo, no una lente. El ciclo lo
+  // arma la máquina (E1 auto por EL PUENTE → E2 → E3 → E4 → E5); E6+ sigue cableado al cubo.
+  const [moldeOn, setMoldeOn] = useState(false);
+  // PASO 7 · LOS PLANOS del molde de la pieza soltada — el juego de láminas (ensamble, análisis,
+  // 5 placas acotadas + 4 vistas, la pieza) que `buildMoldLaminas` ya sabía hacer para el
+  // formulario numérico; aquí recibe el paquete E2 de ESTA pieza y su sólido.
+  const [planosMolde, setPlanosMolde] = useState<DrawingPage[] | null>(null);
+  const [planosOn, setPlanosOn] = useState(false);   // el overlay; las láminas (datos) sobreviven al cerrarlo: el expediente las necesita
+  const [planosIdx, setPlanosIdx] = useState(0);
+  const [planosBusy, setPlanosBusy] = useState(false);
+  const [planosPend, setPlanosPend] = useState(false);
+  // PASO 8 · EL EXPEDIENTE — dictamen + decisiones §13.10 + cotización + planos, en UN archivo.
+  const [expedienteOn, setExpedienteOn] = useState(false);
+  const [revision, setRevision] = useState<RevisionModelo | null>(null);
   const [lentes, setLentes] = useState<LentesFoco | null>(null);
   const [lentesBusy, setLentesBusy] = useState(false);
   const [lentesErr, setLentesErr] = useState('');
@@ -3717,6 +3733,74 @@ export default function ForgeBRepStudio() {
   const docNameRef = useRef(docName);
   useEffect(() => { docNameRef.current = docName; }, [docName]);
   const mold = useMoldStudio({ oc, setCollapsed, setDocName, arbol: arbolRef, arbolRev });
+  const moldeOpacidadRef = useRef<unknown>(null);   // E5: restaurar opacidades una sola vez por sólido
+  // PASO 6 · EL MOLDE SE ARMA SOLO. El humano tocó MOLDE; la máquina: (1) la PARED la mide el
+  // Foco (p50 de la lente PARED — nadie la teclea; sin ella el STEP se leía MACIZO y cotizaba
+  // $188,830), (2) avanza UNA estación por render hasta E5 (E1 la puso EL PUENTE al entrar el
+  // sólido; E6 en adelante sigue cableado al CUBO y se dice, no se finge). Cada estación lee el
+  // `ciclo` recién escrito, por eso va en un efecto y no en un handler.
+  useEffect(() => {
+    if (!moldeOn || !piezaMalla) return;
+    const c = mold.ciclo;
+    if (!c?.pieza) return;                       // el sólido aún no llegó al kernel (Construyendo…)
+    if (mold.intake.wallMm == null) {
+      const p = lentes?.lentes.find((l) => l.id === 'pared')?.p50;   // las lentes son un ARREGLO con id, no un objeto
+      if (p && p > 0) { mold.setIntake({ wallMm: +p.toFixed(2), material: mold.intake.material ?? 'ABS' }); return; }
+      if (!lentes && !lentesBusy) calcularLentes();
+      return;
+    }
+    if (mold.cursoBusy) return;
+    // un tick de aire para que la leyenda «E<n>/5 · armando…» se pinte ANTES del bloqueo: E3
+    // talla el acero con el sólido real en WASM síncrono y puede detener el hilo >30 s (T6
+    // cplx-tiempo: se dice, no se esconde).
+    const paso = c.estacion === 1 ? mold.cicloEstacion2 : c.estacion === 2 ? mold.cicloEstacion3
+      : c.estacion === 3 ? mold.cicloEstacion4 : c.estacion === 4 ? mold.cicloEstacion5 : null;
+    if (!paso) {
+      // E5 alcanzada: E4 dejó las placas a 0.08 de opacidad para enseñar el frente de llenado y el
+      // visor del MOLDE se veía negro (medido 2026-09-07). En este modo el humano quiere VER el acero:
+      // se devuelven las opacidades de E3 (0.40 cavidad · 0.92 núcleo · 0.30 partición), una sola vez.
+      if (c.estacion >= 5 && moldeOpacidadRef.current !== c.piezaShape) { moldeOpacidadRef.current = c.piezaShape; mold.setMoldOpacity({}); }
+      return;
+    }
+    const t = setTimeout(() => paso(), 80);
+    return () => clearTimeout(t);
+  }, [moldeOn, piezaMalla, mold.ciclo, mold.intake, mold.cursoBusy, lentes, lentesBusy, calcularLentes, mold]);
+  // PASO 7 · el juego de planos del molde de ESTA pieza: mismo motor que el PDF de la Máquina
+  // (`buildMoldLaminas`), con el paquete E2 de la pieza y su sólido del kernel (4 vistas de la
+  // pieza moldeada). Corre en un tick aparte para que se pinte «generando…» antes de bloquear.
+  const generarPlanosMolde = useCallback(() => {
+    const pkg = mold.ciclo?.e2?.pkg; const shape = arbolRef.current?.shape;
+    if (!oc || !pkg) return false;
+    setPlanosBusy(true);
+    setTimeout(() => {
+      try {
+        const aspec = packageToAssemblySpec(pkg);
+        const r = pkg.recomendacion;
+        const rows = [
+          { grupo: 'Recomendación', param: 'arquitectura × cavidades', valor: `${r.arch} × ${r.nCav}`, ref: '§3.4' },
+          { grupo: 'Máquina', param: 'inyectora', valor: `${pkg.maquina?.nombre ?? '—'} ${pkg.maquina?.ok ? '✓' : '⚠'}`, ref: '§4.3.3', ok: pkg.maquina?.ok },
+          { grupo: 'DFM', param: 'moldeabilidad', valor: `${pkg.dfm.score}/100`, ref: '§2.3', ok: pkg.dfm.score >= 60 },
+        ];
+        const pages = buildMoldLaminas(OCC, oc, aspec, rows, shape);
+        setPlanosMolde(pages); setPlanosIdx(0); setPlanosOn(true);
+      } catch (e) { console.warn('PLANOS_MOLDE_ERR', e); setPlanosMolde([]); }
+      finally { setPlanosBusy(false); }
+    }, 30);
+    return true;
+  }, [oc, mold.ciclo]);
+  // si pidieron PLANOS antes de que exista E2, MOLDE arma el ciclo y esto los genera al llegar
+  useEffect(() => {
+    if (planosPend && mold.ciclo?.e2?.pkg && !planosBusy) { setPlanosPend(false); generarPlanosMolde(); }
+  }, [planosPend, mold.ciclo, planosBusy, generarPlanosMolde]);
+  // PASO 8 · el expediente como archivo: lo que HAY hoy, con lo que falta dicho
+  const expediente = useMemo(() => {
+    if (!expedienteOn || !piezaMalla) return null;
+    const fecha = new Date().toISOString().slice(0, 10);
+    let cotSvg: string | null = null;
+    try { if (mold.ciclo?.pieza) cotSvg = cotizacionSvg(cotizacionPieza(mold.ciclo.pieza, { fecha })); } catch (e) { console.warn('COT_EXPEDIENTE', e); }
+    const html = expedienteHTML({ nombre: piezaMalla.nombre, fecha, rev: revision, cotSvg, planos: planosMolde, notas: piezaMalla.notas });
+    return { html, tieneDictamen: !!revision, tieneCotizacion: !!cotSvg, nPlanos: planosMolde?.length ?? 0, nDecisiones: revision?.expediente.decisiones.length ?? 0, pendientes: revision?.expediente.pendientes ?? 0 };
+  }, [expedienteOn, piezaMalla, mold.ciclo, revision, planosMolde]);
   const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
   // ── U5 · PANTALLA LIMPIA (ian: «esas ventanas solo me quitan espacio… jamás las
   //    he utilizado») — una ventana SIN CONTENIDO no se renderiza. No se colapsa, no
@@ -4767,6 +4851,27 @@ export default function ForgeBRepStudio() {
   const orbitTo = useCallback((az: number, el: number, r: number, tx?: number, ty?: number, tz?: number) =>
     setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1,
       ...(tx !== undefined && ty !== undefined && tz !== undefined ? { target: [tx, tz, -ty] as [number, number, number] } : {}) })), []);
+  // PASO 6 · REENCUADRE AL MOLDE (va DESPUÉS de `orbitTo`: referenciarlo antes es TDZ, la cuarta vez en
+  // este archivo). El acero vive en coordenadas de la BASE (§4.3.2), no donde cayó el STEP; la cámara del
+  // drop apuntaba a la pieza y quedaba dentro del bloque de 246 mm → visor «vacío». `setView('iso')`
+  // tampoco sirve: encuadra el bbox de la pieza. Aquí se mide el bbox REAL de las placas y se apunta ahí.
+  const moldeEncuadradoRef = useRef<unknown>(null);
+  const moldeBBoxRef = useRef<string>('');   // diagnóstico: bbox del acero, lo lee la leyenda (data-bbox)
+  useEffect(() => {
+    if (!moldeOn || !mold.ciclo?.pieza || !mold.moldParts.length) return;
+    // CADA vez que cambian las partes (E3 → E4 → E5 las reemplazan): medido 2026-09-07, en E3 se veía
+    // el acero y en E5 el visor quedaba negro — la cámara volvía a la pieza (dentro del bloque) y el
+    // guard «una vez por sólido» impedía reencuadrar. moldParts es la dependencia, no el sólido.
+    moldeEncuadradoRef.current = mold.moldParts;
+    const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+    for (const p of mold.moldParts) { const P = p.positions; for (let k = 0; k < P.length; k += 3) for (let d = 0; d < 3; d++) { if (P[k + d] < mn[d]) mn[d] = P[k + d]; if (P[k + d] > mx[d]) mx[d] = P[k + d]; } }
+    if (!Number.isFinite(mn[0])) return;
+    const c = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
+    const diag = Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]);
+    moldeBBoxRef.current = `${mn.map((v) => v.toFixed(0)).join(',')} → ${mx.map((v) => v.toFixed(0)).join(',')} · centro ${c.map((v) => v.toFixed(0)).join(',')} · diag ${diag.toFixed(0)}`;
+    const t = setTimeout(() => orbitTo(40, 28, Math.max(diag * 1.15, 120), c[0], c[1], c[2]), 150);
+    return () => clearTimeout(t);
+  }, [moldeOn, mold.ciclo, mold.moldParts, orbitTo]);
 
   // ⚠ ESTE BLOQUE VA AQUÍ Y NO ARRIBA: `abrirArchivo` depende de `orbitTo`, y ponerlo
   //   antes de su declaración revienta en el NAVEGADOR con «Cannot access 'orbitTo'
@@ -4782,10 +4887,19 @@ export default function ForgeBRepStudio() {
   const [arrastrando, setArrastrando] = useState(false);
   const abrirArchivo = useCallback(async (f: File) => {
     try {
-      const { mesh, notas } = await mallaDesdeArchivo(f.name, await f.arrayBuffer());
+      const buf = await f.arrayBuffer();
+      const { mesh, notas } = await mallaDesdeArchivo(f.name, buf);
       const nombre = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 28);
       setErrPieza('');
       setPiezaMalla({ visor: mallaParaElVisor(mesh), mesh, nombre, notas });
+      // EL DROP CONSERVA EL SÓLIDO (golpe 3 del camino, 2026-09-07). `mallaDesdeArchivo` abre el
+      // STEP con el kernel, lo tesela y TIRABA el sólido: la pieza quedaba «malla del operador,
+      // sin caras de kernel» y partir/molde/planos no tenían con qué trabajar. Ahora, si es STEP,
+      // el mismo texto entra también como pieza principal del documento (la puerta de DISEÑO ya
+      // hacía esto): el Foco sigue sobre la MALLA (rápido, sirve para STL) y el B-Rep vive en el
+      // kernel para lo que necesita caras. Memoria del navegador, no servidores (decisión de ian).
+      if (/\.(stp|step)$/i.test(f.name)) importStepText(new TextDecoder().decode(buf), f.name);
+      else clearImportedStep();   // un STL no trae sólido: que no quede el de la pieza anterior
       // las lentes son de LA pieza anterior — se tiran, no se heredan
       setLentes(null); lentesDe.current = null; setLenteId('medidas'); setLentesErr('');
       setWorkspace('simulacion');
@@ -4804,7 +4918,7 @@ export default function ForgeBRepStudio() {
       setPiezaMalla(null);
       setErrPieza(`no se pudo abrir ${f.name}: ${String(err instanceof Error ? err.message : err).slice(0, 110)}`);
     }
-  }, [orbitTo]);
+  }, [orbitTo, importStepText, clearImportedStep]);
   const [gbParts, setGbParts] = useState<GearboxMotionData | null>(null);
   // Construye las piezas separadas (centradas) cuando se enciende el movimiento o
   // cambian los parámetros de la caja. Teselación una vez; la animación solo mueve grupos.
@@ -6456,7 +6570,7 @@ export default function ForgeBRepStudio() {
             {/* El fantasma del perfil VIEJO se esconde mientras el croquis está
                 abierto: el SVG en vivo ES la verdad ahí; dos versiones confunden. */}
             {!(gbMotion && gbParts) && !moldParts.length && !piezaMalla && showSketch && !sketchOpen && <ProfileGhost pts={profilePts} />}
-            {piezaMalla ? (
+            {piezaMalla && !(moldeOn && mold.moldParts.length) ? (
               /* T1 · TU PIEZA, EN EL VISOR. Mismo `SolidMesh` que el sólido del
                  kernel: por eso hereda picking, sección y —en T2— el canal de
                  colores por vértice para pintarle el espesor encima. */
@@ -6804,6 +6918,30 @@ export default function ForgeBRepStudio() {
                   font: `${particionOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
                   color: particionOn ? '#ff8a5c' : '#6f8095', borderBottom: `2px solid ${particionOn ? '#ff8a5c' : 'transparent'}`,
                 }}>PARTIR</button>
+              {/* PASO 6 · MOLDE — el ciclo de la máquina sobre ESTA pieza; color oro (acero del molde) */}
+              <button data-testid="parte-lente-molde"
+                onClick={() => { setFocoOn(true); setMoldeOn((v) => !v); }}
+                style={{
+                  cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
+                  font: `${moldeOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
+                  color: moldeOn ? '#ffcc33' : '#6f8095', borderBottom: `2px solid ${moldeOn ? '#ffcc33' : 'transparent'}`,
+                }}>MOLDE</button>
+              {/* PASO 7 · PLANOS — el juego de láminas del molde de esta pieza */}
+              <button data-testid="parte-lente-planos"
+                onClick={() => { setFocoOn(true); if (planosMolde) { setPlanosOn((v) => !v); return; } if (mold.ciclo?.e2?.pkg) generarPlanosMolde(); else { setMoldeOn(true); setPlanosPend(true); } }}
+                style={{
+                  cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
+                  font: `${planosOn || planosBusy ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
+                  color: planosMolde ? '#dfe7f2' : '#6f8095', borderBottom: `2px solid ${planosOn || planosBusy ? '#dfe7f2' : 'transparent'}`,
+                }}>PLANOS</button>
+              {/* PASO 8 · EXPEDIENTE — dictamen + decisiones + cotización + planos, en un archivo */}
+              <button data-testid="parte-lente-expediente"
+                onClick={() => { setFocoOn(true); setExpedienteOn((v) => !v); }}
+                style={{
+                  cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
+                  font: `${expedienteOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
+                  color: expedienteOn ? '#c9b4ff' : '#6f8095', borderBottom: `2px solid ${expedienteOn ? '#c9b4ff' : 'transparent'}`,
+                }}>EXPEDIENTE</button>
               {lenteActiva && (
                 <div data-testid="parte-leyenda" style={{ display: 'flex', alignItems: 'center', gap: 9, marginLeft: 6, flexWrap: 'wrap' }}>
                   {lenteActiva.paradas.map((p, i) => (
@@ -6829,6 +6967,30 @@ export default function ForgeBRepStudio() {
                   </span>
                 </div>
               )}
+              {moldeOn && (() => {
+                const c = mold.ciclo; const roles = Array.from(new Set(mold.moldParts.map((p) => p.role)));
+                const tiene = (r: string) => roles.includes(r);
+                const placas = tiene('cavidad') && tiene('nucleo');
+                const est = c?.pieza ? c.estacion : 0;
+                const txt = !c?.pieza ? (result ? 'esperando el sólido…' : 'necesita el sólido del STEP (un STL no trae)')
+                  : mold.intake.wallMm == null ? 'midiendo la pared en el Foco…'
+                  : est < 5 ? `E${est}/5 · armando…` : 'E5/5';
+                return (
+                  <div data-testid="molde-de-la-pieza" data-estacion={est} data-roles={roles.join(' ')} data-pared={mold.intake.wallMm ?? ''}
+                    data-partes={mold.moldParts.length} data-tris={mold.moldParts.reduce((n, p) => n + (p.indices ? p.indices.length / 3 : 0), 0)} data-bbox={moldeBBoxRef.current}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, marginLeft: 6, fontSize: 9.5, color: '#9fb0c4' }}>
+                    <span style={{ width: 16, height: 3, borderRadius: 2, background: '#ffcc33' }} />
+                    <b style={{ color: '#ffe08a' }}>molde de la pieza</b>
+                    <span style={{ opacity: 0.75 }}>{txt}{mold.intake.wallMm != null ? ` · pared ${mold.intake.wallMm} mm (medida)` : ''}</span>
+                    <span style={{ opacity: 0.85 }}>
+                      <span style={{ color: placas ? '#7ee2a8' : '#6f8095' }}>{placas ? '✓' : '·'} placas</span>{' '}
+                      <span style={{ color: tiene('colada') ? '#7ee2a8' : '#6f8095' }}>{tiene('colada') ? '✓' : '·'} colada</span>{' '}
+                      <span style={{ color: '#f27a6c' }}>✗ agua (E8 cubo)</span>{' '}
+                      <span style={{ color: '#f27a6c' }}>✗ expulsores (E10 cubo)</span>
+                    </span>
+                  </div>
+                );
+              })()}
               {lentesBusy && <span style={{ fontSize: 10, color: '#bfeeff', opacity: 0.85 }}>⏳ midiendo el campo…</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 10.5, color: '#93a4ba', pointerEvents: 'auto' }}>
@@ -6924,6 +7086,7 @@ export default function ForgeBRepStudio() {
                 <RevisarPiezaPanel
                   pieza={{ mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas }}
                   onDictamen={(f) => setDictamen({ viola: f.viola, advierte: f.advierte, cumple: f.cumple })}
+                  onRevision={setRevision}
                   onAbrirLote={() => { setLaminaOn(false); setRevisarLoteOn(true); }} />
               </Suspense>
               </div>
@@ -7669,6 +7832,7 @@ export default function ForgeBRepStudio() {
                 )}
                 <Suspense fallback={<div style={{ fontSize: 11, opacity: 0.6 }}>cargando la revisión…</div>}>
                   <RevisarPiezaPanel
+                    onRevision={setRevision}
                     pieza={piezaMalla
                       ? { mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas }
                       : result ? { mesh: { positions: result.mesh.positions, indices: result.mesh.indices }, nombre: docName } : null}
@@ -8884,7 +9048,7 @@ export default function ForgeBRepStudio() {
             ) : (
               <div className="inv">
                 <span className="k">Estado</span>
-                <span className="v" data-testid="estado-texto">{opErr ? `Error: ${opErr}` : bootErr ? `Kernel: ${bootErr}` : piezaMalla ? `${piezaMalla.nombre} — malla del operador (${piezaMalla.visor.triangleCount.toLocaleString('es-MX')} triángulos) · sin caras de kernel: para acotar o partir, importa un STEP` : vacio ? 'Lienzo vacío — Boceto → Extruir, o abre un proyecto (▾ arriba a la izquierda)' : 'Construyendo…'}</span>
+                <span className="v" data-testid="estado-texto">{opErr ? `Error: ${opErr}` : bootErr ? `Kernel: ${bootErr}` : piezaMalla ? `${piezaMalla.nombre} — malla del operador (${piezaMalla.visor.triangleCount.toLocaleString('es-MX')} triángulos)${result && result.faces.length ? ` · sólido en el kernel: ${result.faces.length} caras, ${result.volKernel.toFixed(0)} mm³ — listo para partir y moldear` : ' · sin caras de kernel: para acotar o partir, suelta un STEP (no un STL)'}` : vacio ? 'Lienzo vacío — Boceto → Extruir, o abre un proyecto (▾ arriba a la izquierda)' : 'Construyendo…'}</span>
               </div>
             )}
             {opErr && result && (
@@ -8911,6 +9075,66 @@ export default function ForgeBRepStudio() {
               </div>
             </div>
             <div className="fb-plano-svg" data-testid="cam-svg" dangerouslySetInnerHTML={{ __html: camSvg }} />
+          </div>
+        </div>
+      )}
+      {/* PASO 7 · LOS PLANOS DEL MOLDE de la pieza soltada (mismo cascarón que el plano de pieza) */}
+      {((planosOn && planosMolde) || planosBusy) && (
+        <div className="fb-plano-overlay" data-testid="planos-del-molde" data-paginas={planosMolde?.length ?? 0} onClick={() => setPlanosOn(false)}>
+          <div className="fb-plano-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="fb-plano-bar">
+              <span>📐 Planos del molde · {piezaMalla?.nombre ?? 'la pieza'} · {planosBusy ? '⏳ generando las láminas…' : `${planosMolde!.length} láminas`}</span>
+              <div className="fb-plano-actions" style={{ flexWrap: 'wrap' }}>
+                {planosMolde?.map((p, i) => (
+                  <button key={i} data-testid={`planos-del-molde-pagina-${i}`} onClick={() => setPlanosIdx(i)}
+                    style={{ fontWeight: i === planosIdx ? 700 : 400, opacity: i === planosIdx ? 1 : 0.7 }}>{p.name}</button>
+                ))}
+                {planosMolde && planosMolde.length > 0 && (
+                  <button data-testid="btn-planos-molde-pdf" title="Todas las láminas en una ventana imprimible → PDF"
+                    onClick={() => { const w = window.open('', '_blank'); if (w) { w.document.write(laminasToPrintHTML(planosMolde, `Planos del molde · ${piezaMalla?.nombre ?? 'pieza'}`)); w.document.close(); } }}>🖨 PDF</button>
+                )}
+                <button data-testid="btn-planos-molde-close" onClick={() => setPlanosOn(false)}>✕ Cerrar</button>
+              </div>
+            </div>
+            {planosMolde && planosMolde.length === 0 && <div style={{ padding: 20, color: '#f27a6c' }}>No se pudieron construir las láminas de esta pieza (ver consola: PLANOS_MOLDE_ERR).</div>}
+            {planosMolde && planosMolde[planosIdx] && (
+              <div className="fb-plano-svg" data-testid="planos-del-molde-svg" dangerouslySetInnerHTML={{ __html: planosMolde[planosIdx].svg }} />
+            )}
+          </div>
+        </div>
+      )}
+      {/* PASO 8 · EL EXPEDIENTE — lo que hay, lo que falta, y el archivo */}
+      {expedienteOn && piezaMalla && expediente && (
+        <div className="fb-plano-overlay" data-testid="expediente-de-la-pieza"
+          data-dictamen={expediente.tieneDictamen ? 1 : 0} data-cotizacion={expediente.tieneCotizacion ? 1 : 0} data-planos={expediente.nPlanos} data-decisiones={expediente.nDecisiones}
+          onClick={() => setExpedienteOn(false)}>
+          <div className="fb-plano-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 980 }}>
+            <div className="fb-plano-bar">
+              <span>📁 Expediente · {piezaMalla.nombre} · §13.10</span>
+              <div className="fb-plano-actions">
+                <button data-testid="btn-expediente-descargar" onClick={() => triggerDownload(new Blob([expediente.html], { type: 'text/html' }), `expediente-${piezaMalla.nombre.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.html`)}>⬇ Descargar (HTML)</button>
+                <button data-testid="btn-expediente-imprimir" onClick={() => { const w = window.open('', '_blank'); if (w) { w.document.write(expediente.html); w.document.close(); } }}>🖨 Imprimir / PDF</button>
+                <button data-testid="btn-expediente-close" onClick={() => setExpedienteOn(false)}>✕ Cerrar</button>
+              </div>
+            </div>
+            <div style={{ padding: '14px 18px', color: '#dfe7f2', fontFamily: 'Inter, system-ui, sans-serif', fontSize: 13, lineHeight: 1.5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
+                {[
+                  ['DICTAMEN', expediente.tieneDictamen ? `${revision!.fila.score}/100 · ${revision!.fila.viola} violan · ${revision!.fila.advierte} advierten` : 'abre EL DICTAMEN (D) para incluirlo', expediente.tieneDictamen],
+                  ['DECISIONES §13.10', expediente.tieneDictamen ? `${expediente.nDecisiones} · ${expediente.pendientes} pendientes de firma` : 'salen del dictamen', expediente.tieneDictamen],
+                  ['COTIZACIÓN', expediente.tieneCotizacion ? 'hoja de la pieza incluida' : 'necesita MOLDE (E1)', expediente.tieneCotizacion],
+                  ['PLANOS', expediente.nPlanos ? `${expediente.nPlanos} láminas incluidas` : 'genera LOS PLANOS (paso 7) para incluirlos', expediente.nPlanos > 0],
+                ].map(([t, v, ok]) => (
+                  <div key={String(t)} style={{ border: `1px solid ${ok ? 'rgba(126,226,168,0.5)' : 'rgba(242,122,108,0.5)'}`, borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: ok ? '#7ee2a8' : '#f27a6c' }}>{ok ? '✓' : '·'} {t}</div>
+                    <div style={{ fontSize: 12, color: '#c7d2df', marginTop: 3 }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 11.5, color: '#9fb0c4' }}>
+                El archivo lleva las cuatro secciones en ese orden y termina con el plan de tryout del libro. El video del enfriamiento va después (decisión de ian, 2026-09-04). Nada de lo que falta se inventa: se dice.
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -9150,6 +9374,39 @@ function meshToStlBlob(positions: Float32Array, indices: Uint32Array): Blob {
   }
   return new Blob([buf], { type: 'model/stl' });
 }
+/** PASO 8 · EL EXPEDIENTE como archivo (§13.10): dictamen → decisiones → cotización → planos → tryout.
+ *  Lo que no hay se DICE en el archivo, no se rellena. HTML imprimible (A4 apaisado; láminas A3). */
+function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; cotSvg: string | null; planos: DrawingPage[] | null; notas: string[] }): string {
+  const esc = (t: unknown) => String(t ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
+  const css = `@page{size:A4 landscape;margin:14mm}html,body{margin:0;background:#fff;color:#111;font:12px/1.45 Inter,system-ui,sans-serif}` +
+    `h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 8px;letter-spacing:.06em;text-transform:uppercase;border-bottom:2px solid #111;padding-bottom:4px}` +
+    `.sec{page-break-inside:avoid}.muted{color:#666}.pg{page-break-before:always;width:100%;display:flex;justify-content:center}.pg svg{width:100%;height:auto}` +
+    `table{border-collapse:collapse;width:100%;font-size:11.5px}td,th{border-bottom:1px solid #ddd;padding:4px 6px;text-align:left;vertical-align:top}` +
+    `.VIOLA{color:#b3261e;font-weight:700}.ADVIERTE{color:#9a6b00;font-weight:700}.CUMPLE{color:#1b7f3b}.falta{background:#fff4f2;border:1px solid #f0b6ad;padding:10px 12px;border-radius:6px}`;
+  const rev = o.rev;
+  const dictamen = rev ? (() => {
+    const cs = rev.contratos.subsistemas.flatMap((s) => s.criterios).filter((c) => c.estado === 'VIOLA' || c.estado === 'ADVIERTE');
+    return `<p><b>${esc(rev.fila.score)}/100</b> · ${esc(rev.fila.viola)} violan · ${esc(rev.fila.advierte)} advierten · ${esc(rev.fila.cumple)} cumplen · ${esc(rev.fila.sinCablear)} sin cablear</p>` +
+      `<table><tr><th>§</th><th>criterio</th><th>estado</th><th>lo medido</th></tr>` +
+      cs.map((c) => `<tr><td>${esc(c.cita)}</td><td>${esc(c.criterio)}</td><td class="${c.estado}">${esc(c.estado)}</td><td>${esc(c.detalle)}</td></tr>`).join('') + `</table>`;
+  })() : `<div class="falta">Sin dictamen: no se abrió EL DICTAMEN (D) antes de armar el expediente.</div>`;
+  const decisiones = rev ? `<p>${esc(rev.expediente.decisiones.length)} decisiones que el libro exige del humano · <b>${esc(rev.expediente.pendientes)} pendientes de firma</b> · ${rev.expediente.cerrable ? 'CERRABLE' : 'NO CIERRA sin firmas (§13.10)'}</p>` +
+    `<table><tr><th>tema</th><th>§</th><th>opciones reales</th><th>elección</th></tr>` +
+    rev.expediente.decisiones.map((d) => `<tr><td><b>${esc(d.tema)}</b></td><td>${esc(d.cita)}</td><td>${d.opciones.map((x) => `· ${esc(x)}`).join('<br>')}</td><td>${d.eleccion ? esc(d.eleccion) + (d.responsable ? `<br><span class="muted">${esc(d.responsable)} · ${esc(d.fecha)}</span>` : '') : '<span class="muted">pendiente</span>'}</td></tr>`).join('') + `</table>` +
+    `<h2>Plan de tryout</h2><ul>${rev.expediente.tryout.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
+  const cot = o.cotSvg ? `<div class="pg">${o.cotSvg}</div>` : `<div class="falta">Sin cotización: el molde (E1) no se armó para esta pieza.</div>`;
+  const planos = o.planos && o.planos.length ? o.planos.map((p) => `<div class="pg" title="${esc(p.name)}">${p.svg}</div>`).join('') : `<div class="falta">Sin planos: no se generó el juego de láminas (paso 7).</div>`;
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Expediente · ${esc(o.nombre)}</title><style>${css}</style></head><body>` +
+    `<h1>Expediente · ${esc(o.nombre)}</h1><div class="muted">${esc(o.fecha)} · La Forja de Hefestos · §13.10: el entregable no es el molde, es el registro de decisiones firmado</div>` +
+    (o.notas.length ? `<p class="muted">${o.notas.map(esc).join(' · ')}</p>` : '') +
+    `<div class="sec"><h2>1 · Dictamen</h2>${dictamen}</div>` +
+    `<div class="sec"><h2>2 · Decisiones §13.10</h2>${decisiones || '<div class="falta">Salen del dictamen.</div>'}</div>` +
+    `<h2>3 · Cotización</h2>${cot}` +
+    `<h2>4 · Planos del molde</h2>${planos}` +
+    `<h2>5 · Video</h2><p class="muted">El video del enfriamiento se agrega después (decisión de ian, 2026-09-04): sale de la misma animación de la lente, no de otra.</p>` +
+    `</body></html>`;
+}
+
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

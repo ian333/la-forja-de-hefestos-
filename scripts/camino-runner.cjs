@@ -74,7 +74,10 @@ const parseCheck = (s, n, k) => {
     if (!m) throw new Error(`check ilegible en paso ${n}: ${s}`);
     return { type: 'expect', label, selector: m[1].trim(), min: +m[2], timeout: 15000, settle: 0, decl: s };
   }
-  if (s.startsWith('js:')) return { type: 'expect', label, js: s.slice(3).trim(), timeout: 15000, settle: 0, decl: s };
+  if (s.startsWith('js:')) {
+    const m = s.slice(3).trim().match(/^([\s\S]*?)(?:@(\d+))?$/);   // js:<expr>[@timeoutMs]
+    return { type: 'expect', label, js: (m ? m[1] : s.slice(3)).trim(), timeout: m && m[2] ? +m[2] : 15000, settle: 0, decl: s };
+  }
   throw new Error(`check desconocido en paso ${n}: ${s} (usa testid: | count: | js:)`);
 };
 const runner = runnerLineas.map((l) => {

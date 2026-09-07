@@ -1,0 +1,44 @@
+{
+ "molde-gesto": {
+  "estado": "verde",
+  "checks": "pestaña MOLDE (`parte-lente-molde`) en EL PARTE, color oro, toggle independiente",
+  "video": "",
+  "still": "molde-de-la-pieza.png",
+  "nota": ""
+ },
+ "pared-medida": {
+  "estado": "verde",
+  "checks": "`intake.wallMm` = p50 de la lente PARED = **2.75 mm** (medida, nadie la tecleó); la leyenda dice «pared 2.75 mm (medida)»; sin pared el driver no avanza a E2 (control implícito: se quedó en «midiendo la pared» cuando la ruta a la lente estaba mal)",
+  "video": "",
+  "still": "",
+  "nota": "bug pagado: las lentes son un ARREGLO con id, no un objeto — `lentes.find(l => l.id === 'pared')`"
+ },
+ "ciclo-solo": {
+  "estado": "verde",
+  "checks": "E1 (PUENTE) → E2 → E3 → E4 → E5 sin botones, una estación por render con un tick de aire; la leyenda enseña E<n>/5. E3 con el sólido real: 19.5 s en una corrida y 108-109 s en otras tres (misma pieza)",
+  "video": "",
+  "still": "",
+  "nota": "E3 bloquea el hilo principal: es T6 cplx-tiempo («ninguna pieza del banco pasa de 20 s»), aquí 5×. Declarado, no escondido; el arnés ya no muere en la captura"
+ },
+ "molde-se-ve": {
+  "estado": "verde",
+  "checks": "con MOLDE encendido el Canvas cambia a `moldParts` (7 partes, 212,148 triángulos). Se ve el molde completo de la carcasa en E5: placas A/B translúcidas, inserto de cavidad con la pieza adentro, bebedero (colada) y las cotas de verificación del acero (boca Y 106.52 ✓ · cavidad X 132 ✓ · pared 2.75 ≠ 3.109 ✗ · partición 160 ≠ 159.972 ✗ …). Tres defectos pagados para llegar: (1) la cámara del drop quedaba DENTRO del bloque de 246 mm (el acero vive en la base, no donde cayó el STEP); (2) E4 baja las placas a 0.08 para el frente de llenado → al llegar a E5 se restauran las de E3; (3) E4/E5 REEMPLAZAN las partes y las colocan en otro sitio (E3 bbox centro 129,0,−17 · E5 centro 123,123,158, medido con data-bbox) → el reencuadre va en CADA cambio de moldParts, no una vez por sólido",
+  "video": "",
+  "still": "molde-de-la-pieza.png",
+  "nota": "juzgado con ojos en 6 corridas: vacío → vacío → placa oscura → placa oscura → (opacidad ok, cámara adentro) → MOLDE VISIBLE. El testigo del antes: molde-antes-del-reencuadre.png"
+ },
+ "honesto": {
+  "estado": "verde",
+  "checks": "leyenda `molde-de-la-pieza`: «✓ placas ✓ colada ✗ agua (E8 cubo) ✗ expulsores (E10 cubo)»; el runner mide el paso 6 PARCIAL (3/5), no verde",
+  "video": "",
+  "still": "molde-de-la-pieza.png",
+  "nota": "data-roles/data-partes/data-tris/data-bbox para que el runner y yo midamos sin adivinar"
+ },
+ "sin-regresion": {
+  "estado": "verde",
+  "checks": "cero pageerror en el drive final (el «DataCloneError out of memory» era el perfilador de React en DEV clonando props gigantes: se anula solo en el arnés con NO_PERF_MEASURE=1, producción no perfila) · censo Canvas 8→8 · orden-gate al cerrar",
+  "video": "",
+  "still": "",
+  "nota": "defectos MÍOS pagados en el camino: TDZ de `setView`/`orbitTo` (cuarta vez en el archivo, movido debajo), ' · ' dentro de un js del RUNNER"
+ }
+}
