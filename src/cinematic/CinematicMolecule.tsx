@@ -41,6 +41,34 @@ const CARGAS_DURATION = 83.2;
 const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz todavía)   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
 const WTRI_DURATION = 77.7;
 const WTET_DURATION = 88.0;   // EL CUARTETO: voz 85.51s (segs.json, 27 líneas) + 2.5s de cola
+const WHEX6B_DURATION = 55;
+// HEXÁMERO IDENTIDAD — el evento es l9-l10 ("tú también eres agua… dentro de tus células"):
+// ahí arde el spin y el campo. PROVISIONAL hasta segs.json.
+const WHEX6B_CAPAS: CapasSpec = {
+  campo:    { base: 0.25, mods: [{ wins: [[6.20, 17.65]], a: 0.55, label: 'los puentes: se agarran y se prestan (l3-5)' }] },
+  nubes:    { base: 1,    mods: [] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[6.20, 13.35]], a: 0.42, label: 'los electrones cuando se nombra el préstamo (l3-4)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[32.29, 49.11]], a: 0.85, label: 'ARDE: la forma que crecería dentro de ti (l9-11)' }] },
+  acc:      { base: 1.45, mods: [] },
+  enlaces:  { base: 0,    mods: [{ wins: [[0.0, 6.20]], a: 1.0, label: 'los átomos contables en el gancho (l1-2)' }] },
+  dipolo:   { base: 0,    mods: [] },
+  ceros:    { base: 0,    mods: [] },
+  apertura: { base: 0.10, mods: [] },
+};
+const WTRIB_DURATION = 55;
+// ANILLO IDENTIDAD — el evento es l7 (cooperatividad) y el payoff l9-l11 (tu dedo, el árbol,
+// el mosquito). PROVISIONAL hasta segs.json.
+const WTRIB_CAPAS: CapasSpec = {
+  campo:    { base: 0.55, mods: [{ wins: [[17.46, 31.52]], a: 0.45, label: 'cooperatividad: el campo manda (l6-8)' }] },
+  nubes:    { base: 1,    mods: [{ wins: [[13.78, 17.46]], a: -0.34, label: 'deja LEER el puente (l5)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[9.53, 13.78]], a: 0.42, label: 'los electrones cuando se nombra la molécula (l4)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[17.46, 38.76]], a: 0.85, label: 'ARDE: juntas jalan más, la piel invisible (l6-11)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[9.53, 13.78]], a: 0.45, label: 'ORO del oxígeno (l4)' }] },
+  enlaces:  { base: 0,    mods: [{ wins: [[0.0, 9.53]], a: 1.0, label: 'los átomos contables en el gancho (l1-3)' }] },
+  dipolo:   { base: 0,    mods: [{ wins: [[25.97, 38.76]], a: 1.0, label: 'la piel invisible: los dipolos alineados (l8-11)' }] },
+  ceros:    { base: 0,    mods: [] },
+  apertura: { base: 0.10, mods: [] },
+};
 const WHEX6_DURATION = 97.74; // EL HEXÁGONO v2: voz 95.24s (segs.json, 31 líneas) + 2.5s de cola
 const HEMO_DURATION = 77;
 const WSAL_DURATION = 77;     // LA SAL (Na⁺ + H₂O): provisional = la del rey; recalibrar con segs.json     // LA CAZADORA (hemoglobina): corte de STILLS — recalibrar con segs.json
@@ -738,6 +766,20 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // imagen, porque todas caían en la misma banda de distancia (1.0-1.55) y elevación parecida.
   // Ahora el tramo tiene ritmo de ESCALA: ENCIMA (0.92) → medio (1.16) → LEJOS y de canto
   // (1.92, elev 0.03) → CRASH muy cerca (0.74). Cada toma se ve distinta de sus vecinas.
+  wtrib: [
+    // RECORTE DE IDENTIDAD del anillo (2026-09-07, canon §EL VEREDICTO A/B). Tomas del ganador,
+    // 9 en 55 s (8.73 cortes/min = brazo A). CALIBRADAS a segs.json (13 líneas, 48.63 s):
+    // l4 9.53 · l5 13.78 · l6 17.46 · l7 21.07 · l8 25.97 · l9 31.52 · l11 38.76 · l12 41.76.
+    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 9.53, label: 'EL GANCHO: el anillo de frente — la llave, la gota, "esto la detiene" (l1-3)' },
+    { shot: ringWide({ rMul: 1.14, azim0: 0.55, span: 1.0, elev: 0.30, fov: 34 }), dur: 4.25, label: 'las TRES, que se CUENTEN (l4)' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 3.68, label: 'le presta un hidrógeno a la vecina (l5)' },
+    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 3.61, label: 'el anillo CIERRA: juntas jalan más (l6)' },
+    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 4.90, label: 'COOPERATIVIDAD 12 %: se viene encima (l7)' },
+    { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.03, span: 0.62 }), dur: 5.55, label: 'multiplícalo por millones: la piel invisible (l8)' },
+    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 7.24, label: 'ÍNTIMO: la gota en tu dedo / el árbol (l9-10)' },
+    { shot: crashIn(), dur: 3.00, label: 'y aguanta el peso de un mosquito (l11)' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 13.24, label: 'payoff: la misma agua que traes adentro + GAIA + cola (l12-13)' },
+  ],
   wtri: [
     // CORTE 2026-07-28 (Ian: "es muy largo y tarda mucho para llegar a los vectores"). Fuera 7
     // líneas de relleno — la firma pasa del segundo 59.6 al 42.8 y el video de 92 a 72.9 s.
@@ -867,6 +909,22 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: pullOut({ rFromMul: 0.78, rTdMul: 2.05, fovFrom: 44, fovTo: 34, azim0: 2.30, span: 1.2 }), dur: 4.29, label: 'SALE volando — "nada de esto está dibujado" (l13)' },
     { shot: whipParallax({ rMul: 1.62, elevAmp: 0.26, azim0: 2.60, span: 2.4, fov: 37 }), dur: 7.29, label: 'BARRIDO con parallax: "las líneas son el campo real" (l14)' },
     { shot: ringFaceOn({ rMul: 1.72, azim0: 1.50, span: 0.30, elev: 0.10 }), dur: 6.85, label: 'EL REMATE: "el olor de la mantequilla es esta forma" (l15-16)' },
+  ],
+  whex6b: [
+    // RECORTE DE IDENTIDAD del hexámero (2026-09-07, canon §EL VEREDICTO A/B). Mismas tomas del
+    // ganador —ringFaceOn/ringToBridge/ringEdgeToFace/loomPush/pullOut, sin inventar cámara— pero
+    // 9 en 55 s (8.73 cortes/min = brazo A). El brazo B (18.75) perdió 3.4× en compartidos.
+    // CALIBRADAS a segs.json (2026-09-07, 12 líneas, 49.51 s). Cada corte cae en el ARRANQUE de su
+    // línea: l3 6.20 · l4 9.85 · l5 13.35 · l6 17.65 · l7 21.19 · l8 26.00 · l9 32.29 · l11 41.15.
+    { shot: ringFaceOn({ rMul: 2.70, azim0: 1.50, span: 0.22, elev: 0.06 }), dur: 6.20, label: 'EL GANCHO: el anillo denso de frente — "no te pueden congelar" (l1-2)' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.30, rTo: 1.05, azim: 1.20, fov: 34 }), dur: 3.65, label: 'seis moléculas se agarran en un anillo (l3)' },
+    { shot: ringToBridge({ a: 2, b: 3, rFrom: 1.45, rTo: 1.10, azim: 2.60, fov: 32 }), dur: 3.50, label: 'le presta un hidrógeno a la vecina (l4)' },
+    { shot: ringEdgeToFace({ rMul: 1.95, elev: 0.03, span: 0.20 }), dur: 4.30, label: 'DE CANTO: el anillo es PLANO y ocupa más espacio (l5)' },
+    { shot: ringFaceOn({ rMul: 2.55, azim0: 1.57, span: 0.24, elev: 0.05 }), dur: 3.54, label: 'por eso el hielo flota en tu vaso (l6)' },
+    { shot: ringFaceOn({ rMul: 2.80, azim0: 1.57, span: 0.18, elev: 0.04 }), dur: 4.81, label: 'LA FORMA limpia: se repite millones de veces = un copo (l7)' },
+    { shot: ringFaceOn({ rMul: 2.75, azim0: 1.45, span: 0.20, elev: 0.05 }), dur: 6.29, label: 'EL REMATE: cuenta las puntas / cuenta los lados (l8)' },
+    { shot: loomPush({ rFrom: 2.45, rTo: 1.30, elev: 0.34, azim: 0.85, fov: 33 }), dur: 8.86, label: 'SE VIENE ENCIMA: tú también eres agua / crecería en tus células (l9-10)' },
+    { shot: pullOut({ azim0: 1.57, span: 0.50, rFromMul: 2.60, rTdMul: 3.30 }), dur: 13.85, label: 'payoff: lo bonito es lo que te mataría + GAIA + cola (l11-12)' },
   ],
   whex6: [
     { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.30, rTo: 1.05, azim: 1.20, fov: 34 }), dur: 4.04, label: 'EL DESTELLO — el campo ENCIENDE sobre "mira cómo se agarran"' },
@@ -1339,6 +1397,8 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
   wcolor: { name: 'De quién son', formula: 'C · O · H', fact: 'Cada color es un elemento, repartido por la regla de Hirshfeld — no a ojo.' },
+  whex6b: { name: 'No te pueden congelar', formula: '(H₂O)₆', fact: 'El hexágono que hace bonito a un copo de nieve es el que te reventaría las células.' },
+  wtrib: { name: 'La gota que no cae', formula: '(H₂O)₃', fact: 'Tres aguas juntas jalan 12 % más que por separado: esa es la piel del agua.' },
   wroba: { name: 'Te roba el agua', formula: 'C₂H₅OH···H₂O', fact: 'La punta del alcohol es la del agua: por eso el gel te reseca las manos.' },
   weres: { name: 'Eres tú', formula: 'H₂O···H₂O', fact: 'Seis de cada diez partes de tu cuerpo son exactamente esto.' },
   wgotas: { name: 'Dos gotas', formula: 'H₂O···H₂O', fact: 'El instante en que dos gotas se vuelven una es un puente de hidrógeno naciendo.' },
@@ -2949,6 +3009,10 @@ const WATER_BINS: Record<string, WaterEntry> = {
   // (4 núcleos: Na, O, H, H), mismo eje, mismo régimen. Gate: −24.0 kcal/mol a 2.25 Å = experimento.
   wsal:  { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSAL_CAPAS, dur: WSAL_DURATION },
   // nube ±6.6 bohr: ex=15 dejaba void muerto
+  whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
+            capas: WHEX6B_CAPAS, dur: WHEX6B_DURATION },
+  wtrib: { bin: 'water-trimer', ef: 'water-trimer-efield', ex: 10, anillo: true,
+           ceros: 'water-trimer-ceros', capas: WTRIB_CAPAS, dur: WTRIB_DURATION },
   wtri:  { bin: 'water-trimer',   ef: 'water-trimer-efield',   ex: 10, anillo: true,
            ceros: 'water-trimer-ceros', capas: WTRI_CAPAS, dur: WTRI_DURATION },
   // EL CUARTETO (H₂O)₄ — 4 aguas / 12 átomos. ex sube con el circunradio del polígono

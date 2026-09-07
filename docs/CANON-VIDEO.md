@@ -522,6 +522,30 @@ datos de horarios de publicación 2026 (9.6M posts).
 
 ---
 
+### Los dos porteros de un átomo nuevo (2026-09-07)
+
+Antes de gastar voz y render en un elemento, dos comprobaciones sobre
+`public/precomputed/atoms/manifest.json`:
+
+1. **La configuración debe COINCIDIR con el estado base experimental (NIST ASD).** UHF de capa
+   abierta ordena mal 3d/4s: **Mn (25) y Fe (26) DIFIEREN** y están prohibidos. Cuesta caro
+   saberlo tarde: el hierro sería el mejor gancho de identidad que existe (*el átomo que te
+   pinta la sangre*) y no se puede usar con este método.
+2. **El bin debe traer el ÁTOMO COMPLETO.** Desde **Rb (Z=37)** la base def2-tzvp usa
+   pseudopotencial: **72 elementos vienen SIN núcleo** (sus capas internas no existen en el
+   bin). El yodo se cayó del plan de septiembre por esto — habría salido hueco en pantalla,
+   enseñando un átomo que no es. Regla mecánica: `suma(electrones de las capas) == Z`.
+
+```
+python3 -c "import json;m=json.load(open('public/precomputed/atoms/manifest.json'));
+e=next(x for x in m['elements'] if x['Z']==Z);print(sum(s['electrons'] for s in e['shells'])==Z, e['shells'])"
+```
+
+Sanos y verificados para la serie de identidad: **O (8), Na (11), Mg (12), P (15), S (16),
+K (19), Ca (20), Zn (30)**.
+
+---
+
 ## ⚖️ EL VEREDICTO A/B — el brazo B PERDIÓ, y el compartir no vive en la velocidad (2026-09-07)
 
 Primer experimento controlado de la casa. Dos cortes de **la misma pieza** (EL REY, LOS DOS

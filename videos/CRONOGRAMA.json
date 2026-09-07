@@ -113,81 +113,141 @@
       "fecha": "2026-09-08",
       "hora": "18:45",
       "id": "mol-h2o-el-hexamero-b",
-      "titulo": "El hexámero — recorte al ritmo (12k vistas IG)",
-      "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+      "titulo": "Por esto no te pueden congelar — el hexágono del agua",
+      "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
       "tipo": "recorte-identidad",
       "estado": "proximo",
-      "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B)."
+      "nota": "martes. LISTO hoy: voz verificada, tomas calibradas."
     },
     {
       "fecha": "2026-09-09",
       "hora": "18:45",
       "id": "mol-h2o-el-anillo-b",
-      "titulo": "El anillo — recorte al ritmo (6k)",
-      "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+      "titulo": "Lo que detiene la gota antes de caer — la piel del agua",
+      "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
       "tipo": "recorte-identidad",
       "estado": "proximo",
-      "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B)."
+      "nota": "miércoles. LISTO hoy."
     },
     {
       "fecha": "2026-09-10",
       "hora": "18:45",
-      "id": "mol-h2o-el-sudor-b",
-      "titulo": "El sudor — recorte al ritmo (4.6k)",
-      "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
-      "tipo": "recorte-identidad",
+      "id": "atomo-k",
+      "titulo": "Estás leyendo esto gracias a este átomo — Potasio (Z=19)",
+      "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+      "tipo": "atomo-identidad",
       "estado": "proximo",
-      "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B)."
+      "nota": "cada disparo de una neurona tuya deja salir potasio. 4s¹: un electrón solo, se va facilísimo."
     },
     {
       "fecha": "2026-09-11",
       "hora": "18:45",
-      "id": "mol-h2o-la-sal-b",
-      "titulo": "La sal — recorte al ritmo (2.8k)",
-      "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
-      "tipo": "recorte-identidad",
+      "id": "atomo-ca",
+      "titulo": "El 99 % lo traes en los huesos; el 1 % que sobra es el que te mueve — Calcio (Z=20)",
+      "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+      "tipo": "atomo-identidad",
       "estado": "proximo",
-      "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B)."
+      "nota": "el 1 % citoplásmico dispara la contracción muscular. 4s²."
     },
     {
       "fecha": "2026-09-12",
       "hora": "18:45",
-      "id": "mol-grasa-butirico-b",
-      "titulo": "Mantequilla — recorte al ritmo (3.6k)",
-      "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+      "id": "mol-h2o-el-sudor-b",
+      "titulo": "Lo que te enfría no es el aire — El sudor",
+      "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
       "tipo": "recorte-identidad",
       "estado": "proximo",
-      "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B)."
+      "nota": "sábado. Recorte del sudor (4,580 vistas) con el sujeto en su piel."
     },
     {
       "fecha": "2026-09-13",
       "hora": "18:45",
-      "id": "mol-h2o-el-cuarteto-b",
-      "titulo": "El cuarteto — recorte al ritmo",
-      "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
-      "tipo": "recorte-identidad",
+      "id": "atomo-p",
+      "titulo": "Cada día gastas tu propio peso en una sola molécula — Fósforo (Z=15)",
+      "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+      "tipo": "atomo-identidad",
       "estado": "proximo",
-      "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B)."
+      "nota": "DOMINGO = día fuerte. El ATP se recicla ~el peso corporal al día y lleva 3 fósforos. 3p³ = tres pétalos, un electrón cada uno."
     },
     {
       "fecha": "2026-09-14",
       "hora": "18:45",
-      "id": "mol-h2o-el-hielo-b",
-      "titulo": "El hielo — recorte al ritmo (2.4k)",
-      "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
-      "tipo": "recorte-identidad",
+      "id": "atomo-o",
+      "titulo": "Dos terceras partes de tu peso son este átomo — Oxígeno (Z=8)",
+      "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+      "tipo": "atomo-identidad",
       "estado": "proximo",
-      "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B)."
+      "nota": "LUNES = día fuerte. 65 % de la masa corporal, casi todo por el AGUA, no por el aire. 2p⁴: le faltan dos."
     },
     {
       "fecha": "2026-09-15",
       "hora": "18:45",
-      "id": "mol-h2o-la-silla-b",
-      "titulo": "La silla — recorte al ritmo",
-      "base": "MISMO bin y misma belleza · guion nuevo en SEGUNDA PERSONA (tu cuerpo, tus manos) · brazo A: 6-9 cortes/min, VEL 1.0 · 55-75 s",
+      "id": "atomo-zn",
+      "titulo": "Si la comida dejó de saberte, te falta este átomo — Zinc (Z=30)",
+      "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+      "tipo": "atomo-identidad",
+      "estado": "proximo",
+      "nota": "la deficiencia de zinc quita gusto y olfato; ~300 enzimas lo usan. 3d¹⁰4s²."
+    },
+    {
+      "fecha": "2026-09-16",
+      "hora": "18:45",
+      "id": "mol-h2o-la-sal-b",
+      "titulo": "Por qué tu sangre sabe a mar — La sal",
+      "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
       "tipo": "recorte-identidad",
       "estado": "proximo",
-      "nota": "VEREDICTO 09-07: el brazo B PERDIÓ (c/mil 1.4 vs 4.8 del A, misma pieza) → los recortes van con brazo A (6-9 cortes/min, VEL 1.0) y guion de REVELACIÓN EN SEGUNDA PERSONA: el sujeto es el cuerpo de quien ve, no la molécula (canon §EL VEREDICTO A/B)."
+      "nota": "recorte de LA SAL con el sujeto adentro."
+    },
+    {
+      "fecha": "2026-09-17",
+      "hora": "18:45",
+      "id": "atomo-na",
+      "titulo": "Cada vez que sientes algo, entra este átomo — Sodio (Z=11)",
+      "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+      "tipo": "atomo-identidad",
+      "estado": "proximo",
+      "nota": "el impulso nervioso empieza con Na⁺ entrando. 3s¹."
+    },
+    {
+      "fecha": "2026-09-18",
+      "hora": "18:45",
+      "id": "atomo-s",
+      "titulo": "Tu pelo es lacio o rizado por culpa de este átomo — Azufre (Z=16)",
+      "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
+      "tipo": "atomo-identidad",
+      "estado": "proximo",
+      "nota": "los puentes disulfuro de la queratina deciden la forma del pelo; romperlos y volver a atarlos ES el permanente. 3p⁴: dos electrones sin pareja. (El YODO salió del plan: su bin usa pseudopotencial y le FALTA el núcleo — ver gate_atomos.)"
+    },
+    {
+      "fecha": "2026-09-19",
+      "hora": "18:45",
+      "id": "mol-grasa-butirico-b",
+      "titulo": "El olor que tu intestino fabrica — Ácido butírico",
+      "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
+      "tipo": "recorte-identidad",
+      "estado": "proximo",
+      "nota": "sábado. Recorte del butírico (3,603 vistas)."
+    },
+    {
+      "fecha": "2026-09-20",
+      "hora": "18:45",
+      "id": "mol-h2o-el-cuarteto-b",
+      "titulo": "Cuatro gotas que no caben — El cuarteto",
+      "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
+      "tipo": "recorte-identidad",
+      "estado": "proximo",
+      "nota": "DOMINGO = día fuerte."
+    },
+    {
+      "fecha": "2026-09-21",
+      "hora": "18:45",
+      "id": "mol-h2o-la-silla-b",
+      "titulo": "La silla vacía que tienes en cada gota — La silla",
+      "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
+      "tipo": "recorte-identidad",
+      "estado": "proximo",
+      "nota": "LUNES = día fuerte."
     }
   ],
   "despues": [
@@ -252,5 +312,13 @@
     "gana": "brazo A + identidad en segunda persona",
     "evidencia": "docs/CANON-VIDEO.md §EL VEREDICTO A/B · public/comando/historia.json",
     "pierde": "brazo B (21 tomas, VEL 1.25): c/mil 1.4 vs 4.8 del A siendo 3 días más joven"
+  },
+  "plan": {
+    "generado": "2026-09-07",
+    "ventana": "2026-09-08 → 2026-09-21 (14 días, 1 por día a las 18:45 CDMX)",
+    "receta": "brazo A (6-9 cortes/min, VEL 1.0) + IDENTIDAD EN 2ª PERSONA. Sale del VEREDICTO A/B del 09-07: el ritmo rápido perdió 3.4× en compartidos; lo que sí subió el compartir fue que el sujeto sea el cuerpo de quien ve (ERES TÚ 10.9 y TE ROBA EL AGUA 10.7 compartidos/mil).",
+    "mezcla": "7 recortes de identidad (mismo bin, guion nuevo) + 7 átomos (bin ya precomputado, ~30 s)",
+    "dias_fuertes": "domingo y lunes (telemetría propia) → ahí van fósforo, oxígeno, cuarteto y silla",
+    "gate_atomos": "DOS porteros antes de producir un átomo: (1) la configuración del bin debe COINCIDIR con el estado base experimental (NIST ASD) — Mn (25) y Fe (26) DIFIEREN con UHF y están prohibidos, por eso el hierro, que sería el mejor gancho de sangre, no está; (2) el bin debe traer el ÁTOMO COMPLETO: desde Rb (Z=37) la base def2-tzvp usa pseudopotencial y los 72 elementos pesados vienen SIN núcleo (el yodo salía hueco). Regla: solo Z ≤ 36, y verificar suma de electrones == Z."
   }
 }

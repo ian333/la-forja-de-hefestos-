@@ -1,0 +1,96 @@
+{
+  "id": "mol-h2o-el-hexamero-b",
+  "titulo": "Por esto no te pueden congelar — el hexágono del agua (H₂O)₆",
+  "nota": "RECORTE DE IDENTIDAD del hexámero (mismo bin water-hexamer, misma belleza). El sujeto ya no es la molécula: es el cuerpo de quien ve. Gancho de lazo causal abierto (\"no te pueden congelar\") y payoff en sus propias células.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=whex6b",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (whex6b): render-clip exige formato.dur == duración de la escena. RECORTE DE IDENTIDAD (2026-09-07, canon §EL VEREDICTO A/B): mismo bin y misma belleza del ganador, guion nuevo en 2ª persona, brazo A (9 tomas / 55 s = 8.73 cortes/min, VEL 1.0). Tomas provisionales hasta segs.json.",
+    "nota_16x9": "QUERY=\"m=whex6b&zoom=0.5\" W=3840 H=2160 (medir fill antes de renderizar: el anillo vacía el 16:9)"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.hex6bframes"
+  },
+  "audio": {
+    "dir": "dist-video/hex6b-narracion",
+    "narracion": "hex6b-narracion.mp3",
+    "musica": "whex6-music.wav",
+    "musicaFuente": "la cama del hexámero (dist-video/whex6-narracion/whex6-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "segs": "segs.json",
+    "ass": "hex6b.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-hexamero-identidad-4k-master.mp4",
+    "h264": "agua-hexamero-identidad-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-hexamer.bin",
+      "water-hexamer-efield.bin"
+    ],
+    "guion": "hex6b.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-el-hexamero-b.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-el-hexamero-b-capsula.tar.gz",
+    "pieza": "mol-h2o el hexamero b",
+    "nueva": true,
+    "copy": {
+      "titulo": "Por esto no te pueden congelar (el hexágono que hace los copos de nieve)",
+      "descripcion": "Cuando el agua se enfría, seis moléculas se agarran en un anillo plano. 🔬 Esto no es una animación: son seis H₂O resueltas con física cuántica real (ab initio), 18 átomos, y los seis puentes miden lo mismo: 2.82 ångströms. Ese anillo ocupa más espacio que el agua suelta — por eso el hielo flota en tu vaso, y por eso hay peces vivos bajo un lago congelado. La misma forma, repetida millones de veces, es lo que le da SEIS puntas a un copo de nieve: cuenta las puntas, cuenta los lados del anillo. Y aquí está la parte que no te van a contar: tú también eres agua por dentro. Si te congelaras, esta forma crecería dentro de tus células y las rompería. Lo que hace bonito a un copo de nieve es exactamente lo que te mataría.",
+      "hashtags": [
+        "#agua",
+        "#hielo",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#copodenieve",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque el mismo cristal que hace bonito a un copo de nieve te reventaría las células: lo bonito y lo letal son la misma forma",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy. IDENTIDAD EN 2ª PERSONA declarada: el sujeto del payoff es el cuerpo de quien ve (canon §EL VEREDICTO A/B)."
+    },
+    "autorizado": "",
+    "subidas": {},
+    "programar": "",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/hex6b.txt"
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "brazo A por VEREDICTO 2026-09-07: el B (21 tomas, VEL 1.25) perdió 3.4× en compartidos contra el A de la misma pieza."
+  }
+}

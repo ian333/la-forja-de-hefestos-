@@ -1,0 +1,95 @@
+{
+  "id": "mol-h2o-el-anillo-b",
+  "titulo": "Lo que detiene la gota antes de caer — el trímero del agua (H₂O)₃",
+  "nota": "RECORTE DE IDENTIDAD del anillo (mismo bin water-trimer). La cooperatividad del 12 % contada desde una gota que cuelga de la llave de su casa. El payoff es la piel invisible del agua: su dedo, un mosquito, un árbol.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wtrib",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wtrib): render-clip exige formato.dur == duración de la escena. RECORTE DE IDENTIDAD (2026-09-07, canon §EL VEREDICTO A/B): mismo bin y misma belleza del ganador, guion nuevo en 2ª persona, brazo A (9 tomas / 55 s = 8.73 cortes/min, VEL 1.0). Tomas provisionales hasta segs.json.",
+    "nota_16x9": "QUERY=\"m=wtrib&zoom=0.5\" W=3840 H=2160 (medir fill antes de renderizar)"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.anillobframes"
+  },
+  "audio": {
+    "dir": "dist-video/anillob-narracion",
+    "narracion": "anillob-narracion.mp3",
+    "musica": "whex6-music.wav",
+    "musicaFuente": "la cama del hexámero (dist-video/whex6-narracion/whex6-music.wav), copiada — wtri-narracion ya no conserva su wav",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "segs": "segs.json",
+    "ass": "anillob.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-anillo-identidad-4k-master.mp4",
+    "h264": "agua-anillo-identidad-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-trimer.bin",
+      "water-trimer-efield.bin"
+    ],
+    "guion": "anillob.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-el-anillo-b.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-el-anillo-b-capsula.tar.gz",
+    "pieza": "mol-h2o el anillo b",
+    "nueva": true,
+    "copy": {
+      "titulo": "Lo que detiene la gota antes de caer (la piel invisible del agua)",
+      "descripcion": "Deja la llave goteando y la gota se queda colgando. Esto es lo que la detiene. 🔬 Tres moléculas de agua agarradas en un anillo, resueltas con física cuántica real (ab initio): cada una le presta un hidrógeno a la vecina, y juntas jalan casi 12 % más fuerte que por separado. Eso se llama cooperatividad, y es medible. Multiplica ese efecto por millones de moléculas y tienes una piel invisible sobre el agua: la que sostiene la gota en tu dedo, la que sube el agua hasta la punta de un árbol de cien metros, la que aguanta el peso de un mosquito parado sobre un charco. Es la misma agua que traes adentro.",
+      "hashtags": [
+        "#agua",
+        "#tensiónsuperficial",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque explica algo que ya viste mil veces sin preguntar: por qué la gota se queda colgando",
+      "nota_declaracion": "marco/activacion/valor_propio son LECTURA del copy. IDENTIDAD EN 2ª PERSONA declarada: la llave de su casa, su dedo (canon §EL VEREDICTO A/B)."
+    },
+    "autorizado": "",
+    "subidas": {},
+    "programar": "",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/anillob.txt"
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "brazo A por VEREDICTO 2026-09-07: el B (21 tomas, VEL 1.25) perdió 3.4× en compartidos contra el A de la misma pieza."
+  }
+}
