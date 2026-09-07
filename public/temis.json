@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-07 18:50",
+ "generado": "2026-09-07 19:02",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -9,19 +9,21 @@
  "conteo": {
   "proximo": 7,
   "enCurso": 0,
-  "imprevisto": 1,
+  "imprevisto": 0,
   "supertickets": 13,
-  "cerrado": 80,
+  "cerrado": 81,
   "probado": 0,
   "porProbar": 45,
-  "sinDesplegar": 1,
+  "sinDesplegar": 2,
   "despues": 19
  },
  "deploy": {
   "commit": "36e8e93",
   "fecha": "2026-09-04 22:17"
  },
- "violaciones": [],
+ "violaciones": [
+  "CERRADA SIN EVIDENCIA VISUAL: 2026-09-07-iangpu-c-lleno-cuarta-vez — pon los ss en public/evidencia/2026-09-07-iangpu-c-lleno-cuarta-vez/ antes de pedir revisión"
+ ],
  "columnas": {
   "proximo": [
    {
@@ -297,36 +299,7 @@
     "despliegue": ""
    }
   ],
-  "imprevisto": [
-   {
-    "file": "ordenes/2026-09-07-iangpu-c-lleno-cuarta-vez.md",
-    "slug": "2026-09-07-iangpu-c-lleno-cuarta-vez",
-    "titulo": "iangpu C: LLENO, CUARTA VEZ — el WSL se apagó a media prueba del paso 6",
-    "fecha": "2026-09-07",
-    "estado": "imprevisto",
-    "prioridad": 999,
-    "tipo": "imprevisto",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "iangpu vuelve a servir (WSL arriba, ssh y tailscaled vivos, ≥40 GB libres en C:) y queda una regla que impida la quinta vez.",
-    "toca": 1,
-    "crea": 1,
-    "evidencia": 2,
-    "evidenciaDeclarada": [
-     "fsutil volume diskfree C: ≥ 40 GB · wsl -l -v Running · ssh ian@100.65.173.85 uptime responde",
-     "/home/ian/forja-dev ya no existe · el vhdx es sparse (wsl --manage Ubuntu --set-sparse sin error)"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   }
-  ],
+  "imprevisto": [],
   "enCurso": [
    {
     "file": "ordenes/2026-08-27-roadmap-suite-desde-libros.md",
@@ -1736,6 +1709,34 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-09-07-iangpu-c-lleno-cuarta-vez.md",
+    "slug": "2026-09-07-iangpu-c-lleno-cuarta-vez",
+    "titulo": "iangpu C: LLENO, CUARTA VEZ — el WSL se apagó a media prueba del paso 6",
+    "fecha": "2026-09-07",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "imprevisto",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "iangpu vuelve a servir (WSL arriba, ssh y tailscaled vivos, ≥40 GB libres en C:) y queda una regla que impida la quinta vez.",
+    "toca": 1,
+    "crea": 1,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "fsutil volume diskfree C: ≥ 40 GB · wsl -l -v Running · ssh ian@100.65.173.85 uptime responde",
+     "/home/ian/forja-dev ya no existe · el vhdx es sparse (wsl --manage Ubuntu --set-sparse sin error)"
+    ],
+    "cierre": "CERRADO 2026-09-07 ~12:50 CDMX · C: 4.8 → 113.1 GB libres · vhdx DISPERSO + fstrim: por primera vez lo borrado adentro REGRESA a C:. - Ian corrió set-sparse (WSL 2.5.10, seguro) y arrancó la VM. La s…",
+    "cierreCompleto": "CERRADO 2026-09-07 ~12:50 CDMX · C: 4.8 → 113.1 GB libres · vhdx DISPERSO + fstrim: por primera vez lo borrado adentro REGRESA a C:. - Ian corrió set-sparse (WSL 2.5.10, seguro) y arrancó la VM. La sesión «Reyes» borró 164 GB regenerables adentro (cuadros de 17 piezas, scratch, entregas/ verificadas 29/29 contra E:) → ext4 605 → 441 GB; y corrió el fstrim UNO SOLO por la puerta de Windows (wsl -d Ubuntu -u root -- fstrim -av, 542.6 GiB). - Yo borré /home/ian/forja-dev (4.8 GB, mío) avisando antes, y rearmé el dev aislado SIN copias: /home/ian/forja-dev2 = src/ (17 MB) + configs + symlinks a public/* y node_modules (76 KB propios). - Lo que cambia estructuralmente: el vhdx era NO-sparse → cada caída cada 3 días. Ya no. - Lo que aprendí (memoria): nunca copiar GB al vhdx; fsutil volume diskfree C: antes de escribir grande; vite dev en el repo vigila TODO (la otra sesión soltando archivos = page reload a media prueba) → dev aislado.",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "d8836b6",
+    "despliegue": "sin-desplegar"
+   },
    {
     "file": "ordenes/2026-09-07-el-paso-5-existe.md",
     "slug": "2026-09-07-el-paso-5-existe",
