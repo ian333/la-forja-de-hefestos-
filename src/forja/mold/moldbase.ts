@@ -196,6 +196,10 @@ export const MACHINES: Machine[] = [
   { name: 'Battenfeld HM320 (libro)', tieHmm: 800, tieVmm: 630, minDaylightMm: 350, maxDaylightMm: 800, maxShotCc: 490, clampTons: 326 },
   { name: 'genérica 60 t', tieHmm: 360, tieVmm: 360, minDaylightMm: 150, maxDaylightMm: 420, maxShotCc: 96, clampTons: 60 },
   { name: 'genérica 120 t', tieHmm: 470, tieVmm: 470, minDaylightMm: 200, maxDaylightMm: 550, maxShotCc: 210, clampTons: 120 },
+  // LA DEL TALLER (ian, 2026-09-08): FCS HT-150SV 2022. Catálogo FCS HT 2022 col. HT-150 (cruzado con la
+  // brochure HT-SV 2016 col. HT-150SV): tie bars 462×462 (2016: 460×460), molde 130~550 mm + carrera 460
+  // → daylight abierto 1010 mm, shot 304 cc con tornillo B ⌀44 (A 251 · C 393), 150 tonf. docs/MAQUINA-DEL-TALLER.md
+  { name: 'FCS HT-150SV (taller)', tieHmm: 462, tieVmm: 462, minDaylightMm: 130, maxDaylightMm: 1010, maxShotCc: 304, clampTons: 150 },
 ];
 export interface MachineCheck {
   ok: boolean; fits: boolean; issues: string[];

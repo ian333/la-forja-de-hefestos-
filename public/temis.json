@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-07 23:17",
+ "generado": "2026-09-08 23:34",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -11,9 +11,9 @@
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 85,
+  "cerrado": 86,
   "probado": 0,
-  "porProbar": 49,
+  "porProbar": 50,
   "sinDesplegar": 6,
   "despues": 19
  },
@@ -1309,6 +1309,45 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-09-08-la-inyectora-del-taller.md",
+    "slug": "2026-09-08-la-inyectora-del-taller",
+    "titulo": "LA INYECTORA DEL TALLER — la FCS HT-150SV es LA máquina de La Forja",
+    "fecha": "2026-09-08",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-08, la máquina entrando al taller): «VE E INVESTIGA TODOS LOS DATOS · todos los datos de la forja serán ahora con datos de este bebé · ya busqué placa de datos y modelo y nop · es 2022». Hoy el molde se dimensiona contra un ca…",
+    "toca": 6,
+    "crea": 10,
+    "evidencia": 5,
+    "evidenciaDeclarada": [
+     "node --import tsx scripts/mold-machinesizing-test.cjs → VERIFY_RESULT pass; los checks del libro",
+     "node --import tsx scripts/mold-base-test.cjs y scripts/mold-machine-test.cjs → pass (sin cambiar",
+     "Cada número de MAQUINA_DEL_TALLER tiene su celda en catalogo-2022-ht150.png (columna HT-150) y",
+     "Runner en iangpu (dev aislado :5194) sobre la carcasa: el expediente/planos dicen",
+     "node scripts/orden-gate.cjs VERDE; censo igual (Canvas 8→8, vite/html igual); cero pageerror."
+    ],
+    "cierre": "camino ganó un check (24 en vez de 23) y dos gestos (esperar el overlay y abrir la lámina «Análisis») para que la inyectora del taller se MIDA y se VEA; cero cambios en la interfaz (el nombre aparece…",
+    "cierreCompleto": "camino ganó un check (24 en vez de 23) y dos gestos (esperar el overlay y abrir la lámina «Análisis») para que la inyectora del taller se MIDA y se VEA; cero cambios en la interfaz (el nombre aparece solo porque la carcasa cabe). scripts/mold-machinesizing-test.cjs importa threeplate.ts para el daylight. - números: mold-machinesizing-test 20/20 pass (cup→IM-50 y bezel→IM-250 del libro intactos con taller=null; cup en la del taller: FCS, ok, shot 8.2 % avisado; bezel: «no cabe en la FCS HT-150SV (taller): clamp 157 t > 150 t → en el mercado: IM-250»; gigante: taller.ok=false, governs cierre) · mold-base-test pass · mold-machine-test pass (diseño 213 t → IM-250) · tsc en iangpu: 0 errores en machinesizing.ts/moldbase.ts (158 preexistentes en otros archivos, la mayoría copias viejas sueltas del checkout de iangpu) · runner 2026-09-08 23:21 UTC dev :5194 iangpu: 7/8 ok · 7:4/4 (p7-4 «la del taller: FCS HT-150SV (taller) CUMPLE») · 6:3/5 como antes (agua/expulsores) · orden-gate VERDE · censo 8→8 / 41→41 / 46→46. - evidencia: public/evidencia/2026-09-08-la-inyectora-del-taller/ — catalogo-2022-ht150.png (la columna), catalogo-2022-motor-380v.png, brochure-2016-ht150sv.png + brochure-2016-items.png (el cruce), platina-ht150.png (anillo ⌀100, 100×M16, KO), maquina-en-la-forja.png (la hoja de análisis con el renglón ampliado), paseo-contactos.png; video 25-LA-INYECTORA-DEL-TALLER-paseo.mp4 (241.9 s, 4K hevc 10-bit escalado desde 1080 CSS, declarado) en Downloads de ambas PCs y E:\\forja-videos; doc docs/MAQUINA-DEL-TALLER.md (tabla completa, fuentes con sha256, SIN DATO y dónde lee…",
+    "evidenciaSS": [
+     "evidencia/2026-09-08-la-inyectora-del-taller/brochure-2016-ht150sv.png",
+     "evidencia/2026-09-08-la-inyectora-del-taller/brochure-2016-items.png",
+     "evidencia/2026-09-08-la-inyectora-del-taller/catalogo-2022-ht150.png",
+     "evidencia/2026-09-08-la-inyectora-del-taller/catalogo-2022-motor-380v.png",
+     "evidencia/2026-09-08-la-inyectora-del-taller/maquina-en-la-forja.png",
+     "evidencia/2026-09-08-la-inyectora-del-taller/paseo-contactos.png",
+     "evidencia/2026-09-08-la-inyectora-del-taller/platina-ht150.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
    {
     "file": "ordenes/2026-09-07-iangpu-c-lleno-cuarta-vez.md",
     "slug": "2026-09-07-iangpu-c-lleno-cuarta-vez",
@@ -6065,7 +6104,7 @@
     "titulo": "Dos gotas — el puente naciendo",
     "base": "water-approach · wgotas · 55 s · guion REVELACIÓN",
     "tipo": "revelación",
-    "estado": "hoy",
+    "estado": "hecho",
     "nota": "lunes, segundo día más fuerte",
     "manifiesto": true,
     "publicado": true,
@@ -6080,17 +6119,16 @@
     },
     "yt": {
      "url": "https://youtu.be/l6EuXA1fLGU",
-     "privacidad": "private"
+     "privacidad": "public"
     },
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdAbf7IEnGj/"
+    },
     "ancho": {
      "url": "https://youtu.be/e73O8SyCsWc"
     },
     "entregado": "",
-    "falta": [
-     "YouTube private",
-     "Instagram"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-09-08",
@@ -6584,7 +6622,7 @@
     {
      "n": 7,
      "gesto": "LOS PLANOS",
-     "seVe": "el juego de planos del molde",
+     "seVe": "el juego de planos del molde, con la inyectora del taller (FCS HT-150SV) juzgada en la lámina de análisis",
      "estado": "ok",
      "ticket": "2026-08-28-t7-linea-de-particion"
     },

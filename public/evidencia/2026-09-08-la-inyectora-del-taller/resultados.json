@@ -1,0 +1,44 @@
+{
+ "catalogo-oficial": {
+  "estado": "verde",
+  "checks": "catálogo FCS HT Series 2022 (Mitchell Industries, sha 7a7f44cb…) pp. 9–12: columna HT-150 legible entera (tornillos 40/44/50, shot 251/304/393 cm³, presión 2205/1822/1411 kgf/cm², clamp 150 tonf, carrera 460, molde 130~550, tie bars 462×462, platina 670×670, expulsor 110 mm / 4.0 tonf) + dibujo de platina p. 13 (anillo ⌀100, 100×M16×29, 8×M16×32)",
+  "video": "",
+  "still": "catalogo-2022-ht150.png",
+  "nota": "el catálogo oficial 2025 de fcs.com.tw OMITE las pp. 9–16 (las tablas); el sitio devuelve 404 en /pdf/4887; la fuente completa la publican los distribuidores"
+ },
+ "cruce-dos-ediciones": {
+  "estado": "verde",
+  "checks": "brochure HT-SV 2016 (IMM Technical, sha f3408f98…) columna HT-150SV: coincide en clamp, tornillos, shot, molde, platina, expulsión; difiere en tie bars 460 vs 462, velocidad 128/108 vs 97 mm/s, motor 11/15 vs 13.4/18.2 kW → se toma 2022 (la edición de la máquina) y se anota",
+  "video": "",
+  "still": "brochure-2016-ht150sv.png",
+  "nota": "Windsor/FCS K2016 para el mismo grupo de cierre (SD-150SV): 1 500 kN, 670×670, 130–550, daylight 1 010 mm — coincide"
+ },
+ "la-del-taller-en-codigo": {
+  "estado": "verde",
+  "checks": "`MAQUINA_DEL_TALLER` en machinesizing.ts con cada cifra comentada a su celda; `plasticizeGs` pasa a opcional (SIN DATO no se inventa); `selectInjectionMachine` la juzga PRIMERO y `seleccion.taller` conserva el veredicto; `MACHINES` de moldbase.ts la lleva como última entrada. Tests: mold-machinesizing 20/20 (cup→IM-50 y bezel→IM-250 del libro intactos con taller=null; cup cabe en la HT-150SV con shot 8 % avisado; bezel 157 t NO cabe y lo dice: «no cabe en la FCS HT-150SV (taller): clamp 157 t > 150 t → en el mercado: IM-250»), mold-base pass, mold-machine pass (diseño >150 t → IM-250)",
+  "video": "",
+  "still": "",
+  "nota": "catálogo de mercado IM-50…IM-500 sigue siendo genérico: sirve para decir qué pediría el mercado, no es de nadie"
+ },
+ "sin-dato-declarado": {
+  "estado": "verde",
+  "checks": "docs/MAQUINA-DEL-TALLER.md: tabla completa con las dos ediciones, fuentes con hash, platina, y la lista SIN DATO (tornillo A/B/C instalado, tipo I/II, 220/380 V, punta de boquilla, serie, plastificación, KO de la móvil) con DÓNDE leer cada uno en la máquina",
+  "video": "",
+  "still": "platina-ht150.png",
+  "nota": "tornillo B ⌀44 por defecto, DICHO en el código y en el doc"
+ },
+ "maquina-en-la-forja": {
+  "estado": "verde",
+  "checks": "runner en iangpu (dev :5194, 2026-09-08 23:21 UTC): 7/8 ok · paso 7 ahora 4/4 — el check nuevo lee la HOJA DE ANÁLISIS: «la del taller: FCS HT-150SV (taller) CUMPLE»; la lámina Ensamble ya la nombra en sus notas («máquina FCS HT-150SV (taller)»). El paso 6 sigue parcial (agua/expulsores) como antes: sin regresión",
+  "video": "",
+  "still": "maquina-en-la-forja.png",
+  "nota": "cero cambios en la interfaz: la carcasa CABE en la del taller (la hoja dice CUMPLE; utilización de clamp y % de shot de ESTA pieza no se midieron en esta orden), así que el nombre aparece solo; si no cupiera, la lámina diría IM-xxx y `seleccion.taller.issues` diría por qué — mostrar ESO en la lámina es el siguiente ticket"
+ },
+ "video-del-camino": {
+  "estado": "verde",
+  "checks": "paseo grabado en iangpu (1920×1080 CSS, 374 s brutos) → 241.9 s tras cortar congelones, 0 cuadros encogidos; 3840×2160 hevc 10-bit (50 MB) + 1080 h264 (16 MB). Entregado: laptop C:\\Users\\sebas\\Downloads, iangpu C:\\Users\\sebas\\Downloads y E:\\forja-videos (25-LA-INYECTORA-DEL-TALLER-paseo*.mp4) + SendUserFile. Revisado por cuadros: paso 7 muestra «generando las láminas…» → lámina Análisis con «inyectora · FCS HT-150SV (taller) ✓ ✓»; paso 8 el expediente",
+  "video": "25-LA-INYECTORA-DEL-TALLER-paseo.mp4",
+  "still": "paseo-contactos.png",
+  "nota": "el letrero final dice EL CAMINO COMPLETO aunque el 6 esté a medias (el runner solo rompe con 'falla'): mejora para EL PIPELINE DEL CAMINO, no de esta orden"
+ }
+}

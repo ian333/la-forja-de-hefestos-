@@ -26,7 +26,9 @@ export interface InjectionMachine {
   clampTons: number;                       // fuerza de cierre (t métricas)
   shotCc: number;                          // capacidad máx de shot (cc, GPPS-equiv)
   maxInjPressureMPa: number;               // presión de inyección máx en boquilla
-  plasticizeGs: number;                    // tasa de plastificación (g/s, GPPS)
+  /** tasa de plastificación (g/s, GPPS). OPCIONAL: el catálogo FCS no la publica y hoy ninguna
+   *  restricción de §4.3.3 la usa; una máquina real sin el dato lo deja `undefined`, no lo inventa. */
+  plasticizeGs?: number;
   tieHmm: number; tieVmm: number;          // luz entre columnas
   minDaylightMm: number; maxDaylightMm: number;
   ejectionForceKN: number;                 // fuerza de expulsión provista (~2 % clamp)
@@ -52,6 +54,28 @@ export const INJECTION_MACHINES: InjectionMachine[] = [
   { name: 'IM-350', clampTons: 350, shotCc: 900,  maxInjPressureMPa: 190, plasticizeGs: 70, tieHmm: 660, tieVmm: 660, minDaylightMm: 320, maxDaylightMm: 820, ejectionForceKN: 68.6, nozzleOrificeMm: 4.8 },
   { name: 'IM-500', clampTons: 500, shotCc: 1400, maxInjPressureMPa: 180, plasticizeGs: 95, tieHmm: 810, tieVmm: 810, minDaylightMm: 380, maxDaylightMm: 950, ejectionForceKN: 98.1, nozzleOrificeMm: 6.4 },
 ];
+
+/**
+ * LA INYECTORA DEL TALLER (ian, 2026-09-08: «todos los datos de la forja serán ahora con datos de
+ * este bebé»): FCS HT-150SV, 2022, sin placa de datos legible. CADA cifra sale del catálogo oficial
+ * FCS "Servo Power-Saving Injection Molding Machine (HT Series)" 2022 (pp. 9–12, columna HT-150,
+ * distribuido por Mitchell Industries) CRUZADO con la brochure "HT-SV Series" 2016 (p. 10, columna
+ * HT-150SV, IMM Technical). Coinciden en clamp, tornillos, shot, molde, platina y expulsión; difieren
+ * en tie bars (462 vs 460), velocidad y motor — se anota. Tabla completa, fuentes con hash y lo que
+ * está SIN DATO en `docs/MAQUINA-DEL-TALLER.md`. Lo que el catálogo no trae NO se rellena.
+ */
+export const MAQUINA_DEL_TALLER: InjectionMachine = {
+  name: 'FCS HT-150SV (taller)',
+  clampTons: 150,                 // 閉模力 150 tonf (= 1 471 kN)
+  shotCc: 304,                    // tornillo B ⌀44 mm: 304 cm³ · A ⌀40: 251 · C ⌀50: 393 — CONFIRMAR cuál trae
+  maxInjPressureMPa: 178.7,       // 1 822 kgf/cm² (B) · A 2 205 · C 1 411 (catálogo 2022; tipo II en 2016)
+  tieHmm: 462, tieVmm: 462,       // 大柱內距 462×462 (2022) · la brochure 2016 dice 460×460
+  minDaylightMm: 130,             // 模厚 130~550 mm
+  maxDaylightMm: 1010,            // 550 + carrera de cierre 460 = 1 010 mm de molde ABIERTO
+  ejectionForceKN: 39.2,          // 頂出力 4.0 tonf · carrera 110 mm
+  // plasticizeGs: SIN DATO (el catálogo publica tasa de inyección, no de plastificación)
+  // nozzleOrificeMm: SIN DATO — medir la punta instalada (§6.3.1 la juzga si existe)
+};
 
 export interface MachineRequirements {
   clampNeedTons: number;                   // Eq 5.29 · SF
@@ -94,11 +118,52 @@ export interface MachineSelection {
   /** LA CARRERA, EN NÚMEROS (§6.3.2) — para pintarla en pantalla y en el plano.
    *  Mientras esto no se veía, el punto ciego del daylight vivió sin que nadie lo notara. */
   apertura: { strokeMm: number; stackMm: number; needMm: number; holguraMm: number };
+  /** LA MÁQUINA DEL TALLER, siempre juzgada (2026-09-08): si `ok`, `machine` ES ella; si no, `issues`
+   *  dice POR QUÉ la pieza no cabe en la que está en el piso (y `machine` es lo que pediría el mercado).
+   *  `null` solo cuando se pide explícitamente sin taller (ejercicios del libro). */
+  taller: { machine: InjectionMachine; ok: boolean; issues: string[] } | null;
+}
+
+/** Juzga UNA máquina: las cuatro restricciones de §4.3.3 + el ajuste (columnas y daylight del molde
+ *  ABIERTO, §6.3.2). Devuelve qué pasa, y en palabras QUÉ falla y QUÉ solo advierte. */
+function juzgarMaquina(
+  m: InjectionMachine, req: MachineRequirements,
+  mold: { wmm: number; lmm: number; stackMm: number; openStrokeMm: number }, needMm: number,
+) {
+  const cierre = m.clampTons >= req.clampNeedTons;
+  const shotPct = 100 * req.shotNeedCc / m.shotCc;
+  // ventana IDEAL 25-50 % (§4.3.3); pero <25 % es solo advertencia de residencia,
+  // no fallo. El gate DURO es que el barril alcance el shot con cojín (≤85 %).
+  const shotFits = shotPct <= 85;
+  const shotVentana = shotPct >= 25 && shotPct <= 50;
+  const presion = m.maxInjPressureMPa >= req.injPressureNeedMPa;
+  const expulsion = m.ejectionForceKN >= req.ejectionNeedKN;
+  // ajuste DURO: cabe entre columnas y el daylight traga el molde ABIERTO
+  // (stack + carrera, §6.3.2) — NO el cerrado. Estar por debajo del daylight
+  // mínimo es solo advertencia (se agregan risers), no fallo.
+  const baseMedida = Number.isFinite(mold.wmm) && Number.isFinite(mold.lmm);
+  const columnas = mold.wmm <= m.tieHmm && mold.lmm <= m.tieVmm;   // NaN → false: sin base medida no cabe (y se dice)
+  const daylight = needMm <= m.maxDaylightMm;
+  const ajuste = columnas && daylight;
+  const fallas: string[] = [];
+  if (!cierre) fallas.push(`clamp ${req.clampNeedTons.toFixed(0)} t > ${m.clampTons} t`);
+  if (!shotFits) fallas.push(`shot ${shotPct.toFixed(0)} % > 85 % del barril (${m.shotCc} cc)`);
+  if (!presion) fallas.push(`presión ${req.injPressureNeedMPa.toFixed(0)} MPa > ${m.maxInjPressureMPa} MPa`);
+  if (!expulsion) fallas.push(`expulsión ${req.ejectionNeedKN.toFixed(1)} kN > ${m.ejectionForceKN} kN`);
+  if (!baseMedida) fallas.push('columnas sin juzgar: no hay base estándar medida (molde CUSTOM §4.3.4)');
+  else if (!columnas) fallas.push(`base ${mold.wmm.toFixed(0)}×${mold.lmm.toFixed(0)} mm no pasa entre columnas ${m.tieHmm}×${m.tieVmm}`);
+  if (!daylight) fallas.push(`molde abierto ${needMm.toFixed(0)} mm > daylight ${m.maxDaylightMm} mm (§6.3.2)`);
+  const avisos: string[] = [];
+  if (shotPct < 25) avisos.push(`shot ${shotPct.toFixed(0)}% < 25%: barril grande para la pieza → subir cavidades o máquina más chica`);
+  if (mold.stackMm < m.minDaylightMm) avisos.push(`stack ${mold.stackMm.toFixed(0)} < daylight mín ${m.minDaylightMm}: agregar risers`);
+  return { pasa: cierre && shotFits && presion && expulsion && ajuste, cierre, shotPct, shotVentana, presion, expulsion, ajuste, fallas, avisos };
 }
 
 /**
- * Selecciona la inyectora MÍNIMA (menor tonelaje) que satisface las cuatro
- * restricciones + el ajuste dimensional del molde. Reporta QUÉ restricción manda
+ * Selecciona la inyectora. PRIMERO la del taller (2026-09-08): si la pieza cabe en la FCS HT-150SV
+ * que está en el piso, ESA es la máquina — aunque el mercado tenga una más chica. Si no cabe, se dice
+ * POR QUÉ (clamp, shot, presión, expulsión, columnas, daylight) y se busca la MÍNIMA del mercado
+ * (menor tonelaje) que satisface las cuatro restricciones + el ajuste. Reporta QUÉ restricción manda
  * el tamaño (para saber si conviene rediseñar: menos cavidades, colada fría, etc).
  */
 export function selectInjectionMachine(
@@ -108,39 +173,36 @@ export function selectInjectionMachine(
    *  máquinas que no lo pueden abrir (barrido: 25 casos, hasta 92 mm de faltante). */
   mold: { wmm: number; lmm: number; stackMm: number; openStrokeMm: number },
   catalog: InjectionMachine[] = INJECTION_MACHINES,
+  /** la máquina del taller; `null` = ejercicio de libro, solo mercado. */
+  taller: InjectionMachine | null = MAQUINA_DEL_TALLER,
 ): MachineSelection {
   const sorted = [...catalog].sort((a, b) => a.clampTons - b.clampTons);
   // el daylight tiene que tragar el molde ABIERTO (Tabla 6.1: 264 + 75 = 339).
   const needMm = daylightNeededMm(mold.stackMm, mold.openStrokeMm);
+  const arma = (m: InjectionMachine, ev: ReturnType<typeof juzgarMaquina>, ok: boolean, governs: MachineSelection['governs'], issues: string[], t: MachineSelection['taller']): MachineSelection => ({
+    machine: m, ok, governs,
+    shotPct: +ev.shotPct.toFixed(1), clampUtilPct: +(100 * req.clampNeedTons / m.clampTons).toFixed(1),
+    checks: { cierre: ev.cierre, shotVentana: ev.shotVentana, presion: ev.presion, expulsion: ev.expulsion, ajuste: ev.ajuste }, issues,
+    apertura: {
+      strokeMm: mold.openStrokeMm, stackMm: mold.stackMm, needMm,
+      holguraMm: +(m.maxDaylightMm - needMm).toFixed(1),
+    },
+    taller: t,
+  });
+
+  // 1) LA DEL TALLER: si cabe, es ella. Sus avisos (shot chico, risers) son avisos, no vetos.
+  const evT = taller ? juzgarMaquina(taller, req, mold, needMm) : null;
+  const tallerInfo: MachineSelection['taller'] = taller && evT ? { machine: taller, ok: evT.pasa, issues: evT.pasa ? evT.avisos : evT.fallas } : null;
+  if (taller && evT && evT.pasa) return arma(taller, evT, true, 'cierre', evT.avisos, tallerInfo);
+  const noCabe = taller && evT ? `no cabe en la ${taller.name}: ${evT.fallas.join(' · ')}` : null;
+
+  // 2) EL MERCADO: la mínima que cumple
   for (const m of sorted) {
-    const cierre = m.clampTons >= req.clampNeedTons;
-    const shotPct = 100 * req.shotNeedCc / m.shotCc;
-    // ventana IDEAL 25-50 % (§4.3.3); pero <25 % es solo advertencia de residencia,
-    // no fallo. El gate DURO es que el barril alcance el shot con cojín (≤85 %).
-    const shotFits = shotPct <= 85;
-    const shotVentana = shotPct >= 25 && shotPct <= 50;
-    const presion = m.maxInjPressureMPa >= req.injPressureNeedMPa;
-    const expulsion = m.ejectionForceKN >= req.ejectionNeedKN;
-    // ajuste DURO: cabe entre columnas y el daylight traga el molde ABIERTO
-    // (stack + carrera, §6.3.2) — NO el cerrado. Estar por debajo del daylight
-    // mínimo es solo advertencia (se agregan risers), no fallo.
-    const ajuste = mold.wmm <= m.tieHmm && mold.lmm <= m.tieVmm && needMm <= m.maxDaylightMm;
-    if (cierre && shotFits && presion && expulsion && ajuste) {
-      const issues: string[] = [];
-      if (shotPct < 25) issues.push(`shot ${shotPct.toFixed(0)}% < 25%: barril grande para la pieza → subir cavidades o máquina más chica`);
-      if (mold.stackMm < m.minDaylightMm) issues.push(`stack ${mold.stackMm.toFixed(0)} < daylight mín ${m.minDaylightMm}: agregar risers`);
-      return {
-        machine: m, ok: true, governs: 'cierre',
-        shotPct: +shotPct.toFixed(1), clampUtilPct: +(100 * req.clampNeedTons / m.clampTons).toFixed(1),
-        checks: { cierre, shotVentana, presion, expulsion, ajuste }, issues,
-        apertura: {
-          strokeMm: mold.openStrokeMm, stackMm: mold.stackMm, needMm,
-          holguraMm: +(m.maxDaylightMm - needMm).toFixed(1),
-        },
-      };
-    }
+    const ev = juzgarMaquina(m, req, mold, needMm);
+    if (ev.pasa) return arma(m, ev, true, 'cierre', [...(noCabe ? [`${noCabe} → en el mercado: ${m.name}`] : []), ...ev.avisos], tallerInfo);
   }
-  // ninguna calza: reportar la más grande y QUÉ falló (para diagnosticar el rediseño)
+
+  // 3) ninguna calza: reportar la más grande y QUÉ falló (para diagnosticar el rediseño)
   const big = sorted[sorted.length - 1];
   const shotPct = 100 * req.shotNeedCc / big.shotCc;
   const checks = {
@@ -152,7 +214,7 @@ export function selectInjectionMachine(
     // — campo inexistente en InjectionMachine, siempre caía al else y NUNCA miró el daylight).
     ajuste: big.tieHmm >= mold.wmm && big.tieVmm >= mold.lmm && needMm <= big.maxDaylightMm,
   };
-  const issues: string[] = [];
+  const issues: string[] = noCabe ? [noCabe] : [];
   // ⚠ EL FALLO DE COLUMNAS ERA MUDO (2026-08-07). `ajuste` son DOS cosas —caber entre
   // columnas y abrir dentro del daylight— y solo la segunda se reportaba. Medido con un
   // vaso ⌀90×100: base 696×996 mm contra columnas de 810×810 de la máquina más grande ⇒
@@ -178,5 +240,6 @@ export function selectInjectionMachine(
       strokeMm: mold.openStrokeMm, stackMm: mold.stackMm, needMm,
       holguraMm: +(big.maxDaylightMm - needMm).toFixed(1),
     },
+    taller: tallerInfo,
   };
 }
