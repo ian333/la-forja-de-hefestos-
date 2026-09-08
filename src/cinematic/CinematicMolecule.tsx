@@ -95,14 +95,51 @@ const EGRUPOS_DURATION = 55;
 // dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
 const EGRUPOS_CAPAS: CapasSpec = {
   campo:    { base: 0, mods: [] },
-  nubes:    { base: 1, mods: [] },
+  // EL BRILLO SE COMPENSA A MANO: `apertura` no sólo elige el cuadro, también encoge y apaga la
+  // nube (en las moléculas «cerrado» = juntas = menos volumen). Al usarla de reloj, el acto 2
+  // caía a fill 0.04 y el portero lo marcaba VOID aunque la segregación YA se veía. Esta rampa
+  // sube las nubes al mismo ritmo que baja la apertura.
+  nubes:    { base: 1, mods: [
+    { wins: [[0.0, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (1/12)' },
+    { wins: [[4.58, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (2/12)' },
+    { wins: [[9.17, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (3/12)' },
+    { wins: [[13.75, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (4/12)' },
+    { wins: [[18.33, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (5/12)' },
+    { wins: [[22.92, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (6/12)' },
+    { wins: [[27.5, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (7/12)' },
+    { wins: [[32.08, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (8/12)' },
+    { wins: [[36.67, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (9/12)' },
+    { wins: [[41.25, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (10/12)' },
+    { wins: [[45.83, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (11/12)' },
+    { wins: [[50.42, 55]], a: 0.18, label: 'compensa el brillo que se lleva la apertura (12/12)' },
+  ] },
   parpadeo: { base: 0.18, mods: [] },
   spin:     { base: 1, mods: [] },
-  acc:      { base: 1, mods: [] },
+  acc:      { base: 1.5, mods: [] },
   enlaces:  { base: 0, mods: [] },
   dipolo:   { base: 0, mods: [] },
   ceros:    { base: 0, mods: [] },
-  apertura: { base: 0.10, mods: [] },
+  // ⚠ EL DEFECTO QUE COSTÓ UNA MAÑANA (2026-09-08): `apertura` NO es decorativa — es la que
+  // ELIGE EL CUADRO del .bin (el motor la mapea a Rvals). Con `base: 0.10` fija, la escena se
+  // quedaba clavada en el 10 % de la simulación y NADA de lo que cambié en el modelo se veía:
+  // rehice el volumen, los grupos, la mudanza dirigida y el disco mirando siempre el mismo
+  // cuadro. Aquí la rampa en escalones la lleva de 0 a 1 para que la pieza REPRODUZCA los 120
+  // cuadros: acto 1 (la riqueza se condensa) y acto 2 (los grupos se separan). Va de 1 a 0
+  // porque el motor busca el cuadro con Rvals DESCENDENTE: apertura 1 = primer cuadro.
+  apertura: { base: 1, mods: [
+    { wins: [[0.0, 55]], a: -0.0833, label: 'paso 1/12 de la simulación' },
+    { wins: [[4.58, 55]], a: -0.0833, label: 'paso 2/12 de la simulación' },
+    { wins: [[9.17, 55]], a: -0.0833, label: 'paso 3/12 de la simulación' },
+    { wins: [[13.75, 55]], a: -0.0833, label: 'paso 4/12 de la simulación' },
+    { wins: [[18.33, 55]], a: -0.0833, label: 'paso 5/12 de la simulación' },
+    { wins: [[22.92, 55]], a: -0.0833, label: 'paso 6/12 de la simulación' },
+    { wins: [[27.5, 55]], a: -0.0833, label: 'paso 7/12 de la simulación' },
+    { wins: [[32.08, 55]], a: -0.0833, label: 'paso 8/12 de la simulación' },
+    { wins: [[36.67, 55]], a: -0.0833, label: 'paso 9/12 de la simulación' },
+    { wins: [[41.25, 55]], a: -0.0833, label: 'paso 10/12 de la simulación' },
+    { wins: [[45.83, 55]], a: -0.0833, label: 'paso 11/12 de la simulación' },
+    { wins: [[50.42, 55]], a: -0.0833, label: 'paso 12/12 de la simulación' },
+  ] },
 };
 const WHEX6B_DURATION = 55;
 // HEXÁMERO IDENTIDAD — el evento es l9-l10 ("tú también eres agua… dentro de tus células"):
@@ -3147,7 +3184,7 @@ const WATER_BINS: Record<string, WaterEntry> = {
   wtetb: { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true, capas: WTETB_CAPAS, dur: WTETB_DURATION },
   wsillab: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLAB_DURATION, capas: WSILLAB_CAPAS },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
-             capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 3.0 },
+             capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
             capas: WHEX6B_CAPAS, dur: WHEX6B_DURATION },
   wtrib: { bin: 'water-trimer', ef: 'water-trimer-efield', ex: 10, anillo: true,
