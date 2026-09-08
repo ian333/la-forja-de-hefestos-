@@ -17,8 +17,8 @@
 | C | FCS *HT Series* brochure 2025, 12 pág. | `fcs.com.tw/pdf/7762/…(HT Series)_2025.pdf` (oficial) | `2fe81c541da6307c` | **sin tablas**: salta de la p. 8 a la 17; solo confirma la línea HT-100…HT-1600 y los accesorios |
 
 El sitio de FCS (`fcs.com.tw/download_pdcata`) enlaza los PDF de `/pdf/4887/…` pero devuelve 404; la
-página del producto enlaza C (sin tablas). Los distribuidores publican el catálogo completo. Ian's
-machine es de 2022 → **A es la edición que le toca**; B confirma con el nombre exacto «HT-150SV».
+página del producto enlaza C (sin tablas). Los distribuidores publican el catálogo completo. La
+máquina de ian es de 2022 → **A es la edición que le toca**; B confirma con el nombre exacto «HT-150SV».
 Windsor/FCS en K2016 (SD-150SV, mismo grupo de cierre): 1 500 kN, platinas 670×670, molde 130–550,
 daylight 1 010 mm, tie bars 460×460 — coincide.
 
