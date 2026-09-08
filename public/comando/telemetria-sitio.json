@@ -1,0 +1,92 @@
+{
+ "generado": "2026-09-08T15:40",
+ "ventana_dias": 30,
+ "eventos_totales": 49811,
+ "sesiones_totales": 4002,
+ "llegada": {
+  "sesiones_ultimos_dias": {
+   "2026-08-26": 12,
+   "2026-08-27": 11,
+   "2026-08-28": 10,
+   "2026-08-29": 1,
+   "2026-08-30": 3,
+   "2026-08-31": 6,
+   "2026-09-01": 8,
+   "2026-09-02": 8,
+   "2026-09-03": 4,
+   "2026-09-04": 13,
+   "2026-09-05": 2,
+   "2026-09-06": 7,
+   "2026-09-07": 4,
+   "2026-09-08": 5
+  },
+  "fuentes": {
+   "paid": 2387,
+   "sin-marcar": 1460,
+   "directo": 149,
+   "organico": 6
+  },
+  "movil_pct": 92.5,
+  "sesiones_ventana": 2246
+ },
+ "atrio": {
+  "sesiones_que_vieron_reels": 1,
+  "llegaron_a_puertas": 1,
+  "eligieron_puerta": 1,
+  "pct_puertas": 100.0,
+  "pct_eligieron": 100.0,
+  "motivo_puertas": {
+   "completo": 145,
+   "saltar": 104,
+   "toque": 87
+  },
+  "puerta_elegida": {
+   "mas": 36,
+   "aprender": 33,
+   "taller": 10
+  },
+  "segundos_hasta_puertas_mediana": 29,
+  "reels_mas_vistos": {
+   "mol-grasa-butirico": 2694,
+   "mol-h2o-el-hexamero": 485,
+   "mol-h2o-el-puente": 324,
+   "mol-h2o-el-sudor": 29
+  }
+ },
+ "quedarse": {
+  "sesiones_con_salida": 2234,
+  "segundos_mediana": 5,
+  "segundos_p90": 39,
+  "rebote_menos_10s_pct": 65.9,
+  "interacciones_mediana": 0,
+  "paginas_mas_vistas": {
+   "/": 3782,
+   "/forja-brep.html": 535,
+   "/masterclass.html": 160,
+   "/escuela.html": 74,
+   "/lab.html": 46,
+   "/precios.html": 9,
+   "/ig-oauth/": 1
+  }
+ },
+ "roto": {
+  "sesiones_con_webgl_roto": 15,
+  "pct_sesiones_sin_3d": 0.4,
+  "errores_top": {
+   "THREE.WebGLRenderer: A WebGL context could not be created. Reason: ": 7622,
+   "REBUILD_ERR:": 382,
+   "THREE.WebGLRenderer: Error creating WebGL context.": 151,
+   "THREE.GLTFLoader: Couldn't load texture": 39,
+   "bond abinitio load failed": 21,
+   "[ModuleErrorBoundary:La Forja · Part Studio B-Rep]": 14
+  },
+  "http_404_top": {
+   "/models/library/food/Textures/colormap.png": 24,
+   "/precomputed/h2o-efield.bin": 24,
+   "/precomputed/h2o-attraction.bin": 24,
+   "/precomputed/h2o-pisplit.bin": 24,
+   "/precomputed/h2o-atomcloud.bin": 24
+  },
+  "lcp_mediana_ms": 1724
+ }
+}

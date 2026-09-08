@@ -110,9 +110,22 @@
     /* La telemetría del atrio ES el A/B: qué trío se mostró, hasta dónde llegaron y qué
        puerta tocaron. Con 17 reels ya subidos y sólo 3 en pantalla, las variantes salen
        gratis — no hay que construir un experimento, hay que registrar cuál tocó. */
+    /* ⚠ EL sid VA SIEMPRE (arreglado 2026-09-08). Sin él, el servidor guardaba estos eventos con
+       sid vacío y los 3,532 `atrio.reel` + 336 `atrio.puertas` acumulados eran INCONTABLES por
+       persona: no se podía saber qué fracción de los que llegan ve los reels, ni cuántos de esos
+       tocan una puerta. El embudo más importante del sitio existía y no se podía leer. Se usa la
+       MISMA llave que el cliente de telemetría del resto del sitio (src/lib/telemetry.ts:55). */
+    function sidAtrio(){
+      try{
+        var s = sessionStorage.getItem('__forja_sid');
+        if(!s){ s = Math.random().toString(36).slice(2,10) + '-' + Date.now().toString(36);
+                sessionStorage.setItem('__forja_sid', s); }
+        return s;
+      }catch(e){ return 'nosid'; }
+    }
     function ev(tipo, data){
       try{ navigator.sendBeacon('/api/telemetry/events', new Blob([JSON.stringify(
-        [{type:tipo, t:Date.now(), url:location.href, data:data}])],{type:'application/json'})); }catch(e){}
+        [{type:tipo, t:Date.now(), sid:sidAtrio(), url:location.href, data:data}])],{type:'application/json'})); }catch(e){}
     }
     function pinta(n){
       var r=REELS[n]; at.textContent=r.t; as.textContent=r.s;
