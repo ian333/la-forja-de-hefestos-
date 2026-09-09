@@ -25,6 +25,7 @@
  * el panel expone `onVerHallazgo`.
  */
 import { useEffect, useRef, useState } from 'react';
+import type { MachineSpec } from './moldmachine';
 import { revisarModelo, type RevisionModelo, type FilaRevision } from './revisar-modelo';
 import type { MeshLike } from './flowlen-mesh';
 import { tituloCorto, type Criterio, type ContratoEstado } from './mold-contratos';
@@ -44,6 +45,8 @@ const PESO: Record<ContratoEstado, number> = {
 };
 
 export interface PiezaEnRevision {
+  /** UNA SOLA VERDAD: la spec YA hecha por el studio (misma pared, Q y material que el ciclo del molde). Con ella el dictamen y la hoja salen del mismo `moldMachine`. */
+  spec?: MachineSpec;
   mesh: MeshLike;
   nombre: string;
   /** lo que declaró el cargador (multi-sólido, triángulos, volumen del kernel) */
@@ -97,7 +100,7 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
       try {
         const r = revisarModelo({
           mesh: pieza.mesh, nombre: pieza.nombre,
-          plastic: pieza.plastic, annualVolume: pieza.annualVolume ?? 200_000,
+          plastic: pieza.plastic, annualVolume: pieza.annualVolume, spec: pieza.spec,   // sin ?? 200_000: la cifra asumida vive en UN lugar (Q_ANUAL_ASUMIDA) y se DICE en las notas
           flowMaxVoxels: 40_000,
         });
         if (!vivo) return;
@@ -155,9 +158,9 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
         <b data-testid="rp-nombre" style={{ fontSize: 12.5 }}>{pieza.nombre}</b>
         {rev && (
-          <span data-testid="rp-score" style={{ color: GOLD, fontWeight: 700 }}>{rev.fila.score}<span style={{ opacity: 0.5, fontWeight: 400 }}>/100</span></span>
+          <span data-testid="rp-score" style={{ color: GOLD, fontWeight: 700 }}><span style={{ opacity: 0.55, fontWeight: 400, fontSize: 10, marginRight: 4 }}>contratos</span>{rev.fila.score}<span style={{ opacity: 0.5, fontWeight: 400 }}>/100</span></span>
         )}
-        {rev && <span style={{ opacity: 0.6, fontSize: 10.5 }}>{rev.pkg.recomendacion.arch} × {rev.pkg.recomendacion.nCav} cav</span>}
+        {rev && <span data-testid="rp-cav" style={{ opacity: 0.6, fontSize: 10.5 }}>{rev.pkg.recomendacion.arch} × {rev.pkg.recomendacion.nCav} cav</span>}
       </div>
 
       {/* EL FOCO — el interruptor vive junto a la pieza, que es donde estás mirando.

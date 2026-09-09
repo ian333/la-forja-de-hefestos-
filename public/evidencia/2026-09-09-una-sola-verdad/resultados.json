@@ -1,0 +1,51 @@
+{
+ "una-spec": {
+  "estado": "verde",
+  "checks": "`Q_ANUAL_ASUMIDA = 100 000` vive en moldmachine.ts y la usan `piezaDesdeArbol` (ciclo) y `revisarModelo` (dictamen); el studio construye `specPieza` UNA vez del sólido del kernel (pared de la lente PARED, material y Q del intake) y se la pasa al dictamen (`PiezaEnRevision.spec`), que ya no deriva otra de la malla con otra Q. Runner 2026-09-09 18:06 UTC: p4-3 «1 cav en el dictamen» · p7-5 «1 cav en la hoja = dictamen» (antes: 2 y 1)",
+  "video": "",
+  "still": "dictamen-y-hoja.png",
+  "nota": "sin lente PARED todavía, el dictamen sigue derivando de la malla (y lo dice en sus notas: «producción anual ASUMIDA: 100,000 pzas… la misma que usa el molde»)"
+ },
+ "puntajes-con-nombre": {
+  "estado": "verde",
+  "checks": "dictamen: «contratos 71/100» (data-testid rp-score); hoja: fila «Dictamen · contratos (el juez, 69 criterios) · 71/100 · 5 violan · 12 advierten» + «DFM · moldeabilidad DFM (la puerta 0, no el juez) · 100/100»; «Recomendación · cold-2placas × 1 = dictamen ✓» lo comprueba a la vista; el criterio feed-ciclo se rotula «COLADA VS CICLO» (§6.4.7), ya no «CICLO»",
+  "video": "",
+  "still": "dictamen-y-hoja.png",
+  "nota": "el 233 s del enfriamiento (Eq 3.23) y el «COLADA VS CICLO ✗» miden cosas distintas y ahora se llaman distinto"
+ },
+ "maquina-con-numeros": {
+  "estado": "verde",
+  "checks": "fila Máquina: «FCS HT-150SV (taller) · clamp 2.9 % de 150 t · shot 19.7 % del barril · abierto 395 de 1010 mm ✓»; si no cupiera diría «no cabe en la FCS HT-150SV (taller): …» (`seleccion.taller.issues[0]`)",
+  "video": "",
+  "still": "maquina-con-numeros.png",
+  "nota": "HALLAZGO que los números destaparon: clamp 2.9 % (≈4 t) para una carcasa PP de 106×66 mm. El clamp sale de la caída de presión de LLENADO × 0.5 (`CAVITY_PRESSURE_FACTOR`, moldmachine.ts:170-179), no de la presión de EMPAQUE; un moldista espera 20-40 t. Validar contra Eq 5.29 (cup: 50 MPa → 40 t) y contra la máquina real cuando dispare. No se toca en esta orden: se registra"
+ },
+ "alimentacion-coherente": {
+  "estado": "verde",
+  "checks": "fila «Colada fría §7 · alimentación · 2 placas · sprue directo a la pieza (sin canales, §7.2.1)» cuando nCav = 1 (antes decía «bebedero + canales» con sprue directo en el título de E5); con n>1 dice «bebedero + canales a n cavidades»",
+  "video": "",
+  "still": "dictamen-y-hoja.png",
+  "nota": "E5 sigue decidiendo el sprue por su cuenta (`datumsColada`); hoy coinciden porque nCav=1; cablear E5 a `pkg.diseno.alimentacion` queda para T6"
+ },
+ "m6-por-revisar": {
+  "estado": "verde",
+  "checks": "fila tornillería: «M6 (⌀mín 5.1 mm) · por revisar contra el taller», sin ✓",
+  "video": "",
+  "still": "maquina-con-numeros.png",
+  "nota": ""
+ },
+ "sin-regresion": {
+  "estado": "verde",
+  "checks": "mold-revisar-test 0 fallas · mold-machine-test pass · mold-machinesizing-test pass · ciclo-dado-test 266/266 · runner 7/8 (6 a medias, como antes) · 27 checks",
+  "video": "",
+  "still": "",
+  "nota": "el presupuesto de 10 s del paso 6 se había puesto al FINAL de sus checks y pasó en 3 ms (su reloj arrancaba tarde): movido al PRINCIPIO; la próxima medición lo pondrá en rojo, que es la verdad"
+ },
+ "video-del-camino": {
+  "estado": "verde",
+  "checks": "paseo 26-UNA-SOLA-VERDAD (375 s brutos → 228 s, 0 cuadros encogidos), 4K hevc 10-bit + 1080 h264, entregado en Downloads de ambas PCs y E:\\forja-videos; revisado por cuadros: el dictamen dice «contratos 71/100 · cold-2placas × 1 cav» y «COLADA VS CICLO»; la hoja «× 1 = dictamen ✓» con la máquina en números",
+  "video": "26-UNA-SOLA-VERDAD-paseo.mp4",
+  "still": "paseo-contactos.png",
+  "nota": "los tiempos de espera del paso 6 siguen iguales (es el ticket 3): este paseo cambia lo que DICE, no lo que tarda"
+ }
+}

@@ -39,6 +39,13 @@ import { ventDesign } from './venting';
 
 export type Arch = 'cold-2placas' | 'cold-3placas' | 'hot-runner';
 
+/**
+ * Producción anual ASUMIDA cuando la pieza no la declara — UNA sola cifra para el dictamen y para el
+ * ciclo del molde (UNA SOLA VERDAD, 2026-09-09). Antes el dictamen asumía 200 000 y la hoja 100 000:
+ * `nMin = ceil(Q·ciclo/(6000·3600))` daba 2 y 1 cavidades DE LA MISMA PIEZA en dos pantallas.
+ */
+export const Q_ANUAL_ASUMIDA = 100_000;
+
 export interface MachineSpec {
   name: string;
   /** Geometría (mm/mm²/mm³). */

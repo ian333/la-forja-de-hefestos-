@@ -24,7 +24,7 @@ import { laminaExpulsores, laminaEspesor, laminaDeflexion, laminaAlabeo, laminaU
 import { clasificarVisibilidad, juzgarMarcas, proyectarParaLamina, type MarcaProceso } from './visibilidad';
 import { alabeoPorEspesor, alabeoPorArea } from './warpage';
 import { ABS_TAIT } from './shrinkage';
-import { moldMachine, type MachineSpec, type MoldPackage } from './moldmachine';
+import { moldMachine, Q_ANUAL_ASUMIDA, type MachineSpec, type MoldPackage } from './moldmachine';
 import { contratos, medirEnsamble, type ContratoReporte, type EnsambleMedido } from './mold-contratos';
 import { coordAudit, type CoordFinding } from './mold-coords';
 import { packageToAssemblySpec } from './mold-plano-set';
@@ -124,12 +124,12 @@ export function revisarModelo(input: RevisionInput): RevisionModelo {
       surfaceMm2: Math.round(areaMm2), volumeMm3: Math.round(volumeMm3),
       wallMm: input.wallMm ?? 0,                      // se completa abajo con el raster
       plastic: input.plastic ?? 'ABS',
-      annualVolume: input.annualVolume ?? 500_000,
+      annualVolume: input.annualVolume ?? Q_ANUAL_ASUMIDA,        // la MISMA cifra que el ciclo del molde
       totalVolume: input.totalVolume,
       cavityShape: input.cavityShape,
     };
     if (input.plastic == null) notas.push('plástico ASUMIDO: ABS (no declarado)');
-    if (input.annualVolume == null) notas.push('producción anual ASUMIDA: 500,000 pzas (no declarada)');
+    if (input.annualVolume == null) notas.push(`producción anual ASUMIDA: ${Q_ANUAL_ASUMIDA.toLocaleString()} pzas (no declarada; la misma que usa el molde)`);
   } else {
     throw new Error('revisarModelo: se necesita spec o mesh');
   }

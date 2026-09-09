@@ -98,7 +98,13 @@ export interface Criterio {
  * Es la anatomía de la ficha de Horizon aplicada a la lista: estado chiquito,
  * TÍTULO corto, y la regla adentro — no la regla haciendo de título.
  */
+const TITULOS_PROPIOS: Record<string, string> = {
+  // dos criterios salían rotulados «CICLO»: el del feed es el CONGELAMIENTO de la colada vs la pieza (§6.4.7)
+  // y el del agua es el ciclo de enfriamiento (§9). UNA SOLA VERDAD (2026-09-09): cada uno con su nombre.
+  'feed-ciclo': 'COLADA VS CICLO',
+};
 export function tituloCorto(id: string): string {
+  if (TITULOS_PROPIOS[id]) return TITULOS_PROPIOS[id];
   const p = id.split('-');
   const cuerpo = p.length > 1 ? p.slice(1).join(' ') : id;
   return cuerpo.replace(/_/g, ' ').toUpperCase();

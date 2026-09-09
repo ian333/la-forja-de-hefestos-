@@ -32,7 +32,7 @@
  *  · el despiece a t=1 no traslapa y a t=0 es la identidad (G/H)
  */
 import type { MoldAssemblySpec } from './mold-assembly';
-import { moldMachine, type MoldPackage, type MachineSpec, type Arch } from './moldmachine';
+import { moldMachine, Q_ANUAL_ASUMIDA, type MoldPackage, type MachineSpec, type Arch } from './moldmachine';
 import { CATALOGO_BASES } from './moldbase';   // sprint 3: la base con fuente declarada
 import { packageToAssemblySpec, plateStackZ } from './mold-plano-set';
 import {
@@ -1478,7 +1478,7 @@ export function piezaDesdeArbol(oc: any, shape: any, m: ArbolPiezaMeta): PiezaSp
   const minDim = Math.min(L, W, H);
   const wall = m.wallMm ?? minDim;                               // sin cascarón = macizo
   const material = m.material ?? 'ABS';
-  const Q = m.annualVolume ?? 100_000;
+  const Q = m.annualVolume ?? Q_ANUAL_ASUMIDA;                   // UNA cifra con el dictamen (moldmachine.ts)
   const spec: MachineSpec = {
     name: m.nombre, Lmm: L, Wmm: W, Hmm: H, cavityShape: m.round ? 'round' : 'rect',
     surfaceMm2: Math.round(area), volumeMm3: Math.round(vol), wallMm: wall,
@@ -1558,7 +1558,7 @@ export interface Estacion2Dado {
 // (round o rect). `estacion2Dado()` queda como alias del cubo.
 export function estacion2(pieza: PiezaSpec): Estacion2Dado {
   const spec = pieza.spec;
-  const Q = (spec as any).totalVolume ?? 100_000;
+  const Q = (spec as any).totalVolume ?? Q_ANUAL_ASUMIDA;
   const pkg = moldMachine(spec);
   const win = pkg.recomendacion;
   const filas = pkg.variantes

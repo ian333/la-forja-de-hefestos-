@@ -1,20 +1,20 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-09 17:48",
+ "generado": "2026-09-09 18:19",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 7,
+  "proximo": 6,
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 86,
+  "cerrado": 87,
   "probado": 0,
-  "porProbar": 50,
-  "sinDesplegar": 7,
+  "porProbar": 51,
+  "sinDesplegar": 8,
   "despues": 22
  },
  "deploy": {
@@ -24,38 +24,6 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-09-09-una-sola-verdad.md",
-    "slug": "2026-09-09-una-sola-verdad",
-    "titulo": "UNA SOLA VERDAD — cavidades, ciclo y puntaje idénticos en dictamen, molde, hoja y expediente",
-    "fecha": "2026-09-09",
-    "estado": "proximo",
-    "prioridad": 1,
-    "tipo": "",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "crítica del moldista al paseo (2026-09-09): «El producto se contradice en LO PRIMERO que cotizo». Medido en las capturas del runner: el dictamen dice «71/100 · cold-2placas × 2 cav · CICLO ✗»; la hoja de análisis de los planos dice «cold-2…",
-    "toca": 7,
-    "crea": 1,
-    "evidencia": 6,
-    "evidenciaDeclarada": [
-     "Un solo moldMachine por pieza soltada (contar llamadas en el paseo: 1). Dictamen, molde, hoja y",
-     "RUNNER: check en paso 4 y paso 7 que extrae «× n cav» del dictamen y de la hoja y exige n igual; el ciclo",
-     "Fila de la máquina con números: «FCS HT-150SV (taller) · clamp X t de 150 (Y %) · shot Z % del barril ·",
-     "El título de E5 y la fila de alimentación dicen lo mismo (sprue directo O bebedero + canales), decidido",
-     "El M6 de la hoja (tornillería §12.4 para 124 kg) se marca «por revisar contra el taller», no se inventa.",
-     "mold-machinesizing-test, mold-machine-test, mold-base-test y forja-gate en verde; orden-gate"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
    {
     "file": "ordenes/2026-09-09-lo-que-hay-se-ve.md",
     "slug": "2026-09-09-lo-que-hay-se-ve",
@@ -1321,6 +1289,42 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-09-09-una-sola-verdad.md",
+    "slug": "2026-09-09-una-sola-verdad",
+    "titulo": "UNA SOLA VERDAD — cavidades, ciclo y puntaje idénticos en dictamen, molde, hoja y expediente",
+    "fecha": "2026-09-09",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "crítica del moldista al paseo (2026-09-09): «El producto se contradice en LO PRIMERO que cotizo». Medido en las capturas del runner: el dictamen dice «71/100 · cold-2placas × 2 cav · CICLO ✗»; la hoja de análisis de los planos dice «cold-2…",
+    "toca": 10,
+    "crea": 4,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "Un solo moldMachine por pieza soltada (contar llamadas en el paseo: 1). Dictamen, molde, hoja y",
+     "RUNNER: check en paso 4 y paso 7 que extrae «× n cav» del dictamen y de la hoja y exige n igual; el ciclo",
+     "Fila de la máquina con números: «FCS HT-150SV (taller) · clamp X t de 150 (Y %) · shot Z % del barril ·",
+     "El título de E5 y la fila de alimentación dicen lo mismo (sprue directo O bebedero + canales), decidido",
+     "El M6 de la hoja (tornillería §12.4 para 124 kg) se marca «por revisar contra el taller», no se inventa.",
+     "mold-machinesizing-test, mold-machine-test, mold-base-test y forja-gate en verde; orden-gate"
+    ],
+    "cierre": "contactos del video, como en las órdenes anteriores). Lo hecho: Q_ANUAL_ASUMIDA (100 000) en UN lugar (moldmachine.ts) para el ciclo y el dictamen; el studio construye specPieza una vez del sólido de…",
+    "cierreCompleto": "contactos del video, como en las órdenes anteriores). Lo hecho: Q_ANUAL_ASUMIDA (100 000) en UN lugar (moldmachine.ts) para el ciclo y el dictamen; el studio construye specPieza una vez del sólido del kernel (pared de la lente PARED + intake) y se la da al dictamen (PiezaEnRevision.spec → revisarModelo camino spec); el panel ya no fuerza ?? 200_000; la hoja de análisis lleva «× n = dictamen ✓», la fila «Dictamen · contratos (el juez, 69 criterios) · 71/100 · 5 violan · 12 advierten», el DFM rotulado «la puerta 0, no el juez», la máquina con números (clamp %, shot %, abierto/daylight, y el porqué si no cabe), la alimentación según cavidades («sprue directo … sin canales» con 1 cav), el M6 «por revisar contra el taller»; feed-ciclo se rotula «COLADA VS CICLO». Runner: paso 4 captura las cavidades del dictamen y paso 7 exige las mismas en la hoja. NO se cableó E5 a pkg.diseno.alimentacion (hoy coincide porque nCav = 1; va con T6). - números: mold-revisar-test 0 fallas · mold-machine-test pass · mold-machinesizing-test pass · ciclo-dado-test 266/266 · runner 2026-09-09 18:06 UTC dev :5194 iangpu: 7/8 ok · 27 checks · p4-3 «1 cav en el dictamen, puntaje con nombre» · p7-5 «1 cav en la hoja = dictamen, puntajes con nombre» (antes: 2 y 1) · 6 a medias como antes (agua/expulsores) · orden-gate VERDE · censo 8→8 / 41→41 / 46→46. - evidencia: public/evidencia/2026-09-09-una-sola-verdad/ — dictamen-y-hoja.png (los dos lugares con el mismo número), maquina-con-numeros.png, paseo-contactos.png; video 26-UNA-SOLA-VERDAD-paseo.mp4 (228 s) en Downloads de ambas PCs y E:\\forja-videos. - HA…",
+    "evidenciaSS": [
+     "evidencia/2026-09-09-una-sola-verdad/dictamen-y-hoja.png",
+     "evidencia/2026-09-09-una-sola-verdad/maquina-con-numeros.png",
+     "evidencia/2026-09-09-una-sola-verdad/paseo-contactos.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "53f5681",
+    "despliegue": "sin-desplegar"
+   },
    {
     "file": "ordenes/2026-09-08-la-inyectora-del-taller.md",
     "slug": "2026-09-08-la-inyectora-del-taller",

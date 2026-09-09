@@ -39,7 +39,7 @@ import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
 import * as OCC from './occt';                                   // namespace del kernel para armar el molde
 import { buildMoldParts, packageToAssemblySpec, plateStackZ, buildMoldLaminas, laminasToPrintHTML, type MoldPart, type DrawingPage } from '../mold/mold-plano-set';
-import { cotizacionPieza, cotizacionSvg } from '../mold/estudio-molde-datos';   // PASO 8 · la hoja de cotización de la pieza, dentro del expediente
+import { cotizacionPieza, cotizacionSvg, piezaDesdeArbol } from '../mold/estudio-molde-datos';   // PASO 8 · la hoja de cotización de la pieza, dentro del expediente
 import type { RevisionModelo } from '../mold/revisar-modelo';   // PASO 8 · el dictamen completo (no solo la fila) para el expediente
 import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
 import { flanera } from '../mold/flanera';   // el VASO de la flanera (producto de revolución)
@@ -3733,6 +3733,17 @@ export default function ForgeBRepStudio() {
   const docNameRef = useRef(docName);
   useEffect(() => { docNameRef.current = docName; }, [docName]);
   const mold = useMoldStudio({ oc, setCollapsed, setDocName, arbol: arbolRef, arbolRev });
+  // UNA SOLA VERDAD (2026-09-09): la spec de la pieza se construye UNA vez, del sólido del kernel, con la
+  // pared de la lente PARED y la Q/material del intake — exactamente lo que E2 le da a `moldMachine`. El
+  // dictamen (D) la recibe hecha y ya no deriva la suya de la malla con otra Q: antes salían 2 cavidades en
+  // el dictamen y 1 en la hoja de la misma carcasa. Sin lente PARED todavía, el dictamen sigue solo (y lo dice).
+  const specPieza = useMemo(() => {
+    const shape = arbolRef.current?.shape; const p = lentes?.lentes.find((l) => l.id === 'pared')?.p50;
+    if (!oc || !shape || !piezaMalla || !(p && p > 0)) return undefined;
+    try { return piezaDesdeArbol(oc, shape, { nombre: piezaMalla.nombre, wallMm: +p.toFixed(2), material: mold.intake.material ?? 'ABS', annualVolume: mold.intake.annualVolume }).spec; }
+    catch (e) { console.warn('SPEC_PIEZA_ERR', e); return undefined; }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oc, arbolRev, piezaMalla, lentes, mold.intake]);
   const moldeOpacidadRef = useRef<unknown>(null);   // E5: restaurar opacidades una sola vez por sólido
   // PASO 6 · EL MOLDE SE ARMA SOLO. El humano tocó MOLDE; la máquina: (1) la PARED la mide el
   // Foco (p50 de la lente PARED — nadie la teclea; sin ella el STEP se leía MACIZO y cotizaba
@@ -3776,10 +3787,21 @@ export default function ForgeBRepStudio() {
       try {
         const aspec = packageToAssemblySpec(pkg);
         const r = pkg.recomendacion;
+        // UNA SOLA VERDAD: la hoja dice lo MISMO que el dictamen (mismo pkg) y lo comprueba a la vista;
+        // la máquina trae números, no palomitas; cada puntaje lleva su nombre (contratos = el juez;
+        // DFM = la puerta 0). Lo que falta se dice («sin dictamen»), no se rellena.
+        const sel = pkg.diseno.maquina.seleccion; const mq = sel.machine;
+        const cavDict = revision?.pkg.recomendacion.nCav;
+        const maqValor = mq
+          ? `${mq.name} · clamp ${sel.clampUtilPct} % de ${mq.clampTons} t · shot ${sel.shotPct} % del barril · abierto ${Math.round(sel.apertura.needMm)} de ${mq.maxDaylightMm} mm${sel.taller && !sel.taller.ok ? ` · no cabe en la ${sel.taller.machine.name}: ${sel.taller.issues[0] ?? ''}` : ''}`
+          : 'ninguna inyectora del catálogo';
         const rows = [
-          { grupo: 'Recomendación', param: 'arquitectura × cavidades', valor: `${r.arch} × ${r.nCav}`, ref: '§3.4' },
-          { grupo: 'Máquina', param: 'inyectora', valor: `${pkg.maquina?.nombre ?? '—'} ${pkg.maquina?.ok ? '✓' : '⚠'}`, ref: '§4.3.3', ok: pkg.maquina?.ok },
-          { grupo: 'DFM', param: 'moldeabilidad', valor: `${pkg.dfm.score}/100`, ref: '§2.3', ok: pkg.dfm.score >= 60 },
+          { grupo: 'Recomendación', param: 'arquitectura × cavidades', valor: `${r.arch} × ${r.nCav}${cavDict == null ? '' : cavDict === r.nCav ? ' = dictamen' : ` ≠ dictamen (${cavDict})`}`, ref: '§3.4', ok: cavDict == null ? undefined : cavDict === r.nCav },
+          { grupo: 'Máquina', param: 'inyectora', valor: maqValor, ref: '§4.3.3', ok: sel.ok },
+          revision
+            ? { grupo: 'Dictamen', param: 'contratos (el juez, 69 criterios)', valor: `${revision.fila.score}/100 · ${revision.fila.viola} violan · ${revision.fila.advierte} advierten`, ref: '§13', ok: revision.fila.viola === 0 }
+            : { grupo: 'Dictamen', param: 'contratos (el juez)', valor: 'sin dictamen: pulsa D sobre la pieza', ref: '§13' },
+          { grupo: 'DFM', param: 'moldeabilidad DFM (la puerta 0, no el juez)', valor: `${pkg.dfm.score}/100`, ref: '§2.3', ok: pkg.dfm.score >= 60 },
         ];
         const pages = buildMoldLaminas(OCC, oc, aspec, rows, shape);
         setPlanosMolde(pages); setPlanosIdx(0); setPlanosOn(true);
@@ -3787,7 +3809,7 @@ export default function ForgeBRepStudio() {
       finally { setPlanosBusy(false); }
     }, 30);
     return true;
-  }, [oc, mold.ciclo]);
+  }, [oc, mold.ciclo, revision]);
   // si pidieron PLANOS antes de que exista E2, MOLDE arma el ciclo y esto los genera al llegar
   useEffect(() => {
     if (planosPend && mold.ciclo?.e2?.pkg && !planosBusy) { setPlanosPend(false); generarPlanosMolde(); }
@@ -7084,7 +7106,7 @@ export default function ForgeBRepStudio() {
               <div style={{ position: 'relative', zIndex: 1 }}>
               <Suspense fallback={<div style={{ fontSize: 11, opacity: 0.6 }}>cargando la revisión…</div>}>
                 <RevisarPiezaPanel
-                  pieza={{ mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas }}
+                  pieza={{ mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas, spec: specPieza }}
                   onDictamen={(f) => setDictamen({ viola: f.viola, advierte: f.advierte, cumple: f.cumple })}
                   onRevision={setRevision}
                   onAbrirLote={() => { setLaminaOn(false); setRevisarLoteOn(true); }} />
@@ -7834,7 +7856,7 @@ export default function ForgeBRepStudio() {
                   <RevisarPiezaPanel
                     onRevision={setRevision}
                     pieza={piezaMalla
-                      ? { mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas }
+                      ? { mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas, spec: specPieza }
                       : result ? { mesh: { positions: result.mesh.positions, indices: result.mesh.indices }, nombre: docName } : null}
                     onAbrirLote={() => setRevisarLoteOn(true)}
                     foco={piezaMalla ? {

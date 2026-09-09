@@ -422,7 +422,7 @@ export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
   const rows: AnalysisRow[] = [
     { grupo: 'Tornillería §12.4', param: 'masa del molde (stack real)', valor: `${b.massKg.toFixed(0)} kg`, ref: `${b.Hmm}×${s.widthMm}×${plateDepth(s)} mm` },
     { grupo: 'Tornillería §12.4', param: 'fuerza peor caso (izaje, n_g=10)', valor: `${(b.forceN / 1000).toFixed(1)} kN`, ref: 'Fig 12.33', ok: true },
-    { grupo: 'Tornillería §12.4', param: 'tornillo de sujeción (Ø mín → DIN 912)', valor: `${b.din} (⌀mín ${b.dMinMm.toFixed(1)} mm)`, ref: 'Eq 12.32', ok: true },
+    { grupo: 'Tornillería §12.4', param: 'tornillo de sujeción (Ø mín → DIN 912)', valor: `${b.din} (⌀mín ${b.dMinMm.toFixed(1)} mm) · por revisar contra el taller`, ref: 'Eq 12.32' },
     { grupo: 'Enfriamiento §9.2', param: 'línea de agua (plug DME)', valor: `${s.cooling.plug} · ⌀${dia} mm`, ref: '§9.2.4', ok: true },
     { grupo: 'Enfriamiento §9.2', param: 'profundidad a la cavidad H = 4·D (2D<H<5D)', valor: `${depth} mm`, ref: 'Eq 9.22', ok: true },
     { grupo: 'Enfriamiento §9.2', param: 'paso entre líneas W ∈ [H, 2H]', valor: `${pitch} mm`, ref: 'Eq 9.24', ok: true },
@@ -446,7 +446,7 @@ export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
     );
   } else {
     rows.push(
-      { grupo: 'Colada fría §7', param: 'alimentación', valor: s.feed === 'cold-3placas' ? '3 placas (compuerta automática)' : '2 placas (bebedero + canales)', ref: '§7', ok: true },
+      { grupo: 'Colada fría §7', param: 'alimentación', valor: s.feed === 'cold-3placas' ? '3 placas (compuerta automática)' : (s.nCav ?? 1) === 1 ? '2 placas · sprue directo a la pieza (sin canales, §7.2.1)' : `2 placas (bebedero + canales a ${s.nCav} cavidades)`, ref: '§7', ok: true },
       { grupo: 'Colada fría §7', param: 'colada de desecho (regrind)', valor: '~20-25 % del disparo', ref: '§7.1' },
     );
   }

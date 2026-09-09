@@ -1,9 +1,6 @@
 # ORDEN: UNA SOLA VERDAD — cavidades, ciclo y puntaje idénticos en dictamen, molde, hoja y expediente
 
-ESTADO: proximo
-PRIORIDAD: 1
-
-BASE: 5c64cb8
+BASE: 53f5681
 
 OBJETIVO: crítica del moldista al paseo (2026-09-09): «El producto se contradice en LO PRIMERO que cotizo».
 Medido en las capturas del runner: el dictamen dice «71/100 · cold-2placas × 2 cav · CICLO ✗»; la hoja de
@@ -42,20 +39,61 @@ runner lo mide leyendo los tres lugares y exigiendo igualdad.
 - NO existe: una función única `specDeLaPieza(intake)` con los mismos defaults (Q, pared, área proyectada)
   para ambos consumidores; un check del runner que lea cavidades/ciclo/puntaje en los tres lugares.
 
-## TOCA (probable; se confirma al empezar)
+## TOCA
+- src/forja/mold/moldmachine.ts
 - src/forja/mold/revisar-modelo.ts
 - src/forja/mold/estudio-molde-datos.ts
 - src/forja/mold/RevisarPiezaPanel.tsx
 - src/forja/brep/ForgeBRepStudio.tsx
-- src/forja/brep/useMoldStudio.ts
-- src/forja/mold/mold-contratos.ts (rótulos «CICLO» distintos; el score se llama «contratos»)
+- src/forja/mold/mold-contratos.ts
+- src/forja/mold/mold-drawing-set.ts
 - caminos/la-carcasa-de-mitsubishi.md
+- public/temis.json
+- public/temis-deploy.json
 
 ## CREA
-- public/evidencia/2026-09-09-una-sola-verdad/… (capturas de los tres lugares con el MISMO número + resultados.json)
+- public/evidencia/2026-09-09-una-sola-verdad/resultados.json
+- public/evidencia/2026-09-09-una-sola-verdad/dictamen-y-hoja.png
+- public/evidencia/2026-09-09-una-sola-verdad/maquina-con-numeros.png
+- public/evidencia/2026-09-09-una-sola-verdad/paseo-contactos.png
 
 ## BORRA
 - (nada)
+
+## PREEXISTENTE
+(la otra sesión trabaja en el mismo árbol: comando, tutoriales, YouTube)
+- public/comando/historia.json
+- public/comando/metricas.json
+- scripts/captions-pendientes.py
+- scripts/playlist-tutoriales.py
+- scripts/reprogramar-yt.py
+- scripts/yt-pendientes.sh
+- scripts/comentarios.py
+- videos/CRONOGRAMA.json
+- videos/mol-h2o-dos-gotas.json
+- videos/tutorial-01-nota-de-venta.json
+- videos/tutorial-02-alta-de-producto.json
+- videos/tutorial-03-alta-de-cliente.json
+- videos/tutorial-04-cotizacion.json
+- videos/tutorial-05-facturacion-portal.json
+- videos/tutorial-06-remision.json
+- videos/tutorial-07-editar-nota.json
+- videos/tutorial-08-orden-de-compra.json
+- videos/tutorial-09-cancelar-nota.json
+- videos/tutorial-10-registrar-pago.json
+- videos/tutorial-11-factura-desde-erp.json
+- videos/tutorial-12-factura-global.json
+- videos/tutorial-13-rep-complemento-pago.json
+- videos/tutorial-14-calculadora-precios.json
+- videos/tutorial-15-nota-de-venta-pro.json
+- videos/tutorial-16-detalle-de-producto.json
+- videos/tutorial-18-ajuste-masivo-inventario.json
+- videos/tutorial-20-pdf-imprimir.json
+- videos/tutorial-21-nota-de-credito.json
+- videos/tutorial-22-gasto-operativo.json
+- videos/tutorial-23-alta-de-proveedor.json
+- videos/tutorial-24-buscar-clave-sat.json
+- videos/tutorial-25-reportes-jugosos.json
 
 ## EVIDENCIA (se declara ANTES de trabajar)
 - Un solo `moldMachine` por pieza soltada (contar llamadas en el paseo: 1). Dictamen, molde, hoja y
@@ -72,3 +110,33 @@ runner lo mide leyendo los tres lugares y exigiendo igualdad.
   VERDE; censo igual; runner ≥ 7/8 sin regresión.
 
 ## CIERRE (se llena al terminar)
+- orden vs entregado: idéntico en TOCA/CREA/BORRA (CREA enmendada con `paseo-contactos.png`, la hoja de
+  contactos del video, como en las órdenes anteriores). Lo hecho: `Q_ANUAL_ASUMIDA` (100 000) en UN lugar
+  (moldmachine.ts) para el ciclo y el dictamen; el studio construye `specPieza` una vez del sólido del
+  kernel (pared de la lente PARED + intake) y se la da al dictamen (`PiezaEnRevision.spec` → `revisarModelo`
+  camino `spec`); el panel ya no fuerza `?? 200_000`; la hoja de análisis lleva «× n = dictamen ✓», la fila
+  «Dictamen · contratos (el juez, 69 criterios) · 71/100 · 5 violan · 12 advierten», el DFM rotulado «la
+  puerta 0, no el juez», la máquina con números (clamp %, shot %, abierto/daylight, y el porqué si no cabe),
+  la alimentación según cavidades («sprue directo … sin canales» con 1 cav), el M6 «por revisar contra el
+  taller»; `feed-ciclo` se rotula «COLADA VS CICLO». Runner: paso 4 captura las cavidades del dictamen y
+  paso 7 exige las mismas en la hoja. NO se cableó E5 a `pkg.diseno.alimentacion` (hoy coincide porque
+  nCav = 1; va con T6).
+- números: mold-revisar-test 0 fallas · mold-machine-test pass · mold-machinesizing-test pass ·
+  ciclo-dado-test 266/266 · runner 2026-09-09 18:06 UTC dev :5194 iangpu: **7/8 ok · 27 checks** ·
+  p4-3 «1 cav en el dictamen, puntaje con nombre» · p7-5 «1 cav en la hoja = dictamen, puntajes con nombre»
+  (antes: 2 y 1) · 6 a medias como antes (agua/expulsores) · orden-gate VERDE · censo 8→8 / 41→41 / 46→46.
+- evidencia: `public/evidencia/2026-09-09-una-sola-verdad/` — dictamen-y-hoja.png (los dos lugares con el
+  mismo número), maquina-con-numeros.png, paseo-contactos.png; video 26-UNA-SOLA-VERDAD-paseo.mp4 (228 s)
+  en Downloads de ambas PCs y E:\forja-videos.
+- HALLAZGO que destaparon los números (no se toca aquí, se registra): la fila de la máquina dice «clamp
+  2.9 % de 150 t» (≈4 t) para una carcasa PP de 106×66 mm. El clamp requerido sale de la caída de presión de
+  LLENADO × `CAVITY_PRESSURE_FACTOR` 0.5 (moldmachine.ts:170-179), no de la presión de EMPAQUE; un moldista
+  esperaría 20-40 t. Validar contra Eq 5.29 del libro (cup: 50 MPa → 40 t) y contra la máquina real cuando
+  dispare. Propuesta de ticket: LA PRESIÓN QUE CIERRA.
+- gotchas pagados: el presupuesto `<=10000` del paso 6 iba al FINAL de sus checks y «pasó» en 3 ms porque
+  su reloj arrancaba después de 120 s de otros checks — el `<=ms` se mide desde que empieza SU expect: va
+  PRIMERO (corregido en el camino; la próxima medición lo pone en rojo). `pkill -f "…verdad…"` por ssh mató
+  al propio ssh (tercera vez): el kill vive en un script en disco (`.runner/restart-verdad.sh`).
+- preguntas abiertas: ¿abrimos LA PRESIÓN QUE CIERRA antes de EL PASO 6 SE VE TRABAJAR? (es física, no
+  pantalla: sin ella el «cabe en la del taller» se decide con 4 t). El overflow de la fila de la máquina en
+  la hoja (texto largo se sale de la columna) es de LO QUE HAY SE VE.
