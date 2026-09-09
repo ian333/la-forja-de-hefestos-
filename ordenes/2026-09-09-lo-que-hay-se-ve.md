@@ -17,6 +17,18 @@ ve, centrado, ocupando el cuadro, nunca negro; una lente a la vez; ✗ solo fuer
 telemetría del kernel y las notas de desarrollo viven en Temis, no en la cara del cliente. Y el runner la
 mide en CADA paso.
 
+## LO QUE IAN VIO EN EL VIDEO 26 (2026-09-09, con el minuto)
+- **2:06 · estación 4 (LLENADO): «aquí no se ve nada»** — viewport casi negro con puras etiquetas rojas
+  flotando («hueco 60.52 ≠ 59.802 ✗», «Hk compra 30 ≠ 29.977 ✗») y el letrero del arnés diciendo «✓ SE VE».
+  El «se ve» lo decidió un `data-*`, no un píxel: por eso esta orden mide ENCUADRE y luminancia, no atributos.
+- **3:07 · estación 5: «solo se ven los insertos, NO EL MOLDE»** — el bloque translúcido con los dos insertos
+  y el sprue; las placas A/B y la de soporte no se ven. Observado en el panel izquierdo: los deslizadores de
+  opacidad de «placa A 246…» y «placa B 246…» están en 0 mientras los insertos y la partición sí tienen
+  opacidad. El molde que el cliente espera ver es el de la lámina de ensamble (imagen 11: «esto está bien
+  verga»): placas apiladas, sección, sprue, expulsores — el 3D tiene que enseñar ESO, con las placas.
+- Regla que sale de aquí: cuando el letrero diga SE VE, tiene que haber algo que ver; el veredicto del paso
+  incluye `encuadre.fill ≥ 0.30` y `luma ≥ 0.06`, y en E5 las placas con opacidad ≥ 0.35.
+
 ## POR QUÉ VA SEGUNDO
 - Es barato y visual: cámara, opacidades, tolerancias y qué se pinta. No toca el kernel.
 - Sin la ley medible, EL PASO 6 SE VE TRABAJAR no tiene contra qué probarse: primero el instrumento

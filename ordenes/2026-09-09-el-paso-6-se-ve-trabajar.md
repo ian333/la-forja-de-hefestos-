@@ -14,6 +14,11 @@ rótulo («¿cuántas cavidades?», «SPRUE DIRECTO»…) en ≤4 s de pantalla,
 hilo principal nunca se bloquea más de 1 s, y la primera placa aparece en ≤10 s. Presupuesto del paso
 entero: ≤60 s con progreso visible por estación.
 
+## LO QUE IAN VIO EN EL VIDEO 26 (2026-09-09)
+- **0:50 → 1:56 «se queda cargando»**: 66 s de video con la caja morada quieta bajo el letrero «EL MOLDE»
+  (y eso ya con los congelones cortados a 3 s: en crudo son ~90 s de hilo bloqueado en E3). Es el hoyo que
+  esta orden tapa: el tallado fuera del hilo y el molde apareciendo estación por estación.
+
 ## POR QUÉ ES EL GOLPE ESTRUCTURAL
 - Es el paso que vende el producto y es donde el video se muere (170 de 242 s quietos o negros, y 63
   congelones cortados antes).
