@@ -16,6 +16,7 @@ Une cada medio con su manifiesto (`publicar.subidas.ig.id` / `.yt.id`) cuando ex
 
   /home/ian/pub-venv/bin/python scripts/comentarios.py            # todo
   /home/ian/pub-venv/bin/python scripts/comentarios.py ig|yt      # una plataforma
+  /home/ian/pub-venv/bin/python scripts/comentarios.py diagnostico  # ¿por qué vienen vacíos?
 """
 import os, sys, json, glob, time, datetime as dt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -148,8 +149,75 @@ def youtube(mapa_yt):
     return {'canal': {'titulo': ch['snippet']['title'], 'subs': ch['statistics'].get('subscriberCount'), 'videos': ch['statistics'].get('videoCount')}, 'videos': out, 'total': total}
 
 
+
+# ── DIAGNÓSTICO ──────────────────────────────────────────────────────────────
+def diagnostico():
+    """¿POR QUÉ VIENEN VACÍOS LOS COMENTARIOS? Tres causas posibles, una batería que las separa.
+
+    (1) MODO DESARROLLO de la app de Meta — doc oficial: «Apps in Development mode can only
+        request permissions from role users… data generated while an app is in Development mode
+        can only be seen by role users». El que comenta NO tiene rol → su comentario no existe
+        para la API. Firma: 200 + data:[] + CURSORES de paginación (Meta ve filas y las filtra).
+    (2) PERMISO NO OTORGADO en el consentimiento (`instagram_business_manage_comments`).
+        Firma: error 10 «Application does not have permission», o `permissions` sin el scope.
+    (3) NIVEL DE ACCESO (Advanced) — solo si la app sirve cuentas AJENAS. La nuestra es propia,
+        así que la doc dice que basta Standard.
+
+    LA PRUEBA QUE LAS SEPARA: un comentario de @gaiaprime_mx (que SÍ es usuario de la app) en
+    su propio reel. Si aparece el suyo y no los de la gente → es (1), y se cura con el switch
+    a modo Activo, SIN App Review. Si no aparece ni el suyo → es (2), y se cura re-autorizando.
+    """
+    import requests
+    tk = json.load(open(os.path.join(CONF, 'instagram-token.json')))['access_token']
+    base = f'https://graph.instagram.com/{V}'
+    yo = ig_get(f'{base}/me', {'fields': 'id,user_id,username,account_type'}, tk)
+    print(f"cuenta: @{yo.get('username')} · {yo.get('account_type')} · id {yo.get('id')}")
+    medios = ig_pagina(f'{base}/me/media', {'fields': 'id,caption,comments_count,permalink,timestamp', 'limit': 100}, tk)
+    con = [m for m in medios if (m.get('comments_count') or 0)]
+    print(f"medios: {len(medios)} · con comentarios segun Meta: {len(con)} · suman {sum(m['comments_count'] for m in con)}")
+    if not con: print('(nada que diagnosticar)'); return
+    m = max(con, key=lambda x: x['comments_count'])
+    print(f"\nsonda sobre el mas comentado: {m['comments_count']} comentarios · {m['permalink']}")
+    veredicto = []
+    for etiqueta, params in [
+            ('comments minimo   ', {'fields': 'id,text,timestamp'}),
+            ('comments con autor', {'fields': 'id,text,username,like_count,timestamp'}),
+            ('comments+respuestas', {'fields': 'id,text,username,timestamp,replies{id,text,username}'}),
+            ('comments sin fields', {}),
+    ]:
+        r = requests.get(f"{base}/{m['id']}/comments", params={**params, 'limit': 50, 'access_token': tk}, timeout=60)
+        j = r.json(); n = len(j.get('data', []) or [])
+        cur = 'CON cursores' if (j.get('paging') or {}).get('cursors') else 'sin cursores'
+        err = (j.get('error') or {}).get('message', '')
+        print(f"  {etiqueta} -> HTTP {r.status_code} · {n} filas · {cur}{' · ERROR: ' + err[:80] if err else ''}")
+        veredicto.append((n, cur, err))
+    # la misma media pidiendo el campo anidado: si el campo se cae SIN error, es filtro de acceso
+    r = requests.get(f"{base}/{m['id']}", params={'fields': 'id,comments_count,comments{id,text,username}', 'access_token': tk}, timeout=60)
+    j = r.json()
+    print(f"  campo anidado      -> claves devueltas: {list(j.keys())}"
+          f"{' (el campo comments se CAYO en silencio)' if 'comments' not in j and 'error' not in j else ''}")
+    filas = sum(v[0] for v in veredicto); hay_cur = any(v[1] == 'CON cursores' for v in veredicto)
+    hay_err10 = any('does not have permission' in (v[2] or '') for v in veredicto)
+    print('\n── VEREDICTO ──')
+    if filas:
+        print('  ✓ la API SI entrega comentarios. Corre `comentarios.py ig` y a leer.')
+    elif hay_err10:
+        print('  → CAUSA (2): el token NO trae instagram_business_manage_comments.')
+        print('    Cura: `subir-instagram.py login` y aceptar TODOS los permisos (no desmarcar comentarios).')
+    elif hay_cur:
+        print('  → CAUSA (1): la app esta en MODO DESARROLLO. Meta ve las filas (manda cursores) y las')
+        print('    filtra porque quien comenta no tiene rol en la app. NO hace falta App Review:')
+        print('    panel de Meta -> Configuracion basica (icono + categoria + politica) -> switch a ACTIVO.')
+        print('    Prueba de confirmacion: comenta desde @gaiaprime_mx en ese reel y vuelve a correr esto;')
+        print('    si aparece SOLO el tuyo, queda probado que el filtro es por rol.')
+    else:
+        print('  → sin cursores y sin error: la media no tiene comentarios visibles para este token.')
+
+
+
 def main(args):
     cual = args[0] if args else 'todo'
+    if cual in ('diagnostico', 'diag'): return diagnostico()
     mapa_ig, mapa_yt = manifiestos()
     prev = json.load(open(OUT, encoding='utf-8')) if os.path.exists(OUT) else {}
     out = {'generado': dt.datetime.now().isoformat(timespec='minutes'), 'ig': prev.get('ig'), 'yt': prev.get('yt')}
