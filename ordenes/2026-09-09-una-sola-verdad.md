@@ -68,7 +68,7 @@ runner lo mide leyendo los tres lugares y exigiendo igualdad.
 - scripts/playlist-tutoriales.py
 - scripts/reprogramar-yt.py
 - scripts/yt-pendientes.sh
-- scripts/comentarios.py
+- scripts/comentarios.py (commit 11cd9b9 de la otra sesión, entre mi BASE y HEAD: no es árbol sucio)
 - videos/CRONOGRAMA.json
 - videos/mol-h2o-dos-gotas.json
 - videos/tutorial-01-nota-de-venta.json
