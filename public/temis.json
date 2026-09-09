@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-09 18:19",
+ "generado": "2026-09-09 22:13",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -8,13 +8,13 @@
  },
  "conteo": {
   "proximo": 6,
-  "enCurso": 0,
+  "enCurso": 1,
   "imprevisto": 0,
   "supertickets": 9,
   "cerrado": 87,
   "probado": 0,
   "porProbar": 51,
-  "sinDesplegar": 8,
+  "sinDesplegar": 7,
   "despues": 22
  },
  "deploy": {
@@ -25,9 +25,9 @@
  "columnas": {
   "proximo": [
    {
-    "file": "ordenes/2026-09-09-lo-que-hay-se-ve.md",
-    "slug": "2026-09-09-lo-que-hay-se-ve",
-    "titulo": "LO QUE HAY SE VE — centrado, nunca negro, sin ruido: el Foco vuelve a atenuar",
+    "file": "ordenes/2026-09-09-la-presion-que-cierra.md",
+    "slug": "2026-09-09-la-presion-que-cierra",
+    "titulo": "LA PRESIÓN QUE CIERRA — el clamp requerido con presión de empaque, validado contra el libro y la máquina",
     "fecha": "2026-09-09",
     "estado": "proximo",
     "prioridad": 2,
@@ -35,17 +35,15 @@
     "superticket": false,
     "ejercicios": [],
     "progreso": null,
-    "objetivo": "ian (2026-09-09, viendo el paseo): «¿podemos hacer de alguna manera que SIEMPRE se vea en pantalla lo que hay? Sé que nos podemos mover, pero hay ciertas partes en el video en que no se ve nada, y todo debería estar centrado». Medido el 20…",
-    "toca": 5,
+    "objetivo": "hallazgo de UNA SOLA VERDAD (2026-09-09), al poner números en la fila de la máquina: la carcasa 1594C sale con «clamp 2.9 % de 150 t» (≈4 t). Hoy clampTons = P_cav × A_proy con P_cav = ΔP de LLENADO × CAVITY_PRESSURE_FACTOR (0.5) (moldmach…",
+    "toca": 4,
     "crea": 1,
-    "evidencia": 6,
+    "evidencia": 4,
     "evidenciaDeclarada": [
-     "window.__forgeBrep.encuadre() → { dx, dy, fill, luma }: desvío del centro del bbox visible respecto",
-     "Paseo: ningún cuadro negro en la línea de tiempo (hoja de contactos cada 8 s); en E4 el molde se ve.",
-     "Al pasar de ENFRIAMIENTO a PARTIR y a MOLDE la ficha desaparece (check: count:[data-testid=\"ficha-en-el-mundo\"]>=1",
-     "Cero «✗» en el molde por |Δ| < tolerancia declarada; el ✗ real (draft 0° en el macho) queda solo y visible.",
-     "Vista cliente sin «TOPOLOGÍA», «MALLA/STEP», «vóxeles», ni notas «Falta aquí… T3-T5».",
-     "runner ≥ 7/8 sin regresión; orden-gate VERDE; censo igual."
+     "cup y bezel del libro siguen dando 400 kN y 1 400 kN (tests intactos).",
+     "La carcasa 1594C: clamp requerido en el rango 20-40 t con la fórmula del libro citada; la fila de la",
+     "Cuando la HT-150SV dispare: el clamp real (lectura del controlador) contra el calculado, en el doc.",
+     "runner sin regresión; orden-gate VERDE."
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1286,6 +1284,38 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-09-lo-que-hay-se-ve.md",
+    "slug": "2026-09-09-lo-que-hay-se-ve",
+    "titulo": "LO QUE HAY SE VE — centrado, nunca negro, sin ruido: el Foco vuelve a atenuar",
+    "fecha": "2026-09-09",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-09, viendo el paseo): «¿podemos hacer de alguna manera que SIEMPRE se vea en pantalla lo que hay? Sé que nos podemos mover, pero hay ciertas partes en el video en que no se ve nada, y todo debería estar centrado». Medido el 20…",
+    "toca": 7,
+    "crea": 5,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "window.__forgeBrep.encuadre() → { dx, dy, fill, luma }: desvío del centro del bbox visible respecto",
+     "Paseo: ningún cuadro negro en la línea de tiempo (hoja de contactos cada 8 s); en E4 el molde se ve.",
+     "Al pasar de ENFRIAMIENTO a PARTIR y a MOLDE la ficha desaparece (check: count:[data-testid=\"ficha-en-el-mundo\"]>=1",
+     "Cero «✗» en el molde por |Δ| < tolerancia declarada; el ✗ real (draft 0° en el macho) queda solo y visible.",
+     "Vista cliente sin «TOPOLOGÍA», «MALLA/STEP», «vóxeles», ni notas «Falta aquí… T3-T5».",
+     "runner ≥ 7/8 sin regresión; orden-gate VERDE; censo igual."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -1322,8 +1352,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "53f5681",
-    "despliegue": "sin-desplegar"
+    "commit": "d93900f",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-09-08-la-inyectora-del-taller.md",

@@ -1,9 +1,6 @@
 # ORDEN: LO QUE HAY SE VE — centrado, nunca negro, sin ruido: el Foco vuelve a atenuar
 
-ESTADO: proximo
-PRIORIDAD: 2
-
-BASE: 5c64cb8
+BASE: 12fd545
 
 OBJETIVO: ian (2026-09-09, viendo el paseo): «¿podemos hacer de alguna manera que SIEMPRE se vea en
 pantalla lo que hay? Sé que nos podemos mover, pero hay ciertas partes en el video en que no se ve nada,
@@ -53,12 +50,52 @@ mide en CADA paso.
 - src/forja/mold/RevisarPiezaPanel.tsx
 - caminos/la-carcasa-de-mitsubishi.md
 - scripts/camino-runner.cjs
+- public/temis.json
+- public/temis-deploy.json
 
 ## CREA
-- public/evidencia/2026-09-09-lo-que-hay-se-ve/… (capturas por paso + resultados.json)
+- public/evidencia/2026-09-09-lo-que-hay-se-ve/resultados.json
+- public/evidencia/2026-09-09-lo-que-hay-se-ve/e4-antes-despues.png
+- public/evidencia/2026-09-09-lo-que-hay-se-ve/e5-el-molde-con-placas.png
+- public/evidencia/2026-09-09-lo-que-hay-se-ve/encuadre-por-paso.png
+- public/evidencia/2026-09-09-lo-que-hay-se-ve/paseo-contactos.png
 
 ## BORRA
 - (nada)
+
+## PREEXISTENTE
+(la otra sesión trabaja en el mismo árbol: comando, tutoriales, YouTube)
+- public/comando/historia.json
+- public/comando/metricas.json
+- scripts/captions-pendientes.py
+- scripts/playlist-tutoriales.py
+- scripts/reprogramar-yt.py
+- scripts/yt-pendientes.sh
+- videos/CRONOGRAMA.json
+- videos/mol-h2o-dos-gotas.json
+- videos/tutorial-01-nota-de-venta.json
+- videos/tutorial-02-alta-de-producto.json
+- videos/tutorial-03-alta-de-cliente.json
+- videos/tutorial-04-cotizacion.json
+- videos/tutorial-05-facturacion-portal.json
+- videos/tutorial-06-remision.json
+- videos/tutorial-07-editar-nota.json
+- videos/tutorial-08-orden-de-compra.json
+- videos/tutorial-09-cancelar-nota.json
+- videos/tutorial-10-registrar-pago.json
+- videos/tutorial-11-factura-desde-erp.json
+- videos/tutorial-12-factura-global.json
+- videos/tutorial-13-rep-complemento-pago.json
+- videos/tutorial-14-calculadora-precios.json
+- videos/tutorial-15-nota-de-venta-pro.json
+- videos/tutorial-16-detalle-de-producto.json
+- videos/tutorial-18-ajuste-masivo-inventario.json
+- videos/tutorial-20-pdf-imprimir.json
+- videos/tutorial-21-nota-de-credito.json
+- videos/tutorial-22-gasto-operativo.json
+- videos/tutorial-23-alta-de-proveedor.json
+- videos/tutorial-24-buscar-clave-sat.json
+- videos/tutorial-25-reportes-jugosos.json
 
 ## EVIDENCIA (se declara ANTES de trabajar)
 - `window.__forgeBrep.encuadre()` → `{ dx, dy, fill, luma }`: desvío del centro del bbox visible respecto
