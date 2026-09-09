@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-08 23:34",
+ "generado": "2026-09-09 13:41",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -14,7 +14,7 @@
   "cerrado": 86,
   "probado": 0,
   "porProbar": 50,
-  "sinDesplegar": 6,
+  "sinDesplegar": 7,
   "despues": 19
  },
  "deploy": {
@@ -1345,8 +1345,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "64c08ec",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-09-07-iangpu-c-lleno-cuarta-vez.md",
@@ -6639,7 +6639,7 @@
    "rompeEn": 0,
    "parciales": 1,
    "medido": {
-    "fecha": "2026-09-07 22:13",
+    "fecha": "2026-09-08 23:21",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "iangpu"
