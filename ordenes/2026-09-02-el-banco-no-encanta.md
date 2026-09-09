@@ -1,7 +1,7 @@
 # ORDEN: EL BANCO — el lobby no encanta (y tiene otro estilo que el Foco)
 
 ESTADO: proximo
-PRIORIDAD: 4
+PRIORIDAD: 6
 BASE: 8290218
 
 OBJETIVO: ian, con la lámina viva y el lobby lado a lado (2026-09-02): «no tienen nada que ver,

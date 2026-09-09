@@ -44,7 +44,7 @@ Tres tornillos por modelo: **A ⌀40 · B ⌀44 · C ⌀50 mm**. Cuál trae la d
 | Mold platen (H×V) 模盤尺寸 | mm | 670 × 670 | 670 × 670 | — |
 | Ejector stroke 頂出行程 | mm | 110 | 110 | — |
 | Ejector force 頂出力 | tonf | **4.0** | 4.0 | `ejectionForceKN: 39.2` |
-| Max. pump driving motor | kW | 13.4 (220 V) / 18.2 (380 V) | 11 / 15 | — |
+| Max. pump driving motor | kW | **13.4 (220 V)** / 18.2 (380 V) | 11 / 15 | — · la del taller es 220 V (ian, 2026-09-09) |
 | Temperature controller | set | 5 | (0–400 °C) × 4 | — |
 | Heater capacity 電熱容量 | kW | 11.4 | 11.41 | — |
 | Machine dimensions (L×W×H) | mm | 5300 × 1600 × 1800 | 5050 × 1380 × 1730 | — |
@@ -73,7 +73,7 @@ huella de la máquina: **se toma la edición 2022** por ser la de la máquina; l
 |---|---|---|
 | **Tornillo instalado (A ⌀40 / B ⌀44 / C ⌀50)** | fija shot (251/304/393 cm³) y presión máx (2205/1822/1411 kgf/cm²) | pantalla del controlador FCS-6500S/KEBA → parámetros de máquina («screw diameter»); o el grabado en el cañón/tornillo; o la hoja de embarque |
 | **Unidad de inyección tipo I o II** (solo si es ed. 2016) | velocidad/presión distintas | misma pantalla de parámetros (presión máx: 1475 → I, 1822 → II con tornillo B) |
-| **Tensión 220 / 380 V** | motor 13.4 vs 18.2 kW; instalación eléctrica del taller | gabinete eléctrico (placa del interruptor principal) |
+| ~~Tensión 220 / 380 V~~ **220 V** (ian, 2026-09-09) | motor de bomba **13.4 kW** (columna 220 V) | confirmado por ian; queda pendiente la foto de la placa del interruptor |
 | **Orificio y radio de la punta de boquilla** | §6.3.1: orificio de boquilla < entrada del sprue; radio 10 ó 19 mm debe casar con el bebedero | medir la punta instalada con calibrador; la platina dice R10 en la barra central (no es la boquilla) |
 | **Número de serie / año** | garantía, manual de la unidad | FCS pone la placa en el bastidor del lado del operador, cerca del gabinete, o dentro de la puerta del gabinete eléctrico; también en la pantalla «Machine info» del controlador |
 | **Tasa de plastificación (g/s)** | residencia del fundido | no está en el catálogo (publica tasa de INYECCIÓN); se mide con un purgado cronometrado |

@@ -1,7 +1,7 @@
 # ORDEN: LA FORJA SIN LUZ — el único producto que muere cuando se va la luz de casa
 
 ESTADO: proximo
-PRIORIDAD: 5
+PRIORIDAD: 7
 
 BASE: f81ec7a
 

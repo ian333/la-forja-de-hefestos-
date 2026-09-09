@@ -54,3 +54,8 @@
 - 4K NATIVO del arnés de video (ian, 2026-09-04: «no me preocupa aún lo del 4K, dejémoslo hasta el
   final»). Hoy el paseo se graba a 1080 CSS (el screencast de Playwright ignora el DPR) y el master
   se escala. Rutas medibles: zoom CSS 2× en un viewport 3840, o cuadros por screenshot a DPR 2.
+
+## Sacados de PRÓXIMO el 2026-09-09 para meter el camino (ian: «sí prefiero que el molde se vaya armando»)
+- LA SAL — Na⁺ + H₂O, la primera CARGA ENTERA de la serie → `ordenes/despues/2026-08-26-la-sal.md` (vuelve a PRÓXIMO con `git mv` cuando el camino cierre).
+- conectar TODA La Forja y su analítica → `ordenes/despues/2026-08-27-forja-analitica-conectada.md`.
+- Temis compartido entre instancias de Claude → `ordenes/despues/2026-08-27-temis-compartido.md`.
