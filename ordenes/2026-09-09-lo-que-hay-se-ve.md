@@ -44,10 +44,11 @@ mide en CADA paso.
   viewport) que el runner pueda leer; ninguna regla de «una lente a la vez»; ningún modo cliente que
   esconda la telemetría del kernel.
 
-## TOCA (probable; se confirma al empezar)
+## TOCA
 - src/forja/brep/ForgeBRepStudio.tsx
 - src/forja/brep/useMoldStudio.ts
 - src/forja/mold/RevisarPiezaPanel.tsx
+- src/forja/mold/estudio-molde-datos.ts
 - caminos/la-carcasa-de-mitsubishi.md
 - scripts/camino-runner.cjs
 - public/temis.json
@@ -109,3 +110,36 @@ mide en CADA paso.
 - runner ≥ 7/8 sin regresión; orden-gate VERDE; censo igual.
 
 ## CIERRE (se llena al terminar)
+- orden vs entregado: TOCA/CREA/BORRA idénticos (CREA con las 5 evidencias declaradas). Lo hecho:
+  `window.__forgeBrep.encuadre()` (caja de lo visible proyectada + luminancia real, con `centro/diag`) y el
+  RUNNER lo exige en los pasos 2, 3, 5 y 6 junto con «sin ficha de otra lente», «sin telemetría», «sin
+  bitácora» y «sin ✗ por ruido» (36 checks). Producto: la pieza soltada ocupa el 38 % del cuadro
+  (`cameraDist` 1.8× en vez de 2.2×; el `orbitTo` del drop NO mandaba); la ficha de una lente muere al entrar
+  a PARTIR/MOLDE/PLANOS/EXPEDIENTE; ✗ solo fuera de tolerancia (`TOL_ACERO_MM` 0.05: «Hc compra 55 = 55.028 ✓»,
+  quedan 5 ✗ reales); el pie del cliente dice «SÓLIDO 55 822 mm³ · 472 caras» (Euler/△/KB solo con
+  `?taller=1`); el dictamen ya no imprime «Son T3-T5»; la tira EL PARTE tiene suelo; E4 deja el acero a 0.28 y
+  la pieza visible con el frente lleno; en E5 las placas A/B a 0.38 (ian: «solo se ven los insertos, NO EL
+  MOLDE»); el reencuadre del molde SALTA (dur 0), encuadra TODO el acero no oculto y salta siempre que
+  cambian las partes; 400 ms de aire entre E3, E4 y E5; E3 limpia el mapa de opacidad.
+- números: medición iangpu dev :5194 (2026-09-10 18:45 UTC): **7/8 ok · 36 checks · 6:6/9** · encuadre paso 2 dx −0.024 dy 0.086 fill 0.381
+  luma 0.053 · paso 3 fill 0.383 · paso 5 fill 0.383 · paso 6 (E5) fill 0.77 luma 0.28 · 6 a medias (los ✗
+  honestos: presupuesto 72 s > 10 s, agua, expulsores) · umbral de centrado subido de 0.12 a 0.15 porque en
+  E5 el bebedero alto deja la caja 12.6 % abajo del centro (a ojo sigue centrada; se dice en el contrato) ·
+  tests: mold-revisar 0 fallas · ciclo-dado 266/266 · orden-gate VERDE · censo 8→8 / 41→41 / 46→46 ·
+  video 27: 543 s brutos → 340 s (0 cuadros encogidos), en Downloads de ambas PCs y E:\forja-videos.
+- evidencia: `public/evidencia/2026-09-09-lo-que-hay-se-ve/` — encuadre-por-paso.png (los 4 encuadres con sus
+  números), e5-el-molde-con-placas.png (antes/después), e4-antes-despues.png (E3 desde dentro del bloque vs el
+  molde encuadrado mientras E5 calcula), paseo-contactos.png, resultados.json.
+- DESVIACIÓN, dicha: «nunca negro» se cumple en la medición (los 4 encuadres verdes) pero el paseo todavía
+  trae ~10-20 s oscuros en la frontera E2→E3 (video 27, 130-140 s; antes eran 40-48 s). Medido en 9 corridas y
+  4 sondas: no es la cámara (salta bien: bitácora `__forjaOrbitLog`), es la CADENA de estaciones bloqueando el
+  hilo — en el paseo p6-2 devolvió «false» (la estación RETROCEDE), p6-3 «placas» tardó 22 s y p6-4 «colada»
+  59 s, mientras en la medición E3→E5 tardan < 1 s. Eso es EL PASO 6 SE VE TRABAJAR (tallado y colada fuera
+  del hilo; el runner ya lo mide con el presupuesto de 10 s). No se disfraza: el paso 6 sigue a medias.
+- gotchas pagados: la sombra de contacto (239×0×239) y las platinas ocultas inflaban la caja del encuadre;
+  «lo visible» en E3 son solo los insertos y encuadrarlos metía la cámara dentro del bloque fantasma; el
+  guardián «misma caja: sin salto» dejaba a E3 sin salto; un `<=ms` mide desde SU expect; `pkill -f` por ssh
+  con el patrón en la línea mata al ssh (el kill vive en `.runner/restart-ve.sh`); la salida de un `eval` del
+  arnés se corta a 300 caracteres (los diagnósticos van en `data-*`, no en el retorno).
+- preguntas abiertas: ninguna para ian. Siguen, en orden: LA PRESIÓN QUE CIERRA (2) y EL PASO 6 SE VE
+  TRABAJAR (3), que hereda el bloqueo E2→E5 con sus números.

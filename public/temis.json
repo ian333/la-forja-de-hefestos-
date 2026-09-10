@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-09 22:13",
+ "generado": "2026-09-10 18:46",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -8,13 +8,13 @@
  },
  "conteo": {
   "proximo": 6,
-  "enCurso": 1,
+  "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 87,
+  "cerrado": 88,
   "probado": 0,
-  "porProbar": 51,
-  "sinDesplegar": 7,
+  "porProbar": 52,
+  "sinDesplegar": 8,
   "despues": 22
  },
  "deploy": {
@@ -1284,38 +1284,6 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-09-lo-que-hay-se-ve.md",
-    "slug": "2026-09-09-lo-que-hay-se-ve",
-    "titulo": "LO QUE HAY SE VE — centrado, nunca negro, sin ruido: el Foco vuelve a atenuar",
-    "fecha": "2026-09-09",
-    "estado": "en-curso",
-    "prioridad": 999,
-    "tipo": "",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "ian (2026-09-09, viendo el paseo): «¿podemos hacer de alguna manera que SIEMPRE se vea en pantalla lo que hay? Sé que nos podemos mover, pero hay ciertas partes en el video en que no se ve nada, y todo debería estar centrado». Medido el 20…",
-    "toca": 7,
-    "crea": 5,
-    "evidencia": 6,
-    "evidenciaDeclarada": [
-     "window.__forgeBrep.encuadre() → { dx, dy, fill, luma }: desvío del centro del bbox visible respecto",
-     "Paseo: ningún cuadro negro en la línea de tiempo (hoja de contactos cada 8 s); en E4 el molde se ve.",
-     "Al pasar de ENFRIAMIENTO a PARTIR y a MOLDE la ficha desaparece (check: count:[data-testid=\"ficha-en-el-mundo\"]>=1",
-     "Cero «✗» en el molde por |Δ| < tolerancia declarada; el ✗ real (draft 0° en el macho) queda solo y visible.",
-     "Vista cliente sin «TOPOLOGÍA», «MALLA/STEP», «vóxeles», ni notas «Falta aquí… T3-T5».",
-     "runner ≥ 7/8 sin regresión; orden-gate VERDE; censo igual."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -1354,6 +1322,43 @@
     "falla": "",
     "commit": "d93900f",
     "despliegue": "n-a"
+   },
+   {
+    "file": "ordenes/2026-09-09-lo-que-hay-se-ve.md",
+    "slug": "2026-09-09-lo-que-hay-se-ve",
+    "titulo": "LO QUE HAY SE VE — centrado, nunca negro, sin ruido: el Foco vuelve a atenuar",
+    "fecha": "2026-09-09",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-09, viendo el paseo): «¿podemos hacer de alguna manera que SIEMPRE se vea en pantalla lo que hay? Sé que nos podemos mover, pero hay ciertas partes en el video en que no se ve nada, y todo debería estar centrado». Medido el 20…",
+    "toca": 8,
+    "crea": 5,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "window.__forgeBrep.encuadre() → { dx, dy, fill, luma }: desvío del centro del bbox visible respecto",
+     "Paseo: ningún cuadro negro en la línea de tiempo (hoja de contactos cada 8 s); en E4 el molde se ve.",
+     "Al pasar de ENFRIAMIENTO a PARTIR y a MOLDE la ficha desaparece (check: count:[data-testid=\"ficha-en-el-mundo\"]>=1",
+     "Cero «✗» en el molde por |Δ| < tolerancia declarada; el ✗ real (draft 0° en el macho) queda solo y visible.",
+     "Vista cliente sin «TOPOLOGÍA», «MALLA/STEP», «vóxeles», ni notas «Falta aquí… T3-T5».",
+     "runner ≥ 7/8 sin regresión; orden-gate VERDE; censo igual."
+    ],
+    "cierre": "window.__forgeBrep.encuadre() (caja de lo visible proyectada + luminancia real, con centro/diag) y el RUNNER lo exige en los pasos 2, 3, 5 y 6 junto con «sin ficha de otra lente», «sin telemetría», «…",
+    "cierreCompleto": "window.__forgeBrep.encuadre() (caja de lo visible proyectada + luminancia real, con centro/diag) y el RUNNER lo exige en los pasos 2, 3, 5 y 6 junto con «sin ficha de otra lente», «sin telemetría», «sin bitácora» y «sin ✗ por ruido» (36 checks). Producto: la pieza soltada ocupa el 38 % del cuadro (cameraDist 1.8× en vez de 2.2×; el orbitTo del drop NO mandaba); la ficha de una lente muere al entrar a PARTIR/MOLDE/PLANOS/EXPEDIENTE; ✗ solo fuera de tolerancia (TOL_ACERO_MM 0.05: «Hc compra 55 = 55.028 ✓», quedan 5 ✗ reales); el pie del cliente dice «SÓLIDO 55 822 mm³ · 472 caras» (Euler/△/KB solo con ?taller=1); el dictamen ya no imprime «Son T3-T5»; la tira EL PARTE tiene suelo; E4 deja el acero a 0.28 y la pieza visible con el frente lleno; en E5 las placas A/B a 0.38 (ian: «solo se ven los insertos, NO EL MOLDE»); el reencuadre del molde SALTA (dur 0), encuadra TODO el acero no oculto y salta siempre que cambian las partes; 400 ms de aire entre E3, E4 y E5; E3 limpia el mapa de opacidad. - números: medición iangpu dev :5194 (2026-09-10 18:45 UTC): 7/8 ok · 36 checks · 6:6/9 · encuadre paso 2 dx −0.024 dy 0.086 fill 0.381 luma 0.053 · paso 3 fill 0.383 · paso 5 fill 0.383 · paso 6 (E5) fill 0.77 luma 0.28 · 6 a medias (los ✗ honestos: presupuesto 72 s > 10 s, agua, expulsores) · umbral de centrado subido de 0.12 a 0.15 porque en E5 el bebedero alto deja la caja 12.6 % abajo del centro (a ojo sigue centrada; se dice en el contrato) · tests: mold-revisar 0 fallas · ciclo-dado 266/266 · orden-gate VERDE · censo 8→8 / 41→41 / 46→46 · video 27: 543 s brutos → 340 s (0 cuadros …",
+    "evidenciaSS": [
+     "evidencia/2026-09-09-lo-que-hay-se-ve/e4-antes-despues.png",
+     "evidencia/2026-09-09-lo-que-hay-se-ve/e5-el-molde-con-placas.png",
+     "evidencia/2026-09-09-lo-que-hay-se-ve/encuadre-por-paso.png",
+     "evidencia/2026-09-09-lo-que-hay-se-ve/paseo-contactos.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "beefc5b",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-09-08-la-inyectora-del-taller.md",
@@ -6195,10 +6200,10 @@
     "titulo": "Por esto no te pueden congelar — el hexágono del agua",
     "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
     "tipo": "recorte-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "martes. LISTO hoy: voz verificada, tomas calibradas.",
     "manifiesto": true,
-    "publicado": false,
+    "publicado": true,
     "programar": "2026-09-08T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
@@ -6209,10 +6214,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdDASUxFVoM/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-09",
@@ -6221,10 +6231,10 @@
     "titulo": "Lo que detiene la gota antes de caer — la piel del agua",
     "base": "MISMO bin y misma belleza · guion en 2ª PERSONA (el sujeto es el cuerpo de quien ve) · brazo A: 9 tomas / 55 s = 8.73 cortes/min, VEL 1.0",
     "tipo": "recorte-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "miércoles. LISTO hoy.",
     "manifiesto": true,
-    "publicado": false,
+    "publicado": true,
     "programar": "2026-09-09T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
@@ -6235,10 +6245,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdFlG79kxz3/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-10",
@@ -6697,7 +6712,7 @@
    "rompeEn": 0,
    "parciales": 1,
    "medido": {
-    "fecha": "2026-09-08 23:21",
+    "fecha": "2026-09-10 18:45",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "iangpu"

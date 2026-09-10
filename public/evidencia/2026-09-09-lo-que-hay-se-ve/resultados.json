@@ -1,0 +1,58 @@
+{
+ "encuadre-medible": {
+  "estado": "verde",
+  "checks": "`window.__forgeBrep.encuadre()` → {n, dx, dy, fill, luma, centro, diag}: caja de todo lo visible (mallas con opacidad ≥ 0.2, sin rejilla ni planos sin espesor) proyectada al viewport + luminancia real de un render de 96×64. Runner 2026-09-10: paso 2 dx −0.024 dy 0.086 fill 0.381 luma 0.053 · paso 3 fill 0.383 · paso 5 fill 0.383 · paso 6 (E5) dx −0.014 dy 0.08 fill 0.772 luma 0.282 → los 4 encuadres en verde",
+  "video": "",
+  "still": "encuadre-por-paso.png",
+  "nota": "la primera versión incluía la sombra de contacto (239×0×239) y las platinas ocultas: dy 0.51 en la pieza y 0.49 en el molde — la caja mide LO QUE SE VE, no lo que existe"
+ },
+ "e4-nunca-negro": {
+  "estado": "parcial",
+  "checks": "E4 deja el acero a 0.28 (antes 0.08); la pieza ya no se esconde con el frente lleno; en E5 placas a 0.38; el reencuadre encuadra TODO el acero no oculto y SALTA (dur 0) en vez de volar; 400 ms de aire entre E3, E4 y E5. Video 27 (novena corrida): el molde se ve encuadrado de 150 a 210 s mientras E5 calcula (antes: 40-48 s de negro); queda ~10-20 s oscuros en la frontera E2→E3 (130-140 s)",
+  "video": "",
+  "still": "e4-antes-despues.png",
+  "nota": "lo que queda es el bloqueo del hilo en la cadena E2→E3→E5 (medido en el paseo: p6-2 «false» = la estación retrocede, p6-3 placas falla 22 s, p6-4 colada 59 s, encuadre falla en el paseo y pasa en la medición): es EL PASO 6 SE VE TRABAJAR, no esta orden"
+ },
+ "e5-el-molde": {
+  "estado": "verde",
+  "checks": "ian (3:07): «solo se ven los insertos, NO EL MOLDE» → en E5 placa A/B a 0.38 (antes ghosts a 0.07 con el deslizador en 0): el bloque se lee como molde con sus placas y los insertos adentro",
+  "video": "",
+  "still": "e5-el-molde-con-placas.png",
+  "nota": "el estándar es la lámina de ensamble que a ian le gustó"
+ },
+ "una-lente-a-la-vez": {
+  "estado": "verde",
+  "checks": "la ficha del enfriamiento muere al entrar a PARTIR/MOLDE/PLANOS/EXPEDIENTE (sonda: fichas=0 en paso 5 y en E5)",
+  "video": "",
+  "still": "e5-el-molde-con-placas.png",
+  "nota": ""
+ },
+ "x-solo-fuera-de-tolerancia": {
+  "estado": "verde",
+  "checks": "TOL_ACERO_MM 0.05 para el acero comprado/tallado: «Hc compra 55 = 55.028 ✓», «partición 160 = 159.972 ✓», «Hk compra 30 = 29.977 ✓»; quedan los ✗ reales: pared 2.75 ≠ 3.109, piso 2.75 ≠ 3, draft 0 ≠ 3.606, macho 190.09 ≠ 189.84, hueco 60.52 ≠ 59.80 (5). ciclo-dado-test 266/266, mold-revisar 0 fallas",
+  "video": "",
+  "still": "e5-el-molde-con-placas.png",
+  "nota": "los 5 reales son hallazgos de la pieza/el tallado, no ruido: se quedan en rojo"
+ },
+ "sin-telemetria-ni-bitacora": {
+  "estado": "verde",
+  "checks": "pie del cliente: «SÓLIDO 55822 mm³ · 472 caras · en el kernel» (Euler/△/KB solo con ?taller=1); el dictamen ya no imprime «Son T3-T5»; la tira EL PARTE tiene suelo (nada se lee debajo de las pestañas)",
+  "video": "",
+  "still": "",
+  "nota": ""
+ },
+ "runner-mide-la-ley": {
+  "estado": "verde",
+  "checks": "RUNNER con 36 checks: encuadre en pasos 2, 3, 5, 6 (|dx|,|dy| ≤ 0.12 · fill ≥ 0.30 · luma ≥ 0.02, @8000 por el vuelo/salto de cámara); sin ficha en 5 y 6; sin telemetría en 2; sin bitácora en 4; sin ✗ por ruido en 6 (5 ✗ reales). Medición 2026-09-10 18:2x UTC: 7/8 ok · 6:6/9 (los 3 ✗ honestos: presupuesto 10 s, agua, expulsores)",
+  "video": "",
+  "still": "encuadre-por-paso.png",
+  "nota": "el presupuesto de 10 s del paso 6 marca 72-79 s: la verdad"
+ },
+ "video-del-camino": {
+  "estado": "verde",
+  "checks": "paseo 27-LO-QUE-HAY-SE-VE (novena corrida; 543 s brutos → 340 s, 0 cuadros encogidos), 4K hevc 10-bit + 1080 h264, en Downloads de ambas PCs y E:\\forja-videos; línea de tiempo revisada cuadro por cuadro",
+  "video": "27-LO-QUE-HAY-SE-VE-paseo.mp4",
+  "still": "paseo-contactos.png",
+  "nota": "más largo que los anteriores porque corrí una sonda en paralelo durante la grabación"
+ }
+}

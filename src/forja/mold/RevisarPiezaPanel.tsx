@@ -270,13 +270,8 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
         </div>
       )}
 
-      {/* LO QUE FALTA, DICHO: sin esto el panel parecería completo y no lo está */}
-      {rev && (
-        <div style={{ fontSize: 10, opacity: 0.45, marginTop: 8, lineHeight: 1.5 }}>
-          Falta aquí: el hilo de cada § a su lugar en la pieza · la voz que lo dicta · el
-          expediente con su consecuencia visible. Son T3-T5 y todavía no están.
-        </div>
-      )}
+      {/* LO QUE HAY SE VE (2026-09-09): lo que falta (hilo § → pieza, voz, consecuencia visible) vive en
+          Temis (T3-T5), no en la cara del cliente — un dictamen no confiesa tickets. */}
     </div>
   );
 }

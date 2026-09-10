@@ -2941,7 +2941,15 @@ function SketchPlane({ plane }: { plane: SketchPlane3D }) {
 /** Salta la cámara a una vista preset (iso/top/front/right/left/back/bottom) — como
  *  el ViewCube de Fusion. `view` = {name, nonce} para poder repetir la misma vista. */
 type SketchCam = { pos: [number, number, number]; target: [number, number, number]; up: [number, number, number]; pxPerMm: number } | null;
-function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name: string; nonce: number } | null; orbit?: { az: number; el: number; r: number; nonce: number; target?: [number, number, number] } | null; dist: number; target: [number, number, number]; sketchCam?: SketchCam }) {
+/** LO QUE HAY SE VE (2026-09-09): lo que necesita `__forgeBrep.encuadre()` para medir, desde fuera del
+ *  Canvas, si lo que existe está en pantalla, centrado y con luz. El puente solo GUARDA referencias. */
+type EncuadreSink = { gl: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.Camera; size: { width: number; height: number } };
+function EncuadreBridge({ sink }: { sink: React.MutableRefObject<EncuadreSink | null> }) {
+  const gl = useThree((s) => s.gl); const scene = useThree((s) => s.scene); const camera = useThree((s) => s.camera); const size = useThree((s) => s.size);
+  useEffect(() => { sink.current = { gl, scene, camera, size }; }, [gl, scene, camera, size, sink]);
+  return null;
+}
+function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name: string; nonce: number } | null; orbit?: { az: number; el: number; r: number; nonce: number; dur?: number; target?: [number, number, number] } | null; dist: number; target: [number, number, number]; sketchCam?: SketchCam }) {
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls) as { target: THREE.Vector3; update: () => void; enabled: boolean } | null;
   // ── EL VIAJE (orden del user, como Fusion): la cámara NUNCA salta — VUELA a su
@@ -3015,12 +3023,24 @@ function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name
   }, [view, dist, camera, controls, target, sketchCam]);
   // ÓRBITA arbitraria (az/el grados, r en unidades de mundo) — para barrer 30+ ángulos.
   useEffect(() => {
+    // bitácora para el arnés (LO QUE HAY SE VE): cada petición de órbita, aplicada o saltada y por qué
+    const wlog = (window as unknown as { __forjaOrbitLog?: unknown[] }); (wlog.__forjaOrbitLog ??= []).push({ t: Math.round(performance.now()), nonce: orbit?.nonce, dur: orbit?.dur, target: orbit?.target, r: orbit?.r, skip: !orbit ? 'sin orbit' : sketchCam ? 'sketchCam' : orbit.nonce === lastOrbitNonce.current ? 'mismo nonce' : '' });
     if (!orbit || sketchCam || orbit.nonce === lastOrbitNonce.current) return;
     lastOrbitNonce.current = orbit.nonce;
     const az = (orbit.az * Math.PI) / 180, el = (orbit.el * Math.PI) / 180, r = orbit.r;
     const off: [number, number, number] = [r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az)];
     if (orbit.target) {
       const [tx, ty, tz] = orbit.target;                 // ya viene mapeado CAD→three
+      // LO QUE HAY SE VE (2026-09-09): `dur: 0` = SALTO. El reencuadre del molde llega entre estaciones que
+      // bloquean el hilo (E3 → E4 → E5): un vuelo de 0.85 s nunca termina y la cámara se congela a medio
+      // camino, ADENTRO del bloque (video 27: 32 s de viewport oscuro). El salto queda puesto en un cuadro.
+      if (orbit.dur === 0) {
+        tweenRef.current = null;
+        camera.position.set(off[0] + tx, off[1] + ty, off[2] + tz); camera.up.set(0, 1, 0);
+        if (controls) { controls.target.set(tx, ty, tz); controls.enabled = !sketchCamRef.current; controls.update(); }
+        camera.lookAt(tx, ty, tz);
+        return;
+      }
       flyTo([off[0] + tx, off[1] + ty, off[2] + tz], [0, 1, 0], [tx, ty, tz], 850);
     } else place(off[0], off[1], off[2]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3029,7 +3049,7 @@ function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name
 }
 
 function CadViewport({
-  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, sketchCam, showGround = true, children,
+  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, sketchCam, showGround = true, encuadreSink, children,
 }: {
   cameraDistance: number;
   autoRotate: boolean;
@@ -3037,10 +3057,12 @@ function CadViewport({
   maxDistance?: number;
   enablePan?: boolean;
   view?: { name: string; nonce: number } | null;
-  orbit?: { az: number; el: number; r: number; nonce: number } | null;
+  orbit?: { az: number; el: number; r: number; nonce: number; dur?: number; target?: [number, number, number] } | null;
   viewTarget?: [number, number, number];
   sketchCam?: SketchCam;
   showGround?: boolean;
+  /** LO QUE HAY SE VE: dónde deja el visor sus referencias three para medir el encuadre */
+  encuadreSink?: React.MutableRefObject<EncuadreSink | null>;
   children: ReactNode;
 }) {
   return (
@@ -3124,6 +3146,7 @@ function CadViewport({
           maxDistance={maxDistance ?? cameraDistance * 6}
         />
         <ViewController view={view ?? null} orbit={orbit ?? null} dist={cameraDistance} target={viewTarget ?? [0, 0, 0]} sketchCam={sketchCam} />
+        {encuadreSink && <EncuadreBridge sink={encuadreSink} />}
 
         {/* VIEWCUBE — orientación viva (como TODO CAD). Click en una cara salta a
             vista ortográfica; etiquetas en español. El Canvas es full-window y el
@@ -3677,6 +3700,10 @@ export default function ForgeBRepStudio() {
   // X3 · la ficha se ENSEÑA SOLA: al entrar a una lente abre una vez. Si arrancara
   // cerrada, el operador vería una esferita muda y tendría que adivinar que se apunta.
   useEffect(() => { setFichaAbierta(lenteActiva ? lenteActiva.id : null); }, [lenteActiva?.id]);
+  // LO QUE HAY SE VE (2026-09-09): la ficha de una lente MUERE al pasar a PARTIR, MOLDE, PLANOS o
+  // EXPEDIENTE. Medido en el paseo: la ficha del enfriamiento seguía pegada sobre el molde tapando cotas.
+  // El Foco enseña UNA cosa a la vez.
+  useEffect(() => { if (particionOn || moldeOn || planosOn || expedienteOn) setFichaAbierta(null); }, [particionOn, moldeOn, planosOn, expedienteOn]);
   /** el radio de LA MARCA se escala a la pieza: fija en mm, en una tapa tapa todo */
   const marcaR = useMemo(
     () => (piezaMalla ? Math.max(0.8, bboxDeMalla(piezaMalla.mesh).diagonal * 0.012) : 1),
@@ -3733,6 +3760,10 @@ export default function ForgeBRepStudio() {
   const docNameRef = useRef(docName);
   useEffect(() => { docNameRef.current = docName; }, [docName]);
   const mold = useMoldStudio({ oc, setCollapsed, setDocName, arbol: arbolRef, arbolRev });
+  /** LO QUE HAY SE VE: referencias three del visor (las llena EncuadreBridge) para `__forgeBrep.encuadre()` */
+  const encuadreRef = useRef<EncuadreSink | null>(null);
+  /** modo TALLER (`?taller=1`): la telemetría del kernel (Euler, △, KB) se enseña; al cliente no. */
+  const modoTaller = useMemo(() => typeof location !== 'undefined' && /[?&]taller=1/.test(location.search), []);
   // UNA SOLA VERDAD (2026-09-09): la spec de la pieza se construye UNA vez, del sólido del kernel, con la
   // pared de la lente PARED y la Q/material del intake — exactamente lo que E2 le da a `moldMachine`. El
   // dictamen (D) la recibe hecha y ya no deriva la suya de la malla con otra Q: antes salían 2 cavidades en
@@ -3770,10 +3801,17 @@ export default function ForgeBRepStudio() {
       // E5 alcanzada: E4 dejó las placas a 0.08 de opacidad para enseñar el frente de llenado y el
       // visor del MOLDE se veía negro (medido 2026-09-07). En este modo el humano quiere VER el acero:
       // se devuelven las opacidades de E3 (0.40 cavidad · 0.92 núcleo · 0.30 partición), una sola vez.
-      if (c.estacion >= 5 && moldeOpacidadRef.current !== c.piezaShape) { moldeOpacidadRef.current = c.piezaShape; mold.setMoldOpacity({}); }
+      // ian (2026-09-09, video 26 a 3:07): «solo se ven los insertos, NO EL MOLDE» — las placas A/B son
+      // ghosts a 0.07 y en el panel su deslizador está en 0. El molde que el cliente espera es el de la
+      // lámina de ensamble: placas apiladas. Aquí se les da cuerpo (0.38: acero translúcido, los insertos
+      // adentro siguen legibles). LO QUE HAY SE VE.
+      if (c.estacion >= 5 && moldeOpacidadRef.current !== c.piezaShape) { moldeOpacidadRef.current = c.piezaShape; mold.setMoldOpacity({ 'placa-a-ghost': 0.38, 'placa-b-ghost': 0.38 }); }
       return;
     }
-    const t = setTimeout(() => paso(), 80);
+    // LO QUE HAY SE VE (2026-09-09): de E3 en adelante, 400 ms de aire en vez de 80. Medido en el arnés
+    // (step_25): E3 se pintaba OSCURA porque el salto de cámara (30 ms después del commit) no alcanzaba a
+    // PINTARSE antes de que E4 y luego E5 bloquearan el hilo ~60 s — el cliente veía negro un minuto.
+    const t = setTimeout(() => paso(), c.estacion >= 3 ? 400 : 80);
     return () => clearTimeout(t);
   }, [moldeOn, piezaMalla, mold.ciclo, mold.intake, mold.cursoBusy, lentes, lentesBusy, calcularLentes, mold]);
   // PASO 7 · el juego de planos del molde de ESTA pieza: mismo motor que el PDF de la Máquina
@@ -4866,12 +4904,12 @@ export default function ForgeBRepStudio() {
     if (wasSketchingRef.current && !sketchOpen) setView('iso');
     wasSketchingRef.current = sketchOpen;
   }, [sketchOpen, setView]);
-  const [orbitReq, setOrbitReq] = useState<{ az: number; el: number; r: number; nonce: number; target?: [number, number, number] } | null>(null);
+  const [orbitReq, setOrbitReq] = useState<{ az: number; el: number; r: number; nonce: number; dur?: number; target?: [number, number, number] } | null>(null);
   // target opcional EN COORDENADAS CAD (x,y,z de placa): el ciclo vive colocado dentro
   // de la base y el bbox global puede arrastrar el centro — el driver de QA/video apunta
   // EXPLÍCITO a la pieza. Sin target: el viewTarget de siempre (bbox visible).
-  const orbitTo = useCallback((az: number, el: number, r: number, tx?: number, ty?: number, tz?: number) =>
-    setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1,
+  const orbitTo = useCallback((az: number, el: number, r: number, tx?: number, ty?: number, tz?: number, dur?: number) =>
+    setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1, ...(dur !== undefined ? { dur } : {}),
       ...(tx !== undefined && ty !== undefined && tz !== undefined ? { target: [tx, tz, -ty] as [number, number, number] } : {}) })), []);
   // PASO 6 · REENCUADRE AL MOLDE (va DESPUÉS de `orbitTo`: referenciarlo antes es TDZ, la cuarta vez en
   // este archivo). El acero vive en coordenadas de la BASE (§4.3.2), no donde cayó el STEP; la cámara del
@@ -4879,6 +4917,7 @@ export default function ForgeBRepStudio() {
   // tampoco sirve: encuadra el bbox de la pieza. Aquí se mide el bbox REAL de las placas y se apunta ahí.
   const moldeEncuadradoRef = useRef<unknown>(null);
   const moldeBBoxRef = useRef<string>('');   // diagnóstico: bbox del acero, lo lee la leyenda (data-bbox)
+  const moldeEncRef = useRef<string>('');    // diagnóstico: qué encuadró la cámara y con qué mapa de opacidad (data-enc)
   useEffect(() => {
     if (!moldeOn || !mold.ciclo?.pieza || !mold.moldParts.length) return;
     // CADA vez que cambian las partes (E3 → E4 → E5 las reemplazan): medido 2026-09-07, en E3 se veía
@@ -4886,12 +4925,36 @@ export default function ForgeBRepStudio() {
     // guard «una vez por sólido» impedía reencuadrar. moldParts es la dependencia, no el sólido.
     moldeEncuadradoRef.current = mold.moldParts;
     const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
-    for (const p of mold.moldParts) { const P = p.positions; for (let k = 0; k < P.length; k += 3) for (let d = 0; d < 3; d++) { if (P[k + d] < mn[d]) mn[d] = P[k + d]; if (P[k + d] > mx[d]) mx[d] = P[k + d]; } }
+    // LO QUE HAY SE VE: la cámara sigue a lo que se VE (opacidad ≥ 0.2), no a lo invisible — en E4 el
+    // acero a 0.08 mandaba el encuadre y el visor quedaba negro (ian, video 26 a 2:06: «aquí no se ve nada»).
+    const opac = mold.moldOpacity as Record<string, number>;
+    const oculto = mold.moldHidden as Record<string, boolean>;
+    const visiblesRaw = mold.moldParts.filter((p) => !oculto[p.role] && (opac[p.role] ?? p.opacity) >= 0.2);   // las platinas ocultas tampoco mandan
+    // si lo visible es una fracción chica del acero (mapa rancio, ghosts), encuadrar SOLO eso mete la cámara
+    // dentro del bloque: se encuadra todo lo no oculto (medido en el arnés, E3 oscura)
+    const todos = mold.moldParts.filter((p) => !oculto[p.role]);
+    const diagDe = (ps: typeof todos) => { let a = [Infinity, Infinity, Infinity], b = [-Infinity, -Infinity, -Infinity]; for (const p of ps) { const P = p.positions; for (let k = 0; k < P.length; k += 3) for (let d = 0; d < 3; d++) { if (P[k + d] < a[d]) a[d] = P[k + d]; if (P[k + d] > b[d]) b[d] = P[k + d]; } } return Number.isFinite(a[0]) ? Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) : 0; };
+    // MEDIDO (sonda-e3, 2026-09-10): en E3 «lo visible» son solo los insertos (las placas son ghosts a 0.07) y
+    // la cámara saltaba a su centro con r chico: quedaba DENTRO del bloque y E3 se pintaba oscura ~60 s
+    // mientras E4/E5 calculaban. E4 y E5, que encuadran el bloque entero, se ven bien. Regla: la cámara
+    // encuadra TODO el acero no oculto; lo visible solo se anota para el diagnóstico.
+    const visibles = todos;
+    moldeEncRef.current = `visibles ${visiblesRaw.map((p) => p.role).join('+') || '—'} · encuadra TODO (${todos.length} partes, diag ${diagDe(todos).toFixed(0)}) · opac ${Object.entries(opac).map(([k, v]) => k + ':' + v).join(',') || '{}'}`;
+    for (const p of (visibles.length ? visibles : mold.moldParts)) { const P = p.positions; for (let k = 0; k < P.length; k += 3) for (let d = 0; d < 3; d++) { if (P[k + d] < mn[d]) mn[d] = P[k + d]; if (P[k + d] > mx[d]) mx[d] = P[k + d]; } }
     if (!Number.isFinite(mn[0])) return;
     const c = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
     const diag = Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]);
-    moldeBBoxRef.current = `${mn.map((v) => v.toFixed(0)).join(',')} → ${mx.map((v) => v.toFixed(0)).join(',')} · centro ${c.map((v) => v.toFixed(0)).join(',')} · diag ${diag.toFixed(0)}`;
-    const t = setTimeout(() => orbitTo(40, 28, Math.max(diag * 1.15, 120), c[0], c[1], c[2]), 150);
+    const bboxStr = `${mn.map((v) => v.toFixed(0)).join(',')} → ${mx.map((v) => v.toFixed(0)).join(',')} · centro ${c.map((v) => v.toFixed(0)).join(',')} · diag ${diag.toFixed(0)}`;
+    // LO QUE HAY SE VE (2026-09-09, video 27 a 144-168 s): E3→E4 son las MISMAS placas; reencuadrar arrancaba un
+    // vuelo de 0.9 s y E5 bloqueaba el hilo 80 ms después → la cámara se congelaba a medio vuelo, ADENTRO del
+    // bloque, 32 s de viewport oscuro. Si la caja no cambió, la cámara no se mueve.
+    // diagnóstico (lo lee el arnés en la consola): estación, caja, y si se saltó el reencuadre
+    // (2026-09-10) el guardián «misma caja: sin salto» dejaba a E3 sin salto cuando E2 ya había dejado la misma caja
+    // — medido: E3 se pintaba desde DENTRO del bloque (la cámara del paso PARTIR). Con salto instantáneo (dur 0)
+    // no hay vuelo que congelar: se salta SIEMPRE que cambian las partes.
+    moldeEncRef.current += ' · salto';
+    moldeBBoxRef.current = bboxStr;
+    const t = setTimeout(() => orbitTo(40, 28, Math.max(diag * 1.15, 120), c[0], c[1], c[2], 0), 30);   // SALTO (dur 0), y pronto: E4/E5 bloquean enseguida
     return () => clearTimeout(t);
   }, [moldeOn, mold.ciclo, mold.moldParts, orbitTo]);
 
@@ -4935,6 +4998,8 @@ export default function ForgeBRepStudio() {
       // ENCUADRE DELIBERADO (doctrina de cámara): 3/4 desde ARRIBA, no de canto, con
       // aire alrededor (1.35× la diagonal). OJO: `orbitTo` recibe GRADOS — pasarle
       // radianes deja la cámara a medio grado del suelo y toda pieza se ve "de canto".
+      // (medido 2026-09-09 con `encuadre()`: este orbitTo NO decide el encuadre en reposo — 1.35× y 1.10× dan el
+      //  mismo fill 0.247; lo que manda es `cameraDist`/`viewTarget` del visor. El tamaño se ajusta ahí.)
       orbitTo(40, 30, Math.max(bb.diagonal * 1.35, 40), bb.centro[0], bb.centro[1], bb.centro[2]);
     } catch (err) {
       setPiezaMalla(null);
@@ -6345,6 +6410,50 @@ export default function ForgeBRepStudio() {
         if (xray !== undefined) setMoldXray(xray);
         return { roles: moldParts.map((pt) => pt.role) };
       },
+      // LO QUE HAY SE VE (2026-09-09): ¿lo que existe está en pantalla, centrado y con luz? Mide la caja
+      // de TODO lo visible (mallas con opacidad ≥ 0.2, sin la rejilla) proyectada al viewport: `dx,dy` =
+      // desvío del centro (fracción), `fill` = fracción del cuadro que ocupa, `luma` = luminancia media
+      // REAL de un render chico. El runner lo exige en cada paso; el letrero «SE VE» ya no lo decide un data-*.
+      encuadre: (opts?: { debug?: boolean }) => {
+        const s = encuadreRef.current; if (!s) return null;
+        const { gl, scene, camera, size } = s;
+        const box = new THREE.Box3(); const tmp = new THREE.Box3(); const sz = new THREE.Vector3();
+        const partes: Array<{ name: string; op: number; size: number[] }> = []; let n = 0;
+        scene.updateMatrixWorld(true);
+        scene.traverse((o: THREE.Object3D) => {
+          const mesh = o as THREE.Mesh; if (!(mesh as { isMesh?: boolean }).isMesh || !o.visible) return;
+          const m = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as THREE.Material & { uniforms?: Record<string, unknown>; opacity?: number };
+          if (!m) return;
+          if (m.type === 'GridMaterial' || (m.uniforms && ('cellSize' in m.uniforms))) return;   // la rejilla del piso
+          if (o.userData && o.userData.encuadre === false) return;
+          const op = m.transparent ? (m.opacity ?? 1) : 1; if (op < 0.2) return;
+          for (let p = o.parent; p; p = p.parent) if (p.visible === false) return;
+          tmp.setFromObject(o); if (tmp.isEmpty()) return; tmp.getSize(sz); if (!Number.isFinite(sz.x)) return;
+          // planos sin espesor (la sombra de contacto, 239×0×239 medida) NO son «lo que hay»: inflaban la caja
+          if (Math.min(sz.x, sz.y, sz.z) < 0.01) return;
+          box.union(tmp); n++;
+          if (opts?.debug) partes.push({ name: o.name || m.type, op: +op.toFixed(2), size: [sz.x, sz.y, sz.z].map((v) => +v.toFixed(1)) });
+        });
+        if (n === 0) return { n: 0, dx: NaN, dy: NaN, fill: 0, luma: 0, viewport: [size.width, size.height], partes };
+        let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; const v = new THREE.Vector3();
+        for (let i = 0; i < 8; i++) {
+          v.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).project(camera);
+          const sx = (v.x + 1) / 2, sy = (1 - v.y) / 2;
+          if (sx < x0) x0 = sx; if (sx > x1) x1 = sx; if (sy < y0) y0 = sy; if (sy > y1) y1 = sy;
+        }
+        const fill = Math.max(0, Math.min(1, x1) - Math.max(0, x0)) * Math.max(0, Math.min(1, y1) - Math.max(0, y0));
+        const dx = (x0 + x1) / 2 - 0.5, dy = (y0 + y1) / 2 - 0.5;
+        let luma = NaN;
+        try {
+          const W = 96, H = 64; const rt = new THREE.WebGLRenderTarget(W, H); const prev = gl.getRenderTarget();
+          gl.setRenderTarget(rt); gl.render(scene, camera);
+          const buf = new Uint8Array(W * H * 4); gl.readRenderTargetPixels(rt, 0, 0, W, H, buf); gl.setRenderTarget(prev); rt.dispose();
+          let sum = 0; for (let i = 0; i < buf.length; i += 4) sum += (0.2126 * buf[i] + 0.7152 * buf[i + 1] + 0.0722 * buf[i + 2]) / 255;
+          luma = sum / (W * H);
+        } catch (e) { console.warn('ENCUADRE_LUMA_ERR', e); }
+        const cen = new THREE.Vector3(); box.getCenter(cen); const dim = new THREE.Vector3(); box.getSize(dim);
+        return { n, dx: +dx.toFixed(3), dy: +dy.toFixed(3), fill: +fill.toFixed(3), luma: +luma.toFixed(3), viewport: [size.width, size.height], centro: [+cen.x.toFixed(1), +cen.y.toFixed(1), +cen.z.toFixed(1)], diag: +dim.length().toFixed(1), partes };
+      },
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     // EL BUS DE COMANDOS: `window.__forja.run('dominio.verbo', {…})` — mismo idioma
@@ -6383,7 +6492,10 @@ export default function ForgeBRepStudio() {
     const realSpan = meshBBox ? 2 * Math.max(meshBBox.half[0], meshBBox.half[1], meshBBox.half[2]) : 0;
     const span = Math.max(sketch.width, sketch.height, sketch.radius * 2, stepLen, stepR * 2,
       sketch.kind === 'gear' ? gearD : 0, asmSpan, realSpan, 30);
-    return Math.max(60, span * (realSpan > 0 ? 2.2 : 2.6));
+    // LO QUE HAY SE VE (2026-09-09, ian: «se puede mejorar, tal vez, un poco más grande»): con 2.2× la pieza
+    // soltada ocupaba el 25 % del cuadro (medido con `encuadre()`: fill 0.247); 1.8× la sube a ~0.37 y el
+    // lado mayor sigue cabiendo en vertical con 10 % de aire (fov 35°). La ley del camino pide fill ≥ 0.30.
+    return Math.max(60, span * (realSpan > 0 ? 1.8 : 2.6));
   }, [sketch, assembly, meshBBox]);
 
   // AUTO-ENCUADRAR: cuando el TAMAÑO de la pieza cambia notablemente (agregar una
@@ -6573,6 +6685,7 @@ export default function ForgeBRepStudio() {
           </div>
         )}
         <CadViewport
+          encuadreSink={encuadreRef}
           cameraDistance={cameraDist}
           autoRotate={false}
           minDistance={cameraDist * 0.2}
@@ -6670,7 +6783,10 @@ export default function ForgeBRepStudio() {
                   // dibuja después, por transparente) tapa al fundido y el frente se ve
                   // CONGELADO aunque la malla sí esté cambiando. Medido: 29,504 triángulos
                   // a t=1 vs 5,044 a t=0.33, y la imagen no cambiaba (YAVG 0.02).
-                  if (ciclo?.frenteGrid && pt.role === 'pieza') return null;
+                  // LO QUE HAY SE VE (2026-09-09): la pieza solo se esconde mientras el frente de llenado se ANIMA (tFill < 1).
+                  // En el camino E4 deja tFill = 1 y E5 tarda ~40 s en la colada: la pieza escondida + acero a 0.08 = 48 s de
+                  // viewport negro (ian, video 26 a 2:06). Con el frente lleno, la pieza ES el frente.
+                  if (ciclo?.frenteGrid && pt.role === 'pieza' && tFill < 1) return null;
                   if (moldHidden[pt.role]) return null;
                   // el TRANSITORIO pinta TODAS las placas por vértice; el FEA cubre B+soporte+rieles
                   if (moldSimOn && moldThermalSim && !pt.role.startsWith('platina')) return null;
@@ -6911,6 +7027,8 @@ export default function ForgeBRepStudio() {
           <div data-testid="el-parte-foco" style={{
             position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 8,
             display: 'flex', flexDirection: 'column', gap: 5, pointerEvents: 'none',
+            // LO QUE HAY SE VE: la tira tiene suelo — antes el encabezado «Caras del sólido» del panel se leía debajo de las pestañas
+            background: 'linear-gradient(180deg, rgba(6,10,16,0) 0%, rgba(6,10,16,0.94) 34%)', paddingTop: 12,
             padding: '10px 14px 9px',
             // el velo: sin él, EL PARTE flotaba sobre el 3D y el renglón de procedencia
             // era ilegible contra la pieza clara. No es una caja — es un degradado que
@@ -6999,7 +7117,7 @@ export default function ForgeBRepStudio() {
                   : est < 5 ? `E${est}/5 · armando…` : 'E5/5';
                 return (
                   <div data-testid="molde-de-la-pieza" data-estacion={est} data-roles={roles.join(' ')} data-pared={mold.intake.wallMm ?? ''}
-                    data-partes={mold.moldParts.length} data-tris={mold.moldParts.reduce((n, p) => n + (p.indices ? p.indices.length / 3 : 0), 0)} data-bbox={moldeBBoxRef.current}
+                    data-partes={mold.moldParts.length} data-tris={mold.moldParts.reduce((n, p) => n + (p.indices ? p.indices.length / 3 : 0), 0)} data-bbox={moldeBBoxRef.current} data-enc={moldeEncRef.current}
                     style={{ display: 'flex', alignItems: 'center', gap: 7, marginLeft: 6, fontSize: 9.5, color: '#9fb0c4' }}>
                     <span style={{ width: 16, height: 3, borderRadius: 2, background: '#ffcc33' }} />
                     <b style={{ color: '#ffe08a' }}>molde de la pieza</b>
@@ -7122,7 +7240,7 @@ export default function ForgeBRepStudio() {
             DENTRO del área de trabajo — que es justo la ley: el dato de la pieza vive
             sobre la pieza. `FichaDriver`, adentro del Canvas, le escribe el transform. */}
         {focoOn && lenteActiva?.peor && fichaAbierta === lenteActiva.id && (
-          <FichaEnElMundo lente={lenteActiva} refEl={fichaRef} onCerrar={() => setFichaAbierta(null)} atenuada={laminaOn} />
+          <FichaEnElMundo lente={lenteActiva} refEl={fichaRef} onCerrar={() => setFichaAbierta(null)} atenuada={laminaOn || particionOn || moldeOn} />
         )}
         {focoOn && !lenteActiva && focoCotas.length > 0 && (
           <CotaLabels sets={focoCotas} refs={focoRefs} paleta={PALETA_FOCO} testid="foco-cotas-overlay" modo="medida" />
@@ -9044,7 +9162,14 @@ export default function ForgeBRepStudio() {
 
           {/* ── Invariantes (la corrección visible) ── */}
           <footer className={`fb-invariants ${ok ? 'ok' : 'pending'}`} data-testid="invariants">
-            {result ? (
+            {result && !modoTaller ? (
+              // LO QUE HAY SE VE: al cliente, UNA línea; Euler, △ y KB viven en `?taller=1`
+              <div className="inv">
+                <span className="k">Sólido</span>
+                <span className="v mono">{result.volKernel.toFixed(0)} mm³ · {result.topo.faces} caras</span>
+                <span className="chk">en el kernel</span>
+              </div>
+            ) : result ? (
               <>
                 <div className="inv">
                   <span className="k">Topología</span>

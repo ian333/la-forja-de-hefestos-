@@ -1847,6 +1847,9 @@ export function declDePieza(p: PiezaSpec): DeclE3 {
     draftDeg: p.pieza.part.draftDeg ?? 0,                     // el draft REAL de su sólido (0 si no trae feature)
   };
 }
+/** LO QUE HAY SE VE (2026-09-09): tolerancia del ACERO comprado/tallado. Con 0.02 el molde gritaba
+ *  «Hc compra 55 ≠ 55.028 ✗» por 28 µm de bbox — ruido, no falla (placa rectificada: ±0.05, DME/Hasco). */
+export const TOL_ACERO_MM = 0.05;
 export function verificacionE3(oc: any, a: AceroE3, decl?: DeclE3): VerificacionE3 {
   const d = decl ?? { Lmm: 40, Wmm: 40, Hmm: 40, wallMm: 2, pisoMm: 2, draftDeg: 1.5 };   // el cubo
   const comp = decl ? 'pieza' : 'dado';
@@ -1908,15 +1911,15 @@ export function verificacionE3(oc: any, a: AceroE3, decl?: DeclE3): Verificacion
   mide(comp, 'caras PLANAS sin draft (<1.4°)', 0, da.requiresDraft.length, 0, 'todas las caras');
 
   // ── INSERTO DE CAVIDAD = acero de COMPRA ──
-  mide('inserto cavidad', 'ancho X', a.compra.ifx, bbC.max[0] - bbC.min[0], 0.02, 'PLANTA (SUP)');
-  mide('inserto cavidad', 'fondo Y', a.compra.ify, bbC.max[1] - bbC.min[1], 0.02, 'PLANTA (SUP)');
-  mide('inserto cavidad', 'alto = Hc de compra', a.compra.Hc, bbC.max[2] - bbC.min[2], 0.02, 'FRENTE (FRE)');
+  mide('inserto cavidad', 'ancho X', a.compra.ifx, bbC.max[0] - bbC.min[0], TOL_ACERO_MM, 'PLANTA (SUP)');
+  mide('inserto cavidad', 'fondo Y', a.compra.ify, bbC.max[1] - bbC.min[1], TOL_ACERO_MM, 'PLANTA (SUP)');
+  mide('inserto cavidad', 'alto = Hc de compra', a.compra.Hc, bbC.max[2] - bbC.min[2], TOL_ACERO_MM, 'FRENTE (FRE)');
   // con el VOLTEO la cavidad vive ARRIBA (lado A): su cara INFERIOR toca la partición
-  mide('inserto cavidad', 'cara INFERIOR en la partición (lado A)', a.zPart, bbC.min[2], 0.02, 'FRENTE (FRE)');
+  mide('inserto cavidad', 'cara INFERIOR en la partición (lado A)', a.zPart, bbC.min[2], TOL_ACERO_MM, 'FRENTE (FRE)');
 
   // ── NÚCLEO ──
   // el respaldo del macho quedó BAJO la partición (lado B) tras el volteo
-  mide('núcleo (respaldo)', 'espesor de placa = Hk de compra', a.compra.Hk, a.zPart - bbK.min[2], 0.02, 'FRENTE (FRE)');
+  mide('núcleo (respaldo)', 'espesor de placa = Hk de compra', a.compra.Hk, a.zPart - bbK.min[2], TOL_ACERO_MM, 'FRENTE (FRE)');
   // el macho SUBE hasta 2 mm bajo la base cerrada (que ahora es el TECHO de la pieza)
   mide('núcleo (macho)', `sube hasta el piso (${d.pisoMm} mm bajo la base cerrada)`, bbD.max[2] - d.pisoMm, bbM.max[2], 0.05, 'SECCIÓN frontal');
   mide('núcleo (macho)', 'ancho del hueco en la boca', d.Lmm - 2 * d.wallMm, bbM.max[0] - bbM.min[0], 0.06, 'PLANTA (SUP)');

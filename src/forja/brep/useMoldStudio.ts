@@ -905,6 +905,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       setDocName(malo && !pieza ? 'EL DADO ROTO · draft INVERTIDO — el molde NO abre' : `${nom3} · estación 3 — ARQUITECTURA (cap 4): nace el primer acero`);
       setCollapsed((c) => ({ ...c, features: false }));
       _m('setState');
+      // LO QUE HAY SE VE (2026-09-09): el mapa de opacidad de la estación anterior no manda sobre el acero nuevo —
+      // medido en el arnés: E3 se pintaba OSCURA (solo la pieza visible, la cámara adentro del bloque).
+      setMoldOpacity({});
       cursoSet(3, [
         pieza ? `CICLO DE ${nom3} · estación 3 — ARQUITECTURA (cap 4)` : 'CICLO DEL DADO · estación 3 — ARQUITECTURA (cap 4)',
         `cavidad ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hc} · núcleo ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hk} (P20) · base ${col3.baseWmm}×${col3.baseLmm} comprada (§4.3.2)`,
@@ -1009,7 +1012,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       // EL ACERO SE HACE FANTASMA: Moldflow enseña la PIEZA, no la herramienta. Con los
       // insertos a su opacidad normal el fundido queda detrás de TRES capas translúcidas
       // blancas y sale lavado —medido: se veía blanco aunque el colormap fuera correcto—.
-      setMoldOpacity(Object.fromEntries(moldParts.filter((p: any) => p.role !== 'pieza' && p.role !== 'colada').map((p: any) => [p.role, 0.08])));
+      // LO QUE HAY SE VE (2026-09-09): 0.08 dejaba el visor NEGRO 48 s en el paseo (ian: «aquí no se ve
+      // nada»). 0.28 = el acero sigue siendo fantasma (el fundido se lee) pero el molde no desaparece.
+      setMoldOpacity(Object.fromEntries(moldParts.filter((p: any) => p.role !== 'pieza' && p.role !== 'colada').map((p: any) => [p.role, 0.28])));
       setDocName(`${piezaSpec ? piezaSpec.nombre : 'EL DADO'} · estación 4 — LLENADO (cap 5): ¿dónde muere el aire?`);
       setCollapsed((c) => ({ ...c, features: false }));
     } catch (e) { console.warn('E4_ERR', e); }
