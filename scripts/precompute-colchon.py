@@ -87,7 +87,10 @@ def main():
     # más separación, y se elige la pareja cuyo dorado muere en el mes que la voz dice «el mes malo»
     # (--hero-mes) y cuyo azul llega vivo a los cinco años. Volver a ella al final = el cierre.
     HERO_MES = arg('--hero-mes', 51)
-    ZONA = 0.12 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.06 * CAJA
+    # v2.1 (stills de la v2): el acercamiento es DE FRENTE (cámara en +Z, azim π/2) a r≈1.0 con fov 40
+    # vertical en 9:16 → media altura 0.36, medio ancho 0.20. La pareja va a lo largo de X (vertical
+    # en pantalla por el roll) separada 0.5, y la zona limpia de 0.45 cubre la diagonal del cuadro.
+    ZONA = 0.09 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.05 * CAJA
     u = rng.random(M); th = rng.random(M)
     rc = CAJA * np.sqrt(u * (1.0 - (ZONA / CAJA) ** 2) + (ZONA / CAJA) ** 2)   # centros de par, uniforme en área, fuera de la zona
     th = th * 2 * np.pi
