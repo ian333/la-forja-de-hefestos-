@@ -59,3 +59,5 @@
 - LA SAL — Na⁺ + H₂O, la primera CARGA ENTERA de la serie → `ordenes/despues/2026-08-26-la-sal.md` (vuelve a PRÓXIMO con `git mv` cuando el camino cierre).
 - conectar TODA La Forja y su analítica → `ordenes/despues/2026-08-27-forja-analitica-conectada.md`.
 - Temis compartido entre instancias de Claude → `ordenes/despues/2026-08-27-temis-compartido.md`.
+- EL BANCO — el lobby no encanta → `ordenes/despues/2026-09-02-el-banco-no-encanta.md` (bajó el 2026-09-10 para meter EL ENFRIAMIENTO SE VE, EL AGUA y LOS BOTADORES de la pieza).
+- LA FORJA SIN LUZ → `ordenes/despues/2026-09-04-la-forja-sin-luz.md` (ídem).

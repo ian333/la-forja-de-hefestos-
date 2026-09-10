@@ -1,7 +1,7 @@
 # ORDEN: LA PRESIÓN QUE CIERRA — el clamp requerido con presión de empaque, validado contra el libro y la máquina
 
 ESTADO: proximo
-PRIORIDAD: 2
+PRIORIDAD: 5
 
 BASE: 12fd545
 

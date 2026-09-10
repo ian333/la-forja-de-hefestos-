@@ -1,21 +1,21 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-10 18:46",
+ "generado": "2026-09-10 19:19",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 6,
+  "proximo": 7,
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
   "cerrado": 88,
   "probado": 0,
   "porProbar": 52,
-  "sinDesplegar": 8,
-  "despues": 22
+  "sinDesplegar": 7,
+  "despues": 24
  },
  "deploy": {
   "commit": "36e8e93",
@@ -25,42 +25,12 @@
  "columnas": {
   "proximo": [
    {
-    "file": "ordenes/2026-09-09-la-presion-que-cierra.md",
-    "slug": "2026-09-09-la-presion-que-cierra",
-    "titulo": "LA PRESIÓN QUE CIERRA — el clamp requerido con presión de empaque, validado contra el libro y la máquina",
-    "fecha": "2026-09-09",
-    "estado": "proximo",
-    "prioridad": 2,
-    "tipo": "",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "hallazgo de UNA SOLA VERDAD (2026-09-09), al poner números en la fila de la máquina: la carcasa 1594C sale con «clamp 2.9 % de 150 t» (≈4 t). Hoy clampTons = P_cav × A_proy con P_cav = ΔP de LLENADO × CAVITY_PRESSURE_FACTOR (0.5) (moldmach…",
-    "toca": 4,
-    "crea": 1,
-    "evidencia": 4,
-    "evidenciaDeclarada": [
-     "cup y bezel del libro siguen dando 400 kN y 1 400 kN (tests intactos).",
-     "La carcasa 1594C: clamp requerido en el rango 20-40 t con la fórmula del libro citada; la fila de la",
-     "Cuando la HT-150SV dispare: el clamp real (lectura del controlador) contra el calculado, en el doc.",
-     "runner sin regresión; orden-gate VERDE."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
     "file": "ordenes/2026-09-09-el-paso-6-se-ve-trabajar.md",
     "slug": "2026-09-09-el-paso-6-se-ve-trabajar",
     "titulo": "EL PASO 6 SE VE TRABAJAR — el molde se va armando, estación por estación, sin congelar la pantalla",
     "fecha": "2026-09-09",
     "estado": "proximo",
-    "prioridad": 3,
+    "prioridad": 1,
     "tipo": "",
     "superticket": false,
     "ejercicios": [],
@@ -87,12 +57,169 @@
     "despliegue": ""
    },
    {
+    "file": "ordenes/2026-09-10-el-enfriamiento-se-ve.md",
+    "slug": "2026-09-10-el-enfriamiento-se-ve",
+    "titulo": "EL ENFRIAMIENTO SE VE — la escala con segundos junto a la pieza, y la pieza enfriándose en el tiempo",
+    "fecha": "2026-09-10",
+    "estado": "proximo",
+    "prioridad": 2,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "escala",
+      "titulo": "una barra con segundos junto a la pieza y el campo mapeado a ella",
+      "herramientas": "testid escala-enfriamiento",
+      "oraculo": "el punto que manda señalado con su valor",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "tiempo",
+      "titulo": "la pieza se enfría en pantalla con el reloj corriendo",
+      "herramientas": "__forgeBrep.cambio(1000) ≥ 0.02",
+      "oraculo": "al final solo el punto que manda sigue caliente",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "movimiento-medido",
+      "titulo": "el runner exige que dos capturas a 1 s sean distintas en todo paso que simule",
+      "herramientas": "cláusula MOVIMIENTO en el contrato del camino",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 3
+    },
+    "objetivo": "ian (2026-09-10): «aún no se puede cerrar el happy path si no veo una simulación real de la temperatura y el enfriamiento… no me gustan los colores que usa, no entiendo, solo veo que cambia de color: falta la referencia visual, o la simula…",
+    "toca": 6,
+    "crea": 4,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "Golpe 1 (escala): testid:escala-enfriamiento visible en el paso 3 con ≥ 3 marcas en segundos y el color de",
+     "Golpe 2 (tiempo): __forgeBrep.cambio(1000) ≥ 0.02 durante el play (la pieza cambia); un reloj t / t_c",
+     "Runner: paso 3 con ambos checks; paseo con el enfriamiento corriendo (línea de tiempo: cuadros distintos",
+     "orden-gate VERDE; censo igual; cero pageerror."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-10-el-agua-de-tu-pieza.md",
+    "slug": "2026-09-10-el-agua-de-tu-pieza",
+    "titulo": "EL AGUA DE TU PIEZA — las líneas de enfriamiento (E8) sobre la pieza soltada, no sobre el cubo",
+    "fecha": "2026-09-10",
+    "estado": "proximo",
+    "prioridad": 3,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-10): «NO VEO LOS BOTADORES NI LAS LÍNEAS DE ENFRIAMIENTO… yo preferiría que se vea todo el molde». Hoy el molde de la carcasa termina en E5 (placas, insertos, bebedero); el agua es la estación 8 y solo está cableada para el cu…",
+    "toca": 6,
+    "crea": 3,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "Paso 6: el check agua del RUNNER pasa (rol agua en data-roles), sin quitar ningún check.",
+     "Las líneas no atraviesan insertos ni pieza (mold-interference: 0 traslapes) y su paso cumple W ∈ [H, 2H].",
+     "La lámina de la placa y el 3D dicen las MISMAS líneas (misma fuente).",
+     "Paseo con el agua visible; video en ambas PCs; orden-gate VERDE."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-10-los-botadores-de-tu-pieza.md",
+    "slug": "2026-09-10-los-botadores-de-tu-pieza",
+    "titulo": "LOS BOTADORES DE TU PIEZA — los expulsores (E10) sobre la pieza soltada; el paso 6 deja de estar a medias",
+    "fecha": "2026-09-10",
+    "estado": "proximo",
+    "prioridad": 4,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-10): «no veo los botadores». Los expulsores son la estación 10 y solo existen para el cubo (estacion10Dado). Al final de esta orden los pines §11 (⌀ por catálogo, colocados por agarre §11.2.5 como ya hace revisarModelo para el…",
+    "toca": 6,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "Paso 6: el check expulsores del RUNNER pasa; con agua y expulsores el paso 6 sale «ok» y el camino 8/8 en su",
+     "Los pines coinciden con los de la lámina «Placa expulsora» (misma fuente) y no atraviesan agua ni insertos.",
+     "Paseo con los botadores visibles; video en ambas PCs; orden-gate VERDE."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-09-la-presion-que-cierra.md",
+    "slug": "2026-09-09-la-presion-que-cierra",
+    "titulo": "LA PRESIÓN QUE CIERRA — el clamp requerido con presión de empaque, validado contra el libro y la máquina",
+    "fecha": "2026-09-09",
+    "estado": "proximo",
+    "prioridad": 5,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "hallazgo de UNA SOLA VERDAD (2026-09-09), al poner números en la fila de la máquina: la carcasa 1594C sale con «clamp 2.9 % de 150 t» (≈4 t). Hoy clampTons = P_cav × A_proy con P_cav = ΔP de LLENADO × CAVITY_PRESSURE_FACTOR (0.5) (moldmach…",
+    "toca": 4,
+    "crea": 1,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "cup y bezel del libro siguen dando 400 kN y 1 400 kN (tests intactos).",
+     "La carcasa 1594C: clamp requerido en el rango 20-40 t con la fórmula del libro citada; la fila de la",
+     "Cuando la HT-150SV dispare: el clamp real (lectura del controlador) contra el calculado, en el doc.",
+     "runner sin regresión; orden-gate VERDE."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-09-04-que-sigue.md",
     "slug": "2026-09-04-que-sigue",
     "titulo": "QUÉ SIGUE — después de soltar, la Forja te lleva de la mano al siguiente paso",
     "fecha": "2026-09-04",
     "estado": "proximo",
-    "prioridad": 4,
+    "prioridad": 6,
     "tipo": "",
     "superticket": false,
     "ejercicios": [],
@@ -122,7 +249,7 @@
     "titulo": "EL PIPELINE DEL CAMINO — cada happy path lleva su video, y el video se sube",
     "fecha": "2026-09-04",
     "estado": "proximo",
-    "prioridad": 5,
+    "prioridad": 7,
     "tipo": "",
     "superticket": false,
     "ejercicios": [],
@@ -136,134 +263,6 @@
      "el video se revisa con hoja de contactos ANTES de quedar en el catálogo (0 cuadros encogidos)",
      "la subida NO ocurre sin «autorizado» de ian (control negativo: sin autorización, no sube)",
      "orden-gate VERDE · censo igual"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-02-el-banco-no-encanta.md",
-    "slug": "2026-09-02-el-banco-no-encanta",
-    "titulo": "EL BANCO — el lobby no encanta (y tiene otro estilo que el Foco)",
-    "fecha": "2026-09-02",
-    "estado": "proximo",
-    "prioridad": 6,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "banco-idioma",
-      "titulo": "El Banco tiene su propio idioma visual, escrito",
-      "herramientas": "doctrina",
-      "oraculo": "una sección en DOCTRINA-FOCO.md que diga qué es el Banco y cómo se ve (sólido, callado, ¿latón/madera/papel?), con referencias del atlas",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "banco-lobby",
-      "titulo": "El lobby se re-viste con ese idioma",
-      "herramientas": "UI",
-      "oraculo": "proyectos, plantillas y Abrir archivo sin tarjetas genéricas; ian lo ve y no dice «meee»",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "banco-temis",
-      "titulo": "Temis vive en el mismo idioma",
-      "herramientas": "UI",
-      "oraculo": "la franja del camino y las columnas comparten paleta y tipografía con el lobby",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "banco-no-foco",
-      "titulo": "Nada del Banco imita al Foco",
-      "herramientas": "regla",
-      "oraculo": "cero cristal, cero lluvia, cero tinte por estado en el Banco: son dos idiomas",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "banco-medido",
-      "titulo": "Se mide la mejora, no se declara",
-      "herramientas": "antes/después",
-      "oraculo": "capturas del mismo lobby antes y después, y el conteo de cajas con borde (hoy: cada tarjeta)",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "banco-sin-regresion",
-      "titulo": "Nada del lobby deja de funcionar",
-      "herramientas": "gate",
-      "oraculo": "abrir archivo, plantillas y Temis siguen manejables por el arnés",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "ian, con la lámina viva y el lobby lado a lado (2026-09-02): «no tienen nada que ver, y está bien — una es el Banco y otro es el Foco; pero aunque se entiende que son diferentes, tienen estilos MEEE. El Banco actual no me termina de encant…",
-    "toca": 4,
-    "crea": 1,
-    "evidencia": 2,
-    "evidenciaDeclarada": [
-     "mocks de 2-3 direcciones sobre el lobby REAL, en Downloads, antes de decidir",
-     "capturas antes/después · gate verde · deploy + verificación"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-04-la-forja-sin-luz.md",
-    "slug": "2026-09-04-la-forja-sin-luz",
-    "titulo": "LA FORJA SIN LUZ — el único producto que muere cuando se va la luz de casa",
-    "fecha": "2026-09-04",
-    "estado": "proximo",
-    "prioridad": 7,
-    "tipo": "",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "que university.gaiaprime.com.mx siga en 200 cuando ATLAS se apaga. Hoy no: el 2026-09-03 se fue la luz en casa (Site 2) y La Forja cayó con Error 1033 durante ~2 h mientras Orkesta siguió viva.",
-    "toca": 2,
-    "crea": 0,
-    "evidencia": 3,
-    "evidenciaDeclarada": [
-     "LA PRUEBA DEL APAGÓN: con cloudflared de ATLAS detenido a propósito, curl -sI",
-     "La réplica se actualiza en el MISMO deploy (un deploy, dos destinos) — probado con un",
-     "censo esperado: canvas/vite/html igual (esto es infra, no UI)."
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1357,8 +1356,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "beefc5b",
-    "despliegue": "sin-desplegar"
+    "commit": "0bd6856",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-09-08-la-inyectora-del-taller.md",
@@ -5819,6 +5818,14 @@
   {
    "grupo": "Sacados de PRÓXIMO el 2026-09-09 para meter el camino (ian: «sí prefiero que el molde se vaya armando»)",
    "texto": "Temis compartido entre instancias de Claude → `ordenes/despues/2026-08-27-temis-compartido.md`."
+  },
+  {
+   "grupo": "Sacados de PRÓXIMO el 2026-09-09 para meter el camino (ian: «sí prefiero que el molde se vaya armando»)",
+   "texto": "EL BANCO — el lobby no encanta → `ordenes/despues/2026-09-02-el-banco-no-encanta.md` (bajó el 2026-09-10 para meter EL ENFRIAMIENTO SE VE, EL AGUA y LOS BOTADORES de la pieza)."
+  },
+  {
+   "grupo": "Sacados de PRÓXIMO el 2026-09-09 para meter el camino (ian: «sí prefiero que el molde se vaya armando»)",
+   "texto": "LA FORJA SIN LUZ → `ordenes/despues/2026-09-04-la-forja-sin-luz.md` (ídem)."
   }
  ],
  "cine": {
@@ -6667,9 +6674,9 @@
     {
      "n": 3,
      "gesto": "ENFRIAMIENTO",
-     "seVe": "el campo pintado en ≤2.5 s y LA FICHA sobre el punto que manda el ciclo",
-     "estado": "ok",
-     "ticket": "2026-08-30-u10-el-foco-es-el-analisis"
+     "seVe": "el campo pintado en ≤2.5 s con su ESCALA en segundos junto a la pieza, LA FICHA sobre el punto que manda, y la pieza enfriándose EN EL TIEMPO con el reloj corriendo (nada de pantallas fijas)",
+     "estado": "parcial",
+     "ticket": "2026-09-10-el-enfriamiento-se-ve"
     },
     {
      "n": 4,
@@ -6707,10 +6714,10 @@
      "ticket": "2026-08-28-t5-expediente-que-se-ve"
     }
    ],
-   "verdes": 7,
+   "verdes": 6,
    "total": 8,
    "rompeEn": 0,
-   "parciales": 1,
+   "parciales": 2,
    "medido": {
     "fecha": "2026-09-10 18:45",
     "url": "http://localhost:5194/forja-brep.html",

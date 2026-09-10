@@ -1,7 +1,7 @@
 # ORDEN: EL PASO 6 SE VE TRABAJAR — el molde se va armando, estación por estación, sin congelar la pantalla
 
 ESTADO: proximo
-PRIORIDAD: 3
+PRIORIDAD: 1
 
 BASE: 5c64cb8
 

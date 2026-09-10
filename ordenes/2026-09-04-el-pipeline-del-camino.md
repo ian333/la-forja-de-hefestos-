@@ -1,7 +1,7 @@
 # ORDEN: EL PIPELINE DEL CAMINO — cada happy path lleva su video, y el video se sube
 
 ESTADO: proximo
-PRIORIDAD: 5
+PRIORIDAD: 7
 
 BASE: 4d28106
 
