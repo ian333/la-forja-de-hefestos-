@@ -90,6 +90,28 @@ const WSUDORB_DURATION = 55;
 const WSALB_DURATION = 55;
 const WTETB_DURATION = 55;
 const WSILLAB_DURATION = 55;
+// ── EL COLCHÓN (econ-colchon, 2026-09-10) ──────────────────────────────────────────────────
+// 40,000 negocios, dos grupos con la MISMA suerte y distinto colchón (precompute-colchon.py).
+// `apertura` es el RELOJ (Rvals descendente: 1 = mes 0, 0 = mes 60). Antes de «Mira» (≈18 s) la
+// simulación está en el mes 0; de 18 a 27 s corren los 5 años en 15 escalones encadenados de
+// 0.6 s (= rampa continua: el motor interpola los 4 cuadros de cada escalón); después queda en
+// el mes 60. `respiro: 0` porque un muerto no resucita. Tiempos PROVISIONALES: se calibran a
+// segs.json cuando exista la voz.
+const ECOLCHON_DURATION = 44;
+const ECOLCHON_CAPAS: CapasSpec = {
+  campo:    { base: 0, mods: [] },
+  respiro:  { base: 0, mods: [] },
+  nubes:    { base: 1, mods: Array.from({ length: 15 }, (_, i) => (
+    { wins: [[18.0 + 0.6 * i, 44]] as [number, number][], a: 0.144, label: `compensa el brillo que se lleva la apertura (${i + 1}/15)` })) },
+  parpadeo: { base: 0.18, mods: [] },
+  spin:     { base: 1, mods: [] },
+  acc:      { base: 1.5, mods: [] },
+  enlaces:  { base: 0, mods: [] },
+  dipolo:   { base: 0, mods: [] },
+  ceros:    { base: 0, mods: [] },
+  apertura: { base: 1, mods: Array.from({ length: 15 }, (_, i) => (
+    { wins: [[18.0 + 0.6 * i, 44]] as [number, number][], a: -1 / 15, label: `mes ${4 * (i + 1)} de 60` })) },
+};
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
 // dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
@@ -1064,6 +1086,25 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 5.22, label: 'dos manos, dos sillas: cuatro (l9)' },
     { shot: pullOut({}), dur: 15.27, label: 'tetraedro · flota · y tú · GAIA (l10-12)' },
   ],
+  ecolchon: [
+    // EL COLCHÓN (2026-09-10). Guion en scripts/guiones/econ-colchon.txt; frase → pantalla:
+    //   0-7 s   «De cada cien… / Sesenta y cuatro…»   el disco entero, denso (cuadro 0 = el gancho)
+    //   7-17.5  «Aquí hay cuarenta mil / dorados… / azules… / la misma suerte»  sube y revela los DOS
+    //           anillos: oro afuera (1 mes de caja), azul adentro (3 meses); respiran igual
+    //   17.5-27 «Mira.» + silencio: cinco años en nueve segundos, la orilla se apaga
+    //   27-36   «casi al triple / No vendían menos…»   lo que quedó: la orilla negra, el centro azul
+    //   36-44   «Un negocio no muere… / Si tienes uno…»   plano fijo, el cierre en 2ª persona
+    // Tomas del vocabulario existente (las mismas de egrupos), sin inventar cámara.
+    // TANDA 1 (2026-09-10): rMul 1.30 recortaba el anillo de oro en 9:16 y el crashIn de «Mira»
+    // metía la cámara DENTRO del disco: en el momento clave no se veía la orilla apagarse, sólo
+    // puntos por todos lados. El disco entero tiene que caber en el ANCHO del 9:16 (rMul ≥ 1.5)
+    // y «Mira» es una TOMA FIJA: nueve segundos sin corte viendo morir la orilla.
+    { shot: eyeLevelLock({ rMul: 1.55, azim: 0.9 }), dur: 7, label: 'los cuarenta mil, de frente, el disco entero' },
+    { shot: loomPush({ rFrom: 1.7, rTo: 1.45, elev: 0.30, azim: 1.2, fov: 34 }), dur: 10.5, label: 'sube apenas y revela: oro afuera, azul adentro' },
+    { shot: eyeLevelLock({ rMul: 1.45, azim: 1.1 }), dur: 9.5, label: 'MIRA: toma fija, la orilla se apaga' },
+    { shot: pullOut({ azim0: 1.0, span: 0.8, rFromMul: 1.25, rTdMul: 1.75 }), dur: 9, label: 'lo que quedó' },
+    { shot: eyeLevelLock({ rMul: 1.5, azim: 0.6 }), dur: 8, label: 'y tú' },
+  ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
     // agentes y su posición sale de dos modelos publicados (Bouchaud-Mézard 2000 + Schelling
@@ -1566,6 +1607,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   wsalb: { name: 'Por qué te da sed', formula: 'Na⁺···H₂O', fact: 'Cada sodio se lleva su propia jaula de agua — y por eso pides más.' },
   wtetb: { name: 'Ninguna está sola', formula: '(H₂O)₄', fact: 'A tres no les cuadraba; a cuatro sí, y jalan 19 % más que por separado.' },
   wsillab: { name: 'Dos sillas vacías', formula: 'H₂O···H₂O', fact: 'Dos sillas y dos hidrógenos = cuatro lugares por molécula: el tetraedro del hielo.' },
+  ecolchon: { name: 'El colchón', formula: 'ruina del jugador · INEGI 1989-2019', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
   whex6b: { name: 'No te pueden congelar', formula: '(H₂O)₆', fact: 'El hexágono que hace bonito a un copo de nieve es el que te reventaría las células.' },
   wtrib: { name: 'La gota que no cae', formula: '(H₂O)₃', fact: 'Tres aguas juntas jalan 12 % más que por separado: esa es la piel del agua.' },
@@ -2054,7 +2096,22 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     const pos = geo.getAttribute('position') as THREE.BufferAttribute;
     const arr = pos.array as Float32Array;
     const o0 = k * N * 3, o1 = (k + 1) * N * 3, inv = 1 / qScale, mf = 1 - frac;
-    for (let i = 0; i < N * 3; i++) arr[i] = (posQ[o0 + i] * mf + posQ[o1 + i] * frac) * inv;
+    // CENTINELA (-32768,-32768,-32768) = «este punto NO existe en este cuadro». Lo escribe
+    // precompute-colchon.py para los negocios que ya murieron: el color por punto es fijo en
+    // WAP2, así que la única forma de APAGAR un punto es no rasterizarlo — NaN en posición
+    // hace que el vértice falle el clip. Ningún bin previo lo usa (todos recortan a ±32767), así
+    // que para O₂/N₂/agua/átomos esta rama no se toca. Si CUALQUIERA de los dos cuadros del
+    // bracket trae el centinela, el punto desaparece (no se interpola hacia la esquina).
+    for (let p = 0, i = 0; p < N; p++, i += 3) {
+      const a = o0 + i, b = o1 + i;
+      if ((posQ[a] === -32768 && posQ[a + 1] === -32768 && posQ[a + 2] === -32768) ||
+          (posQ[b] === -32768 && posQ[b + 1] === -32768 && posQ[b + 2] === -32768)) {
+        arr[i] = NaN; arr[i + 1] = NaN; arr[i + 2] = NaN; continue;
+      }
+      arr[i] = (posQ[a] * mf + posQ[b] * frac) * inv;
+      arr[i + 1] = (posQ[a + 1] * mf + posQ[b + 1] * frac) * inv;
+      arr[i + 2] = (posQ[a + 2] * mf + posQ[b + 2] * frac) * inv;
+    }
     pos.needsUpdate = true;
     if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uPix.value = uPix; matRef.current.uniforms.uBright.value = brightness;
       if (cores) { for (let i=0;i<8;i++) matRef.current.uniforms.uCores.value[i].set(...(cores[i] ?? [0,0,0])); matRef.current.uniforms.uNCores.value = Math.min(8, cores.length); matRef.current.uniforms.uCoreR.value = coreR; }
@@ -3183,6 +3240,8 @@ const WATER_BINS: Record<string, WaterEntry> = {
   wsalb: { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSALB_CAPAS, dur: WSALB_DURATION },
   wtetb: { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true, capas: WTETB_CAPAS, dur: WTETB_DURATION },
   wsillab: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLAB_DURATION, capas: WSILLAB_CAPAS },
+  ecolchon: { bin: 'economia-colchon', ef: 'economia-colchon-efield', ex: 11,
+              capas: ECOLCHON_CAPAS, dur: ECOLCHON_DURATION, sizeMul: 1.35, binColors: true },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
@@ -3446,7 +3505,11 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
     // su amplitud de punto cero es 0.102 Å (calculada, x_rms = √(ħ/2μω) con μ≈9 uma). Aquí se
     // dibuja EXAGERADA ×2.2 (±0.22 Å) para que se lea en pantalla, y RALENTIZADA: el periodo
     // real es 0.185 ps y aquí son 4 s (2×10¹³ veces más lento). Las dos licencias, declaradas.
-    const respira = 0.08 * Math.sin(2 * Math.PI * T / 4.0);
+    // `respiro` (capa opcional) = amplitud de esa vibración. Sin declararla queda la de siempre
+    // (0.08). Una pieza donde `apertura` es RELOJ de una simulación irreversible (econ-colchon:
+    // el negocio que murió no resucita) la declara en 0: si el reloj vibrara, los cuadros irían
+    // hacia atrás y los puntos apagados volverían a prender.
+    const respira = (C.respiro ?? 0.08) * Math.sin(2 * Math.PI * T / 4.0);
     es = Math.max(0, Math.min(1, C.apertura + respira));
   } else {
     let esr = 0.30 + 0.34 * Math.cos(T * 0.30);      // 0 = pegadas, 0.64 = moderado

@@ -1,0 +1,28 @@
+{
+ "modelo": "ruina del jugador con ventas multiplicativas (Gibrat) y costos fijos; dos grupos con la MISMA secuencia de suerte y distinto colchón inicial",
+ "calibracion": "INEGI, Nota sobre los indicadores de la Demografía de los Negocios (tabla 1989-2019): q(0)=0.3092, q(4)=0.6432, E(0)=8.4 años",
+ "N": 40000,
+ "meses": 60,
+ "sigma": 0.35,
+ "margen": 0.0,
+ "colchon_meses": [
+  1.0,
+  3.0
+ ],
+ "semilla": 7,
+ "mueren_dorados": {
+  "ano1": 0.323,
+  "ano2": 0.4832,
+  "ano5": 0.6574
+ },
+ "mueren_azules": {
+  "ano1": 0.0081,
+  "ano2": 0.0609,
+  "ano5": 0.2352
+ },
+ "razon_ano5": 2.795,
+ "razon_ano1": 40.13,
+ "licencia_visual": "el grupo es el LUGAR y no cambia: azules = disco lleno r<0.60R, dorados = anillo exterior 0.75R-R (misma densidad). Morir = desaparecer ahí (centinela (-32768)³ que el motor descarta). Temblor radial ±2 % de R con la η del mes (los pares comparten η).",
+ "cuadro_por_mes": 1,
+ "K": 61
+}
