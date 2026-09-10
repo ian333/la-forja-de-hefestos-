@@ -96,6 +96,12 @@
   },
   "ritmo": {
     "brazo": "A",
-    "nota_brazo": "brazo A por VEREDICTO 2026-09-07; 5 tomas en 44 s ≈ 6.8 cortes/min. Se MIDE con ritmo-pieza.py tras la voz."
+    "nota_brazo": "brazo A por VEREDICTO 2026-09-07; 5 tomas en 44 s ≈ 6.8 cortes/min. Se MIDE con ritmo-pieza.py tras la voz.",
+    "cortes_por_min": 4.36,
+    "tomas": 5,
+    "silabas_por_seg": 4.14,
+    "silabas_por_seg_del_video": 3.24,
+    "fuente_habla": "segs.json (REAL)",
+    "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
   }
 }
