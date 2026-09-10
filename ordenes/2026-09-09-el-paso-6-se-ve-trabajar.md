@@ -19,6 +19,15 @@ entero: ≤60 s con progreso visible por estación.
   (y eso ya con los congelones cortados a 3 s: en crudo son ~90 s de hilo bloqueado en E3). Es el hoyo que
   esta orden tapa: el tallado fuera del hilo y el molde apareciendo estación por estación.
 
+## LO QUE HEREDA DE LO QUE HAY SE VE (2026-09-10, medido)
+- La cámara ya no es el problema: salta (dur 0) al bloque entero en cuanto cambian las partes (`__forjaOrbitLog`).
+- El hilo: E2/E3 bloquean 72-79 s (p6-1) en cada corrida; en la MEDICIÓN E3→E4→E5 tardan < 1 s después, pero en
+  el PASEO (con REC) la cadena se alarga y retrocede: p6-2 devolvió «false» (la estación baja de 3), p6-3 «placas»
+  tardó 22 s, p6-4 «colada» 59 s, y el encuadre falló en el paseo (10.9 s) y pasó en la medición. Sospecha: el
+  PUENTE re-siembra E1 si cambia `intakeRev`/`arbolRev` a mitad del ciclo (`useMoldStudio` efecto con deps
+  `[oc, arbolRev, intakeRev]`), o E5 (colada + «una sola tubería») bloquea decenas de segundos bajo carga.
+- El video 27 conserva ~10-20 s oscuros en 130-140 s (frontera E2→E3): esta orden los debe.
+
 ## POR QUÉ ES EL GOLPE ESTRUCTURAL
 - Es el paso que vende el producto y es donde el video se muere (170 de 242 s quietos o negros, y 63
   congelones cortados antes).
