@@ -36,7 +36,7 @@ MARGEN = arg('--margen', 0.0)    # utilidad esperada por mes (0 = viven en tabla
 COLCHON = (1.0, 3.0)             # meses de costos guardados: dorados, azules
 CAJA_MAX = 6.0                   # 6 meses de caja = el centro del disco
 SEMILLA = 7
-CAJA = 5.0; GROSOR = 0.55        # el mismo disco que economia-grupos
+CAJA = 5.0; GROSOR = 0.35        # el disco de economia-grupos, más delgado (v2.3: el cono de la cámara)
 CENTINELA = -32768               # «este punto no existe» para el motor
 K = MESES + 1                    # un cuadro por mes (el motor interpola entre cuadros)
 
@@ -90,7 +90,15 @@ def main():
     # v2.1 (stills de la v2): el acercamiento es DE FRENTE (cámara en +Z, azim π/2) a r≈1.0 con fov 40
     # vertical en 9:16 → media altura 0.36, medio ancho 0.20. La pareja va a lo largo de X (vertical
     # en pantalla por el roll) separada 0.5, y la zona limpia de 0.45 cubre la diagonal del cuadro.
-    ZONA = 0.09 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.05 * CAJA
+    # v2.2 (sonda): con la pareja a lo largo de X quedaba FUERA del 9:16 (X es el eje HORIZONTAL en
+    # pantalla, no el vertical: medio ancho 0.25 a r=1.2). La pareja va a lo largo de Y (vertical en
+    # pantalla) y la zona limpia sube a 0.50 para cubrir la diagonal del cuadro.
+    # v2.3 (sondas a r=1.2 de frente): un punto solo a esa distancia mide lo mismo que el ruido de
+    # fondo, y el disco tiene GROSOR: los puntos de atrás (z<0) llenan el hueco en perspectiva. Dos
+    # cambios: (1) cada gemelo héroe es un CÚMULO de 60 puntos (σ 0.025) → una bola que brilla y se
+    # apaga entera; (2) la zona limpia sube a 1.0 y el disco se adelgaza (0.55 → 0.35) para que el
+    # cono de la cámara no atrape puntos de atrás. Los 118 puntos extra van FUERA de la estadística.
+    ZONA = 0.20 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.05 * CAJA; CUMULO = 60; SIG_CUMULO = 0.025
     u = rng.random(M); th = rng.random(M)
     rc = CAJA * np.sqrt(u * (1.0 - (ZONA / CAJA) ** 2) + (ZONA / CAJA) ** 2)   # centros de par, uniforme en área, fuera de la zona
     th = th * 2 * np.pi
@@ -103,7 +111,7 @@ def main():
     cand = np.where(vivo[MESES, M:])[0]
     hero = int(cand[np.argmin(np.abs(mes_muerte_oro[cand] - HERO_MES))])
     print(f'   héroe: par #{hero} · su dorado muere en el mes {int(mes_muerte_oro[hero])} (pedido {HERO_MES}) · su azul vive los 60')
-    pcx[hero] = pcy[hero] = 0.0; zc[hero] = 0.0; ux[hero], uy[hero] = 1.0, 0.0; sx[hero], sy[hero] = 0.0, 1.0
+    pcx[hero] = pcy[hero] = 0.0; zc[hero] = 0.0; ux[hero], uy[hero] = 0.0, 1.0; sx[hero], sy[hero] = 1.0, 0.0
     dsep = np.full(M, D_PAR, dtype=np.float32); dsep[hero] = D_HERO
     pos = np.zeros((K, N, 3), dtype=np.float32)
     for k in range(K):
@@ -111,14 +119,22 @@ def main():
         tx, ty = e * sx, e * sy
         pos[k, :M, 0] = pcx - dsep * ux + tx; pos[k, :M, 1] = pcy - dsep * uy + ty; pos[k, :M, 2] = zc      # oro
         pos[k, M:, 0] = pcx + dsep * ux + tx; pos[k, M:, 1] = pcy + dsep * uy + ty; pos[k, M:, 2] = zc      # azul
+    # ── EL CÚMULO DEL HÉROE: 59 copias extra de cada gemelo con desplazamiento fijo (σ 0.025)
+    ext = (CUMULO - 1) * 2
+    offs = rng.normal(0, SIG_CUMULO, (CUMULO - 1, 3)).astype(np.float32); offs[:, 2] *= 0.3
+    pos_ext = np.zeros((K, ext, 3), dtype=np.float32)
+    pos_ext[:, :CUMULO - 1] = pos[:, hero][:, None, :] + offs[None]
+    pos_ext[:, CUMULO - 1:] = pos[:, M + hero][:, None, :] + offs[None]
+    vivo_ext = np.concatenate([np.repeat(vivo[:, hero][:, None], CUMULO - 1, 1), np.repeat(vivo[:, M + hero][:, None], CUMULO - 1, 1)], 1)
+    pos = np.concatenate([pos, pos_ext], 1); vivo_all = np.concatenate([vivo, vivo_ext], 1); NT = N + ext
     posq = 32767 / (CAJA * 1.25)
     q = np.clip(np.round(pos * posq), -32767, 32767).astype('<i2')
-    q[~vivo] = CENTINELA                                        # (K,N) → las 3 coordenadas del muerto
+    q[~vivo_all] = CENTINELA                                    # (K,NT) → las 3 coordenadas del muerto
     ORO, AZUL = [255, 195, 80], [60, 120, 255]
-    color = np.array([ORO] * M + [AZUL] * M, dtype=np.uint8)
+    color = np.array([ORO] * M + [AZUL] * M + [ORO] * (CUMULO - 1) + [AZUL] * (CUMULO - 1), dtype=np.uint8)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'wb') as fp:
-        fp.write(struct.pack('<4s7i', b'WAP2', N, 0, 0, K, 0, 0, 0))     # sin núcleos
+        fp.write(struct.pack('<4s7i', b'WAP2', NT, 0, 0, K, 0, 0, 0))    # sin núcleos; NT = 40,000 + cúmulo
         fp.write(struct.pack('<3f', float(posq), 0.0, 1.0))               # R_MIN=0 (fin) · R_MAX=1 (inicio)
         fp.write(np.linspace(1, 0, K).astype('<f4').tobytes())            # Rvals DESCENDENTE: R alto = cuadro 0
         fp.write(vivo.mean(axis=1).astype('<f4').tobytes())               # bondMass: fracción viva por cuadro

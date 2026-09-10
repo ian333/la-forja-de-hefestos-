@@ -1122,14 +1122,17 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // la pareja se veía un campo de puntos. CONVENCIÓN medida en la v1: azim = π/2 es la cámara en +Z
     // = disco DE FRENTE (eyeLevelLock azim 0.9 daba la elipse inclinada). Los acercamientos van a
     // azim≈π/2, elev≈0, rMul 0.09 (r≈1.0): en cuadro sólo la zona limpia con los dos gemelos.
-    { shot: twoShot({ rMul: 0.09, elev: 0.0, azim0: 1.47, span: 0.2, fov: 40 }), dur: 13.06, label: 'estos dos negocios: la pareja DE FRENTE, derivando idéntico; el dorado y el azul' },
-    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.09, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 5.87, label: 'cuarenta mil parejas: se abre de la pareja al disco; arranca el reloj' },
+        // v2.3 (sonda): twoShot RESPIRA con -0.10·sin(uπ) sobre el rMul → con rMul 0.11 la cámara se
+    // metía hasta MINR (0.14) = adentro de la pareja y no se veía nada. Los acercamientos usan
+    // staticBreath (±0.03, respiración chica) a rMul 0.11 ≈ 1.2 unidades, de frente (azim π/2).
+    { shot: staticBreath({ rMul: 0.11, elev: 0.0, azim: 1.5, fov: 40 }), dur: 13.06, label: 'estos dos negocios: la pareja DE FRENTE, derivando idéntico; el dorado y el azul' },
+    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.11, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 5.87, label: 'cuarenta mil parejas: se abre de la pareja al disco; arranca el reloj' },
     { shot: crashIn({ rMul: 0.27, elev: 0.05, azim0: 1.45, span: 0.25, fov: 36 }), dur: 5.92, label: 'MIRA: plano medio de frente, cientos de parejas alrededor del héroe; los dorados se apagan' },
-    { shot: twoShot({ rMul: 0.09, elev: 0.0, azim0: 1.55, span: 0.15, fov: 40 }), dur: 4.20, label: 'no vendió menos: la pareja héroe, su dorado se apaga en «el mes malo»' },
-    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.09, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 4.57, label: 'casi al triple: el disco que era mitad y mitad ya es azul' },
+    { shot: staticBreath({ rMul: 0.11, elev: 0.0, azim: 1.55, fov: 40 }), dur: 4.20, label: 'no vendió menos: la pareja héroe, su dorado se apaga en «el mes malo»' },
+    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.11, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 4.57, label: 'casi al triple: el disco que era mitad y mitad ya es azul' },
     { shot: heroOrbit({ rMul: 1.5, elev: 0.2, azim0: 1.2, span: 0.6, fov: 33 }), dur: 7.64, label: 'por eso en México: el disco, orbitando lento' },
-    { shot: diveToNucleus({ rFromMul: 1.5, rTo: 1.0, fovFrom: 33, fovTo: 40, spin: 0.4 }), dur: 4.85, label: 'muere el día que no sabe: regreso a la pareja del inicio' },
-    { shot: twoShot({ rMul: 0.09, elev: 0.0, azim0: 1.5, span: 0.15, fov: 40 }), dur: 10.89, label: 'si tienes uno: el azul sigue, el dorado ya no está' },
+    { shot: diveToNucleus({ rFromMul: 1.5, rTo: 1.21, fovFrom: 33, fovTo: 40, spin: 0.4 }), dur: 4.85, label: 'muere el día que no sabe: regreso a la pareja del inicio' },
+    { shot: staticBreath({ rMul: 0.11, elev: 0.0, azim: 1.5, fov: 40 }), dur: 10.89, label: 'si tienes uno: el azul sigue, el dorado ya no está' },
   ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
@@ -3231,6 +3234,10 @@ type WaterEntry = {
    *  hemoglobina α=oro y β=morado — la arquitectura 2+2 se vuelve CONTABLE). Default
    *  false = accColorWarm de siempre; las piezas entregadas no cambian. */
   binColors?: boolean;
+  // sinRaleo: apaga el RALEO ANTI-QUEMADO del origen (O2FLOW_VERT: `thin = exp(-|p|²/0.30)`, un
+  // resto de cuando el núcleo vivía en el origen). En una nube de NEGOCIOS el origen no es un núcleo:
+  // es donde vive la pareja héroe, y el raleo la BORRABA (stills econ-colchon v2.1/v2.2: centro vacío).
+  sinRaleo?: boolean;
 };
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
@@ -3267,7 +3274,7 @@ const WATER_BINS: Record<string, WaterEntry> = {
   wtetb: { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true, capas: WTETB_CAPAS, dur: WTETB_DURATION },
   wsillab: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLAB_DURATION, capas: WSILLAB_CAPAS },
   ecolchon: { bin: 'economia-colchon', ef: 'economia-colchon-efield', ex: 11,
-              capas: ECOLCHON_CAPAS, dur: ECOLCHON_DURATION, sizeMul: 1.35, binColors: true },
+              capas: ECOLCHON_CAPAS, dur: ECOLCHON_DURATION, sizeMul: 1.35, binColors: true, sinRaleo: true },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
@@ -3599,7 +3606,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
           borde degradado: agrandarlo muestra la degradación, no el punto). O sea el look bueno
           era el del master; el preview de 1080 era el que mentía. */}
       <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={(anillo ? 0.47 : 0.35) * szM} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
-      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={W.binColors ? wd.accColor : accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={(anillo ? 0.59 : 0.44) * szM} coreThin={0.72} twinkle={twk} tw_time={time} bonds={anillo ? ohBonds : undefined} bondGlow={anillo ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
+      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={W.binColors ? wd.accColor : accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={(anillo ? 0.59 : 0.44) * szM} coreThin={W.sinRaleo ? 0 : 0.72} twinkle={twk} tw_time={time} bonds={anillo ? ohBonds : undefined} bondGlow={anillo ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
       <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={(anillo ? 0.62 : 0.46) * szM} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
       {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
