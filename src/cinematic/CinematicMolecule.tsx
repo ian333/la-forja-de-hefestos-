@@ -1124,15 +1124,17 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // azim≈π/2, elev≈0, rMul 0.09 (r≈1.0): en cuadro sólo la zona limpia con los dos gemelos.
         // v2.3 (sonda): twoShot RESPIRA con -0.10·sin(uπ) sobre el rMul → con rMul 0.11 la cámara se
     // metía hasta MINR (0.14) = adentro de la pareja y no se veía nada. Los acercamientos usan
-    // staticBreath (±0.03, respiración chica) a rMul 0.11 ≈ 1.2 unidades, de frente (azim π/2).
-    { shot: staticBreath({ rMul: 0.11, elev: 0.0, azim: 1.5, fov: 40 }), dur: 13.06, label: 'estos dos negocios: la pareja DE FRENTE, derivando idéntico; el dorado y el azul' },
-    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.11, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 5.87, label: 'cuarenta mil parejas: se abre de la pareja al disco; arranca el reloj' },
+    // staticBreath (±0.03, respiración chica) a rMul 0.16 ≈ 1.8 unidades, de frente (azim π/2).
+    // v3.1: la pareja va HORIZONTAL en pantalla (eje Y del bin) y a rMul 0.11 (medio ancho 0.25) quedaba
+    // en las orillas y el azul se salía en el cierre; a 0.16 el medio ancho es 0.36 y la pareja (±0.25) cabe.
+    { shot: staticBreath({ rMul: 0.16, elev: 0.0, azim: 1.5, fov: 40 }), dur: 13.06, label: 'estos dos negocios: la pareja DE FRENTE, derivando idéntico; el dorado y el azul' },
+    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.16, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 5.87, label: 'cuarenta mil parejas: se abre de la pareja al disco; arranca el reloj' },
     { shot: crashIn({ rMul: 0.27, elev: 0.05, azim0: 1.45, span: 0.25, fov: 36 }), dur: 5.92, label: 'MIRA: plano medio de frente, cientos de parejas alrededor del héroe; los dorados se apagan' },
-    { shot: staticBreath({ rMul: 0.11, elev: 0.0, azim: 1.55, fov: 40 }), dur: 4.20, label: 'no vendió menos: la pareja héroe, su dorado se apaga en «el mes malo»' },
-    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.11, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 4.57, label: 'casi al triple: el disco que era mitad y mitad ya es azul' },
+    { shot: staticBreath({ rMul: 0.16, elev: 0.0, azim: 1.55, fov: 40 }), dur: 4.20, label: 'no vendió menos: la pareja héroe, su dorado se apaga en «el mes malo»' },
+    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.16, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 4.57, label: 'casi al triple: el disco que era mitad y mitad ya es azul' },
     { shot: heroOrbit({ rMul: 1.5, elev: 0.2, azim0: 1.2, span: 0.6, fov: 33 }), dur: 7.64, label: 'por eso en México: el disco, orbitando lento' },
-    { shot: diveToNucleus({ rFromMul: 1.5, rTo: 1.21, fovFrom: 33, fovTo: 40, spin: 0.4 }), dur: 4.85, label: 'muere el día que no sabe: regreso a la pareja del inicio' },
-    { shot: staticBreath({ rMul: 0.11, elev: 0.0, azim: 1.5, fov: 40 }), dur: 10.89, label: 'si tienes uno: el azul sigue, el dorado ya no está' },
+    { shot: diveToNucleus({ rFromMul: 1.5, rTo: 1.76, fovFrom: 33, fovTo: 40, spin: 0.4 }), dur: 4.85, label: 'muere el día que no sabe: regreso a la pareja del inicio' },
+    { shot: staticBreath({ rMul: 0.16, elev: 0.0, azim: 1.5, fov: 40 }), dur: 10.89, label: 'si tienes uno: el azul sigue, el dorado ya no está' },
   ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000

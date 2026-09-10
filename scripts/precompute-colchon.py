@@ -98,7 +98,7 @@ def main():
     # cambios: (1) cada gemelo héroe es un CÚMULO de 60 puntos (σ 0.025) → una bola que brilla y se
     # apaga entera; (2) la zona limpia sube a 1.0 y el disco se adelgaza (0.55 → 0.35) para que el
     # cono de la cámara no atrape puntos de atrás. Los 118 puntos extra van FUERA de la estadística.
-    ZONA = 0.20 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.05 * CAJA; CUMULO = 60; SIG_CUMULO = 0.025
+    ZONA = 0.20 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.05 * CAJA; CUMULO = 80; SIG_CUMULO = 0.035
     u = rng.random(M); th = rng.random(M)
     rc = CAJA * np.sqrt(u * (1.0 - (ZONA / CAJA) ** 2) + (ZONA / CAJA) ** 2)   # centros de par, uniforme en área, fuera de la zona
     th = th * 2 * np.pi
