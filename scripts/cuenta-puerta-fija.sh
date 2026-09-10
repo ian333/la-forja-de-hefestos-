@@ -49,4 +49,18 @@ echo "4) verificación por la puerta pública (Cloudflare → túnel de La Forja
 sleep 4
 curl -s -m 20 "$URL/health" | grep -q '"ok":true' && echo "   ✓ $URL/health" || { echo "✗ health no responde por la puerta pública"; exit 1; }
 echo "   planes: $(curl -s -m 20 "$URL/plans" | head -c 300)"
+echo "5) webhook de Stripe: la firma (STRIPE_WEBHOOK_SECRET) del .env local viaja a ATLAS si difiere"
+# El endpoint se registra desde la laptop con la API de Stripe (modo prueba hoy; en vivo al cambiar
+# STRIPE_MODE) y Stripe solo enseña la firma al crearlo: queda en university-api/.env local (600)
+# y de ahí se copia a ATLAS. Nunca se imprime.
+ENV_LOCAL=/home/ian/Orkesta/university-api/.env
+SEC=$(grep -E '^STRIPE_WEBHOOK_SECRET=' "$ENV_LOCAL" | cut -d= -f2-)
+if [ -n "$SEC" ]; then
+  REMOTO=$(ssh "$ATLAS" "grep -E '^STRIPE_WEBHOOK_SECRET=' ~/university-api/.env | cut -d= -f2-")
+  if [ "$REMOTO" != "$SEC" ]; then
+    printf 'STRIPE_WEBHOOK_SECRET=%s\n' "$SEC" | ssh "$ATLAS" 'cd ~/university-api && read -r L && (grep -qE "^STRIPE_WEBHOOK_SECRET=" .env && sed -i "s#^STRIPE_WEBHOOK_SECRET=.*#$L#" .env || echo "$L" >> .env) && chmod 600 .env && docker compose up -d 2>&1 | tail -1'
+    echo "   ✓ firma del webhook sincronizada a ATLAS (API recreada)"
+  else echo "   ✓ firma del webhook ya estaba en ATLAS"; fi
+else echo "   ⚠ sin STRIPE_WEBHOOK_SECRET en $ENV_LOCAL: el webhook no valida hasta registrarlo"; fi
+
 echo "✓ puerta fija lista. Sigue: commit + release de la-forja (precios.html y cuenta.html ya apuntan aquí)."
