@@ -97,12 +97,15 @@ const WSILLAB_DURATION = 55;
 // 0.6 s (= rampa continua: el motor interpola los 4 cuadros de cada escalón); después queda en
 // el mes 60. `respiro: 0` porque un muerto no resucita. Tiempos PROVISIONALES: se calibran a
 // segs.json cuando exista la voz.
-const ECOLCHON_DURATION = 44;
+// CALIBRADO A segs.json (2026-09-10, voz real 46.1 s + 7.0 s de pausa declarada tras «Mira.»):
+//   l01 0.40 · l02 6.13 · l03 9.40 · l04 11.94 · l05 18.32 · «Mira.» 22.80-23.95 · [reloj 24.0→31.0]
+//   l07 «casi al triple» 31.35 · l08 34.81 · l09 39.48 · l10 45.03 · l11 «GAIA Prime» 49.33-52.71
+const ECOLCHON_DURATION = 55;
 const ECOLCHON_CAPAS: CapasSpec = {
   campo:    { base: 0, mods: [] },
   respiro:  { base: 0, mods: [] },
   nubes:    { base: 1, mods: Array.from({ length: 15 }, (_, i) => (
-    { wins: [[18.0 + 0.6 * i, 44]] as [number, number][], a: 0.144, label: `compensa el brillo que se lleva la apertura (${i + 1}/15)` })) },
+    { wins: [[24.0 + (7.0 / 15) * i, 55]] as [number, number][], a: 0.144, label: `compensa el brillo que se lleva la apertura (${i + 1}/15)` })) },
   parpadeo: { base: 0.18, mods: [] },
   spin:     { base: 1, mods: [] },
   acc:      { base: 1.5, mods: [] },
@@ -110,7 +113,7 @@ const ECOLCHON_CAPAS: CapasSpec = {
   dipolo:   { base: 0, mods: [] },
   ceros:    { base: 0, mods: [] },
   apertura: { base: 1, mods: Array.from({ length: 15 }, (_, i) => (
-    { wins: [[18.0 + 0.6 * i, 44]] as [number, number][], a: -1 / 15, label: `mes ${4 * (i + 1)} de 60` })) },
+    { wins: [[24.0 + (7.0 / 15) * i, 55]] as [number, number][], a: -1 / 15, label: `mes ${4 * (i + 1)} de 60` })) },
 };
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
@@ -1099,11 +1102,12 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // metía la cámara DENTRO del disco: en el momento clave no se veía la orilla apagarse, sólo
     // puntos por todos lados. El disco entero tiene que caber en el ANCHO del 9:16 (rMul ≥ 1.5)
     // y «Mira» es una TOMA FIJA: nueve segundos sin corte viendo morir la orilla.
-    { shot: eyeLevelLock({ rMul: 1.55, azim: 0.9 }), dur: 7, label: 'los cuarenta mil, de frente, el disco entero' },
-    { shot: loomPush({ rFrom: 1.7, rTo: 1.45, elev: 0.30, azim: 1.2, fov: 34 }), dur: 10.5, label: 'sube apenas y revela: oro afuera, azul adentro' },
-    { shot: eyeLevelLock({ rMul: 1.45, azim: 1.1 }), dur: 9.5, label: 'MIRA: toma fija, la orilla se apaga' },
-    { shot: pullOut({ azim0: 1.0, span: 0.8, rFromMul: 1.25, rTdMul: 1.75 }), dur: 9, label: 'lo que quedó' },
-    { shot: eyeLevelLock({ rMul: 1.5, azim: 0.6 }), dur: 8, label: 'y tú' },
+    // Cortes en el ARRANQUE de su línea (segs.json): 9.4 (l03) · 22.5 (Mira) · 31.2 (l07) · 39.4 (l09).
+    { shot: eyeLevelLock({ rMul: 1.55, azim: 0.9 }), dur: 9.4, label: 'los cuarenta mil, de frente, el disco entero' },
+    { shot: loomPush({ rFrom: 1.7, rTo: 1.45, elev: 0.30, azim: 1.2, fov: 34 }), dur: 13.1, label: 'sube apenas y revela: oro afuera, azul adentro' },
+    { shot: eyeLevelLock({ rMul: 1.45, azim: 1.1 }), dur: 8.7, label: 'MIRA: toma fija, 7 s de reloj, la orilla se apaga' },
+    { shot: pullOut({ azim0: 1.0, span: 0.8, rFromMul: 1.25, rTdMul: 1.75 }), dur: 8.2, label: 'lo que quedó' },
+    { shot: eyeLevelLock({ rMul: 1.5, azim: 0.6 }), dur: 15.6, label: 'y tú' },
   ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000

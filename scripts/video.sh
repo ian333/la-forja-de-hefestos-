@@ -356,7 +356,9 @@ if est > tope:
 PYFIT
   # TAKES=4 SIEMPRE (canon §VOZ): el default de narracion-gen es 1 = CERO selección (Gauss 2026-07-30).
   TAKES="${TAKES:-4}" VEL="$VEL" /home/ian/tts-venv/bin/python "$ROOT/scripts/narracion-gen.py" "$MOLV" 2>&1 | grep -E "CACHÉ|ELEGIDA|huérfano|FALTAN|✗" | tail -12
-  python3 "$ROOT/scripts/assemble-narracion.py" "$MOLV" --gap 0.40 --lead 0.40 2>&1 | tail -1
+  # audio.pausas = "6:7.0" → silencio declarado después de la línea 6 (assemble-narracion.py --pausa).
+  local PAUSAS; PAUSAS="$(m audio.pausas)"
+  python3 "$ROOT/scripts/assemble-narracion.py" "$MOLV" --gap 0.40 --lead 0.40 ${PAUSAS:+--pausa "$PAUSAS"} 2>&1 | tail -1
   if ! /home/ian/tts-venv/bin/python "$ROOT/scripts/voz-check.py" "$MOLV" 2>&1 | tee /tmp/vozcheck-$ID.txt | grep -q "✓ la voz DICE el guion"; then
     echo "   ✗ LA VOZ NO DICE EL GUION — no se sigue:"; grep -E "DIFIERE|guion:|oído" /tmp/vozcheck-$ID.txt | head -8
     return 1

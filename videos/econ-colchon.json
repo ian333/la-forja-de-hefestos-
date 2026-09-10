@@ -1,0 +1,101 @@
+{
+  "id": "econ-colchon",
+  "titulo": "Un negocio no muere de vender poco — El colchón",
+  "nota": "PRIMERA PIEZA DE LA SERIE «ECONOMÍA DE TU NEGOCIO» (ian, 2026-09-10: «sácame el primer video, a partir de ahí vemos»). Mismo motor de nubes que las moléculas; los puntos son 40,000 negocios (precompute-colchon.py, ruina del jugador calibrada a INEGI). Guion en 2ª persona, brazo A. Tomas COPIADAS del vocabulario de egrupos; «Mira» es toma fija de 9.5 s.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=ecolchon",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (ecolchon): render-clip exige formato.dur == duración de la escena (ECOLCHON_DURATION = 44). Capas y cortes PROVISIONALES hasta segs.json: «Mira» debe caer donde la voz lo dice.",
+    "nota_16x9": "QUERY=\"m=ecolchon&zoom=0.5\" W=3840 H=2160 (medir fill antes de renderizar)"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55,
+    "nota_dur": "44 → 48 → 55 s (2026-09-10): 46.1 s de voz medidos (segs.json) + 7.0 s de silencio con reloj después de «Mira.» (audio.pausas) + cola. Se alarga la escena (ECOLCHON_DURATION) en vez de recortar el guion que ian aprobó."
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.colchonframes"
+  },
+  "audio": {
+    "dir": "dist-video/econ-colchon-narracion",
+    "narracion": "econ-colchon-narracion.mp3",
+    "musica": "wpair-music-ticks.wav",
+    "musicaFuente": "wpair-music.wav copiada de dist-video/sudorb-narracion (la pieza ganadora) + LOS TICS DEL RELOJ mezclados encima (scripts/ticks-reloj.py): un tic por mes durante los 5 años de «Mira», un pulso grave cada año. Ian: «lo del tic me mama, me recuerda a Interstellar».",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "pausas": "6:7.0",
+    "nota_pausas": "LA TOMA LARGA: después de «Mira.» (línea 6, acaba en 23.95 s) hay 7.0 s sin voz en los que corren los 60 meses de la simulación (apertura 24.0→31.0 s) con un tic por mes y un pulso por año (ticks-reloj.py). Medido en segs.json: l07 «casi al triple» arranca en 31.35 s.",
+    "segs": "segs.json",
+    "ass": "econ-colchon.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-colchon-4k-master.mp4",
+    "h264": "econ-colchon-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "economia-colchon.bin",
+      "economia-colchon-efield.bin"
+    ],
+    "guion": "econ-colchon.txt",
+    "scripts": [
+      "precompute-colchon.py",
+      "ticks-reloj.py",
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-colchon.mp4",
+    "capsulaRel": "economia/_code/econ-colchon-capsula.tar.gz",
+    "pieza": "econ colchon",
+    "nueva": true,
+    "copy": {
+      "titulo": "Un negocio no muere de vender poco. Muere el día que no sabía cuánto le quedaba.",
+      "descripcion": "De cada 100 negocios que abren en México, 31 no cumplen un año y 64 no llegan a cinco (INEGI, tabla demográfica 1989-2019). Aquí hay 40,000 negocios simulados con exactamente la misma suerte, mes por mes: los dorados empezaron con un mes de caja guardado, los azules con tres. En cinco años, los dorados se apagan casi al triple. No vendían menos: les llegó el mes malo con la caja vacía. Es la ruina del jugador, un resultado de probabilidad de hace tres siglos, corriendo sobre los números reales de INEGI. Si tienes un negocio, ese número —cuánto te queda en caja— se ve todos los días. 💬 ¿Cuántos meses de caja tienes guardados hoy? Cuéntame en los comentarios.",
+      "hashtags": [
+        "#negocios",
+        "#emprender",
+        "#pymes",
+        "#méxico",
+        "#economía",
+        "#finanzas",
+        "#inegi",
+        "#tiendita",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque le pasa a quien lo ve: el que tiene negocio se reconoce en un punto que se apaga",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA (canon §EL VEREDICTO A/B) y PRIMER LLAMADO A LA ACCIÓN de la serie: pregunta en comentarios (no hay puente al ERP todavía; la calculadora pública viene después)."
+    },
+    "autorizado": "",
+    "subidas": {},
+    "programar": "",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json. Sin publicar.autorizado con las palabras de ian NADA sube."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/econ-colchon.txt"
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "brazo A por VEREDICTO 2026-09-07; 5 tomas en 44 s ≈ 6.8 cortes/min. Se MIDE con ritmo-pieza.py tras la voz."
+  }
+}
