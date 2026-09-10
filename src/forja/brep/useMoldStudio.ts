@@ -49,7 +49,7 @@ import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
 import { predicadoDeMalla } from '../mold/flowlen';   // sprint 1: E4/E5 POR PIEZA
 import { estacion1Dado, estacion2Dado, estacion1, estacion2, piezaDesdeArbol, DADO_PIEZA, type PiezaSpec, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, declDePieza, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
-import { resolverLlenadoFAN } from '../mold/fan';
+import { resolverLlenadoFAN, resolverLlenadoFANAsync } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
@@ -70,6 +70,22 @@ export interface ArbolPieza {
   wallMm?: number; draftDeg?: number; filletMm?: number; round: boolean; material?: string;
 }
 
+/** EL PASO 6 SE VE TRABAJAR: la malla de la E2 llevada al marco del molde con la MISMA `volt` de
+ *  construirAceroE3 (π sobre x + traslado a la base) — sin volver a teselar el sólido con el kernel. */
+const volteaMalla = (base: MoldPart, col: { tx: number; ty: number; tz: number }, name: string, color: string, opacity: number): MoldPart => {
+  const P = base.positions, Nn = base.normals;
+  const pos = new Float32Array(P.length), nor = new Float32Array(Nn.length);
+  for (let k = 0; k < P.length; k += 3) {
+    pos[k] = P[k] + col.tx; pos[k + 1] = -P[k + 1] + col.ty; pos[k + 2] = -P[k + 2] + col.tz;
+    nor[k] = Nn[k]; nor[k + 1] = -Nn[k + 1]; nor[k + 2] = -Nn[k + 2];
+  }
+  let edges: Float32Array | undefined;
+  if (base.edges) {
+    const E = base.edges; edges = new Float32Array(E.length);
+    for (let k = 0; k < E.length; k += 3) { edges[k] = E[k] + col.tx; edges[k + 1] = -E[k + 1] + col.ty; edges[k + 2] = -E[k + 2] + col.tz; }
+  }
+  return { ...base, role: 'pieza', name, color, opacity, positions: pos, normals: nor, edges };
+};
 export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 0 }: {
   oc: any;
   setCollapsed: Dispatch<SetStateAction<Record<string, boolean>>>;
@@ -455,6 +471,22 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   //    Los botones se DESHABILITAN hasta su etapa (como Tooling Split gris en SW).
   const [cursoStage, setCursoStage] = useState(0);
   const [cursoBusy, setCursoBusy] = useState(false);
+  /** EL PASO 6 SE VE TRABAJAR (2026-09-10): lo que el cliente ve MIENTRAS el acero se talla (paso i/n con su
+   *  reloj) y los ms REALES de cada paso (ian: «¿tienes telemetría?»). Entre paso y paso se pinta un cuadro
+   *  (`respira`): el molde se va armando pieza por pieza en vez de aparecer de golpe tras 70 s de pantalla muerta. */
+  const [progreso, setProgreso] = useState<{ estacion: number; paso: string; i: number; n: number; t0: number } | null>(null);
+  const telemetriaRef = useRef<Array<{ estacion: number; paso: string; ms: number }>>([]);
+  const [telemetriaRev, setTelemetriaRev] = useState(0);
+  const respira = useCallback(() => new Promise<void>((res) => requestAnimationFrame(() => setTimeout(res, 0))), []);
+  // EL PASO 6 SE VE TRABAJAR (2026-09-10, visto en el paseo): al cambiar las partes la cámara REENCUADRA con un
+  // timer de 30 ms (ForgeBRepStudio); si el kernel bloquea el hilo justo después, ese timer no corre y el viewport
+  // queda apuntando al encuadre viejo (8 s oscuros antes del acero). Dos cuadros con 80 ms en medio: el salto se
+  // dispara y se PINTA antes del bloque.
+  const respiraCuadro = useCallback(async (ms = 80) => { await respira(); await new Promise<void>((res) => setTimeout(res, ms)); await respira(); }, [respira]);
+  const marca = useCallback((estacion: number, paso: string, t0: number) => {
+    const ms = Math.round(performance.now() - t0); telemetriaRef.current.push({ estacion, paso, ms }); setTelemetriaRev((v) => v + 1);
+    console.log(`E${estacion}T`, paso, ms, 'ms'); return performance.now();
+  }, []);
   const [cursoReport, setCursoReport] = useState<string[]>([]);
   const [cursoCollapsed, setCursoCollapsed] = useState(false);   // plegar el panel para no tapar el sólido
   const cursoRef = useRef<{
@@ -799,18 +831,33 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   // DORADO y los perdedores ×2/×4 como fantasmas — NO se borran, se ve qué NO
   // elegir y el panel dice por cuánto pierde cada uno (amortización desglosada).
   // Corre la Máquina 6 veces (variantes + banda A-050): ~1 s síncrono, aceptable.
-  const cicloEstacion2 = useCallback(() => {
+  const cicloEstacion2 = useCallback(async () => {
     if (!oc || !ciclo) return;
+    const T2 = performance.now(); let t2 = T2; setCursoBusy(true);
+    // EL PASO 6 SE VE TRABAJAR (2026-09-10): medido con telemetría, E2 era LA espera de 60 s del molde — no E3
+    // (18.7 s): teselaba el sólido REAL siete veces (una por copia de la familia ×1/×2/×4) con el kernel.
+    // Ahora se tesela UNA vez y las seis copias se trasladan en la malla (mismas normales e índices).
+    setProgreso({ estacion: 2, paso: 'la economía (cap 3): ¿cuántas cavidades? — 15 variantes cotizadas', i: 0, n: 2, t0: T2 });
+    await respira();
     try {
       // EL PUENTE: la pieza del árbol si la hay; si no, el cubo — bit a bit como antes
       const pieza = ciclo.pieza ?? DADO_PIEZA;
       const e2 = ciclo.pieza ? estacion2(pieza) : estacion2Dado();
+      t2 = marca(2, 'economia (moldMachine)', t2);
       const d = ciclo.piezaShape ?? dadoShape(oc);
       // separación del layout ×2/×4 por la HUELLA real (80/170/220 eran del cubo de 40)
       const bb = ciclo.piezaShape ? shapeBBox(oc, d) : null;
       const Lx = bb ? bb.max[0] - bb.min[0] : 40, Ly = bb ? bb.max[1] - bb.min[1] : 40;
       const P = bb ? { a: Lx + 20, b: 2 * (Lx + 20) + 10, c: 2 * (Lx + 20) + 10 + Lx + 10, sy: Ly / 2 + 5 } : { a: 80, b: 170, c: 220, sy: 25 };
-      const at = (x: number, y: number) => OCC.transformShape(oc, d, { translate: [x, y, 0] });
+      setProgreso({ estacion: 2, paso: 'la familia de cavidades ×1 · ×2 · ×4 sobre la base', i: 1, n: 2, t0: T2 });
+      await respira();
+      const base = cursoPart(d, 'pieza', '', '#f4d27a', 0.98, 0.1);           // UNA teselación del sólido real
+      t2 = marca(2, 'tessellate pieza', t2);
+      const at = (x: number, y: number, role: string, name: string, color: string, opacity: number): MoldPart => {
+        const pos = new Float32Array(base.positions.length);
+        for (let k = 0; k < pos.length; k += 3) { pos[k] = base.positions[k] + x; pos[k + 1] = base.positions[k + 1] + y; pos[k + 2] = base.positions[k + 2]; }
+        return { ...base, role, name, color, opacity, positions: pos };
+      };
       const gana = e2.variantes.find((v) => v.ganadora);
       const v2 = e2.variantes.find((v) => v.nCav === 2 && v.arch === 'cold-2placas');
       const v4 = e2.variantes.find((v) => v.nCav === 4 && v.arch === 'cold-2placas');
@@ -822,16 +869,19 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         `GANA ×${gana?.nCav}: molde $${gana?.moldeUSD.toLocaleString()} · $${gana?.totalPzaUSD}/pza a 100k`,
         e2.bandaLectura,
       ], [
-        cursoPart(at(0, 0), 'pieza', `×1 GANADOR — $${gana?.totalPzaUSD}/pza`, '#f4d27a', 0.98, 0.1),
-        cursoPart(at(P.a, -P.sy), 'fam2a', `×2 pierde — $${v2?.totalPzaUSD}/pza`, '#8fa0b8', 0.22, 0.02),
-        cursoPart(at(P.a, P.sy), 'fam2b', '×2 (la otra cavidad)', '#8fa0b8', 0.22, 0.02),
-        cursoPart(at(P.b, -P.sy), 'fam4a', `×4 pierde — $${v4?.totalPzaUSD}/pza`, '#8fa0b8', 0.16, 0.02),
-        cursoPart(at(P.b, P.sy), 'fam4b', '×4', '#8fa0b8', 0.16, 0.02),
-        cursoPart(at(P.c, -P.sy), 'fam4c', '×4', '#8fa0b8', 0.16, 0.02),
-        cursoPart(at(P.c, P.sy), 'fam4d', '×4', '#8fa0b8', 0.16, 0.02),
+        at(0, 0, 'pieza', `×1 GANADOR — $${gana?.totalPzaUSD}/pza`, '#f4d27a', 0.98),
+        at(P.a, -P.sy, 'fam2a', `×2 pierde — $${v2?.totalPzaUSD}/pza`, '#8fa0b8', 0.22),
+        at(P.a, P.sy, 'fam2b', '×2 (la otra cavidad)', '#8fa0b8', 0.22),
+        at(P.b, -P.sy, 'fam4a', `×4 pierde — $${v4?.totalPzaUSD}/pza`, '#8fa0b8', 0.16),
+        at(P.b, P.sy, 'fam4b', '×4', '#8fa0b8', 0.16),
+        at(P.c, -P.sy, 'fam4c', '×4', '#8fa0b8', 0.16),
+        at(P.c, P.sy, 'fam4d', '×4', '#8fa0b8', 0.16),
       ]);
-    } catch (e) { console.warn('E2_ERR', e); }
-  }, [oc, ciclo, cursoSet, cursoPart, setDocName, setCollapsed]);
+      marca(2, 'familia (copias en malla)', t2); marca(2, 'E2 total', T2);
+      setProgreso({ estacion: 2, paso: 'economía lista', i: 2, n: 2, t0: T2 });
+    } catch (e) { console.warn('E2_ERR', e); setProgreso(null); }
+    finally { setCursoBusy(false); }
+  }, [oc, ciclo, cursoSet, cursoPart, setDocName, setCollapsed, respira, marca]);
   // ── ESTACIÓN 3: ARQUITECTURA (cap 4) — nace el primer acero ──
   // El dado gana su draft REAL (1.5° por loft — hasta la E2 iba declarado: se VE el
   // momento en que el acero se lo impone, decisión de ian). splitMold (el mismo de la
@@ -842,28 +892,86 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   // opcional ahí, el evento lo enciende SIEMPRE (la E3 armó el dado ROTO en cada clic
   // hasta que el arnés dejó de encontrar el botón de la E4). El call site usa
   // `() => onE3()`, y aquí se normaliza por si alguien vuelve a cablearlo directo.
-  const cicloEstacion3 = useCallback((maloArg: unknown = false) => {
+  const cicloEstacion3 = useCallback(async (maloArg: unknown = false) => {
     const malo = maloArg === true;
     if (!oc || !ciclo?.e2) return;
-    const _t0 = performance.now(); const _m = (n: string) => console.log('E3T', n, Math.round(performance.now() - _t0), 'ms');
+    const T0 = performance.now(); let t = T0;
+    const pkg = ciclo.e2.pkg;
+    const pieza = ciclo.pieza;                             // v1·3 — E3 POR PIEZA (undefined = el cubo clásico)
+    const nom3 = pieza ? pieza.nombre : 'EL DADO';
+    setCursoBusy(true);
     try {
-      const pkg = ciclo.e2.pkg;
-      const pieza = ciclo.pieza;                             // v1·3 — E3 POR PIEZA (undefined = el cubo clásico)
       const e3 = estacion3Dado(pkg, pieza);
+      const cab = pieza ? `CICLO DE ${nom3} · estación 3 — ARQUITECTURA (cap 4)` : 'CICLO DEL DADO · estación 3 — ARQUITECTURA (cap 4)';
+      // ── paso 0/5: LO QUE YA SE PUEDE VER, antes de las booleanas (5 s de kernel) ──
+      // EL PASO 6 SE VE TRABAJAR: la base COMPRADA (§4.3.2), la partición y la pieza COLOCADA
+      // aparecen en el primer cuadro; la cavidad y el núcleo se tallan ADENTRO de lo que ya se ve.
+      // La pieza es la malla de la E2 volteada (volteaMalla = la `volt` de construirAceroE3).
+      const col0 = colocacionEnLaBase(pkg, pieza?.local);
+      const zPart0 = col0.zPartBase;
+      const base2 = pieza ? moldParts.find((p) => p.role === 'pieza') : undefined;
+      const nomPieza = `${nom3} — TU sólido, COLOCADO en la base (§4.3.2)`;
+      let pPieza: MoldPart | null = base2 ? volteaMalla(base2, col0, nomPieza, '#7ee0a0', 0.52) : null;
+      // FALLBACK (visto en el paseo 21:29 UTC: el pre-pintado salió SIN pieza y el viewport quedó 6 s «oscuro»
+      // con solo dos ghosts a 0.07): si la malla de E2 no está en este closure, la pieza se voltea desde el
+      // sólido del kernel — cuesta una teselación (1.9 s) pero la base NUNCA se pinta vacía.
+      const mk0 = pieza ? (pieza.solidDraft ?? pieza.solidRecto) : undefined;
+      if (!pPieza && mk0) {
+        pPieza = cursoPart(OCC.transformShape(oc, mk0(oc), { rotateAngle: Math.PI, rotateAxis: { origin: [0, 0, 0], dir: [1, 0, 0] }, translate: [col0.tx, col0.ty, col0.tz] }), 'pieza', nomPieza, '#7ee0a0', 0.52, 0.06);
+      }
+      const pPart = cursoPart(OCC.transformShape(oc, OCC.makeBox(oc, 150, 150, 0.8), { translate: [col0.centroX - 75, col0.centroY - 75, zPart0 - 0.4] }), 'particion', 'PARTICIÓN plana en la boca — A-061', '#f4d27a', 0.30, 0.04);
+      // las placas compradas a 0.30 (acero translúcido, como E5 las pinta a 0.38): ian quiere VER el molde, y a
+      // 0.07 la base pre-pintada era invisible sobre el fondo.
+      const pA = cursoPart(OCC.transformShape(oc, OCC.makeBox(oc, col0.baseWmm, col0.baseLmm, col0.plates.A), { translate: [0, 0, zPart0] }), 'placa-a-ghost', `placa A ${col0.baseWmm}×${col0.baseLmm}×${col0.plates.A} — el acero COMPRADO que aloja la cavidad`, '#8fa0b8', 0.30, 0.01);
+      const pB = cursoPart(OCC.transformShape(oc, OCC.makeBox(oc, col0.baseWmm, col0.baseLmm, col0.plates.B), { translate: [0, 0, zPart0 - col0.plates.B] }), 'placa-b-ghost', `placa B ${col0.baseWmm}×${col0.baseLmm}×${col0.plates.B} — aloja el núcleo`, '#8fa0b8', 0.30, 0.01);
+      setMoldOpacity({});
+      setCollapsed((c) => ({ ...c, features: false }));
+      cursoSet(3, [cab, `base ${col0.baseWmm}×${col0.baseLmm} comprada (§4.3.2) · tallando la cavidad y el núcleo…`], [...(pPieza ? [pPieza] : []), pPart, pA, pB]);
+      t = marca(3, base2 ? 'base y pieza colocada (malla de E2)' : `base y pieza colocada (SIN malla de E2 en el closure: roles ${moldParts.map((p) => p.role).join('+') || 'ninguno'}; teselada del kernel)`, t);
+      // ── paso 1/5: EL ACERO (los cortes booleanos del kernel: el paso atómico más largo) ──
+      setProgreso({ estacion: 3, paso: 'tallando la cavidad y el núcleo en el acero (booleanas del kernel)', i: 0, n: 5, t0: T0 });
+      // MEDIDO en el paseo (21:15 UTC): con 80 ms el viewport seguía oscuro 6 s — render del estudio + efectos
+      // pasivos + timer de 30 ms + segundo render pasan de 100 ms. 350 ms: la base se ve ANTES del kernel.
+      await respiraCuadro(350);                       // la base YA encuadrada y pintada antes de los 5.3 s de kernel
       // EL ACERO VERIFICADO (orden e3-verificacion): construirAceroE3 talla con las
       // dims de COMPRA (insertDims — el bug de ian: 60/16 declarados vs 52/14
       // dibujados) y verificacionE3 mide TODO del B-Rep: 17 cotas declarado≈medido,
       // draft por rebanadas, Σ volúmenes = bloque, cuerpos=2. La tabla va al panel.
       const acero = construirAceroE3(oc, pkg, malo && !pieza, undefined, pieza);
-      _m('acero');
+      t = marca(3, 'acero', t);
       const dadoD = acero.dadoD;
       const r = acero.r;
+      const col3 = acero.colocacion!;
+      const zPart3 = col3.zPartBase;
+      const compra = `cavidad ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hc} · núcleo ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hk} (P20) · base ${col3.baseWmm}×${col3.baseLmm} comprada (§4.3.2)`;
+      setMoldPkg(pkg);
+      setCiclo((c) => ({ ...(c as NonNullable<typeof c>), estacion: 3, e3 }));
+      setDocName(malo && !pieza ? 'EL DADO ROTO · draft INVERTIDO — el molde NO abre' : `${nom3} · estación 3 — ARQUITECTURA (cap 4): nace el primer acero`);
+      pPieza = pPieza ?? cursoPart(dadoD, 'pieza', pieza ? `${nom3} — TU sólido, COLOCADO en la base (§4.3.2)` : 'EL DADO v2 — draft 1.5° TALLADO (ya no declarado)', '#7ee0a0', 0.52, 0.06);
+      // SE VE YA, UNA PLACA POR CUADRO (medido 2026-09-10: acero 5.4 s + teselado 3.6 s seguidos = 9 s de hilo
+      // muerto y la primera placa a los 10.8 s). Entre el tallado y cada teselado el hilo RESPIRA: la cavidad
+      // aparece en cuanto existe, el núcleo un cuadro después — DENTRO de la base que ya se veía.
+      setProgreso({ estacion: 3, paso: 'acero tallado ✓ · teselando la cavidad', i: 0, n: 5, t0: T0 });
+      await respira();
+      const pCav = cursoPart(r.cavityPlate, 'cavidad', 'INSERTO DE CAVIDAD (hembra) · P20 · talla el exterior', '#9db4d0', 0.40, 0.03);
+      cursoSet(3, [cab, compra, 'cavidad ✓ · teselando el núcleo…'], [pPieza, pPart, pA, pB, pCav]);
+      t = marca(3, 'tessellate cavidad', t);
+      setProgreso({ estacion: 3, paso: 'cavidad en pantalla · teselando el núcleo', i: 0, n: 5, t0: T0 });
+      await respira();
+      // el explode ABRE hacia B (−z): con el volteo, +34 clavaba el núcleo A TRAVÉS
+      // de la cavidad (medido: nucleo z 164..217.5 vs cavidad 146..206 — traslape)
+      const pNuc = cursoPart(OCC.transformShape(oc, r.corePlate, { translate: [0, 0, -40] }), 'nucleo', 'INSERTO DE NÚCLEO + macho · P20 (abierto −40 mm hacia B)', '#b8c6da', 0.92, 0.07);
+      cursoSet(3, [cab, compra, 'tallado ✓ · midiendo…'], [pCav, pNuc, pPieza, pPart, pA, pB]);
+      t = marca(3, 'tessellate núcleo', t);
+      // ── paso 2/5: LA VERIFICACIÓN (17 cotas del B-Rep) ──
+      setProgreso({ estacion: 3, paso: 'midiendo el acero: 17 cotas declarado ≈ medido, draft por rebanadas', i: 1, n: 5, t0: T0 });
+      await respira();
       // SIN computeMoldAlarm aquí: congelaba el tab MINUTOS (vóxeles sobre bloques
       // de 120³ en el hilo del click) y además es REDUNDANTE — cavity/macho/pieza son
       // una PARTICIÓN EXACTA del bloque por construcción booleana, y la fila
       // "Σ cavidad+macho+pieza = bloque" ya lo prueba: traslape = suma > 100 %.
       const e3v = verificacionE3(oc, acero, pieza ? declDePieza(pieza) : undefined);
-      _m('verificacion');
+      t = marca(3, 'verificacion', t);
       const marco3 = pieza?.local ? {
         comp: 'pieza', x0: pieza.local.cxMm - pieza.local.semiXmm, y0: pieza.local.cyMm - pieza.local.semiYmm,
         L: pieza.local.semiXmm * 2, W: pieza.local.semiYmm * 2, H: pieza.local.alturaMm,
@@ -871,8 +979,11 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       } : undefined;
       const e3cotas = cotasCicloE3(e3v, acero, 40, marco3);   // 40 = el lift con que la escena ABRE el núcleo hacia B (183.5−40 < 146: sin roce)
       setCotasOn(true);                               // las dimensiones SE VEN, no se buscan
-      // ── LA PRUEBA DEL RAYO: ¿la pieza SALE? (el teorema, sobre las mitades reales) ──
-      const mallaDe = (sh: any) => { const t = OCC.tessellate(oc, sh, 0.15); return { positions: t.positions, indices: t.indices }; };
+      setCiclo((c) => ({ ...(c as NonNullable<typeof c>), e3v, e3cotas }));
+      // ── paso 3/5: LA PRUEBA DEL RAYO: ¿la pieza SALE? (el teorema, sobre las mitades reales) ──
+      setProgreso({ estacion: 3, paso: 'la prueba del rayo: ¿la pieza sale del molde?', i: 2, n: 5, t0: T0 });
+      await respira();
+      const mallaDe = (sh: any) => { const tt = OCC.tessellate(oc, sh, 0.15); return { positions: tt.positions, indices: tt.indices }; };
       // VOLTEADO (Fig 7.2): la CAVIDAD vive en el lado A y ABRE hacia ARRIBA; el
       // NÚCLEO está en B y se aleja hacia ABAJO. Los flags viajan con el molde.
       const rayo = pruebaDelRayo([
@@ -882,10 +993,18 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       // dentro del click (regresión que metí con el rayo). El gate node sí corre a 384;
       // el veredicto es el mismo — se comprobó que atrapadas no cambia con la malla.
       ], { res: 160 });
-      _m('tessellate+rayo');
+      t = marca(3, 'tessellate+rayo', t);
+      setCiclo((c) => ({ ...(c as NonNullable<typeof c>), rayo }));
+      // ── paso 4/5: LA INTERSECCIÓN de las mitades ──
+      setProgreso({ estacion: 3, paso: 'intersección de las mitades (cavidad ∩ núcleo = ∅)', i: 3, n: 5, t0: T0 });
+      await respira();
       const interMm3 = interseccionMitades(oc, r.cavityPlate, r.macho).volMm3;
-      _m('interseccion');
+      t = marca(3, 'interseccion', t);
       setMoldXray(false);                             // 🩻 PELEA con el mapa de color (todo pálido): el mapa manda
+      setCiclo((c) => ({ ...(c as NonNullable<typeof c>), interMm3 }));
+      // ── paso 5/5: LAS PLACAS COMPRADAS y la partición ──
+      setProgreso({ estacion: 3, paso: 'las placas compradas y la partición', i: 4, n: 5, t0: T0 });
+      await respira();
       // EN EL MARCO REAL DEL STACK — estos tres vivían con literales del marco local
       // (z=39.1 / −79 / 96) y el molde en pantalla quedaba 100+ mm lejos del líquido:
       // "parece que está todo desconectado — la cavidad y el líquido" (ian). CUARTA
@@ -894,46 +1013,32 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       // ⚠ `col` NO existe en este scope (vive dentro de construirAceroE3): usarla aquí
       // fue un ReferenceError silencioso dentro del try — la estación moría sin E4 (la
       // clase de bug del onE4). La colocación viaja en el resultado: acero.colocacion.
-      const col3 = acero.colocacion!;
-      const zPart3 = col3.zPartBase;
-      const partPlano = OCC.transformShape(oc, OCC.makeBox(oc, 150, 150, 0.8), { translate: [col3.centroX - 75, col3.centroY - 75, zPart3 - 0.4] });
-      const placaA = OCC.transformShape(oc, OCC.makeBox(oc, col3.baseWmm, col3.baseLmm, col3.plates.A), { translate: [0, 0, zPart3] });
-      const placaB = OCC.transformShape(oc, OCC.makeBox(oc, col3.baseWmm, col3.baseLmm, col3.plates.B), { translate: [0, 0, zPart3 - col3.plates.B] });
-      setMoldPkg(pkg);
-      setCiclo({ ...ciclo, estacion: 3, e3, e3v, e3cotas, rayo, interMm3 });
-      const nom3 = pieza ? pieza.nombre : 'EL DADO';
-      setDocName(malo && !pieza ? 'EL DADO ROTO · draft INVERTIDO — el molde NO abre' : `${nom3} · estación 3 — ARQUITECTURA (cap 4): nace el primer acero`);
-      setCollapsed((c) => ({ ...c, features: false }));
-      _m('setState');
-      // LO QUE HAY SE VE (2026-09-09): el mapa de opacidad de la estación anterior no manda sobre el acero nuevo —
-      // medido en el arnés: E3 se pintaba OSCURA (solo la pieza visible, la cámara adentro del bloque).
-      setMoldOpacity({});
+      // (partición y placas ya viven desde el paso 0: pPart/pA/pB — mismas cotas, col0 ≡ col3)
+      if (Math.abs(zPart3 - zPart0) > 1e-9) console.warn('E3: zPart0 ≠ zPart3', zPart0, zPart3);
       cursoSet(3, [
-        pieza ? `CICLO DE ${nom3} · estación 3 — ARQUITECTURA (cap 4)` : 'CICLO DEL DADO · estación 3 — ARQUITECTURA (cap 4)',
-        `cavidad ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hc} · núcleo ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hk} (P20) · base ${col3.baseWmm}×${col3.baseLmm} comprada (§4.3.2)`,
+        cab, compra,
         pieza
           ? 'el acero talla TU sólido TAL CUAL — el draft es el que TU pieza trae (la E1 lo juzgó §2.3.6; aquí se MIDE del B-Rep)'
           : 'draft 1.5° TALLADO — y los semáforos §4.3.3 despiertan (mira el panel de análisis)',
       ], [
-        cursoPart(r.cavityPlate, 'cavidad', 'INSERTO DE CAVIDAD (hembra) · P20 · talla el exterior', '#9db4d0', 0.40, 0.03),
-        // el explode ABRE hacia B (−z): con el volteo, +34 clavaba el núcleo A TRAVÉS
-        // de la cavidad (medido: nucleo z 164..217.5 vs cavidad 146..206 — traslape)
-        cursoPart(OCC.transformShape(oc, r.corePlate, { translate: [0, 0, -40] }), 'nucleo', 'INSERTO DE NÚCLEO + macho · P20 (abierto −40 mm hacia B)', '#b8c6da', 0.92, 0.07),
-        cursoPart(dadoD, 'pieza', pieza ? `${nom3} — TU sólido, COLOCADO en la base (§4.3.2)` : 'EL DADO v2 — draft 1.5° TALLADO (ya no declarado)', '#7ee0a0', 0.52, 0.06),
-        cursoPart(partPlano, 'particion', 'PARTICIÓN plana en la boca — A-061', '#f4d27a', 0.30, 0.04),
-        cursoPart(placaA, 'placa-a-ghost', `placa A ${col3.baseWmm}×${col3.baseLmm}×${col3.plates.A} — el acero COMPRADO que aloja la cavidad`, '#8fa0b8', 0.07, 0.01),
-        cursoPart(placaB, 'placa-b-ghost', `placa B ${col3.baseWmm}×${col3.baseLmm}×${col3.plates.B} — aloja el núcleo`, '#8fa0b8', 0.07, 0.01),
+        pCav, pNuc, pPieza, pPart, pA, pB,
       ]);
-    } catch (e) { console.warn('E3_ERR', e); }
-  }, [oc, ciclo, cursoSet, cursoPart, setDocName, setCollapsed]);
+      marca(3, 'placas', t); marca(3, 'E3 total', T0);
+      setProgreso({ estacion: 3, paso: 'acero listo', i: 5, n: 5, t0: T0 });
+    } catch (e) { console.warn('E3_ERR', e); setProgreso(null); }
+    finally { setCursoBusy(false); }
+  }, [oc, ciclo, moldParts, cursoSet, cursoPart, setDocName, setCollapsed, respira, respiraCuadro, marca]);
   // ── ESTACIÓN 4: LLENADO (cap 5) — ¿por dónde entra y por dónde TERMINA? ──
   // Cero motor nuevo: el cap 5 entero ya corre en el pkg (velocidad con su escalera de
   // convergencia, presiones, gate, alimentación). Aquí se MIDE la longitud de flujo
   // sobre la malla REAL (Dijkstra de surfaceFlowLength) y se pinta la pieza por CUÁNDO
   // le llega el plástico. La última zona en llenarse es el dato que la estación 7
   // (venteo) va a consumir: ahí muere el aire.
-  const cicloEstacion4 = useCallback(() => {
+  const cicloEstacion4 = useCallback(async () => {
     if (!oc || !ciclo?.e2) return;
+    const T4 = performance.now(); setCursoBusy(true);
+    setProgreso({ estacion: 4, paso: 'el llenado (cap 5): por dónde entra y dónde termina el plástico', i: 0, n: 1, t0: T4 });
+    await respira();
     try {
       const pieza = moldParts.find((p) => p.role === 'pieza');
       if (!pieza) return;
@@ -1018,7 +1123,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       setDocName(`${piezaSpec ? piezaSpec.nombre : 'EL DADO'} · estación 4 — LLENADO (cap 5): ¿dónde muere el aire?`);
       setCollapsed((c) => ({ ...c, features: false }));
     } catch (e) { console.warn('E4_ERR', e); }
-  }, [oc, ciclo, moldParts, cursoSet, setDocName, setCollapsed]);
+    finally { marca(4, 'E4 total', T4); setProgreso({ estacion: 4, paso: 'llenado listo', i: 1, n: 1, t0: T4 }); setCursoBusy(false); }
+  }, [oc, ciclo, moldParts, cursoSet, setDocName, setCollapsed, respira, marca]);
   // ── ESTACIÓN 5: ALIMENTACIÓN (cap 6) — que el sprue deje de verse raro ──
   // ian: "se sigue viendo raro el sprue". La conicidad estaba bien; lo que faltaba era el
   // SISTEMA: la colada terminaba en su punto MÁS ANCHO (⌀9.5) justo donde tocaba una
@@ -1027,8 +1133,12 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   // resto de la app ya lo consumía. Esta estación NO escribe una sola fórmula del cap 6:
   // ensambla boquilla → bebedero → runner → pozo de escoria → compuerta → pieza, y MIDE
   // sobre el sólido tesela'do que la sección ESTRECHA de verdad.
-  const cicloEstacion5 = useCallback(() => {
+  const cicloEstacion5 = useCallback(async () => {
     if (!oc || !ciclo?.e2 || !ciclo?.e4) return;
+    const T5 = performance.now(); let t5 = T5; setCursoBusy(true);
+    const N5 = 6;
+    setProgreso({ estacion: 5, paso: 'la colada (§7.2.1): datums del bebedero, runner y compuerta', i: 0, n: N5, t0: T5 });
+    await respira();
     try {
       // SPRINT 1 — E5 POR PIEZA: la huella y la pared vienen de la pieza (el cubo:
       // DADO_PIEZA.local → los mismos tx..tx+40 / ty−40..ty de siempre, bit-igual).
@@ -1055,8 +1165,14 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         plastic: piezaSpec5?.material && FEED_MATERIALS[piezaSpec5.material] ? piezaSpec5.material : 'ABS', partVolCc, wallMm, fillTimeS: 1,
       });
       const e5 = estacion5Dado({ datums: d, partVolCc, wallMm, cavidadMPa });
+      t5 = marca(5, 'datums colada', t5);
+      setProgreso({ estacion: 5, paso: 'el acero de la colada: bebedero cónico + runner + compuerta (kernel)', i: 1, n: N5, t0: T5 });
+      await respira();
       const sol = construirColada(OCC, oc, d);
       const e5v = verificacionColada(OCC, oc, sol, d);
+      t5 = marca(5, 'colada acero (kernel)', t5);
+      setProgreso({ estacion: 5, paso: 'una sola tubería: voxelizando colada ∪ pieza a 1 mm', i: 2, n: N5, t0: T5 });
+      await respira();
       // ── UNA SOLA TUBERÍA (ian: "son 2 tuberías desconectadas en lugar de 1 — está mal
       // todo"). Colada ∪ pieza se voxelizan JUNTAS, sembradas en la BOQUILLA: el frente
       // BAJA por el bebedero, cruza runner y compuerta y entra a la pieza en UN campo,
@@ -1077,11 +1193,24 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         gateMm: { x: d.ejeX, y: d.ejeY, z: d.zCaraClampMm - 1 },   // LA BOQUILLA
         wallMm, meltN: rh5.melt.n,
       });
+      t5 = marca(5, `campo conjunto (${campoJ.nx}×${campoJ.ny}×${campoJ.nz} vóxeles)`, t5);
+      setProgreso({ estacion: 5, paso: 'FAN/Hele-Shaw: el llenado real desde la boquilla (presión, tiempo, short-shot)', i: 3, n: N5, t0: T5 });
+      await respira();
       const cwJ = convergeVelocityCross(rh5.cross, rh5.kappa, rh5.tWall, wallMm / 1000);
       // EL SWAP de la orden llenado-desde-el-operador: el frente deja de ser la
       // heurística de resistencia (llenadoNivel1) y sale del solver FAN/Hele-Shaw —
       // presión real, tiempo real, short-shot real. MISMA ranura `frente`.
-      const fanJ = resolverLlenadoFAN(campoJ, { material: rh5.melt, vMs: cwJ.vMs, wallMm, fillTimeS: 1, pLimitMPa: 140 });
+      // el solver CEDE el hilo cada ~1 s: la barra dice el % de volumen lleno (bit-igual al síncrono).
+      // MEDIDO 2026-09-10 (sonda por estación): cada cesión cuesta un cuadro entero de la escena 3D más el
+      // re-render del estudio (~90 ms); a 120 ms E5 subió de 54.7 a 78 s, a 350 ms el FAN quedó en 63.8 s.
+      // A 1 s: ~60 cesiones. El contador de segundos de la barra (tickMolde) se mueve solo, 4 veces por segundo.
+      const fanJ = await resolverLlenadoFANAsync(campoJ, { material: rh5.melt, vMs: cwJ.vMs, wallMm, fillTimeS: 1, pLimitMPa: 140 }, async (pf) => {
+        setProgreso({ estacion: 5, paso: `FAN/Hele-Shaw: llenado ${(pf.volPct * 100).toFixed(0)} % del volumen · paso ${pf.pasos}`, i: 3, n: N5, t0: T5 });
+        await respira();
+      }, 1000);
+      t5 = marca(5, `FAN llenado (${fanJ.nNodos} nodos, ${fanJ.pasos} pasos)`, t5);
+      setProgreso({ estacion: 5, paso: 'ocupación sub-vóxel (9 muestras por celda)', i: 4, n: N5, t0: T5 });
+      await respira();
       const nCavJ = campoJ.cavity.reduce((a: number, b: number) => a + b, 0);
       const posJ = new Float32Array(nCavJ * 3); const fvJ = new Float32Array(nCavJ);
       const esPieza = new Uint8Array(nCavJ);
@@ -1091,20 +1220,32 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       const ocupacionJ = new Float32Array(campoJ.nx * campoJ.ny * campoJ.nz);
       const q4J = campoJ.cellMm * 0.25;
       let qJ = 0;
-      for (let k2 = 0; k2 < campoJ.nz; k2++) for (let j2 = 0; j2 < campoJ.ny; j2++) for (let i2 = 0; i2 < campoJ.nx; i2++) {
-        const id2 = campoJ.idx(i2, j2, k2);
-        if (!campoJ.cavity[id2]) continue;
-        const X = campoJ.x0 + (i2 + 0.5) * campoJ.cellMm, Y = campoJ.y0 + (j2 + 0.5) * campoJ.cellMm, Z = campoJ.z0 + (k2 + 0.5) * campoJ.cellMm;
-        let hits = dentroTuberia(X, Y, Z) ? 1 : 0;
-        for (let a = -1; a <= 1; a += 2) for (let b = -1; b <= 1; b += 2) for (let d2 = -1; d2 <= 1; d2 += 2) {
-          if (dentroTuberia(X + a * q4J, Y + b * q4J, Z + d2 * q4J)) hits++;
+      // TROCEADO por planos z (EL PASO 6 SE VE TRABAJAR): cada tanda respira un cuadro y la barra
+      // dice el plano; el resultado es bit-igual al bucle de un solo golpe (mismo orden k2→j2→i2).
+      const TANDA_Z = 12; let tTanda = performance.now();
+      for (let k2 = 0; k2 < campoJ.nz; k2++) {
+        for (let j2 = 0; j2 < campoJ.ny; j2++) for (let i2 = 0; i2 < campoJ.nx; i2++) {
+          const id2 = campoJ.idx(i2, j2, k2);
+          if (!campoJ.cavity[id2]) continue;
+          const X = campoJ.x0 + (i2 + 0.5) * campoJ.cellMm, Y = campoJ.y0 + (j2 + 0.5) * campoJ.cellMm, Z = campoJ.z0 + (k2 + 0.5) * campoJ.cellMm;
+          let hits = dentroTuberia(X, Y, Z) ? 1 : 0;
+          for (let a = -1; a <= 1; a += 2) for (let b = -1; b <= 1; b += 2) for (let d2 = -1; d2 <= 1; d2 += 2) {
+            if (dentroTuberia(X + a * q4J, Y + b * q4J, Z + d2 * q4J)) hits++;
+          }
+          ocupacionJ[id2] = hits / 9;
+          posJ[qJ * 3] = X; posJ[qJ * 3 + 1] = Y; posJ[qJ * 3 + 2] = Z;
+          fvJ[qJ] = fanJ.frente[id2];
+          esPieza[qJ] = dentroPiezaBase(X, Y, Z) ? 1 : 0;
+          qJ++;
         }
-        ocupacionJ[id2] = hits / 9;
-        posJ[qJ * 3] = X; posJ[qJ * 3 + 1] = Y; posJ[qJ * 3 + 2] = Z;
-        fvJ[qJ] = fanJ.frente[id2];
-        esPieza[qJ] = dentroPiezaBase(X, Y, Z) ? 1 : 0;
-        qJ++;
+        if ((k2 + 1) % TANDA_Z === 0 && performance.now() - tTanda > 120) {
+          setProgreso({ estacion: 5, paso: `ocupación sub-vóxel · plano z ${k2 + 1}/${campoJ.nz}`, i: 4, n: N5, t0: T5 });
+          await respira(); tTanda = performance.now();
+        }
       }
+      t5 = marca(5, 'ocupación sub-vóxel', t5);
+      setProgreso({ estacion: 5, paso: 'pintando la colada y el frente conjunto', i: 5, n: N5, t0: T5 });
+      await respira();
       const frenteQJ = Float32Array.from([...fvJ].filter((x) => x >= 0)).sort();
       const volColadaVoxCc = ([...esPieza].filter((m, i) => !m && fvJ[i] >= 0).length * campoJ.cellMm ** 3) / 1000;
       // ⚠ LA SEMILLA PUEDE TELEPORTARSE: measureFlowLength ajusta el gate al vóxel de
@@ -1138,7 +1279,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       setDocName(`${piezaSpec5 ? piezaSpec5.nombre : 'EL DADO'} · estación 5 — ALIMENTACIÓN: ${d.modo === 'sprue-directo' ? 'SPRUE DIRECTO a la base (§7.2.1, Fig 7.2)' : 'bebedero → runner → compuerta (cap 6)'}`);
       setCollapsed((c: any) => ({ ...c, features: false }));
     } catch (e) { console.warn('E5_ERR', e); }
-  }, [oc, ciclo, moldParts, cursoPart, cursoSet, setDocName, setCollapsed]);
+    finally { marca(5, 'pintar', t5); marca(5, 'E5 total', T5); setProgreso({ estacion: 5, paso: 'molde armado', i: N5, n: N5, t0: T5 }); setCursoBusy(false); }
+  }, [oc, ciclo, moldParts, cursoPart, cursoSet, setDocName, setCollapsed, respira, marca]);
   // ── ESTACIÓN 6: EMPAQUE (cap 7) — el retorno de la E4 se cierra aquí ──
   // El gate REAL (sprue directo, Fig 7.2) contra el empaque que la pieza necesita,
   // la contracción pvT con su número para la E9, y LA EXAGERACIÓN CON BANDERA que
@@ -1716,5 +1858,5 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   // props de los paneles — con moldParts (Float32Arrays de millones) eso es el
   // main thread muerto. Cazado con Debugger.pause el 2026-07-27.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => ({ moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
+  return useMemo(() => ({ progreso, telemetria: telemetriaRef.current, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [progreso, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
 }

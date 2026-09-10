@@ -1,0 +1,277 @@
+{
+ "orden": "2026-09-09-el-paso-6-se-ve-trabajar",
+ "medido_utc": "2026-09-10 22:03 UTC",
+ "MEDIDO": [
+  "MEDIDO · 6/8 ok · 267 s · servido 6f70032 · iangpu",
+  "MEDIDO · 5/8 ok · 340 s · servido 6f70032 · iangpu"
+ ],
+ "shot_timeouts": [],
+ "glitch": [
+  "GLITCH_FRAMES 0",
+  "GLITCH_RESTANTES 0"
+ ],
+ "paso6_medicion": [
+  {
+   "label": "p6-1",
+   "ok": true,
+   "ms": 414,
+   "detail": ""
+  },
+  {
+   "label": "p6-2",
+   "ok": true,
+   "ms": 1318,
+   "detail": ""
+  },
+  {
+   "label": "p6-3",
+   "ok": true,
+   "ms": 716,
+   "detail": "E4 | pared 2.75 mm | cavidad nucleo pieza particion placa-a-ghost placa-b-ghost | visibles cavidad+nucleo+pieza+particion+placa-a-ghost+placa-b-ghost · encuadra"
+  },
+  {
+   "label": "p6-4",
+   "ok": true,
+   "ms": 3525,
+   "detail": "placas: cavidad + núcleo"
+  },
+  {
+   "label": "p6-5",
+   "ok": true,
+   "ms": 45430,
+   "detail": "colada"
+  },
+  {
+   "label": "p6-6",
+   "ok": false,
+   "ms": 15001,
+   "detail": "no se cumplió en 15000 ms"
+  },
+  {
+   "label": "p6-7",
+   "ok": false,
+   "ms": 17936,
+   "detail": "no se cumplió en 15000 ms"
+  },
+  {
+   "label": "p6-8",
+   "ok": true,
+   "ms": 532,
+   "detail": "encuadre dx -0.012 dy 0.126 fill 0.702 luma 0.258"
+  },
+  {
+   "label": "p6-9",
+   "ok": true,
+   "ms": 2,
+   "detail": "sin ficha de otra lente"
+  },
+  {
+   "label": "p6-10",
+   "ok": true,
+   "ms": 2,
+   "detail": "sin ✗ por ruido (<0.05 mm); ✗ reales: 5"
+  },
+  {
+   "label": "p6-11",
+   "ok": true,
+   "ms": 2,
+   "detail": "telemetría E2 2.5s + E3 16.1s + E4 0.7s + E5 64.3s"
+  }
+ ],
+ "paso6_paseo": [
+  {
+   "label": "p6-1",
+   "ok": true,
+   "ms": 383,
+   "detail": ""
+  },
+  {
+   "label": "p6-2",
+   "ok": true,
+   "ms": 1425,
+   "detail": ""
+  },
+  {
+   "label": "p6-3",
+   "ok": true,
+   "ms": 716,
+   "detail": "E4 | pared 2.75 mm | cavidad nucleo pieza particion placa-a-ghost placa-b-ghost | visibles cavidad+nucleo+pieza+particion+placa-a-ghost+placa-b-ghost · encuadra"
+  },
+  {
+   "label": "p6-4",
+   "ok": true,
+   "ms": 6521,
+   "detail": "placas: cavidad + núcleo"
+  },
+  {
+   "label": "p6-5",
+   "ok": true,
+   "ms": 38460,
+   "detail": "colada"
+  },
+  {
+   "label": "p6-6",
+   "ok": false,
+   "ms": 17940,
+   "detail": "no se cumplió en 15000 ms"
+  },
+  {
+   "label": "p6-7",
+   "ok": false,
+   "ms": 15002,
+   "detail": "no se cumplió en 15000 ms"
+  },
+  {
+   "label": "p6-8",
+   "ok": true,
+   "ms": 548,
+   "detail": "encuadre dx -0.012 dy 0.135 fill 0.623 luma 0.228"
+  },
+  {
+   "label": "p6-9",
+   "ok": true,
+   "ms": 3,
+   "detail": "sin ficha de otra lente"
+  },
+  {
+   "label": "p6-10",
+   "ok": true,
+   "ms": 4,
+   "detail": "sin ✗ por ruido (<0.05 mm); ✗ reales: 5"
+  },
+  {
+   "label": "p6-11",
+   "ok": true,
+   "ms": 2,
+   "detail": "telemetría E2 2.5s + E3 15.3s + E4 0.7s + E5 59.0s"
+  }
+ ],
+ "telemetria_por_estacion_ms": {
+  "E2": [
+   {
+    "paso": "economia (moldMachine)",
+    "ms": 490
+   },
+   {
+    "paso": "tessellate pieza",
+    "ms": 1935
+   },
+   {
+    "paso": "familia (copias en malla)",
+    "ms": 4
+   },
+   {
+    "paso": "E2 total",
+    "ms": 2429
+   }
+  ],
+  "E3": [
+   {
+    "paso": "base y pieza colocada (sin kernel)",
+    "ms": 20
+   },
+   {
+    "paso": "acero",
+    "ms": 5297
+   },
+   {
+    "paso": "tessellate cavidad",
+    "ms": 888
+   },
+   {
+    "paso": "tessellate núcleo",
+    "ms": 1833
+   },
+   {
+    "paso": "verificacion",
+    "ms": 3690
+   },
+   {
+    "paso": "tessellate+rayo",
+    "ms": 1143
+   },
+   {
+    "paso": "interseccion",
+    "ms": 1101
+   },
+   {
+    "paso": "placas",
+    "ms": 596
+   },
+   {
+    "paso": "E3 total",
+    "ms": 14569
+   }
+  ],
+  "E4": [
+   {
+    "paso": "E4 total",
+    "ms": 615
+   }
+  ],
+  "E5": [
+   {
+    "paso": "datums colada",
+    "ms": 474
+   },
+   {
+    "paso": "colada acero (kernel)",
+    "ms": 474
+   },
+   {
+    "paso": "campo conjunto (70×111×141 vóxeles)",
+    "ms": 2830
+   },
+   {
+    "paso": "FAN llenado (20790 nodos, 386 pasos)",
+    "ms": 57250
+   },
+   {
+    "paso": "ocupación sub-vóxel",
+    "ms": 2131
+   },
+   {
+    "paso": "pintar",
+    "ms": 557
+   },
+   {
+    "paso": "E5 total",
+    "ms": 63718
+   }
+  ]
+ },
+ "totales_s": {
+  "E2": 2.4,
+  "E3": 14.6,
+  "E4": 0.6,
+  "E5": 63.7
+ },
+ "MEDIDO_camino": "- runner · 2026-09-10 22:03 UTC · http://localhost:5194/forja-brep.html · servido 6f70032 · iangpu · 6/8 ok · 1:2/2 2:5/5 3:4/6 4:4/4 5:3/3 6:9/11 7:5/5 8:4/4",
+ "nota": "MEDIDO[0] = medición (la de registro); MEDIDO[1] = paseo grabando (p7-4 planos 32.9 s > 30 s: variación bajo screencast). Telemetría por estación de la sonda con el mismo código (solo cambia el rótulo del primer paso de E3). Antes de esta orden: E2 60 s, primera placa 9.5 s (medición) / 15.6 s (paseo), 66 s de viewport quieto en el video 26.",
+ "antes_vs_despues": {
+  "E2_s": [
+   60,
+   2.4
+  ],
+  "primera_placa_medicion_s": [
+   9.45,
+   0.41
+  ],
+  "primera_placa_paseo_s": [
+   15.6,
+   0.38
+  ],
+  "E5_s": [
+   54.7,
+   63.7
+  ],
+  "ciclo_E2_E5_s": [
+   133,
+   81.3
+  ],
+  "hueco_oscuro_antes_del_acero_s": [
+   66,
+   "~3 (dos cuadros a 0.5 fps)"
+  ]
+ }
+}

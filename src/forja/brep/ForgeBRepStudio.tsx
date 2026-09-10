@@ -3762,6 +3762,10 @@ export default function ForgeBRepStudio() {
   const mold = useMoldStudio({ oc, setCollapsed, setDocName, arbol: arbolRef, arbolRev });
   /** LO QUE HAY SE VE: referencias three del visor (las llena EncuadreBridge) para `__forgeBrep.encuadre()` */
   const encuadreRef = useRef<EncuadreSink | null>(null);
+  /** EL PASO 6 SE VE TRABAJAR: el reloj de la leyenda del molde late mientras una estación trabaja (los cuadros
+   *  entre pasos son los que pinta `respira`; dentro de un paso atómico el reloj se queda, y eso también es verdad). */
+  const [tickMolde, setTickMolde] = useState(0);
+  useEffect(() => { if (!mold.progreso || mold.progreso.i >= mold.progreso.n) return; const id = setInterval(() => setTickMolde((v) => v + 1), 250); return () => clearInterval(id); }, [mold.progreso]);
   /** modo TALLER (`?taller=1`): la telemetría del kernel (Euler, △, KB) se enseña; al cliente no. */
   const modoTaller = useMemo(() => typeof location !== 'undefined' && /[?&]taller=1/.test(location.search), []);
   // UNA SOLA VERDAD (2026-09-09): la spec de la pieza se construye UNA vez, del sólido del kernel, con la
@@ -6410,6 +6414,9 @@ export default function ForgeBRepStudio() {
         if (xray !== undefined) setMoldXray(xray);
         return { roles: moldParts.map((pt) => pt.role) };
       },
+      /** EL PASO 6 SE VE TRABAJAR: los ms reales por paso de cada estación (E3 acero/verificación/rayo/intersección/placas, E4, E5). */
+      get telemetria() { return mold.telemetria.slice(); },
+      get progreso() { return mold.progreso; },
       // LO QUE HAY SE VE (2026-09-09): ¿lo que existe está en pantalla, centrado y con luz? Mide la caja
       // de TODO lo visible (mallas con opacidad ≥ 0.2, sin la rejilla) proyectada al viewport: `dx,dy` =
       // desvío del centro (fracción), `fill` = fracción del cuadro que ocupa, `luma` = luminancia media
@@ -7112,6 +7119,8 @@ export default function ForgeBRepStudio() {
                 const tiene = (r: string) => roles.includes(r);
                 const placas = tiene('cavidad') && tiene('nucleo');
                 const est = c?.pieza ? c.estacion : 0;
+                const pg = mold.progreso; void tickMolde;
+                const enCurso = pg && pg.i < pg.n;
                 const txt = !c?.pieza ? (result ? 'esperando el sólido…' : 'necesita el sólido del STEP (un STL no trae)')
                   : mold.intake.wallMm == null ? 'midiendo la pared en el Foco…'
                   : est < 5 ? `E${est}/5 · armando…` : 'E5/5';
@@ -7122,6 +7131,16 @@ export default function ForgeBRepStudio() {
                     <span style={{ width: 16, height: 3, borderRadius: 2, background: '#ffcc33' }} />
                     <b style={{ color: '#ffe08a' }}>molde de la pieza</b>
                     <span style={{ opacity: 0.75 }}>{txt}{mold.intake.wallMm != null ? ` · pared ${mold.intake.wallMm} mm (medida)` : ''}</span>
+                    {pg && (
+                      // LA BARRA: qué está haciendo la máquina AHORA, paso i/n y su reloj (EL PASO 6 SE VE TRABAJAR)
+                      <span data-testid="progreso-molde" data-estacion={pg.estacion} data-i={pg.i} data-n={pg.n} data-en-curso={enCurso ? '1' : '0'}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: enCurso ? '#ffe08a' : '#7ee2a8' }}>
+                        <span style={{ width: 90, height: 5, borderRadius: 3, background: '#1b2330', overflow: 'hidden', display: 'inline-block' }}>
+                          <span style={{ display: 'block', height: '100%', width: `${Math.round(100 * (pg.i + (enCurso ? 0.15 : 0)) / pg.n)}%`, background: enCurso ? '#ffcc33' : '#7ee2a8', transition: 'width .3s' }} />
+                        </span>
+                        <span>E{pg.estacion} · {pg.paso} · {pg.i}/{pg.n}{enCurso ? ` · ${((performance.now() - pg.t0) / 1000).toFixed(0)} s` : ''}</span>
+                      </span>
+                    )}
                     <span style={{ opacity: 0.85 }}>
                       <span style={{ color: placas ? '#7ee2a8' : '#6f8095' }}>{placas ? '✓' : '·'} placas</span>{' '}
                       <span style={{ color: tiene('colada') ? '#7ee2a8' : '#6f8095' }}>{tiene('colada') ? '✓' : '·'} colada</span>{' '}

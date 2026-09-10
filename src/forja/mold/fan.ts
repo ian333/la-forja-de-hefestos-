@@ -194,7 +194,8 @@ export interface LlenadoFAN {
   nota: string;
 }
 
-export function resolverLlenadoFAN(campo: CampoFAN, o: {
+/** las opciones del solver (antes inline en la firma; ahora con nombre para las dos envolturas) */
+export interface OpcionesFAN {
   material: MeltMaterial;
   /** velocidad de diseño del lazo §5.5.1 (calibra η_eff junto con wallMm) */
   vMs: number;
@@ -224,7 +225,12 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
   /** N2 TÉRMICO (opt-in): el estrangulador por cara — piel erf + freno WLF.
    *  Apagado ⇒ el camino isotermo de siempre, bit a bit. */
   termico?: TermicoFAN;
-}): LlenadoFAN {
+}
+/** lo que el solver reporta entre tandas cuando cede el hilo (EL PASO 6 SE VE TRABAJAR) */
+export interface ProgresoFAN { outer: number; pasos: number; volPct: number }
+/** EL SOLVER como generador: `yield` cada 8 vueltas del bucle externo; el cómputo es idéntico
+ *  (misma secuencia de operaciones en punto flotante) se drene de golpe o cediendo el hilo. */
+function* llenadoFANGen(campo: CampoFAN, o: OpcionesFAN): Generator<ProgresoFAN, LlenadoFAN, void> {
   const { nx, ny, nz, cellMm: c, cavity, thicknessMm } = campo;
   const N = nx * ny * nz;
   const eta = etaEfectiva(o.material, o.wallMm, o.vMs);
@@ -387,8 +393,12 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
   const maxOuter = nPasos * 4 + Math.ceil(M / 4) + 60 + (modoSw === 'presion' ? nPasos * 8 : 0);
   const pos = new Int32Array(M);
 
-  for (let outer = 0; outer < maxOuter && volLleno < volTotal - 1e-9; outer++) {
+  // EL PASO 6 SE VE TRABAJAR (medido 2026-09-10): el cuerpo de cada vuelta vive en una función NORMAL —
+  // dentro de la generadora V8 no lo optimizaba (E5 54.7 → 78 s con el MISMO cómputo, a cualquier cadencia
+  // de cesión). La generadora solo itera y cede. Devuelve 0 = sigue · 1 = break · 2 = continue.
+  const vuelta = (): 0 | 1 | 2 => {
     pasos++;
+
     // ── N2: el estrangulador de ESTE instante — edad de cada nodo lleno →
     //   thr ∈ [0,1] por nodo; cara = min de sus dos nodos; congelado (0) = PARED
     //   (kAct=0: la cara no fluye — no es el sumidero p=0 de la frontera).
@@ -434,7 +444,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       const i = act[q];
       for (let e = deg[i]; e < deg[i + 1]; e++) if (!filled[adjN[e]]) { hayFrontera = true; break; }
     }
-    if (!hayFrontera) break;
+    if (!hayFrontera) return 1;
 
     // CG matrix-free: Σ_j k(p_i − p_j) = Q·[i=gate] · p=0 en la frontera (no llenos)
     const x = new Float64Array(A), b2 = new Float64Array(A);
@@ -497,7 +507,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
         qIn += kAct[e] * (pLimit - pj);
       }
       QinAct = qIn;
-      if (QinAct < qMin || tNow >= tMaxS) break;        // el creep ya no aporta / fin de protocolo
+      if (QinAct < qMin || tNow >= tMaxS) return 1;        // el creep ya no aporta / fin de protocolo
     }
     const pInlet = fase === 1 ? x[pos[gNode]] : pLimit;
     if (pInlet > pMax) pMax = pInlet;
@@ -507,9 +517,9 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
         // EL SWITCHOVER: la frontera rota a su variable conjugada. Mismo operador.
         fase = 2; tSwitch = tNow; volSwitch = volLleno;
         pPrev[gNode] = pLimit; pasos--;
-        continue;                                       // re-resolver este paso en fase 2
+        return 2;                                       // re-resolver este paso en fase 2
       }
-      shortShot = true; break;                          // la máquina no da más (modo stop)
+      shortShot = true; return 1;                          // la máquina no da más (modo stop)
     }
 
     // flujos hacia la frontera + AUDITORÍA
@@ -534,11 +544,11 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
         else F[fIdx[j]] += flujo;
       }
     }
-    if (!front.length) break;                           // lo alcanzable ya se llenó
+    if (!front.length) return 1;                           // lo alcanzable ya se llenó
     let sumF = 0;
     for (const fq of F) sumF += fq;
     // N2: el frente existe pero YA NO LE LLEGA flujo — el canal murió congelado.
-    if (th && sumF <= 1e-12) break;
+    if (th && sumF <= 1e-12) return 1;
     // AUDITORÍA: fase 1 contra el Q impuesto; fase 2 contra el Q MEDIDO en la
     // boquilla (ambos calculados del mismo solve: consistencia interna)
     const relErr = Math.abs(sumF - (fase === 1 ? Q : QinAct)) / Math.max(1e-9, fase === 1 ? Q : QinAct);
@@ -586,6 +596,11 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       // (torres). Se corta y se re-resuelve la presión con la frontera fresca.
       if (llenadosSolve >= tope) break;
     }
+    return 0;
+  };
+  for (let outer = 0; outer < maxOuter && volLleno < volTotal - 1e-9; outer++) {
+    if (outer % 8 === 0) yield { outer, pasos, volPct: volLleno / volTotal };
+    if (vuelta() === 1) break;
   }
 
   // ── salida por VÓXEL: la MISMA ranura que llenadoNivel1 ────────────────
@@ -630,4 +645,25 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       (th ? 'N2 TÉRMICO ACTIVO: piel erf (imágenes) × freno WLF por edad de celda — sin convección ni shear heating (sesgo conservador, Kazmer §7.3.4).'
         : 'Sin térmica: la capa congelada es N2.'),
   };
+}
+
+/** El solver de siempre: drena el generador sin ceder el hilo (bit-igual a antes del 2026-09-10). */
+export function resolverLlenadoFAN(campo: CampoFAN, o: OpcionesFAN): LlenadoFAN {
+  const g = llenadoFANGen(campo, o);
+  let r = g.next();
+  while (!r.done) r = g.next();
+  return r.value;
+}
+/** EL PASO 6 SE VE TRABAJAR: el MISMO solver cediendo el hilo cada `cadaMs` (la barra avanza, el
+ *  cliente ve trabajar); `cada` recibe el progreso y puede esperar un cuadro. Resultado bit-igual. */
+export async function resolverLlenadoFANAsync(
+  campo: CampoFAN, o: OpcionesFAN, cada?: (p: ProgresoFAN) => void | Promise<void>, cadaMs = 120,
+): Promise<LlenadoFAN> {
+  const g = llenadoFANGen(campo, o);
+  let r = g.next(); let t = performance.now();
+  while (!r.done) {
+    if (cada && performance.now() - t > cadaMs) { await cada(r.value); t = performance.now(); }
+    r = g.next();
+  }
+  return r.value;
 }

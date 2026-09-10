@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-10 19:19",
+ "generado": "2026-09-10 22:18",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -11,10 +11,10 @@
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 88,
+  "cerrado": 89,
   "probado": 0,
-  "porProbar": 52,
-  "sinDesplegar": 7,
+  "porProbar": 53,
+  "sinDesplegar": 8,
   "despues": 24
  },
  "deploy": {
@@ -24,38 +24,6 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-09-09-el-paso-6-se-ve-trabajar.md",
-    "slug": "2026-09-09-el-paso-6-se-ve-trabajar",
-    "titulo": "EL PASO 6 SE VE TRABAJAR — el molde se va armando, estación por estación, sin congelar la pantalla",
-    "fecha": "2026-09-09",
-    "estado": "proximo",
-    "prioridad": 1,
-    "tipo": "",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "ian (2026-09-09): «sí prefiero que el molde se vaya armando». Medido el 2026-09-08 en iangpu: al tocar MOLDE la pantalla se CONGELA 90 s (E3 talla el acero en el hilo principal: ni el arnés pudo capturar), luego 48 s de viewport casi negro…",
-    "toca": 4,
-    "crea": 2,
-    "evidencia": 6,
-    "evidenciaDeclarada": [
-     "RUNNER paso 6: testid:molde-de-la-pieza@150000<=10000 (primera placa en ≤10 s) en verde; el paso",
-     "Cero SHOT_TIMEOUT_* en meta.json del runner (el arnés pudo capturar cada estación).",
-     "Paseo: en la línea de tiempo (un cuadro cada 8 s) el molde cambia de un cuadro al siguiente durante el",
-     "__forgeBrep.encuadre() verde en cada estación (ley de LO QUE HAY SE VE).",
-     "Agua y expulsores siguen siendo de T6: el paso 6 sigue «a medias» y lo dice; esta orden NO los promete.",
-     "orden-gate VERDE; censo igual (un worker no es Canvas)."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
    {
     "file": "ordenes/2026-09-10-el-enfriamiento-se-ve.md",
     "slug": "2026-09-10-el-enfriamiento-se-ve",
@@ -263,6 +231,84 @@
      "el video se revisa con hoja de contactos ANTES de quedar en el catálogo (0 cuadros encogidos)",
      "la subida NO ocurre sin «autorizado» de ian (control negativo: sin autorización, no sube)",
      "orden-gate VERDE · censo igual"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-10-el-fan-en-su-carril.md",
+    "slug": "2026-09-10-el-fan-en-su-carril",
+    "titulo": "EL FAN EN SU CARRIL — el llenado deja de bloquear el hilo y el molde arma en < 60 s",
+    "fecha": "2026-09-10",
+    "estado": "proximo",
+    "prioridad": 7,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] medir en node el FAN plano vs generador vs `vuelta()` sobre el campo real de la carcasa (guardar el campo en",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] worker: `fan.worker.ts` recibe el campo (transferables) y devuelve `LlenadoFAN` + progreso por mensaje; E5 lo",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] si con worker sigue > 45 s: celda 1.5 mm SOLO en el tramo del bebedero (la pieza sigue a 1 mm) — declarado",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] RUNNER paso 6: `testid:molde-de-la-pieza@150000<=10000` sigue verde; nuevo check «ciclo E2→E5 ≤ 60 s» desde",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 4
+    },
+    "objetivo": "hallazgo de EL PASO 6 SE VE TRABAJAR (2026-09-10, medido con telemetría por paso en iangpu): el solver FAN/Hele-Shaw de la E5 (colada ∪ pieza, 70×111×141 vóxeles a 1 mm, 20 790 nodos, 386 pasos) pesa 57 s de los 64 s de E5 y el ciclo E2→E5…",
+    "toca": 5,
+    "crea": 4,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "telemetría: E5 total y FAN antes/después; ciclo E2→E5 < 60 s en la medición del runner.",
+     "paseo sin SHOT_TIMEOUT, p6-5 (colada) en verde con margen; GLITCH 0.",
+     "bit-igual: ciclo-dado-test 248/248 con el worker y sin él; A/B de checks diff 0."
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1358,6 +1404,42 @@
     "falla": "",
     "commit": "0bd6856",
     "despliegue": "n-a"
+   },
+   {
+    "file": "ordenes/2026-09-09-el-paso-6-se-ve-trabajar.md",
+    "slug": "2026-09-09-el-paso-6-se-ve-trabajar",
+    "titulo": "EL PASO 6 SE VE TRABAJAR — el molde se va armando, estación por estación, sin congelar la pantalla",
+    "fecha": "2026-09-09",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-09): «sí prefiero que el molde se vaya armando». Medido el 2026-09-08 en iangpu: al tocar MOLDE la pantalla se CONGELA 90 s (E3 talla el acero en el hilo principal: ni el arnés pudo capturar), luego 48 s de viewport casi negro…",
+    "toca": 6,
+    "crea": 4,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "RUNNER paso 6: testid:molde-de-la-pieza@150000<=10000 (primera placa en ≤10 s) en verde; el paso",
+     "Cero SHOT_TIMEOUT_* en meta.json del runner (el arnés pudo capturar cada estación).",
+     "Paseo: en la línea de tiempo (un cuadro cada 8 s) el molde cambia de un cuadro al siguiente durante el",
+     "__forgeBrep.encuadre() verde en cada estación (ley de LO QUE HAY SE VE).",
+     "Agua y expulsores siguen siendo de T6: el paso 6 sigue «a medias» y lo dice; esta orden NO los promete.",
+     "orden-gate VERDE; censo igual (un worker no es Canvas)."
+    ],
+    "cierre": "(resultados.json, e3-por-pasos.png, telemetria.png, paseo-contactos.png); BORRA nada. El worker del kernel NO se hizo (sigue diferido): el tallado (5.3 s) y la verificación de 17 cotas (3.7 s) siguen…",
+    "cierreCompleto": "(resultados.json, e3-por-pasos.png, telemetria.png, paseo-contactos.png); BORRA nada. El worker del kernel NO se hizo (sigue diferido): el tallado (5.3 s) y la verificación de 17 cotas (3.7 s) siguen bloqueando el hilo más de 1 s. - lo hecho, golpe por golpe (cada uno medido con el runner en iangpu dev :5194): 1. Telemetría real del ciclo (marca() por paso → __forgeBrep.telemetria, barra progreso-molde con estación · paso · i/n · segundos, tick de 250 ms): la espera de 60 s del molde NO era E3 (18 s) sino E2, que teselaba el sólido real SIETE veces (una por copia de la familia ×1/×2/×4). Una teselación + copias trasladadas en la malla: E2 60 s → 2.4 s. 2. E3 progresivo: la base comprada, la partición y la pieza COLOCADA se pintan ANTES de las booleanas (la pieza es la malla de E2 volteada con la misma volt de construirAceroE3, sin re-teselar); el hilo respira entre el tallado y cada teselado (cavidad → un cuadro → núcleo) y antes del acero espera 350 ms para que el reencuadre de la cámara (timer de 30 ms + dos renders del estudio) PINTE la base antes del bloque. Primera placa: 9.5 s → 0.36 s (medición) y 15.6 s → 0.40 s (paseo, grabando). 3. E5 con sub-pasos y el solver FAN cediendo el hilo: datums · acero de la colada · campo conjunto (70×111×141 vóxeles, 2.8 s) · FAN (20 790 nodos, 386 pasos) · ocupación sub-vóxel troceada por planos z · pintar. El solver es un GENERADOR (llenadoFANGen) con resolverLlenadoFAN síncrono bit-igual (ciclo-dado-test 248/248 con el solver de HEAD y con el nuevo; diff de todas las líneas de checks = 0) y resolverLlenadoFANAsync que cede cada 1 …",
+    "evidenciaSS": [
+     "evidencia/2026-09-09-el-paso-6-se-ve-trabajar/e3-por-pasos.png",
+     "evidencia/2026-09-09-el-paso-6-se-ve-trabajar/paseo-contactos.png",
+     "evidencia/2026-09-09-el-paso-6-se-ve-trabajar/telemetria.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "f1397c0",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-09-08-la-inyectora-del-taller.md",
@@ -6719,7 +6801,7 @@
    "rompeEn": 0,
    "parciales": 2,
    "medido": {
-    "fecha": "2026-09-10 18:45",
+    "fecha": "2026-09-10 22:03",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "iangpu"
