@@ -97,8 +97,8 @@ mide en CADA paso.
 - videos/tutorial-23-alta-de-proveedor.json
 - videos/tutorial-24-buscar-clave-sat.json
 - videos/tutorial-25-reportes-jugosos.json
-- videos/mol-h2o-el-anillo-b.json (otra sesión, 2026-09-10)
-- videos/mol-h2o-el-hexamero-b.json (otra sesión, 2026-09-10)
+- videos/mol-h2o-el-anillo-b.json
+- videos/mol-h2o-el-hexamero-b.json
 
 ## EVIDENCIA (se declara ANTES de trabajar)
 - `window.__forgeBrep.encuadre()` → `{ dx, dy, fill, luma }`: desvío del centro del bbox visible respecto
