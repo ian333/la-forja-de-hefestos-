@@ -77,18 +77,37 @@ def main():
     #   DORADOS (1 mes):  ANILLO exterior r ∈ [0.75, 1.0]·R (uniforme en área, ≈ misma densidad)
     # Un temblor radial chico por mes (±2 % de R, con la η de cada negocio) para que la nube
     # viva mientras corre el reloj; los pares comparten η, así que tiemblan igual.
-    th = rng.random(N) * 2 * np.pi
-    u = rng.random(N)
-    r0 = np.empty(N, dtype=np.float32)
-    r0[:M] = CAJA * np.sqrt(u[:M] * (1.0 - 0.75 ** 2) + 0.75 ** 2)   # anillo de oro, uniforme en área
-    r0[M:] = CAJA * 0.60 * np.sqrt(u[M:])                             # disco azul, uniforme en área
-    zz = rng.normal(0, GROSOR, N)
+    # VERSIÓN 2 — GEMELOS (ian, 2026-09-10, tras ver el video 1: «no se mueve nada… son tantos puntos
+    # que los que se mueren no se notan… no entendí nada»). Anillo-y-disco enseñaba dos GRUPOS; la
+    # historia es una PAREJA con la misma suerte. Cada negocio i es un par pegado: oro (1 mes) y azul
+    # (3 meses) a ±d del centro del par, con la MISMA η → tiemblan idéntico (misma suerte, VISIBLE
+    # en acercamiento) y morir es que uno de los dos desaparezca junto a su gemelo. De lejos el disco
+    # es una mezcla oro+azul que se vuelve azul conforme mueren los dorados.
+    # EL HÉROE: la pareja del guion («estos dos negocios») vive en el CENTRO, en una zona limpia, con
+    # más separación, y se elige la pareja cuyo dorado muere en el mes que la voz dice «el mes malo»
+    # (--hero-mes) y cuyo azul llega vivo a los cinco años. Volver a ella al final = el cierre.
+    HERO_MES = arg('--hero-mes', 51)
+    ZONA = 0.12 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.06 * CAJA
+    u = rng.random(M); th = rng.random(M)
+    rc = CAJA * np.sqrt(u * (1.0 - (ZONA / CAJA) ** 2) + (ZONA / CAJA) ** 2)   # centros de par, uniforme en área, fuera de la zona
+    th = th * 2 * np.pi
+    pcx, pcy = rc * np.cos(th), rc * np.sin(th)
+    phi = rng.random(M) * 2 * np.pi; ux, uy = np.cos(phi), np.sin(phi)         # orientación del par
+    psi = rng.random(M) * 2 * np.pi; sx, sy = np.cos(psi), np.sin(psi)         # dirección del temblor del par
+    zc = rng.normal(0, GROSOR, M)
+    # el héroe: dorado muere en HERO_MES (o el más cercano), azul vivo a los 60 meses
+    mes_muerte_oro = np.where(vivo[MESES, :M], 10 ** 6, np.argmin(vivo[:, :M], axis=0))   # primer cuadro muerto
+    cand = np.where(vivo[MESES, M:])[0]
+    hero = int(cand[np.argmin(np.abs(mes_muerte_oro[cand] - HERO_MES))])
+    print(f'   héroe: par #{hero} · su dorado muere en el mes {int(mes_muerte_oro[hero])} (pedido {HERO_MES}) · su azul vive los 60')
+    pcx[hero] = pcy[hero] = 0.0; zc[hero] = 0.0; ux[hero], uy[hero] = 1.0, 0.0; sx[hero], sy[hero] = 0.0, 1.0
+    dsep = np.full(M, D_PAR, dtype=np.float32); dsep[hero] = D_HERO
     pos = np.zeros((K, N, 3), dtype=np.float32)
     for k in range(K):
-        e = eta[min(k, MESES - 1)]
-        tiembla = 0.02 * CAJA * np.concatenate([e, e])               # la MISMA η para el par (i, M+i)
-        r = r0 + tiembla
-        pos[k, :, 0] = r * np.cos(th); pos[k, :, 1] = r * np.sin(th); pos[k, :, 2] = zz
+        e = eta[min(k, MESES - 1)] * 0.02 * CAJA                             # la MISMA η para el par (i, M+i)
+        tx, ty = e * sx, e * sy
+        pos[k, :M, 0] = pcx - dsep * ux + tx; pos[k, :M, 1] = pcy - dsep * uy + ty; pos[k, :M, 2] = zc      # oro
+        pos[k, M:, 0] = pcx + dsep * ux + tx; pos[k, M:, 1] = pcy + dsep * uy + ty; pos[k, M:, 2] = zc      # azul
     posq = 32767 / (CAJA * 1.25)
     q = np.clip(np.round(pos * posq), -32767, 32767).astype('<i2')
     q[~vivo] = CENTINELA                                        # (K,N) → las 3 coordenadas del muerto
@@ -112,6 +131,7 @@ def main():
                'mueren_dorados': {'ano1': round(mueren(d, 12), 4), 'ano2': round(mueren(d, 24), 4), 'ano5': round(mueren(d, 60), 4)},
                'mueren_azules': {'ano1': round(mueren(a, 12), 4), 'ano2': round(mueren(a, 24), 4), 'ano5': round(mueren(a, 60), 4)},
                'razon_ano5': round(razon5, 3), 'razon_ano1': round(razon1, 2),
+               'heroe': {'par': hero, 'mes_muere_dorado': int(mes_muerte_oro[hero]), 'pedido': HERO_MES, 'posicion': 'origen, zona limpia de radio 0.12·CAJA, separación 0.06·CAJA'},
                'licencia_visual': 'el grupo es el LUGAR y no cambia: azules = disco lleno r<0.60R, dorados = anillo exterior 0.75R-R (misma densidad). Morir = desaparecer ahí (centinela (-32768)³ que el motor descarta). Temblor radial ±2 % de R con la η del mes (los pares comparten η).',
                'cuadro_por_mes': 1, 'K': K}, open(OUT_JSON, 'w'), indent=1, ensure_ascii=False)
     print(f'OK  {ef} (campo vacío) · {OUT_JSON}')

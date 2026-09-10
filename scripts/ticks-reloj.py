@@ -24,6 +24,7 @@ ap.add_argument('--inicio', type=float, required=True); ap.add_argument('--dur',
 ap.add_argument('--unidades', type=int, default=60); ap.add_argument('--por-pulso', type=int, default=12)
 ap.add_argument('--nivel', type=float, default=0.55); ap.add_argument('--pulso', type=float, default=0.7)
 ap.add_argument('--duck', type=float, default=0.45); ap.add_argument('--total', type=float, default=0)
+ap.add_argument('--primer-mes', type=int, default=0, help='mes simulado del primer tic (los pulsos caen en múltiplos de --por-pulso)')
 a = ap.parse_args()
 
 SR = 48000
@@ -63,7 +64,8 @@ for i in range(a.unidades + 1):                       # el tic 0 abre la ventana
     t0 = a.inicio + i * paso; s0 = int(t0 * SR)
     if s0 >= N: break
     g = tic() * a.nivel; e = min(N, s0 + len(g)); out[s0:e] += g[:e - s0, None]
-    if i > 0 and i % a.por_pulso == 0:
+    mes = a.primer_mes + i
+    if mes > 0 and mes % a.por_pulso == 0:
         p = pulso() * a.pulso; e = min(N, s0 + len(p)); out[s0:e] += p[:e - s0, None]
 
 out = np.clip(out, -0.98, 0.98)

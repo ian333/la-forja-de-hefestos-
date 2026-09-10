@@ -100,20 +100,30 @@ const WSILLAB_DURATION = 55;
 // CALIBRADO A segs.json (2026-09-10, voz real 46.1 s + 7.0 s de pausa declarada tras «Mira.»):
 //   l01 0.40 · l02 6.13 · l03 9.40 · l04 11.94 · l05 18.32 · «Mira.» 22.80-23.95 · [reloj 24.0→31.0]
 //   l07 «casi al triple» 31.35 · l08 34.81 · l09 39.48 · l10 45.03 · l11 «GAIA Prime» 49.33-52.71
-const ECOLCHON_DURATION = 55;
+// VERSIÓN 2 — GEMELOS (2026-09-10). El reloj vive 40 s, no 7: meses 0→2 lentos mientras se presenta
+// a la pareja (t 0→14), y 2→60 desde «cada tic es un mes» (t≈14) hasta «casi al triple» (t≈32),
+// en 29 escalones encadenados de 0.6 s (2 meses cada uno). Tiempos PROVISIONALES: se calibran a segs.json.
+// CALIBRADO A segs.json v2 (voz 53.6 s, VEL 1.10): l01 0.40 · l02 6.83 · l03 13.06 («va a correr el
+// tiempo» ≈15.6) · l04 18.93 · l05 24.85 («el mes malo» ≈26.5: el héroe muere en el mes 50 = 26.7 s)
+// · l06 29.05 · l07 33.62 · l08 41.26 · l09 46.11 · l10 50.22-53.23. Reloj: meses 2→60 de 15.6 a 29.0.
+const ECOLCHON_DURATION = 57;
+const ECOLCHON_PASOS: [number, number][] = [
+  [4.5, -1 / 60], [9.5, -1 / 60],
+  ...Array.from({ length: 29 }, (_, i) => [15.6 + (13.4 / 29) * i, -2 / 60] as [number, number]),
+];
 const ECOLCHON_CAPAS: CapasSpec = {
   campo:    { base: 0, mods: [] },
   respiro:  { base: 0, mods: [] },
-  nubes:    { base: 1, mods: Array.from({ length: 15 }, (_, i) => (
-    { wins: [[24.0 + (7.0 / 15) * i, 55]] as [number, number][], a: 0.144, label: `compensa el brillo que se lleva la apertura (${i + 1}/15)` })) },
+  nubes:    { base: 1, mods: ECOLCHON_PASOS.map(([t, a], i) => (
+    { wins: [[t, ECOLCHON_DURATION]] as [number, number][], a: -a * 2.17, label: `compensa el brillo que se lleva la apertura (${i + 1}/${ECOLCHON_PASOS.length})` })) },
   parpadeo: { base: 0.18, mods: [] },
   spin:     { base: 1, mods: [] },
   acc:      { base: 1.5, mods: [] },
   enlaces:  { base: 0, mods: [] },
   dipolo:   { base: 0, mods: [] },
   ceros:    { base: 0, mods: [] },
-  apertura: { base: 1, mods: Array.from({ length: 15 }, (_, i) => (
-    { wins: [[24.0 + (7.0 / 15) * i, 55]] as [number, number][], a: -1 / 15, label: `mes ${4 * (i + 1)} de 60` })) },
+  apertura: { base: 1, mods: ECOLCHON_PASOS.map(([t, a], i) => (
+    { wins: [[t, ECOLCHON_DURATION]] as [number, number][], a, label: `paso ${i + 1}: mes ${i < 2 ? i + 1 : 2 + 2 * (i - 1)} de 60` })) },
 };
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
@@ -1102,12 +1112,17 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // metía la cámara DENTRO del disco: en el momento clave no se veía la orilla apagarse, sólo
     // puntos por todos lados. El disco entero tiene que caber en el ANCHO del 9:16 (rMul ≥ 1.5)
     // y «Mira» es una TOMA FIJA: nueve segundos sin corte viendo morir la orilla.
-    // Cortes en el ARRANQUE de su línea (segs.json): 9.4 (l03) · 22.5 (Mira) · 31.2 (l07) · 39.4 (l09).
-    { shot: eyeLevelLock({ rMul: 1.55, azim: 0.9 }), dur: 9.4, label: 'los cuarenta mil, de frente, el disco entero' },
-    { shot: loomPush({ rFrom: 1.7, rTo: 1.45, elev: 0.30, azim: 1.2, fov: 34 }), dur: 13.1, label: 'sube apenas y revela: oro afuera, azul adentro' },
-    { shot: eyeLevelLock({ rMul: 1.45, azim: 1.1 }), dur: 8.7, label: 'MIRA: toma fija, 7 s de reloj, la orilla se apaga' },
-    { shot: pullOut({ azim0: 1.0, span: 0.8, rFromMul: 1.25, rTdMul: 1.75 }), dur: 8.2, label: 'lo que quedó' },
-    { shot: eyeLevelLock({ rMul: 1.5, azim: 0.6 }), dur: 15.6, label: 'y tú' },
+    // VERSIÓN 2 — GEMELOS. Cada línea con su evento; la pareja héroe vive en el ORIGEN (zona limpia),
+    // así que el acercamiento a ella es twoShot con rMul chico (ex=11 → rMul 0.13 ≈ 1.4 unidades; la
+    // pareja mide 0.6). Cortes en el ARRANQUE de su línea; tiempos PROVISIONALES hasta segs.json.
+    { shot: twoShot({ rMul: 0.13, elev: 0.14, azim0: 0.6, span: 0.5, fov: 40 }), dur: 13.06, label: 'estos dos negocios: la pareja, temblando idéntico; el dorado y el azul' },
+    { shot: pullOut({ azim0: 0.6, span: 0.4, rFromMul: 0.13, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 5.87, label: 'cuarenta mil parejas: se abre al disco; arranca el reloj' },
+    { shot: crashIn({ rMul: 0.45, elev: 0.25, azim0: 1.3, span: 0.9, fov: 36 }), dur: 5.92, label: 'MIRA: la orilla de cerca, los dorados se apagan junto a su azul' },
+    { shot: twoShot({ rMul: 0.13, elev: 0.14, azim0: 1.1, span: 0.3, fov: 40 }), dur: 4.20, label: 'no vendió menos: la pareja héroe, su dorado se apaga en «el mes malo»' },
+    { shot: pullOut({ azim0: 1.4, span: 0.4, rFromMul: 0.13, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 4.57, label: 'casi al triple: el disco que era mitad y mitad ya es azul' },
+    { shot: heroOrbit({ rMul: 1.5, elev: 0.2, azim0: 1.8, span: 0.6, fov: 33 }), dur: 7.64, label: 'por eso en México: el disco, orbitando lento' },
+    { shot: diveToNucleus({ rFromMul: 1.5, rTo: 1.4, fovFrom: 33, fovTo: 40, spin: 0.6 }), dur: 4.85, label: 'muere el día que no sabe: regreso a la pareja del inicio' },
+    { shot: twoShot({ rMul: 0.13, elev: 0.14, azim0: 2.4, span: 0.4, fov: 40 }), dur: 10.89, label: 'si tienes uno: el azul sigue, el dorado ya no está' },
   ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
