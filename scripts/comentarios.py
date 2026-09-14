@@ -17,6 +17,7 @@ Une cada medio con su manifiesto (`publicar.subidas.ig.id` / `.yt.id`) cuando ex
   /home/ian/pub-venv/bin/python scripts/comentarios.py            # todo
   /home/ian/pub-venv/bin/python scripts/comentarios.py ig|yt      # una plataforma
   /home/ian/pub-venv/bin/python scripts/comentarios.py diagnostico  # ¿por qué vienen vacíos?
+  python3 scripts/comentarios.py fb <archivo-token>                  # IG por la página de Facebook (sin papeleo)
 """
 import os, sys, json, glob, time, datetime as dt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -215,12 +216,93 @@ def diagnostico():
 
 
 
+# ── INSTAGRAM POR LA PÁGINA DE FACEBOOK (Facebook Login) ─────────────────────
+# LA PUERTA SIN PAPELEO (2026-09-14). La API con Instagram Login devuelve cursores y cero filas porque
+# la app de Meta está en modo Desarrollo, y publicarla pide verificación del negocio (documentos).
+# La otra puerta, documentada por Meta para leer comentarios de TU cuenta: Facebook Login con la cuenta
+# de Instagram VINCULADA a una página de Facebook. Permisos: instagram_basic, instagram_manage_comments,
+# pages_read_engagement (+ ads_read si el rol sobre la página viene de un portafolio de negocio),
+# pages_show_list para encontrar la página. Token de usuario del Explorador de la Graph API.
+# Solo usa la biblioteca estándar: corre desde la laptop sin venv. El token NUNCA se imprime.
+#   python3 scripts/comentarios.py fb <archivo-con-el-token>
+FB_V = 'v23.0'
+FB_PERMISOS = ('instagram_basic', 'instagram_manage_comments', 'pages_show_list', 'pages_read_engagement')
+
+
+def fb_get(ruta, params=None, tk=None):
+    import urllib.request, urllib.parse, urllib.error
+    url = ruta if ruta.startswith('http') else f'https://graph.facebook.com/{FB_V}/{ruta}'
+    if params is not None:
+        url += ('&' if '?' in url else '?') + urllib.parse.urlencode({**params, 'access_token': tk})
+    for intento in range(4):
+        try:
+            return json.load(urllib.request.urlopen(url, timeout=60))
+        except urllib.error.HTTPError as e:
+            try: j = json.loads(e.read())
+            except Exception: j = {'error': {'message': str(e)}}
+            if (j.get('error') or {}).get('code') in (4, 17, 32, 613):
+                print('   … límite de la API, espero 60 s'); time.sleep(60); continue
+            return j
+        except Exception as e:
+            if intento == 3: return {'error': {'message': str(e)}}
+            time.sleep(5)
+
+
+def fb_pagina(ruta, params, tk):
+    out = []; j = fb_get(ruta, params, tk)
+    while True:
+        if 'error' in j: print(f'   ✗ {ruta.split("?")[0]}: {str(j["error"].get("message"))[:120]}'); break
+        out += j.get('data', [])
+        nxt = (j.get('paging') or {}).get('next')
+        if not nxt: break
+        j = fb_get(nxt)
+    return out
+
+
+def instagram_fb(mapa_ig, tk):
+    yo = fb_get('me', {'fields': 'id,name'}, tk)
+    if 'error' in yo: sys.exit(f'✗ el token no sirve: {yo["error"].get("message")}')
+    otorgados = {p['permission'] for p in fb_pagina('me/permissions', {}, tk) if p.get('status') == 'granted'}
+    faltan = [p for p in FB_PERMISOS if p not in otorgados]
+    print(f'FB {yo.get("name")} · permisos otorgados: {", ".join(sorted(otorgados))}')
+    if faltan: print(f'   ⚠ faltan: {", ".join(faltan)} — genera otro token con esos permisos')
+    paginas = fb_pagina('me/accounts', {'fields': 'id,name,instagram_business_account{id,username,followers_count,media_count}', 'limit': 100}, tk)
+    con_ig = [p for p in paginas if p.get('instagram_business_account')]
+    print(f'   páginas: {", ".join(p["name"] for p in paginas) or "(ninguna)"} · con Instagram vinculado: {len(con_ig)}')
+    if not con_ig:
+        sys.exit('✗ ninguna página tiene la cuenta de Instagram vinculada: en la app de Instagram → Editar perfil → Página')
+    ig = con_ig[0]['instagram_business_account']
+    print(f'IG @{ig.get("username")} (por la página «{con_ig[0]["name"]}»): {ig.get("followers_count")} seguidores · {ig.get("media_count")} medios')
+    medios = fb_pagina(f'{ig["id"]}/media', {'fields': 'id,caption,media_type,media_product_type,permalink,timestamp,comments_count,like_count', 'limit': 100}, tk)
+    out = []; total = 0; anunciados = 0
+    for m in medios:
+        n = m.get('comments_count') or 0; anunciados += n; coms = []
+        if n:
+            coms = fb_pagina(f'{m["id"]}/comments', {'fields': CAMPOS_COM, 'limit': 50}, tk)
+        lista = [{'id': c.get('id'), 'autor': c.get('username'), 'texto': c.get('text') or '', 'likes': c.get('like_count') or 0, 'fecha': c.get('timestamp'),
+                  'respuestas': [{'id': r.get('id'), 'autor': r.get('username'), 'texto': r.get('text') or '', 'likes': r.get('like_count') or 0,
+                                  'fecha': r.get('timestamp')} for r in ((c.get('replies') or {}).get('data') or [])]} for c in coms]
+        n_tot = len(lista) + sum(len(c['respuestas']) for c in lista); total += n_tot
+        out.append({'id': m['id'], 'manifiesto': mapa_ig.get(str(m['id'])), 'tipo': m.get('media_product_type') or m.get('media_type'), 'permalink': m.get('permalink'),
+                    'fecha': m.get('timestamp'), 'caption': (m.get('caption') or '')[:300], 'likes': m.get('like_count'), 'comments_count': n,
+                    'n_comentarios': n_tot, 'comentarios': lista})
+        if n: print(f'   {(m.get("caption") or m["id"])[:48]!r:52} · {n_tot} comentarios (Meta dice {n})')
+    print(f'   IG total: {total} comentarios+respuestas bajados · Meta anuncia {anunciados}')
+    if anunciados and not total:
+        print('   ✗ Meta sigue filtrando las filas también por esta puerta: el único camino por API es publicar la app')
+    return {'cuenta': {'username': ig.get('username'), 'followers_count': ig.get('followers_count'), 'media_count': ig.get('media_count')},
+            'via': 'facebook-login (página vinculada)', 'medios': out, 'total': total}
+
+
 def main(args):
     cual = args[0] if args else 'todo'
     if cual in ('diagnostico', 'diag'): return diagnostico()
     mapa_ig, mapa_yt = manifiestos()
     prev = json.load(open(OUT, encoding='utf-8')) if os.path.exists(OUT) else {}
     out = {'generado': dt.datetime.now().isoformat(timespec='minutes'), 'ig': prev.get('ig'), 'yt': prev.get('yt')}
+    if cual == 'fb':
+        if len(args) < 2: sys.exit('uso: comentarios.py fb <archivo-con-el-token>')
+        out['ig'] = instagram_fb(mapa_ig, open(os.path.expanduser(args[1]), encoding='utf-8').read().strip())
     if cual in ('todo', 'ig'):
         try: out['ig'] = instagram(mapa_ig)
         except Exception as e: print(f'✗ instagram: {e}')
