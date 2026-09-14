@@ -1,0 +1,1189 @@
+{
+ "nota": "ETIQUETAS A MANO (2026-09-14): cada comentario leído completo y clasificado. Es el set de entrenamiento de scripts/comentarios-ml.py. Coincide por autor + inicio del texto; lo no listado lo clasifican reglas simples (solo emojis → asombro, solo @menciones → etiqueta, gaiaprime_mx → gaia).",
+ "categorias": {
+  "asombro": "le gustó: admiración, emoción, gracias",
+  "pregunta": "pregunta de contenido, pide explicación o un video",
+  "explica": "aporta: explica a otros, añade un dato, observa algo del video",
+  "corrige": "corrige al video o a otro usuario (con razón o sin ella)",
+  "duda_real": "¿es real, es IA, cuál es la fuente? — duda de confianza, sin hostilidad",
+  "esceptico": "rechazo hostil: falso, mentira, ilusión, IA",
+  "espiritual": "lo lee como Dios, energía, toroide cósmico, dimensiones, el universo es un átomo",
+  "confusion": "no entendió",
+  "etiqueta": "solo arroba a otra persona (comparte)",
+  "reto": "contesta el reto que pone el video (contar líneas)",
+  "otro": "chiste, saludo, ruido",
+  "gaia": "respuesta de la cuenta"
+ },
+ "etiquetas": [
+  [
+   "jesuseslaunicaverdad",
+   "TODO ES MUCHO",
+   "espiritual"
+  ],
+  [
+   "arturo_al18",
+   "Que romántico",
+   "asombro"
+  ],
+  [
+   "samusmssk8",
+   "Gracias reina",
+   "asombro"
+  ],
+  [
+   "armandolf.ce",
+   "Por qué hay 1 línea",
+   "pregunta"
+  ],
+  [
+   "platina2112",
+   "",
+   "espiritual"
+  ],
+  [
+   "aceves.carlosalberto",
+   "Todo se repite",
+   "espiritual"
+  ],
+  [
+   "gus.dan77",
+   "No vimos",
+   "esceptico"
+  ],
+  [
+   "dolce_pasteldepino",
+   "Así mismo",
+   "espiritual"
+  ],
+  [
+   "peiro_miguel",
+   "Pueden, por favor",
+   "duda_real"
+  ],
+  [
+   "jarperer",
+   "Locura",
+   "asombro"
+  ],
+  [
+   "imjuanignacio",
+   "Es precioso",
+   "asombro"
+  ],
+  [
+   "dercess",
+   "En el puente",
+   "explica"
+  ],
+  [
+   "dercess",
+   "Se llama enlace",
+   "explica"
+  ],
+  [
+   "wesde35",
+   "Son dos moléculas",
+   "explica"
+  ],
+  [
+   "criissmcanteros",
+   "De hecho",
+   "explica"
+  ],
+  [
+   "yaninaagabrielaa",
+   "Tremenda",
+   "asombro"
+  ],
+  [
+   "zendawork2025",
+   "Parece un universo",
+   "asombro"
+  ],
+  [
+   "liliana.s.perez.9",
+   "Es fascinante",
+   "asombro"
+  ],
+  [
+   "liliana.s.perez.9",
+   "H2O",
+   "explica"
+  ],
+  [
+   "jtan_95",
+   "Un modelamiento",
+   "explica"
+  ],
+  [
+   "simone.mello.silva",
+   "Ele é",
+   "explica"
+  ],
+  [
+   "black_rick_666",
+   "Es como 2 galaxias",
+   "asombro"
+  ],
+  [
+   "fuentedesol",
+   "Lamentable",
+   "esceptico"
+  ],
+  [
+   "fuentedesol",
+   "@fuentedesol",
+   "otro"
+  ],
+  [
+   "hiram0o",
+   "Y que son",
+   "pregunta"
+  ],
+  [
+   "lepkodsl",
+   "Hermoso para dormir",
+   "asombro"
+  ],
+  [
+   "hectormolina521",
+   "Puentes",
+   "explica"
+  ],
+  [
+   "alejandrazema",
+   "Es una simulación",
+   "corrige"
+  ],
+  [
+   "huguitopincha23",
+   "La química",
+   "explica"
+  ],
+  [
+   "kmilo_duke087",
+   "ESPECTACULAR",
+   "asombro"
+  ],
+  [
+   "juandomingocastillo5",
+   "Yo soy",
+   "espiritual"
+  ],
+  [
+   "kansportv",
+   "Esas dos",
+   "pregunta"
+  ],
+  [
+   "amarunewen",
+   "El ozono",
+   "pregunta"
+  ],
+  [
+   "arrua.gaston",
+   "Ahí está la fiaca",
+   "otro"
+  ],
+  [
+   "noname2025apl",
+   "La creación",
+   "espiritual"
+  ],
+  [
+   "1guidoignacio",
+   "Ya me dio sed",
+   "asombro"
+  ],
+  [
+   "capy1960",
+   "Gracias",
+   "asombro"
+  ],
+  [
+   "leylacon_alas",
+   "ALUCINANTE",
+   "espiritual"
+  ],
+  [
+   "m.a.ss.pr",
+   "@av2q",
+   "explica"
+  ],
+  [
+   "mariacristinagomezmejia",
+   "Hermoso",
+   "asombro"
+  ],
+  [
+   "ekireptico",
+   "Parece laniaquea",
+   "espiritual"
+  ],
+  [
+   "nairbarasec",
+   "Prácticamente",
+   "asombro"
+  ],
+  [
+   "jordi_selva_",
+   "Que mensaje",
+   "asombro"
+  ],
+  [
+   "jordi_selva_",
+   "Impresionante",
+   "asombro"
+  ],
+  [
+   "baptiste0620",
+   "ES UNA MOLÉCULA",
+   "explica"
+  ],
+  [
+   "coeducacion_prv",
+   "P",
+   "otro"
+  ],
+  [
+   "josed_narvaez",
+   "Ooooo",
+   "explica"
+  ],
+  [
+   "malbzamora",
+   "Que magnífica",
+   "asombro"
+  ],
+  [
+   "migue_acvdo_",
+   "Así es para el agua",
+   "asombro"
+  ],
+  [
+   "migue_acvdo_",
+   "@gaiaprime_mx excelente",
+   "asombro"
+  ],
+  [
+   "naxoprz",
+   "Ese puente",
+   "pregunta"
+  ],
+  [
+   "santiagoantonio85",
+   "Cual es la conexión",
+   "pregunta"
+  ],
+  [
+   "diegomarino359",
+   "Hermoso",
+   "asombro"
+  ],
+  [
+   "casibobo",
+   "Es falso",
+   "esceptico"
+  ],
+  [
+   "federicofigueroafede",
+   "H20",
+   "otro"
+  ],
+  [
+   "jafetmazo",
+   "Es hermosa la ilustración",
+   "corrige"
+  ],
+  [
+   "franciaaponte17",
+   "Estupendo",
+   "asombro"
+  ],
+  [
+   "migue.972",
+   "Yo ingiero",
+   "asombro"
+  ],
+  [
+   "l4utr0n",
+   "@migue.972",
+   "explica"
+  ],
+  [
+   "victorgustavonavarro",
+   "Sorprendente",
+   "asombro"
+  ],
+  [
+   "jorge_the_yorsho",
+   "Hermoso",
+   "asombro"
+  ],
+  [
+   "alfredoleonporras",
+   "Increíble",
+   "asombro"
+  ],
+  [
+   "tereblaka",
+   "Son 2 moleculas",
+   "explica"
+  ],
+  [
+   "lulenecolmenarez",
+   "Fascinante",
+   "asombro"
+  ],
+  [
+   "valencia.0120",
+   "Hermoso",
+   "asombro"
+  ],
+  [
+   "amantecarrillo",
+   "Miralos",
+   "otro"
+  ],
+  [
+   "robinzonc.quispe",
+   "",
+   "esceptico"
+  ],
+  [
+   "richardgarcia481",
+   "Eato es",
+   "esceptico"
+  ],
+  [
+   "iriannedacrux",
+   "Todo bien menos",
+   "corrige"
+  ],
+  [
+   "chalaprado",
+   "@iriannedacrux",
+   "explica"
+  ],
+  [
+   "av2q",
+   "A ver, no dos",
+   "corrige"
+  ],
+  [
+   "drcantarero",
+   "@av2q",
+   "corrige"
+  ],
+  [
+   "zikcosiao",
+   "@av2q",
+   "otro"
+  ],
+  [
+   "arnoldojoseguerrero",
+   "Impactante y Soberbio",
+   "asombro"
+  ],
+  [
+   "frans_gielen",
+   "@arnoldojoseguerrero",
+   "asombro"
+  ],
+  [
+   "edgar_cappone",
+   "@arnoldojoseguerrero",
+   "explica"
+  ],
+  [
+   "arnoldojoseguerrero",
+   "@edgar_cappone",
+   "otro"
+  ],
+  [
+   "elfriede_fett_interiordesign",
+   "",
+   "asombro"
+  ],
+  [
+   "allfrith.perez",
+   "Y si solo somos",
+   "espiritual"
+  ],
+  [
+   "l4utr0n",
+   "@allfrith.perez no",
+   "explica"
+  ],
+  [
+   "allfrith.perez",
+   "@l4utr0n",
+   "asombro"
+  ],
+  [
+   "l4utr0n",
+   "@allfrith.perez de nada",
+   "otro"
+  ],
+  [
+   "milhuevonadas",
+   "@allfrith.perez",
+   "otro"
+  ],
+  [
+   "adriandmil",
+   "@allfrith.perez",
+   "espiritual"
+  ],
+  [
+   "zikcosiao",
+   "@l4utr0n",
+   "espiritual"
+  ],
+  [
+   "cortes.e.raul",
+   "",
+   "asombro"
+  ],
+  [
+   "el_dogtor.517373",
+   "Porque el agua suena",
+   "pregunta"
+  ],
+  [
+   "juanrobertrivasromani",
+   "una idea",
+   "duda_real"
+  ],
+  [
+   "ruizvial",
+   "Hay tantas",
+   "esceptico"
+  ],
+  [
+   "horacioarrieta2",
+   "Para quien sabe",
+   "asombro"
+  ],
+  [
+   "horacioarrieta2",
+   "Fantástico",
+   "asombro"
+  ],
+  [
+   "_.titvs._",
+   "A nuvem",
+   "corrige"
+  ],
+  [
+   "antonioteixeira3394",
+   "@_.titvs._",
+   "explica"
+  ],
+  [
+   "andherzog",
+   "Incrível",
+   "espiritual"
+  ],
+  [
+   "canomanueljuan",
+   "Es un nube",
+   "explica"
+  ],
+  [
+   "skalim_darkstar",
+   "dos átomos",
+   "corrige"
+  ],
+  [
+   "kilmar_site",
+   "@skalim_darkstar",
+   "explica"
+  ],
+  [
+   "skalim_darkstar",
+   "@kilmar_site",
+   "otro"
+  ],
+  [
+   "arnoldojoseguerrero",
+   "@skalim_darkstar",
+   "otro"
+  ],
+  [
+   "arnoldojoseguerrero",
+   "@kilmar_site",
+   "otro"
+  ],
+  [
+   "fbeldom",
+   "Un toroide",
+   "explica"
+  ],
+  [
+   "omarmr1017",
+   "No, es parte",
+   "corrige"
+  ],
+  [
+   "leonardojestefan",
+   "Excelente gráfico",
+   "asombro"
+  ],
+  [
+   "friesluisalberto",
+   "El diseño",
+   "espiritual"
+  ],
+  [
+   "mauroblesg",
+   "El 78%",
+   "explica"
+  ],
+  [
+   "mc._arthurjaguar",
+   "Poético",
+   "asombro"
+  ],
+  [
+   "larrylicius",
+   "Y entonces",
+   "pregunta"
+  ],
+  [
+   "michel_1634",
+   "Qué miedo",
+   "asombro"
+  ],
+  [
+   "rafaelgonzales948",
+   "Esa es la imagen",
+   "asombro"
+  ],
+  [
+   "lastenia_garcia777",
+   "Cuántica",
+   "otro"
+  ],
+  [
+   "lastenia_garcia777",
+   "Se alimenta",
+   "explica"
+  ],
+  [
+   "_p.o.p.e.s",
+   "El Big Bang",
+   "espiritual"
+  ],
+  [
+   "dinarte.7",
+   "",
+   "espiritual"
+  ],
+  [
+   "pandul.ricottilli",
+   "No lo vimos",
+   "esceptico"
+  ],
+  [
+   "chalo_esc",
+   "El ático",
+   "otro"
+  ],
+  [
+   "javzz31",
+   "Está animación",
+   "asombro"
+  ],
+  [
+   "javzz31",
+   "@gaiaprime_mx Homero",
+   "otro"
+  ],
+  [
+   "javzz31",
+   "Super interesante",
+   "asombro"
+  ],
+  [
+   "dianadi4ever",
+   "Wow",
+   "asombro"
+  ],
+  [
+   "latransformada_de_amador",
+   "Saludos",
+   "otro"
+  ],
+  [
+   "claukoze",
+   "Amo la naturaleza",
+   "asombro"
+  ],
+  [
+   "julio___torres",
+   "Bellísimo",
+   "asombro"
+  ],
+  [
+   "rositadda",
+   "Se entiende",
+   "asombro"
+  ],
+  [
+   "rositadda",
+   "@zara.catalinarte",
+   "asombro"
+  ],
+  [
+   "tomasdorestebu",
+   "No entiendo esa",
+   "pregunta"
+  ],
+  [
+   "alefs00",
+   "Asi es el amor",
+   "asombro"
+  ],
+  [
+   "upeguirodrigoalbertosuaza",
+   "Maravilloso",
+   "asombro"
+  ],
+  [
+   "moraluishumbertopavez",
+   "Creo que hoy",
+   "espiritual"
+  ],
+  [
+   "inesgracielacabrera",
+   "Increíble",
+   "asombro"
+  ],
+  [
+   "munozfigueroajesus",
+   "Luego el pegamento",
+   "explica"
+  ],
+  [
+   "marjoriegarcia1971",
+   "Si cierto",
+   "espiritual"
+  ],
+  [
+   "nipiu.nipiu",
+   "Si no lo aprecio",
+   "pregunta"
+  ],
+  [
+   "jhonyroche56",
+   "@nipiu.nipiu",
+   "espiritual"
+  ],
+  [
+   "lapas.666",
+   "Gracias",
+   "asombro"
+  ],
+  [
+   "illiaraymuz",
+   "Bonito video",
+   "corrige"
+  ],
+  [
+   "enric_98_",
+   "Me gusta",
+   "asombro"
+  ],
+  [
+   "gilda.aviles.5",
+   "Increible",
+   "asombro"
+  ],
+  [
+   "robertoyustedelgado",
+   "Yüú",
+   "asombro"
+  ],
+  [
+   "robertoyustedelgado",
+   "@gaiaprime_mx siiii",
+   "asombro"
+  ],
+  [
+   "arroyojavierjauregui",
+   "Tremenda",
+   "asombro"
+  ],
+  [
+   "canalesdelcampocuantico",
+   "Doble toroide",
+   "espiritual"
+  ],
+  [
+   "vidagracias4",
+   "@canalesdelcampocuantico",
+   "espiritual"
+  ],
+  [
+   "carlos_guarnizo_olivera",
+   "Es un toroide",
+   "explica"
+  ],
+  [
+   "zara.catalinarte",
+   "La química hubiese",
+   "asombro"
+  ],
+  [
+   "zara.catalinarte",
+   "@__rbazan__",
+   "otro"
+  ],
+  [
+   "josejimenezpriv",
+   "@zara.catalinarte",
+   "asombro"
+  ],
+  [
+   "__rbazan__",
+   "@zara.catalinarte",
+   "corrige"
+  ],
+  [
+   "jufu_sat",
+   "Genial",
+   "asombro"
+  ],
+  [
+   "edgarenriquezfeleg",
+   "La teiria",
+   "espiritual"
+  ],
+  [
+   "____josemanuelsanz",
+   "La 5ta",
+   "espiritual"
+  ],
+  [
+   "pcontrerasok",
+   "Q explicación",
+   "asombro"
+  ],
+  [
+   "jonathan_aguilar44",
+   "Grande Dios",
+   "espiritual"
+  ],
+  [
+   "arodrigo49",
+   "Cuál es la fuente",
+   "duda_real"
+  ],
+  [
+   "camilofebres",
+   "@gaiaprime_mx ¡magnífico!",
+   "corrige"
+  ],
+  [
+   "arodrigo49",
+   "Perfecto gracias",
+   "duda_real"
+  ],
+  [
+   "arodrigo49",
+   "@gaiaprime_mx excelente",
+   "asombro"
+  ],
+  [
+   "erokoverflow",
+   "@arodrigo49",
+   "otro"
+  ],
+  [
+   "arodrigo49",
+   "Eroko",
+   "explica"
+  ],
+  [
+   "8bitsbgm_",
+   "@gaiaprime_mx sería",
+   "pregunta"
+  ],
+  [
+   "latino_americano_2001",
+   "Pensé que",
+   "asombro"
+  ],
+  [
+   "arquimedesboadadiaz",
+   "¡Qué belleza",
+   "asombro"
+  ],
+  [
+   "marymargalvez",
+   "El agua se sigue",
+   "pregunta"
+  ],
+  [
+   "correaquimica",
+   "Muy bueno",
+   "corrige"
+  ],
+  [
+   "correaquimica",
+   "La segunda letra",
+   "corrige"
+  ],
+  [
+   "correaquimica",
+   "En el HCl",
+   "corrige"
+  ],
+  [
+   "arnoldojoseguerrero",
+   "Impresionante el Nivel",
+   "asombro"
+  ],
+  [
+   "zeusolimpicus",
+   "Podrías explicar",
+   "pregunta"
+  ],
+  [
+   "stz_santacruz",
+   "Y por qué esa nube",
+   "pregunta"
+  ],
+  [
+   "stz_santacruz",
+   "Y por qué esas 2",
+   "pregunta"
+  ],
+  [
+   "augusto88887",
+   "Es está",
+   "pregunta"
+  ],
+  [
+   "lesims07",
+   "No se prestan",
+   "corrige"
+  ],
+  [
+   "teresagrauyarzabal2",
+   "Ejemplo claro",
+   "asombro"
+  ],
+  [
+   "teresagrauyarzabal2",
+   "Cuanto que aprender",
+   "asombro"
+  ],
+  [
+   "axlbassmcr",
+   "No es el enlace",
+   "corrige"
+  ],
+  [
+   "gurihuri",
+   "@axlbassmcr",
+   "otro"
+  ],
+  [
+   "hector_me94",
+   "La nube",
+   "pregunta"
+  ],
+  [
+   "jesuscantomurciano",
+   "Sí,  estamos",
+   "otro"
+  ],
+  [
+   "argentina_libre.2023",
+   "Excelente animación",
+   "asombro"
+  ],
+  [
+   "normanagnar",
+   "No entendí",
+   "confusion"
+  ],
+  [
+   "87.561335",
+   "Deja de mentir",
+   "esceptico"
+  ],
+  [
+   "uri.sab",
+   "En el futuro",
+   "otro"
+  ],
+  [
+   "st_wnder",
+   "Hexavalente",
+   "otro"
+  ],
+  [
+   "duraznito._uwu",
+   "Durisimo",
+   "asombro"
+  ],
+  [
+   "bandera_negra_art",
+   "Cromo hexavalente",
+   "explica"
+  ],
+  [
+   "soberbio_diseno",
+   "No entiendo si",
+   "duda_real"
+  ],
+  [
+   "soberbio_diseno",
+   "No entiendo...",
+   "duda_real"
+  ],
+  [
+   "van_sirgriss",
+   "@soberbio_diseno",
+   "explica"
+  ],
+  [
+   "juan204564",
+   "Que tremenda",
+   "asombro"
+  ],
+  [
+   "zingueriacarlosvastik",
+   "si amigo",
+   "espiritual"
+  ],
+  [
+   "zingueriacarlosvastik",
+   "tantos años",
+   "asombro"
+  ],
+  [
+   "samuel8007684",
+   "Eso quiere decir",
+   "explica"
+  ],
+  [
+   "chachostella2002",
+   "Esto es Dios",
+   "espiritual"
+  ],
+  [
+   "rdparra1",
+   "Lo que muestras",
+   "corrige"
+  ],
+  [
+   "herni777",
+   "En realidad",
+   "corrige"
+  ],
+  [
+   "amaznas_",
+   "No logro ver",
+   "confusion"
+  ],
+  [
+   "amaznas_",
+   "Electrones",
+   "otro"
+  ],
+  [
+   "amaznas_",
+   "Que hermoso",
+   "asombro"
+  ],
+  [
+   "gurihuri",
+   "318",
+   "reto"
+  ],
+  [
+   "romo_sa",
+   "318",
+   "reto"
+  ],
+  [
+   "carpinteriaarchipielago",
+   "Y si y si",
+   "espiritual"
+  ],
+  [
+   "alfredomiguely",
+   "Por eso le ponen",
+   "pregunta"
+  ],
+  [
+   "rusberortega2",
+   "Cómo se define",
+   "pregunta"
+  ],
+  [
+   "patriciafatimacervera",
+   "¿Y?",
+   "confusion"
+  ],
+  [
+   "jmgeorged",
+   "Enlace salino",
+   "explica"
+  ],
+  [
+   "plantscellsandtissues",
+   "Please",
+   "pregunta"
+  ],
+  [
+   "la_ganzua_cerrajeros_cuenca",
+   "Magnífico",
+   "asombro"
+  ],
+  [
+   "pastoramarusa",
+   "Es impressionante",
+   "asombro"
+  ],
+  [
+   "pastoramarusa",
+   "Maravilloso",
+   "asombro"
+  ],
+  [
+   "lobatchewskyacapulco",
+   "Se percibe",
+   "pregunta"
+  ],
+  [
+   "gerardo_heredia_",
+   "Hermosas",
+   "asombro"
+  ],
+  [
+   "jordi_selva_",
+   "Ciència",
+   "asombro"
+  ],
+  [
+   "jordi_selva_",
+   "Muy interesante",
+   "asombro"
+  ],
+  [
+   "jordi_selva_",
+   "Increiblemente",
+   "asombro"
+  ],
+  [
+   "damian3ekn",
+   "puente de",
+   "asombro"
+  ],
+  [
+   "realtoruben",
+   "Entre más entiendo",
+   "confusion"
+  ],
+  [
+   "ffbalbi",
+   "Modelo ontológico",
+   "otro"
+  ],
+  [
+   "landvillalobos",
+   "Nos enseñan",
+   "explica"
+  ],
+  [
+   "bungalowsgenesis",
+   "increíble",
+   "asombro"
+  ],
+  [
+   "@claudioschwaner",
+   "En la comunidad",
+   "explica"
+  ],
+  [
+   "@rolandoluilamcampos8258",
+   "JAJAJA",
+   "explica"
+  ],
+  [
+   "@isidoroaguila7003",
+   "100",
+   "asombro"
+  ],
+  [
+   "@mauricioalanhandl1739",
+   "Qué creatividad",
+   "asombro"
+  ],
+  [
+   "@tanoramb",
+   "Que forma",
+   "esceptico"
+  ],
+  [
+   "@LuisMontufar-p2q",
+   "Excelente",
+   "asombro"
+  ],
+  [
+   "@M.A.T.3",
+   "Y conviertes",
+   "explica"
+  ],
+  [
+   "@Angelvilla3",
+   "Creo que es",
+   "corrige"
+  ],
+  [
+   "@cancerautomata",
+   "Me intriga",
+   "pregunta"
+  ],
+  [
+   "@GalyAurora",
+   "",
+   "asombro"
+  ],
+  [
+   "@RaulCoronadoMartínez-v8t6d",
+   "Así es",
+   "explica"
+  ],
+  [
+   "@MAriaEstherOcampo-g7p",
+   "El aluminio",
+   "asombro"
+  ],
+  [
+   "@HeinerCalderon-jz7cd",
+   "Good",
+   "asombro"
+  ],
+  [
+   "mariacristinagomezmejia",
+   "🙌gracias",
+   "asombro"
+  ],
+  [
+   "rita.lacantaora.7758",
+   "Su👏",
+   "asombro"
+  ],
+  [
+   "moacyr.0",
+   "Wow",
+   "asombro"
+  ]
+ ]
+}
