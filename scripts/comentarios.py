@@ -226,6 +226,7 @@ def diagnostico():
 # Solo usa la biblioteca estándar: corre desde la laptop sin venv. El token NUNCA se imprime.
 #   python3 scripts/comentarios.py fb <archivo-con-el-token>
 FB_V = 'v23.0'
+IG_ID_GAIA = '17841446831070758'      # @gaiaprime_mx en la Graph API de Facebook (= ig_id del token de Instagram)
 FB_PERMISOS = ('instagram_basic', 'instagram_manage_comments', 'pages_show_list', 'pages_read_engagement')
 
 
@@ -269,10 +270,20 @@ def instagram_fb(mapa_ig, tk):
     paginas = fb_pagina('me/accounts', {'fields': 'id,name,instagram_business_account{id,username,followers_count,media_count}', 'limit': 100}, tk)
     con_ig = [p for p in paginas if p.get('instagram_business_account')]
     print(f'   páginas: {", ".join(p["name"] for p in paginas) or "(ninguna)"} · con Instagram vinculado: {len(con_ig)}')
-    if not con_ig:
-        sys.exit('✗ ninguna página tiene la cuenta de Instagram vinculada: en la app de Instagram → Editar perfil → Página')
-    ig = con_ig[0]['instagram_business_account']
-    print(f'IG @{ig.get("username")} (por la página «{con_ig[0]["name"]}»): {ig.get("followers_count")} seguidores · {ig.get("media_count")} medios')
+    if con_ig:
+        ig = con_ig[0]['instagram_business_account']; via = f'la página «{con_ig[0]["name"]}»'
+    else:
+        # SIN PÁGINA (medido 2026-09-14): vincular la página pedía un código al número viejo de ian y no se
+        # pudo, pero el token de usuario de Facebook SÍ alcanza la cuenta de Instagram DIRECTO por su id
+        # (la del portafolio Gaia Prime) y sus comentarios salen completos. El id es el `ig_id` del token de
+        # Instagram (17841446831070758).
+        ig_id = IG_ID_GAIA
+        tokf = os.path.join(CONF, 'instagram-token.json')
+        if os.path.exists(tokf): ig_id = str(json.load(open(tokf)).get('ig_id') or ig_id)
+        ig = fb_get(ig_id, {'fields': 'id,username,followers_count,media_count'}, tk)
+        if 'error' in ig: sys.exit(f'✗ sin página vinculada y el token tampoco alcanza la cuenta {ig_id}: {ig["error"].get("message")}')
+        via = 'acceso directo a la cuenta (sin página)'
+    print(f'IG @{ig.get("username")} (por {via}): {ig.get("followers_count")} seguidores · {ig.get("media_count")} medios')
     medios = fb_pagina(f'{ig["id"]}/media', {'fields': 'id,caption,media_type,media_product_type,permalink,timestamp,comments_count,like_count', 'limit': 100}, tk)
     out = []; total = 0; anunciados = 0
     for m in medios:
@@ -291,7 +302,7 @@ def instagram_fb(mapa_ig, tk):
     if anunciados and not total:
         print('   ✗ Meta sigue filtrando las filas también por esta puerta: el único camino por API es publicar la app')
     return {'cuenta': {'username': ig.get('username'), 'followers_count': ig.get('followers_count'), 'media_count': ig.get('media_count')},
-            'via': 'facebook-login (página vinculada)', 'medios': out, 'total': total}
+            'via': f'facebook-login ({via})', 'medios': out, 'total': total}
 
 
 def main(args):
