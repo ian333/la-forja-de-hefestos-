@@ -153,6 +153,10 @@ export function measureFlowLength(o: {
   meltN?: number;
   /** volumen que dice el kernel (mm³) — el CRUCE que caza el voxelizado mentiroso */
   expectVolumeMm3?: number;
+  /** `false` = solo hueco + espesor, SIN el Dijkstra del frente (EL ENFRIAMIENTO SE VE, 2026-09-14: a celda 0.8 mm el
+   *  frente eran 1.4 de 2.4 s y la lente de enfriamiento no lo usa). `flowLenMm` queda en Infinity salvo la compuerta.
+   *  Sin la opción, idéntico a antes. */
+  frente?: boolean;
 }): FlowField {
   const c = Math.max(0.05, o.cellMm);
   const nx = Math.max(1, Math.round((o.x1 - o.x0) / c));
@@ -322,7 +326,7 @@ export function measureFlowLength(o: {
     }
   }
   // cola de prioridad simple (bucket por distancia): N es chico (~1e5) y esto es puro.
-  const heap: number[] = [g];
+  const heap: number[] = o.frente === false ? [] : [g];
   const key = new Float32Array(N).fill(Infinity);
   key[g] = 0;
   const done = new Uint8Array(N);

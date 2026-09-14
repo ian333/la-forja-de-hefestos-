@@ -1,16 +1,16 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-10 22:18",
+ "generado": "2026-09-14 22:47",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 7,
+  "proximo": 6,
   "enCurso": 0,
   "imprevisto": 0,
-  "supertickets": 9,
+  "supertickets": 10,
   "cerrado": 89,
   "probado": 0,
   "porProbar": 53,
@@ -24,74 +24,6 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-09-10-el-enfriamiento-se-ve.md",
-    "slug": "2026-09-10-el-enfriamiento-se-ve",
-    "titulo": "EL ENFRIAMIENTO SE VE — la escala con segundos junto a la pieza, y la pieza enfriándose en el tiempo",
-    "fecha": "2026-09-10",
-    "estado": "proximo",
-    "prioridad": 2,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "escala",
-      "titulo": "una barra con segundos junto a la pieza y el campo mapeado a ella",
-      "herramientas": "testid escala-enfriamiento",
-      "oraculo": "el punto que manda señalado con su valor",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "tiempo",
-      "titulo": "la pieza se enfría en pantalla con el reloj corriendo",
-      "herramientas": "__forgeBrep.cambio(1000) ≥ 0.02",
-      "oraculo": "al final solo el punto que manda sigue caliente",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "movimiento-medido",
-      "titulo": "el runner exige que dos capturas a 1 s sean distintas en todo paso que simule",
-      "herramientas": "cláusula MOVIMIENTO en el contrato del camino",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 3
-    },
-    "objetivo": "ian (2026-09-10): «aún no se puede cerrar el happy path si no veo una simulación real de la temperatura y el enfriamiento… no me gustan los colores que usa, no entiendo, solo veo que cambia de color: falta la referencia visual, o la simula…",
-    "toca": 6,
-    "crea": 4,
-    "evidencia": 4,
-    "evidenciaDeclarada": [
-     "Golpe 1 (escala): testid:escala-enfriamiento visible en el paso 3 con ≥ 3 marcas en segundos y el color de",
-     "Golpe 2 (tiempo): __forgeBrep.cambio(1000) ≥ 0.02 durante el play (la pieza cambia); un reloj t / t_c",
-     "Runner: paso 3 con ambos checks; paseo con el enfriamiento corriendo (línea de tiempo: cuadros distintos",
-     "orden-gate VERDE; censo igual; cero pageerror."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
    {
     "file": "ordenes/2026-09-10-el-agua-de-tu-pieza.md",
     "slug": "2026-09-10-el-agua-de-tu-pieza",
@@ -1329,6 +1261,78 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-10-el-enfriamiento-se-ve.md",
+    "slug": "2026-09-10-el-enfriamiento-se-ve",
+    "titulo": "EL ENFRIAMIENTO SE VE — la escala con segundos junto a la pieza, y la pieza enfriándose en el tiempo",
+    "fecha": "2026-09-10",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "escala",
+      "titulo": "una barra con segundos junto a la pieza y el campo mapeado a ella",
+      "herramientas": "testid escala-enfriamiento",
+      "oraculo": "el punto que manda señalado con su valor",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "tiempo",
+      "titulo": "la pieza se enfría en pantalla con el reloj corriendo",
+      "herramientas": "__forgeBrep.cambio(1000) ≥ 0.02",
+      "oraculo": "al final solo el punto que manda sigue caliente",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "movimiento-medido",
+      "titulo": "el runner exige que dos capturas a 1 s sean distintas en todo paso que simule",
+      "herramientas": "cláusula MOVIMIENTO en el contrato del camino",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 3
+    },
+    "objetivo": "ian (2026-09-10): «aún no se puede cerrar el happy path si no veo una simulación real de la temperatura y el enfriamiento… no me gustan los colores que usa, no entiendo, solo veo que cambia de color: falta la referencia visual, o la simula…",
+    "toca": 8,
+    "crea": 5,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "Golpe 1 (escala): testid:escala-enfriamiento visible en el paso 3 con ≥ 3 marcas en segundos y el color de",
+     "Golpe 2 (tiempo): __forgeBrep.cambio(1000) ≥ 0.02 durante el play (la pieza cambia); un reloj t / t_c",
+     "Runner: paso 3 con ambos checks; paseo con el enfriamiento corriendo (línea de tiempo: cuadros distintos",
+     "orden-gate VERDE; censo igual; cero pageerror."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [
+     "evidencia/2026-09-10-el-enfriamiento-se-ve/escala.png",
+     "evidencia/2026-09-10-el-enfriamiento-se-ve/paseo-contactos.png",
+     "evidencia/2026-09-10-el-enfriamiento-se-ve/pintura-antes-despues.png"
+    ],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -1438,7 +1442,7 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "f1397c0",
+    "commit": "da78760",
     "despliegue": "sin-desplegar"
    },
    {
@@ -6351,7 +6355,7 @@
     "titulo": "El 99 % lo traes en los huesos; el 1 % que sobra es el que te mueve — Calcio (Z=20)",
     "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
     "tipo": "atomo-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "el 1 % citoplásmico dispara la contracción muscular. 4s².",
     "manifiesto": true,
     "publicado": true,
@@ -6365,10 +6369,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdIJ76tDvHD/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-11",
@@ -6377,7 +6386,7 @@
     "titulo": "Tu pelo es lacio o rizado por culpa de este átomo — Azufre (Z=16)",
     "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
     "tipo": "atomo-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "los puentes disulfuro de la queratina deciden la forma del pelo; romperlos y volver a atarlos ES el permanente. 3p⁴: dos electrones sin pareja. (El YODO salió del plan: su bin usa pseudopotencial y le FALTA el núcleo — ver gate_atomos.)",
     "manifiesto": true,
     "publicado": true,
@@ -6391,10 +6400,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdKup69j7gB/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-12",
@@ -6403,7 +6417,7 @@
     "titulo": "Si la comida dejó de saberte, te falta este átomo — Zinc (Z=30)",
     "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
     "tipo": "atomo-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "la deficiencia de zinc quita gusto y olfato; ~300 enzimas lo usan. 3d¹⁰4s².",
     "manifiesto": true,
     "publicado": true,
@@ -6417,10 +6431,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdNTcrjCDmN/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-13",
@@ -6429,7 +6448,7 @@
     "titulo": "Cada día gastas tu propio peso en una sola molécula — Fósforo (Z=15)",
     "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
     "tipo": "atomo-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "DOMINGO = día fuerte. El ATP se recicla ~el peso corporal al día y lleva 3 fósforos. 3p³ = tres pétalos, un electrón cada uno.",
     "manifiesto": true,
     "publicado": true,
@@ -6443,10 +6462,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdP4U1KjYYD/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-14",
@@ -6473,6 +6497,37 @@
     "ancho": null,
     "entregado": "",
     "falta": []
+   },
+   {
+    "fecha": "2026-09-14",
+    "hora": "21:00",
+    "id": "econ-colchon",
+    "titulo": "Tu negocio no cierra por vender poco — capítulo 1 de LA ECONOMÍA DE TU NEGOCIO",
+    "base": "economia-colchon (ruina del jugador calibrada a INEGI) · gemelos · 57 s · guion en 2ª persona + primer comentario sencillo",
+    "tipo": "serie economía de tu negocio",
+    "estado": "hoy",
+    "nota": "ian 2026-09-14: «sube el colchon… subelo hoy». 21:00 y no 18:45: la serie es para México y a las 18:45 sale atomo-k.",
+    "manifiesto": true,
+    "publicado": true,
+    "programar": "2026-09-14T21:00:00-06:00",
+    "rasgos": {
+     "brazo": "A",
+     "dur": 57,
+     "vel": 1.1,
+     "marco": "revelacion"
+    },
+    "yt": {
+     "url": "https://youtu.be/8jbWV_qtSFo",
+     "privacidad": "private"
+    },
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": [
+     "YouTube private",
+     "Instagram",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-15",
@@ -6801,7 +6856,7 @@
    "rompeEn": 0,
    "parciales": 2,
    "medido": {
-    "fecha": "2026-09-10 22:03",
+    "fecha": "2026-09-14 22:38",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "iangpu"

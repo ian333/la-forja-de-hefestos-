@@ -37,7 +37,7 @@
  */
 import type { MeshLike } from './flowlen-mesh';
 import type { FlowField } from './flowlen';
-import { flowFieldFromMesh } from './revisar-modelo';
+import { flowFieldFromMesh, meshVolumeArea } from './revisar-modelo';
 import { coolingTimePlate, ABS_KAZMER, type CoolingMaterial } from './cooling';
 
 export type LenteId = 'pared' | 'enfriamiento' | 'llenado';
@@ -90,10 +90,68 @@ export interface Lente {
   cuerpo: string;
   /** dónde está el punto que manda — para LA MARCA sobre la pieza */
   peor: { punto: [number, number, number]; valor: number } | null;
+  /** los puntos de SUPERFICIE que empatan con lo más lento (≥ 95 % del máximo pintado), separados ≥ 6 mm
+   *  (2026-09-14). En la 1594C el máximo del campo son 8 vóxeles a 0.4 mm de la cara INFERIOR, bajo los 4 postes:
+   *  ninguno se ve desde arriba y la marca se dibujaba a través de la pared sobre una esquina azul, mientras el
+   *  rojo visible era la base interior del poste de atrás. Son VÉRTICES (viven sobre la superficie pintada); la
+   *  escena elige de aquí el que la cámara SÍ ve. */
+  candidatos?: Array<{ punto: [number, number, number]; valor: number }>;
   /** el § del libro del que sale */
   ref: string;
   /** vértices sin dato (fuera de la rejilla) — se DICE, no se pinta gris a escondidas */
   sinDato: number;
+  /** EL CAMPO PARA PINTAR POR FRAGMENTO (2026-09-14). Sin él la pieza se pinta por vértice y el color se degrada
+   *  a lo largo de triángulos de hasta 115 mm: medido en la 1594C, 16.6 % de la superficie pintada «tarde» contra
+   *  2.2 % real. Con él, cada píxel lee el vóxel que tiene debajo. */
+  gpu?: CampoGPU;
+}
+
+/**
+ * El campo empaquetado para una textura 3D. `rg` lleva 2 bytes por celda de la rejilla, en el orden de
+ * `Data3DTexture` (i + nx·(j + ny·k), el mismo de `FlowField.idx`): R = (valor − lo)/(hi − lo) en 0..255 y
+ * G = 255 donde hay dato. Las celdas de ACERO pegadas al hueco (hasta 2 celdas) toman el valor del hueco más
+ * cercano: la superficie de la pieza cae justo en la frontera y sin esa orilla el filtrado mezclaría con «sin dato».
+ * `lut` es el color de cada R (256×1 RGBA) sacado de `colorDe`: la MISMA función del vértice y de la leyenda.
+ */
+export interface CampoGPU {
+  nx: number; ny: number; nz: number;
+  x0: number; y0: number; z0: number; cellMm: number;
+  rg: Uint8Array;
+  lut: Uint8Array;
+  escala: { lo: number; hi: number };
+}
+
+function campoParaGPU(f: FlowField, campoVox: Float32Array, esc: { lo: number; hi: number }, r: Rampa, gamma: number): CampoGPU {
+  const { nx, ny, nz } = f;
+  const N = nx * ny * nz;
+  const rg = new Uint8Array(N * 2);
+  const span = esc.hi - esc.lo || 1;
+  const byteDe = (x: number) => Math.round(255 * Math.max(0, Math.min(1, (x - esc.lo) / span)));
+  for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const t = f.idx(i, j, k);
+    let val = f.cavity[t] ? campoVox[t] : NaN;
+    if (!Number.isFinite(val)) {
+      let mejorD = Infinity;
+      for (let rr = 1; rr <= 2 && !Number.isFinite(val); rr++) {
+        for (let dk = -rr; dk <= rr; dk++) for (let dj = -rr; dj <= rr; dj++) for (let di = -rr; di <= rr; di++) {
+          if (Math.max(Math.abs(di), Math.abs(dj), Math.abs(dk)) !== rr) continue;
+          const ii = i + di, jj = j + dj, kk = k + dk;
+          if (ii < 0 || jj < 0 || kk < 0 || ii >= nx || jj >= ny || kk >= nz) continue;
+          const u = f.idx(ii, jj, kk);
+          if (!f.cavity[u] || !Number.isFinite(campoVox[u])) continue;
+          const d = di * di + dj * dj + dk * dk;
+          if (d < mejorD) { mejorD = d; val = campoVox[u]; }
+        }
+      }
+    }
+    if (Number.isFinite(val)) { rg[t * 2] = byteDe(val); rg[t * 2 + 1] = 255; }
+  }
+  const lut = new Uint8Array(256 * 4);
+  for (let b = 0; b < 256; b++) {
+    const c = colorDe(r, esc.lo + (b / 255) * span, esc, gamma);
+    lut[b * 4] = Math.round(c[0] * 255); lut[b * 4 + 1] = Math.round(c[1] * 255); lut[b * 4 + 2] = Math.round(c[2] * 255); lut[b * 4 + 3] = 255;
+  }
+  return { nx, ny, nz, x0: f.x0, y0: f.y0, z0: f.z0, cellMm: f.cellMm, rg, lut, escala: { ...esc } };
 }
 
 export interface LentesFoco {
@@ -108,7 +166,7 @@ export interface LentesFoco {
 
 export interface OpcionesLentes {
   material?: CoolingMaterial;
-  /** tope de vóxeles del campo. Medido: 90k resuelve bien y cuesta ≤2.5 s. */
+  /** tope de vóxeles del campo. Si NO se da, la rejilla se afina a la PARED (ver `rejillaParaLaPared`). */
   maxVoxels?: number;
   gateMm?: { x: number; y: number; z: number };
 }
@@ -140,6 +198,18 @@ const RAMPA_SIMULADO: Rampa = [
   [0.60, hex('#a248d8')],
   [0.85, hex('#e061c8')],
   [1.00, hex('#ffd3f2')],
+];
+
+/** TÉRMICA — la lente de ENFRIAMIENTO (2026-09-14). ian: «no me gustan los colores que usa, no entiendo, solo
+ *  veo que cambia de color». Es la MISMA convención del cubo (`MoldScene.thermalRamp`: azul enfría rápido, ROJO
+ *  detiene el ciclo) y la de Moldflow: un moldista la lee sin leyenda. El azul se levanta de #0000ff a #2f5dff
+ *  porque la mitad de la carcasa cae ahí y el azul puro se hunde en el fondo oscuro del visor. */
+const RAMPA_TERMICA: Rampa = [
+  [0.00, hex('#2f5dff')],
+  [0.25, hex('#14c3f5')],
+  [0.50, hex('#3ddc6a')],
+  [0.75, hex('#ffd23a')],
+  [1.00, hex('#ff3b2f')],
 ];
 
 const AMBAR = hex('#ffc24b');   // exige tu atención
@@ -255,16 +325,61 @@ function puntoDelMaximo(f: FlowField, campoVox: Float32Array): { punto: [number,
   };
 }
 
+/** los vértices más lentos DISTINTOS: valor ≥ frac·(máx de los vértices), de mayor a menor, a ≥ sepMm entre sí */
+function candidatosEnSuperficie(P: ArrayLike<number>, val: Float32Array, frac = 0.95, sepMm = 6, tope = 8): Array<{ punto: [number, number, number]; valor: number }> {
+  let max = -Infinity;
+  for (let v = 0; v < val.length; v++) if (Number.isFinite(val[v]) && val[v] > max) max = val[v];
+  if (!Number.isFinite(max)) return [];
+  const cand: number[] = [];
+  for (let v = 0; v < val.length; v++) if (val[v] >= frac * max) cand.push(v);
+  cand.sort((a, b) => val[b] - val[a] || a - b);
+  const out: Array<{ punto: [number, number, number]; valor: number }> = [];
+  for (const v of cand) {
+    const pt: [number, number, number] = [P[v * 3], P[v * 3 + 1], P[v * 3 + 2]];
+    if (out.every((o) => Math.hypot(o.punto[0] - pt[0], o.punto[1] - pt[1], o.punto[2] - pt[2]) >= sepMm)) out.push({ punto: pt, valor: val[v] });
+    if (out.length >= tope) break;
+  }
+  return out;
+}
+
 const s1 = (x: number) => (x >= 100 ? x.toFixed(0) : x.toFixed(1));
 
 /**
  * LA PASADA ÚNICA. Corre el campo una vez y devuelve las tres lecturas.
  * Es puro: misma malla ⇒ mismos números. No toca el DOM ni three.js.
  */
+/**
+ * LA REJILLA SE AFINA A LA PARED (EL ENFRIAMIENTO SE VE, 2026-09-14). A 90 000 vóxeles la 1594C Box salía con
+ * celda de 1.375 mm y su pared de 3.1 mm (medida con rayos contra la malla) caía en 2 o 4 celdas: el espesor local
+ * (Hildebrand–Rüegsegger) decía 2.75 mm a media altura y 5.5 mm abajo, el 37 % de los vóxeles inflado a más de 1.5×
+ * la pared, y como t_c va con h² las paredes leían 63 s en vez de 20 s. Medido por resolución: celda 0.98 → pared
+ * 3.91 mm (11 % inflado); celda 0.80 → 3.2 mm (5.7 %, lo que queda son los postes macizos de verdad), 2.1 s.
+ * Regla: ≥ 4 celdas por pared, con la pared estimada SIN pasada extra como 2·V/A (en pared delgada V ≈ A/2·t:
+ * 2.87 mm en la carcasa) y un tope de vóxeles para que ninguna pieza se coma el presupuesto de 2.5 s.
+ */
+const CELDAS_POR_PARED = 4;
+const VOXELES_TOPE = 460_000;   // medido en la 1594C: celda 0.80 mm, pared 3.2 mm (exacta 3.1), campo 2.15 s en node
+function rejillaParaLaPared(mesh: MeshLike): number {
+  const P = mesh.positions;
+  const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+  for (let k = 0; k < P.length; k += 3) for (let d = 0; d < 3; d++) { if (P[k + d] < mn[d]) mn[d] = P[k + d]; if (P[k + d] > mx[d]) mx[d] = P[k + d]; }
+  const cajaMm3 = Math.max(1, (mx[0] - mn[0]) * (mx[1] - mn[1]) * (mx[2] - mn[2]));
+  const { volumeMm3, areaMm2 } = meshVolumeArea(mesh);
+  const pared = areaMm2 > 0 ? (2 * Math.abs(volumeMm3)) / areaMm2 : 0;
+  if (!(pared > 0)) return 90_000;
+  const celda = pared / CELDAS_POR_PARED;
+  return Math.max(90_000, Math.min(VOXELES_TOPE, Math.round(cajaMm3 / (celda * celda * celda))));
+}
+
 export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
   const mat = o?.material ?? ABS_KAZMER;
   const t0 = Date.now();
-  const f = flowFieldFromMesh(mesh, { maxVoxels: o?.maxVoxels ?? 90_000, gateMm: o?.gateMm });
+  // DOS CAMPOS (2026-09-14): el del FRENTE a la rejilla de siempre (90 000 vóxeles, Dijkstra intacto → LLENADO,
+  // inalcanzables, avisos) y el FINO afinado a la pared SIN frente (→ PARED y ENFRIAMIENTO). Medido: el Dijkstra a celda
+  // 0.8 mm eran 1.4 s de 2.4 y el enfriamiento no lo usa. Si el llamador fija `maxVoxels`, un solo campo como antes.
+  const fFrente = flowFieldFromMesh(mesh, { maxVoxels: o?.maxVoxels ?? 90_000, gateMm: o?.gateMm });
+  const mvFino = o?.maxVoxels ? 0 : rejillaParaLaPared(mesh);
+  const f = mvFino > 90_000 ? flowFieldFromMesh(mesh, { maxVoxels: mvFino, gateMm: o?.gateMm, frente: false }) : fFrente;
   const msCampo = Date.now() - t0;
 
   const t1 = Date.now();
@@ -352,7 +467,7 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
     });
   }
 
-  // ══ LENTE 2 · ENFRIAMIENTO — SIMULADA (violeta) ═══════════════════════════
+  // ══ LENTE 2 · ENFRIAMIENTO — SIMULADA (térmica: azul listo pronto → rojo detiene el ciclo) ═══════════════════════════
   {
     const { val, sinDato } = muestrearEnVertices(f, P, tcVox);
     const q = cuantiles(val);
@@ -362,7 +477,7 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
       const t = val[v];
       const c: [number, number, number] = !Number.isFinite(t)
         ? [0.25, 0.28, 0.32]
-        : colorDe(RAMPA_SIMULADO, t, esc, GAMMA_SIMULADO);
+        : colorDe(RAMPA_TERMICA, t, esc, GAMMA_SIMULADO);
       colores[v * 3] = c[0]; colores[v * 3 + 1] = c[1]; colores[v * 3 + 2] = c[2];
     }
     const manda = puntoDelMaximo(f, tcVox);
@@ -375,17 +490,26 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
       id: 'enfriamiento', nombre: 'ENFRIAMIENTO', que: 'cuánto tarda cada punto en poder salir del molde',
       unidad: 's', origen: 'simulado', colores, valores: val, ...q, maxCampo: tcMax, escala: esc,
       paradas: [
-        { v: esc.lo, hex: rgbHex(colorDe(RAMPA_SIMULADO, esc.lo, esc, GAMMA_SIMULADO)), etiqueta: 'lista primero' },
-        { v: (esc.lo + esc.hi) / 2, hex: rgbHex(colorDe(RAMPA_SIMULADO, (esc.lo + esc.hi) / 2, esc, GAMMA_SIMULADO)), etiqueta: 'a medio camino' },
-        { v: esc.hi, hex: rgbHex(colorDe(RAMPA_SIMULADO, esc.hi, esc, GAMMA_SIMULADO)), etiqueta: `tarde (p95) · el peor: ${s1(tcMax)} s` },
+        { v: esc.lo, hex: rgbHex(colorDe(RAMPA_TERMICA, esc.lo, esc, GAMMA_SIMULADO)), etiqueta: 'lista primero' },
+        { v: (esc.lo + esc.hi) / 2, hex: rgbHex(colorDe(RAMPA_TERMICA, (esc.lo + esc.hi) / 2, esc, GAMMA_SIMULADO)), etiqueta: 'a medio camino' },
+        { v: esc.hi, hex: rgbHex(colorDe(RAMPA_TERMICA, esc.hi, esc, GAMMA_SIMULADO)), etiqueta: `tarde (p95) · el peor: ${s1(tcMax)} s` },
       ],
-      titular: `El ciclo lo manda un solo punto: ${s1(tcMax)} s. El resto está listo en ${s1(q.p50)} s.`,
+      // «un solo punto» mentía cuando lo lento se repite (los 4 postes de la 1594C, 2026-09-14): se cuentan las ZONAS
+      // empatadas (candidatos a ≥ 15 mm entre sí) y se dice cuántas.
+      titular: (() => {
+        const zonas = candidatosEnSuperficie(P, val, 0.95, 15, 12).length;
+        return zonas > 1
+          ? `El ciclo lo manda lo más lento: ${s1(tcMax)} s, en ${zonas} lugares iguales. El resto está listo en ${s1(q.p50)} s.`
+          : `El ciclo lo manda un solo punto: ${s1(tcMax)} s. El resto está listo en ${s1(q.p50)} s.`;
+      })(),
       cuerpo: `El molde no abre hasta que el ÚLTIMO punto está firme, así que ese máximo es tu ciclo, `
-        + `no el promedio. Ese punto tarda ${veces.toFixed(1)}× más que la mitad de la pieza`
+        + `no el promedio. Lo más lento tarda ${veces.toFixed(1)}× más que la mitad de la pieza`
         + (hMax > 0 ? `, porque ahí la pared llega a ${s1(hMax)} mm` : '')
         + `. El tiempo va con el CUADRADO del espesor (Eq 9.5): bajarle 30 % a ese macizo te quita `
         + `la mitad del ciclo. Enfriar más fuerte casi no ayuda — el cuello es el plástico, no el agua.`,
       peor: manda, ref: '§9.2 · Eq 9.5, t_c = h²/(π²α)·ln(4/π·ΔT)', sinDato,
+      gpu: campoParaGPU(f, tcVox, esc, RAMPA_TERMICA, GAMMA_SIMULADO),
+      candidatos: candidatosEnSuperficie(P, val),
     });
   }
 
@@ -394,7 +518,7 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
     // `flowLenMm` trae Infinity en lo inalcanzable, y `cuantiles` ya los filtra
     // (Number.isFinite). Aquí se pintan de ROJO: un punto sin camino a la
     // compuerta es un short shot, no "el extremo de la rampa".
-    const { val, sinDato } = muestrearEnVertices(f, P, f.flowLenMm);
+    const { val, sinDato } = muestrearEnVertices(fFrente, P, fFrente.flowLenMm);
     const q = cuantiles(val);
     const esc = escalaDe(q);
     const colores = new Float32Array(nv * 3);
@@ -406,7 +530,7 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
       else c = colorDe(RAMPA_SIMULADO, L, esc, GAMMA_SIMULADO);
       colores[v * 3] = c[0]; colores[v * 3 + 1] = c[1]; colores[v * 3 + 2] = c[2];
     }
-    const ultimo = puntoDelMaximo(f, f.flowLenMm);
+    const ultimo = puntoDelMaximo(fFrente, fFrente.flowLenMm);
     // L/t — la razón que decide la presión (§5.5.5). El espesor es el NOMINAL de la
     // lente de pared, no un cuantil del vóxel crudo (ahí el acero mete ceros).
     const lMax = ultimo?.valor ?? q.max;
@@ -418,10 +542,10 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
         { v: esc.lo, hex: rgbHex(colorDe(RAMPA_SIMULADO, esc.lo, esc, GAMMA_SIMULADO)), etiqueta: 'cerca de la compuerta' },
         { v: (esc.lo + esc.hi) / 2, hex: rgbHex(colorDe(RAMPA_SIMULADO, (esc.lo + esc.hi) / 2, esc, GAMMA_SIMULADO)), etiqueta: 'a media pieza' },
         { v: esc.hi, hex: rgbHex(colorDe(RAMPA_SIMULADO, esc.hi, esc, GAMMA_SIMULADO)), etiqueta: `lejos (p95) · el último: ${s1(lMax)} mm` },
-        ...(f.unreachable > 0 ? [{ v: 0, hex: rgbHex(ROJO), etiqueta: 'SIN camino a la compuerta' }] : []),
+        ...(fFrente.unreachable > 0 ? [{ v: 0, hex: rgbHex(ROJO), etiqueta: 'SIN camino a la compuerta' }] : []),
       ],
-      titular: f.unreachable > 0
-        ? `${f.unreachable} punto(s) NO tienen camino a la compuerta: eso es un short shot (§5.5).`
+      titular: fFrente.unreachable > 0
+        ? `${fFrente.unreachable} punto(s) NO tienen camino a la compuerta: eso es un short shot (§5.5).`
         : `El fundido corre hasta ${s1(lMax)} mm desde la compuerta para llegar al punto más lejano.`,
       cuerpo: `La distancia NO es en línea recta: el frente rodea cada agujero, costilla y pozo, `
         + `igual que el plástico real. Lo claro es lo último en llenarse — ahí caen las líneas de `
@@ -436,7 +560,7 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
     lentes,
     campo: {
       celdaMm: f.cellMm, huecos, nx: f.nx, ny: f.ny, nz: f.nz,
-      volumenCm3: f.volumeMm3 / 1000, inalcanzables: f.unreachable, avisos: f.warnings,
+      volumenCm3: f.volumeMm3 / 1000, inalcanzables: fFrente.unreachable, avisos: fFrente.warnings,
     },
     ms: { campo: msCampo, lentes: msLentes, total: msCampo + msLentes },
   };

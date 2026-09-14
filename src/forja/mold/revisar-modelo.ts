@@ -54,6 +54,8 @@ export function meshVolumeArea(mesh: MeshLike): { volumeMm3: number; areaMm2: nu
 export function flowFieldFromMesh(mesh: MeshLike, o?: {
   gateMm?: { x: number; y: number; z: number };
   wallMm?: number; expectVolumeMm3?: number; maxVoxels?: number;
+  /** `false` salta el Dijkstra del frente (ver `measureFlowLength`) */
+  frente?: boolean;
 }): FlowField {
   const q = solidFromMesh(mesh);
   const gate = o?.gateMm ?? defaultGate(q);
@@ -65,7 +67,7 @@ export function flowFieldFromMesh(mesh: MeshLike, o?: {
     x1: b.x1 + cell, y1: b.y1 + cell, z1: b.z1 + cell,
     cellMm: cell, gateMm: gate,
     inCavity: (x, y, z) => q.inside(x, y, z),
-    wallMm: o?.wallMm, expectVolumeMm3: o?.expectVolumeMm3,
+    wallMm: o?.wallMm, expectVolumeMm3: o?.expectVolumeMm3, frente: o?.frente,
   });
 }
 

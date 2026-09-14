@@ -63,4 +63,4 @@ CONTRATO para los tickets que deben pasos rojos: T7 expone `linea-particion` sob
 
 ## MEDIDO
 - 20 Hammond reales (v1-gate): importan 20/20 · cotizan 17/20 · parten 2/20. El paso 5 es el muro; 6 y 7 existen y funcionan en el dado, pero dependen de 5.
-- runner · 2026-09-10 22:03 UTC · http://localhost:5194/forja-brep.html · servido 6f70032 · iangpu · 6/8 ok · 1:2/2 2:5/5 3:4/6 4:4/4 5:3/3 6:9/11 7:5/5 8:4/4
+- runner · 2026-09-14 22:38 UTC · http://localhost:5194/forja-brep.html · servido 6f70032 · iangpu · 6/8 ok · 1:2/2 2:5/5 3:5/6 4:4/4 5:3/3 6:9/11 7:5/5 8:4/4

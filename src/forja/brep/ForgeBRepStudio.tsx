@@ -53,7 +53,7 @@ import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, PALETA_FOCO, type CotaSet } from './MoldCotas3D';
 import { medidasDeLaPieza } from '../mold/foco-medidas';   // U3 · EL FOCO: el plano, encima de la pieza
-import { lentesDelFoco, type LentesFoco, type LenteId } from '../mold/foco-lentes';   // U10 · EL FOCO: el ANÁLISIS, encima de la pieza
+import { lentesDelFoco, type LentesFoco, type LenteId, type CampoGPU } from '../mold/foco-lentes';   // U10 · EL FOCO: el ANÁLISIS, encima de la pieza
 import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
@@ -2484,9 +2484,46 @@ function FeaDeformMesh({ mesh, colors, disp, dispMax, clip }: {
 // ──────────────────────────────────────────────────────────────────
 // Render del sólido teselado + picking de cara/arista (raycast)
 // ──────────────────────────────────────────────────────────────────
+/** EL CAMPO POR FRAGMENTO — la posición del vértice viaja en el marco de la MALLA (el mismo del campo: la rejilla
+ *  se construyó sobre `mesh.positions`), no en el del mundo: el grupo del visor rota la pieza a Y-arriba. */
+const CAMPO_VS = /* glsl */`
+  #include <clipping_planes_pars_vertex>
+  out vec3 vPos;
+  out vec3 vNormV;
+  void main() {
+    vPos = position;
+    vNormV = normalize(normalMatrix * normal);
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    #include <clipping_planes_vertex>
+  }
+`;
+const CAMPO_FS = /* glsl */`
+  precision highp float;
+  precision highp sampler3D;
+  #include <clipping_planes_pars_fragment>
+  uniform sampler3D uCampo;
+  uniform sampler2D uLut;
+  uniform vec3 uOrigen;
+  uniform vec3 uTam;
+  in vec3 vPos;
+  in vec3 vNormV;
+  out vec4 salida;
+  void main() {
+    #include <clipping_planes_fragment>
+    // LUZ DE CÁMARA que solo ATENÚA (revisión visual 2026-09-14: sin ella piso, paredes y fondo eran el mismo azul
+    // plano y la caja se leía como silueta). De frente = el byte exacto de la LUT (la escala dice la verdad ahí);
+    // de canto baja a 70 %. El TONO es el dato; la luz solo da la forma.
+    float luz = 0.70 + 0.30 * abs(normalize(vNormV).z);
+    vec4 c = texture(uCampo, (vPos - uOrigen) / uTam);
+    if (c.g < 0.5) { salida = vec4(vec3(0.25, 0.28, 0.32) * luz, 1.0); return; }   // sin dato: el gris que la lente ya usa
+    salida = vec4(texture(uLut, vec2(c.r * (255.0 / 256.0) + 0.5 / 256.0, 0.5)).rgb * luz, 1.0);
+  }
+`;
+
 function SolidMesh({
   mesh, faded, matKey, tint, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
-  feaColors, overhangColors, clip, holograma = false,
+  feaColors, overhangColors, clip, holograma = false, campoGPU = null,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
@@ -2510,6 +2547,10 @@ function SolidMesh({
    *  De Horizon: bajo el Foco el cuerpo es frío y se ve a través — lo cálido se
    *  reserva para lo que exige atención. */
   holograma?: boolean;
+  /** EL ENFRIAMIENTO SE VE (2026-09-14): el campo como textura 3D — cada PÍXEL lee su vóxel. Gana sobre
+   *  `feaColors`: por vértice el color se degradaba a lo largo de triángulos de hasta 115 mm (medido en la
+   *  1594C: 34 % del área con el color equivocado; por fragmento, 0.3 %). */
+  campoGPU?: CampoGPU | null;
 }) {
   const pbrBase = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
   // Con tinte: acabado MATE de color (metalness bajo) — el metálico espejo murió.
@@ -2539,6 +2580,33 @@ function SolidMesh({
   }, [geom, overlayColors, mesh.positions.length]);
   const edgesGeo = useMemo(() => new THREE.EdgesGeometry(geom, 25), [geom]);
   useEffect(() => () => { geom.dispose(); edgesGeo.dispose(); }, [geom, edgesGeo]);
+
+  // EL CAMPO POR FRAGMENTO: textura 3D (R = valor normalizado, G = hay dato) + la LUT de `colorDe`. Uniforms
+  // UNA vez (useMemo) y se muta `.value` — la convención del proyecto; las texturas se rehacen solo si cambia el campo.
+  const campoTex = useMemo(() => {
+    if (!campoGPU) return null;
+    const vol = new THREE.Data3DTexture(campoGPU.rg, campoGPU.nx, campoGPU.ny, campoGPU.nz);
+    vol.format = THREE.RGFormat; vol.type = THREE.UnsignedByteType;
+    vol.minFilter = THREE.LinearFilter; vol.magFilter = THREE.LinearFilter;
+    vol.wrapS = vol.wrapT = vol.wrapR = THREE.ClampToEdgeWrapping;
+    vol.unpackAlignment = 1; vol.needsUpdate = true;
+    const lut = new THREE.DataTexture(campoGPU.lut, 256, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
+    lut.minFilter = THREE.LinearFilter; lut.magFilter = THREE.LinearFilter;
+    lut.wrapS = lut.wrapT = THREE.ClampToEdgeWrapping; lut.needsUpdate = true;
+    return { vol, lut };
+  }, [campoGPU]);
+  useEffect(() => () => { campoTex?.vol.dispose(); campoTex?.lut.dispose(); }, [campoTex]);
+  const campoUniforms = useMemo(() => ({
+    uCampo: { value: null as THREE.Data3DTexture | null },
+    uLut: { value: null as THREE.DataTexture | null },
+    uOrigen: { value: new THREE.Vector3() },
+    uTam: { value: new THREE.Vector3(1, 1, 1) },
+  }), []);
+  if (campoTex && campoGPU) {
+    campoUniforms.uCampo.value = campoTex.vol; campoUniforms.uLut.value = campoTex.lut;
+    campoUniforms.uOrigen.value.set(campoGPU.x0, campoGPU.y0, campoGPU.z0);
+    campoUniforms.uTam.value.set(campoGPU.nx * campoGPU.cellMm, campoGPU.ny * campoGPU.cellMm, campoGPU.nz * campoGPU.cellMm);
+  }
 
   // Radio del tubo PICKEABLE de arista, escalado al tamaño del modelo: ni tan
   // fino que el raycast falle, ni tan grueso que tape la geometría. La esfera de
@@ -2679,7 +2747,22 @@ function SolidMesh({
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
       >
-        {overlayColors ? (
+        {campoTex ? (
+          /* EL CAMPO POR FRAGMENTO. Sin luz ni tonemap y SIN conversión de espacio de color: el byte de la LUT es el
+             píxel que se ve, así la escala DOM (mismos bytes) describe exactamente lo pintado. Las aristas B-Rep
+             oscuras encima siguen dando la forma. */
+          <shaderMaterial
+            key="campo-gpu"
+            glslVersion={THREE.GLSL3}
+            uniforms={campoUniforms}
+            vertexShader={CAMPO_VS}
+            fragmentShader={CAMPO_FS}
+            clipping
+            clippingPlanes={clipPlanes}
+            side={THREE.DoubleSide}
+            toneMapped={false}
+          />
+        ) : overlayColors ? (
           /* OVERLAY (FEA von Mises / voladizos de imprimibilidad): vertexColors.
              meshBasicMaterial = SIN luz: el color del esfuerzo se ve EXACTO en
              cualquier ángulo y con la luz tenue del viewport CAD (un mapa de
@@ -3636,7 +3719,9 @@ export default function ForgeBRepStudio() {
     setLentesBusy(true); setLentesErr('');
     // el mismo idioma que el FEA de esta pantalla: pinta el "calculando" y DESPUÉS
     // bloquea. `lentesDelFoco` es síncrono y pesado a propósito (es el campo real).
-    requestAnimationFrame(() => {
+    // EL ENFRIAMIENTO SE VE (2026-09-14): rAF + setTimeout, no rAF solo. Con la rejilla a la pared el campo
+    // tarda 2 s y el rAF corría ANTES de pintar el aviso (la lección del paso 6: respirar es rAF y luego una tarea).
+    requestAnimationFrame(() => setTimeout(() => {
       try {
         const r = lentesDelFoco(piezaMalla.mesh);
         lentesDe.current = piezaMalla.mesh;
@@ -3645,7 +3730,7 @@ export default function ForgeBRepStudio() {
         setLentes(null); lentesDe.current = null;
         setLentesErr(String(e instanceof Error ? e.message : e).slice(0, 160));
       } finally { setLentesBusy(false); }
-    });
+    }, 0));
   }, [piezaMalla, lentesBusy, lentes]);
   const lenteActiva = useMemo(
     () => (lenteId === 'medidas' ? null : lentes?.lentes.find((l) => l.id === lenteId) ?? null),
@@ -3697,6 +3782,16 @@ export default function ForgeBRepStudio() {
   const [olas, setOlas] = useState<Array<{ id: number; x: number; y: number; color: string }>>([]);
   const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
   const fichaRef = useRef<HTMLDivElement | null>(null);
+  // EL ENFRIAMIENTO SE VE · la ESCALA vive junto a la pieza: `EscalaDriver` (en el Canvas) le escribe el transform
+  const escalaRef = useRef<HTMLDivElement | null>(null);
+  // EL PUNTO QUE MANDA, el que SE VE: `MarcaVisible` elige entre los empates del máximo el que la cámara no tiene tapado
+  const [puntoVisible, setPuntoVisible] = useState<{ lente: string; punto: [number, number, number] } | null>(null);
+  const piezaCaja = useMemo(() => {
+    if (!piezaMalla) return null;
+    const P = piezaMalla.mesh.positions; const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+    for (let k = 0; k < P.length; k += 3) for (let d = 0; d < 3; d++) { if (P[k + d] < mn[d]) mn[d] = P[k + d]; if (P[k + d] > mx[d]) mx[d] = P[k + d]; }
+    return Number.isFinite(mn[0]) ? { mn: mn as [number, number, number], mx: mx as [number, number, number] } : null;
+  }, [piezaMalla]);
   // X3 · la ficha se ENSEÑA SOLA: al entrar a una lente abre una vez. Si arrancara
   // cerrada, el operador vería una esferita muda y tendría que adivinar que se apunta.
   useEffect(() => { setFichaAbierta(lenteActiva ? lenteActiva.id : null); }, [lenteActiva?.id]);
@@ -6725,33 +6820,45 @@ export default function ForgeBRepStudio() {
                      queda ignorado ahí, que es lo correcto: un colormap teñido de cian
                      ya no significa lo que dice su leyenda. */
                   feaColors={focoOn ? lenteActiva?.colores ?? null : null}
+                  campoGPU={focoOn ? lenteActiva?.gpu ?? null : null}
                   overhangColors={null} clip={sectionPlanes} holograma={focoOn} />
                 {/* U10 · LA MARCA — el punto que MANDA en esta lente (el macizo que
                     fija el ciclo, el último rincón en llenarse). De Horizon: la ficha
                     señala UN lugar, no toda la pieza. */}
-                {focoOn && lenteActiva?.peor && (
+                {focoOn && lenteActiva?.peor && (() => {
+                  // la marca NO se dibuja hasta que `MarcaVisible` eligió (visto en el paseo: 1 cuadro en el poste tapado)
+                  const conCand = !!lenteActiva.candidatos && lenteActiva.candidatos.length > 1;
+                  const puntoMarca = conCand ? (puntoVisible?.lente === lenteActiva.id ? puntoVisible.punto : null) : lenteActiva.peor.punto;
+                  return (
                   <>
                     {/* X3 · LA MARCA ES APUNTABLE. Antes era una esferita muda mientras su
                         frase vivía en la barra lateral — o sea, el dato del área de trabajo
                         fuera del área de trabajo. Ahora se apunta y se abre. */}
-                    <mesh position={lenteActiva.peor.punto} renderOrder={9}
+                    {puntoMarca && (<>
+                    <mesh position={puntoMarca} renderOrder={9}
                       onPointerOver={(e) => { e.stopPropagation(); setFichaAbierta(lenteActiva.id); }}
                       onPointerOut={() => { /* se queda abierta: cerrarla al salir haría imposible leerla */ }}>
                       <sphereGeometry args={[marcaR, 16, 12]} />
-                      <meshBasicMaterial color={lenteActiva.origen === 'medido' ? '#5fd4f5' : '#ffd3f2'}
+                      <meshBasicMaterial color={lenteActiva.gpu ? '#ffffff' : lenteActiva.origen === 'medido' ? '#5fd4f5' : '#ffd3f2'}
                         toneMapped={false} depthTest={false} transparent opacity={0.9} />
                     </mesh>
                     {/* el aro del haz: dice "esto se apunta" sin escribirlo */}
-                    <mesh position={lenteActiva.peor.punto} renderOrder={8}>
+                    <mesh position={puntoMarca} renderOrder={8}>
                       <sphereGeometry args={[marcaR * 2.1, 20, 14]} />
-                      <meshBasicMaterial color={lenteActiva.origen === 'medido' ? '#5fd4f5' : '#e061c8'}
-                        toneMapped={false} depthTest={false} transparent opacity={0.16} />
+                      <meshBasicMaterial color={lenteActiva.gpu ? '#ffffff' : lenteActiva.origen === 'medido' ? '#5fd4f5' : '#e061c8'}
+                        toneMapped={false} depthTest={false} transparent opacity={lenteActiva.gpu ? 0.28 : 0.16} />
                     </mesh>
                     {fichaAbierta === lenteActiva.id && (
-                      <FichaDriver punto={lenteActiva.peor.punto} el={fichaRef} />
+                      <FichaDriver punto={puntoMarca} el={fichaRef} />
+                    )}
+                    </>)}
+                    {lenteActiva.gpu && piezaCaja && <EscalaDriver caja={piezaCaja} el={escalaRef} />}
+                    {lenteActiva.candidatos && lenteActiva.candidatos.length > 1 && (
+                      <MarcaVisible lenteId={lenteActiva.id} candidatos={lenteActiva.candidatos} mesh={piezaMalla.mesh} onElige={setPuntoVisible} />
                     )}
                   </>
-                )}
+                  );
+                })()}
                 {/* EL FOCO · LAS MEDIDAS — hermanas de la malla: MISMO espacio de
                     coordenadas, así que la cota cae donde está la arista. Las cotas
                     solo salen en la lente MEDIDAS: encima de un campo de color serían
@@ -7260,6 +7367,17 @@ export default function ForgeBRepStudio() {
             sobre la pieza. `FichaDriver`, adentro del Canvas, le escribe el transform. */}
         {focoOn && lenteActiva?.peor && fichaAbierta === lenteActiva.id && (
           <FichaEnElMundo lente={lenteActiva} refEl={fichaRef} onCerrar={() => setFichaAbierta(null)} atenuada={laminaOn || particionOn || moldeOn} />
+        )}
+        {/* la espera del campo SE DICE sobre la pieza (2 s con la rejilla a la pared): antes solo la tira de abajo lo decía */}
+        {focoOn && lentesBusy && lenteId !== 'medidas' && (
+          <div data-testid="lente-calculando" style={{ position: 'absolute', left: '50%', top: '18%', transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
+            padding: '8px 14px', borderLeft: '3px solid #14c3f5', background: 'rgba(10,16,26,0.86)', font: '600 12.5px system-ui,sans-serif', color: '#dfe9f5', whiteSpace: 'nowrap' }}>
+            ⏳ calculando cuánto tarda cada punto de tu pieza · Eq 9.5 sobre su pared, 4 celdas por espesor
+          </div>
+        )}
+        {/* EL ENFRIAMIENTO SE VE · LA ESCALA: la clave del color, en segundos, junto a la pieza (no en la tira de abajo) */}
+        {focoOn && lenteActiva?.gpu && lenteActiva.peor && (
+          <EscalaEnElMundo lente={lenteActiva} gpu={lenteActiva.gpu} refEl={escalaRef} atenuada={laminaOn || particionOn || moldeOn} />
         )}
         {focoOn && !lenteActiva && focoCotas.length > 0 && (
           <CotaLabels sets={focoCotas} refs={focoRefs} paleta={PALETA_FOCO} testid="foco-cotas-overlay" modo="medida" />
@@ -9429,6 +9547,150 @@ function FichaDriver({ punto, el }: { punto: [number, number, number]; el: React
   });
   // ancla vacía: hereda los transforms del grupo donde vive la pieza
   return <group ref={anchor} />;
+}
+
+/**
+ * EL ENFRIAMIENTO SE VE (2026-09-14) · el ancla de LA ESCALA: proyecta las 8 esquinas de la caja de la pieza y pone la
+ * barra a su DERECHA, centrada en su alto. Mismo `useFrame` + `project(camera)` que la ficha; sin setState por cuadro.
+ */
+function EscalaDriver({ caja, el }: { caja: { mn: [number, number, number]; mx: [number, number, number] }; el: React.MutableRefObject<HTMLDivElement | null> }) {
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+  const anchor = useRef<THREE.Group>(null);
+  const v = useRef(new THREE.Vector3()).current;
+  useFrame(() => {
+    const d = el.current, g = anchor.current;
+    if (!d || !g) return;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      v.set(i & 1 ? caja.mx[0] : caja.mn[0], i & 2 ? caja.mx[1] : caja.mn[1], i & 4 ? caja.mx[2] : caja.mn[2]);
+      g.localToWorld(v); v.project(camera);
+      const px = (v.x * 0.5 + 0.5) * size.width, py = (-v.y * 0.5 + 0.5) * size.height;
+      if (px < x0) x0 = px; if (px > x1) x1 = px; if (py < y0) y0 = py; if (py > y1) y1 = py;
+    }
+    if (!Number.isFinite(x0)) { d.style.display = 'none'; return; }
+    d.style.display = '';
+    const alto = Math.max(190, Math.min(320, (y1 - y0) * 0.72));
+    const ancho = 330;   // barra + marcas + «◀ el punto que manda el ciclo»
+    const left = Math.max(12, Math.min(size.width - ancho - 12, x1 + 34));
+    const top = Math.max(56, Math.min(size.height - alto - 70, (y0 + y1) / 2 - alto / 2));
+    d.style.transform = `translate(${left.toFixed(0)}px,${top.toFixed(0)}px)`;
+    d.style.height = `${alto.toFixed(0)}px`;
+    d.dataset.caja = `${x0.toFixed(0)},${y0.toFixed(0)},${x1.toFixed(0)},${y1.toFixed(0)}`;
+  });
+  return <group ref={anchor} />;
+}
+
+/**
+ * EL PUNTO QUE MANDA, EL QUE SE VE (2026-09-14). Los empates de lo más lento (vértices: viven SOBRE la superficie
+ * pintada) se prueban contra la malla con un rayo DESDE LA CÁMARA, en el marco de la pieza con el ancla: el primero
+ * sin nada delante gana. Tolerancia 0.6 mm: el propio vértice y sus vecinos coplanares no se cuentan como tapa.
+ * Se elige al abrir la lente y cada vez que la cámara se queda quieta 400 ms tras moverse; nunca por cuadro
+ * (la ficha brincaría de poste en poste mientras orbitas).
+ */
+function MarcaVisible({ lenteId, candidatos, mesh, onElige }: {
+  lenteId: string;
+  candidatos: Array<{ punto: [number, number, number]; valor: number }>;
+  mesh: { positions: ArrayLike<number>; indices: ArrayLike<number> };
+  onElige: (v: { lente: string; punto: [number, number, number] } | null) => void;
+}) {
+  const camera = useThree((s) => s.camera);
+  const anchor = useRef<THREE.Group>(null);
+  const ultima = useRef({ pos: new THREE.Vector3(Infinity, 0, 0), quieta: 0, elegida: '' });
+  const cam = useRef(new THREE.Vector3()).current;
+  const elegir = useCallback(() => {
+    const g = anchor.current; if (!g) return;
+    cam.copy(camera.position); g.worldToLocal(cam);
+    const P = mesh.positions, I = mesh.indices;
+    const TOL = 0.6;
+    let gana = -1;
+    for (let c = 0; c < candidatos.length && gana < 0; c++) {
+      const p = candidatos[c].punto;
+      const dx = p[0] - cam.x, dy = p[1] - cam.y, dz = p[2] - cam.z; const L = Math.hypot(dx, dy, dz); if (!(L > 0)) continue;
+      const d = [dx / L, dy / L, dz / L];
+      let tapado = false;
+      for (let t = 0; t + 2 < I.length && !tapado; t += 3) {
+        const a = I[t] * 3, b = I[t + 1] * 3, e = I[t + 2] * 3;
+        const e1x = P[b] - P[a], e1y = P[b + 1] - P[a + 1], e1z = P[b + 2] - P[a + 2];
+        const e2x = P[e] - P[a], e2y = P[e + 1] - P[a + 1], e2z = P[e + 2] - P[a + 2];
+        const hx = d[1] * e2z - d[2] * e2y, hy = d[2] * e2x - d[0] * e2z, hz = d[0] * e2y - d[1] * e2x;
+        const det = e1x * hx + e1y * hy + e1z * hz; if (Math.abs(det) < 1e-12) continue;
+        const f = 1 / det, sx = cam.x - P[a], sy = cam.y - P[a + 1], sz = cam.z - P[a + 2];
+        const u = f * (sx * hx + sy * hy + sz * hz); if (u < 0 || u > 1) continue;
+        const qx = sy * e1z - sz * e1y, qy = sz * e1x - sx * e1z, qz = sx * e1y - sy * e1x;
+        const v = f * (d[0] * qx + d[1] * qy + d[2] * qz); if (v < 0 || u + v > 1) continue;
+        const tt = f * (e2x * qx + e2y * qy + e2z * qz);
+        if (tt > 1e-6 && tt < L - TOL) tapado = true;
+      }
+      if (!tapado) gana = c;
+    }
+    const clave = `${lenteId}:${gana}`;
+    if (clave === ultima.current.elegida) return;
+    ultima.current.elegida = clave;
+    onElige({ lente: lenteId, punto: candidatos[gana >= 0 ? gana : 0].punto });
+  }, [camera, mesh, candidatos, lenteId, onElige, cam]);
+  useEffect(() => { ultima.current.elegida = ''; ultima.current.pos.set(Infinity, 0, 0); }, [lenteId, candidatos]);
+  useFrame((st) => {
+    const u = ultima.current;
+    // la PRIMERA elección es inmediata (visto en el paseo: la marca salía 1 s en el poste tapado y luego brincaba)
+    if (u.elegida === '') { u.pos.copy(camera.position); u.quieta = -1; elegir(); return; }
+    if (u.pos.distanceToSquared(camera.position) > 1e-4) { u.pos.copy(camera.position); u.quieta = st.clock.elapsedTime; return; }
+    if (u.quieta >= 0 && st.clock.elapsedTime - u.quieta > 0.4) { u.quieta = -1; elegir(); }
+  });
+  return <group ref={anchor} />;
+}
+
+/**
+ * LA ESCALA del enfriamiento: los MISMOS bytes de la LUT que pinta el shader, de abajo (listo pronto) a arriba (detiene
+ * el ciclo). Las marcas van LINEALES en segundos (la posición en la barra ES el tiempo), así que el color se amontona
+ * abajo en azul: es la verdad de esta pieza — la mitad está lista en el mínimo y solo los macizos tardan.
+ */
+function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false }: {
+  lente: { unidad: string; p50: number; maxCampo: number };
+  gpu: CampoGPU;
+  refEl: React.MutableRefObject<HTMLDivElement | null>;
+  atenuada?: boolean;
+}) {
+  const { lo, hi } = gpu.escala;
+  const span = hi - lo || 1;
+  const grad = useMemo(() => {
+    const paradas: string[] = [];
+    for (let i = 0; i <= 16; i++) {
+      const b = Math.round((i / 16) * 255) * 4;
+      paradas.push(`rgb(${gpu.lut[b]},${gpu.lut[b + 1]},${gpu.lut[b + 2]}) ${(100 * i / 16).toFixed(2)}%`);
+    }
+    return `linear-gradient(to top, ${paradas.join(', ')})`;
+  }, [gpu]);
+  const s0 = (x: number) => (x >= 100 ? x.toFixed(0) : x.toFixed(1));
+  const marcas = [0, 0.25, 0.5, 0.75, 1].map((u) => ({ u, v: lo + u * span }));
+  const pct = (x: number) => Math.max(0, Math.min(100, (100 * (x - lo)) / span));
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 6, opacity: atenuada ? 0.12 : 1, transition: 'opacity .35s ease' }}>
+      <div ref={refEl} data-testid="escala-enfriamiento" data-lo={lo.toFixed(1)} data-hi={hi.toFixed(1)} data-marcas={marcas.length}
+        style={{ position: 'absolute', left: 0, top: 0, width: 210, height: 240, willChange: 'transform', display: 'none' }}>
+        <div style={{ position: 'absolute', left: 0, top: -40, width: 230, font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: '#dfe7f2' }}>
+          SEGUNDOS PARA ESTAR FIRME
+          <div style={{ font: '500 10.5px system-ui,sans-serif', letterSpacing: 0, color: '#9fb0c4', marginTop: 2 }}>Eq 9.5 sobre la pared de cada punto</div>
+        </div>
+        {/* la barra */}
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, borderRadius: 3, background: grad, boxShadow: '0 0 0 1px rgba(255,255,255,0.22), 0 2px 10px rgba(0,0,0,0.45)' }} />
+        {/* marcas en segundos */}
+        {marcas.map((m) => (
+          <div key={m.u} style={{ position: 'absolute', left: 16, bottom: `${m.u * 100}%`, transform: 'translateY(50%)', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 7, height: 1.5, background: 'rgba(255,255,255,0.75)' }} />
+            <b style={{ font: '700 12px system-ui,sans-serif', fontVariantNumeric: 'tabular-nums', color: '#eaf2fb', textShadow: '0 1px 3px #000' }}>{s0(m.v)} {lente.unidad}</b>
+          </div>
+        ))}
+        {/* lo que manda: arriba — y la mitad de la pieza, donde cae */}
+        <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.maxCampo)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#ffb4a8', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
+          ◀ lo más lento: manda el ciclo
+        </div>
+        <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.p50)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#a9c4ff', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
+          ◀ la mitad de tu pieza ya está firme
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function FichaEnElMundo({ lente, refEl, onCerrar, atenuada = false }: {

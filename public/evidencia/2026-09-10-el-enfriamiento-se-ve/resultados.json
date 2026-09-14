@@ -1,0 +1,201 @@
+{
+ "orden": "2026-09-10-el-enfriamiento-se-ve",
+ "golpe": "1 · LA ESCALA",
+ "MEDIDO": [
+  "MEDIDO · 6/8 ok · 241 s · servido 6f70032 · iangpu",
+  "MEDIDO · 6/8 ok · 301 s · servido 6f70032 · iangpu"
+ ],
+ "shot_timeouts": [],
+ "glitch": [
+  "GLITCH_FRAMES 0",
+  "GLITCH_RESTANTES 0"
+ ],
+ "paso3_medicion": [
+  {
+   "label": "p3-1",
+   "ok": true,
+   "ms": 2,
+   "detail": ""
+  },
+  {
+   "label": "p3-2",
+   "ok": true,
+   "ms": 2,
+   "detail": "1.6 s declarados por el módulo"
+  },
+  {
+   "label": "p3-3",
+   "ok": true,
+   "ms": 2,
+   "detail": ""
+  },
+  {
+   "label": "p3-4",
+   "ok": true,
+   "ms": 25,
+   "detail": "encuadre dx -0.024 dy 0.086 fill 0.381 luma 0.071"
+  },
+  {
+   "label": "p3-5",
+   "ok": true,
+   "ms": 2,
+   "detail": ""
+  },
+  {
+   "label": "p3-6",
+   "ok": false,
+   "ms": 16210,
+   "detail": "no se cumplió en 15000 ms"
+  }
+ ],
+ "paso3_paseo": [
+  {
+   "label": "p3-1",
+   "ok": true,
+   "ms": 2,
+   "detail": ""
+  },
+  {
+   "label": "p3-2",
+   "ok": true,
+   "ms": 2,
+   "detail": "1.6 s declarados por el módulo"
+  },
+  {
+   "label": "p3-3",
+   "ok": true,
+   "ms": 4,
+   "detail": ""
+  },
+  {
+   "label": "p3-4",
+   "ok": true,
+   "ms": 31,
+   "detail": "encuadre dx -0.022 dy 0.086 fill 0.348 luma 0.065"
+  },
+  {
+   "label": "p3-5",
+   "ok": true,
+   "ms": 3,
+   "detail": ""
+  },
+  {
+   "label": "p3-6",
+   "ok": false,
+   "ms": 15002,
+   "detail": "no se cumplió en 15000 ms"
+  }
+ ],
+ "paso6_pared_medicion": [
+  "E4 | pared 3.2 mm | cavidad nucleo pieza particion placa-a-g"
+ ],
+ "pintura_1594C_box": {
+  "metodo": "node, mismos puntos finos por triángulo, vecino de hueco más cercano",
+  "por_vertice_celda_1p375": {
+   "pct_area_pintada_tarde": 16.6,
+   "pct_area_tarde_real": 2.2,
+   "pct_area_color_equivocado_25pct": 34.1,
+   "error_medio_rampa": 0.224
+  },
+  "por_fragmento_emulado": {
+   "pct_area_pintada_tarde": 2.2,
+   "pct_area_color_equivocado_25pct": 0.3,
+   "error_medio_rampa": 0.006,
+   "pct_sin_dato": 0.0
+  },
+  "aristas_malla_mm": {
+   "p50": 0.3,
+   "p90": 21.5,
+   "max": 115.5
+  }
+ },
+ "rejilla_vs_pared_exacta_3p1mm": [
+  {
+   "celda_mm": 1.375,
+   "pared_leida_mm": [
+    2.75,
+    5.5
+   ],
+   "pct_vox_inflados": 36.6,
+   "ms_campo_node": 317
+  },
+  {
+   "celda_mm": 0.978,
+   "pared_leida_mm": [
+    3.91
+   ],
+   "pct_vox_inflados": 11.4,
+   "ms_campo_node": 1087
+  },
+  {
+   "celda_mm": 0.883,
+   "pared_leida_mm": [
+    3.53
+   ],
+   "pct_vox_inflados": 7.3,
+   "ms_campo_node": 1489
+  },
+  {
+   "celda_mm": 0.836,
+   "pared_leida_mm": [
+    3.35
+   ],
+   "pct_vox_inflados": 7.2,
+   "ms_campo_node": 1819
+  },
+  {
+   "celda_mm": 0.8,
+   "pared_leida_mm": [
+    3.2
+   ],
+   "pct_vox_inflados": 5.7,
+   "ms_campo_node": 2149
+  }
+ ],
+ "etapas_campo_celda_0p8_ms": {
+  "voxelizar": 850,
+  "distancia": 100,
+  "espesor_local": 45,
+  "dijkstra_frente": 1390
+ },
+ "dos_campos_ab_contra_HEAD": {
+  "llenado_valores_distintos": 0,
+  "llenado_colores_distintos": 0,
+  "marca_y_titular_llenado_iguales": true,
+  "ms_node": {
+   "1594C Box": [
+    1545,
+    1677
+   ],
+   "1594C Lid": [
+    868,
+    907
+   ],
+   "rpi4-top": [
+    840,
+    851
+   ]
+  }
+ },
+ "lente_enfriamiento_1594C": {
+  "antes": {
+   "celda_mm": 1.375,
+   "pared_p50_mm": 2.75,
+   "tc_p50_s": 15.9,
+   "tc_max_s": 233,
+   "titular": "El ciclo lo manda un solo punto: 233 s."
+  },
+  "despues": {
+   "celda_mm": 0.8,
+   "pared_p50_mm": 3.2,
+   "tc_p50_s": 21.5,
+   "tc_max_s": 134.5,
+   "titular": "El ciclo lo manda lo más lento: 134 s, en 4 lugares iguales."
+  },
+  "eq95_con_pared_exacta_3p1mm_s": 20.2
+ },
+ "pruebas": {
+  "ciclo_dado_test": "266/266 (copia de la laptop; la de iangpu estaba vieja, 248)",
+  "tsc_ab": "27 → 27 errores en los 4 archivos (0 nuevos)"
+ }
+}

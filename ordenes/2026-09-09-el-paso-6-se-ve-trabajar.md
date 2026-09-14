@@ -164,6 +164,8 @@ el hilo entre tandas de pasos; ninguna ecuación cambia; ciclo-dado-test.cjs se 
   · **Ceder el hilo cuesta un cuadro entero** (~90 ms: escena 3D + re-render del estudio por `setProgreso`): a 120 ms
     de cadencia E5 subió a 78 s. La barra vive con cadencia de 1 s + el contador de segundos.
   · `ciclo-dado-test` da **248/248** hoy (el 266/266 del 09-09 era con otro árbol; A/B con el mismo árbol: 248 y 248).
+    CORRECCIÓN 2026-09-14: la causa no era «otro árbol»: la copia del test en iangpu estaba VIEJA (sin las 18 de LENTE).
+    El A/B del FAN sigue valiendo (su sección E5/FAN sí estaba en esa copia); con la copia de la laptop: 266/266.
 - gotchas pagados:
   · **dev2 es COPIA, no symlink** (`src/` y `public/`; solo `node_modules` es symlink): una corrida entera midió
     código viejo por sincronizar solo el repo de iangpu. Regla: rsync `src/` a `/home/ian/forja-dev2/src/` antes.
