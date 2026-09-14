@@ -192,7 +192,13 @@
     "nueva": true,
     "autorizado": "2026-09-07 yt,ig — dicho por ian en sesión, después de verlas todas: \"ya las vi todas, te mamaste, todo autorizado\"",
     "programar": "2026-09-12T18:45:00-06:00",
-    "subidas": {},
+    "subidas": {
+      "ig": {
+        "id": "18094870556284122",
+        "url": "https://www.instagram.com/reel/DdNTcrjCDmN/",
+        "fecha": "2026-09-14T10:59"
+      }
+    },
     "copy": {
       "titulo": "Si la comida dejó de saberte, te falta este átomo (Zinc)",
       "descripcion": "Cuando falta zinc, lo primero que se va es el sabor y el olfato. 👅 Tu lengua y tu nariz lo necesitan para funcionar, y unas trescientas proteínas tuyas lo usan como herramienta de trabajo. Esto no es un dibujo: es la densidad electrónica del zinc resuelta con física cuántica real (SCF, def2-tzvp), orbital por orbital. Mira su última capa d: está completa, llena, cerrada. Por eso el zinc no se pelea con nadie — se deja usar, y por eso sirve de herramienta.",

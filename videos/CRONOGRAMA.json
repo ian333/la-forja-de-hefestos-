@@ -136,7 +136,7 @@
       "titulo": "El 99 % lo traes en los huesos; el 1 % que sobra es el que te mueve — Calcio (Z=20)",
       "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
       "tipo": "atomo-identidad",
-      "estado": "proximo",
+      "estado": "hecho",
       "nota": "el 1 % citoplásmico dispara la contracción muscular. 4s²."
     },
     {
@@ -146,7 +146,7 @@
       "titulo": "Tu pelo es lacio o rizado por culpa de este átomo — Azufre (Z=16)",
       "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
       "tipo": "atomo-identidad",
-      "estado": "proximo",
+      "estado": "hecho",
       "nota": "los puentes disulfuro de la queratina deciden la forma del pelo; romperlos y volver a atarlos ES el permanente. 3p⁴: dos electrones sin pareja. (El YODO salió del plan: su bin usa pseudopotencial y le FALTA el núcleo — ver gate_atomos.)"
     },
     {
@@ -156,7 +156,7 @@
       "titulo": "Si la comida dejó de saberte, te falta este átomo — Zinc (Z=30)",
       "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
       "tipo": "atomo-identidad",
-      "estado": "proximo",
+      "estado": "hecho",
       "nota": "la deficiencia de zinc quita gusto y olfato; ~300 enzimas lo usan. 3d¹⁰4s²."
     },
     {
@@ -166,7 +166,7 @@
       "titulo": "Cada día gastas tu propio peso en una sola molécula — Fósforo (Z=15)",
       "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
       "tipo": "atomo-identidad",
-      "estado": "proximo",
+      "estado": "hecho",
       "nota": "DOMINGO = día fuerte. El ATP se recicla ~el peso corporal al día y lleva 3 fósforos. 3p³ = tres pétalos, un electrón cada uno."
     },
     {

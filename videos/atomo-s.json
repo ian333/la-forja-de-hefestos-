@@ -150,7 +150,13 @@
     "nueva": true,
     "autorizado": "2026-09-07 yt,ig — dicho por ian en sesión, después de verlas todas: \"ya las vi todas, te mamaste, todo autorizado\"",
     "programar": "2026-09-11T18:45:00-06:00",
-    "subidas": {},
+    "subidas": {
+      "ig": {
+        "id": "18030729488889649",
+        "url": "https://www.instagram.com/reel/DdKup69j7gB/",
+        "fecha": "2026-09-14T10:59"
+      }
+    },
     "copy": {
       "titulo": "Tu pelo es lacio o rizado por culpa de este átomo (Azufre)",
       "descripcion": "Dentro de cada hilo de tu pelo, dos átomos de azufre se dan la mano: son los puentes disulfuro de la queratina, y ellos deciden la forma. 💇 Romperlos y volver a atarlos en otra posición es, literalmente, lo que hace un permanente en un salón de belleza. Lo que ves es la densidad electrónica del azufre resuelta con física cuántica real (SCF, def2-tzvp), orbital por orbital: seis electrones en su última capa, y dos de ellos sin pareja — las dos manos con las que agarra.",

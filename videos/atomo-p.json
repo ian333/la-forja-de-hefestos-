@@ -150,7 +150,13 @@
     "nueva": true,
     "autorizado": "2026-09-07 yt,ig — dicho por ian en sesión, después de verlas todas: \"ya las vi todas, te mamaste, todo autorizado\"",
     "programar": "2026-09-13T18:45:00-06:00",
-    "subidas": {},
+    "subidas": {
+      "ig": {
+        "id": "18114682811055495",
+        "url": "https://www.instagram.com/reel/DdP4U1KjYYD/",
+        "fecha": "2026-09-14T10:59"
+      }
+    },
     "copy": {
       "titulo": "Cada día gastas tu propio peso en una sola molécula (Fósforo)",
       "descripcion": "Tu cuerpo fabrica y consume, cada día, aproximadamente su propio peso en ATP. 🔋 Y el ATP lleva tres átomos de fósforo: es la moneda con la que pagas cada latido, cada paso y cada pensamiento. No la almacenas: la fabricas y la gastas miles de veces al día. Lo que ves es la densidad electrónica del fósforo, resuelta con física cuántica real (SCF, def2-tzvp), orbital por orbital. Mira sus tres pétalos: tres electrones solos, cada uno listo para amarrar.",
