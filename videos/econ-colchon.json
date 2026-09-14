@@ -63,32 +63,45 @@
   "publicar": {
     "biblioteca": "economia/reels/econ-colchon.mp4",
     "capsulaRel": "economia/_code/econ-colchon-capsula.tar.gz",
-    "pieza": "econ colchon",
+    "pieza": "clase-reel",
     "nueva": true,
     "copy": {
-      "titulo": "Un negocio no muere de vender poco. Muere el día que no sabía cuánto le quedaba.",
-      "descripcion": "Estos dos negocios venden lo mismo y cada mes les toca exactamente la misma suerte. La única diferencia es la caja: el dorado guardó un mes de gastos, el azul guardó tres. Son 40,000 parejas simuladas con la misma suerte mes por mes; en cinco años los dorados se apagan casi al triple. No vendieron menos: les llegó el mes malo con la caja vacía. Es la ruina del jugador corriendo sobre los números reales de INEGI (tabla demográfica 1989-2019: de cada 100 negocios, 31 no cumplen un año y 64 no llegan a cinco). Un negocio no muere de vender poco; muere el día que no sabe cuánto le queda. 💬 ¿Cuántos meses de caja tienes guardados hoy? Cuéntame en los comentarios.",
+      "titulo": "Tu negocio no cierra por vender poco · La economía de tu negocio, capítulo 1",
+      "descripcion": "Empieza una serie nueva: LA ECONOMÍA DE TU NEGOCIO. Cada capítulo, una idea sencilla para que tu negocio aguante. 📈\n\nCapítulo 1: el guardadito.\n\nEstos dos negocios venden lo mismo y cada mes les toca la misma suerte. La única diferencia es lo que tienen guardado: el dorado, para pagar un mes de gastos; el azul, para tres. Cuando llega un mes malo, el dorado cierra y el azul aguanta. No vendió menos: se le acabó el guardadito.\n\nEn México, de cada 100 negocios que abren, 31 cierran antes de cumplir un año (INEGI).\n\n💬 Si mañana no vendieras nada, ¿para cuántos meses te alcanza lo que tienes guardado?\n\nSíguenos para el capítulo 2.",
       "hashtags": [
         "#negocios",
-        "#emprender",
+        "#emprendedores",
         "#pymes",
         "#méxico",
-        "#economía",
-        "#finanzas",
-        "#inegi",
         "#tiendita",
+        "#ahorro",
+        "#finanzas",
+        "#economía",
         "#gaia",
         "#aprendeaverloinvisible"
       ],
       "marco": "revelacion",
       "activacion": "alta",
-      "valor_propio": "porque le pasa a quien lo ve: el que tiene negocio se reconoce en un punto que se apaga",
-      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA (canon §EL VEREDICTO A/B) y PRIMER LLAMADO A LA ACCIÓN de la serie: pregunta en comentarios (no hay puente al ERP todavía; la calculadora pública viene después)."
+      "valor_propio": "porque le pasa a quien lo ve: el que tiene negocio se reconoce en el punto que se apaga",
+      "nota_declaracion": "CAPÍTULO 1 de la serie LA ECONOMÍA DE TU NEGOCIO (ian, 2026-09-14: «anuncia que será una serie»). Copy en LENGUAJE SENCILLO: sin «ruina del jugador» ni «tabla demográfica»; la explicación completa va en el primer comentario."
     },
-    "autorizado": "",
-    "subidas": {},
-    "programar": "",
-    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json. Sin publicar.autorizado con las palabras de ian NADA sube."
+    "autorizado": "2026-09-14 yt,ig — dicho por ian en sesión: \"sube el colchon son 30 segundos iremos mejorando sobre ese video subelo hoy, anuncia que sera una serie\"",
+    "subidas": {
+      "yt": {
+        "id": "8jbWV_qtSFo",
+        "url": "https://youtu.be/8jbWV_qtSFo",
+        "privacidad": "private",
+        "publishAt": "2026-09-14T21:00:00-06:00",
+        "captions": "AUieDaacTOdI96wLWi0eqqLHUdE6tDpk3HFEp7KpTq-toMHXyqCIkaMMcw",
+        "fecha": "2026-09-14T11:43"
+      }
+    },
+    "programar": "2026-09-14T21:00:00-06:00",
+    "nota_programar": "21:00 CDMX y no 18:45 (2026-09-14): la serie de negocio es para MÉXICO, el pico propio es 21-23 h hora local, y a las 18:45 de ese día ya sale atomo-k.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nImagina dos taquerías en la misma calle. Venden los mismos tacos y les llega la misma gente.\n\nDoña Lupe tiene guardado para pagar UN mes de renta, gas y sueldos. Es el punto dorado del video.\nDon Beto tiene guardado para TRES meses. Es el punto azul.\n\nUn mes llueve todos los días y casi nadie sale a comer. Las dos venden poquito.\n\nDoña Lupe se gasta su guardadito y ya no le alcanza para la renta: cierra.\nDon Beto paga con su guardadito, aguanta, y cuando vuelve el sol sigue abierto.\n\nDoña Lupe no cocinaba peor ni vendía menos. Lo que le faltó fue el cochinito.\n\nEs como ir de excursión: los dos caminan igual, pero el que lleva más agua aguanta cuando no hay dónde comprar.\n\n✏️ Haz esta cuenta hoy: si mañana no vendieras nada, ¿cuántos meses podrías pagar tus gastos con lo que tienes guardado? Si es menos de uno, empieza a guardar poquito cada semana, aunque sean 50 pesos.\n\nEste es el capítulo 1 de La economía de tu negocio. Déjanos tu cuenta aquí abajo 👇",
+    "nota_primer_comentario": "ian, 2026-09-14: «en los comentarios debes explicar a gente no educada, con ejemplos simples, ideas que un niño y una abuela entienden». Instagram: lo publica PRIME justo después del reel (cola-publicar.py tick). YouTube: scripts/primer-comentario.py.",
+    "nota_pieza": "comando-catalogo.cjs mete TODO economia/reels/*.mp4 en UNA pieza «clase-reel» (líneas 338-342): el id «econ colchon» nunca existe en el catálogo y el check en vivo de paso_publicar fallaba aunque el video ya estaba en PRIME y ATLAS (2026-09-14). Ostrom tampoco pasó por aquí. Pendiente: un id por reel de economía.",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-colchon.mp4?v=100194b7a1"
   },
   "guion": {
     "archivo": "scripts/guiones/econ-colchon.txt"

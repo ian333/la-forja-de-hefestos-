@@ -122,6 +122,13 @@ def tick(dry=False):
         log(f'▶ {e["id"]} — programado {e["programar"]}, {tarde*60:.0f} min después')
         try:
             r = publicar_reel(tok, e)
+            # PRIMER COMENTARIO (2026-09-14, econ-colchon): la explicación sencilla va en los comentarios
+            # justo al publicar. Nunca tumba la publicación: si falla, queda en el log y en hecho/.
+            if e.get('primer_comentario'):
+                c = api('POST', f'https://graph.instagram.com/{V}/{r["id"]}/comments',
+                        data={'message': e['primer_comentario'], 'access_token': tok['access_token']})
+                if 'id' in c: r['comentario'] = c['id']; log(f'   💬 primer comentario publicado: {c["id"]}')
+                else: r['comentario_error'] = str(c)[:300]; log(f'   ⚠ primer comentario NO se publicó: {str(c)[:200]}')
             json.dump({'id': e['id'], 'estado': 'ok', 'ig': r, 'programar': e['programar'],
                        'publicado_en': ahora().isoformat(timespec='seconds')}, open(ph, 'w'), indent=1)
             log(f'✓ {e["id"]} publicado: {r["url"]}')
@@ -216,6 +223,9 @@ def armar(vid):
     caption = (c['titulo'] + '\n\n' + c.get('descripcion', '') + '\n\n' + ' '.join(c.get('hashtags', [])[:30]))[:2200]
     entrada = {'id': vid, 'programar': pub['programar'], 'video_url': url, 'caption': caption,
                'armado': ahora().isoformat(timespec='seconds'), 'autorizado': aut[:120]}
+    if pub.get('primer_comentario'):
+        entrada['primer_comentario'] = pub['primer_comentario'][:2200]      # tope de Instagram por comentario
+        print(f'   💬 con primer comentario ({len(entrada["primer_comentario"])} caracteres)')
     # el script mismo → PRIME (se despliega solo; el cron solo necesita existir) + token SINCRONIZADO
     r = ssh(f'mkdir -p {COLA}/hecho && cat > {COLA}/cola-publicar.py && chmod 600 {COLA}/cola-publicar.py', open(os.path.abspath(__file__)).read())
     if r.returncode: sys.exit(f'✗ no pude copiar el script a PRIME: {r.stderr.strip()}')
