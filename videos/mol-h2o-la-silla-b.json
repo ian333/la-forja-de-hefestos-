@@ -79,10 +79,20 @@
       "valor_propio": "porque enseña que el jalón del agua tiene DOMICILIO, y de ahí sale que el hielo flote",
       "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B)."
     },
-    "autorizado": "",
-    "subidas": {},
-    "programar": "",
-    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+    "autorizado": "2026-09-14 yt,ig — dicho por ian en sesión: \"autorizo sudor-b, sal-b, cuarteto-b y silla-b en youtube e instagram\"",
+    "subidas": {
+      "yt": {
+        "id": "V1LAjOfYKP8",
+        "url": "https://youtu.be/V1LAjOfYKP8",
+        "privacidad": "private",
+        "publishAt": "2026-09-21T18:45:00-06:00",
+        "captions": "AUieDaaaQ_V9pWSau8Oy9yMV3oekdEh8v9JsLbhOwm1IcsLL_yVxh70qUw",
+        "fecha": "2026-09-14T18:44"
+      }
+    },
+    "programar": "2026-09-21T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora.",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-la-silla-b.mp4?v=ba69a7313e"
   },
   "guion": {
     "archivo": "scripts/guiones/sillab.txt"

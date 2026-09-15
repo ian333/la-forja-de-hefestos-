@@ -79,10 +79,20 @@
       "valor_propio": "porque convierte la sed en un mecanismo que puedes ver",
       "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B)."
     },
-    "autorizado": "",
-    "subidas": {},
-    "programar": "",
-    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora."
+    "autorizado": "2026-09-14 yt,ig — dicho por ian en sesión: \"autorizo sudor-b, sal-b, cuarteto-b y silla-b en youtube e instagram\"",
+    "subidas": {
+      "yt": {
+        "id": "S3Nn6ajKn8c",
+        "url": "https://youtu.be/S3Nn6ajKn8c",
+        "privacidad": "private",
+        "publishAt": "2026-09-18T18:45:00-06:00",
+        "captions": "AUieDaaTvSMfIScN6Gpi8qLnvMxOCYekKM516b8iLBHdx5eJpNxaGGn1kw",
+        "fecha": "2026-09-14T18:23"
+      }
+    },
+    "programar": "2026-09-18T18:45:00-06:00",
+    "nota_programar": "hora canon 18:45 CDMX = public/comando/horarios.json (pico 21-23 h local en AR/CL/CO/MX). Sin publicar.autorizado con las palabras de ian NADA sube: programar solo declara la hora.",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-la-sal-b.mp4?v=8f14c7ab26"
   },
   "guion": {
     "archivo": "scripts/guiones/salb.txt"
