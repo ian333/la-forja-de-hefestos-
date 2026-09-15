@@ -17,7 +17,7 @@ Une cada medio con su manifiesto (`publicar.subidas.ig.id` / `.yt.id`) cuando ex
   /home/ian/pub-venv/bin/python scripts/comentarios.py            # todo
   /home/ian/pub-venv/bin/python scripts/comentarios.py ig|yt      # una plataforma
   /home/ian/pub-venv/bin/python scripts/comentarios.py diagnostico  # ¿por qué vienen vacíos?
-  python3 scripts/comentarios.py fb <archivo-token>                  # IG por la página de Facebook (sin papeleo)
+  python3 scripts/comentarios.py fb [archivo-token]                  # IG por Facebook (token de 60 días en ~/.config/gaia-pub)
 """
 import os, sys, json, glob, time, datetime as dt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -312,8 +312,20 @@ def main(args):
     prev = json.load(open(OUT, encoding='utf-8')) if os.path.exists(OUT) else {}
     out = {'generado': dt.datetime.now().isoformat(timespec='minutes'), 'ig': prev.get('ig'), 'yt': prev.get('yt')}
     if cual == 'fb':
-        if len(args) < 2: sys.exit('uso: comentarios.py fb <archivo-con-el-token>')
-        out['ig'] = instagram_fb(mapa_ig, open(os.path.expanduser(args[1]), encoding='utf-8').read().strip())
+        # EL TOKEN DE 60 DÍAS (2026-09-15): ~/.config/gaia-pub/facebook-user-token.json (600, fuera del repo;
+        # copia en PRIME ~/forja-cola/). Se obtiene: Explorador → token → Depurador → «Ampliar token de acceso».
+        ruta = os.path.expanduser(args[1]) if len(args) > 1 else os.path.join(CONF, 'facebook-user-token.json')
+        crudo = open(ruta, encoding='utf-8').read().strip()
+        info = json.loads(crudo) if crudo.startswith('{') else {'access_token': crudo}
+        if info.get('expira'):
+            dias = (dt.date.fromisoformat(info['expira']) - dt.date.today()).days
+            print(f'token de Facebook: vence {info["expira"]} (faltan {dias} días)' + ('  ⚠ RENOVAR: Explorador → Depurador → Ampliar' if dias <= 10 else ''))
+        antes = {c['id'] for m in ((prev.get('ig') or {}).get('medios') or []) for c in m.get('comentarios', [])}
+        out['ig'] = instagram_fb(mapa_ig, info['access_token'])
+        nuevos = [(m, c) for m in out['ig']['medios'] for c in m['comentarios'] if c['id'] not in antes and c.get('autor') not in ('gaiaprime_mx',)]
+        print(f'── {len(nuevos)} comentarios NUEVOS de la gente desde la bajada anterior')
+        for m, c in sorted(nuevos, key=lambda x: x[1].get('fecha') or '')[-40:]:
+            print(f"   {(c.get('fecha') or '')[:16]}  @{c.get('autor')}: {(c.get('texto') or '')[:90]!r}  ← {(m.get('caption') or '')[:40]!r}")
     if cual in ('todo', 'ig'):
         try: out['ig'] = instagram(mapa_ig)
         except Exception as e: print(f'✗ instagram: {e}')
