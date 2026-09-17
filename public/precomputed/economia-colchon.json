@@ -33,7 +33,7 @@
   "por_mes_de_gastos": 12,
   "tope": 72,
   "ancho_hilera": 4,
-  "paso": 0.032,
+  "paso": 0.07,
   "caja_heroe_meses": {
    "oro": [
     1.0,

@@ -1127,14 +1127,14 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // staticBreath (±0.03, respiración chica) a rMul 0.16 ≈ 1.8 unidades, de frente (azim π/2).
     // v3.1: la pareja va HORIZONTAL en pantalla (eje Y del bin) y a rMul 0.11 (medio ancho 0.25) quedaba
     // en las orillas y el azul se salía en el cierre; a 0.16 el medio ancho es 0.36 y la pareja (±0.25) cabe.
-    { shot: staticBreath({ rMul: 0.16, elev: 0.0, azim: 1.5, fov: 40 }), dur: 13.06, label: 'estos dos negocios: la pareja DE FRENTE, derivando idéntico; el dorado y el azul' },
-    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.16, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 5.87, label: 'cuarenta mil parejas: se abre de la pareja al disco; arranca el reloj' },
+    { shot: staticBreath({ rMul: 0.095, elev: 0.0, azim: 1.5, fov: 40 }), dur: 13.06, label: 'estos dos negocios: la pareja DE FRENTE, derivando idéntico; el dorado y el azul' },
+    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.095, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 5.87, label: 'cuarenta mil parejas: se abre de la pareja al disco; arranca el reloj' },
     { shot: crashIn({ rMul: 0.27, elev: 0.05, azim0: 1.45, span: 0.25, fov: 36 }), dur: 5.92, label: 'MIRA: plano medio de frente, cientos de parejas alrededor del héroe; los dorados se apagan' },
-    { shot: staticBreath({ rMul: 0.16, elev: 0.0, azim: 1.55, fov: 40 }), dur: 4.20, label: 'no vendió menos: la pareja héroe, su dorado se apaga en «el mes malo»' },
-    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.16, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 4.57, label: 'casi al triple: el disco que era mitad y mitad ya es azul' },
+    { shot: staticBreath({ rMul: 0.095, elev: 0.0, azim: 1.55, fov: 40 }), dur: 4.20, label: 'no vendió menos: la pareja héroe, su dorado se apaga en «el mes malo»' },
+    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.095, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 4.57, label: 'casi al triple: el disco que era mitad y mitad ya es azul' },
     { shot: heroOrbit({ rMul: 1.5, elev: 0.2, azim0: 1.2, span: 0.6, fov: 33 }), dur: 7.64, label: 'por eso en México: el disco, orbitando lento' },
     { shot: diveToNucleus({ rFromMul: 1.5, rTo: 1.76, fovFrom: 33, fovTo: 40, spin: 0.4 }), dur: 4.85, label: 'muere el día que no sabe: regreso a la pareja del inicio' },
-    { shot: staticBreath({ rMul: 0.16, elev: 0.0, azim: 1.5, fov: 40 }), dur: 10.89, label: 'si tienes uno: el azul sigue, el dorado ya no está' },
+    { shot: staticBreath({ rMul: 0.095, elev: 0.0, azim: 1.5, fov: 40 }), dur: 10.89, label: 'si tienes uno: el azul sigue, el dorado ya no está' },
   ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
@@ -1638,7 +1638,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   wsalb: { name: 'Por qué te da sed', formula: 'Na⁺···H₂O', fact: 'Cada sodio se lleva su propia jaula de agua — y por eso pides más.' },
   wtetb: { name: 'Ninguna está sola', formula: '(H₂O)₄', fact: 'A tres no les cuadraba; a cuatro sí, y jalan 19 % más que por separado.' },
   wsillab: { name: 'Dos sillas vacías', formula: 'H₂O···H₂O', fact: 'Dos sillas y dos hidrógenos = cuatro lugares por molécula: el tetraedro del hielo.' },
-  ecolchon: { name: 'El colchón', formula: 'ruina del jugador · INEGI 1989-2019', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
+  ecolchon: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
   whex6b: { name: 'No te pueden congelar', formula: '(H₂O)₆', fact: 'El hexágono que hace bonito a un copo de nieve es el que te reventaría las células.' },
   wtrib: { name: 'La gota que no cae', formula: '(H₂O)₃', fact: 'Tres aguas juntas jalan 12 % más que por separado: esa es la piel del agua.' },
@@ -3276,7 +3276,7 @@ const WATER_BINS: Record<string, WaterEntry> = {
   wtetb: { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true, capas: WTETB_CAPAS, dur: WTETB_DURATION },
   wsillab: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLAB_DURATION, capas: WSILLAB_CAPAS },
   ecolchon: { bin: 'economia-colchon', ef: 'economia-colchon-efield', ex: 11,
-              capas: ECOLCHON_CAPAS, dur: ECOLCHON_DURATION, sizeMul: 1.35, binColors: true, sinRaleo: true },
+              capas: ECOLCHON_CAPAS, dur: ECOLCHON_DURATION, sizeMul: 2.6, binColors: true, sinRaleo: true },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,

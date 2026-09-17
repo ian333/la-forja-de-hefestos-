@@ -106,10 +106,11 @@ def main():
     # base común, así que los dos montones son dos columnas lado a lado: Lupe 1 mes, Beto 3.
     # Cada mes entran los billetes de las ventas y salen los de los gastos; como los gemelos comparten
     # η, entran y salen los MISMOS billetes en los dos: «la misma suerte» se ve sin decirla.
-    ZONA = 0.20 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.05 * CAJA; SIG_CUMULO = 0.035
+    ZONA = 0.20 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.034 * CAJA; SIG_CUMULO = 0.035
     BILLETES_MES = 12                      # 1 mes de gastos = 12 billetes (3 hileras de 4)
     ANCHO = 4                              # billetes por hilera
-    PASO = 0.032                           # separación entre billetes
+    PASO = 0.070                           # separación entre billetes (v3.2: medido en stills — el montón
+                                           # mide 0.28 y la pareja 0.34 de separación; el cuadro mide 0.76×1.35)
     MAX_BILL = int(BILLETES_MES * CAJA_MAX)  # el montón más alto que puede verse (6 meses)
     CUMULO = MAX_BILL
     u = rng.random(M); th = rng.random(M)
@@ -124,7 +125,9 @@ def main():
     cand = np.where(vivo[MESES, M:])[0]
     hero = int(cand[np.argmin(np.abs(mes_muerte_oro[cand] - HERO_MES))])
     print(f'   héroe: par #{hero} · su dorado muere en el mes {int(mes_muerte_oro[hero])} (pedido {HERO_MES}) · su azul vive los 60')
-    pcx[hero] = pcy[hero] = 0.0; zc[hero] = 0.0; ux[hero], uy[hero] = 0.0, 1.0; sx[hero], sy[hero] = 1.0, 0.0
+    # v3.1: el par héroe NO va en el centro exacto: baja 0.18 (eje X = vertical en pantalla) para que
+    # los montones tengan de dónde crecer hacia arriba y el cuadro no quede vacío por abajo.
+    pcx[hero] = -0.40; pcy[hero] = 0.0; zc[hero] = 0.0; ux[hero], uy[hero] = 0.0, 1.0; sx[hero], sy[hero] = 1.0, 0.0
     dsep = np.full(M, D_PAR, dtype=np.float32); dsep[hero] = D_HERO
     pos = np.zeros((K, N, 3), dtype=np.float32)
     for k in range(K):
