@@ -98,7 +98,20 @@ def main():
     # cambios: (1) cada gemelo héroe es un CÚMULO de 60 puntos (σ 0.025) → una bola que brilla y se
     # apaga entera; (2) la zona limpia sube a 1.0 y el disco se adelgaza (0.55 → 0.35) para que el
     # cono de la cámara no atrape puntos de atrás. Los 118 puntos extra van FUERA de la estadística.
-    ZONA = 0.20 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.05 * CAJA; CUMULO = 80; SIG_CUMULO = 0.035
+    # v3 — CADA PUNTITO ES UN BILLETE (ian, 2026-09-17, tras juzgar el video publicado: la frase
+    # «la única diferencia es la caja» no tenía imagen, porque los dos cúmulos héroe median IGUAL).
+    # Ahora el cúmulo de cada gemelo héroe es su CAJA: un montón de billetes apilados (BILLETES_MES
+    # por cada mes de gastos guardado), con las posiciones FIJAS y la cantidad VISIBLE = caja[k].
+    # Se apila a lo largo de X (vertical en pantalla, porque el par va a lo largo de Y) desde una
+    # base común, así que los dos montones son dos columnas lado a lado: Lupe 1 mes, Beto 3.
+    # Cada mes entran los billetes de las ventas y salen los de los gastos; como los gemelos comparten
+    # η, entran y salen los MISMOS billetes en los dos: «la misma suerte» se ve sin decirla.
+    ZONA = 0.20 * CAJA; D_PAR = 0.035 * CAJA; D_HERO = 0.05 * CAJA; SIG_CUMULO = 0.035
+    BILLETES_MES = 12                      # 1 mes de gastos = 12 billetes (3 hileras de 4)
+    ANCHO = 4                              # billetes por hilera
+    PASO = 0.032                           # separación entre billetes
+    MAX_BILL = int(BILLETES_MES * CAJA_MAX)  # el montón más alto que puede verse (6 meses)
+    CUMULO = MAX_BILL
     u = rng.random(M); th = rng.random(M)
     rc = CAJA * np.sqrt(u * (1.0 - (ZONA / CAJA) ** 2) + (ZONA / CAJA) ** 2)   # centros de par, uniforme en área, fuera de la zona
     th = th * 2 * np.pi
@@ -119,19 +132,31 @@ def main():
         tx, ty = e * sx, e * sy
         pos[k, :M, 0] = pcx - dsep * ux + tx; pos[k, :M, 1] = pcy - dsep * uy + ty; pos[k, :M, 2] = zc      # oro
         pos[k, M:, 0] = pcx + dsep * ux + tx; pos[k, M:, 1] = pcy + dsep * uy + ty; pos[k, M:, 2] = zc      # azul
-    # ── EL CÚMULO DEL HÉROE: 59 copias extra de cada gemelo con desplazamiento fijo (σ 0.025)
-    ext = (CUMULO - 1) * 2
-    offs = rng.normal(0, SIG_CUMULO, (CUMULO - 1, 3)).astype(np.float32); offs[:, 2] *= 0.3
+    # ── LOS DOS MONTONES DE BILLETES DEL HÉROE: posiciones FIJAS en rejilla, cantidad = la caja del mes.
+    # Hilera j (de abajo hacia arriba) y columna c: el billete n = j*ANCHO + c. Se ven los primeros
+    # round(caja[k]·BILLETES_MES); los demás llevan centinela, así que el montón CRECE y SE ENCOGE.
+    nb = np.arange(MAX_BILL)
+    fila, col = nb // ANCHO, nb % ANCHO
+    jit = rng.normal(0, PASO * 0.12, (MAX_BILL, 3)).astype(np.float32)
+    rej = np.zeros((MAX_BILL, 3), dtype=np.float32)
+    rej[:, 0] = (fila + 0.5) * PASO + jit[:, 0]                    # hacia arriba en pantalla (eje X del bin)
+    rej[:, 1] = (col - (ANCHO - 1) / 2) * PASO + jit[:, 1]         # ancho del montón
+    rej[:, 2] = jit[:, 2] * 0.3
+    ext = MAX_BILL * 2
     pos_ext = np.zeros((K, ext, 3), dtype=np.float32)
-    pos_ext[:, :CUMULO - 1] = pos[:, hero][:, None, :] + offs[None]
-    pos_ext[:, CUMULO - 1:] = pos[:, M + hero][:, None, :] + offs[None]
-    vivo_ext = np.concatenate([np.repeat(vivo[:, hero][:, None], CUMULO - 1, 1), np.repeat(vivo[:, M + hero][:, None], CUMULO - 1, 1)], 1)
+    pos_ext[:, :MAX_BILL] = pos[:, hero][:, None, :] + rej[None]
+    pos_ext[:, MAX_BILL:] = pos[:, M + hero][:, None, :] + rej[None]
+    cajas_hero = np.stack([caja[:, hero], caja[:, M + hero]])                      # (2,K) en meses de gastos
+    n_bill = np.clip(np.nan_to_num(np.round(cajas_hero * BILLETES_MES)), 0, MAX_BILL).astype(int)
+    vivo_ext = np.concatenate([(nb[None] < n_bill[0][:, None]), (nb[None] < n_bill[1][:, None])], 1)
+    print(f'   billetes del héroe: mes 0 → oro {n_bill[0,0]} · azul {n_bill[1,0]} ({BILLETES_MES} por mes de gastos, tope {MAX_BILL})')
+    print(f'   caja del héroe (meses): oro {np.nan_to_num(cajas_hero[0])[:8].round(2)} … · azul {np.nan_to_num(cajas_hero[1])[:8].round(2)} …')
     pos = np.concatenate([pos, pos_ext], 1); vivo_all = np.concatenate([vivo, vivo_ext], 1); NT = N + ext
     posq = 32767 / (CAJA * 1.25)
     q = np.clip(np.round(pos * posq), -32767, 32767).astype('<i2')
     q[~vivo_all] = CENTINELA                                    # (K,NT) → las 3 coordenadas del muerto
     ORO, AZUL = [255, 195, 80], [60, 120, 255]
-    color = np.array([ORO] * M + [AZUL] * M + [ORO] * (CUMULO - 1) + [AZUL] * (CUMULO - 1), dtype=np.uint8)
+    color = np.array([ORO] * M + [AZUL] * M + [ORO] * MAX_BILL + [AZUL] * MAX_BILL, dtype=np.uint8)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'wb') as fp:
         fp.write(struct.pack('<4s7i', b'WAP2', NT, 0, 0, K, 0, 0, 0))    # sin núcleos; NT = 40,000 + cúmulo
@@ -152,6 +177,10 @@ def main():
                'razon_ano5': round(razon5, 3), 'razon_ano1': round(razon1, 2),
                'heroe': {'par': hero, 'mes_muere_dorado': int(mes_muerte_oro[hero]), 'pedido': HERO_MES, 'posicion': 'origen, zona limpia de radio 0.12·CAJA, separación 0.06·CAJA'},
                'licencia_visual': 'el grupo es el LUGAR y no cambia: azules = disco lleno r<0.60R, dorados = anillo exterior 0.75R-R (misma densidad). Morir = desaparecer ahí (centinela (-32768)³ que el motor descarta). Temblor radial ±2 % de R con la η del mes (los pares comparten η).',
+               'billetes': {'por_mes_de_gastos': BILLETES_MES, 'tope': MAX_BILL, 'ancho_hilera': ANCHO, 'paso': PASO,
+                            'caja_heroe_meses': {'oro': [None if np.isnan(v) else round(float(v), 3) for v in caja[:, hero]],
+                                                 'azul': [None if np.isnan(v) else round(float(v), 3) for v in caja[:, M + hero]]},
+                            'nota': 'v3: el cúmulo del héroe ES su caja — un billete por 1/12 de mes de gastos, rejilla fija y cantidad visible = caja[k]'},
                'cuadro_por_mes': 1, 'K': K}, open(OUT_JSON, 'w'), indent=1, ensure_ascii=False)
     print(f'OK  {ef} (campo vacío) · {OUT_JSON}')
 
