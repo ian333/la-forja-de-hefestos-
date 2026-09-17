@@ -1,6 +1,6 @@
 {
  "orden": "2026-09-10-el-enfriamiento-se-ve",
- "golpe": "1 · LA ESCALA",
+ "golpe": "1 · LA ESCALA + 2 · EL TIEMPO",
  "MEDIDO": [
   "MEDIDO · 6/8 ok · 241 s · servido 6f70032 · iangpu",
   "MEDIDO · 6/8 ok · 301 s · servido 6f70032 · iangpu"
@@ -197,5 +197,69 @@
  "pruebas": {
   "ciclo_dado_test": "266/266 (copia de la laptop; la de iangpu estaba vieja, 248)",
   "tsc_ab": "27 → 27 errores en los 4 archivos (0 nuevos)"
+ },
+ "golpe2_el_reloj": {
+  "fisica": {
+   "ecuacion": "θ(t) = min(1, 4/π·exp(−L·t/t_c)) — primer término de la serie de la Eq 9.5 en el centro de la pared local",
+   "L": 1.8019,
+   "thetaE": 0.2101,
+   "material": "ABS (Kazmer): fundido 239 °C · expulsión 97.6 °C · agua 60 °C",
+   "oraculo_placa_2mm": {
+    "tc_s": 8.4,
+    "T_en_tc_C": 97.6,
+    "T_eject_C": 97.6
+   },
+   "limitacion": "el primer término mantiene el centro a temperatura de fundido el primer 13 % de cada t_c"
+  },
+  "superficie_firme_pct": {
+   "0 s": 0,
+   "10.8 s": 7.3,
+   "21.5 s": 80.2,
+   "40 s": 92.7,
+   "67 s": 96.8,
+   "100 s": 98.8,
+   "134.5 s": 100
+  },
+  "cuantiles_area_s": {
+   "mediana": 21.5,
+   "p25": 21.5,
+   "p75": 21.5,
+   "p95": 43.2,
+   "tc_min": 5.38,
+   "tc_max": 134.46
+  },
+  "movimiento_medido_pct_pixeles_por_s": {
+   "tramo_vivo_7_a_35_s": [
+    19.5,
+    22.2
+   ],
+   "50 s": 1.97,
+   "62 s": 0.94,
+   "79 s": 0.24,
+   "≥93 s": 0.07,
+   "nota": "la cola es física: pasados ~40 s las paredes ya están a temperatura del agua y solo cambian los postes"
+  },
+  "runner_limpio_2026-09-17_18:31_UTC": {
+   "total": "7/8",
+   "paso3": "6/6",
+   "p3-2_lente_s": 1.9,
+   "p3-6_cambio_pct": 21.8,
+   "p6-1_primera_placa_s": 0.4,
+   "telemetria_s": {
+    "E2": 2.9,
+    "E3": 19.5,
+    "E4": 0.7,
+    "E5": 85.5
+   },
+   "paso6": "8/11 — p6-5 colada 60.9 s contra presupuesto 60 (E5 85.5 s)"
+  },
+  "paseo": {
+   "video": "30-EL-ENFRIAMIENTO-EL-RELOJ-paseo.mp4",
+   "dur_s": 218.6,
+   "p3-6_cambio_pct": 17.8,
+   "glitch": 0,
+   "shot_timeouts": 0
+  },
+  "interfaz": "barra en °C junto a la pieza (fundido · 97.6 firme · agua), reloj t/134 s ×13 con marcas en 21.5 s y 134 s, pausa y botón al mapa en segundos"
  }
 }

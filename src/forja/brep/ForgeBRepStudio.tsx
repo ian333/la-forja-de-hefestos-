@@ -2484,6 +2484,11 @@ function FeaDeformMesh({ mesh, colors, disp, dispMax, clip }: {
 // ──────────────────────────────────────────────────────────────────
 // Render del sólido teselado + picking de cara/arista (raycast)
 // ──────────────────────────────────────────────────────────────────
+/** EL RELOJ del enfriamiento (golpe 2). `fijo` ≠ null clava el tiempo (capturas exactas desde `__forgeBrep`). */
+type RelojEnfriamiento = { t: number; modo: 0 | 1; pausa: boolean; fijo: number | null; fase: number; ultimo: number };
+const RELOJ_PLAY_S = 10;     // 0 → t_c máx en 10 s de pantalla (la carcasa: 134 s → ×13, ROTULADO)
+const RELOJ_FIN_S = 2.5;     // quieto al final, «abre el molde», y otra vez
+
 /** EL CAMPO POR FRAGMENTO — la posición del vértice viaja en el marco de la MALLA (el mismo del campo: la rejilla
  *  se construyó sobre `mesh.positions`), no en el del mundo: el grupo del visor rota la pieza a Y-arriba. */
 const CAMPO_VS = /* glsl */`
@@ -2504,8 +2509,14 @@ const CAMPO_FS = /* glsl */`
   #include <clipping_planes_pars_fragment>
   uniform sampler3D uCampo;
   uniform sampler2D uLut;
+  uniform sampler2D uLutT;
   uniform vec3 uOrigen;
   uniform vec3 uTam;
+  uniform float uModo;     // 0 = mapa en segundos (golpe 1) · 1 = el reloj: temperatura en t (golpe 2)
+  uniform float uT;        // segundos físicos desde que el plástico llenó
+  uniform float uL;        // ln(4/π·(T_f−T_a)/(T_e−T_a)) — la MISMA constante de la Eq 9.5
+  uniform float uTcMin;
+  uniform float uTcMax;
   in vec3 vPos;
   in vec3 vNormV;
   out vec4 salida;
@@ -2517,13 +2528,21 @@ const CAMPO_FS = /* glsl */`
     float luz = 0.70 + 0.30 * abs(normalize(vNormV).z);
     vec4 c = texture(uCampo, (vPos - uOrigen) / uTam);
     if (c.g < 0.5) { salida = vec4(vec3(0.25, 0.28, 0.32) * luz, 1.0); return; }   // sin dato: el gris que la lente ya usa
-    salida = vec4(texture(uLut, vec2(c.r * (255.0 / 256.0) + 0.5 / 256.0, 0.5)).rgb * luz, 1.0);
+    if (uModo < 0.5) {
+      salida = vec4(texture(uLut, vec2(c.r * (255.0 / 256.0) + 0.5 / 256.0, 0.5)).rgb * luz, 1.0);
+      return;
+    }
+    // EL RELOJ (golpe 2): θ(t) = min(1, 4/π·exp(−L·t/t_c)) — primer término de la serie de la Eq 9.5 en el centro de la
+    // pared local. En t = t_c da exacto θ_e (T de expulsión): el reloj y el mapa de segundos no se contradicen.
+    float tc = mix(uTcMin, uTcMax, c.b * c.b);
+    float theta = min(1.0, 1.2732395 * exp(-uL * uT / max(tc, 1e-3)));
+    salida = vec4(texture(uLutT, vec2(theta * (255.0 / 256.0) + 0.5 / 256.0, 0.5)).rgb * luz, 1.0);
   }
 `;
 
 function SolidMesh({
   mesh, faded, matKey, tint, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
-  feaColors, overhangColors, clip, holograma = false, campoGPU = null,
+  feaColors, overhangColors, clip, holograma = false, campoGPU = null, campoReloj = null,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
@@ -2551,6 +2570,9 @@ function SolidMesh({
    *  `feaColors`: por vértice el color se degradaba a lo largo de triángulos de hasta 115 mm (medido en la
    *  1594C: 34 % del área con el color equivocado; por fragmento, 0.3 %). */
   campoGPU?: CampoGPU | null;
+  /** EL RELOJ del enfriamiento (golpe 2): `t` en segundos físicos y `modo` (0 mapa · 1 tiempo). Lo escribe
+   *  `RelojEnfriamientoDriver` cada cuadro; aquí solo se copia a los uniforms (sin re-render de React). */
+  campoReloj?: React.MutableRefObject<RelojEnfriamiento> | null;
 }) {
   const pbrBase = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
   // Con tinte: acabado MATE de color (metalness bajo) — el metálico espejo murió.
@@ -2585,25 +2607,35 @@ function SolidMesh({
   // UNA vez (useMemo) y se muta `.value` — la convención del proyecto; las texturas se rehacen solo si cambia el campo.
   const campoTex = useMemo(() => {
     if (!campoGPU) return null;
-    const vol = new THREE.Data3DTexture(campoGPU.rg, campoGPU.nx, campoGPU.ny, campoGPU.nz);
-    vol.format = THREE.RGFormat; vol.type = THREE.UnsignedByteType;
+    const vol = new THREE.Data3DTexture(campoGPU.vol, campoGPU.nx, campoGPU.ny, campoGPU.nz);
+    vol.format = THREE.RGBAFormat; vol.type = THREE.UnsignedByteType;
     vol.minFilter = THREE.LinearFilter; vol.magFilter = THREE.LinearFilter;
     vol.wrapS = vol.wrapT = vol.wrapR = THREE.ClampToEdgeWrapping;
     vol.unpackAlignment = 1; vol.needsUpdate = true;
     const lut = new THREE.DataTexture(campoGPU.lut, 256, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
     lut.minFilter = THREE.LinearFilter; lut.magFilter = THREE.LinearFilter;
     lut.wrapS = lut.wrapT = THREE.ClampToEdgeWrapping; lut.needsUpdate = true;
-    return { vol, lut };
+    const lutT = new THREE.DataTexture(campoGPU.lutT, 256, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
+    lutT.minFilter = THREE.NearestFilter; lutT.magFilter = THREE.NearestFilter;   // el corte en θ_e es un FRENTE: sin mezclar azul con ámbar
+    lutT.wrapS = lutT.wrapT = THREE.ClampToEdgeWrapping; lutT.needsUpdate = true;
+    return { vol, lut, lutT };
   }, [campoGPU]);
-  useEffect(() => () => { campoTex?.vol.dispose(); campoTex?.lut.dispose(); }, [campoTex]);
+  useEffect(() => () => { campoTex?.vol.dispose(); campoTex?.lut.dispose(); campoTex?.lutT.dispose(); }, [campoTex]);
   const campoUniforms = useMemo(() => ({
     uCampo: { value: null as THREE.Data3DTexture | null },
     uLut: { value: null as THREE.DataTexture | null },
+    uLutT: { value: null as THREE.DataTexture | null },
     uOrigen: { value: new THREE.Vector3() },
     uTam: { value: new THREE.Vector3(1, 1, 1) },
+    uModo: { value: 0 }, uT: { value: 0 }, uL: { value: 1 }, uTcMin: { value: 0 }, uTcMax: { value: 1 },
   }), []);
+  useFrame(() => {
+    const r = campoReloj?.current; if (!r) { campoUniforms.uModo.value = 0; return; }
+    campoUniforms.uModo.value = r.modo; campoUniforms.uT.value = r.t;
+  });
   if (campoTex && campoGPU) {
-    campoUniforms.uCampo.value = campoTex.vol; campoUniforms.uLut.value = campoTex.lut;
+    campoUniforms.uCampo.value = campoTex.vol; campoUniforms.uLut.value = campoTex.lut; campoUniforms.uLutT.value = campoTex.lutT;
+    campoUniforms.uL.value = campoGPU.termica.L; campoUniforms.uTcMin.value = campoGPU.tc.min; campoUniforms.uTcMax.value = campoGPU.tc.max;
     campoUniforms.uOrigen.value.set(campoGPU.x0, campoGPU.y0, campoGPU.z0);
     campoUniforms.uTam.value.set(campoGPU.nx * campoGPU.cellMm, campoGPU.ny * campoGPU.cellMm, campoGPU.nz * campoGPU.cellMm);
   }
@@ -3784,6 +3816,13 @@ export default function ForgeBRepStudio() {
   const fichaRef = useRef<HTMLDivElement | null>(null);
   // EL ENFRIAMIENTO SE VE · la ESCALA vive junto a la pieza: `EscalaDriver` (en el Canvas) le escribe el transform
   const escalaRef = useRef<HTMLDivElement | null>(null);
+  // EL ENFRIAMIENTO SE VE · golpe 2 — EL RELOJ: la pieza se enfría en pantalla. El tiempo vive en un ref (lo avanza
+  // `RelojEnfriamientoDriver` cada cuadro); modo y pausa son estado porque cambian la escala flotante.
+  const relojEnf = useRef<RelojEnfriamiento>({ t: 0, modo: 1, pausa: false, fijo: null, fase: 0, ultimo: 0 });
+  const relojEls = useRef<{ t: HTMLElement | null; barra: HTMLElement | null; estado: HTMLElement | null }>({ t: null, barra: null, estado: null });
+  const [modoEnf, setModoEnf] = useState<'tiempo' | 'mapa'>('tiempo');
+  const [pausaEnf, setPausaEnf] = useState(false);
+  useEffect(() => { relojEnf.current.modo = modoEnf === 'tiempo' ? 1 : 0; relojEnf.current.pausa = pausaEnf; }, [modoEnf, pausaEnf]);
   // EL PUNTO QUE MANDA, el que SE VE: `MarcaVisible` elige entre los empates del máximo el que la cámara no tiene tapado
   const [puntoVisible, setPuntoVisible] = useState<{ lente: string; punto: [number, number, number] } | null>(null);
   const piezaCaja = useMemo(() => {
@@ -6516,6 +6555,33 @@ export default function ForgeBRepStudio() {
       // de TODO lo visible (mallas con opacidad ≥ 0.2, sin la rejilla) proyectada al viewport: `dx,dy` =
       // desvío del centro (fracción), `fill` = fracción del cuadro que ocupa, `luma` = luminancia media
       // REAL de un render chico. El runner lo exige en cada paso; el letrero «SE VE» ya no lo decide un data-*.
+      // EL ENFRIAMIENTO SE VE · golpe 2 — MOVIMIENTO MEDIDO: fracción de píxeles que cambian (algún canal > 12/255)
+      // entre dos renders chicos separados `ms`. La cláusula MOVIMIENTO del contrato del camino (p3-6) lo exige ≥ 0.02.
+      cambio: (ms = 1000) => new Promise<number>((res) => {
+        const W = 96, H = 64;
+        const toma = (): Uint8Array | null => {
+          const s = encuadreRef.current; if (!s) return null;
+          try {
+            const rt = new THREE.WebGLRenderTarget(W, H); const prev = s.gl.getRenderTarget();
+            s.gl.setRenderTarget(rt); s.gl.render(s.scene, s.camera);
+            const buf = new Uint8Array(W * H * 4); s.gl.readRenderTargetPixels(rt, 0, 0, W, H, buf); s.gl.setRenderTarget(prev); rt.dispose();
+            return buf;
+          } catch (e) { console.warn('CAMBIO_ERR', e); return null; }
+        };
+        const a = toma(); if (!a) { res(0); return; }
+        setTimeout(() => {
+          const b = toma(); if (!b) { res(0); return; }
+          let d = 0;
+          for (let i = 0; i < a.length; i += 4) if (Math.max(Math.abs(a[i] - b[i]), Math.abs(a[i + 1] - b[i + 1]), Math.abs(a[i + 2] - b[i + 2])) > 12) d++;
+          res(+(d / (W * H)).toFixed(4));
+        }, ms);
+      }),
+      // el reloj del enfriamiento para capturas exactas: `fijar(t)` clava los segundos físicos, `fijar(null)` lo suelta
+      enfriamiento: {
+        fijar: (t: number | null) => { relojEnf.current.fijo = t; },
+        modo: (m: 'tiempo' | 'mapa') => setModoEnf(m),
+        estado: () => ({ t: +relojEnf.current.t.toFixed(2), modo: relojEnf.current.modo, pausa: relojEnf.current.pausa, fijo: relojEnf.current.fijo }),
+      },
       encuadre: (opts?: { debug?: boolean }) => {
         const s = encuadreRef.current; if (!s) return null;
         const { gl, scene, camera, size } = s;
@@ -6821,6 +6887,7 @@ export default function ForgeBRepStudio() {
                      ya no significa lo que dice su leyenda. */
                   feaColors={focoOn ? lenteActiva?.colores ?? null : null}
                   campoGPU={focoOn ? lenteActiva?.gpu ?? null : null}
+                  campoReloj={focoOn && lenteActiva?.gpu ? relojEnf : null}
                   overhangColors={null} clip={sectionPlanes} holograma={focoOn} />
                 {/* U10 · LA MARCA — el punto que MANDA en esta lente (el macizo que
                     fija el ciclo, el último rincón en llenarse). De Horizon: la ficha
@@ -6853,6 +6920,9 @@ export default function ForgeBRepStudio() {
                     )}
                     </>)}
                     {lenteActiva.gpu && piezaCaja && <EscalaDriver caja={piezaCaja} el={escalaRef} />}
+                    {lenteActiva.gpu && (
+                      <RelojEnfriamientoDriver reloj={relojEnf} tcMax={lenteActiva.gpu.tc.max} p50={lenteActiva.p50} els={relojEls} />
+                    )}
                     {lenteActiva.candidatos && lenteActiva.candidatos.length > 1 && (
                       <MarcaVisible lenteId={lenteActiva.id} candidatos={lenteActiva.candidatos} mesh={piezaMalla.mesh} onElige={setPuntoVisible} />
                     )}
@@ -7377,7 +7447,8 @@ export default function ForgeBRepStudio() {
         )}
         {/* EL ENFRIAMIENTO SE VE · LA ESCALA: la clave del color, en segundos, junto a la pieza (no en la tira de abajo) */}
         {focoOn && lenteActiva?.gpu && lenteActiva.peor && (
-          <EscalaEnElMundo lente={lenteActiva} gpu={lenteActiva.gpu} refEl={escalaRef} atenuada={laminaOn || particionOn || moldeOn} />
+          <EscalaEnElMundo lente={lenteActiva} gpu={lenteActiva.gpu} refEl={escalaRef} atenuada={laminaOn || particionOn || moldeOn}
+            modo={modoEnf} onModo={(m) => { relojEnf.current.fase = 0; setModoEnf(m); }} pausa={pausaEnf} onPausa={() => setPausaEnf((v) => !v)} relojEls={relojEls} />
         )}
         {focoOn && !lenteActiva && focoCotas.length > 0 && (
           <CotaLabels sets={focoCotas} refs={focoRefs} paleta={PALETA_FOCO} testid="foco-cotas-overlay" modo="medida" />
@@ -9573,7 +9644,7 @@ function EscalaDriver({ caja, el }: { caja: { mn: [number, number, number]; mx: 
     const alto = Math.max(190, Math.min(320, (y1 - y0) * 0.72));
     const ancho = 330;   // barra + marcas + «◀ el punto que manda el ciclo»
     const left = Math.max(12, Math.min(size.width - ancho - 12, x1 + 34));
-    const top = Math.max(56, Math.min(size.height - alto - 70, (y0 + y1) / 2 - alto / 2));
+    const top = Math.max(76, Math.min(size.height - alto - 190, (y0 + y1) / 2 - alto / 2));   // 190: el reloj vive debajo de la barra
     d.style.transform = `translate(${left.toFixed(0)}px,${top.toFixed(0)}px)`;
     d.style.height = `${alto.toFixed(0)}px`;
     d.dataset.caja = `${x0.toFixed(0)},${y0.toFixed(0)},${x1.toFixed(0)},${y1.toFixed(0)}`;
@@ -9641,53 +9712,151 @@ function MarcaVisible({ lenteId, candidatos, mesh, onElige }: {
 }
 
 /**
- * LA ESCALA del enfriamiento: los MISMOS bytes de la LUT que pinta el shader, de abajo (listo pronto) a arriba (detiene
- * el ciclo). Las marcas van LINEALES en segundos (la posición en la barra ES el tiempo), así que el color se amontona
- * abajo en azul: es la verdad de esta pieza — la mitad está lista en el mínimo y solo los macizos tardan.
+ * EL RELOJ (golpe 2): avanza el tiempo físico cada cuadro — 0 → t_c máx en RELOJ_PLAY_S, quieto RELOJ_FIN_S, otra vez — y
+ * escribe el reloj flotante por ref (sin setState por cuadro). Si los cuadros se atrasan (grabación), el reloj se atrasa
+ * con ellos: lo que se ve y lo que dice el reloj siempre son el mismo instante.
  */
-function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false }: {
+function RelojEnfriamientoDriver({ reloj, tcMax, p50, els }: {
+  reloj: React.MutableRefObject<RelojEnfriamiento>; tcMax: number; p50: number;
+  els: React.MutableRefObject<{ t: HTMLElement | null; barra: HTMLElement | null; estado: HTMLElement | null }>;
+}) {
+  useEffect(() => { reloj.current.fase = 0; reloj.current.ultimo = 0; }, [reloj, tcMax]);
+  useFrame(() => {
+    const r = reloj.current; const ahora = performance.now() / 1000;
+    const dt = r.ultimo ? Math.min(0.1, ahora - r.ultimo) : 0; r.ultimo = ahora;
+    if (r.fijo != null) r.t = r.fijo;
+    else if (r.modo === 1 && !r.pausa) {
+      r.fase = (r.fase + dt) % (RELOJ_PLAY_S + RELOJ_FIN_S);
+      r.t = r.fase < RELOJ_PLAY_S ? (r.fase / RELOJ_PLAY_S) * tcMax : tcMax;
+    }
+    const e = els.current;
+    if (e.t) e.t.textContent = `t = ${r.t.toFixed(0)} s`;
+    if (e.barra) e.barra.style.width = `${Math.min(100, (100 * r.t) / Math.max(1e-6, tcMax)).toFixed(1)}%`;
+    if (e.estado) e.estado.textContent = r.t >= tcMax - 1e-6 ? 'todo firme: ya abre el molde'
+      : r.t >= p50 ? 'la mitad ya está firme · lo grueso sigue blando' : 'enfriando desde que se llenó';
+  });
+  return null;
+}
+
+/**
+ * LA ESCALA FLOTANTE del enfriamiento, en sus dos modos (ian 2026-09-15: «me mama la interfaz flotante, le da dinamismo»):
+ *  · TIEMPO (golpe 2, de entrada): la barra en °C con los MISMOS bytes de `lutT` que pinta el shader — agua abajo,
+ *    fundido arriba, el corte en la temperatura de expulsión — y debajo EL RELOJ con marcas en la mitad firme y en el
+ *    ciclo. El tiempo va ×(t_c máx / 10 s) y se ROTULA.
+ *  · MAPA (golpe 1): los segundos para estar firme, LINEALES en la barra, con la LUT del mapa.
+ */
+function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false, modo, onModo, pausa, onPausa, relojEls }: {
   lente: { unidad: string; p50: number; maxCampo: number };
   gpu: CampoGPU;
   refEl: React.MutableRefObject<HTMLDivElement | null>;
   atenuada?: boolean;
+  modo: 'tiempo' | 'mapa';
+  onModo: (m: 'tiempo' | 'mapa') => void;
+  pausa: boolean;
+  onPausa: () => void;
+  relojEls: React.MutableRefObject<{ t: HTMLElement | null; barra: HTMLElement | null; estado: HTMLElement | null }>;
 }) {
   const { lo, hi } = gpu.escala;
   const span = hi - lo || 1;
-  const grad = useMemo(() => {
+  const gradDe = (lut: Uint8Array) => {
     const paradas: string[] = [];
-    for (let i = 0; i <= 16; i++) {
-      const b = Math.round((i / 16) * 255) * 4;
-      paradas.push(`rgb(${gpu.lut[b]},${gpu.lut[b + 1]},${gpu.lut[b + 2]}) ${(100 * i / 16).toFixed(2)}%`);
+    for (let i = 0; i <= 32; i++) {
+      const b = Math.round((i / 32) * 255) * 4;
+      paradas.push(`rgb(${lut[b]},${lut[b + 1]},${lut[b + 2]}) ${(100 * i / 32).toFixed(2)}%`);
     }
     return `linear-gradient(to top, ${paradas.join(', ')})`;
+  };
+  const grad = useMemo(() => gradDe(gpu.lut), [gpu]);
+  const gradT = useMemo(() => {
+    // el corte en θ_e va DURO en la barra, como en la pieza (la LUT de temperatura se muestrea sin mezclar)
+    const th = gpu.termica.thetaE, P: string[] = [];
+    const c = (theta: number) => { const b = Math.max(0, Math.min(255, Math.round(theta * 255))) * 4; return `rgb(${gpu.lutT[b]},${gpu.lutT[b + 1]},${gpu.lutT[b + 2]})`; };
+    for (let i = 0; i <= 8; i++) { const u = (th * i) / 8 * 0.999; P.push(`${c(u)} ${(100 * u).toFixed(2)}%`); }
+    for (let i = 0; i <= 16; i++) { const u = th + ((1 - th) * i) / 16; P.push(`${c(Math.min(1, u + 1e-3))} ${(100 * u).toFixed(2)}%`); }
+    return `linear-gradient(to top, ${P.join(', ')})`;
   }, [gpu]);
   const s0 = (x: number) => (x >= 100 ? x.toFixed(0) : x.toFixed(1));
   const marcas = [0, 0.25, 0.5, 0.75, 1].map((u) => ({ u, v: lo + u * span }));
   const pct = (x: number) => Math.max(0, Math.min(100, (100 * (x - lo)) / span));
+  const { tMelt, tCoolant, tEject, thetaE, material } = gpu.termica;
+  const thetaDe = (T: number) => (T - tCoolant) / (tMelt - tCoolant);
+  const marcasT = [
+    { T: tMelt, txt: 'fundido' }, { T: 170, txt: '' }, { T: tEject, txt: '' }, { T: tCoolant, txt: 'agua del molde' },
+  ];
+  const tcMax = gpu.tc.max;
+  const vel = Math.max(1, Math.round(tcMax / RELOJ_PLAY_S));
+  const boton: React.CSSProperties = { pointerEvents: 'auto', cursor: 'pointer', font: '600 10.5px system-ui,sans-serif', color: '#dfe9f5', background: 'rgba(12,20,32,0.85)', border: '1px solid rgba(160,190,220,0.35)', borderRadius: 3, padding: '3px 8px' };
+  const etiqueta: React.CSSProperties = { font: '700 12px system-ui,sans-serif', fontVariantNumeric: 'tabular-nums', color: '#eaf2fb', textShadow: '0 1px 3px #000', whiteSpace: 'nowrap' };
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 6, opacity: atenuada ? 0.12 : 1, transition: 'opacity .35s ease' }}>
-      <div ref={refEl} data-testid="escala-enfriamiento" data-lo={lo.toFixed(1)} data-hi={hi.toFixed(1)} data-marcas={marcas.length}
+      <div ref={refEl} data-testid="escala-enfriamiento" data-modo={modo} data-lo={lo.toFixed(1)} data-hi={hi.toFixed(1)} data-marcas={marcas.length}
+        data-tcmax={tcMax.toFixed(1)} data-velocidad={vel}
         style={{ position: 'absolute', left: 0, top: 0, width: 210, height: 240, willChange: 'transform', display: 'none' }}>
-        <div style={{ position: 'absolute', left: 0, top: -40, width: 230, font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: '#dfe7f2' }}>
-          SEGUNDOS PARA ESTAR FIRME
-          <div style={{ font: '500 10.5px system-ui,sans-serif', letterSpacing: 0, color: '#9fb0c4', marginTop: 2 }}>Eq 9.5 sobre la pared de cada punto</div>
-        </div>
-        {/* la barra */}
-        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, borderRadius: 3, background: grad, boxShadow: '0 0 0 1px rgba(255,255,255,0.22), 0 2px 10px rgba(0,0,0,0.45)' }} />
-        {/* marcas en segundos */}
-        {marcas.map((m) => (
-          <div key={m.u} style={{ position: 'absolute', left: 16, bottom: `${m.u * 100}%`, transform: 'translateY(50%)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 7, height: 1.5, background: 'rgba(255,255,255,0.75)' }} />
-            <b style={{ font: '700 12px system-ui,sans-serif', fontVariantNumeric: 'tabular-nums', color: '#eaf2fb', textShadow: '0 1px 3px #000' }}>{s0(m.v)} {lente.unidad}</b>
-          </div>
-        ))}
-        {/* lo que manda: arriba — y la mitad de la pieza, donde cae */}
-        <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.maxCampo)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#ffb4a8', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
-          ◀ lo más lento: manda el ciclo
-        </div>
-        <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.p50)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#a9c4ff', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
-          ◀ la mitad de tu pieza ya está firme
-        </div>
+        {modo === 'tiempo' ? (
+          <>
+            <div style={{ position: 'absolute', left: 0, top: -44, width: 300, font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: '#dfe7f2' }}>
+              TU PIEZA ENFRIÁNDOSE
+              <div style={{ font: '500 10.5px system-ui,sans-serif', letterSpacing: 0, color: '#9fb0c4', marginTop: 2 }}>centro de cada pared · Eq 9.5 en el tiempo · {material}</div>
+            </div>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, borderRadius: 3, background: gradT, boxShadow: '0 0 0 1px rgba(255,255,255,0.22), 0 2px 10px rgba(0,0,0,0.45)' }} />
+            {marcasT.map((m) => (
+              <div key={m.T} style={{ position: 'absolute', left: 16, bottom: `${100 * thetaDe(m.T)}%`, transform: 'translateY(50%)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 7, height: 1.5, background: 'rgba(255,255,255,0.75)' }} />
+                <b style={etiqueta}>{m.T.toFixed(m.T % 1 ? 1 : 0)} °C</b>
+                {m.txt && <span style={{ font: '500 10.5px system-ui,sans-serif', color: '#9fb0c4', textShadow: '0 1px 3px #000' }}>{m.txt}</span>}
+              </div>
+            ))}
+            {/* el corte: firme */}
+            <div style={{ position: 'absolute', left: -4, width: 24, bottom: `${100 * thetaE}%`, height: 0, borderTop: '2px solid #ffffff', boxShadow: '0 0 6px rgba(255,255,255,0.7)' }} />
+            <div style={{ position: 'absolute', left: 88, bottom: `${100 * thetaE}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#ffffff', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
+              ◀ firme: ya se puede expulsar
+            </div>
+            {/* EL RELOJ */}
+            <div style={{ position: 'absolute', left: 0, top: 'calc(100% + 18px)', width: 300 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <b ref={(el) => { relojEls.current.t = el; }} data-testid="reloj-enfriamiento" style={{ font: '700 20px system-ui,sans-serif', fontVariantNumeric: 'tabular-nums', color: '#ffffff', textShadow: '0 1px 4px #000' }}>t = 0 s</b>
+                <span style={{ font: '500 11px system-ui,sans-serif', color: '#9fb0c4', textShadow: '0 1px 3px #000' }}>de {s0(tcMax)} s · tiempo ×{vel}</span>
+              </div>
+              <div ref={(el) => { relojEls.current.estado = el; }} style={{ font: '600 11px system-ui,sans-serif', color: '#ffd9a8', textShadow: '0 1px 3px #000', margin: '2px 0 7px' }}>enfriando desde que se llenó</div>
+              <div style={{ position: 'relative', width: 280, height: 6, borderRadius: 3, background: 'rgba(160,190,220,0.22)' }}>
+                <div ref={(el) => { relojEls.current.barra = el; }} style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '0%', borderRadius: 3, background: 'linear-gradient(90deg,#ffc23a,#ff7a1f,#3f7bff)' }} />
+                <span style={{ position: 'absolute', left: `${(100 * lente.p50) / tcMax}%`, top: -3, width: 2, height: 12, background: '#a9c4ff' }} />
+                <span style={{ position: 'absolute', left: 'calc(100% - 2px)', top: -3, width: 2, height: 12, background: '#ffffff' }} />
+              </div>
+              <div style={{ position: 'relative', width: 280, height: 14, font: '500 10px system-ui,sans-serif', color: '#9fb0c4' }}>
+                <span style={{ position: 'absolute', left: `${(100 * lente.p50) / tcMax}%`, transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>{s0(lente.p50)} s la mitad</span>
+                <span style={{ position: 'absolute', right: 0, whiteSpace: 'nowrap' }}>{s0(tcMax)} s abre</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <button type="button" data-testid="reloj-pausa" style={boton} onClick={onPausa}>{pausa ? 'seguir' : 'pausa'}</button>
+                <button type="button" data-testid="reloj-mapa" style={boton} onClick={() => onModo('mapa')}>ver el mapa en segundos</button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ position: 'absolute', left: 0, top: -40, width: 230, font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: '#dfe7f2' }}>
+              SEGUNDOS PARA ESTAR FIRME
+              <div style={{ font: '500 10.5px system-ui,sans-serif', letterSpacing: 0, color: '#9fb0c4', marginTop: 2 }}>Eq 9.5 sobre la pared de cada punto</div>
+            </div>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, borderRadius: 3, background: grad, boxShadow: '0 0 0 1px rgba(255,255,255,0.22), 0 2px 10px rgba(0,0,0,0.45)' }} />
+            {marcas.map((m) => (
+              <div key={m.u} style={{ position: 'absolute', left: 16, bottom: `${m.u * 100}%`, transform: 'translateY(50%)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 7, height: 1.5, background: 'rgba(255,255,255,0.75)' }} />
+                <b style={etiqueta}>{s0(m.v)} {lente.unidad}</b>
+              </div>
+            ))}
+            <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.maxCampo)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#ffb4a8', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
+              ◀ lo más lento: manda el ciclo
+            </div>
+            <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.p50)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#a9c4ff', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
+              ◀ la mitad de tu pieza ya está firme
+            </div>
+            <div style={{ position: 'absolute', left: 0, top: 'calc(100% + 18px)' }}>
+              <button type="button" data-testid="reloj-tiempo" style={boton} onClick={() => onModo('tiempo')}>verla enfriarse en el tiempo</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

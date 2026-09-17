@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-14 22:47",
+ "generado": "2026-09-17 18:36",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -10,11 +10,11 @@
   "proximo": 6,
   "enCurso": 0,
   "imprevisto": 0,
-  "supertickets": 10,
-  "cerrado": 89,
+  "supertickets": 9,
+  "cerrado": 90,
   "probado": 0,
-  "porProbar": 53,
-  "sinDesplegar": 8,
+  "porProbar": 54,
+  "sinDesplegar": 9,
   "despues": 24
  },
  "deploy": {
@@ -1261,13 +1261,15 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
-   },
+   }
+  ],
+  "cerrado": [
    {
     "file": "ordenes/2026-09-10-el-enfriamiento-se-ve.md",
     "slug": "2026-09-10-el-enfriamiento-se-ve",
     "titulo": "EL ENFRIAMIENTO SE VE — la escala con segundos junto a la pieza, y la pieza enfriándose en el tiempo",
     "fecha": "2026-09-10",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 999,
     "tipo": "",
     "superticket": true,
@@ -1321,21 +1323,20 @@
      "Runner: paso 3 con ambos checks; paseo con el enfriamiento corriendo (línea de tiempo: cuadros distintos",
      "orden-gate VERDE; censo igual; cero pageerror."
     ],
-    "cierre": "",
-    "cierreCompleto": "",
+    "cierre": "09-14; nada nuevo el 09-17). CREA: los cuatro archivos declarados existen (resultados.json, escala.png, pintura-antes-despues.png, tiempo-0-50-100.png, paseo-contactos.png). BORRA nada. - GOLPE 2 · E…",
+    "cierreCompleto": "09-14; nada nuevo el 09-17). CREA: los cuatro archivos declarados existen (resultados.json, escala.png, pintura-antes-despues.png, tiempo-0-50-100.png, paseo-contactos.png). BORRA nada. - GOLPE 2 · EL TIEMPO, hecho y medido: la temperatura sale del MISMO primer término que da la Eq 9.5 (θ(t) = min(1, 4/π·exp(−L·t/t_c)), L = 1.8019 con el ABS de la lente), así que cada punto cruza 97.6 °C EXACTO en su t_c: oráculo de la placa de 2 mm del libro (t_c 8.4 s → T = 97.6 = T_expulsión). El t_c completo viaja en un tercer canal de la textura (√ normalizada) y el color de θ en su propia LUT: azul si ya está firme, rojo→naranja→amarillo casi blanco mientras sigue blando, con el corte en θ_e como FRENTE de solidificación. Interfaz FLOTANTE junto a la pieza: barra en °C (239 fundido · 97.6 firme · 60 agua), reloj «t = x s de 134 s · tiempo ×13» con marcas en 21.5 s (la mitad firme) y 134 s (abre), pausa y botón al mapa en segundos del golpe 1. Bucle 0 → t_c máx en 10 s + 2.5 s quieto. __forgeBrep.cambio(ms) mide el MOVIMIENTO y __forgeBrep.enfriamiento.fijar(t) clava el reloj para capturas. - números (runner limpio 2026-09-17 18:31 UTC, dev :5194 iangpu, máquina sin otra carga): 7/8 · paso 3 = 6/6 (antes 4/6) · lente 1.9 s declarados (presupuesto 2.5) · p3-6 en verde por primera vez: 21.8 % de los píxeles cambian en 1 s (grabando el paseo, 17.8 %) · primera placa del molde 0.40 s · GLITCH 0 · SHOT_TIMEOUT 0 · video 30 de 219 s. Superficie firme medida con muestreo fino: 7.3 % a los 10.8 s · 80.2 % a los 21.5 s · 96.8 % a los 67 s · 100 % a los 134.5 s (la mediana por área también es 2…",
     "evidenciaSS": [
      "evidencia/2026-09-10-el-enfriamiento-se-ve/escala.png",
      "evidencia/2026-09-10-el-enfriamiento-se-ve/paseo-contactos.png",
-     "evidencia/2026-09-10-el-enfriamiento-se-ve/pintura-antes-despues.png"
+     "evidencia/2026-09-10-el-enfriamiento-se-ve/pintura-antes-despues.png",
+     "evidencia/2026-09-10-el-enfriamiento-se-ve/tiempo-0-50-100.png"
     ],
-    "revisable": false,
+    "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
-   }
-  ],
-  "cerrado": [
+    "commit": "37f6feb",
+    "despliegue": "sin-desplegar"
+   },
    {
     "file": "ordenes/2026-09-09-una-sola-verdad.md",
     "slug": "2026-09-09-una-sola-verdad",
@@ -1442,7 +1443,7 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "da78760",
+    "commit": "37f6feb",
     "despliegue": "sin-desplegar"
    },
    {
@@ -6479,7 +6480,7 @@
     "titulo": "Estás leyendo esto gracias a este átomo — Potasio (Z=19)",
     "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
     "tipo": "atomo-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "cada disparo de una neurona tuya deja salir potasio. 4s¹: un electrón solo, se va facilísimo.",
     "manifiesto": true,
     "publicado": true,
@@ -6493,10 +6494,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdSdCvHlRk6/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-14",
@@ -6505,7 +6511,7 @@
     "titulo": "Tu negocio no cierra por vender poco — capítulo 1 de LA ECONOMÍA DE TU NEGOCIO",
     "base": "economia-colchon (ruina del jugador calibrada a INEGI) · gemelos · 57 s · guion en 2ª persona + primer comentario sencillo",
     "tipo": "serie economía de tu negocio",
-    "estado": "hoy",
+    "estado": "hecho",
     "nota": "ian 2026-09-14: «sube el colchon… subelo hoy». 21:00 y no 18:45: la serie es para México y a las 18:45 sale atomo-k.",
     "manifiesto": true,
     "publicado": true,
@@ -6518,14 +6524,14 @@
     },
     "yt": {
      "url": "https://youtu.be/8jbWV_qtSFo",
-     "privacidad": "private"
+     "privacidad": "public"
     },
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdSsfrggO02/"
+    },
     "ancho": null,
     "entregado": "",
     "falta": [
-     "YouTube private",
-     "Instagram",
      "16:9"
     ]
    },
@@ -6536,7 +6542,7 @@
     "titulo": "Dos terceras partes de tu peso son este átomo — Oxígeno (Z=8)",
     "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
     "tipo": "atomo-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "LUNES = día fuerte. 65 % de la masa corporal, casi todo por el AGUA, no por el aire. 2p⁴: le faltan dos.",
     "manifiesto": true,
     "publicado": true,
@@ -6550,10 +6556,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdVB1ROjZsL/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-16",
@@ -6562,7 +6573,7 @@
     "titulo": "Cada vez que sientes algo, entra este átomo — Sodio (Z=11)",
     "base": "escena de átomos (cinematic-atom.html?z=N, bin ya precomputado) · ~30 s · guion de 55 palabras con GANCHO DE IDENTIDAD · el cromo probó que el formato retiene (54 % visto, 1.5 bucles); lo que le faltó fue el sujeto: ahora lo tiene",
     "tipo": "atomo-identidad",
-    "estado": "proximo",
+    "estado": "hecho",
     "nota": "el impulso nervioso empieza con Na⁺ entrando. 3s¹.",
     "manifiesto": true,
     "publicado": true,
@@ -6576,10 +6587,15 @@
      "marco": "revelacion"
     },
     "yt": null,
-    "ig": null,
+    "ig": {
+     "url": "https://www.instagram.com/reel/DdXmoDWjXs3/"
+    },
     "ancho": null,
     "entregado": "",
-    "falta": []
+    "falta": [
+     "YouTube",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-09-17",
@@ -6591,8 +6607,8 @@
     "estado": "proximo",
     "nota": "sábado. Recorte del sudor (4,580 vistas) con el sujeto en su piel.",
     "manifiesto": true,
-    "publicado": false,
-    "programar": "",
+    "publicado": true,
+    "programar": "2026-09-17T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 8.73,
@@ -6601,13 +6617,14 @@
      "vel": 1,
      "marco": "revelacion"
     },
-    "yt": null,
+    "yt": {
+     "url": "https://youtu.be/xzKvY_j-HZY",
+     "privacidad": "private"
+    },
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-09-18",
@@ -6619,8 +6636,8 @@
     "estado": "proximo",
     "nota": "recorte de LA SAL con el sujeto adentro.",
     "manifiesto": true,
-    "publicado": false,
-    "programar": "",
+    "publicado": true,
+    "programar": "2026-09-18T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 8.73,
@@ -6629,13 +6646,14 @@
      "vel": 1,
      "marco": "revelacion"
     },
-    "yt": null,
+    "yt": {
+     "url": "https://youtu.be/S3Nn6ajKn8c",
+     "privacidad": "private"
+    },
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-09-19",
@@ -6666,8 +6684,8 @@
     "estado": "proximo",
     "nota": "DOMINGO = día fuerte.",
     "manifiesto": true,
-    "publicado": false,
-    "programar": "",
+    "publicado": true,
+    "programar": "2026-09-20T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 8.73,
@@ -6676,13 +6694,14 @@
      "vel": 1,
      "marco": "revelacion"
     },
-    "yt": null,
+    "yt": {
+     "url": "https://youtu.be/9NtjZjDYsIU",
+     "privacidad": "private"
+    },
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-09-21",
@@ -6694,8 +6713,8 @@
     "estado": "proximo",
     "nota": "LUNES = día fuerte.",
     "manifiesto": true,
-    "publicado": false,
-    "programar": "",
+    "publicado": true,
+    "programar": "2026-09-21T18:45:00-06:00",
     "rasgos": {
      "brazo": "A",
      "cortes_min": 6.55,
@@ -6704,13 +6723,14 @@
      "vel": 1,
      "marco": "revelacion"
     },
-    "yt": null,
+    "yt": {
+     "url": "https://youtu.be/V1LAjOfYKP8",
+     "privacidad": "private"
+    },
     "ig": null,
     "ancho": null,
     "entregado": "",
-    "falta": [
-     "sin programar"
-    ]
+    "falta": []
    }
   ]
  },
@@ -6812,7 +6832,7 @@
      "n": 3,
      "gesto": "ENFRIAMIENTO",
      "seVe": "el campo pintado en ≤2.5 s con su ESCALA en segundos junto a la pieza, LA FICHA sobre el punto que manda, y la pieza enfriándose EN EL TIEMPO con el reloj corriendo (nada de pantallas fijas)",
-     "estado": "parcial",
+     "estado": "ok",
      "ticket": "2026-09-10-el-enfriamiento-se-ve"
     },
     {
@@ -6851,12 +6871,12 @@
      "ticket": "2026-08-28-t5-expediente-que-se-ve"
     }
    ],
-   "verdes": 6,
+   "verdes": 7,
    "total": 8,
    "rompeEn": 0,
-   "parciales": 2,
+   "parciales": 1,
    "medido": {
-    "fecha": "2026-09-14 22:38",
+    "fecha": "2026-09-17 18:31",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "iangpu"

@@ -107,26 +107,49 @@ export interface Lente {
 }
 
 /**
- * El campo empaquetado para una textura 3D. `rg` lleva 2 bytes por celda de la rejilla, en el orden de
- * `Data3DTexture` (i + nx·(j + ny·k), el mismo de `FlowField.idx`): R = (valor − lo)/(hi − lo) en 0..255 y
- * G = 255 donde hay dato. Las celdas de ACERO pegadas al hueco (hasta 2 celdas) toman el valor del hueco más
- * cercano: la superficie de la pieza cae justo en la frontera y sin esa orilla el filtrado mezclaría con «sin dato».
- * `lut` es el color de cada R (256×1 RGBA) sacado de `colorDe`: la MISMA función del vértice y de la leyenda.
+ * El campo empaquetado para una textura 3D. `vol` lleva 4 bytes por celda de la rejilla, en el orden de
+ * `Data3DTexture` (i + nx·(j + ny·k), el mismo de `FlowField.idx`):
+ *   R = (t_c − lo)/(hi − lo) en 0..255 — el MAPA en segundos (golpe 1), recortado a la escala p05..p95
+ *   G = 255 donde hay dato
+ *   B = √((t_c − mín)/(máx − mín)) en 0..255 — EL RELOJ (golpe 2): el t_c completo, sin recorte; la raíz da más
+ *       resolución a las paredes rápidas (0.5 s por nivel se come el 6 % de un t_c de 8 s; con la raíz, 0.03 s)
+ * Las celdas de ACERO pegadas al hueco (hasta 2 celdas) toman el valor del hueco más cercano: la superficie de la
+ * pieza cae justo en la frontera y sin esa orilla el filtrado mezclaría con «sin dato».
+ * `lut` es el color de cada R sacado de `colorDe` (la MISMA función del vértice y de la leyenda); `lutT` es el color
+ * de la temperatura θ ∈ [0,1] (0 = agua del molde, 1 = fundido) con el corte en θ_e = firme.
  */
 export interface CampoGPU {
   nx: number; ny: number; nz: number;
   x0: number; y0: number; z0: number; cellMm: number;
-  rg: Uint8Array;
+  vol: Uint8Array;
   lut: Uint8Array;
+  lutT: Uint8Array;
   escala: { lo: number; hi: number };
+  tc: { min: number; max: number };
+  /** Eq 9.5 en el tiempo: θ(t) = min(1, 4/π·exp(−L·t/t_c)); L = ln(4/π·(T_f−T_a)/(T_e−T_a)); θ_e = (T_e−T_a)/(T_f−T_a) */
+  termica: { material: string; tMelt: number; tCoolant: number; tEject: number; L: number; thetaE: number };
 }
 
-function campoParaGPU(f: FlowField, campoVox: Float32Array, esc: { lo: number; hi: number }, r: Rampa, gamma: number): CampoGPU {
+
+export function thetaDelTiempo(t: number, tc: number, L: number): number {
+  return Math.min(1, (4 / Math.PI) * Math.exp((-L * t) / Math.max(1e-6, tc)));
+}
+export function colorDeTemperatura(theta: number, thetaE: number): [number, number, number] {
+  return theta < thetaE
+    ? muestrearRampa(RAMPA_FIRME, theta / thetaE)
+    : muestrearRampa(RAMPA_BLANDA, (theta - thetaE) / (1 - thetaE));
+}
+
+function campoParaGPU(f: FlowField, campoVox: Float32Array, esc: { lo: number; hi: number }, r: Rampa, gamma: number, mat: CoolingMaterial): CampoGPU {
   const { nx, ny, nz } = f;
   const N = nx * ny * nz;
-  const rg = new Uint8Array(N * 2);
+  const vol = new Uint8Array(N * 4);
   const span = esc.hi - esc.lo || 1;
   const byteDe = (x: number) => Math.round(255 * Math.max(0, Math.min(1, (x - esc.lo) / span)));
+  let tMin = Infinity, tMax = -Infinity;
+  for (let i = 0; i < N; i++) if (f.cavity[i] && Number.isFinite(campoVox[i])) { if (campoVox[i] < tMin) tMin = campoVox[i]; if (campoVox[i] > tMax) tMax = campoVox[i]; }
+  if (!Number.isFinite(tMin)) { tMin = 0; tMax = 1; }
+  const spanT = tMax - tMin || 1;
   for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
     const t = f.idx(i, j, k);
     let val = f.cavity[t] ? campoVox[t] : NaN;
@@ -144,14 +167,28 @@ function campoParaGPU(f: FlowField, campoVox: Float32Array, esc: { lo: number; h
         }
       }
     }
-    if (Number.isFinite(val)) { rg[t * 2] = byteDe(val); rg[t * 2 + 1] = 255; }
+    if (Number.isFinite(val)) {
+      vol[t * 4] = byteDe(val); vol[t * 4 + 1] = 255;
+      vol[t * 4 + 2] = Math.round(255 * Math.sqrt(Math.max(0, Math.min(1, (val - tMin) / spanT))));
+      vol[t * 4 + 3] = 255;
+    }
   }
   const lut = new Uint8Array(256 * 4);
   for (let b = 0; b < 256; b++) {
     const c = colorDe(r, esc.lo + (b / 255) * span, esc, gamma);
     lut[b * 4] = Math.round(c[0] * 255); lut[b * 4 + 1] = Math.round(c[1] * 255); lut[b * 4 + 2] = Math.round(c[2] * 255); lut[b * 4 + 3] = 255;
   }
-  return { nx, ny, nz, x0: f.x0, y0: f.y0, z0: f.z0, cellMm: f.cellMm, rg, lut, escala: { ...esc } };
+  const L = Math.log((4 / Math.PI) * ((mat.tMelt - mat.tCoolant) / (mat.tEject - mat.tCoolant)));
+  const thetaE = (mat.tEject - mat.tCoolant) / (mat.tMelt - mat.tCoolant);
+  const lutT = new Uint8Array(256 * 4);
+  for (let b = 0; b < 256; b++) {
+    const c = colorDeTemperatura(b / 255, thetaE);
+    lutT[b * 4] = Math.round(c[0] * 255); lutT[b * 4 + 1] = Math.round(c[1] * 255); lutT[b * 4 + 2] = Math.round(c[2] * 255); lutT[b * 4 + 3] = 255;
+  }
+  return {
+    nx, ny, nz, x0: f.x0, y0: f.y0, z0: f.z0, cellMm: f.cellMm, vol, lut, lutT, escala: { ...esc }, tc: { min: tMin, max: tMax },
+    termica: { material: mat === ABS_KAZMER ? 'ABS (Kazmer)' : 'material de la pieza', tMelt: mat.tMelt, tCoolant: mat.tCoolant, tEject: mat.tEject, L, thetaE },
+  };
 }
 
 export interface LentesFoco {
@@ -211,6 +248,17 @@ const RAMPA_TERMICA: Rampa = [
   [0.75, hex('#ffd23a')],
   [1.00, hex('#ff3b2f')],
 ];
+
+/** EL RELOJ — la temperatura del centro de la pared en el tiempo, del MISMO primer término que da la Eq 9.5. Firme =
+ *  azules (el mismo idioma del mapa: azul listo); blando = ámbar → rojo → blanco caliente. El salto de color en θ_e
+ *  ES el frente de solidificación: se ve entrar desde las paredes delgadas hasta los macizos. */
+// el piso del azul NO es navy: al final del reloj casi toda la pieza está fría y un #16307a × la luz de canto se perdía en
+// el fondo del visor (revisión 2026-09-15, antes de correrlo: LO QUE HAY SE VE)
+const RAMPA_FIRME: Rampa = [[0.00, hex('#2448c8')], [1.00, hex('#5b95ff')]];
+// MONÓTONA como una brasa (revisión del video 2026-09-17: con el rojo a media rampa y el amarillo al solidificar, la
+// pieza PARECÍA calentarse antes de enfriarse). De fundido a firme: amarillo casi blanco → ámbar → naranja → rojo, y en
+// θ_e el corte a azul. Cada paso baja de temperatura Y de luminancia, que es como se lee el enfriamiento.
+const RAMPA_BLANDA: Rampa = [[0.00, hex('#ff3b2f')], [0.35, hex('#ff7a1f')], [0.70, hex('#ffc23a')], [1.00, hex('#ffe9a8')]];
 
 const AMBAR = hex('#ffc24b');   // exige tu atención
 const ROJO = hex('#ff6b6b');    // viola el libro
@@ -508,7 +556,7 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
         + `. El tiempo va con el CUADRADO del espesor (Eq 9.5): bajarle 30 % a ese macizo te quita `
         + `la mitad del ciclo. Enfriar más fuerte casi no ayuda — el cuello es el plástico, no el agua.`,
       peor: manda, ref: '§9.2 · Eq 9.5, t_c = h²/(π²α)·ln(4/π·ΔT)', sinDato,
-      gpu: campoParaGPU(f, tcVox, esc, RAMPA_TERMICA, GAMMA_SIMULADO),
+      gpu: campoParaGPU(f, tcVox, esc, RAMPA_TERMICA, GAMMA_SIMULADO, mat),
       candidatos: candidatosEnSuperficie(P, val),
     });
   }
