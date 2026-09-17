@@ -1,13 +1,13 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-17 23:04",
+ "generado": "2026-09-17 23:06",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 5,
+  "proximo": 6,
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
@@ -73,6 +73,73 @@
      "La carcasa 1594C: clamp requerido en el rango 20-40 t con la fórmula del libro citada; la fila de la",
      "Cuando la HT-150SV dispare: el clamp real (lectura del controlador) contra el calculado, en el doc.",
      "runner sin regresión; orden-gate VERDE."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-10-el-agua-dice-dos-cosas.md",
+    "slug": "2026-09-10-el-agua-dice-dos-cosas",
+    "titulo": "EL AGUA DICE DOS COSAS — la lámina de la placa y el 3D del molde no dibujan el mismo circuito",
+    "fecha": "2026-09-10",
+    "estado": "proximo",
+    "prioridad": 5,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] medir los dos caminos lado a lado para cubo, vaso y carcasa (tabla: D, H, W, n, plug, ΔT, Re).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] UNA fuente: `estacion8Circuito` como origen y la lámina leyendo sus segmentos (o al revés, según la",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] gate nuevo: «lámina y 3D dicen lo mismo» (D, H, W, n, plug) para las tres piezas.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 3
+    },
+    "objetivo": "hallazgo de EL AGUA DE TU PIEZA (2026-09-17, medido en node sobre la carcasa 1594C con pared 3.2): el MISMO molde tiene DOS circuitos de agua distintos según quién lo dibuje. La lámina de la placa (coolingCircuitDesign en mold-drawing-set.…",
+    "toca": 3,
+    "crea": 0,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "La tabla de los dos caminos ANTES y DESPUÉS para las tres piezas.",
+     "ciclo-dado-test verde (266/266 o el número nuevo, firmado y explicado).",
+     "Captura de la lámina y del 3D del MISMO molde con los mismos números a la vista."
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1340,7 +1407,7 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "f1397c0",
+    "commit": "0c5c46a",
     "despliegue": "sin-desplegar"
    },
    {
