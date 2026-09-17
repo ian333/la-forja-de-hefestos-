@@ -100,6 +100,10 @@ def norm(s):
     # error de voz. El defecto era del gate, no del TTS. Se canoniza a masculino de los dos
     # lados: la distinción no es pronunciación, es concordancia.
     s = s.replace('cientas', 'cientos')
+    # B = V. En español son EL MISMO sonido (/b/), así que ningún transcriptor puede
+    # distinguirlos: «Beto» salió como «veto» en el guardadito (2026-09-17) y el gate
+    # reprobó una voz correcta. Como aquí se compara FONÉTICA, las canonizamos a 'b'.
+    s = s.replace('v', 'b')
     out = []
     for t in s.split():
         t = t.strip('.,')

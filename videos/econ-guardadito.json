@@ -1,0 +1,99 @@
+{
+  "id": "econ-guardadito",
+  "titulo": "El guardadito — capítulo 1 de La economía de tu negocio (v3, billetes)",
+  "nota": "VERSIÓN 3 (ian, 2026-09-17, tras juzgar el publicado cuadro por cuadro: «la única diferencia es la caja» no tenía imagen). El lenguaje nuevo: CADA PUNTITO ES UN BILLETE — el montón de cada gemelo héroe es su caja real (12 billetes por mes de gastos), Doña Lupe abre con 1 mes y Don Beto con 3, y los dos montones suben y bajan con la MISMA suerte. Guion en prosa con personajes; rótulos con nombre y pesos; las CIEN CALLES en vez del disco de 40,000. Id nuevo para no pisar al publicado (econ-colchon, 09-14).",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=eguarda",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (eguarda): render-clip exige formato.dur == duración de la escena (EGUARDA_DURATION = 55). Reloj y tomas calibrados a segs.json de la voz v3.",
+    "nota_16x9": "QUERY=\"m=eguarda&zoom=0.5\" W=3840 H=2160 (medir fill antes de renderizar)"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 55,
+    "nota_dur": "v3: 113 palabras ≈ 51.4 s de voz (fit-check a 0.455 s/palabra, VEL 1.0) + 3.6 s de cola. Se recalibra con segs.json."
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.guardaditoframes"
+  },
+  "audio": {
+    "dir": "dist-video/econ-guardadito-narracion",
+    "narracion": "econ-guardadito-narracion.mp3",
+    "musica": "wpair-music-ticks.wav",
+    "musicaFuente": "wpair-music.wav (ganadora) + tics del reloj (ticks-reloj.py): el reloj arranca cuando la voz dice «cada tic es un mes» (línea 3) y corre 58 meses hasta «casi al triple»; pulso grave en cada año.",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 54,
+    "segs": "segs.json",
+    "ass": "econ-guardadito.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana), VEL 1.0 (v3: el brazo A manda, ver canon §EL VEREDICTO A/B)",
+    "vel": 1.0
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-guardadito-4k-master.mp4",
+    "h264": "econ-guardadito-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "economia-guardadito.bin",
+      "economia-guardadito-efield.bin"
+    ],
+    "guion": "econ-guardadito.txt",
+    "scripts": [
+      "precompute-colchon.py",
+      "ticks-reloj.py",
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-guardadito.mp4",
+    "capsulaRel": "economia/_code/econ-guardadito-capsula.tar.gz",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "El guardadito · La economía de tu negocio, capítulo 1",
+      "descripcion": "Doña Lupe y Don Beto venden los mismos tacos en la misma calle y cada mes les toca la misma suerte. 🌮\n\nCada puntito que ves es un billete de lo que tienen guardado: ella juntó para pagar un mes de renta, gas y sueldos; él, para tres.\n\nLlega el mes malo y los dos venden poquito. Don Beto paga con su guardadito y aguanta. A Doña Lupe ya no le alcanza para la renta, y cierra. No vendía menos: se le acabó el guardadito.\n\nEn México, de cada 100 negocios que abren, 31 cierran antes de cumplir un año (INEGI).\n\n💬 ¿Para cuántos meses te alcanza lo que tienes guardado? Dinos tu número aquí abajo.\n\nSíguenos para el capítulo 2: el fiado.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#ahorro",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque le pasa a quien lo ve: el que tiene negocio se reconoce en el punto que se apaga"
+    },
+    "primer_comentario": "Te lo explico fácil 👇\n\nImagina dos taquerías en la misma calle. Venden los mismos tacos y les llega la misma gente.\n\nDoña Lupe tiene guardado para pagar UN mes de renta, gas y sueldos. Es el punto dorado del video.\nDon Beto tiene guardado para TRES meses. Es el punto azul.\n\nUn mes llueve todos los días y casi nadie sale a comer. Las dos venden poquito.\n\nDoña Lupe se gasta su guardadito y ya no le alcanza para la renta: cierra.\nDon Beto paga con su guardadito, aguanta, y cuando vuelve el sol sigue abierto.\n\nDoña Lupe no cocinaba peor ni vendía menos. Lo que le faltó fue el cochinito.\n\nEs como ir de excursión: los dos caminan igual, pero el que lleva más agua aguanta cuando no hay dónde comprar.\n\n✏️ Haz esta cuenta hoy: si mañana no vendieras nada, ¿cuántos meses podrías pagar tus gastos con lo que tienes guardado? Si es menos de uno, empieza a guardar poquito cada semana, aunque sean 50 pesos.\n\nEste es el capítulo 1 de La economía de tu negocio. Déjanos tu cuenta aquí abajo 👇",
+    "nota_primer_comentario": "ian, 2026-09-14: «en los comentarios debes explicar a gente no educada, con ejemplos simples, ideas que un niño y una abuela entienden». Instagram: lo publica PRIME justo después del reel (cola-publicar.py tick). YouTube: scripts/primer-comentario.py.",
+    "nota_pieza": "comando-catalogo.cjs mete TODO economia/reels/*.mp4 en UNA pieza «clase-reel» (líneas 338-342): el id «econ colchon» nunca existe en el catálogo y el check en vivo de paso_publicar fallaba aunque el video ya estaba en PRIME y ATLAS (2026-09-14). Ostrom tampoco pasó por aquí. Pendiente: un id por reel de economía.",
+    "nota_autorizacion": "SIN AUTORIZAR: no se sube nada hasta que ian lo diga con sus palabras (publicar.autorizado)."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/econ-guardadito.txt"
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "v2: ~10 cortes en 60 s; VEL 1.10 (canon §EL RITMO: hablábamos al 53 % del español natural). Se MIDE tras la voz."
+  }
+}

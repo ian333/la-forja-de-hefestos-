@@ -128,6 +128,36 @@ const ECOLCHON_CAPAS: CapasSpec = {
   apertura: { base: 1, mods: ECOLCHON_PASOS.map(([t, a], i) => (
     { wins: [[t, ECOLCHON_DURATION]] as [number, number][], a, label: `paso ${i + 1}: mes ${i < 2 ? i + 1 : 2 + 2 * (i - 1)} de 60` })) },
 };
+// ── EL GUARDADITO (econ-guardadito, v3 · 2026-09-17) — misma sim que el colchón, OTRO reloj y
+// otras tomas, así que lleva molKey propio (canon §PORTERO 16: otra duración = otro molKey).
+// CALIBRADO A segs.json (voz real 49.91 s, VEL 1.0, 11 líneas):
+//   l01 0.40 · l02 5.34 · l03 9.40 · l04 «cada tic es un mes» 14.45 · l05 «el mes malo» 20.41
+//   l06 23.31 · l07 «y cierra» 27.05-31.32 · l08 31.72 · l09 «cien calles» 35.64 · l10 42.02 · l11 46.08
+// EL RELOJ va en tres tramos: (A) 0→2 meses lento mientras se presenta a la pareja, (B) 2→12 un
+// TIC por mes mientras la voz cuenta la historia — el dorado del héroe muere en el mes 12 y el
+// motor lo apaga al SALIR del mes 11, así que ese paso arranca en 30.5 («y cierra»), y (C) 12→60
+// a toda velocidad bajo «en cien calles como esta», para probar los cinco años.
+const EGUARDA_DURATION = 55;
+const EGUARDA_PASOS: [number, number][] = [
+  ...Array.from({ length: 12 }, (_, i) => [2.0 + 1.0 * i, -(2 / 60) / 12] as [number, number]),
+  ...Array.from({ length: 9 }, (_, i) => [14.45 + 1.78 * i, -1 / 60] as [number, number]),
+  [30.5, -1 / 60],
+  ...Array.from({ length: 24 }, (_, i) => [36.0 + 0.22 * i, -2 / 60] as [number, number]),
+];
+const EGUARDA_CAPAS: CapasSpec = {
+  campo:    { base: 0, mods: [] },
+  respiro:  { base: 0, mods: [] },
+  nubes:    { base: 1, mods: EGUARDA_PASOS.map(([t, a], i) => (
+    { wins: [[t, EGUARDA_DURATION]] as [number, number][], a: -a * 2.17, label: `compensa el brillo que se lleva la apertura (${i + 1}/${EGUARDA_PASOS.length})` })) },
+  parpadeo: { base: 0.18, mods: [] },
+  spin:     { base: 1, mods: [] },
+  acc:      { base: 1.5, mods: [] },
+  enlaces:  { base: 0, mods: [] },
+  dipolo:   { base: 0, mods: [] },
+  ceros:    { base: 0, mods: [] },
+  apertura: { base: 1, mods: EGUARDA_PASOS.map(([t, a], i) => (
+    { wins: [[t, EGUARDA_DURATION]] as [number, number][], a, label: `paso ${i + 1} del reloj` })) },
+};
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
 // dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
@@ -1136,6 +1166,26 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: diveToNucleus({ rFromMul: 1.5, rTo: 1.76, fovFrom: 33, fovTo: 40, spin: 0.4 }), dur: 4.85, label: 'muere el día que no sabe: regreso a la pareja del inicio' },
     { shot: staticBreath({ rMul: 0.095, elev: 0.0, azim: 1.5, fov: 40 }), dur: 10.89, label: 'si tienes uno: el azul sigue, el dorado ya no está' },
   ],
+  eguarda: [
+    // EL GUARDADITO (v3). Un corte por arranque de línea (9 cortes en 55 s = 9.8/min, brazo A).
+    // Tomas del registro, sin inventar cámara; rMul 0.095 ≈ r 1.05 → el cuadro mide 0.76 × 1.35
+    // (MEDIDO en stills 2026-09-17), y los dos montones de billetes ocupan 0.62 de ancho.
+    // ⚠ staticBreath suma ±0.03 ABSOLUTO al rMul: con rMul 0.08 eso es ±37 % y en el valle la
+    // pareja (que vive 0.25 abajo del centro) se salía del cuadro — dos cuadros NEGROS a t=30-31.
+    // Piso medido para esta pieza: rMul ≥ 0.105. Por eso los acercamientos usan eyeLevelLock, que
+    // NO respira (micro-deriva 0.02): permite bajar a rMul 0.09 (r ≈ 1.0, cuadro 0.72 de ancho) y
+    // que los dos montones ocupen ~86 % del ancho sin riesgo de cuadro negro.
+    { shot: eyeLevelLock({ rMul: 0.092, azim: 1.50, fov: 40 }), dur: 5.34, label: 'l01 los dos negocios, sus dos montones' },
+    { shot: eyeLevelLock({ rMul: 0.086, azim: 1.58, fov: 40 }), dur: 4.06, label: 'l02 cada puntito es un billete: de cerca, se cuentan' },
+    { shot: eyeLevelLock({ rMul: 0.090, azim: 1.44, fov: 40 }), dur: 5.05, label: 'l03 ella un mes, él tres: los dos montones enteros' },
+    { shot: eyeLevelLock({ rMul: 0.095, azim: 1.55, fov: 40 }), dur: 5.96, label: 'l04 arranca el reloj: un tic por mes, la misma suerte' },
+    { shot: crashIn({ rMul: 0.105, elev: -0.05, azim0: 1.40, span: 0.20, fov: 38 }), dur: 6.64, label: 'l05-l06 el mes malo y Don Beto aguantando' },
+    { shot: eyeLevelLock({ rMul: 0.088, azim: 1.50, fov: 40 }), dur: 4.67, label: 'l07 a Doña Lupe se le acaban los billetes y cierra' },
+    { shot: eyeLevelLock({ rMul: 0.098, azim: 1.47, fov: 40 }), dur: 3.92, label: 'l08 el hueco donde estaba su montón' },
+    { shot: pullOut({ azim0: 1.5, span: 0.3, rFromMul: 0.098, rTdMul: 1.55, fovFrom: 42, fovTo: 33 }), dur: 6.38, label: 'l09 en cien calles como esta: cinco años en cinco segundos' },
+    { shot: crashIn({ rMul: 0.145, elev: 0.03, azim0: 1.35, span: 0.22, fov: 38 }), dur: 4.06, label: 'l10 de regreso a la pareja: la pregunta' },
+    { shot: eyeLevelLock({ rMul: 0.092, azim: 1.52, fov: 40 }), dur: 8.92, label: 'l11 el sello y la cola' },
+  ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
     // agentes y su posición sale de dos modelos publicados (Bouchaud-Mézard 2000 + Schelling
@@ -1638,6 +1688,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   wsalb: { name: 'Por qué te da sed', formula: 'Na⁺···H₂O', fact: 'Cada sodio se lleva su propia jaula de agua — y por eso pides más.' },
   wtetb: { name: 'Ninguna está sola', formula: '(H₂O)₄', fact: 'A tres no les cuadraba; a cuatro sí, y jalan 19 % más que por separado.' },
   wsillab: { name: 'Dos sillas vacías', formula: 'H₂O···H₂O', fact: 'Dos sillas y dos hidrógenos = cuatro lugares por molécula: el tetraedro del hielo.' },
+  eguarda: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Los dos venden lo mismo y les toca la misma suerte: cierra el que tenía guardado un mes, no el que vendía menos.' },
   ecolchon: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
   whex6b: { name: 'No te pueden congelar', formula: '(H₂O)₆', fact: 'El hexágono que hace bonito a un copo de nieve es el que te reventaría las células.' },
@@ -3277,6 +3328,8 @@ const WATER_BINS: Record<string, WaterEntry> = {
   wsillab: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLAB_DURATION, capas: WSILLAB_CAPAS },
   ecolchon: { bin: 'economia-colchon', ef: 'economia-colchon-efield', ex: 11,
               capas: ECOLCHON_CAPAS, dur: ECOLCHON_DURATION, sizeMul: 2.6, binColors: true, sinRaleo: true },
+  eguarda: { bin: 'economia-guardadito', ef: 'economia-guardadito-efield', ex: 11,
+             capas: EGUARDA_CAPAS, dur: EGUARDA_DURATION, sizeMul: 2.6, binColors: true, sinRaleo: true },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,

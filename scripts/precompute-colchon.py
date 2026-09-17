@@ -26,9 +26,10 @@ import os, sys, json, struct
 import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, 'public', 'precomputed', 'economia-colchon.bin')
-OUT_JSON = OUT.replace('.bin', '.json')
 arg = lambda k, d: type(d)(sys.argv[sys.argv.index(k) + 1]) if k in sys.argv else d
+SALIDA = arg('--salida', 'economia-colchon')   # v3: el guardadito escribe su propio bin y no pisa al publicado
+OUT = os.path.join(ROOT, 'public', 'precomputed', f'{SALIDA}.bin')
+OUT_JSON = OUT.replace('.bin', '.json')
 N = arg('--n', 40000)            # negocios (mitad dorados, mitad azules; pares con la misma suerte)
 MESES = arg('--meses', 60)       # 5 años
 SIGMA = arg('--sigma', 0.35)     # ruido de ventas (calibrado contra INEGI)
@@ -123,11 +124,20 @@ def main():
     # el héroe: dorado muere en HERO_MES (o el más cercano), azul vivo a los 60 meses
     mes_muerte_oro = np.where(vivo[MESES, :M], 10 ** 6, np.argmin(vivo[:, :M], axis=0))   # primer cuadro muerto
     cand = np.where(vivo[MESES, M:])[0]
-    hero = int(cand[np.argmin(np.abs(mes_muerte_oro[cand] - HERO_MES))])
+    # v3.1: entre TODAS las parejas cuyo dorado muere en el mes pedido (y cuyo azul llega vivo a los
+    # cinco años), seguimos a la que AGUANTA MEJOR hasta el final: la que tiene más caja en su peor
+    # mes anterior. Es una elección de CUÁL pareja real contar, no un cambio del modelo — y hace que
+    # el cierre se VEA: llega con billetes y los pierde de golpe, en vez de apagarse a cuentagotas.
+    exacto = cand[mes_muerte_oro[cand] == HERO_MES]
+    if len(exacto):
+        piso = np.nanmin(np.where(np.isnan(caja[1:HERO_MES, exacto]), np.inf, caja[1:HERO_MES, exacto]), axis=0)
+        hero = int(exacto[int(np.argmax(piso))])
+    else:
+        hero = int(cand[np.argmin(np.abs(mes_muerte_oro[cand] - HERO_MES))])
     print(f'   héroe: par #{hero} · su dorado muere en el mes {int(mes_muerte_oro[hero])} (pedido {HERO_MES}) · su azul vive los 60')
     # v3.1: el par héroe NO va en el centro exacto: baja 0.18 (eje X = vertical en pantalla) para que
     # los montones tengan de dónde crecer hacia arriba y el cuadro no quede vacío por abajo.
-    pcx[hero] = -0.40; pcy[hero] = 0.0; zc[hero] = 0.0; ux[hero], uy[hero] = 0.0, 1.0; sx[hero], sy[hero] = 1.0, 0.0
+    pcx[hero] = -0.25; pcy[hero] = 0.0; zc[hero] = 0.0; ux[hero], uy[hero] = 0.0, 1.0; sx[hero], sy[hero] = 1.0, 0.0
     dsep = np.full(M, D_PAR, dtype=np.float32); dsep[hero] = D_HERO
     pos = np.zeros((K, N, 3), dtype=np.float32)
     for k in range(K):
