@@ -122,7 +122,13 @@
     "nueva": true,
     "autorizado": "2026-09-07 yt,ig — dicho por ian en sesión, después de verlas todas: \"ya las vi todas, te mamaste, todo autorizado\"",
     "programar": "2026-09-15T18:45:00-06:00",
-    "subidas": {},
+    "subidas": {
+      "ig": {
+        "id": "18114982567800259",
+        "url": "https://www.instagram.com/reel/DdVB1ROjZsL/",
+        "fecha": "2026-09-17T10:57"
+      }
+    },
     "copy": {
       "titulo": "Dos terceras partes de tu peso son este átomo (Oxígeno)",
       "descripcion": "Dos terceras partes de tu masa son oxígeno — y no por el aire que respiras, sino por el AGUA que eres. 💧 Lo que ves es la densidad electrónica del oxígeno calculada con física cuántica real (SCF, def2-tzvp), orbital por orbital. Fíjate en su última capa: le faltan dos electrones para llenarse, y por eso te agarra a ti, al hierro y a todo lo que toca. Respirar es dejarlo entrar; oxidarse es dejarlo ganar. El mismo átomo hace las dos cosas.",

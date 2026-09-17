@@ -157,7 +157,13 @@
     "nueva": true,
     "autorizado": "2026-09-07 yt,ig — dicho por ian en sesión, después de verlas todas: \"ya las vi todas, te mamaste, todo autorizado\"",
     "programar": "2026-09-14T18:45:00-06:00",
-    "subidas": {},
+    "subidas": {
+      "ig": {
+        "id": "18109553255135776",
+        "url": "https://www.instagram.com/reel/DdSdCvHlRk6/",
+        "fecha": "2026-09-17T10:57"
+      }
+    },
     "copy": {
       "titulo": "Estás leyendo esto gracias a este átomo (Potasio)",
       "descripcion": "Cada vez que una neurona tuya dispara, deja escapar potasio — y al escapar, la neurona se apaga y queda lista para volver a encenderse. ⚡ Ochenta y seis mil millones de neuronas haciendo eso todo el día, incluida la que acaba de leer esta frase. Lo que ves NO es un dibujo: es la densidad electrónica del potasio resuelta con física cuántica real (SCF, base def2-tzvp), orbital por orbital. Fíjate en su capa de afuera: un solo electrón, lejísimos del núcleo. Por eso se va tan fácil, y por eso tu cabeza funciona con él.",

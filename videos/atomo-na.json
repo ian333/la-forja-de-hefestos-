@@ -129,7 +129,13 @@
     "nueva": true,
     "autorizado": "2026-09-07 yt,ig — dicho por ian en sesión, después de verlas todas: \"ya las vi todas, te mamaste, todo autorizado\"",
     "programar": "2026-09-16T18:45:00-06:00",
-    "subidas": {},
+    "subidas": {
+      "ig": {
+        "id": "17908288662312484",
+        "url": "https://www.instagram.com/reel/DdXmoDWjXs3/",
+        "fecha": "2026-09-17T10:57"
+      }
+    },
     "copy": {
       "titulo": "Cada vez que sientes algo, este átomo entra corriendo a un nervio (Sodio)",
       "descripcion": "Tocar, oír, el frío en la mano: todo empieza con sodio entrando de golpe a una célula nerviosa. ⚡ Es el mismo átomo que es la mitad de la sal que le pones a la comida. Lo que ves es su densidad electrónica calculada con física cuántica real (SCF, def2-tzvp), orbital por orbital. Un electrón solo, muy lejos del núcleo: lo suelta sin pensarlo. Y lo que queda ya no es un metal que arde en el agua — es sabor.",
