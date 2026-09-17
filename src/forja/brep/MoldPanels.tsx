@@ -627,6 +627,9 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
       {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={ciclo.pieza ? undefined : cicloEstacion6} piezaDelArbol={!!ciclo.pieza} />}
       {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} onE7={cicloEstacion7} />}
+      {/* EL AGUA DE TU PIEZA: el molde de una pieza soltada termina en la estación 6 = EL AGUA
+          (la del cubo es la 8). Misma ficha, sin el botón a la E9 del ciclo del dado. */}
+      {ciclo.estacion === 6 && !ciclo.e6 && ciclo.e8 && ciclo.pieza && <CicloE8 e8={ciclo.e8} />}
       {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} onE8={cicloEstacion8} />}
       {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
       {ciclo.estacion === 9 && ciclo.e9 && <CicloE9 e9={ciclo.e9} onE10={cicloEstacion10} />}

@@ -1,20 +1,20 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-17 18:36",
+ "generado": "2026-09-17 23:04",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 6,
+  "proximo": 5,
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 90,
+  "cerrado": 91,
   "probado": 0,
-  "porProbar": 54,
-  "sinDesplegar": 9,
+  "porProbar": 55,
+  "sinDesplegar": 10,
   "despues": 24
  },
  "deploy": {
@@ -24,36 +24,6 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-09-10-el-agua-de-tu-pieza.md",
-    "slug": "2026-09-10-el-agua-de-tu-pieza",
-    "titulo": "EL AGUA DE TU PIEZA — las líneas de enfriamiento (E8) sobre la pieza soltada, no sobre el cubo",
-    "fecha": "2026-09-10",
-    "estado": "proximo",
-    "prioridad": 3,
-    "tipo": "",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "ian (2026-09-10): «NO VEO LOS BOTADORES NI LAS LÍNEAS DE ENFRIAMIENTO… yo preferiría que se vea todo el molde». Hoy el molde de la carcasa termina en E5 (placas, insertos, bebedero); el agua es la estación 8 y solo está cableada para el cu…",
-    "toca": 6,
-    "crea": 3,
-    "evidencia": 4,
-    "evidenciaDeclarada": [
-     "Paso 6: el check agua del RUNNER pasa (rol agua en data-roles), sin quitar ningún check.",
-     "Las líneas no atraviesan insertos ni pieza (mold-interference: 0 traslapes) y su paso cumple W ∈ [H, 2H].",
-     "La lámina de la placa y el 3D dicen las MISMAS líneas (misma fuente).",
-     "Paseo con el agua visible; video en ambas PCs; orden-gate VERDE."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
    {
     "file": "ordenes/2026-09-10-los-botadores-de-tu-pieza.md",
     "slug": "2026-09-10-los-botadores-de-tu-pieza",
@@ -1334,7 +1304,43 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "37f6feb",
+    "commit": "860e073",
+    "despliegue": "sin-desplegar"
+   },
+   {
+    "file": "ordenes/2026-09-10-el-agua-de-tu-pieza.md",
+    "slug": "2026-09-10-el-agua-de-tu-pieza",
+    "titulo": "EL AGUA DE TU PIEZA — las líneas de enfriamiento (E8) sobre la pieza soltada, no sobre el cubo",
+    "fecha": "2026-09-10",
+    "estado": "cerrado",
+    "prioridad": 3,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-10): «NO VEO LOS BOTADORES NI LAS LÍNEAS DE ENFRIAMIENTO… yo preferiría que se vea todo el molde». Hoy el molde de la carcasa termina en E5 (placas, insertos, bebedero); el agua es la estación 8 y solo está cableada para el cu…",
+    "toca": 7,
+    "crea": 3,
+    "evidencia": 7,
+    "evidenciaDeclarada": [
+     "Paso 6: el check agua del RUNNER pasa (rol agua en data-roles), sin quitar ningún check.",
+     "Las líneas no atraviesan insertos ni pieza (mold-interference: 0 traslapes) y su paso cumple W ∈ [H, 2H].",
+     "La lámina de la placa y el 3D dicen las MISMAS líneas (misma fuente).",
+     "Paseo con el agua visible; video en ambas PCs; orden-gate VERDE.",
+     "«W ∈ [H, 2H]» se cumple en el DISEÑO (W 38.1 = 2.00·H con H 19.04) pero NO en el anillo del lado A una vez",
+     "«La lámina y el 3D dicen las mismas líneas» NO se entrega aquí: se MIDIÓ la diferencia (arriba) y se pasa a",
+     "Aparece un TOCA que no estaba previsto: src/forja/brep/MoldPanels.tsx — al pasar la pieza a la estación 6"
+    ],
+    "cierre": "El agua de la carcasa se ve en el molde y el runner la mide. El paso 6 pasó de 8/11 a 10/11 (✓ placas · ✓ colada · ✓ agua, rojo solo EXPULSORES) y el camino volvió a 7/8: runner · 2026-09-17 22:55 UT…",
+    "cierreCompleto": "El agua de la carcasa se ve en el molde y el runner la mide. El paso 6 pasó de 8/11 a 10/11 (✓ placas · ✓ colada · ✓ agua, rojo solo EXPULSORES) y el camino volvió a 7/8: runner · 2026-09-17 22:55 UTC · 7/8 ok · 1:2/2 2:5/5 3:6/6 4:4/4 5:3/3 6:10/11 7:5/5 8:4/4. Telemetría de la corrida: E2 3.0 s + E3 20.4 s + E4 0.8 s + E5 67.1 s + E6 (agua) 2.4 s; p6-5 colada 51.3 s (dentro del presupuesto de 60), p6-6 agua 1.2 s, encuadre del molde dx −0.014 dy 0.127 fill 0.70 luma 0.253. Lo que se entregó - Estación 6 del molde de TU pieza = EL AGUA (cicloAguaPieza en useMoldStudio), encadenada por el conductor después de la E5. Dibuja el circuito COMPLETO con roles agua-*: 12 líneas ⌀4.76 (JP-250), anillo en A que rodea tu huella con 10 mm de aire, serpentina + BAFFLE en B hasta 5.24 mm del ápice interior, 12 tapones NPT, 3 O-rings. Ficha del cap 9 en el panel (sin el botón a la E9 del cubo). - estacion8Dado/estacion8Circuito dejaron de estar cableados al cubo: pared, huella, base cerrada, volumen, banda, largo de línea y número de líneas salen de la pieza. Los defaults reproducen el cubo EXACTO — ciclo-dado-test 266/266, corrida a corrida sin una sola diferencia fuera de un reloj. - La leyenda de la tira dejó de mentir: decía ✗ agua (E8 cubo) clavado; ahora dice ✓ agua cuando el agua está y · agua cuando no. EL HALLAZGO QUE VALIÓ MÁS QUE EL TICKET. La base cerrada de la pieza estaba en la CARA EQUIVOCADA: colocacionEnLaBase devolvía tz, que solo es la base cerrada si el marco local arranca en z=0 (el cubo). La carcasa vive en −33.31..0.03 ⇒ decía 159.53 (la BOCA, en la partición) en …",
+    "evidenciaSS": [
+     "evidencia/2026-09-10-el-agua-de-tu-pieza/agua-en-el-molde.png",
+     "evidencia/2026-09-10-el-agua-de-tu-pieza/paseo-contactos.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "f1397c0",
     "despliegue": "sin-desplegar"
    },
    {
@@ -6854,7 +6860,7 @@
      "gesto": "EL MOLDE",
      "seVe": "el molde se va armando estación por estación sobre ESA pieza (placas, colada, agua, expulsores), siempre centrado, nunca negro, primera placa en ≤10 s",
      "estado": "parcial",
-     "ticket": "2026-09-09-el-paso-6-se-ve-trabajar"
+     "ticket": "2026-09-10-los-botadores-de-tu-pieza"
     },
     {
      "n": 7,
@@ -6876,10 +6882,10 @@
    "rompeEn": 0,
    "parciales": 1,
    "medido": {
-    "fecha": "2026-09-17 18:31",
+    "fecha": "2026-09-17 22:55",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
-    "maquina": "iangpu"
+    "maquina": "Ian"
    }
   }
  ]

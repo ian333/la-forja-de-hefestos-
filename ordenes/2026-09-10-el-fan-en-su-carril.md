@@ -22,6 +22,16 @@ N % · paso M», el resultado es bit-igual (ciclo-dado-test y A/B con diff 0) y 
 - NO existe: worker alguno en La Forja; serialización de `CampoFAN` (typed arrays → transferables); medición del
   costo del generador vs función plana en node (solo se midió en el navegador: 54.7 → 64 s).
 
+## LO QUE DESTAPÓ «EL AGUA DE TU PIEZA» (2026-09-17, medido)
+- La rejilla de la E5 arranca en `z0 = col.tz − (alturaMm + 1) − 2`, que supone que la pieza cuelga HACIA
+  ABAJO de `tz` (cierto para el cubo, cuyo marco local va 0..40). La carcasa vive en local −33.31..0.03, o
+  sea ARRIBA de `tz`: la rejilla empieza en **123.19** cuando la pieza empieza en **159.50** ⇒ **36.3 mm de
+  planos z VACÍOS, el 26 % del rango** (de los 141 planos, 36 no tienen un solo vóxel de cavidad). El bucle
+  de ocupación los recorre igual (70×111×36 ≈ 280 k celdas de puro aire). Recortar la caja al extremo REAL
+  de la pieza (`min/max` de `zBocaMm` y `zBaseCerradaMm`, que desde hoy dice la verdad) es ~26 % menos
+  rejilla en la E5 — pero MUEVE el origen del cubo 0.5 mm (142.5 → 143) y con él su voxelización, así que
+  va aquí y no de contrabando: hay que re-medir y re-firmar el ciclo del dado.
+
 ## EJERCICIOS
 - [ ] medir en node el FAN plano vs generador vs `vuelta()` sobre el campo real de la carcasa (guardar el campo en
       `public/evidencia/…/campo-1594C.json`): saber cuánto es V8 y cuánto es el solver.

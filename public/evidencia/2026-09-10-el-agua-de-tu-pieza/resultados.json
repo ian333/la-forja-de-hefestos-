@@ -1,0 +1,336 @@
+{
+  "orden": "2026-09-10-el-agua-de-tu-pieza",
+  "medido": "2026-09-17 22:23 UTC",
+  "donde": "node + OCC en la laptop (kernel real, sin navegador)",
+  "pieza": {
+    "nombre": "1594C Box",
+    "paredMm": 3.2,
+    "volCc": 55.8,
+    "huellaMm": [
+      66.02,
+      106.52
+    ],
+    "alturaMm": 33.34,
+    "localZ": [
+      -33.31,
+      0.03
+    ]
+  },
+  "baseCerrada": {
+    "antes": 159.53,
+    "ahora": 192.84,
+    "porque": "zBaseCerradaMm era tz (válido solo si el marco local arranca en 0); ahora tz − zMin",
+    "seccionLlenaPct": {
+      "zMinMas1": 93,
+      "zMaxMenos1": 16
+    }
+  },
+  "bebedero": {
+    "zGateMm": 192.84,
+    "LsprueMm": 69.16,
+    "antesLsprueMm": 102.47
+  },
+  "lineas": {
+    "nPorLado": 3,
+    "diaMm": 4.76,
+    "plug": "JP-250",
+    "hMm": 19,
+    "wMm": 38.1,
+    "largoMm": 446,
+    "variacionFlujoPct": 3.8
+  },
+  "circuito": {
+    "ladoA": {
+      "zMm": 210.24,
+      "hMm": 17.4,
+      "hOverD": 3.66,
+      "semiMm": 43.01,
+      "nBarrenos": 6,
+      "nTapones": 6,
+      "nSellos": 2
+    },
+    "ladoB": {
+      "zMm": 125.24,
+      "hMm": 34.76,
+      "hOverD": 7.3,
+      "nBarrenos": 6,
+      "nTapones": 6,
+      "nSellos": 1
+    },
+    "baffle": {
+      "x": 223,
+      "y": 273,
+      "zBot": 125.24,
+      "zTop": 184.40038751485963,
+      "boreDiaMm": 9.53,
+      "claroApiceMm": 5.24
+    },
+    "segmentos": [
+      {
+        "id": "A-norte",
+        "p0": [
+          179.99,
+          336.26,
+          210.24
+        ],
+        "p1": [
+          266.01,
+          336.26,
+          210.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "linea"
+      },
+      {
+        "id": "A-sur",
+        "p0": [
+          179.99,
+          209.74,
+          210.24
+        ],
+        "p1": [
+          266.01,
+          209.74,
+          210.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "linea"
+      },
+      {
+        "id": "A-este",
+        "p0": [
+          266.01,
+          209.74,
+          210.24
+        ],
+        "p1": [
+          266.01,
+          336.26,
+          210.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "linea"
+      },
+      {
+        "id": "A-oeste",
+        "p0": [
+          179.99,
+          209.74,
+          210.24
+        ],
+        "p1": [
+          179.99,
+          336.26,
+          210.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "linea"
+      },
+      {
+        "id": "A-ext-in",
+        "p0": [
+          0,
+          209.74,
+          210.24
+        ],
+        "p1": [
+          179.99,
+          209.74,
+          210.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "extension"
+      },
+      {
+        "id": "A-ext-out",
+        "p0": [
+          266.01,
+          336.26,
+          210.24
+        ],
+        "p1": [
+          446,
+          336.26,
+          210.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "extension"
+      },
+      {
+        "id": "B-linea0",
+        "p0": [
+          184.92000000000002,
+          0,
+          125.24
+        ],
+        "p1": [
+          184.92000000000002,
+          546,
+          125.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "linea"
+      },
+      {
+        "id": "B-linea1",
+        "p0": [
+          223,
+          0,
+          125.24
+        ],
+        "p1": [
+          223,
+          546,
+          125.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "linea"
+      },
+      {
+        "id": "B-linea2",
+        "p0": [
+          261.08,
+          0,
+          125.24
+        ],
+        "p1": [
+          261.08,
+          546,
+          125.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "linea"
+      },
+      {
+        "id": "B-cruce-lejos",
+        "p0": [
+          184.92000000000002,
+          526,
+          125.24
+        ],
+        "p1": [
+          223,
+          526,
+          125.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "cruce"
+      },
+      {
+        "id": "B-cruce-cerca",
+        "p0": [
+          223,
+          20,
+          125.24
+        ],
+        "p1": [
+          261.08,
+          20,
+          125.24
+        ],
+        "diaMm": 4.76,
+        "tipo": "cruce"
+      },
+      {
+        "id": "B-baffle",
+        "p0": [
+          223,
+          273,
+          125.24
+        ],
+        "p1": [
+          223,
+          273,
+          184.40038751485963
+        ],
+        "diaMm": 9.53,
+        "tipo": "baffle"
+      }
+    ],
+    "nSegmentos": 12,
+    "nTapones": 12,
+    "nSellos": 3,
+    "juezOk": true,
+    "claros": [
+      {
+        "contra": "anillo A ↔ bebedero (radial al eje)",
+        "claroMm": 36.32,
+        "minMm": 2.38,
+        "ok": true
+      },
+      {
+        "contra": "anillo A ↔ techo del inserto de cavidad",
+        "claroMm": 2.38,
+        "minMm": 2.38,
+        "ok": true
+      },
+      {
+        "contra": "anillo A ↔ techo de la pieza (base cerrada)",
+        "claroMm": 15.02,
+        "minMm": 2.38,
+        "ok": true
+      },
+      {
+        "contra": "serpentina B ↔ piso del bolsillo del inserto B",
+        "claroMm": 2.38,
+        "minMm": 2.38,
+        "ok": true
+      },
+      {
+        "contra": "baffle ↔ ápice interior del macho",
+        "claroMm": 5.24,
+        "minMm": 4.76,
+        "ok": true
+      },
+      {
+        "contra": "extensión A-IN ↔ borde de la base (sale a cara)",
+        "claroMm": 209.74,
+        "minMm": 4.76,
+        "ok": true
+      }
+    ],
+    "recortes": [
+      "lado A: H 19.04 pedía z=211.88 pero el TECHO del inserto está en 215 ⇒ z=210.24 (H 17.40 = 3.66D, sigue en 2D..5D) — en la E8a esto ROMPÍA el acero (claro −0.74 mm)",
+      "lado B: H 19.04 pedía z=140.96 pero el PISO del bolsillo del inserto B está en 130 ⇒ z=125.24 (H 34.76 = 7.30D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bolsillo del inserto lo empuja a 7.30D) — en la E8a el claro era -13.34 mm < 2.38"
+    ]
+  },
+  "interferencia": {
+    "malos": 0,
+    "peor": {
+      "id": "—",
+      "vol": 0
+    },
+    "bafflePct": 91.9,
+    "volPiezaCc": 55.8
+  },
+  "ciclo": {
+    "tcPiezaS": 21.7,
+    "tcSprueS": 75.7,
+    "mandaS": 75.7,
+    "manda": "bebedero",
+    "factor": 3.5
+  },
+  "laminaVs3D": {
+    "lamina": {
+      "diaMm": 9.53,
+      "hMm": 32,
+      "wMm": 64,
+      "nPorLado": 5,
+      "plug": "JP-352"
+    },
+    "tresD": {
+      "nPorLado": 3,
+      "diaMm": 4.76,
+      "plug": "JP-250",
+      "hMm": 19,
+      "wMm": 38.1,
+      "largoMm": 446,
+      "variacionFlujoPct": 3.8
+    },
+    "nota": "dos caminos distintos al mismo coolingDesign — ticket el-agua-dice-dos-cosas"
+  },
+  "cubo": {
+    "cicloDadoTest": "266/266",
+    "cambios": "ninguno (bit-igual)"
+  }
+}

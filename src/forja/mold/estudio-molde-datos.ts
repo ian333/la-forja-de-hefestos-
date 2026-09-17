@@ -1130,7 +1130,11 @@ export interface PiezaSpec {
   solidUndercut?: (oc: any) => any;
   inCavity?: (x: number, y: number, z: number) => boolean;
   /** dims LOCALES para colocacionEnLaBase (hoy el 20/20/39.5 del cubo). */
-  local?: { semiXmm: number; semiYmm: number; alturaMm: number; bocaZmm: number; cxMm: number; cyMm: number };
+  local?: { semiXmm: number; semiYmm: number; alturaMm: number; bocaZmm: number; cxMm: number; cyMm: number;
+    /** z LOCAL de la cara opuesta a la boca (la BASE CERRADA). El cubo vive en 0..40 y por eso
+     *  valía 0 callado; la carcasa vive en −33.31..0.03 y sin esto el molde ponía su base cerrada
+     *  EN LA PARTICIÓN — el bebedero le pegaba al lado equivocado y el agua le caía adentro. */
+    zMinMm?: number };
 }
 
 /** EL CUBO como PiezaSpec — captura EXACTA de lo que estacion1Dado/estacion2Dado
@@ -1514,6 +1518,7 @@ export function piezaDesdeArbol(oc: any, shape: any, m: ArbolPiezaMeta): PiezaSp
     // esquina 20,20) y la boca en la Z ABSOLUTA del bbox (piezas con z0≠0 no se corren).
     local: {
       semiXmm: L / 2, semiYmm: W / 2, alturaMm: H, bocaZmm: Math.max(bb.min[2], bb.max[2] - 0.5),
+      zMinMm: bb.min[2],                                 // la BASE CERRADA en el marco local (el cubo: 0)
       cxMm: r2((bb.min[0] + bb.max[0]) / 2), cyMm: r2((bb.min[1] + bb.max[1]) / 2),
     },
   };
@@ -1755,7 +1760,7 @@ export function dentroDadoLocal(x: number, y: number, z: number): boolean {
   return x < ii || x > 38 - ii + 2 || y < ii || y > 38 - ii + 2;
 }
 
-export function colocacionEnLaBase(pkg: MoldPackage, local?: { cxMm: number; cyMm: number; bocaZmm: number }) {
+export function colocacionEnLaBase(pkg: MoldPackage, local?: { cxMm: number; cyMm: number; bocaZmm: number; zMinMm?: number }) {
   const asm = packageToAssemblySpec(pkg);
   const z = plateStackZ(asm);
   const centroX = asm.widthMm / 2, centroY = (asm.depthMm ?? asm.widthMm) / 2;
@@ -1777,7 +1782,11 @@ export function colocacionEnLaBase(pkg: MoldPackage, local?: { cxMm: number; cyM
   return {
     volteo: true as const, tx, ty, tz, aGlobal, aLocal,
     centroX, centroY, zPartBase,
-    zBocaMm: zPartBase, zBaseCerradaMm: tz,
+    // LA BASE CERRADA es la cara OPUESTA a la boca, no el origen del marco local. Con el volteo
+    // (global = tz − local_z) eso es tz − z_local_mínimo. El cubo (z 0..40) da tz − 0 = el 185.5 de
+    // siempre; la carcasa (z −33.31..0.03) pasa de 159.53 (¡la boca, en la partición!) a 192.84.
+    // MEDIDO 2026-09-17: a z_min+1 la sección de la carcasa está 93 % llena (tapa) y a z_max−1 solo 16 % (anillo).
+    zBocaMm: zPartBase, zBaseCerradaMm: tz - (local?.zMinMm ?? 0),
     baseWmm: asm.widthMm, baseLmm: asm.depthMm ?? asm.widthMm,
     plates: asm.plates,
   };
@@ -3185,14 +3194,19 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
   partVolCc?: number; tPackNeededS?: number;
   /** CONTROL NEGATIVO del gate: forzar profundidad/pitch fuera de las reglas */
   hOverD?: number; wOverH?: number;
+  /** EL AGUA DE TU PIEZA (2026-09-17): sin esto, los números son los del CUBO (pared 2, huella 40, base 196) */
+  pieza?: PiezaParaElAgua;
 }): Estacion8Dado {
   const dz: any = pkg.diseno;
   const A = PLASTICOS_A.ABS;
-  const partVolCc = o?.partVolCc ?? 14.14;
+  const pz = o?.pieza;
+  const partVolCc = o?.partVolCc ?? pz?.volCc ?? 14.14;
+  const asmDelPkg = packageToAssemblySpec(pkg);
+  const largoLineaMm = +((asmDelPkg.widthMm ?? 196)).toFixed(2);   // de lado a lado de ESTA base (el cubo: 196)
   const matCool = { alpha: A.alphaM2s, tMelt: A.tMeltC, tCoolant: A.tCoolC, tEject: A.tEjectC };
 
   // ── PASO 1 · el t_c de CADA sección (Eq 9.5 placa · Eq 9.6 cilindro) ──
-  const tcPiezaS = +tcPlateS(2 / 1000, A.alphaM2s, A.tMeltC, A.tEjectC, A.tCoolC).toFixed(1);
+  const tcPiezaS = +tcPlateS((pz ? pz.wallMm : 2) / 1000, A.alphaM2s, A.tMeltC, A.tEjectC, A.tCoolC).toFixed(1);
   const diaActualMm = +(2 * d.rBaseMm).toFixed(2);
   const tcDe = (diaMm: number) => +coolingTimeRod(diaMm / 1000, matCool).toFixed(1);
   const tcSprueS = tcDe(diaActualMm);
@@ -3202,12 +3216,15 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
   // ── el DISEÑO del agua, con el ciclo que MANDA (Q̇ = Q/t_c) ──
   const acero = ACEROS_MOLDE.P20;
   const cd = coolingDesign({
-    nCav: 1, partVolCc, runnerVolCc: volumenColadaCc(d), thickestMm: 2,
+    nCav: 1, partVolCc, runnerVolCc: volumenColadaCc(d), thickestMm: pz ? pz.wallMm : 2,
     rhoRTKgM3: A.rhoRTKgM3, cpJkgC: A.cpJkgC, alphaM2s: A.alphaM2s,
     tMeltC: A.tMeltC, tEjectC: A.tEjectC, tCoolantC: A.tCoolC,
     kMoldWmC: acero.kWmC, sigmaEnduranceMPa: acero.sigmaEnduranceMPa,
-    bandMm: 40,                                   // la huella del dado
-    lineLenMm: 196,                               // barreno de lado a lado de la base
+    // la huella (el cubo: 40) y el barreno de lado a lado de la base (el cubo: 196 = el ancho de SU base)
+    // la BANDA se mide ATRAVESADA a las líneas: la serpentina del lado B corre a lo largo de Y y se
+    // reparte en X, así que la banda es la huella en X (el cubo: 2×20 = los 40 de siempre).
+    bandMm: pz ? +(2 * pz.semiXmm).toFixed(2) : 40,
+    lineLenMm: largoLineaMm,
     tcS: mandaS,                                  // el ciclo REAL, no el de la pared
     hOverD: o?.hOverD, wOverH: o?.wOverH,
   });
@@ -3387,8 +3404,8 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
     bushing: { diaActualMm, tcActualS: tcSprueS, freezeActualS, tPackNeededS: +tPackNeededS.toFixed(2), diaOptimoMm, tcOptimoS, freezeOptimoS, ahorroPct, cadena },
     dinero: { cicloEq323S, tarifaUSDh: +tarifaUSDh.toFixed(2), nCav, partUSDdeclarado: +cp.partUSD.toFixed(4), salidas },
     core,
-    lineas: { nPorLado: cd.nPerSide, diaMm: cd.diaMm, plug: cd.plug, hMm: +cd.hLineMm.toFixed(1), wMm: +cd.wLineMm.toFixed(1), largoMm: 196, variacionFlujoPct: +heatFluxVariation(cd.wOverH).toFixed(1) },
-    circuito: estacion8Circuito(pkg, d, cd),
+    lineas: { nPorLado: cd.nPerSide, diaMm: cd.diaMm, plug: cd.plug, hMm: +cd.hLineMm.toFixed(1), wMm: +cd.wLineMm.toFixed(1), largoMm: largoLineaMm, variacionFlujoPct: +heatFluxVariation(cd.wOverH).toFixed(1) },
+    circuito: estacion8Circuito(pkg, d, cd, pz),
     caudal, ruteo,
     anuncios,
   };
@@ -3426,17 +3443,40 @@ export interface CircuitoAgua {
   conexionesPorMitad: number;
 }
 
-export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: CoolingDesignOut): CircuitoAgua {
+/** EL AGUA DE TU PIEZA (2026-09-17): lo que el circuito necesita saber de la pieza soltada. Sin esto se usan los
+ *  números del CUBO, que era lo único cableado. Cada default reproduce el cubo EXACTO (semi 20+10 = 30, base cerrada
+ *  zPart+39.5, piso 2 mm), así que el ciclo del dado no se mueve. */
+export interface PiezaParaElAgua {
+  /** semiejes de la huella (mm) — el anillo del lado A la rodea con 10 mm de aire */
+  semiXmm: number; semiYmm: number;
+  /** pared de la pieza (mm): el t_c de la placa y el claro del ápice del baffle */
+  wallMm: number;
+  /** z de la base cerrada (la cara por donde entra la colada) */
+  zBaseCerradaMm: number;
+  /** altura de la pieza (mm) — para el claro del baffle dentro del macho */
+  alturaMm: number;
+  /** volumen de la pieza (cc) medido del sólido */
+  volCc: number;
+}
+
+export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: CoolingDesignOut, pieza?: PiezaParaElAgua): CircuitoAgua {
   const asm = packageToAssemblySpec(pkg);
   const idm = insertDims(asm);
   const D = cd.diaMm, r = D / 2, medio = D / 2;          // claro mínimo = ½⌀ (§9.2.7)
   const W = cd.wLineMm, hDis = cd.hLineMm;
   const zPart = d.zPartMm;
-  const zBase = zPart + 39.5;                            // base cerrada (volteo Fig 7.2)
+  const zBase = pieza ? pieza.zBaseCerradaMm : zPart + 39.5;   // base cerrada (volteo Fig 7.2); el cubo: zPart+39.5
   const techoInsA = zPart + idm.Hc;                      // tope del inserto de cavidad
   const pisoInsB = zPart - idm.Hk;                       // piso del bolsillo del inserto B
   const baseW = asm.widthMm, baseL = asm.depthMm ?? asm.widthMm;
   const recortes: string[] = [];
+  // EL AGUA DE TU PIEZA (2026-09-17): el texto decía «sigue en 2D..5D» SIEMPRE, aunque el recorte
+  // dejara la línea en 7.30D (carcasa, lado B). Un recorte que se rotula a sí mismo como legal no es
+  // un aviso: es una mentira. Ahora dice cuál de las dos cosas pasó.
+  const bandaHD = (h: number) => {
+    const hd = h / D;
+    return hd >= 2 && hd <= 5 ? 'sigue en 2D..5D' : `⚠ SE SALE de 2D..5D (§9.2.6) — el bolsillo del inserto lo empuja a ${hd.toFixed(2)}D`;
+  };
 
   // ── LADO A · anillo perimetral (§9.3.1d) EN el inserto de cavidad ──
   // z de diseño (H de la superficie) vs el TECHO del inserto: manda el techo.
@@ -3444,10 +3484,11 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   const zA = Math.min(zAdiseno, techoInsA - D);          // r de barreno + ½⌀ de acero
   const hA = zA - zBase;
   if (zA < zAdiseno) recortes.push(
-    `lado A: H ${hDis.toFixed(2)} pedía z=${zAdiseno.toFixed(2)} pero el TECHO del inserto está en ${techoInsA} ⇒ z=${zA.toFixed(2)} (H ${hA.toFixed(2)} = ${(hA / D).toFixed(2)}D, sigue en 2D..5D) — en la E8a esto ROMPÍA el acero (claro −${(zAdiseno + r - techoInsA).toFixed(2)} mm)`);
-  const semi = 30;                                       // libra bebedero y rodea la huella 40
+    `lado A: H ${hDis.toFixed(2)} pedía z=${zAdiseno.toFixed(2)} pero el TECHO del inserto está en ${techoInsA} ⇒ z=${zA.toFixed(2)} (H ${hA.toFixed(2)} = ${(hA / D).toFixed(2)}D, ${bandaHD(hA)}) — en la E8a esto ROMPÍA el acero (claro −${Math.abs(zAdiseno + r - techoInsA).toFixed(2)} mm)`);
+  // el anillo RODEA la huella con 10 mm de aire, por eje (el cubo: 20+10 = 30 en los dos ⇒ el mismo anillo de antes)
+  const semiX = (pieza ? pieza.semiXmm : 20) + 10, semiY = (pieza ? pieza.semiYmm : 20) + 10;
   const cx = d.ejeX, cy = d.ejeY;
-  const x0 = cx - semi, x1 = cx + semi, y0 = cy - semi, y1 = cy + semi;
+  const x0 = cx - semiX, x1 = cx + semiX, y0 = cy - semiY, y1 = cy + semiY;
   const segs: SegmentoAgua[] = [
     { id: 'A-norte', p0: [x0, y1, zA], p1: [x1, y1, zA], diaMm: D, tipo: 'linea' },
     { id: 'A-sur', p0: [x0, y0, zA], p1: [x1, y0, zA], diaMm: D, tipo: 'linea' },
@@ -3477,24 +3518,35 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   const zB = Math.min(zBdiseno, pisoInsB - D);
   const hB = zPart - zB;
   if (zB < zBdiseno + 1e-9 && Math.abs(zB - zBdiseno) > 1e-9) recortes.push(
-    `lado B: H ${hDis.toFixed(2)} pedía z=${zBdiseno.toFixed(2)} pero el PISO del bolsillo del inserto B está en ${pisoInsB} ⇒ z=${zB.toFixed(2)} (H ${hB.toFixed(2)} = ${(hB / D).toFixed(2)}D, sigue en 2D..5D) — en la E8a el claro era ${(pisoInsB - (zBdiseno + r)).toFixed(2)} mm < ${medio.toFixed(2)}`);
-  const xs = [cx - W, cx, cx + W];
+    `lado B: H ${hDis.toFixed(2)} pedía z=${zBdiseno.toFixed(2)} pero el PISO del bolsillo del inserto B está en ${pisoInsB} ⇒ z=${zB.toFixed(2)} (H ${hB.toFixed(2)} = ${(hB / D).toFixed(2)}D, ${bandaHD(hB)}) — en la E8a el claro era ${(pisoInsB - (zBdiseno + r)).toFixed(2)} mm < ${medio.toFixed(2)}`);
+  // CUÁNTAS líneas las dice el diseño (§9.2.6: ceil(banda/W)+1), no un 3 clavado. El cubo pide 3 y
+  // recibe 3 (las mismas x: cx−W, cx, cx+W); una pieza más ancha recibe las que su banda pida.
+  const nB = Math.max(2, cd.nPerSide);
+  const xs = Array.from({ length: nB }, (_, k) => cx + (k - (nB - 1) / 2) * W);
   const yCr0 = 20, yCr1 = baseL - 20;
-  for (let k = 0; k < 3; k++) segs.push({ id: `B-linea${k}`, p0: [xs[k], 0, zB], p1: [xs[k], baseL, zB], diaMm: D, tipo: 'linea' });
-  segs.push({ id: 'B-cruce-lejos', p0: [xs[0], yCr1, zB], p1: [xs[1], yCr1, zB], diaMm: D, tipo: 'cruce' });
-  segs.push({ id: 'B-cruce-cerca', p0: [xs[1], yCr0, zB], p1: [xs[2], yCr0, zB], diaMm: D, tipo: 'cruce' });
-  tapones.push(
-    { x: xs[0], y: baseL, z: zB, dir: [0, 1, 0] },       // línea 0: entra por y=0 (IN), muere tras el cruce
-    { x: xs[1], y: 0, z: zB, dir: [0, -1, 0] }, { x: xs[1], y: baseL, z: zB, dir: [0, 1, 0] },
-    { x: xs[2], y: 0, z: zB, dir: [0, -1, 0] },          // línea 2: sale por y=baseL (OUT)
-    { x: xs[0] - r, y: yCr1, z: zB, dir: [-1, 0, 0] },   // bocas de los cruces (se barrenan desde x)
-    { x: xs[2] + r, y: yCr0, z: zB, dir: [1, 0, 0] },
-  );
-  inOut.push({ etiqueta: 'B-IN', x: xs[0], y: 0, z: zB }, { etiqueta: 'B-OUT', x: xs[2], y: baseL, z: zB });
+  for (let k = 0; k < nB; k++) segs.push({ id: `B-linea${k}`, p0: [xs[k], 0, zB], p1: [xs[k], baseL, zB], diaMm: D, tipo: 'linea' });
+  // los cruces alternan extremo (serpentín): el par va al fondo, el impar al frente
+  for (let k = 0; k < nB - 1; k++) {
+    const lejos = k % 2 === 0, yCr = lejos ? yCr1 : yCr0;
+    segs.push({ id: `B-cruce-${lejos ? 'lejos' : 'cerca'}${nB > 3 ? `-${k}` : ''}`, p0: [xs[k], yCr, zB], p1: [xs[k + 1], yCr, zB], diaMm: D, tipo: 'cruce' });
+  }
+  // el agua ENTRA por la línea 0 (y=0) y SALE por la última (y=baseL): esos dos extremos quedan
+  // abiertos; todos los demás se tapan. (El cubo: 4 tapones de línea + 2 bocas de cruce = 6.)
+  for (let k = 0; k < nB; k++) {
+    if (k > 0) tapones.push({ x: xs[k], y: 0, z: zB, dir: [0, -1, 0] });
+    if (k < nB - 1) tapones.push({ x: xs[k], y: baseL, z: zB, dir: [0, 1, 0] });
+  }
+  for (let k = 0; k < nB - 1; k++) {                     // bocas de los cruces (se barrenan desde x)
+    const lejos = k % 2 === 0;
+    tapones.push(lejos
+      ? { x: xs[0] - r, y: yCr1, z: zB, dir: [-1, 0, 0] }
+      : { x: xs[nB - 1] + r, y: yCr0, z: zB, dir: [1, 0, 0] });
+  }
+  inOut.push({ etiqueta: 'B-IN', x: xs[0], y: 0, z: zB }, { etiqueta: 'B-OUT', x: xs[nB - 1], y: baseL, z: zB });
 
   // el BAFFLE (Tabla 9.3): bore que SUBE por el macho desde la línea central
   const boreDiaMm = 9.53;                                // JP-352 (3/8")
-  const apiceInteriorZ = zBase - 2;                      // techo interior del hueco (piso 2)
+  const apiceInteriorZ = zBase - (pieza ? pieza.wallMm : 2);   // techo interior del hueco (el cubo: piso 2)
   const zTopBaffle = apiceInteriorZ - 0.55 * boreDiaMm;  // ½⌀bore de acero al ápice, con margen
   segs.push({ id: 'B-baffle', p0: [cx, cy, zB], p1: [cx, cy, zTopBaffle], diaMm: boreDiaMm, tipo: 'baffle' });
   sellos.push({ x: cx, y: cy, z: pisoInsB, nota: 'sello del bore del baffle al cruzar placa B↔inserto del núcleo' });
@@ -3504,7 +3556,7 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   const claros: CircuitoAgua['juez']['claros'] = [];
   const mide = (contra: string, claroMm: number, minMm = medio) =>
     claros.push({ contra, claroMm: +claroMm.toFixed(2), minMm: +minMm.toFixed(2), ok: claroMm >= minMm - 1e-9 });
-  mide('anillo A ↔ bebedero (radial al eje)', semi - d.rBaseMm - r);
+  mide('anillo A ↔ bebedero (radial al eje)', Math.min(semiX, semiY) - d.rBaseMm - r);
   mide('anillo A ↔ techo del inserto de cavidad', techoInsA - (zA + r));
   mide('anillo A ↔ techo de la pieza (base cerrada)', zA - r - zBase);
   mide('serpentina B ↔ piso del bolsillo del inserto B', pisoInsB - (zB + r));
@@ -3514,8 +3566,10 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
 
   return {
     segmentos: segs, tapones, sellos, inOut, baffle,
-    ladoA: { zMm: +zA.toFixed(2), hMm: +hA.toFixed(2), hOverD: +(hA / D).toFixed(2), semiMm: semi, nBarrenos: 6, nTapones: 6, nSellos: 2 },
-    ladoB: { zMm: +zB.toFixed(2), hMm: +hB.toFixed(2), hOverD: +(hB / D).toFixed(2), nBarrenos: 6, nTapones: 6, nSellos: 1 },
+    ladoA: { zMm: +zA.toFixed(2), hMm: +hA.toFixed(2), hOverD: +(hA / D).toFixed(2), semiMm: Math.min(semiX, semiY), nBarrenos: 6, nTapones: 6, nSellos: 2 },
+    // CONTADOS, no supuestos: nB líneas + (nB−1) cruces + el baffle; los tapones son los que B empujó
+    // después de los 6 del lado A (el cubo: 6 y 6, como estaba escrito a mano).
+    ladoB: { zMm: +zB.toFixed(2), hMm: +hB.toFixed(2), hOverD: +(hB / D).toFixed(2), nBarrenos: 2 * nB, nTapones: tapones.length - 6, nSellos: 1 },
     juez, recortes, conexionesPorMitad: 2,
   };
 }

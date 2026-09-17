@@ -3916,8 +3916,8 @@ export default function ForgeBRepStudio() {
   const moldeOpacidadRef = useRef<unknown>(null);   // E5: restaurar opacidades una sola vez por sólido
   // PASO 6 · EL MOLDE SE ARMA SOLO. El humano tocó MOLDE; la máquina: (1) la PARED la mide el
   // Foco (p50 de la lente PARED — nadie la teclea; sin ella el STEP se leía MACIZO y cotizaba
-  // $188,830), (2) avanza UNA estación por render hasta E5 (E1 la puso EL PUENTE al entrar el
-  // sólido; E6 en adelante sigue cableado al CUBO y se dice, no se finge). Cada estación lee el
+  // $188,830), (2) avanza UNA estación por render hasta E6 = EL AGUA (E1 la puso EL PUENTE al entrar
+  // el sólido; los expulsores y lo que sigue aún son del CUBO y se dice, no se finge). Cada estación lee el
   // `ciclo` recién escrito, por eso va en un efecto y no en un handler.
   useEffect(() => {
     if (!moldeOn || !piezaMalla) return;
@@ -3930,22 +3930,18 @@ export default function ForgeBRepStudio() {
       return;
     }
     if (mold.cursoBusy) return;
-    // un tick de aire para que la leyenda «E<n>/5 · armando…» se pinte ANTES del bloqueo: E3
+    // E4 dejó las placas a 0.08 para enseñar el llenado y el visor se veía negro (medido 2026-09-07).
+    // Se devuelve el cuerpo ANTES de la estación del agua: el circuito se barrena sobre acero que se ve.
+    if (c.estacion >= 5 && moldeOpacidadRef.current !== c.piezaShape) { moldeOpacidadRef.current = c.piezaShape; mold.setMoldOpacity({ 'placa-a-ghost': 0.38, 'placa-b-ghost': 0.38 }); }
+    // un tick de aire para que la leyenda «E<n>/6 · armando…» se pinte ANTES del bloqueo: E3
     // talla el acero con el sólido real en WASM síncrono y puede detener el hilo >30 s (T6
     // cplx-tiempo: se dice, no se esconde).
     const paso = c.estacion === 1 ? mold.cicloEstacion2 : c.estacion === 2 ? mold.cicloEstacion3
-      : c.estacion === 3 ? mold.cicloEstacion4 : c.estacion === 4 ? mold.cicloEstacion5 : null;
-    if (!paso) {
-      // E5 alcanzada: E4 dejó las placas a 0.08 de opacidad para enseñar el frente de llenado y el
-      // visor del MOLDE se veía negro (medido 2026-09-07). En este modo el humano quiere VER el acero:
-      // se devuelven las opacidades de E3 (0.40 cavidad · 0.92 núcleo · 0.30 partición), una sola vez.
-      // ian (2026-09-09, video 26 a 3:07): «solo se ven los insertos, NO EL MOLDE» — las placas A/B son
-      // ghosts a 0.07 y en el panel su deslizador está en 0. El molde que el cliente espera es el de la
-      // lámina de ensamble: placas apiladas. Aquí se les da cuerpo (0.38: acero translúcido, los insertos
-      // adentro siguen legibles). LO QUE HAY SE VE.
-      if (c.estacion >= 5 && moldeOpacidadRef.current !== c.piezaShape) { moldeOpacidadRef.current = c.piezaShape; mold.setMoldOpacity({ 'placa-a-ghost': 0.38, 'placa-b-ghost': 0.38 }); }
-      return;
-    }
+      : c.estacion === 3 ? mold.cicloEstacion4 : c.estacion === 4 ? mold.cicloEstacion5
+      // EL AGUA DE TU PIEZA (2026-09-17): la E5 ya no es el final. El circuito del cap 9 se barrena
+      // sobre el molde de ESTA pieza — el paso 6 del camino pedía «agua» y hasta hoy decía ✗.
+      : c.estacion === 5 ? mold.cicloAguaPieza : null;
+    if (!paso) return;
     // LO QUE HAY SE VE (2026-09-09): de E3 en adelante, 400 ms de aire en vez de 80. Medido en el arnés
     // (step_25): E3 se pintaba OSCURA porque el salto de cámara (30 ms después del commit) no alcanzaba a
     // PINTARSE antes de que E4 y luego E5 bloquearan el hilo ~60 s — el cliente veía negro un minuto.
@@ -7295,12 +7291,13 @@ export default function ForgeBRepStudio() {
                 const c = mold.ciclo; const roles = Array.from(new Set(mold.moldParts.map((p) => p.role)));
                 const tiene = (r: string) => roles.includes(r);
                 const placas = tiene('cavidad') && tiene('nucleo');
+                const agua = roles.some((r) => r.startsWith('agua-'));
                 const est = c?.pieza ? c.estacion : 0;
                 const pg = mold.progreso; void tickMolde;
                 const enCurso = pg && pg.i < pg.n;
                 const txt = !c?.pieza ? (result ? 'esperando el sólido…' : 'necesita el sólido del STEP (un STL no trae)')
                   : mold.intake.wallMm == null ? 'midiendo la pared en el Foco…'
-                  : est < 5 ? `E${est}/5 · armando…` : 'E5/5';
+                  : est < 6 ? `E${est}/6 · armando…` : 'E6/6';
                 return (
                   <div data-testid="molde-de-la-pieza" data-estacion={est} data-roles={roles.join(' ')} data-pared={mold.intake.wallMm ?? ''}
                     data-partes={mold.moldParts.length} data-tris={mold.moldParts.reduce((n, p) => n + (p.indices ? p.indices.length / 3 : 0), 0)} data-bbox={moldeBBoxRef.current} data-enc={moldeEncRef.current}
@@ -7321,7 +7318,9 @@ export default function ForgeBRepStudio() {
                     <span style={{ opacity: 0.85 }}>
                       <span style={{ color: placas ? '#7ee2a8' : '#6f8095' }}>{placas ? '✓' : '·'} placas</span>{' '}
                       <span style={{ color: tiene('colada') ? '#7ee2a8' : '#6f8095' }}>{tiene('colada') ? '✓' : '·'} colada</span>{' '}
-                      <span style={{ color: '#f27a6c' }}>✗ agua (E8 cubo)</span>{' '}
+                      {/* EL AGUA DE TU PIEZA: el agua ya es la de ESTA pieza, así que la leyenda deja de
+                          estar clavada en ✗ y dice lo que hay (los expulsores siguen siendo del cubo: se dice). */}
+                      <span style={{ color: agua ? '#7ee2a8' : '#6f8095' }}>{agua ? '✓' : '·'} agua</span>{' '}
                       <span style={{ color: '#f27a6c' }}>✗ expulsores (E10 cubo)</span>
                     </span>
                   </div>
