@@ -1,13 +1,13 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-18 18:59",
+ "generado": "2026-09-18 21:15",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 6,
+  "proximo": 7,
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
@@ -24,6 +24,60 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
+   {
+    "file": "ordenes/2026-09-18-las-20-piezas.md",
+    "slug": "2026-09-18-las-20-piezas",
+    "titulo": "LAS 20 PIEZAS — lo que encontraron los revisores (superticket de hallazgos)",
+    "fecha": "2026-09-18",
+    "estado": "proximo",
+    "prioridad": 3,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] ian decide el orden de las 7 causas (recomendación: 1 LA ENTRADA primero — 15 de 20 piezas reales no llegan a",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] cada causa, su orden con TOCA/CREA y su evidencia; el arnés de las 20 piezas como juez de regresión.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 2
+    },
+    "objetivo": "ian (2026-09-18): «ahora puedes verificar, varias piezas no? tienes agentes para revisar los pdf, encontrar errores, lanza agentes con opus». Se corrió el ciclo completo del molde sobre los 20 STEP reales Hammond (node + kernel, mismos pas…",
+    "toca": 1,
+    "crea": 0,
+    "evidencia": 1,
+    "evidenciaDeclarada": [
+     "El reporte consolidado, los 19 PDF y TABLA.json en Downloads de las dos PCs (y E:\\forja-videos)."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
    {
     "file": "ordenes/2026-09-18-el-portamoldes-de-tu-pieza.md",
     "slug": "2026-09-18-el-portamoldes-de-tu-pieza",
