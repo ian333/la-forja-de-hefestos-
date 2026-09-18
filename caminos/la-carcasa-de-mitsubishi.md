@@ -8,10 +8,10 @@ NOTA: el ingeniero diseñó moldeable (draft, sin undercuts). Los mecanismos son
 ## PASOS
 - 1 · abrir la Forja · lienzo limpio, sin cuadrado · ok · -
 - 2 · soltar el STEP en cualquier parte · carga, el Foco se prende solo, 3 cotas sobre la pieza · ok · 2026-09-01-x4-el-happy-path
-- 3 · ENFRIAMIENTO · el campo pintado en ≤2.5 s con su ESCALA en segundos junto a la pieza, LA FICHA sobre el punto que manda, y la pieza enfriándose EN EL TIEMPO con el reloj corriendo (nada de pantallas fijas) · parcial · 2026-09-10-el-enfriamiento-se-ve
+- 3 · ENFRIAMIENTO · el campo pintado en ≤2.5 s con su ESCALA en segundos junto a la pieza, LA FICHA sobre el punto que manda, y la pieza enfriándose EN EL TIEMPO con el reloj corriendo (nada de pantallas fijas) · ok · 2026-09-10-el-enfriamiento-se-ve
 - 4 · D → EL DICTAMEN · qué viola, qué cambiar, teñido por el estado · ok · 2026-09-02-x6-la-lamina-viva
 - 5 · PARTIR · la línea de partición sobre la carcasa · ok · 2026-08-28-t7-linea-de-particion
-- 6 · EL MOLDE · el molde se va armando estación por estación sobre ESA pieza (placas, colada, agua, expulsores) y luego TRABAJA (llenar, abrir, expulsar), siempre centrado, nunca negro, primera placa en ≤10 s · parcial · 2026-09-10-los-botadores-de-tu-pieza
+- 6 · EL MOLDE · el molde se va armando estación por estación sobre ESA pieza (placas, colada, agua, expulsores) y luego TRABAJA (llenar, abrir, expulsar), siempre centrado, nunca negro, primera placa en ≤10 s · ok · 2026-09-10-los-botadores-de-tu-pieza
 - 7 · LOS PLANOS · el juego de planos del molde, con la inyectora del taller (FCS HT-150SV) juzgada en la lámina de análisis · ok · 2026-08-28-t7-linea-de-particion
 - 8 · EL EXPEDIENTE · dictamen + planos + cotización en un archivo (y el video, después) · ok · 2026-08-28-t5-expediente-que-se-ve
 
@@ -67,5 +67,5 @@ CONTRATO para los tickets que deben pasos rojos: T7 expone `linea-particion` sob
 
 ## MEDIDO
 - 20 Hammond reales (v1-gate): importan 20/20 · cotizan 17/20 · parten 2/20. El paso 5 es el muro; 6 y 7 existen y funcionan en el dado, pero dependen de 5.
-- 2026-09-18 02:54 UTC con la máquina SOLA: **8/8** (1:2/2 2:5/5 3:6/6 4:4/4 5:3/3 6:13/13 7:5/5 8:4/4 · colada 58.2 s · botadores suben 41.3 mm · E5 79.8 s). Las corridas de 03:17 y 03:27 (4/8 y 6/8) se hicieron con Horizon Forbidden West y Cuphead corriendo en el host Windows de iangpu (CPU 51 %, GPU P3): E5 subió a 110 s y fallan SOLO los relojes (lente ≤2.5 s del paso 3, colada ≤60 s del paso 6); todos los checks de FORMA pasan. La línea del runner de abajo es la ÚLTIMA corrida, no la mejor.
-- runner · 2026-09-18 03:27 UTC · http://localhost:5194/forja-brep.html · servido 6f70032 · Ian · 6/8 ok · 1:2/2 2:5/5 3:5/6 4:4/4 5:3/3 6:12/13 7:5/5 8:4/4
+- CONTEXTO de las corridas del 2026-09-18: 02:54 UTC máquina sola **8/8** (colada 58.2 s · E5 79.8 s) · 03:17 y 03:27 UTC 4/8 y 6/8 con Horizon Forbidden West y Cuphead corriendo en el host Windows de iangpu (E5 110 s; fallaron SOLO relojes) · 18:51 UTC `0/8` FALSO: iangpu se había reiniciado y el vite de dev2 estaba muerto (`ERR_CONNECTION_REFUSED`, 0 checks) — descartado, no es medición · 18:59 UTC recién reiniciada y sola: **8/8, 43/43 checks** (colada 39.7 s · E5 57.5 s · lente 1.5 s · E2→E7 83 s). El margen de los relojes depende de la CARGA de la máquina, no del código.
+- runner · 2026-09-18 18:59 UTC · http://localhost:5194/forja-brep.html · servido 6f70032 · Ian · 8/8 ok · 1:2/2 2:5/5 3:6/6 4:4/4 5:3/3 6:13/13 7:5/5 8:4/4

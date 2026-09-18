@@ -52,3 +52,14 @@ cuando ian diga «autorizado» — la puerta de publicar sigue siendo suya, piez
 - orden-gate VERDE · censo igual
 
 ## CIERRE (se llena al terminar)
+
+## HALLAZGO 2026-09-18 (medido al sellar LOS BOTADORES) — el runner mide un servidor MUERTO y lo escribe como verdad
+iangpu se reinició de noche y el vite de dev2 (:5194) ya no corría. `camino-runner.cjs` corrió igual: el arnés murió en
+`page.goto: net::ERR_CONNECTION_REFUSED`, dejó **0 checks**, y el runner REESCRIBIÓ el camino con «falla» en el paso 1,
+«bloqueado» en los otros 7 y `0/8 ok · se rompe en el paso 1` — un camino que doce horas antes midió 8/8 y cuyo código
+no cambió. Una corrida sin UNA sola medición no es un 0/8: es «no medí». Lo que debe hacer el pipeline:
+- si `meta.fatal` trae un error de NAVEGACIÓN (`ERR_CONNECTION_REFUSED`, `ERR_NAME_NOT_RESOLVED`, timeout del `goto`) o
+  `checks.length === 0`: exit ≠ 0, mensaje «el servidor no contesta en <URL>», y el `.md` NO se toca;
+- antes de correr, un `curl` a la URL (200 o no se arranca);
+- el sello `servido …` cambió de `6f70032` a `local 3e61f10` sin que nadie lo notara: si el commit servido ≠ el esperado,
+  decirlo en grande (hoy pasa callado).
