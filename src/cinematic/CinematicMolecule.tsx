@@ -184,7 +184,7 @@ const EPRESA_CAPAS: CapasSpec = {
 const ECIUDAD_DURATION = 10;
 const ECIUDAD_PASOS: [number, number][] = Array.from({ length: 48 }, (_, i) => [0.3 + 0.2 * i, -1 / 48] as [number, number]);
 const ECIUDAD_CAPAS: CapasSpec = {
-  campo:    { base: 1.15, mods: [] },                      // las calles SIEMPRE: son la estructura (1.6 teñía de azul todo el plano general)
+  campo:    { base: 2.1, mods: [] },                       // las calles: 1.15 con brillo fijo daba 8 % azul; ahora el brillo es el TRÁFICO (las muertas bajan a 16 %) y hace falta más ganancia
   respiro:  { base: 0, mods: [] },
   nubes:    { base: 1, mods: [] },
   parpadeo: { base: 0.08, mods: [] },
