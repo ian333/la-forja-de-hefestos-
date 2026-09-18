@@ -158,6 +158,26 @@ const EGUARDA_CAPAS: CapasSpec = {
   apertura: { base: 1, mods: EGUARDA_PASOS.map(([t, a], i) => (
     { wins: [[t, EGUARDA_DURATION]] as [number, number][], a, label: `paso ${i + 1} del reloj` })) },
 };
+// ── LA PRESA (sonda del 2026-09-17): el dinero como AGUA. 26,000 gotas: el cuerpo de la presa
+// (nivel = la caja real de Doña Lupe), el caudal que cae (ventas) y la fuga de abajo (gastos).
+// El reloj corre los 12 meses en 10 s; al final, sequía y presa seca. Sin voz: es para VER.
+const EPRESA_DURATION = 10;
+const EPRESA_PASOS: [number, number][] = Array.from({ length: 48 }, (_, i) => [0.3 + 0.2 * i, -1 / 48] as [number, number]);
+const EPRESA_CAPAS: CapasSpec = {
+  campo:    { base: 0, mods: [] },
+  respiro:  { base: 0, mods: [] },
+  // SIN compensación de brillo: con 26,000 gotas en un volumen chico, la rampa de `nubes` del
+  // colchón (×2.17) reventaba el cuadro a blanco (90 % de píxeles con luz medidos a los 6 s).
+  nubes:    { base: 1, mods: [] },
+  parpadeo: { base: 0.06, mods: [] },
+  spin:     { base: 1, mods: [] },
+  acc:      { base: 1.0, mods: [] },
+  enlaces:  { base: 0, mods: [] },
+  dipolo:   { base: 0, mods: [] },
+  ceros:    { base: 0, mods: [] },
+  apertura: { base: 1, mods: EPRESA_PASOS.map(([t, a], i) => (
+    { wins: [[t, EPRESA_DURATION]] as [number, number][], a, label: `mes ${(i / 4).toFixed(2)}` })) },
+};
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
 // dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
@@ -1186,6 +1206,14 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 0.145, elev: 0.03, azim0: 1.35, span: 0.22, fov: 38 }), dur: 4.06, label: 'l10 de regreso a la pareja: la pregunta' },
     { shot: eyeLevelLock({ rMul: 0.092, azim: 1.52, fov: 40 }), dur: 8.92, label: 'l11 el sello y la cola' },
   ],
+  epresa: [
+    // SONDA DEL AGUA: dos tomas, sin cortes bruscos. La presa debe LLENAR el cuadro (ex 11 → rMul
+    // 0.135 ≈ r 1.49, cuadro 1.08 × 1.92; la presa mide 1.45 de alto y 1.56 de ancho).
+    // ⚠ heroOrbit resta 0.12·sin(uπ) al rMul: con rMul 0.15 la cámara se metía DENTRO del agua a
+    // media toma y la presa se deshacía en polvo (medido: 70 % de luz a 0.5 s, 9 % a 3 s).
+    { shot: eyeLevelLock({ rMul: 0.150, azim: 1.50, fov: 40 }), dur: 5.0, label: 'la presa llena: el caudal cae y el agua respira' },
+    { shot: loomPush({ rFrom: 0.150, rTo: 0.118, elev: 0.03, azim: 1.52, fov: 40 }), dur: 5.0, label: 'la sequía: se acaba el caudal, baja el nivel y queda el vaso vacío' },
+  ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
     // agentes y su posición sale de dos modelos publicados (Bouchaud-Mézard 2000 + Schelling
@@ -1688,6 +1716,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   wsalb: { name: 'Por qué te da sed', formula: 'Na⁺···H₂O', fact: 'Cada sodio se lleva su propia jaula de agua — y por eso pides más.' },
   wtetb: { name: 'Ninguna está sola', formula: '(H₂O)₄', fact: 'A tres no les cuadraba; a cuatro sí, y jalan 19 % más que por separado.' },
   wsillab: { name: 'Dos sillas vacías', formula: 'H₂O···H₂O', fact: 'Dos sillas y dos hidrógenos = cuatro lugares por molécula: el tetraedro del hielo.' },
+  epresa: { name: 'La presa', formula: 'el dinero es agua', fact: 'El nivel no es adorno: es la caja real del negocio, mes con mes.' },
   eguarda: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Los dos venden lo mismo y les toca la misma suerte: cierra el que tenía guardado un mes, no el que vendía menos.' },
   ecolchon: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
@@ -3330,6 +3359,8 @@ const WATER_BINS: Record<string, WaterEntry> = {
               capas: ECOLCHON_CAPAS, dur: ECOLCHON_DURATION, sizeMul: 2.6, binColors: true, sinRaleo: true },
   eguarda: { bin: 'economia-guardadito', ef: 'economia-guardadito-efield', ex: 11,
              capas: EGUARDA_CAPAS, dur: EGUARDA_DURATION, sizeMul: 2.6, binColors: true, sinRaleo: true },
+  epresa: { bin: 'economia-presa', ef: 'economia-presa-efield', ex: 11,
+            capas: EPRESA_CAPAS, dur: EPRESA_DURATION, sizeMul: 0.85, binColors: true, sinRaleo: true },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,

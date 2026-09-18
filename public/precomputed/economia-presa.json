@@ -1,0 +1,33 @@
+{
+ "lectura": "EL DINERO ES AGUA (licencia visual declarada): nivel = caja real de Doña Lupe (capítulo 1), caudal = ventas, fuga = gastos, sequía = el mes malo",
+ "fuente_numeros": "public/precomputed/economia-guardadito.json → billetes.caja_heroe_meses.oro (ruina del jugador calibrada a INEGI 1989-2019)",
+ "gotas": {
+  "total": 26000,
+  "cuerpo": 20800,
+  "caudal": 2080,
+  "fuga": 1560,
+  "vaso": 1560
+ },
+ "nivel_max_meses": 1.5,
+ "meses": 12,
+ "sub_cuadros_por_mes": 8,
+ "K": 97,
+ "nivel_por_mes": [
+  1.0,
+  1.078,
+  1.109,
+  1.29,
+  1.091,
+  1.396,
+  1.113,
+  1.602,
+  1.51,
+  0.913,
+  1.051,
+  0.93,
+  null
+ ],
+ "semilla": 11,
+ "R": 0.52,
+ "H": 1.7
+}
