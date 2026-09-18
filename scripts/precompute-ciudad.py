@@ -101,6 +101,9 @@ def main():
         brillo.append(np.full(LP, int(255 * TRANSITABLE[hw])))
     lineas = np.array(lineas, dtype=np.float32); brillo = np.array(brillo, dtype=np.uint8)
     NL = len(lineas)
+    tramo_de = {}
+    for e, (a, b, d, hw) in enumerate(aristas): tramo_de[(a, b)] = e; tramo_de[(b, a)] = e
+    jerarquia = np.array([TRANSITABLE[hw] for _, _, _, hw in aristas], dtype=np.float32)
 
     # ── LOS NEGOCIOS: sobre las calles residenciales/terciarias, en proporción al largo del tramo.
     cand = [(i, d) for i, (a, b, d, hw) in enumerate(aristas) if hw in ('residential', 'tertiary', 'unclassified', 'living_street')]
@@ -152,6 +155,9 @@ def main():
     xs = neg_xy[:, 0]; x_min, x_max = xs.min(), xs.max()
     frente = lambda k: x_min + (x_max - x_min) * max(0.0, (k / SUB - 6.0) / 4.0)   # dónde va la sequía
     ventas_mes = np.zeros(M, dtype=np.float32); gasto_mes = np.zeros(M, dtype=np.float32)
+    # EL TRÁFICO: cuántos pagos pasan por cada calle en cada cuadro. La calle brilla por lo que
+    # REALMENTE corre por ella (principio del Wind Map): la sequía y los cierres la apagan solos.
+    trafico = np.zeros((K, NL), dtype=np.float32)
     for k in range(K):
         # avanzar los pagos en viaje
         llegados = []
@@ -179,6 +185,11 @@ def main():
                 rxy = np.vstack([neg_xy[i], rxy, neg_xy[j]])
                 acum = np.concatenate([[0.0], np.cumsum(np.hypot(np.diff(rxy[:, 0]), np.diff(rxy[:, 1])) * M_POR_UNIDAD)])
                 p = libres.pop(); en_viaje[p] = (rxy, acum, 0.0, j)
+                for sgi in range(1, len(ruta)):                  # cada tramo se enciende mientras la chispa lo cruza
+                    e = tramo_de.get((ruta[sgi - 1], ruta[sgi]))
+                    if e is None: continue
+                    k0 = k + int(acum[sgi] // VEL); k1 = min(K, k + int(math.ceil(acum[sgi + 1] / VEL)) + 1)
+                    if k0 < K: trafico[k0:k1, e] += 1.0
                 gasto_mes[i] += monto; ventas_mes[j] += monto; pos[k, p, :2] = neg_xy[i]
         # cierre de mes: la caja
         if k % SUB == 0 and k > 0:
@@ -218,14 +229,22 @@ def main():
         fp.write(vivo_k.mean(axis=1).astype('<f4').tobytes())
         fp.write(col.tobytes()); fp.write(qz.tobytes())
     print(f'OK  {OUT}  {os.path.getsize(OUT)/1024/1024:.2f} MB · {nb} luces de negocio + {P} pesos × (1+{ESTELA}) · {K} cuadros')
-    # las calles: 2 cuadros idénticos (el campo se interpola por R; las calles no se mueven)
-    KE = 2
+    # las calles: K cuadros (mismo reloj que la nube). Posición fija; BRILLO = la base de la
+    # jerarquía (la ciudad siempre se lee) + el tráfico real suavizado (se enciende y se apaga lento).
+    # arranque en régimen: la colonia ya existía antes del primer cuadro, así que la estela de las
+    # calles empieza con el tráfico típico del mes 1 (si no, el cuadro 0 —el gancho— sale apagado).
+    suave = np.zeros_like(trafico); acc_t = trafico[SUB:2 * SUB].mean(axis=0) / (1 - 0.78)
+    for k in range(K): acc_t = 0.78 * acc_t + trafico[k]; suave[k] = acc_t
+    ref = np.percentile(suave[suave > 0], 92) if (suave > 0).any() else 1.0
+    flujo = np.clip(suave / ref, 0, 1) ** 0.7
+    brillo_k = np.clip(255 * (0.16 * jerarquia[None] + 0.84 * flujo * (0.45 + 0.55 * jerarquia[None])), 0, 255).astype(np.uint8)
+    q16 = np.clip(np.round(lineas * 2000), -32767, 32767).astype('<i2')
     with open(OUT_EF, 'wb') as fp:
-        fp.write(struct.pack('<3i', KE, NL, LP)); fp.write(np.array([1.0, 0.0], '<f4').tobytes())
-        q16 = np.clip(np.round(lineas * 2000), -32767, 32767).astype('<i2')
-        for _ in range(KE): fp.write(q16.tobytes())
-        for _ in range(KE): fp.write(brillo.tobytes())
-    print(f'OK  {OUT_EF}  {os.path.getsize(OUT_EF)/1024/1024:.2f} MB · {NL} tramos de calle')
+        fp.write(struct.pack('<3i', K, NL, LP)); fp.write(np.linspace(1, 0, K).astype('<f4').tobytes())
+        for _ in range(K): fp.write(q16.tobytes())
+        for k in range(K): fp.write(np.repeat(brillo_k[k][:, None], LP, 1).tobytes())
+    enc = [(brillo_k[m * SUB] > 90).mean() for m in range(MESES + 1)]
+    print(f'OK  {OUT_EF}  {os.path.getsize(OUT_EF)/1024/1024:.2f} MB · {NL} tramos · calles encendidas por mes: ' + ' '.join(f'{100*e:.0f}%' for e in enc))
     json.dump({'lectura': 'LA CIUDAD DE NOCHE: calles reales (OSM, Chimalhuacán), negocios sobre las calles, dinero que viaja del que paga al que cobra por el camino más corto; caja = cobrado − gastado (ruina del jugador, margen 0); el contagio emerge',
                'caja_bbox': [LON0, LAT0, LON1, LAT1], 'm_por_unidad': M_POR_UNIDAD, 'cruces': len(nodos), 'tramos': NL, 'negocios': M, 'pesos': P,
                'meses': MESES, 'sub': SUB, 'K': K, 'sigma': SIGMA, 'colchon': COLCHON, 'sequia': 'entra por el sur en el mes 6 y cruza la colonia en 4 meses; gasto a la mitad en la zona seca',
