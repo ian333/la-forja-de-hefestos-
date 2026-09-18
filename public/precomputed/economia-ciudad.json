@@ -1,0 +1,37 @@
+{
+ "lectura": "LA CIUDAD DE NOCHE: calles reales (OSM, Chimalhuacán), negocios sobre las calles, dinero que viaja del que paga al que cobra por el camino más corto; caja = cobrado − gastado (ruina del jugador, margen 0); el contagio emerge",
+ "caja_bbox": [
+  -98.966,
+  19.405,
+  -98.944,
+  19.44
+ ],
+ "m_por_unidad": 450.0,
+ "cruces": 4164,
+ "tramos": 4814,
+ "negocios": 1200,
+ "pesos": 9000,
+ "meses": 12,
+ "sub": 8,
+ "K": 97,
+ "sigma": 0.35,
+ "colchon": 1.0,
+ "sequia": "entra por el sur en el mes 6 y cruza la colonia en 4 meses; gasto a la mitad en la zona seca",
+ "vivos_por_mes": [
+  1200,
+  1162,
+  1011,
+  875,
+  774,
+  696,
+  646,
+  615,
+  593,
+  569,
+  550,
+  535,
+  524
+ ],
+ "semilla": 3,
+ "fuente_calles": "OpenStreetMap contributors (ODbL) vía Overpass API, 2026-09-17"
+}

@@ -178,6 +178,24 @@ const EPRESA_CAPAS: CapasSpec = {
   apertura: { base: 1, mods: EPRESA_PASOS.map(([t, a], i) => (
     { wins: [[t, EPRESA_DURATION]] as [number, number][], a, label: `mes ${(i / 4).toFixed(2)}` })) },
 };
+// ── LA CIUDAD DE NOCHE (sonda, 2026-09-17): las calles REALES de Chimalhuacán como campo (cintas
+// frías), los negocios como cúmulos cálidos cuyo tamaño es su caja, y el dinero como chispas que
+// corren por las calles del que paga al que cobra. 12 meses en 10 s. Ver docs/QUE-EXCITA-EL-OJO.md.
+const ECIUDAD_DURATION = 10;
+const ECIUDAD_PASOS: [number, number][] = Array.from({ length: 48 }, (_, i) => [0.3 + 0.2 * i, -1 / 48] as [number, number]);
+const ECIUDAD_CAPAS: CapasSpec = {
+  campo:    { base: 1.15, mods: [] },                      // las calles SIEMPRE: son la estructura (1.6 teñía de azul todo el plano general)
+  respiro:  { base: 0, mods: [] },
+  nubes:    { base: 1, mods: [] },
+  parpadeo: { base: 0.08, mods: [] },
+  spin:     { base: 1, mods: [] },
+  acc:      { base: 1.1, mods: [] },
+  enlaces:  { base: 0, mods: [] },
+  dipolo:   { base: 0, mods: [] },
+  ceros:    { base: 0, mods: [] },
+  apertura: { base: 1, mods: ECIUDAD_PASOS.map(([t, a], i) => (
+    { wins: [[t, ECIUDAD_DURATION]] as [number, number][], a, label: `mes ${(i / 4).toFixed(2)}` })) },
+};
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
 // dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
@@ -1214,6 +1232,14 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: eyeLevelLock({ rMul: 0.150, azim: 1.50, fov: 40 }), dur: 5.0, label: 'la presa llena: el caudal cae y el agua respira' },
     { shot: loomPush({ rFrom: 0.150, rTo: 0.118, elev: 0.03, azim: 1.52, fov: 40 }), dur: 5.0, label: 'la sequía: se acaba el caudal, baja el nivel y queda el vaso vacío' },
   ],
+  eciudad: [
+    // SONDA: tres distancias fijas para juzgar (la colonia entera · unas cuadras · un negocio).
+    // Las cintas y los sprites miden PÍXELES fijos: a rMul 0.62 el plano general se teñía de azul (64 % frío,
+    // 77 % de luz) y a 0.13 el cuadro quedaba vacío (7 %). La banda que sirve, medida: rMul 0.19-0.45.
+    { shot: eyeLevelLock({ rMul: 0.45, azim: 1.5708, fov: 40 }), dur: 3.4, label: 'la colonia de noche' },
+    { shot: eyeLevelLock({ rMul: 0.28, azim: 1.5708, fov: 40 }), dur: 3.3, label: 'unas cuadras: el dinero corre por las calles' },
+    { shot: eyeLevelLock({ rMul: 0.19, azim: 1.5708, fov: 40 }), dur: 3.3, label: 'una cuadra: los negocios y lo que les llega' },
+  ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
     // agentes y su posición sale de dos modelos publicados (Bouchaud-Mézard 2000 + Schelling
@@ -1717,6 +1743,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   wtetb: { name: 'Ninguna está sola', formula: '(H₂O)₄', fact: 'A tres no les cuadraba; a cuatro sí, y jalan 19 % más que por separado.' },
   wsillab: { name: 'Dos sillas vacías', formula: 'H₂O···H₂O', fact: 'Dos sillas y dos hidrógenos = cuatro lugares por molécula: el tetraedro del hielo.' },
   epresa: { name: 'La presa', formula: 'el dinero es agua', fact: 'El nivel no es adorno: es la caja real del negocio, mes con mes.' },
+  eciudad: { name: 'La colonia', formula: 'Chimalhuacán, de noche', fact: 'Cada calle existe; cada luz es un negocio; cada chispa, un pago que viaja.' },
   eguarda: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Los dos venden lo mismo y les toca la misma suerte: cierra el que tenía guardado un mes, no el que vendía menos.' },
   ecolchon: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
@@ -3320,6 +3347,9 @@ type WaterEntry = {
   // resto de cuando el núcleo vivía en el origen). En una nube de NEGOCIOS el origen no es un núcleo:
   // es donde vive la pareja héroe, y el raleo la BORRABA (stills econ-colchon v2.1/v2.2: centro vacío).
   sinRaleo?: boolean;
+  campoAncho?: number;                 // grosor de las líneas de campo en px del master 4K (la ciudad: calles)
+  campoCol?: [number, number, number]; // color de las líneas (por defecto cian-violeta)
+  campoFlujo?: number;                 // pulsos de luz corriendo por las líneas (0 = quieto)
 };
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
@@ -3361,6 +3391,9 @@ const WATER_BINS: Record<string, WaterEntry> = {
              capas: EGUARDA_CAPAS, dur: EGUARDA_DURATION, sizeMul: 2.6, binColors: true, sinRaleo: true },
   epresa: { bin: 'economia-presa', ef: 'economia-presa-efield', ex: 11,
             capas: EPRESA_CAPAS, dur: EPRESA_DURATION, sizeMul: 0.85, binColors: true, sinRaleo: true },
+  eciudad: { bin: 'economia-ciudad', ef: 'economia-ciudad-efield', ex: 11,
+             capas: ECIUDAD_CAPAS, dur: ECIUDAD_DURATION, sizeMul: 1.35, binColors: true, sinRaleo: true,
+             campoAncho: 8.0, campoCol: [0.34, 0.70, 1.75], campoFlujo: 1 },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
@@ -3698,7 +3731,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
       {ceros && <FieldNulls data={ceros} R={R} reveal={C.ceros ?? 0} time={time} />}
-      {bondEf && !efIon && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
+      {bondEf && !efIon && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={W.campoCol ?? [0.42, 0.72, 1.6]} ancho={W.campoAncho ?? 4.4} flujo={W.campoFlujo ?? 0} />}
       {/* LAS PARTES. Color con el convenio de siempre: POSITIVO cálido, NEGATIVO frío.
           Prendidas a la vez se ven encimadas y apuntando al revés — que es el argumento. */}
       {efNuc && nucGate > 0.001 && <BondEField data={efNuc} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * nucGate} col={[1.75, 0.52, 0.22]} flujo={1} />}
