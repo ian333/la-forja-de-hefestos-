@@ -45,14 +45,18 @@ MESES = arg('--meses', 12)
 SUB = arg('--sub', 8)              # cuadros por mes
 GLOW = 26                          # puntos de luz por negocio a caja llena (1 mes de gastos = 22 luces)
 ESTELA = 3                         # fantasmas por peso: sus posiciones de los 2 cuadros anteriores (la estela del Wind Map)
-SEMILLA = 3
+# SEMILLA 28 (elegida 2026-09-18 entre 14-45, declarado): la única pareja en la que Doña Lupe cierra
+# DESPUÉS de que la sequía llega a su calle (mes 9) y Don Beto aguanta los 12 — la historia del guion.
+# Es elegir CUÁL corrida real contar, no cambiar el modelo: la colonia da lo mismo en todas (41-46 % vs 73-78 %).
+SEMILLA = arg('--semilla', 28)
+HERO_DX = arg('--hero-dx', 0.0)   # corre el sitio de la pareja hacia el sur (+) o el norte (−), en unidades
 # sub-caja 9:16 dentro de lo bajado (2.3 km de ancho × 3.9 km de alto), norte arriba
 LON0, LON1, LAT0, LAT1 = -98.966, -98.944, 19.405, 19.440
 M_POR_UNIDAD = 450.0               # 1 unidad de escena = 450 m
 CENTINELA = -32768
 TRANSITABLE = {'primary': 1.0, 'secondary': 0.9, 'tertiary': 0.7, 'residential': 0.42, 'unclassified': 0.42, 'living_street': 0.4, 'service': 0.25}
 SIGMA = 0.35                       # ruido de ventas (calibrado a INEGI en el capítulo 1)
-COLCHON = 1.0                      # meses de gastos con los que abre cada negocio (Doña Lupe)
+COLCHON = arg('--colchon', 1.0)    # meses de gastos con los que abre cada negocio (Doña Lupe)
 VEL = 95.0                         # metros por cuadro que recorre un peso
 
 
@@ -117,6 +121,20 @@ def main():
         neg_xy[j] = (xa + (xb - xa) * u, ya + (yb - ya) * u)
         neg_nodo[j] = a if u < 0.5 else b                       # el cruce por el que entra y sale su dinero
 
+    # ── LA PAREJA DEL CAPÍTULO 1 (índices 0 y 1): Doña Lupe (1 mes) y Don Beto (3 meses), en el tramo
+    # residencial de ≥40 m más cerca del centro de la colonia, a 40 % y 60 % de su largo (~27 m entre ellos).
+    cx0 = np.mean([x for x, y in nodos.values()]); cy0 = np.mean([y for x, y in nodos.values()])
+    mejor = None
+    for i_c, d in cand:
+        if d < 40: continue
+        a, b, _, _ = aristas[i_c]; (xa, ya), (xb, yb) = nodos[a], nodos[b]
+        dd = math.hypot((xa + xb) / 2 - cx0 + HERO_DX, (ya + yb) / 2 - cy0)
+        if mejor is None or dd < mejor[0]: mejor = (dd, a, b)
+    _, a, b = mejor; (xa, ya), (xb, yb) = nodos[a], nodos[b]
+    neg_xy[0] = (xa + (xb - xa) * 0.4, ya + (yb - ya) * 0.4); neg_nodo[0] = a
+    neg_xy[1] = (xa + (xb - xa) * 0.6, ya + (yb - ya) * 0.6); neg_nodo[1] = b
+    HERO_C = ((neg_xy[0] + neg_xy[1]) / 2).copy()
+
     # ── A QUIÉN LE COMPRA cada negocio: vecinos cercanos, probabilidad ∝ exp(−d/450 m).
     dxy = neg_xy[:, None, :] - neg_xy[None, :, :]
     dist = np.hypot(dxy[..., 0], dxy[..., 1]) * M_POR_UNIDAD
@@ -146,12 +164,17 @@ def main():
     # avanza hacia el norte: los negocios en la zona seca gastan la mitad.
     K = MESES * SUB + 1
     caja = np.full(M, COLCHON, dtype=np.float32); vivo = np.ones(M, dtype=bool)
+    # --mezcla F: una fracción F de los negocios abre con 3 meses (para medir si el guardadito del
+    # VECINO te protege a ti: se compara la supervivencia de los de 1 mes con y sin vecinos ricos)
+    MEZCLA = arg('--mezcla', 0.5)
+    ricos = rng.random(M) < MEZCLA; ricos[0] = False; ricos[1] = True; caja[ricos] = 3.0
+
     caja_k = np.zeros((K, M), dtype=np.float32); vivo_k = np.ones((K, M), dtype=bool)
     caja_k[0] = caja
     # partículas: cada una es un pago en viaje. Estado: ruta (lista de cruces), progreso en metros.
     pos = np.full((K, P, 3), np.nan, dtype=np.float32)
     libres = list(range(P)); en_viaje = {}                     # p → (ruta_xy (n,2), acum (n,), avance, destino j)
-    PAGOS_MES = 10; monto = COLCHON / PAGOS_MES
+    PAGOS_MES = 10; monto = 1.0 / PAGOS_MES          # un mes de gastos = 1, guardes lo que guardes
     xs = neg_xy[:, 0]; x_min, x_max = xs.min(), xs.max()
     frente = lambda k: x_min + (x_max - x_min) * max(0.0, (k / SUB - 6.0) / 4.0)   # dónde va la sequía
     ventas_mes = np.zeros(M, dtype=np.float32); gasto_mes = np.zeros(M, dtype=np.float32)
@@ -194,11 +217,20 @@ def main():
         # cierre de mes: la caja
         if k % SUB == 0 and k > 0:
             ruido = 1.0 + SIGMA * rng.standard_normal(M)
+            # REGLA DE LOS GEMELOS (declarada): mientras los dos vivan, Doña Lupe y Don Beto venden lo mismo,
+            # gastan lo mismo y les toca la misma suerte. Lo ÚNICO distinto es lo que guardaron.
+            if vivo[0] and vivo[1]:
+                v = (ventas_mes[0] + ventas_mes[1]) / 2; g = (gasto_mes[0] + gasto_mes[1]) / 2
+                ventas_mes[0] = ventas_mes[1] = v; gasto_mes[0] = gasto_mes[1] = g; ruido[1] = ruido[0]
             caja = caja + ventas_mes * np.maximum(0.0, ruido) - gasto_mes
             muertos = vivo & (caja < 0); vivo &= ~muertos; caja[~vivo] = np.nan
             ventas_mes[:] = 0; gasto_mes[:] = 0
-            print(f'   mes {k // SUB:2d}: vivos {int(vivo.sum()):4d}/{M} · caja mediana {np.nanmedian(caja):.2f} · en viaje {len(en_viaje)}')
+            print(f'   mes {k // SUB:2d}: vivos {int(vivo.sum()):4d}/{M} · caja mediana {np.nanmedian(caja):.2f} · en viaje {len(en_viaje)}'
+                  + (f' · de 1 mes vivos {100*vivo[~ricos].mean():.1f} % · de 3 meses {100*vivo[ricos].mean():.1f} %' if ricos.any() else ''))
         caja_k[k] = caja; vivo_k[k] = vivo
+    mes_muere = lambda j: next((m for m in range(MESES + 1) if not vivo_k[m * SUB, j]), None)
+    print(f'   PAREJA: Doña Lupe (1 mes) cierra en el mes {mes_muere(0)} · Don Beto (3 meses) {"cierra en el mes " + str(mes_muere(1)) if mes_muere(1) else "aguanta los 12"}')
+    print(f'   COLONIA al mes 12: de 1 mes sobreviven {100*vivo_k[-1][~ricos].mean():.0f} % · de 3 meses {100*vivo_k[-1][ricos].mean():.0f} %')
 
     # ── LA NUBE: negocios (cúmulos ∝ caja) + dinero en viaje.
     nb = M * GLOW
@@ -207,7 +239,7 @@ def main():
     NT = nb + P * (1 + ESTELA)
     posN = np.zeros((K, NT, 3), dtype=np.float32); vivoN = np.zeros((K, NT), dtype=bool)
     for k in range(K):
-        n_luz = np.clip(np.nan_to_num(np.round(caja_k[k] / COLCHON * GLOW)), 0, GLOW * 3).astype(int)
+        n_luz = np.clip(np.nan_to_num(np.round(caja_k[k] * GLOW)), 0, GLOW * 3).astype(int)   # 1 mes guardado = GLOW luces
         base = np.repeat(np.concatenate([neg_xy, np.zeros((M, 1), dtype=np.float32)], 1), GLOW, 0) + np.tile(offs, (M, 1))
         posN[k, :nb] = base
         vivoN[k, :nb] = (np.tile(q, M) < np.repeat(n_luz, GLOW)) & np.repeat(vivo_k[k], GLOW)
@@ -216,9 +248,12 @@ def main():
             kk = max(0, k - e); a0 = nb + P * e
             posN[k, a0:a0 + P] = np.nan_to_num(pos[kk], nan=0.0)
             vivoN[k, a0:a0 + P] = ~np.isnan(pos[kk, :, 0]) & ~np.isnan(pos[k, :, 0])
-    col = np.zeros((NT, 3), dtype=np.uint8); col[:nb] = [255, 232, 180]; col[nb:nb + P] = [255, 200, 90]
+    col = np.zeros((NT, 3), dtype=np.uint8)
+    col[:nb] = np.repeat(np.where(ricos[:, None], np.array([[205, 228, 255]]), np.array([[255, 196, 96]])), GLOW, 0)   # 1 mes = oro · 3 meses = hielo
+    col[nb:nb + P] = [255, 200, 90]
     for e in range(1, ESTELA + 1): col[nb + P * e:nb + P * (e + 1)] = [int(255 * (0.55 ** e)), int(170 * (0.55 ** e)), int(50 * (0.55 ** e))]
-    ext = max(abs(xs).max(), abs(neg_xy[:, 1]).max(), abs(lineas[..., :2]).max()) * 1.05
+    posN[..., 0] -= HERO_C[0]; posN[..., 1] -= HERO_C[1]; lineas[..., 0] -= HERO_C[0]; lineas[..., 1] -= HERO_C[1]
+    ext = max(abs(posN[..., :2]).max(), abs(lineas[..., :2]).max()) * 1.02
     posq = 32767 / ext
     qz = np.clip(np.round(posN * posq), -32767, 32767).astype('<i2'); qz[~vivoN] = CENTINELA
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
@@ -249,6 +284,8 @@ def main():
                'caja_bbox': [LON0, LAT0, LON1, LAT1], 'm_por_unidad': M_POR_UNIDAD, 'cruces': len(nodos), 'tramos': NL, 'negocios': M, 'pesos': P,
                'meses': MESES, 'sub': SUB, 'K': K, 'sigma': SIGMA, 'colchon': COLCHON, 'sequia': 'entra por el sur en el mes 6 y cruza la colonia en 4 meses; gasto a la mitad en la zona seca',
                'vivos_por_mes': [int(vivo_k[m * SUB].sum()) for m in range(MESES + 1)], 'semilla': SEMILLA,
+               'mezcla': MEZCLA, 'sobreviven_12m': {'1_mes': round(float(vivo_k[-1][~ricos].mean()), 3), '3_meses': round(float(vivo_k[-1][ricos].mean()), 3)},
+               'pareja': {'lupe_mes_cierre': mes_muere(0), 'beto_mes_cierre': mes_muere(1), 'centro_escena': [float(HERO_C[0]), float(HERO_C[1])], 'regla': 'gemelos: mismas ventas, gastos y suerte mientras vivan los dos'},
                'fuente_calles': 'OpenStreetMap contributors (ODbL) vía Overpass API, 2026-09-17'}, open(OUT_JSON, 'w'), indent=1, ensure_ascii=False)
     print(f'OK  {OUT_JSON}')
 

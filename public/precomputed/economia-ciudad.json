@@ -19,19 +19,33 @@
  "sequia": "entra por el sur en el mes 6 y cruza la colonia en 4 meses; gasto a la mitad en la zona seca",
  "vivos_por_mes": [
   1200,
-  1162,
-  1011,
-  875,
-  774,
-  696,
-  646,
-  615,
-  593,
-  569,
-  550,
-  535,
-  524
+  1179,
+  1107,
+  1036,
+  978,
+  922,
+  859,
+  821,
+  792,
+  763,
+  740,
+  725,
+  718
  ],
- "semilla": 3,
+ "semilla": 28,
+ "mezcla": 0.5,
+ "sobreviven_12m": {
+  "1_mes": 0.41,
+  "3_meses": 0.767
+ },
+ "pareja": {
+  "lupe_mes_cierre": 9,
+  "beto_mes_cierre": null,
+  "centro_escena": [
+   -0.8007640242576599,
+   -0.07186807692050934
+  ],
+  "regla": "gemelos: mismas ventas, gastos y suerte mientras vivan los dos"
+ },
  "fuente_calles": "OpenStreetMap contributors (ODbL) vía Overpass API, 2026-09-17"
 }
