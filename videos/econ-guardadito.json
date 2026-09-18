@@ -89,7 +89,18 @@
     "nota_pieza": "comando-catalogo.cjs mete TODO economia/reels/*.mp4 en UNA pieza «clase-reel» (líneas 338-342): el id «econ colchon» nunca existe en el catálogo y el check en vivo de paso_publicar fallaba aunque el video ya estaba en PRIME y ATLAS (2026-09-14). Ostrom tampoco pasó por aquí. Pendiente: un id por reel de economía.",
     "autorizado": "2026-09-17 yt,ig — dicho por ian en sesión: \"el video de econ, no me gusta pero publiquemoslo asi, incluso nuestros errores se mostraran… subelo con un agente de fondo… aunque este feo si no lo subimos, estamos perdiendo datos para analizar\"",
     "programar": "2026-09-19T21:00:00-06:00",
-    "nota_programar": "21:00 CDMX (no 18:45): la serie de negocio es para México y su pico local es 21-23 h. Sábado 19 = hueco libre del cronograma."
+    "nota_programar": "21:00 CDMX (no 18:45): la serie de negocio es para México y su pico local es 21-23 h. Sábado 19 = hueco libre del cronograma.",
+    "subidas": {
+      "yt": {
+        "id": "D7uyYbe4ONE",
+        "url": "https://youtu.be/D7uyYbe4ONE",
+        "privacidad": "private",
+        "publishAt": "2026-09-19T21:00:00-06:00",
+        "captions": "AUieDaZIpF_uirtCAml7RFO_4Fftmh5T2ImofKx1yoNPMnH5ZW4NiXwhLw",
+        "fecha": "2026-09-17T19:57"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-guardadito.mp4?v=5a37f5aa57"
   },
   "guion": {
     "archivo": "scripts/guiones/econ-guardadito.txt"
