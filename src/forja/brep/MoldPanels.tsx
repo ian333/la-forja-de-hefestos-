@@ -67,7 +67,9 @@ export function MoldBuildingBanner({ on }: { on: boolean }) {
 }
 
 export function CursoPanel({ mold }: { mold: MoldBag }) {
-  const { cursoStage, cursoReport, cursoCollapsed, setCursoCollapsed } = mold;
+  const { cursoStage, cursoReport, cursoCollapsed, setCursoCollapsed, ciclo: cicloCurso } = mold;
+  // el molde de una pieza soltada tiene 7 estaciones (…agua, botadores); el curso clásico, 6. Decía «7/6».
+  const cursoTotal = cicloCurso?.pieza ? 7 : 6;
   if (cursoReport.length === 0) return null;
           const gate = cursoReport.find((l) => l.startsWith('La línea de partición'));   // el mensaje verde nunca se pierde
           const tail = cursoReport.slice(-6);
@@ -86,7 +88,7 @@ export function CursoPanel({ mold }: { mold: MoldBag }) {
                   alignItems: 'center', justifyContent: 'space-between', width: '100%',
                   padding: '8px 12px', color: GOLD, fontWeight: 700, fontSize: 11.5,
                 }}>
-                <span>MOLD TOOLS — curso Alwis · paso {cursoStage}/6</span>
+                <span>MOLD TOOLS — curso Alwis · paso {cursoStage}/{cursoTotal}</span>
                 <span style={{ color: '#8a97a8' }}>{cursoCollapsed ? '▸' : '▾'}</span>
               </button>
               {!cursoCollapsed && (
@@ -630,6 +632,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {/* EL AGUA DE TU PIEZA: el molde de una pieza soltada termina en la estación 6 = EL AGUA
           (la del cubo es la 8). Misma ficha, sin el botón a la E9 del ciclo del dado. */}
       {ciclo.estacion === 6 && !ciclo.e6 && ciclo.e8 && ciclo.pieza && <CicloE8 e8={ciclo.e8} />}
+      {/* LOS BOTADORES DE TU PIEZA: la estación 7 del molde de la pieza soltada es la EXPULSIÓN (la del cubo es la 10) */}
+      {ciclo.estacion === 7 && !ciclo.e7 && ciclo.e10 && ciclo.pieza && <CicloE10 e10={ciclo.e10} />}
       {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} onE8={cicloEstacion8} />}
       {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
       {ciclo.estacion === 9 && ciclo.e9 && <CicloE9 e9={ciclo.e9} onE10={cicloEstacion10} />}

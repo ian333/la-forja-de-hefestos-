@@ -3723,7 +3723,7 @@ export interface Estacion10Dado {
   fuerza: { fEjectN: number; aEffMm2: number; sigmaMPa: number; fPkgN: number; cruceOkPct: number; pctClamp: number; clampKN: number; pctEyectorMaq: number };
   cicloDecision: string[];
   pines: {
-    n: number; diaMm: number; posiciones: Array<{ x: number; y: number; tipo: 'esquina-knit' | 'medio-lado' }>;
+    n: number; diaMm: number; posiciones: Array<{ x: number; y: number; tipo: 'esquina-knit' | 'medio-lado' | 'agarre' }>;
     dMinCompMm: number; dMinCorteMm: number; gobierna: 'cortante' | 'compresión' | 'pandeo';
     fPorPinN: number; libreMm: number;
     pandeoLibro: { fCritN: number; sf: number }; pandeoNuestro: { fCritN: number; sf: number };
@@ -3735,16 +3735,31 @@ export interface Estacion10Dado {
   anuncios: AnuncioRetorno[];
 }
 
+/** LOS BOTADORES DE TU PIEZA (2026-09-17): lo que la E10 necesita de la pieza soltada. Sin esto, el cubo
+ *  (pared 2, huella 40×40, draft 1.5°, 8 posiciones a mano) — bit-igual. Las posiciones vienen del AGARRE
+ *  §11.2.5 (`gripEjectorLayout`, la misma fuente del dictamen), YA volteadas al marco de la base. */
+export interface PiezaParaLosPines extends PiezaParaElAgua {
+  /** draft EXTERIOR medido de las caras (°) — el cos φ de la Eq 11.8 */
+  draftDeg: number;
+  /** centros de los pines en el marco de la BASE (x, y) */
+  posiciones: Array<{ x: number; y: number }>;
+}
+
 export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: CircuitoAgua, o?: {
   /** CONTROL NEGATIVO del gate: forzar un pin extra en una posición dada */
   pinExtra?: { x: number; y: number };
+  pieza?: PiezaParaLosPines;
 }): Estacion10Dado {
   const dz: any = pkg.diseno;
   const m = ABS_EJECT;
+  const pz = o?.pieza;
 
   // ── F_eject del dado REAL (Eq 11.8 + Eq 11.7) y sus CRUCES ──
-  const aEffM2 = effectiveArea({ h: 0.002, L: 0.040, W: 0.040 });     // perímetro boca × pared
-  const fEjectN = ejectionForce(m, 1.5, aEffM2);
+  // perímetro de la boca × pared: el cubo 40×40×2 con 1.5° declarados; la pieza, SU huella, SU pared y SU draft medido
+  const aEffM2 = pz
+    ? effectiveArea({ h: pz.wallMm / 1000, L: (2 * pz.semiXmm) / 1000, W: (2 * pz.semiYmm) / 1000 })
+    : effectiveArea({ h: 0.002, L: 0.040, W: 0.040 });
+  const fEjectN = ejectionForce(m, pz ? pz.draftDeg : 1.5, aEffM2);
   const fPkgN = dz.expulsion.vector.fEjectN;                          // el motor de la Máquina (mismas Eqs)
   const cruceOkPct = +((100 * Math.abs(fEjectN - fPkgN)) / fPkgN).toFixed(1);
   const maq = dz.maquina.seleccion.machine;
@@ -3753,21 +3768,28 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
   const pctEyectorMaq = +((100 * fEjectN) / (maq.ejectionForceKN * 1000)).toFixed(1);
 
   // ── EL CICLO DE DECISIÓN R34→R46 (impreso paso a paso) ──
-  const wallMm = 2;
+  const wallMm = pz ? pz.wallMm : 2;
   const cat = (dMin: number) => EJECTOR_PIN_DIAS_MM.find((x) => x >= dMin) ?? EJECTOR_PIN_DIAS_MM[EJECTOR_PIN_DIAS_MM.length - 1];
   const s4 = ejectorPinSizing(m, fEjectN, 4, wallMm / 1000);
   const d4 = cat(s4.dMinMm);
   const s8 = ejectorPinSizing(m, fEjectN, 8, wallMm / 1000);
   const d8 = cat(s8.dMinMm);
+  // L libre del pin: de la retenedora a la partición (aritmética de juzgarPines)
+  const asm = packageToAssemblySpec(pkg);
+  const pl = asm.plates;
+  const retH = Math.max(15, Math.round(pl.ejectorHousing * 0.28));
+  const libreMm = pl.ejectorHousing + pl.support + pl.B - 4 - retH;
   const cicloDecision = [
-    `F_eject = μ·cosφ·σ_res·Aeff = ${m.mu}·cos(1.5°)·${(residualStress(m) / 1e6).toFixed(2)} MPa·${(aEffM2 * 1e6).toFixed(0)} mm² = ${fEjectN.toFixed(0)} N (Eq 11.7-11.8)`,
+    `F_eject = μ·cosφ·σ_res·Aeff = ${m.mu}·cos(${pz ? pz.draftDeg.toFixed(2) : '1.5'}°)·${(residualStress(m) / 1e6).toFixed(2)} MPa·${(aEffM2 * 1e6).toFixed(0)} mm² = ${fEjectN.toFixed(0)} N (Eq 11.7-11.8)`,
     `con 4 pines: cortante (Eq 11.12, gobierna R45) pide ⌀${s4.dMinMm.toFixed(2)} → catálogo ${d4} mm`,
     `⚠ R34: pin ${d4} > pared ${wallMm} = PUNTO CALIENTE (masa sin enfriar + resistencia de contacto) — LA ALARMA REAL`,
     `DECISIÓN R46 (muchos-chicos): 8 pines → cortante pide ⌀${s8.dMinMm.toFixed(2)} → catálogo ${d8} ≤ pared ✓`,
     `el premio literal de R46: "eyección y VENTEO más uniformes" — 8 pin-vents para las knit de la E7, no 4`,
-    `⚠ R52: el pin RECTO ⌀1.588 sobre 88 mm PANDEA (SF 0.1 a K=2, 1.2 a K=0.7 del libro) — segundo conflicto real`,
-    `SALIDA DEL LIBRO (R52): pin ESCALONADO — punta ⌀1.588 × 50 GUIADA en su barreno + cuerpo al hombro (+1 → catálogo) cruzando el claro libre`,
-    `⚠ A-239 (¡al revés!): los pines de medio-lado en x=eje caían SOBRE el carril central del agua — y ese carril alimenta el BAFFLE: no se mueve. CEDEN LOS PINES: ±12 mm (claro 8.8) — el ciclo ejercido`,
+    `⚠ R52: el pin RECTO ⌀${d8} sobre ${libreMm.toFixed(0)} mm PANDEA (SF 0.1 a K=2, 1.2 a K=0.7 del libro) — segundo conflicto real`,
+    `SALIDA DEL LIBRO (R52): pin ESCALONADO — punta ⌀${d8} × 50 GUIADA en su barreno + cuerpo al hombro (+1 → catálogo) cruzando el claro libre`,
+    pz
+      ? `A-239 EJERCIDO: los ${pz.posiciones.length} pines van donde la pieza AGARRA al macho (§11.2.5, medido en su malla) y se juzgan contra la serpentina y el baffle REALES de su E6 — ver el juez`
+      : `⚠ A-239 (¡al revés!): los pines de medio-lado en x=eje caían SOBRE el carril central del agua — y ese carril alimenta el BAFFLE: no se mueve. CEDEN LOS PINES: ±12 mm (claro 8.8) — el ciclo ejercido`,
   ];
 
   // ── los 8 pines en el ANILLO de la boca (4 esquinas = knit E7 + 4 medios) ──
@@ -3778,19 +3800,17 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
   // moverse porque alimenta el BAFFLE. R50 da el menú; aquí CEDEN LOS PINES:
   // los de las paredes Y se corren ±12 mm del eje (quedan en su land, libran
   // el carril con 8.8 mm). El agua conserva sus carriles; el ciclo, ejercido.
-  const posiciones: Estacion10Dado['pines']['posiciones'] = [
-    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sy]) => ({ x: cx + sx * semi, y: cy + sy * semi, tipo: 'esquina-knit' as const })),
-    { x: cx + semi, y: cy, tipo: 'medio-lado' as const }, { x: cx - semi, y: cy, tipo: 'medio-lado' as const },
-    { x: cx - 12, y: cy + semi, tipo: 'medio-lado' as const }, { x: cx + 12, y: cy - semi, tipo: 'medio-lado' as const },
-  ];
+  const posiciones: Estacion10Dado['pines']['posiciones'] = pz
+    // la pieza soltada: donde AGARRA al macho (§11.2.5 Fig 11.11), medido en su malla, ya en el marco de la base
+    ? pz.posiciones.map((p) => ({ x: p.x, y: p.y, tipo: 'agarre' as const }))
+    : [
+      ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sy]) => ({ x: cx + sx * semi, y: cy + sy * semi, tipo: 'esquina-knit' as const })),
+      { x: cx + semi, y: cy, tipo: 'medio-lado' as const }, { x: cx - semi, y: cy, tipo: 'medio-lado' as const },
+      { x: cx - 12, y: cy + semi, tipo: 'medio-lado' as const }, { x: cx + 12, y: cy - semi, tipo: 'medio-lado' as const },
+    ];
   if (o?.pinExtra) posiciones.push({ x: o.pinExtra.x, y: o.pinExtra.y, tipo: 'medio-lado' });
   const nP = posiciones.length;
   const fPorPinN = fEjectN / nP;
-  // L libre del pin: de la retenedora a la partición (aritmética de juzgarPines)
-  const asm = packageToAssemblySpec(pkg);
-  const pl = asm.plates;
-  const retH = Math.max(15, Math.round(pl.ejectorHousing * 0.28));
-  const libreMm = pl.ejectorHousing + pl.support + pl.B - 4 - retH;
   // pandeo del pin RECTO ⌀1.588 sobre el claro completo: VIOLA (SF 0.1 a K=2,
   // 1.2 a K=0.7) — el ciclo sigue con la salida del libro (R52): PIN ESCALONADO,
   // punta ⌀1.588 × 50 mm GUIADA en su barreno ajustado (no pandea: soportada),
@@ -3828,10 +3848,13 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
       if (dist < peorAgua) { peorAgua = dist; contraAgua = sg.id; }
     }
     mide(`${tag} ↔ agua E8b (${contraAgua})`, peorAgua, circuito.segmentos[0].diaMm / 2);   // ½⌀ de la línea (§9.2.7)
-    // vs las salidas de venteo de la E7 (⌀3 barrenadas bajando en la partición)
-    const salidas = [[cx + 33.5, cy], [cx - 33.5, cy], [cx, cy + 33.5], [cx, cy - 33.5]];
-    const dv = Math.min(...salidas.map(([vx, vy]) => Math.hypot(pin.x - vx, pin.y - vy))) - 1.5 - rPin;
-    mide(`${tag} ↔ salida de venteo E7`, dv, rPin);                   // 1⌀ de pin de acero (R48)
+    // vs las salidas de venteo de la E7 (⌀3 barrenadas bajando en la partición) — SOLO el cubo las tiene
+    // (su E7 está hecha); la pieza soltada todavía no tiene E7 y eso se DICE, no se juzga contra un genérico
+    if (!pz) {
+      const salidas = [[cx + 33.5, cy], [cx - 33.5, cy], [cx, cy + 33.5], [cx, cy - 33.5]];
+      const dv = Math.min(...salidas.map(([vx, vy]) => Math.hypot(pin.x - vx, pin.y - vy))) - 1.5 - rPin;
+      mide(`${tag} ↔ salida de venteo E7`, dv, rPin);                 // 1⌀ de pin de acero (R48)
+    }
   }
   const juez = { claros, ok: claros.every((c) => c.ok) };
 
@@ -3874,7 +3897,7 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
     jp.resumen.slice(0, 180));
 
   const anuncios: AnuncioRetorno[] = [
-    { estacion: 7, titulo: 'CERRADO: las knit internas tienen sus pin-vents — y más de los prometidos', detalle: `4 esquinas (⌀${d8}, claro 0.13 ⇒ vent 0.065, §8.3.2) + 4 medios-lados de regalo por R46 — venteo más uniforme, literal del libro`, seccion: '§8.2.2 · §11.2.4' },
+    { estacion: 7, titulo: 'CERRADO: las knit internas tienen sus pin-vents — y más de los prometidos', detalle: pz ? `${nP} pines por agarre §11.2.5 (⌀${d8}, claro 0.13 ⇒ vent 0.065, §8.3.2) — venteo donde la pieza abraza al macho (R46)` : `4 esquinas (⌀${d8}, claro 0.13 ⇒ vent 0.065, §8.3.2) + 4 medios-lados de regalo por R46 — venteo más uniforme, literal del libro`, seccion: '§8.2.2 · §11.2.4' },
     { estacion: 9, titulo: 'CERRADO: el s viajó al agarre (y la diferencia explicada)', detalle: `agarre en molde CTE·ΔT ${(m.cte * (m.tSolid - m.tEject) * 100).toFixed(2)} % vs s total 0.8 % — usar el total sobrestimaría F (R40: no apilar conservadurismo)`, seccion: '§10.4 · §11.2.2' },
     { estacion: 12, titulo: 'tabla de eyectores al acta (R37): keyed + etiquetados', detalle: `8 pines ⌀${d8} × L ${libreMm.toFixed(0)} (posición y rol registrados) — PROHIBIDO pines casi idénticos intercambiables`, seccion: '§11.1.7' },
   ];

@@ -1,20 +1,20 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-17 23:06",
+ "generado": "2026-09-18 03:29",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 6,
+  "proximo": 5,
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 91,
+  "cerrado": 92,
   "probado": 0,
-  "porProbar": 55,
-  "sinDesplegar": 10,
+  "porProbar": 56,
+  "sinDesplegar": 11,
   "despues": 24
  },
  "deploy": {
@@ -24,35 +24,6 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-09-10-los-botadores-de-tu-pieza.md",
-    "slug": "2026-09-10-los-botadores-de-tu-pieza",
-    "titulo": "LOS BOTADORES DE TU PIEZA — los expulsores (E10) sobre la pieza soltada; el paso 6 deja de estar a medias",
-    "fecha": "2026-09-10",
-    "estado": "proximo",
-    "prioridad": 4,
-    "tipo": "",
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "ian (2026-09-10): «no veo los botadores». Los expulsores son la estación 10 y solo existen para el cubo (estacion10Dado). Al final de esta orden los pines §11 (⌀ por catálogo, colocados por agarre §11.2.5 como ya hace revisarModelo para el…",
-    "toca": 6,
-    "crea": 3,
-    "evidencia": 3,
-    "evidenciaDeclarada": [
-     "Paso 6: el check expulsores del RUNNER pasa; con agua y expulsores el paso 6 sale «ok» y el camino 8/8 en su",
-     "Los pines coinciden con los de la lámina «Placa expulsora» (misma fuente) y no atraviesan agua ni insertos.",
-     "Paseo con los botadores visibles; video en ambas PCs; orden-gate VERDE."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
    {
     "file": "ordenes/2026-09-09-la-presion-que-cierra.md",
     "slug": "2026-09-09-la-presion-que-cierra",
@@ -133,7 +104,7 @@
      "total": 3
     },
     "objetivo": "hallazgo de EL AGUA DE TU PIEZA (2026-09-17, medido en node sobre la carcasa 1594C con pared 3.2): el MISMO molde tiene DOS circuitos de agua distintos según quién lo dibuje. La lámina de la placa (coolingCircuitDesign en mold-drawing-set.…",
-    "toca": 3,
+    "toca": 4,
     "crea": 0,
     "evidencia": 3,
     "evidenciaDeclarada": [
@@ -1301,6 +1272,39 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-09-10-los-botadores-de-tu-pieza.md",
+    "slug": "2026-09-10-los-botadores-de-tu-pieza",
+    "titulo": "LOS BOTADORES DE TU PIEZA — los expulsores (E10) sobre la pieza soltada; el paso 6 deja de estar a medias",
+    "fecha": "2026-09-10",
+    "estado": "cerrado",
+    "prioridad": 4,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "ian (2026-09-10): «no veo los botadores». Los expulsores son la estación 10 y solo existen para el cubo (estacion10Dado). Al final de esta orden los pines §11 (⌀ por catálogo, colocados por agarre §11.2.5 como ya hace revisarModelo para el…",
+    "toca": 7,
+    "crea": 3,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "Paso 6: el check expulsores del RUNNER pasa; con agua y expulsores el paso 6 sale «ok» y el camino 8/8 en su",
+     "Los pines coinciden con los de la lámina «Placa expulsora» (misma fuente) y no atraviesan agua ni insertos.",
+     "Paseo con los botadores visibles; video en ambas PCs; orden-gate VERDE.",
+     "LA ANIMACIÓN (ian 2026-09-17: «la animación de los botadores»): al terminar la estación de los expulsores el"
+    ],
+    "cierre": "EL CAMINO DE LA CARCASA DIO 8/8. runner · 2026-09-18 02:54 UTC · 8/8 ok · 1:2/2 2:5/5 3:6/6 4:4/4 5:3/3 6:13/13 7:5/5 8:4/4 con la máquina sola. El paso 6 cerró su promesa original completa — placas …",
+    "cierreCompleto": "EL CAMINO DE LA CARCASA DIO 8/8. runner · 2026-09-18 02:54 UTC · 8/8 ok · 1:2/2 2:5/5 3:6/6 4:4/4 5:3/3 6:13/13 7:5/5 8:4/4 con la máquina sola. El paso 6 cerró su promesa original completa — placas · colada (58.2 s, dentro de 60) · agua · expulsores — y además el molde TRABAJA: cambio(1000) = 42.5 % de píxeles cambiando por segundo y animZ('pin-punta-0') = 41.3 mm de carrera vista (= H + 8 = 41.34: la carrera entera). Telemetría: E2 3.1 + E3 21.6 + E4 0.8 + E5 79.8 + E6 2.4 + E7 (botadores) 3.2 s. Lo que se entregó - Estación 7 del molde de TU pieza = LOS BOTADORES (cicloBotadoresPieza), encadenada tras el agua. La fuerza sale de TU perímetro, TU pared y TU draft MEDIDO por la E3 (Eq 11.7-11.8 → 3883 N; el motor del paquete: 3892, Δ 0.2 %). El ciclo R34→R46 con la pared 3.2: 4 pines piden ⌀4.763 > pared (punto caliente) → 8 pines ⌀2.381 ✓; recto PANDEA (SF 0.16) → escalonado punta ⌀2.381×50 + cuerpo ⌀4.763, SF 9.7. Juez contra el agua REAL de la E6: cero conflictos, peor claro 10.51 mm. - Los pines se colocan donde la pieza AGARRA al macho (§11.2.5, gripEjectorLayout sobre la malla en su marco LOCAL, volteados a la base): 360 columnas de pared, 356 candidatos, 8 colocados; los 8 empujan sobre material del piso interior (8/8) y la punta termina en zBaseCerrada − pared = 189.64. - LA ANIMACIÓN (ian: «la animación de los botadores»): al terminar la estación el ciclo arranca solo (llenar · abrir · expulsar · retraer · cerrar) con las carreras de TU pieza — apertura 2.5·H = 83.4 (§6.3.2), expulsión H + 8 = 41.3 (cap 11); el cubo sigue dando sus 100 y 48. El ciclo se APAGA al s…",
+    "evidenciaSS": [
+     "evidencia/2026-09-10-los-botadores-de-tu-pieza/botadores-en-el-molde.png",
+     "evidencia/2026-09-10-los-botadores-de-tu-pieza/paseo-contactos.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "f1397c0",
+    "despliegue": "sin-desplegar"
+   },
    {
     "file": "ordenes/2026-09-10-el-enfriamiento-se-ve.md",
     "slug": "2026-09-10-el-enfriamiento-se-ve",
@@ -6905,7 +6909,7 @@
      "n": 3,
      "gesto": "ENFRIAMIENTO",
      "seVe": "el campo pintado en ≤2.5 s con su ESCALA en segundos junto a la pieza, LA FICHA sobre el punto que manda, y la pieza enfriándose EN EL TIEMPO con el reloj corriendo (nada de pantallas fijas)",
-     "estado": "ok",
+     "estado": "parcial",
      "ticket": "2026-09-10-el-enfriamiento-se-ve"
     },
     {
@@ -6925,7 +6929,7 @@
     {
      "n": 6,
      "gesto": "EL MOLDE",
-     "seVe": "el molde se va armando estación por estación sobre ESA pieza (placas, colada, agua, expulsores), siempre centrado, nunca negro, primera placa en ≤10 s",
+     "seVe": "el molde se va armando estación por estación sobre ESA pieza (placas, colada, agua, expulsores) y luego TRABAJA (llenar, abrir, expulsar), siempre centrado, nunca negro, primera placa en ≤10 s",
      "estado": "parcial",
      "ticket": "2026-09-10-los-botadores-de-tu-pieza"
     },
@@ -6944,12 +6948,12 @@
      "ticket": "2026-08-28-t5-expediente-que-se-ve"
     }
    ],
-   "verdes": 7,
+   "verdes": 6,
    "total": 8,
    "rompeEn": 0,
-   "parciales": 1,
+   "parciales": 2,
    "medido": {
-    "fecha": "2026-09-17 22:55",
+    "fecha": "2026-09-18 03:27",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "Ian"

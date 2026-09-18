@@ -1,0 +1,195 @@
+{
+ "orden": "2026-09-10-los-botadores-de-tu-pieza",
+ "medido": "2026-09-18 01:53 UTC (runner iangpu) · node+kernel laptop 2026-09-17",
+ "pieza": {
+  "nombre": "1594C Box",
+  "paredMm": 3.2,
+  "draftExteriorMedidoDeg": 3.606,
+  "huellaMm": [
+   66.02,
+   106.52
+  ],
+  "alturaMm": 33.34
+ },
+ "fuerza": {
+  "fEjectN": 3883,
+  "aEffMm2": 1104,
+  "sigmaMPa": 7.05,
+  "fPkgN": 3892,
+  "cruceOkPct": 0.2,
+  "pctClamp": 0.16,
+  "clampKN": 2452,
+  "pctEyectorMaq": 7.9
+ },
+ "cicloR34R46": [
+  "F_eject = μ·cosφ·σ_res·Aeff = 0.5·cos(1.5°)·7.05 MPa·1104 mm² = 3883 N (Eq 11.7-11.8)",
+  "con 4 pines: cortante (Eq 11.12, gobierna R45) pide ⌀4.39 → catálogo 4.763 mm",
+  "⚠ R34: pin 4.763 > pared 3.2 = PUNTO CALIENTE (masa sin enfriar + resistencia de contacto) — LA ALARMA REAL",
+  "DECISIÓN R46 (muchos-chicos): 8 pines → cortante pide ⌀2.19 → catálogo 2.381 ≤ pared ✓",
+  "el premio literal de R46: \"eyección y VENTEO más uniformes\" — 8 pin-vents para las knit de la E7, no 4",
+  "⚠ R52: el pin RECTO ⌀2.381 sobre 102 mm PANDEA (SF 0.1 a K=2, 1.2 a K=0.7 del libro) — segundo conflicto real",
+  "SALIDA DEL LIBRO (R52): pin ESCALONADO — punta ⌀2.381 × 50 GUIADA en su barreno + cuerpo al hombro (+1 → catálogo) cruzando el claro libre",
+  "⚠ A-239 (¡al revés!): los pines de medio-lado en x=eje caían SOBRE el carril central del agua — y ese carril alimenta el BAFFLE: no se mueve. CEDEN LOS PINES: ±12 mm (claro 8.8) — el ciclo ejercido"
+ ],
+ "pines": {
+  "n": 8,
+  "diaMm": 2.381,
+  "gobierna": "cortante",
+  "fPorPinN": 485,
+  "libreMm": 102,
+  "escalonado": {
+   "puntaDiaMm": 2.381,
+   "puntaMm": 50,
+   "cuerpoDiaMm": 4.763,
+   "libreCuerpoMm": 52,
+   "sfRectoK2": 0.16
+  },
+  "pandeoNuestro": {
+   "fCritN": 4726,
+   "sf": 9.7
+  },
+  "pandeoLibro": {
+   "fCritN": 38578,
+   "sf": 79.5
+  },
+  "margenWitnessMm": 0.41,
+  "posiciones": [
+   {
+    "x": 205,
+    "y": 313.2,
+    "tipo": "agarre"
+   },
+   {
+    "x": 241,
+    "y": 313.2,
+    "tipo": "agarre"
+   },
+   {
+    "x": 203,
+    "y": 234.8,
+    "tipo": "agarre"
+   },
+   {
+    "x": 243,
+    "y": 234.8,
+    "tipo": "agarre"
+   },
+   {
+    "x": 199,
+    "y": 307.2,
+    "tipo": "agarre"
+   },
+   {
+    "x": 247,
+    "y": 307.2,
+    "tipo": "agarre"
+   },
+   {
+    "x": 199,
+    "y": 299.1,
+    "tipo": "agarre"
+   },
+   {
+    "x": 247,
+    "y": 299.1,
+    "tipo": "agarre"
+   }
+  ]
+ },
+ "agarre": {
+  "fuente": "gripEjectorLayout §11.2.5 sobre la malla real (marco local, volteado a la base)",
+  "paredes": 360,
+  "candidatos": 356,
+  "colocados": 8,
+  "sobreMaterialEnElPisoInterior": "8/8",
+  "notas": [
+   "360 columnas de pared · 356 candidatos junto al agarre · 8 pines colocados (§11.2.5 Fig 11.11)"
+  ]
+ },
+ "juezAgua": {
+  "claros": [
+   {
+    "contra": "pin(205,313) ↔ agua E8b (B-linea1)",
+    "claroMm": 14.43,
+    "minMm": 2.38,
+    "ok": true
+   },
+   {
+    "contra": "pin(241,313) ↔ agua E8b (B-linea1)",
+    "claroMm": 14.43,
+    "minMm": 2.38,
+    "ok": true
+   },
+   {
+    "contra": "pin(203,235) ↔ agua E8b (B-linea0)",
+    "claroMm": 14.51,
+    "minMm": 2.38,
+    "ok": true
+   },
+   {
+    "contra": "pin(243,235) ↔ agua E8b (B-linea2)",
+    "claroMm": 14.51,
+    "minMm": 2.38,
+    "ok": true
+   },
+   {
+    "contra": "pin(199,307) ↔ agua E8b (B-linea0)",
+    "claroMm": 10.51,
+    "minMm": 2.38,
+    "ok": true
+   },
+   {
+    "contra": "pin(247,307) ↔ agua E8b (B-linea2)",
+    "claroMm": 10.51,
+    "minMm": 2.38,
+    "ok": true
+   },
+   {
+    "contra": "pin(199,299) ↔ agua E8b (B-linea0)",
+    "claroMm": 10.51,
+    "minMm": 2.38,
+    "ok": true
+   },
+   {
+    "contra": "pin(247,299) ↔ agua E8b (B-linea2)",
+    "claroMm": 10.51,
+    "minMm": 2.38,
+    "ok": true
+   }
+  ],
+  "ok": true
+ },
+ "geometria": {
+  "zPisoInterior": 189.64,
+  "zParticion": 160,
+  "carreras": {
+   "openMm": 83.4,
+   "ejectMm": 41.3
+  }
+ },
+ "paqueteDecia": {
+  "ejectors": {
+   "type": "pin",
+   "count": 19,
+   "diaMm": 10
+  },
+  "nota": "con ⌀10 el agarre solo coloca 5 de 19 (keepOut 16.1) — la lámina ahora lee los 8 de la E7 (misma fuente)"
+ },
+ "runner": {
+  "maquinaSola_0254UTC": "8/8 · 6:13/13 · colada 58.2 s · cambio 42.5 % · animZ 41.3 mm · E2 3.1 + E3 21.6 + E4 0.8 + E5 79.8 + E6 2.4 + E7 3.2 s",
+  "conJuegoEnElHost_0317UTC": "4/8 (click a PLANOS vencido a 15 s) · E5 66 s",
+  "conJuegoEnElHost_0327UTC": "6/8 · 3:5/6 (lente 15 s) · 6:12/13 (colada 64.6 s) · animZ 23.9 mm · E5 110.2 s",
+  "hostWindows": "Horizon Forbidden West 16000 s CPU 5.5 GB + Cuphead · CPU 51 % · GPU 38 % P3 1215/3120 MHz"
+ },
+ "cubo": {
+  "cicloDadoTest": "266/266",
+  "diffVsCorridaDelAgua": "solo el reloj LENTE (1.12 → 1.37 s); ningún número del ciclo cambió",
+  "corridaCargada": "265/266 con la laptop ocupada: falló SOLO el reloj LENTE ≤2.5 s (3.56 s) — no es del código"
+ },
+ "paseo": {
+  "video": "32-LOS-BOTADORES-DE-TU-PIEZA-paseo.mp4",
+  "duracionS": 585,
+  "fallanSoloRelojes": "p3-2 15 s · p6-5 67 s",
+  "planosYExpediente": "OK"
+ }
+}

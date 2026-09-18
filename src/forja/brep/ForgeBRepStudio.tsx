@@ -3940,7 +3940,9 @@ export default function ForgeBRepStudio() {
       : c.estacion === 3 ? mold.cicloEstacion4 : c.estacion === 4 ? mold.cicloEstacion5
       // EL AGUA DE TU PIEZA (2026-09-17): la E5 ya no es el final. El circuito del cap 9 se barrena
       // sobre el molde de ESTA pieza — el paso 6 del camino pedía «agua» y hasta hoy decía ✗.
-      : c.estacion === 5 ? mold.cicloAguaPieza : null;
+      : c.estacion === 5 ? mold.cicloAguaPieza
+      // LOS BOTADORES DE TU PIEZA (2026-09-17): después del agua, los expulsores — y el ciclo arranca solo
+      : c.estacion === 6 ? mold.cicloBotadoresPieza : null;
     if (!paso) return;
     // LO QUE HAY SE VE (2026-09-09): de E3 en adelante, 400 ms de aire en vez de 80. Medido en el arnés
     // (step_25): E3 se pintaba OSCURA porque el salto de cámara (30 ms después del commit) no alcanzaba a
@@ -3958,6 +3960,13 @@ export default function ForgeBRepStudio() {
     setTimeout(() => {
       try {
         const aspec = packageToAssemblySpec(pkg);
+        // LOS BOTADORES DE TU PIEZA: si la E7 ya colocó los pines por agarre, la lámina «Placa expulsora»
+        // dibuja ESOS (misma fuente que el 3D), no la rejilla genérica del paquete (19 × ⌀10 para la carcasa).
+        const e10 = mold.ciclo?.e10, d5 = mold.ciclo?.e5datums;
+        if (e10 && d5 && mold.ciclo?.pieza) {
+          aspec.ejectors = { ...aspec.ejectors, type: 'pin', count: e10.pines.n, diaMm: e10.pines.diaMm,
+            positions: e10.pines.posiciones.map((pp) => ({ x: pp.x - d5.ejeX, y: pp.y - d5.ejeY })) };
+        }
         const r = pkg.recomendacion;
         // UNA SOLA VERDAD: la hoja dice lo MISMO que el dictamen (mismo pkg) y lo comprueba a la vista;
         // la máquina trae números, no palomitas; cada puntaje lleva su nombre (contratos = el juez;
@@ -3996,6 +4005,13 @@ export default function ForgeBRepStudio() {
     return { html, tieneDictamen: !!revision, tieneCotizacion: !!cotSvg, nPlanos: planosMolde?.length ?? 0, nDecisiones: revision?.expediente.decisiones.length ?? 0, pendientes: revision?.expediente.pendientes ?? 0 };
   }, [expedienteOn, piezaMalla, mold.ciclo, revision, planosMolde]);
   const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
+  // LOS BOTADORES DE TU PIEZA (2026-09-17): el ciclo animado (llenar · abrir · expulsar) vive SOLO mientras la
+  // lente MOLDE está a la vista. Medido en el paseo: con el rAF corriendo bajo los planos y el expediente, cada
+  // check del runner pasó de 2–9 ms a 1.5–2.5 s y el video creció de 4:22 a 9:42 — la máquina seguía trabajando
+  // para nadie. Al volver a MOLDE, el ▶ del panel lo arranca de nuevo.
+  useEffect(() => {
+    if (cicloPlaying && (!moldeOn || planosOn)) cicloPlayStop();
+  }, [moldeOn, planosOn, cicloPlaying, cicloPlayStop]);
   // ── U5 · PANTALLA LIMPIA (ian: «esas ventanas solo me quitan espacio… jamás las
   //    he utilizado») — una ventana SIN CONTENIDO no se renderiza. No se colapsa, no
   //    se achica: no existe. Es la regla de Detroit vuelta mecánica.
@@ -7062,8 +7078,10 @@ export default function ForgeBRepStudio() {
                 {/* APERTURA ANIMADA: lado A sube y las CORREDERAS se retraen con la
                     cinemática real del perno (u = apertura·tanφ, tope en S) */}
                 <MoldOpenDriver refs={moldAnimRefs} ctl={moldOpenRef} parts={moldParts}
-                  openMm={moldOpenStrokeMm || (ciclo?.e5datums ? 100 : 0)}
-                  ejectMm={ciclo?.e5datums ? 48 : (liveMoldSpec?.cavity.depthMm ?? 30) + 8}
+                  // las carreras salen de la ALTURA de la pieza del ciclo: apertura 2.5·H (§6.3.2) y expulsión
+                  // H + 8 para LIBRAR el núcleo (cap 11). El cubo (H 40) da los 100 y 48 de siempre.
+                  openMm={moldOpenStrokeMm || (ciclo?.e5datums ? 2.5 * (ciclo.pieza?.local?.alturaMm ?? 40) : 0)}
+                  ejectMm={ciclo?.e5datums ? (ciclo.pieza?.local?.alturaMm ?? 40) + 8 : (liveMoldSpec?.cavity.depthMm ?? 30) + 8}
                   stripperRing={liveMoldSpec?.ejectors?.type === 'stripper'}
                   aSideRoles={ciclo?.e5datums ? ['cavidad', 'placa-a-ghost'] : undefined}
                   aSidePrefixes={ciclo?.e5datums ? ['agua-A-', 'agua-tapon-A-', 'agua-oring-A-'] : undefined}
@@ -7292,12 +7310,13 @@ export default function ForgeBRepStudio() {
                 const tiene = (r: string) => roles.includes(r);
                 const placas = tiene('cavidad') && tiene('nucleo');
                 const agua = roles.some((r) => r.startsWith('agua-'));
+                const expulsores = roles.some((r) => r.startsWith('pin-'));
                 const est = c?.pieza ? c.estacion : 0;
                 const pg = mold.progreso; void tickMolde;
                 const enCurso = pg && pg.i < pg.n;
                 const txt = !c?.pieza ? (result ? 'esperando el sólido…' : 'necesita el sólido del STEP (un STL no trae)')
                   : mold.intake.wallMm == null ? 'midiendo la pared en el Foco…'
-                  : est < 6 ? `E${est}/6 · armando…` : 'E6/6';
+                  : est < 7 ? `E${est}/7 · armando…` : 'E7/7';
                 return (
                   <div data-testid="molde-de-la-pieza" data-estacion={est} data-roles={roles.join(' ')} data-pared={mold.intake.wallMm ?? ''}
                     data-partes={mold.moldParts.length} data-tris={mold.moldParts.reduce((n, p) => n + (p.indices ? p.indices.length / 3 : 0), 0)} data-bbox={moldeBBoxRef.current} data-enc={moldeEncRef.current}
@@ -7321,7 +7340,7 @@ export default function ForgeBRepStudio() {
                       {/* EL AGUA DE TU PIEZA: el agua ya es la de ESTA pieza, así que la leyenda deja de
                           estar clavada en ✗ y dice lo que hay (los expulsores siguen siendo del cubo: se dice). */}
                       <span style={{ color: agua ? '#7ee2a8' : '#6f8095' }}>{agua ? '✓' : '·'} agua</span>{' '}
-                      <span style={{ color: '#f27a6c' }}>✗ expulsores (E10 cubo)</span>
+                      <span style={{ color: expulsores ? '#7ee2a8' : '#6f8095' }}>{expulsores ? '✓' : '·'} expulsores</span>
                     </span>
                   </div>
                 );
