@@ -68,6 +68,10 @@ carrera, y el paso 6 del camino queda COMPLETO en su promesa original (placas, c
 - scripts/precompute-presa.py
 - src/cinematic/CinematicMolecule.tsx
 - videos/econ-guardadito.json
+(y a las 03:29 UTC, ya con el deploy saliendo: el gate los vio ROJO por no estar aquí — son de la otra sesión, no entraron al commit)
+- public/precomputed/economia-ciudad.json
+- public/precomputed/osm-chimalhuacan-calles.json
+- scripts/precompute-ciudad.py
 
 ## LO QUE SE MIDIÓ AL ABRIR (2026-09-17, node + kernel, laptop)
 - `estacion10Dado` trae los mismos vicios que tenía el agua: `effectiveArea({h: 0.002, L: 0.040, W: 0.040})`
