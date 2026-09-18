@@ -236,7 +236,14 @@ def main():
     nb = M * GLOW
     q = np.arange(GLOW)
     offs = rng.normal(0, 0.042, (GLOW, 3)).astype(np.float32); offs[:, 2] *= 0.2   # ~19 m: un negocio se lee como una mancha de luz
-    NT = nb + P * (1 + ESTELA)
+    # LA PAREJA DE CERCA: de cerca, las 26 luces de un negocio (σ 19 m) se dispersan y los héroes no
+    # se leían (stills k1: 1-4 % de luz en sus acercamientos). Doña Lupe y Don Beto llevan además un
+    # CUERPO de luz compacto: GLOW_H luces por mes guardado, σ 5 m — mismo reloj, misma caja.
+    # v2 (stills k4): con 110 luces a σ 5 m, en teleobjetivo la pareja salía como dos constelaciones
+    # ralas (2-7 % de luz). 240 luces por mes a σ 3.5 m = dos CUERPOS de luz que se leen al instante.
+    GLOW_H = 240; NH = GLOW_H * 3
+    offs_h = rng.normal(0, 0.0078, (NH, 3)).astype(np.float32); offs_h[:, 2] *= 0.3
+    NT = nb + P * (1 + ESTELA) + 2 * NH
     posN = np.zeros((K, NT, 3), dtype=np.float32); vivoN = np.zeros((K, NT), dtype=bool)
     for k in range(K):
         n_luz = np.clip(np.nan_to_num(np.round(caja_k[k] * GLOW)), 0, GLOW * 3).astype(int)   # 1 mes guardado = GLOW luces
@@ -244,6 +251,11 @@ def main():
         posN[k, :nb] = base
         vivoN[k, :nb] = (np.tile(q, M) < np.repeat(n_luz, GLOW)) & np.repeat(vivo_k[k], GLOW)
         posN[k, nb:nb + P] = np.nan_to_num(pos[k], nan=0.0); vivoN[k, nb:nb + P] = ~np.isnan(pos[k, :, 0])
+        h0 = nb + P * (1 + ESTELA)
+        for hh in range(2):
+            nh = int(np.clip(np.nan_to_num(np.round(caja_k[k, hh] * GLOW_H)), 0, NH)) if vivo_k[k, hh] else 0
+            posN[k, h0 + hh * NH:h0 + (hh + 1) * NH, :2] = neg_xy[hh] + offs_h[:, :2]; posN[k, h0 + hh * NH:h0 + (hh + 1) * NH, 2] = offs_h[:, 2]
+            vivoN[k, h0 + hh * NH:h0 + (hh + 1) * NH] = np.arange(NH) < nh
         for e in range(1, ESTELA + 1):                          # la estela: dónde estaba el peso hace e cuadros
             kk = max(0, k - e); a0 = nb + P * e
             posN[k, a0:a0 + P] = np.nan_to_num(pos[kk], nan=0.0)
@@ -251,6 +263,7 @@ def main():
     col = np.zeros((NT, 3), dtype=np.uint8)
     col[:nb] = np.repeat(np.where(ricos[:, None], np.array([[205, 228, 255]]), np.array([[255, 196, 96]])), GLOW, 0)   # 1 mes = oro · 3 meses = hielo
     col[nb:nb + P] = [255, 200, 90]
+    h0 = nb + P * (1 + ESTELA); col[h0:h0 + NH] = [255, 206, 112]; col[h0 + NH:h0 + 2 * NH] = [218, 236, 255]   # Doña Lupe oro · Don Beto hielo
     for e in range(1, ESTELA + 1): col[nb + P * e:nb + P * (e + 1)] = [int(255 * (0.55 ** e)), int(170 * (0.55 ** e)), int(50 * (0.55 ** e))]
     posN[..., 0] -= HERO_C[0]; posN[..., 1] -= HERO_C[1]; lineas[..., 0] -= HERO_C[0]; lineas[..., 1] -= HERO_C[1]
     ext = max(abs(posN[..., :2]).max(), abs(lineas[..., :2]).max()) * 1.02
@@ -272,7 +285,9 @@ def main():
     for k in range(K): acc_t = 0.78 * acc_t + trafico[k]; suave[k] = acc_t
     ref = np.percentile(suave[suave > 0], 92) if (suave > 0).any() else 1.0
     flujo = np.clip(suave / ref, 0, 1) ** 0.7
-    brillo_k = np.clip(255 * (0.16 * jerarquia[None] + 0.84 * flujo * (0.45 + 0.55 * jerarquia[None])), 0, 255).astype(np.uint8)
+    # base 0.16 → 0.34: las calles tranquilas (residenciales) quedaban invisibles y la calle de la pareja no
+    # se leía de cerca (stills k2). El trazo de la ciudad siempre se ve tenue; el tráfico lo enciende.
+    brillo_k = np.clip(255 * (0.34 * jerarquia[None] + 0.66 * flujo * (0.45 + 0.55 * jerarquia[None])), 0, 255).astype(np.uint8)
     q16 = np.clip(np.round(lineas * 2000), -32767, 32767).astype('<i2')
     with open(OUT_EF, 'wb') as fp:
         fp.write(struct.pack('<3i', K, NL, LP)); fp.write(np.linspace(1, 0, K).astype('<f4').tobytes())

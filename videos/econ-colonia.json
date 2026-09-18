@@ -1,0 +1,97 @@
+{
+  "id": "econ-colonia",
+  "titulo": "La colonia de noche — capítulo 1 de La economía de tu negocio, en Chimalhuacán",
+  "nota": "LA CIUDAD DE NOCHE (ian, 2026-09-18: «WTF PERO QUÉ HERMOSO, A ESTO ME REFERÍA»; «en verdad me gusta el concepto, dale»). Calles REALES de Chimalhuacán (OpenStreetMap), 1200 negocios sobre las calles, el dinero corre por el camino más corto y cada calle brilla por lo que realmente pasa por ella. Doña Lupe (oro, 1 mes) y Don Beto (hielo, 3 meses) en la misma calle con la misma suerte (regla de los gemelos); la sequía entra por el sur en el mes 6; Lupe cierra en el mes 9. Colonia: de 1 mes sobreviven 41 %, de 3 meses 77 % (semilla 28). Ver docs/QUE-EXCITA-EL-OJO.md y precompute-ciudad.py.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=ecolonia",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (ecolonia): mismo bin que la sonda eciudad, reloj y tomas calibrados a segs.json de su voz."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 66,
+    "nota_dur": "voz real 62.41 s (segs.json v2: abre con la colonia) + 3.6 s de cola"
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.coloniaframes"
+  },
+  "audio": {
+    "dir": "dist-video/econ-colonia-narracion",
+    "narracion": "econ-colonia-narracion.mp3",
+    "musica": "wcolonia-music-ticks.wav",
+    "musicaFuente": "wpair-music.wav + tics del reloj (se calibran a la voz)",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 52,
+    "segs": "segs.json",
+    "ass": "econ-colonia.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana), VEL 1.0 (v3: el brazo A manda, ver canon §EL VEREDICTO A/B)",
+    "vel": 1.0
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-colonia-4k-master.mp4",
+    "h264": "econ-colonia-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "economia-ciudad.bin",
+      "economia-ciudad-efield.bin"
+    ],
+    "guion": "econ-colonia.txt",
+    "scripts": [
+      "precompute-ciudad.py",
+      "ticks-reloj.py",
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-colonia.mp4",
+    "capsulaRel": "economia/_code/econ-colonia-capsula.tar.gz",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Una noche en Chimalhuacán · La economía de tu negocio",
+      "descripcion": "Esta es una calle de verdad de Chimalhuacán, de noche. Cada luz es un negocio y cada chispa es dinero que va del que compra al que vende. 🌙\n\nDoña Lupe y Don Beto venden lo mismo y les toca la misma suerte. Ella guardó para un mes de gastos; él, para tres.\n\nLlega un mes malo, la gente deja de comprar y la sombra avanza cuadra por cuadra. Don Beto aguanta. La luz de Doña Lupe se apaga.\n\nEn esa colonia, de cada diez negocios con un mes guardado cerraron seis; de los que tenían tres, solo dos.\n\n💬 ¿Para cuántos meses te alcanza lo que tienes guardado? Dinos tu número aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#ahorro",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque es TU colonia de noche: el dueño de negocio se ve en la luz que se apaga"
+    },
+    "nota_primer_comentario": "ian, 2026-09-14: «en los comentarios debes explicar a gente no educada, con ejemplos simples, ideas que un niño y una abuela entienden». Instagram: lo publica PRIME justo después del reel (cola-publicar.py tick). YouTube: scripts/primer-comentario.py.",
+    "nota_pieza": "comando-catalogo.cjs mete TODO economia/reels/*.mp4 en UNA pieza «clase-reel» (líneas 338-342): el id «econ colchon» nunca existe en el catálogo y el check en vivo de paso_publicar fallaba aunque el video ya estaba en PRIME y ATLAS (2026-09-14). Ostrom tampoco pasó por aquí. Pendiente: un id por reel de economía.",
+    "nota_autorizacion": "SIN AUTORIZAR: no se sube nada hasta que ian lo diga con sus palabras."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/econ-colonia.txt"
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota_brazo": "v2: ~10 cortes en 60 s; VEL 1.10 (canon §EL RITMO: hablábamos al 53 % del español natural). Se MIDE tras la voz."
+  }
+}

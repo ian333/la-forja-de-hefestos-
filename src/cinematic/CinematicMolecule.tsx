@@ -196,6 +196,36 @@ const ECIUDAD_CAPAS: CapasSpec = {
   apertura: { base: 1, mods: ECIUDAD_PASOS.map(([t, a], i) => (
     { wins: [[t, ECIUDAD_DURATION]] as [number, number][], a, label: `mes ${(i / 4).toFixed(2)}` })) },
 };
+// ── LA COLONIA DE NOCHE (econ-colonia, 2026-09-18) — el capítulo 1 contado en Chimalhuacán.
+// Mismo bin que la sonda (economia-ciudad: semilla 28, pareja al centro de la escena). 97 cuadros =
+// 12 meses × 8. El reloj es LINEAL POR TRAMOS y corre siempre (si se detiene, las chispas se congelan).
+// v2 ABRE CON LA COLONIA (el cuadro más hermoso = el gancho). CALIBRADO A segs.json v2 (voz 62.41 s):
+// l01 «Esta es Chimalhuacán» 0.40 · l03 «En esta calle…» 9.68 · l06 «cada tic es un mes» 27.85 ·
+// l07 «un mes malo» 30.53 · l08 «la sombra… llega a su calle» 34.86 · l09 «Don Beto… aguanta» 39.63 ·
+// l10 «la luz de Doña Lupe se apaga» 43.50 · l11 la cifra 46.45 · l12 la pregunta 54.66 · l13 sello 58.53.
+// Doña Lupe muere al SALIR del cuadro 71 (mes 9): ese paso cae en 44.1 s, dentro de «…se apaga».
+const ECOLONIA_DURATION = 66;
+const ECOLONIA_RELOJ: [number, number][] = [   // (segundo, cuadro del bin)
+  [0, 0], [27.85, 44], [30.53, 48], [34.86, 56], [39.63, 64], [43.8, 71], [44.1, 72], [46.45, 74], [54.0, 96], [66, 96],
+];
+const ECOLONIA_PASOS: [number, number][] = (() => {
+  const out: [number, number][] = []; const dt = 0.2;
+  const f = (t: number) => { for (let i = 1; i < ECOLONIA_RELOJ.length; i++) { const [t0, f0] = ECOLONIA_RELOJ[i - 1], [t1, f1] = ECOLONIA_RELOJ[i]; if (t <= t1) return f0 + (f1 - f0) * (t - t0) / Math.max(t1 - t0, 1e-6); } return 96; };
+  for (let t = 0; t < ECOLONIA_DURATION - dt; t += dt) { const d = (f(t + dt) - f(t)) / 96; if (d > 1e-6) out.push([t, -d]); }
+  return out;
+})();
+const ECOLONIA_CAPAS: CapasSpec = {
+  campo:    { base: 2.1, mods: [] },
+  respiro:  { base: 0, mods: [] },
+  nubes:    { base: 1, mods: [] },
+  parpadeo: { base: 0.08, mods: [] },
+  spin:     { base: 1, mods: [] },
+  acc:      { base: 1.1, mods: [] },
+  enlaces:  { base: 0, mods: [] },
+  dipolo:   { base: 0, mods: [] },
+  ceros:    { base: 0, mods: [] },
+  apertura: { base: 1, mods: ECOLONIA_PASOS.map(([t, a]) => ({ wins: [[t, ECOLONIA_DURATION]] as [number, number][], a, label: `reloj ${t.toFixed(1)} s` })) },
+};
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
 // dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
@@ -1240,6 +1270,24 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: eyeLevelLock({ rMul: 0.28, azim: 1.5708, fov: 40 }), dur: 3.3, label: 'unas cuadras: el dinero corre por las calles' },
     { shot: eyeLevelLock({ rMul: 0.19, azim: 1.5708, fov: 40 }), dur: 3.3, label: 'una cuadra: los negocios y lo que les llega' },
   ],
+  ecolonia: [
+    // v2 — un corte por arranque de línea; la cámara apunta a la pareja (origen de la escena).
+    // Colonia: rMul 0.42 · fov 40 (banda medida 0.19-0.45). Pareja: rMul ≥ 0.06 con TELEOBJETIVO fov 13-15
+    // (acercar la cámara a 0.02-0.03 agranda cada sprite hasta diluirlo: cuadro NEGRO, stills k3).
+    { shot: eyeLevelLock({ rMul: 0.42, azim: 1.5708, fov: 40 }), dur: 3.67, label: 'l01 Esta es Chimalhuacán, de noche (EL GANCHO: la colonia entera)' },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.17, elev: 0.0, azim: 1.5708, fov: 40 }), dur: 6.01, label: 'l02 cada luz un negocio, cada chispa dinero: bajamos hacia su calle' },
+    { shot: eyeLevelLock({ rMul: 0.062, azim: 1.5708, fov: 15 }), dur: 6.79, label: 'l03 CORTE a su calle: la dorada es Doña Lupe, la blanca Don Beto' },
+    { shot: eyeLevelLock({ rMul: 0.060, azim: 1.5708, fov: 14 }), dur: 3.92, label: 'l04 venden lo mismo, la misma suerte' },
+    { shot: loomPush({ rFrom: 0.064, rTo: 0.056, elev: 0.0, azim: 1.5708, fov: 13 }), dur: 7.46, label: 'l05 un mes contra tres: su luz es más grande' },
+    { shot: pullOut({ azim0: 1.5708, span: 0.0, rFromMul: 0.060, rTdMul: 0.42, fovFrom: 14, fovTo: 40 }), dur: 2.68, label: 'l06 cada tic es un mes: se abre a la colonia' },
+    { shot: eyeLevelLock({ rMul: 0.42, azim: 1.5708, fov: 40 }), dur: 4.33, label: 'l07 un mes malo: la sequía entra por el sur' },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.075, elev: 0.0, azim: 1.5708, fov: 30 }), dur: 4.77, label: 'l08 la sombra avanza y llega a su calle' },
+    { shot: eyeLevelLock({ rMul: 0.060, azim: 1.5708, fov: 14 }), dur: 3.87, label: 'l09 CORTE a la pareja: Don Beto paga y aguanta' },
+    { shot: eyeLevelLock({ rMul: 0.058, azim: 1.5708, fov: 13 }), dur: 2.95, label: 'l10 la luz de Doña Lupe se apaga (44.1 s)' },
+    { shot: pullOut({ azim0: 1.5708, span: 0.0, rFromMul: 0.060, rTdMul: 0.42, fovFrom: 14, fovTo: 40 }), dur: 8.21, label: 'l11 la colonia al final del año: se apagaron las de oro' },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.070, elev: 0.0, azim: 1.5708, fov: 30 }), dur: 3.87, label: 'l12 ¿para cuántos meses te alcanza? (de regreso a su calle)' },
+    { shot: eyeLevelLock({ rMul: 0.062, azim: 1.5708, fov: 15 }), dur: 7.47, label: 'l13 el sello: Don Beto solo en su calle' },
+  ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
     // agentes y su posición sale de dos modelos publicados (Bouchaud-Mézard 2000 + Schelling
@@ -1744,6 +1792,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   wsillab: { name: 'Dos sillas vacías', formula: 'H₂O···H₂O', fact: 'Dos sillas y dos hidrógenos = cuatro lugares por molécula: el tetraedro del hielo.' },
   epresa: { name: 'La presa', formula: 'el dinero es agua', fact: 'El nivel no es adorno: es la caja real del negocio, mes con mes.' },
   eciudad: { name: 'La colonia', formula: 'Chimalhuacán, de noche', fact: 'Cada calle existe; cada luz es un negocio; cada chispa, un pago que viaja.' },
+  ecolonia: { name: 'Una noche en Chimalhuacán', formula: 'la economía de tu negocio', fact: 'Cada calle existe; cada luz es un negocio; cada chispa, un pago que viaja.' },
   eguarda: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Los dos venden lo mismo y les toca la misma suerte: cierra el que tenía guardado un mes, no el que vendía menos.' },
   ecolchon: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
@@ -3394,6 +3443,9 @@ const WATER_BINS: Record<string, WaterEntry> = {
   eciudad: { bin: 'economia-ciudad', ef: 'economia-ciudad-efield', ex: 11,
              capas: ECIUDAD_CAPAS, dur: ECIUDAD_DURATION, sizeMul: 1.35, binColors: true, sinRaleo: true,
              campoAncho: 8.0, campoCol: [0.34, 0.70, 1.75], campoFlujo: 1 },
+  ecolonia: { bin: 'economia-ciudad', ef: 'economia-ciudad-efield', ex: 11,
+              capas: ECOLONIA_CAPAS, dur: ECOLONIA_DURATION, sizeMul: 1.35, binColors: true, sinRaleo: true,
+              campoAncho: 8.0, campoCol: [0.34, 0.70, 1.75], campoFlujo: 1 },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
