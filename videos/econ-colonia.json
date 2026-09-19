@@ -85,7 +85,10 @@
     },
     "nota_primer_comentario": "ian, 2026-09-14: «en los comentarios debes explicar a gente no educada, con ejemplos simples, ideas que un niño y una abuela entienden». Instagram: lo publica PRIME justo después del reel (cola-publicar.py tick). YouTube: scripts/primer-comentario.py.",
     "nota_pieza": "comando-catalogo.cjs mete TODO economia/reels/*.mp4 en UNA pieza «clase-reel» (líneas 338-342): el id «econ colchon» nunca existe en el catálogo y el check en vivo de paso_publicar fallaba aunque el video ya estaba en PRIME y ATLAS (2026-09-14). Ostrom tampoco pasó por aquí. Pendiente: un id por reel de economía.",
-    "nota_autorizacion": "SIN AUTORIZAR: no se sube nada hasta que ian lo diga con sus palabras."
+    "autorizado": "2026-09-19 yt,ig — dicho por ian en sesión al ver el video final: \"me mama subelo por favor\"",
+    "programar": "2026-09-20T21:00:00-06:00",
+    "nota_programar": "Domingo 20, 21:00 CDMX: el sábado 19 a las 21:00 sale econ-guardadito (la misma historia con la imagen vieja); un día de separación para no publicar dos capítulos 1 el mismo día y medir la comparación fea/bonita con la misma historia.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nEsto es Chimalhuacán visto desde arriba, de noche. Las calles son las de verdad.\n\nCada lucecita es un negocio. Cada chispa que corre por las calles es dinero: alguien que le compra a otro.\n\nDoña Lupe y Don Beto venden tacos en la misma calle. Venden lo mismo y les va igual.\nLa única diferencia: Doña Lupe tiene guardado para pagar UN mes de renta, gas y sueldos (su luz dorada es chiquita). Don Beto tiene guardado para TRES meses (su luz blanca es más grande).\n\nLlega un mes malo: la gente deja de comprar y las calles se van apagando. A los dos les baja la venta igual.\nDon Beto paga con lo que guardó y aguanta. A Doña Lupe no le alcanza y cierra.\n\nEn toda la colonia pasó lo mismo: de cada 10 negocios con un mes guardado cerraron 6; de los que tenían tres, solo 2.\n\nEs como un paraguas: no evita la lluvia, pero decide quién llega seco.\n\n✏️ Haz la cuenta hoy: si mañana no vendieras nada, ¿cuántos meses podrías pagar tus gastos con lo que tienes guardado? Si es menos de uno, empieza con poquito cada semana, aunque sean 50 pesos.\n\nDéjanos tu número aquí abajo 👇"
   },
   "guion": {
     "archivo": "scripts/guiones/econ-colonia.txt"
