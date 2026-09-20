@@ -61,3 +61,7 @@
 - Temis compartido entre instancias de Claude → `ordenes/despues/2026-08-27-temis-compartido.md`.
 - EL BANCO — el lobby no encanta → `ordenes/despues/2026-09-02-el-banco-no-encanta.md` (bajó el 2026-09-10 para meter EL ENFRIAMIENTO SE VE, EL AGUA y LOS BOTADORES de la pieza).
 - LA FORJA SIN LUZ → `ordenes/despues/2026-09-04-la-forja-sin-luz.md` (ídem).
+
+## Hallazgos de LA ENTRADA (2026-09-19) — registrados; PRÓXIMO estaba 7/7, ian decide cuándo suben
+- EL REENCUADRE ESPERA AL HILO — en una pieza pesada (1557BGY) ~24 s de viewport vacío al arrancar MOLDE: la cámara sigue en el encuadre del Foco mientras el kernel talla → `ordenes/despues/2026-09-19-el-reencuadre-espera-al-hilo.md`.
+- TESSELLATE NO REMALLA — `BRepTools.Clean` no surte efecto: pedir malla más gruesa (u otro ángulo) devuelve la vieja → `ordenes/despues/2026-09-19-tessellate-no-remalla.md`.

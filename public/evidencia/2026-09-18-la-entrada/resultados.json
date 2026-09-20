@@ -1,0 +1,580 @@
+{
+ "orden": "2026-09-18-la-entrada",
+ "medido": "2026-09-19 · iangpu · node + kernel OCC · los 20 STEP reales de test-parts/inyeccion-reales (arnés verif-pieza.cjs, ENTRADA=0 vs ENTRADA=1)",
+ "resumen": {
+  "piezas": 20,
+  "problemasMecanicos": {
+   "antes": 92,
+   "despues": 37
+  },
+  "porClase": [
+   {
+    "clase": "agarre colocó menos de 8 pines",
+    "antes": 16,
+    "despues": 2
+   },
+   {
+    "clase": "orientación ambigua o boca abajo",
+    "antes": 16,
+    "despues": 2
+   },
+   {
+    "clase": "el agua invade la pieza (kernel)",
+    "antes": 14,
+    "despues": 1
+   },
+   {
+    "clase": "agua fuera de 2D..5D",
+    "antes": 14,
+    "despues": 9
+   },
+   {
+    "clase": "pared de la lente vs 2V/A >50 %",
+    "antes": 13,
+    "despues": 4
+   },
+   {
+    "clase": "etapa reventada",
+    "antes": 10,
+    "despues": 0
+   },
+   {
+    "clase": "pin más grueso que la pared (R34)",
+    "antes": 4,
+    "despues": 6
+   },
+   {
+    "clase": "juez del agua en rojo",
+    "antes": 3,
+    "despues": 3
+   },
+   {
+    "clase": "juez de pines en rojo",
+    "antes": 2,
+    "despues": 10
+   }
+  ]
+ },
+ "nota": "El juez de pines en rojo SUBE porque ahora sí hay pines que juzgar: son las causas 2 y 3 del superticket LAS 20 PIEZAS (agua del lado B vs botadores), no una regresión de la entrada.",
+ "filas": [
+  {
+   "pieza": "1551F",
+   "entrada": "5sól Z+",
+   "antes": {
+    "tam": "50x35x124",
+    "cc": 11.89,
+    "boca": "AMBIGUA (tapa",
+    "base": "446×396",
+    "pines": "0/8 ⌀1.588",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "50x35x12",
+    "cc": 6.63,
+    "boca": "boca arriba",
+    "base": "296×196",
+    "pines": "8/8 ⌀1.588",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1552C3BK",
+   "entrada": "8sól Y+ ↻",
+   "antes": {
+    "tam": "51x22x111",
+    "cc": 40.1,
+    "boca": "AMBIGUA (tapa",
+    "base": "396×346",
+    "pines": "0/8 ⌀1.588",
+    "invaden": 1,
+    "lam": 13,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "50x110x14",
+    "cc": 19.26,
+    "boca": "boca arriba",
+    "base": "156×246",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1553B",
+   "entrada": "10sól Z- ↻",
+   "antes": {
+    "tam": "79x120x285",
+    "cc": 74.92,
+    "boca": "AMBIGUA (tapa",
+    "base": "996×996",
+    "pines": "0/8 ⌀3.175",
+    "invaden": "-",
+    "lam": 17,
+    "rotas": "aceroE3"
+   },
+   "despues": {
+    "tam": "76x120x12",
+    "cc": 25.16,
+    "boca": "boca arriba",
+    "base": "196×246",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1553D",
+   "entrada": "12sól Z- ↻",
+   "antes": {
+    "tam": "89x150x346",
+    "cc": 104.55,
+    "boca": "AMBIGUA (tapa",
+    "base": "142×240",
+    "pines": "0/8 ⌀3.175",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "86x150x14",
+    "cc": 36.48,
+    "boca": "boca arriba",
+    "base": "196×296",
+    "pines": "8/8 ⌀3.175",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1554B",
+   "entrada": "11sól Y+ ↻",
+   "antes": {
+    "tam": "65x41x65",
+    "cc": 61.72,
+    "boca": "AMBIGUA (tapa",
+    "base": "296×246",
+    "pines": "0/8 ⌀1.588",
+    "invaden": 1,
+    "lam": 15,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "65x65x28",
+    "cc": 32.93,
+    "boca": "boca arriba",
+    "base": "396×296",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1557BGY",
+   "entrada": "19sól Y- ↻",
+   "antes": {
+    "tam": "82x270x110",
+    "cc": 97.12,
+    "boca": "AMBIGUA (tapa",
+    "base": "546×696",
+    "pines": "0/8 ⌀4.763",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "80x80x31",
+    "cc": 50.33,
+    "boca": "boca arriba",
+    "base": "246×246",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1591BSBK",
+   "entrada": "6sól Z+",
+   "antes": {
+    "tam": "62x112x262",
+    "cc": 54.58,
+    "boca": "AMBIGUA (tapa",
+    "base": "796×996",
+    "pines": "0/8 ⌀2.381",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "62x112x27",
+    "cc": 37.89,
+    "boca": "boca arriba",
+    "base": "196×246",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1591XXCBK",
+   "entrada": "10sól Y+ ↻",
+   "antes": {
+    "tam": "121x40x67",
+    "cc": 63.32,
+    "boca": "AMBIGUA (tapa",
+    "base": "346×296",
+    "pines": "0/8 ⌀2.381",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "121x67x37",
+    "cc": 43.42,
+    "boca": "boca arriba",
+    "base": "296×246",
+    "pines": "8/8 ⌀3.175",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1593D",
+   "entrada": "9sól Z- ↻",
+   "antes": {
+    "tam": "36x114x241",
+    "cc": 43.24,
+    "boca": "AMBIGUA (tapa",
+    "base": "796×796",
+    "pines": "0/8 ⌀2.381",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "36x114x13",
+    "cc": 17.47,
+    "boca": "boca arriba",
+    "base": "156×246",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1593K",
+   "entrada": "9sól Z- ↻",
+   "antes": {
+    "tam": "66x67x191",
+    "cc": 47.15,
+    "boca": "AMBIGUA (tapa",
+    "base": "696×696",
+    "pines": "0/8 ⌀2.381",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "66x67x14",
+    "cc": 15.87,
+    "boca": "boca arriba",
+    "base": "196×196",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1593L",
+   "entrada": "11sól Z?",
+   "antes": {
+    "tam": "66x93x229",
+    "cc": 61.74,
+    "boca": "AMBIGUA (tapa",
+    "base": "796×796",
+    "pines": "0/8 ⌀2.381",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "66x92x14",
+    "cc": 22.18,
+    "boca": "AMBIGUA (tapa",
+    "base": "196×196",
+    "pines": "0/8 ⌀2.381",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1594C Box",
+   "entrada": "1sól Z+",
+   "antes": {
+    "tam": "66x107x33",
+    "cc": 55.82,
+    "boca": "boca arriba",
+    "base": "246×246",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "66x106x33",
+    "cc": 55.82,
+    "boca": "boca arriba",
+    "base": "246×246",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1594C Lid",
+   "entrada": "1sól Z+",
+   "antes": {
+    "tam": "106x66x14",
+    "cc": 33.29,
+    "boca": "boca arriba",
+    "base": "246×196",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "106x66x14",
+    "cc": 33.29,
+    "boca": "boca arriba",
+    "base": "246×196",
+    "pines": "8/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1598B Bottom",
+   "entrada": "1sól Z+",
+   "antes": {
+    "tam": "134x136x27",
+    "cc": 80.26,
+    "boca": "boca arriba",
+    "base": "296×296",
+    "pines": "8/8 ⌀4.763",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "134x136x27",
+    "cc": 80.26,
+    "boca": "boca arriba",
+    "base": "296×296",
+    "pines": "8/8 ⌀4.763",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1598B End Plate",
+   "entrada": "1sól Z?",
+   "antes": {
+    "tam": "128x45x2",
+    "cc": 9.5,
+    "boca": "AMBIGUA (tapa",
+    "base": "246×156",
+    "pines": "0/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "128x45x2",
+    "cc": 9.5,
+    "boca": "AMBIGUA (tapa",
+    "base": "246×156",
+    "pines": "0/8 ⌀2.381",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1598B Top",
+   "entrada": "1sól Z+",
+   "antes": {
+    "tam": "134x136x27",
+    "cc": 79.89,
+    "boca": "boca arriba",
+    "base": "296×296",
+    "pines": "8/8 ⌀4.763",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "134x136x27",
+    "cc": 79.89,
+    "boca": "boca arriba",
+    "base": "296×296",
+    "pines": "8/8 ⌀4.763",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1599BBK",
+   "entrada": "10sól Z+",
+   "antes": {
+    "tam": "130x65x292",
+    "cc": 67.17,
+    "boca": "AMBIGUA (tapa",
+    "base": "996×996",
+    "pines": "0/8 ⌀3.175",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": "verificacionE3"
+   },
+   "despues": {
+    "tam": "130x65x18",
+    "cc": 36.98,
+    "boca": "boca arriba",
+    "base": "246×196",
+    "pines": "8/8 ⌀3.175",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "1599HBK",
+   "entrada": "10sól Z+",
+   "antes": {
+    "tam": "220x110x493",
+    "cc": 204.64,
+    "boca": "AMBIGUA (tapa",
+    "base": "352×176",
+    "pines": "0/8 ⌀4.763",
+    "invaden": 1,
+    "lam": 0,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "220x110x36",
+    "cc": 118.71,
+    "boca": "boca arriba",
+    "base": "396×296",
+    "pines": "8/8 ⌀4.763",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "PJ12106",
+   "entrada": "36sól Y+ ↻",
+   "antes": {
+    "tam": "301x178x351",
+    "cc": 1772.91,
+    "boca": "AMBIGUA (tapa",
+    "base": "482×285",
+    "pines": "0/8 ⌀6.35",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "289x337x156",
+    "cc": 1034.87,
+    "boca": "boca arriba",
+    "base": "462×539",
+    "pines": "8/8 ⌀6.35",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  },
+  {
+   "pieza": "RL6215BK",
+   "entrada": "6sól Z- ↻",
+   "antes": {
+    "tam": "125x80x35",
+    "cc": 77.26,
+    "boca": "AMBIGUA (tapa",
+    "base": "296×246",
+    "pines": "0/8 ⌀3.175",
+    "invaden": 1,
+    "lam": 17,
+    "rotas": ""
+   },
+   "despues": {
+    "tam": "125x80x30",
+    "cc": 47.87,
+    "boca": "boca arriba",
+    "base": "296×246",
+    "pines": "8/8 ⌀3.175",
+    "invaden": 0,
+    "lam": 17,
+    "rotas": ""
+   }
+  }
+ ],
+ "problemasDespues": [
+  "1551F: juez del AGUA en ROJO — anillo A ↔ techo de la pieza (base cerrada) 2.36<2.38",
+  "1551F: juez de PINES en ROJO (peor claro -1.17)",
+  "1551F: agua fuera de 2D..5D — lado A: H 19.04 pedía z=176.54 pero el TECHO del inserto está en 167 ⇒ z=162.24 (H 4.74 = 1.00D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bolsillo del insert",
+  "1553B: juez del AGUA en ROJO — anillo A ↔ techo de la pieza (base cerrada) 2.36<2.38",
+  "1553B: juez de PINES en ROJO (peor claro 1.76)",
+  "1553B: agua fuera de 2D..5D — lado A: H 19.04 pedía z=176.54 pero el TECHO del inserto está en 167 ⇒ z=162.24 (H 4.74 = 1.00D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bolsillo del insert",
+  "1553D: juez de PINES en ROJO (peor claro -1.17)",
+  "1554B: agua fuera de 2D..5D — lado A: H 19.04 pedía z=192.04 pero el TECHO del inserto está en 186 ⇒ z=181.24 (H 8.24 = 1.73D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bolsillo del insert",
+  "1554B: pared de la lente 4.35 vs 2V/A 2.64 (difieren >50 %)",
+  "1557BGY: juez de PINES en ROJO (peor claro -1.53)",
+  "1591BSBK: juez de PINES en ROJO (peor claro -1.57)",
+  "1591BSBK: pared de la lente 3.2 vs 2V/A 2.09 (difieren >50 %)",
+  "1591XXCBK: pin ⌀3.175 > pared 1.74 (R34)",
+  "1591XXCBK: agua fuera de 2D..5D — lado B: H 19.04 pedía z=140.96 pero el PISO del bolsillo del inserto B está en 130 ⇒ z=125.24 (H 34.76 = 7.30D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bols",
+  "1593D: pin ⌀2.381 > pared 2.26 (R34)",
+  "1593L: orientación AMBIGUA (8.96/18.08)",
+  "1593L: el AGUA INVADE la pieza (kernel): B-baffle 401.51 mm³",
+  "1593L: agarre colocó 0 de 8 pines — pieza maciza/plana (toda columna abarca la altura): el agarre es uniforme — la rejilla no es antipatrón aquí",
+  "1594C Box: agua fuera de 2D..5D — lado B: H 19.04 pedía z=140.96 pero el PISO del bolsillo del inserto B está en 130 ⇒ z=125.24 (H 34.76 = 7.30D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bols",
+  "1598B Bottom: juez de PINES en ROJO (peor claro -2.78)",
+  "1598B Bottom: pin ⌀4.763 > pared 4.11 (R34)",
+  "1598B End Plate: orientación AMBIGUA (100/100)",
+  "1598B End Plate: agarre colocó 0 de 8 pines — sin columnas de PARED (pieza plana sin costillas): el agarre es uniforme y la rejilla no es antipatrón aquí",
+  "1598B End Plate: pin ⌀2.381 > pared 1.6 (R34)",
+  "1598B Top: juez de PINES en ROJO (peor claro -2.78)",
+  "1598B Top: pared de la lente 4.96 vs 2V/A 2.89 (difieren >50 %)",
+  "1599BBK: juez de PINES en ROJO (peor claro -2.05)",
+  "1599HBK: juez de PINES en ROJO (peor claro 0.4)",
+  "1599HBK: pin ⌀4.763 > pared 2.46 (R34)",
+  "1599HBK: agua fuera de 2D..5D — lado B: H 19.04 pedía z=160.96 pero el PISO del bolsillo del inserto B está en 130 ⇒ z=125.24 (H 54.76 = 11.50D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bol",
+  "PJ12106: juez del AGUA en ROJO — anillo A ↔ techo de la pieza (base cerrada) -112.22<2.38",
+  "PJ12106: juez de PINES en ROJO (peor claro -4.69)",
+  "PJ12106: agua fuera de 2D..5D — lado A: H 19.04 pedía z=378.12 pero el TECHO del inserto está en 254 ⇒ z=249.24 (H -109.84 = -23.07D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bolsillo del i",
+  "PJ12106: agua fuera de 2D..5D — lado B: H 19.04 pedía z=184.96 pero el PISO del bolsillo del inserto B está en 154 ⇒ z=149.24 (H 54.76 = 11.50D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bol",
+  "PJ12106: pared de la lente 11.1 vs 2V/A 4.08 (difieren >50 %)",
+  "RL6215BK: pin ⌀3.175 > pared 2.45 (R34)",
+  "RL6215BK: agua fuera de 2D..5D — lado B: H 19.04 pedía z=140.96 pero el PISO del bolsillo del inserto B está en 130 ⇒ z=125.24 (H 34.76 = 7.30D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bols"
+ ]
+}

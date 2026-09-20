@@ -496,7 +496,12 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
     carved?: boolean; vols: Record<string, number>; stage: number; report: string[];
   }>({ vols: {}, stage: 0, report: [] });
   const cursoPart = useCallback((shape: OCC.Shape, role: string, name: string, color: string, opacity = 1, deflection = 0.8): MoldPart => {
-    const m = OCC.tessellate(oc!, shape, deflection, deflection);
+    // `deflection` son MILÍMETROS (la flecha de la cuerda). Se pasaba TAMBIÉN como deflexión ANGULAR (radianes): la
+    // cavidad a 0.03 se mallaba a 0.03 rad = 1.7° por segmento en cada filete. En el cubo (caras planas) no costaba;
+    // en la caja de 1557BGY (514 caras, medido 2026-09-19 con acero fresco): 6,243,430 triángulos · 229 s de hilo
+    // muerto · 2 GB de heap · la pestaña tronaba. Con 0.2 rad: 73,578 triángulos · 2.1 s, y la flecha de 0.03 mm
+    // sigue mandando en todo radio > 6 mm. El piso solo toca a los que pedían < 0.2; los demás quedan como estaban.
+    const m = OCC.tessellate(oc!, shape, deflection, Math.max(deflection, 0.2));
     const positions = m.positions instanceof Float32Array ? m.positions : new Float32Array(m.positions);
     const indices = m.indices instanceof Uint32Array ? m.indices : new Uint32Array(m.indices);
     const normals = new Float32Array(positions.length);

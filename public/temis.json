@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-18 21:15",
+ "generado": "2026-09-20 00:38",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -11,11 +11,11 @@
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 92,
+  "cerrado": 93,
   "probado": 0,
-  "porProbar": 56,
+  "porProbar": 57,
   "sinDesplegar": 10,
-  "despues": 24
+  "despues": 26
  },
  "deploy": {
   "commit": "36e8e93",
@@ -1427,6 +1427,98 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-09-18-la-entrada.md",
+    "slug": "2026-09-18-la-entrada",
+    "titulo": "LA ENTRADA — el STEP que suelta el cliente llega al molde como UNA pieza, con su tamaño real y parada en su eje de apertura",
+    "fecha": "2026-09-18",
+    "estado": "cerrado",
+    "prioridad": 2,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[x] golpe 1",
+      "titulo": "la caja envolvente real (AddOptimal) en arbolBBoxExacta; cubo y carcasa bit-iguales.",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] golpe 2",
+      "titulo": "prepararPiezaDelSTEP(K, oc, shape) en draw-axis.ts: sólidos → el mayor → eje por sección (o",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] juez: el arnés de las 20 piezas (el mismo del superticket) — orientación, pines por agarre, baffle vs pieza,",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] golpe 3 (enmienda 2)",
+      "titulo": "cursoPart: la deflexión lineal (mm) ya no se pasa también como angular (rad).",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] paseo: soltar un ENSAMBLE (1557BGY) y que se vea el aviso y la caja parada; video en las dos PCs.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 5
+    },
+    "objetivo": "ian (2026-09-18, tras LAS 20 PIEZAS): «corrige 1». La causa raíz 1 de los revisores: 15 de los 20 STEP reales son ENSAMBLES y el estudio los moldea como un ladrillo. Al final de esta orden, al soltar un STEP: (1) si trae varios sólidos, el…",
+    "toca": 8,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "Arnés de las 20: las cajas quedan «boca arriba», el agarre coloca pines donde antes daba 0/8, el baffle deja de",
+     "ciclo-dado-test 266/266 · camino de la carcasa 8/8 · orden-gate VERDE.",
+     "Paseo soltando 1557BGY: el aviso flotante y la caja parada; video en ambas PCs."
+    ],
+    "cierre": "Sueltas un ENSAMBLE y sales con el molde de la PIEZA, armado y trabajando, en la app. Paseo del video 34 soltando 1557BGY.stp (19 sólidos: caja, tapa, empaque, 4 insertos, 8 tornillos, 2 patas): el a…",
+    "cierreCompleto": "Sueltas un ENSAMBLE y sales con el molde de la PIEZA, armado y trabajando, en la app. Paseo del video 34 soltando 1557BGY.stp (19 sólidos: caja, tapa, empaque, 4 insertos, 8 tornillos, 2 patas): el aviso flotante dice «Tu archivo es un ENSAMBLE de 19 sólidos. Moldeo la pieza mayor: 50.33 cc, 80 × 80 × 31 mm… La paré en su eje de apertura — abría en −Y»; el Foco mide la CAJA (cotas 80.0 / 80.0 / 31.2, 514 caras, 50.33 cc); primera placa del molde a los 4.7 s; agua ✓ y botadores ✓ a los 152 s del clic; pin-punta-0 sube 39.2 mm (= H + 8 = 31.2 + 8, la carrera declarada). Telemetría: E2 5.5 · E3 44.7 (acero 17.0 · cavidad teselada 2.9 s, eran 217.2) · E4 2.3 · E5 87.0 · E6 3.3 · E7 4.8 s. Heap 594 MB (eran 2.1 GB y la pestaña tronaba). Lo que se entregó (tres golpes, tres causas apiladas + una que destapó el paseo) - Golpe 1 · la caja envolvente real. arbolBBoxExacta usa AddOptimal: la de polos BSpline inflaba 1557BGY a 81.6×234.7×81.6 (mide 80×31.2×80). De ahí venían las bases de 996×996. En la carcasa el cambio es ≤ 0.04 mm (la de polos sumaba la tolerancia): es una corrección HACIA el valor exacto, no bit-igual, y se declara. - Golpe 2 · prepararPiezaDelSTEP (draw-axis.ts): sólidos con el ENUM TopAbs_SOLID → el de mayor volumen → eje por asimetría de la SECCIÓN LLENA (la boca es anillo, la base es llena; pickDrawAxis si es débil; el espesor si es placa) → giro propio alrededor del centro para dejar la boca en +Z. Se mide UNA vez por archivo (caché por texto del STEP; aplicarEntrada en cada reconstrucción). La malla del Foco (mallaDesdeArchivo, stl.ts) pasa por la MISMA entr…",
+    "evidenciaSS": [
+     "evidencia/2026-09-18-la-entrada/ensamble-soltado.png",
+     "evidencia/2026-09-18-la-entrada/paseo-contactos.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
    {
     "file": "ordenes/2026-09-10-los-botadores-de-tu-pieza.md",
     "slug": "2026-09-10-los-botadores-de-tu-pieza",
@@ -6145,6 +6237,14 @@
   {
    "grupo": "Sacados de PRÓXIMO el 2026-09-09 para meter el camino (ian: «sí prefiero que el molde se vaya armando»)",
    "texto": "LA FORJA SIN LUZ → `ordenes/despues/2026-09-04-la-forja-sin-luz.md` (ídem)."
+  },
+  {
+   "grupo": "Hallazgos de LA ENTRADA (2026-09-19) — registrados; PRÓXIMO estaba 7/7, ian decide cuándo suben",
+   "texto": "EL REENCUADRE ESPERA AL HILO — en una pieza pesada (1557BGY) ~24 s de viewport vacío al arrancar MOLDE: la cámara sigue en el encuadre del Foco mientras el kernel talla → `ordenes/despues/2026-09-19-el-reencuadre-espera-al-hilo.md`."
+  },
+  {
+   "grupo": "Hallazgos de LA ENTRADA (2026-09-19) — registrados; PRÓXIMO estaba 7/7, ian decide cuándo suben",
+   "texto": "TESSELLATE NO REMALLA — `BRepTools.Clean` no surte efecto: pedir malla más gruesa (u otro ángulo) devuelve la vieja → `ordenes/despues/2026-09-19-tessellate-no-remalla.md`."
   }
  ],
  "cine": {
@@ -7085,7 +7185,7 @@
      "n": 6,
      "gesto": "EL MOLDE",
      "seVe": "el molde se va armando estación por estación sobre ESA pieza (placas, colada, agua, expulsores) y luego TRABAJA (llenar, abrir, expulsar), siempre centrado, nunca negro, primera placa en ≤10 s",
-     "estado": "ok",
+     "estado": "parcial",
      "ticket": "2026-09-10-los-botadores-de-tu-pieza"
     },
     {
@@ -7103,12 +7203,12 @@
      "ticket": "2026-08-28-t5-expediente-que-se-ve"
     }
    ],
-   "verdes": 8,
+   "verdes": 7,
    "total": 8,
    "rompeEn": 0,
-   "parciales": 0,
+   "parciales": 1,
    "medido": {
-    "fecha": "2026-09-18 18:59",
+    "fecha": "2026-09-20 00:36",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "Ian"
