@@ -213,4 +213,7 @@ reusada miente.
 (1600×1000, 407 s) + `-1080-h264` + `-720-chat`. Evidencia: `ensamble-soltado.png` (el aviso | el molde abierto
 expulsando la caja), `paseo-contactos.png` (51 cuadros, uno cada 8 s), `resultados.json`.
 
-**Producción** · (se llena tras el deploy)
+**Producción** · verificado 2026-09-20 00:45 UTC en university.gaiaprime.com.mx: `temis-deploy.json` servido = `30ce513` (dirty 0); el
+bundle servido `assets/forja-brep-CTdF1Iaw.js` trae `aviso-entrada`, «ENSAMBLE de» y el piso angular (`Math.max(Ee,.2)`); la
+evidencia responde 200 (`resultados.json`, `ensamble-soltado.png`, `paseo-contactos.png`); el tablero servido dice
+«LA ENTRADA · cerrado · en-vivo», 0 sin desplegar, 0 violaciones.

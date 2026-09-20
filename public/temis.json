@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-20 00:38",
+ "generado": "2026-09-20 00:45",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -14,7 +14,7 @@
   "cerrado": 93,
   "probado": 0,
   "porProbar": 57,
-  "sinDesplegar": 10,
+  "sinDesplegar": 11,
   "despues": 26
  },
  "deploy": {
@@ -1516,8 +1516,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "30ce513",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-09-10-los-botadores-de-tu-pieza.md",
