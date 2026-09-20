@@ -121,6 +121,7 @@ import {
   type SweepProfile,
   type SketchPlane3D,
 } from './occt';
+import { prepararPiezaDelSTEP, aplicarEntrada, type PiezaDelSTEP } from '../mold/draw-axis';
 import { makeThreadedRod, threadDims, threadDesignation } from './thread';
 import { makeRack, rackArea } from './rack';
 import { makeDinBolt, dinBoltInfo } from './din-bolt';
@@ -3881,6 +3882,24 @@ export default function ForgeBRepStudio() {
   // sólido importado (step.parts u otra fuente open). El texto STEP se guarda en
   // el DocState → se persiste en la biblioteca como cualquier pieza. ──
   const [importedStep, setImportedStep] = useState<string | null>(null);
+  // LA ENTRADA (orden 2026-09-18-la-entrada): 15 de 20 STEP reales son ENSAMBLES y el molde se hacía sobre el ladrillo
+  // fundido, acostado o de cabeza. La DECISIÓN (qué sólido, qué giro) se mide UNA vez por archivo; en cada
+  // reconstrucción se reaplica a la importación fresca (como siempre se reimportó). Una pieza ya parada pasa intacta.
+  const entradaRef = useRef<{ src: string; d: PiezaDelSTEP } | null>(null);
+  const [entrada, setEntrada] = useState<PiezaDelSTEP | null>(null);
+  const [entradaVista, setEntradaVista] = useState(false);
+  const entradaDelSTEP = useCallback((raw: Shape, src: string): Shape => {
+    if (!oc) return raw;
+    const c = entradaRef.current;
+    if (c && c.src === src) return aplicarEntrada(oc, raw, c.d);
+    let d: PiezaDelSTEP;
+    try { d = prepararPiezaDelSTEP(oc, raw); }
+    catch (e) { console.warn('ENTRADA_ERR', e); return raw; }          // sin decisión: el STEP como venía (lo de siempre)
+    entradaRef.current = { src, d };
+    setEntrada(d.solidos > 1 || d.giro ? d : null);                    // solo se AVISA lo que cambió algo
+    setEntradaVista(false);
+    return d.shape;
+  }, [oc]);
   // ── GUARDAR / CARGAR (biblioteca de piezas) ──
   const [docName, setDocName] = useState('Pieza 1');
   // EL MOLDE completo (estado+armado+alarma+curso+flanera) vive en useMoldStudio
@@ -4212,7 +4231,7 @@ export default function ForgeBRepStudio() {
           let mainShape: Shape | null = null;
           try {
             mainShape = importedStep
-              ? importSTEP(oc, importedStep)
+              ? entradaDelSTEP(importSTEP(oc, importedStep), importedStep)
               : buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
           } catch (e) { if (components.length === 0) throw e; } // sin componentes, propaga
           // Componentes: por defecto se JUNTAN (compound), pero cada uno puede
@@ -4348,7 +4367,7 @@ export default function ForgeBRepStudio() {
         setBuilding(false);
       }
     });
-  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components, importedStep]);
+  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components, importedStep, entradaDelSTEP]);
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
 
@@ -5123,9 +5142,16 @@ export default function ForgeBRepStudio() {
   const abrirArchivo = useCallback(async (f: File) => {
     try {
       const buf = await f.arrayBuffer();
-      const { mesh, notas } = await mallaDesdeArchivo(f.name, buf);
+      const { mesh, notas, entrada: ent } = await mallaDesdeArchivo(f.name, buf);
       const nombre = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 28);
       setErrPieza('');
+      // LA ENTRADA: la decisión (qué sólido, qué giro) ya la midió el cargador sobre ESTE archivo — la reconstrucción
+      // del B-Rep la REUSA (misma llave: el texto del STEP) en vez de medir otra vez. El Foco y el molde ven LA MISMA pieza.
+      if (ent && /\.(stp|step)$/i.test(f.name)) {
+        entradaRef.current = { src: new TextDecoder().decode(buf), d: ent };
+        setEntrada(ent.solidos > 1 || ent.giro ? ent : null);
+        setEntradaVista(false);
+      }
       setPiezaMalla({ visor: mallaParaElVisor(mesh), mesh, nombre, notas });
       // EL DROP CONSERVA EL SÓLIDO (golpe 3 del camino, 2026-09-07). `mallaDesdeArchivo` abre el
       // STEP con el kernel, lo tesela y TIRABA el sólido: la pieza quedaba «malla del operador,
@@ -7455,6 +7481,31 @@ export default function ForgeBRepStudio() {
             sobre la pieza. `FichaDriver`, adentro del Canvas, le escribe el transform. */}
         {focoOn && lenteActiva?.peor && fichaAbierta === lenteActiva.id && (
           <FichaEnElMundo lente={lenteActiva} refEl={fichaRef} onCerrar={() => setFichaAbierta(null)} atenuada={laminaOn || particionOn || moldeOn} />
+        )}
+        {/* LA ENTRADA: el archivo que soltaste NO era una pieza parada — se DICE qué se moldea y cómo se paró, sobre el
+            lienzo (no en la tira ni en un panel). Se va con «entendido»; vuelve al soltar otro archivo. */}
+        {importedStep && entrada && !entradaVista && (
+          <div data-testid="aviso-entrada" data-solidos={entrada.solidos} data-eje={`${entrada.eje}${entrada.boca}`} data-giro={entrada.giro ?? ''}
+            style={{ position: 'absolute', left: '50%', top: '9%', transform: 'translateX(-50%)', zIndex: 7, maxWidth: 'min(640px, 86%)',
+              padding: '10px 14px', borderLeft: '3px solid #f4c84a', background: 'rgba(10,16,26,0.9)', font: '500 12.5px system-ui,sans-serif', color: '#dfe9f5', lineHeight: 1.45 }}>
+            {entrada.solidos > 1 && (
+              <div>
+                <b style={{ color: '#ffe08a' }}>Tu archivo es un ENSAMBLE de {entrada.solidos} sólidos.</b>{' '}
+                Moldeo la pieza mayor: {entrada.elegido.volCc} cc, {entrada.elegido.tamMm.map((v) => v.toFixed(0)).join(' × ')} mm.
+                <span style={{ color: '#9fb0c4' }}> Los otros {entrada.solidos - 1} quedan fuera ({entrada.volsCc.slice(1, 6).join(' · ')}{entrada.volsCc.length > 6 ? ' …' : ''} cc: tapa, tornillos, insertos…).</span>
+              </div>
+            )}
+            {entrada.giro && (
+              <div style={{ marginTop: entrada.solidos > 1 ? 4 : 0 }}>
+                <b style={{ color: '#7ee2a8' }}>La paré en su eje de apertura</b> — {entrada.giro}.
+                <span style={{ color: '#9fb0c4' }}> El molde abre en Z con la boca arriba (sección llena {entrada.seccionPct[entrada.eje].join(' / ')} % en los extremos de {entrada.eje}).</span>
+              </div>
+            )}
+            <button data-testid="aviso-entrada-ok" onClick={() => setEntradaVista(true)}
+              style={{ marginTop: 6, font: '600 11px system-ui,sans-serif', color: '#dfe9f5', background: 'rgba(40,52,70,0.9)', border: '1px solid rgba(160,190,220,0.35)', borderRadius: 3, padding: '3px 10px', cursor: 'pointer' }}>
+              entendido
+            </button>
+          </div>
         )}
         {/* la espera del campo SE DICE sobre la pieza (2 s con la rejilla a la pared): antes solo la tira de abajo lo decía */}
         {focoOn && lentesBusy && lenteId !== 'medidas' && (

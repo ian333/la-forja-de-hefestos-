@@ -1525,7 +1525,11 @@ export function piezaDesdeArbol(oc: any, shape: any, m: ArbolPiezaMeta): PiezaSp
 }
 function arbolBBoxExacta(oc: any, shape: any): { min: [number, number, number]; max: [number, number, number] } {
   const box = new oc.Bnd_Box_1();
-  oc.BRepBndLib.Add(shape, box, false);                            // false = geometría exacta, no la malla
+  // LA ENTRADA (2026-09-18): `Add(shape, box, false)` NO es exacta — con superficies BSpline mide con sus POLOS
+  // de control: la caja de 1557BGY salía 81.6×234.7×81.6 (mide 80×31.2×80) y el ensamble 1553B 284.6 de alto
+  // (mide 24). De ahí las bases de 996×996 para cajas de 24 mm. `AddOptimal` mide la superficie real (coincide con
+  // la malla en los 20 STEP Hammond) y sigue sin triangular, así que el ⌀80 del cilindro sigue siendo 80, no 79.77.
+  oc.BRepBndLib.AddOptimal(shape, box, false, false);
   const mn = box.CornerMin(), mx = box.CornerMax();
   const out = { min: [mn.X(), mn.Y(), mn.Z()] as [number, number, number], max: [mx.X(), mx.Y(), mx.Z()] as [number, number, number] };
   box.delete?.(); mn.delete?.(); mx.delete?.();

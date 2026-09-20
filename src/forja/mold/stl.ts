@@ -53,6 +53,8 @@ export interface MallaCargada {
   solidos: number;
   /** volumen exacto del kernel (solo STEP; la malla no tiene "exacto" contra qué compararse) */
   volKernelMm3?: number;
+  /** LA ENTRADA (orden 2026-09-18-la-entrada): qué sólido se tomó y cómo se paró — el estudio la REUSA al reconstruir */
+  entrada?: import('./draw-axis').PiezaDelSTEP;
   /** supuestos y advertencias DECLARADOS — se pintan, no se esconden */
   notas: string[];
 }
@@ -88,20 +90,29 @@ export async function mallaDesdeArchivo(nombre: string, buf: ArrayBuffer): Promi
   if (ext === 'step' || ext === 'stp') {
     const K = await import('../brep/occt');
     const oc = await K.getOCCT();
-    const shape = K.importSTEP(oc, new TextDecoder().decode(buf));
+    const crudo = K.importSTEP(oc, new TextDecoder().decode(buf));
+    // LA ENTRADA: 15 de los 20 STEP Hammond son ENSAMBLES (caja+tapa+PCB+tornillos) — el Foco medía el ladrillo
+    // fundido y acostado. Aquí se toma el sólido mayor y se para en su eje de apertura (la misma decisión que el
+    // estudio aplica al B-Rep: se entrega en `entrada` para no medir dos veces).
+    const { prepararPiezaDelSTEP } = await import('./draw-axis');
+    let entrada: import('./draw-axis').PiezaDelSTEP | undefined;
+    try { entrada = prepararPiezaDelSTEP(oc, crudo); } catch { entrada = undefined; }
+    const shape = entrada ? entrada.shape : crudo;
     const volKernelMm3 = K.volume(oc, shape);
     if (!(volKernelMm3 > 0)) throw new Error('STEP importado sin volumen (¿superficies sueltas, no un sólido?)');
     const t = K.tessellate(oc, shape, 0.1, 0.5);
     if (!t.triangleCount) throw new Error('STEP importado pero la tesela salió vacía');
-    let solidos = 0;
-    try {
-      const ex = new oc.TopExp_Explorer_2(shape, oc.TopAbs_ShapeEnum.TopAbs_SOLID, oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
+    let solidos = entrada ? entrada.solidos : 0;
+    if (!entrada) try {
+      const ex = new oc.TopExp_Explorer_2(crudo, oc.TopAbs_ShapeEnum.TopAbs_SOLID, oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
       while (ex.More()) { solidos++; ex.Next(); }
     } catch { solidos = 0; }
     const notas = [`STEP: ${t.triangleCount} triángulos teselados (deflexión 0.1 mm) · volumen exacto del kernel ${volKernelMm3.toFixed(1)} mm³`];
-    if (solidos > 1) notas.push(`⚠ el archivo trae ${solidos} sólidos y se están midiendo FUSIONADOS (caja + tapa + postes cuentan como una pieza): la cotización sale de más. Elegir cuál moldear es otro ticket.`);
+    if (solidos > 1 && entrada) notas.push(`el archivo trae ${solidos} sólidos (un ENSAMBLE): se mide y se moldea la pieza MAYOR, ${entrada.elegido.volCc} cc — los otros ${solidos - 1} quedan fuera`);
+    else if (solidos > 1) notas.push(`⚠ el archivo trae ${solidos} sólidos y se están midiendo FUSIONADOS (la entrada no pudo separarlos)`);
     else if (solidos === 0) notas.push('⚠ no se pudo contar sólidos en este STEP (se mide la forma completa)');
-    return { mesh: { positions: t.positions, indices: t.indices }, fuente: 'step', solidos, volKernelMm3, notas };
+    if (entrada?.giro) notas.push(`parada en su eje de apertura: ${entrada.giro}`);
+    return { mesh: { positions: t.positions, indices: t.indices }, fuente: 'step', solidos, volKernelMm3, notas, entrada };
   }
   throw new Error(`extensión no soportada: "${ext || nombre}". El cargador acepta .stl, .step y .stp`);
 }
