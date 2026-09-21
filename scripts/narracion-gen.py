@@ -146,6 +146,9 @@ def gen_trim(text, final):
     # en todas las piezas o no sirve. Respelado SOLO para el TTS; el guion y los subtítulos
     # conservan "GAIA Prime".
     tts_text = tts_text.replace('GAIA Prime', 'Gaia Práim').replace('Gaia Prime', 'Gaia Práim')
+    # "Chuy" lo dice "Chu": medido 2026-09-21 con Whisper large-v3 y small sobre la toma de
+    # el fiado ("Don Chu vendió…"). Con la tilde en la u, large-v3 oye "Don Chuy".
+    tts_text = tts_text.replace('Chuy', 'Chúy')
 # ⚠ Si tocas los respelados de arriba, SUBE PREPRO_V (invalida el caché de líneas).
     tts_text = tts_text.strip()
     if tts_text.endswith('.'):
@@ -237,7 +240,7 @@ def gen_line(text, final):
 # OJO: en zsh "LINES" es variable especial ENTERA (alto del terminal) — asignarle
 # "7,8,9" la evalua como aritmetica (operador coma) y queda solo el ULTIMO numero.
 # Usar LINEAS; LINES se mantiene por compatibilidad para valores de un solo numero.
-PREPRO_V = '3'   # versión del preprocesado TTS (enláce=2, +Práim=3)
+PREPRO_V = '4'   # versión del preprocesado TTS (enláce=2, +Práim=3, +Chúy=4)
 ONLY = os.environ.get('LINEAS') or os.environ.get('LINES')   # "4" o "4,7": regenerar SOLO esas lineas
 VEL = float(os.environ.get('VEL', '1.0'))
 TAKES = int(os.environ.get('TAKES', '1'))  # >1: genera N tomas y se queda con la MEDIANA.
