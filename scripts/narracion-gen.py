@@ -17,8 +17,10 @@ os.environ["COQUI_TOS_AGREED"] = "1"
 
 MOL = (sys.argv[1] if len(sys.argv) > 1 else 'n2').lower()
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GUION = os.path.join(ROOT, "scripts", "guiones", f"{MOL}.txt")
-OUT = os.path.join(ROOT, "dist-video", f"{MOL}-narracion")
+# GUION= y OUT= los usa el motor de shorts (lia-video-engine) para narrar con Matilda sin
+# copiar este script: le da un .txt con una frase por renglon y recoge <MOL>_lNN.wav.
+GUION = os.environ.get("GUION") or os.path.join(ROOT, "scripts", "guiones", f"{MOL}.txt")
+OUT = os.environ.get("OUT") or os.path.join(ROOT, "dist-video", f"{MOL}-narracion")
 # VOCES DE REFERENCIA (el timbre y el ACENTO salen de aquí, no del texto: XTTS solo habla
 # "es" genérico y clona lo que le des). Override: REFS=/ruta/a.mp3,/ruta/b.mp3
 # ⚠ 2026-08-04: TRES de las cuatro `mat_*.mp3` DESAPARECIERON del home de iangpu. Si faltan,
