@@ -1,0 +1,872 @@
+{
+ "piezas": {
+  "carcasa": {
+   "archivo": "1594C Box.stp",
+   "armado": true,
+   "resumen": {
+    "ok": 6,
+    "falla": 8,
+    "mirar": 3
+   },
+   "base": [
+    246,
+    246
+   ],
+   "alturaPiezaMm": 33.3,
+   "pared": 3.2,
+   "telemetria": "E2 2.7s · E3 21.5s · E4 1.0s · E5 76.2s · E6 2.7s · E7 3.4s · E8 8.8s",
+   "ficha": "SIMULADO · §9.2 · Eq 9.5, t_c = h²/(π²α)·ln(4/π·ΔT)El ciclo lo manda lo más lento: 134 s, en 4 lugares iguales. El resto está listo en 21.5 s.El molde no abre hasta que el ÚLTIMO punto está firme, así que ese máximo es tu ciclo, no el promedio. Lo más lento tarda 6.2× más que la mitad de la pieza, porque ahí la pared llega a 8.0 mm. El tiempo va con el CUADRADO del espesor (Eq 9.5): bajarle 30 % a",
+   "planos": {
+    "paginas": 17,
+    "maquina": "FCS HT-150SV (taller) CUMPLE"
+   },
+   "puntos": [
+    {
+     "id": "0",
+     "preg": "EL MOLDE",
+     "que": "el molde entero, cerrado",
+     "medido": "65 componentes · base 246×246 · altura 262 mm · armado: E2 2.7s · E3 21.5s · E4 1.0s · E5 76.2s · E6 2.7s · E7 3.4s · E8 8.8s",
+     "pide": "",
+     "v": "info"
+    },
+    {
+     "id": "1.1",
+     "preg": "1 · ¿CIERRA?",
+     "que": "el macho está DENTRO de la pieza: su techo toca el piso interior",
+     "medido": "techo del macho z 189.8 · piso interior de la pieza z 189.6 → 0.2 mm",
+     "pide": "|Δ| ≤ 0.5 mm",
+     "v": "ok"
+    },
+    {
+     "id": "1.2",
+     "preg": "1 · ¿CIERRA?",
+     "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+     "medido": "partición z 160 · anillo y bebedero sobre el eje (123, 123)",
+     "pide": "todo alineado al eje",
+     "v": "mirar"
+    },
+    {
+     "id": "2.1",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua B ↔ cara INFERIOR de la placa B",
+     "medido": "-1.14 mm de acero bajo la línea (⌀ 4.76)",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "falla"
+    },
+    {
+     "id": "2.2",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua A ↔ cara SUPERIOR de la placa A",
+     "medido": "13.38 mm de acero sobre la línea",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "ok"
+    },
+    {
+     "id": "2.3",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua B ↔ el pin más cercano (en planta, al nivel del agua)",
+     "medido": "7.38 mm entre agua-B-linea2 y pin-cuerpo-5",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "ok"
+    },
+    {
+     "id": "2.4",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "los pines de RETORNO ↔ el inserto de núcleo",
+     "medido": "15000 mm³ · 5.3 mm",
+     "pide": "0 mm³ compartidos",
+     "v": "falla"
+    },
+    {
+     "id": "2.5",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+     "medido": "agua-B-linea1↔support 0.4 mm ; agua-B-linea0↔support 0.4 mm ; agua-B-linea2↔support 0.4 mm ; agua-B-linea0↔pines-retorno 0.62 mm",
+     "pide": "0 mm de penetración",
+     "v": "falla"
+    },
+    {
+     "id": "3.1",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "la apertura saca la pieza CON su bebedero",
+     "medido": "apertura 2.5·H = 83.3 mm · pieza 33.3 + bebedero 69.2 + 10 = 112.5",
+     "pide": "apertura ≥ pieza + bebedero + 10",
+     "v": "falla"
+    },
+    {
+     "id": "3.2",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "medido": "libre 31 mm · la pieza pide 41.3 (H + 8) → la retenedora entra 10.3 mm en el soporte",
+     "pide": "libre ≥ pedida",
+     "v": "falla"
+    },
+    {
+     "id": "3.3",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+     "medido": "guía sobre la partición 57.8 mm · macho 29.8 mm",
+     "pide": "guía > macho",
+     "v": "ok"
+    },
+    {
+     "id": "5.1",
+     "preg": "5 · ¿LLENA Y ENFRÍA?",
+     "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+     "medido": "el ciclo lo manda lo más lento: 134 s; el resto está listo en 21.5 s → 6.2× (la pared llega a 8 mm; la medida es 3.2)",
+     "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)",
+     "v": "falla"
+    },
+    {
+     "id": "6.1",
+     "preg": "6 · ¿EXPULSA SIN DAÑAR?",
+     "que": "los pines: la punta en el piso de la pieza y la cabeza en la retenedora",
+     "medido": "punta ↔ piso 0 mm · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+     "pide": "ambos ≤ 0.5 mm",
+     "v": "ok"
+    },
+    {
+     "id": "6.2",
+     "preg": "6 · ¿EXPULSA SIN DAÑAR?",
+     "que": "el paquete expulsor visto DESDE ABAJO: pines, retornos, pilares",
+     "medido": "8 pines · retenedora z 58..71",
+     "pide": "nada encimado",
+     "v": "mirar"
+    },
+    {
+     "id": "7.1",
+     "preg": "7 · ¿SE PUEDE FABRICAR?",
+     "que": "cada línea de agua se taladra desde un canto",
+     "medido": "11 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 51.7",
+     "pide": "0 ciegas · largo/⌀ ≤ 50",
+     "v": "falla"
+    },
+    {
+     "id": "7.2",
+     "preg": "7 · ¿SE PUEDE FABRICAR?",
+     "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+     "medido": "16 tramos de pin atraviesan núcleo MACIZO (hasta 2.19 mm = su radio) · bebedero ↔ cavidad 3.88 mm",
+     "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)",
+     "v": "falla"
+    },
+    {
+     "id": "4.1",
+     "preg": "4 · ¿CABE EN LA INYECTORA?",
+     "que": "la inyectora del taller juzgada en la lámina de análisis",
+     "medido": "FCS HT-150SV (taller) CUMPLE · altura del molde 262 mm + apertura 83.3 mm",
+     "pide": "CUMPLE (luz, barras, tonelaje, carrera)",
+     "v": "ok"
+    },
+    {
+     "id": "8.1",
+     "preg": "8 · ¿EL PLANO = EL 3D?",
+     "que": "el juego de láminas existe y se deja mirar",
+     "medido": "17 láminas capturadas (la comparación cota-por-cota contra el sólido AÚN no existe)",
+     "pide": "≥ 3 láminas · cada cota = el sólido",
+     "v": "mirar"
+    }
+   ],
+   "otrasColisiones": []
+  },
+  "tapa": {
+   "archivo": "1594C Lid.stp",
+   "armado": true,
+   "resumen": {
+    "ok": 8,
+    "falla": 6,
+    "mirar": 3
+   },
+   "base": [
+    246,
+    196
+   ],
+   "alturaPiezaMm": 14.1,
+   "pared": 3.86,
+   "telemetria": "E2 0.8s · E3 9.0s · E4 0.5s · E5 18.3s · E6 0.8s · E7 1.1s · E8 6.5s",
+   "ficha": "SIMULADO · §9.2 · Eq 9.5, t_c = h²/(π²α)·ln(4/π·ΔT)El ciclo lo manda lo más lento: 62.7 s, en 4 lugares iguales. El resto está listo en 31.3 s.El molde no abre hasta que el ÚLTIMO punto está firme, así que ese máximo es tu ciclo, no el promedio. Lo más lento tarda 2.0× más que la mitad de la pieza, porque ahí la pared llega a 5.5 mm. El tiempo va con el CUADRADO del espesor (Eq 9.5): bajarle 30 % ",
+   "planos": {
+    "paginas": 17,
+    "maquina": "FCS HT-150SV (taller) CUMPLE"
+   },
+   "puntos": [
+    {
+     "id": "0",
+     "preg": "EL MOLDE",
+     "que": "el molde entero, cerrado",
+     "medido": "70 componentes · base 246×196 · altura 218 mm · armado: E2 0.8s · E3 9.0s · E4 0.5s · E5 18.3s · E6 0.8s · E7 1.1s · E8 6.5s",
+     "pide": "",
+     "v": "info"
+    },
+    {
+     "id": "1.1",
+     "preg": "1 · ¿CIERRA?",
+     "que": "el macho está DENTRO de la pieza: su techo toca el piso interior",
+     "medido": "techo del macho z 156.8 · piso interior de la pieza z 155.7 → 1.06 mm",
+     "pide": "|Δ| ≤ 0.5 mm",
+     "v": "falla"
+    },
+    {
+     "id": "1.2",
+     "preg": "1 · ¿CIERRA?",
+     "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+     "medido": "partición z 146 · anillo y bebedero sobre el eje (123, 98)",
+     "pide": "todo alineado al eje",
+     "v": "mirar"
+    },
+    {
+     "id": "2.1",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua B ↔ cara INFERIOR de la placa B",
+     "medido": "-1.14 mm de acero bajo la línea (⌀ 4.76)",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "falla"
+    },
+    {
+     "id": "2.2",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua A ↔ cara SUPERIOR de la placa A",
+     "medido": "8.38 mm de acero sobre la línea",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "ok"
+    },
+    {
+     "id": "2.3",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua B ↔ el pin más cercano (en planta, al nivel del agua)",
+     "medido": "5.41 mm entre agua-B-linea0 y pin-punta-4",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "ok"
+    },
+    {
+     "id": "2.4",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "los pines de RETORNO ↔ el inserto de núcleo",
+     "medido": "3328 mm³ · 2.71 mm",
+     "pide": "0 mm³ compartidos",
+     "v": "falla"
+    },
+    {
+     "id": "2.5",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+     "medido": "agua-B-linea1↔support 0.4 mm ; agua-B-linea2↔support 0.4 mm ; agua-B-linea3↔support 0.4 mm ; agua-B-linea0↔support 0.4 mm",
+     "pide": "0 mm de penetración",
+     "v": "falla"
+    },
+    {
+     "id": "3.1",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "la apertura saca la pieza CON su bebedero",
+     "medido": "apertura 2.5·H = 35.2 mm · pieza 14.1 + bebedero 58.4 + 10 = 82.5",
+     "pide": "apertura ≥ pieza + bebedero + 10",
+     "v": "falla"
+    },
+    {
+     "id": "3.2",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "medido": "libre 31 mm · la pieza pide 22.1 (H + 8) → la retenedora entra 0 mm en el soporte",
+     "pide": "libre ≥ pedida",
+     "v": "ok"
+    },
+    {
+     "id": "3.3",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+     "medido": "guía sobre la partición 31.4 mm · macho 10.8 mm",
+     "pide": "guía > macho",
+     "v": "ok"
+    },
+    {
+     "id": "5.1",
+     "preg": "5 · ¿LLENA Y ENFRÍA?",
+     "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+     "medido": "el ciclo lo manda lo más lento: 62.7 s; el resto está listo en 31.3 s → 2× (la pared llega a 5.5 mm; la medida es 3.86)",
+     "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)",
+     "v": "ok"
+    },
+    {
+     "id": "6.1",
+     "preg": "6 · ¿EXPULSA SIN DAÑAR?",
+     "que": "los pines: la punta en el piso de la pieza y la cabeza en la retenedora",
+     "medido": "punta ↔ piso 0 mm · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+     "pide": "ambos ≤ 0.5 mm",
+     "v": "ok"
+    },
+    {
+     "id": "6.2",
+     "preg": "6 · ¿EXPULSA SIN DAÑAR?",
+     "que": "el paquete expulsor visto DESDE ABAJO: pines, retornos, pilares",
+     "medido": "8 pines · retenedora z 58..71",
+     "pide": "nada encimado",
+     "v": "mirar"
+    },
+    {
+     "id": "7.1",
+     "preg": "7 · ¿SE PUEDE FABRICAR?",
+     "que": "cada línea de agua se taladra desde un canto",
+     "medido": "13 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 41.2",
+     "pide": "0 ciegas · largo/⌀ ≤ 50",
+     "v": "ok"
+    },
+    {
+     "id": "7.2",
+     "preg": "7 · ¿SE PUEDE FABRICAR?",
+     "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+     "medido": "8 tramos de pin atraviesan núcleo MACIZO (hasta 1.12 mm = su radio) · bebedero ↔ cavidad 3.38 mm",
+     "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)",
+     "v": "falla"
+    },
+    {
+     "id": "4.1",
+     "preg": "4 · ¿CABE EN LA INYECTORA?",
+     "que": "la inyectora del taller juzgada en la lámina de análisis",
+     "medido": "FCS HT-150SV (taller) CUMPLE · altura del molde 218 mm + apertura 35.2 mm",
+     "pide": "CUMPLE (luz, barras, tonelaje, carrera)",
+     "v": "ok"
+    },
+    {
+     "id": "8.1",
+     "preg": "8 · ¿EL PLANO = EL 3D?",
+     "que": "el juego de láminas existe y se deja mirar",
+     "medido": "17 láminas capturadas (la comparación cota-por-cota contra el sólido AÚN no existe)",
+     "pide": "≥ 3 láminas · cada cota = el sólido",
+     "v": "mirar"
+    }
+   ],
+   "otrasColisiones": []
+  },
+  "alta": {
+   "archivo": "1599HBK.stp",
+   "armado": true,
+   "resumen": {
+    "ok": 5,
+    "falla": 9,
+    "mirar": 3
+   },
+   "base": [
+    396,
+    296
+   ],
+   "alturaPiezaMm": 35.5,
+   "pared": 2.46,
+   "telemetria": "E2 5.2s · E3 29.6s · E4 2.1s · E5 22.0s · E6 5.4s · E7 6.8s · E8 10.2s",
+   "ficha": "SIMULADO · §9.2 · Eq 9.5, t_c = h²/(π²α)·ln(4/π·ΔT)El ciclo lo manda lo más lento: 51.0 s, en 12 lugares iguales. El resto está listo en 12.7 s.El molde no abre hasta que el ÚLTIMO punto está firme, así que ese máximo es tu ciclo, no el promedio. Lo más lento tarda 4.0× más que la mitad de la pieza, porque ahí la pared llega a 4.9 mm. El tiempo va con el CUADRADO del espesor (Eq 9.5): bajarle 30 %",
+   "planos": {
+    "paginas": 17,
+    "maquina": "FCS HT-150SV (taller) CUMPLE"
+   },
+   "puntos": [
+    {
+     "id": "0",
+     "preg": "EL MOLDE",
+     "que": "el molde entero, cerrado",
+     "medido": "85 componentes · base 396×296 · altura 302 mm · armado: E2 5.2s · E3 29.6s · E4 2.1s · E5 22.0s · E6 5.4s · E7 6.8s · E8 10.2s",
+     "pide": "",
+     "v": "info"
+    },
+    {
+     "id": "1.1",
+     "preg": "1 · ¿CIERRA?",
+     "que": "el macho está DENTRO de la pieza: su techo toca el piso interior",
+     "medido": "techo del macho z 211.5 · piso interior de la pieza z 212.5 → -1.04 mm",
+     "pide": "|Δ| ≤ 0.5 mm",
+     "v": "falla"
+    },
+    {
+     "id": "1.2",
+     "preg": "1 · ¿CIERRA?",
+     "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+     "medido": "partición z 180 · anillo y bebedero sobre el eje (198, 148)",
+     "pide": "todo alineado al eje",
+     "v": "mirar"
+    },
+    {
+     "id": "2.1",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua B ↔ cara INFERIOR de la placa B",
+     "medido": "-1.14 mm de acero bajo la línea (⌀ 4.76)",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "falla"
+    },
+    {
+     "id": "2.2",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua A ↔ cara SUPERIOR de la placa A",
+     "medido": "30.38 mm de acero sobre la línea",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "ok"
+    },
+    {
+     "id": "2.3",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua B ↔ el pin más cercano (en planta, al nivel del agua)",
+     "medido": "0 mm entre agua-B-linea1 y pin-cuerpo-5",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "falla"
+    },
+    {
+     "id": "2.4",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "los pines de RETORNO ↔ el inserto de núcleo",
+     "medido": "sin contacto",
+     "pide": "0 mm³ compartidos",
+     "v": "ok"
+    },
+    {
+     "id": "2.5",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+     "medido": "agua-B-linea0↔support 0.4 mm ; agua-B-linea2↔support 0.4 mm ; agua-B-linea3↔support 0.4 mm ; agua-B-linea4↔support 0.4 mm",
+     "pide": "0 mm de penetración",
+     "v": "falla"
+    },
+    {
+     "id": "3.1",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "la apertura saca la pieza CON su bebedero",
+     "medido": "apertura 2.5·H = 88.8 mm · pieza 35.5 + bebedero 87 + 10 = 132.5",
+     "pide": "apertura ≥ pieza + bebedero + 10",
+     "v": "falla"
+    },
+    {
+     "id": "3.2",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "medido": "libre 31 mm · la pieza pide 43.5 (H + 8) → la retenedora entra 12.5 mm en el soporte",
+     "pide": "libre ≥ pedida",
+     "v": "falla"
+    },
+    {
+     "id": "3.3",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+     "medido": "guía sobre la partición 74.6 mm · macho 31.5 mm",
+     "pide": "guía > macho",
+     "v": "ok"
+    },
+    {
+     "id": "5.1",
+     "preg": "5 · ¿LLENA Y ENFRÍA?",
+     "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+     "medido": "el ciclo lo manda lo más lento: 51.0 s; el resto está listo en 12.7 s → 4× (la pared llega a 4.9 mm; la medida es 2.46)",
+     "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)",
+     "v": "falla"
+    },
+    {
+     "id": "6.1",
+     "preg": "6 · ¿EXPULSA SIN DAÑAR?",
+     "que": "los pines: la punta en el piso de la pieza y la cabeza en la retenedora",
+     "medido": "punta ↔ piso 0 mm · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+     "pide": "ambos ≤ 0.5 mm",
+     "v": "ok"
+    },
+    {
+     "id": "6.2",
+     "preg": "6 · ¿EXPULSA SIN DAÑAR?",
+     "que": "el paquete expulsor visto DESDE ABAJO: pines, retornos, pilares",
+     "medido": "8 pines · retenedora z 58..71",
+     "pide": "nada encimado",
+     "v": "mirar"
+    },
+    {
+     "id": "7.1",
+     "preg": "7 · ¿SE PUEDE FABRICAR?",
+     "que": "cada línea de agua se taladra desde un canto",
+     "medido": "19 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 62.2",
+     "pide": "0 ciegas · largo/⌀ ≤ 50",
+     "v": "falla"
+    },
+    {
+     "id": "7.2",
+     "preg": "7 · ¿SE PUEDE FABRICAR?",
+     "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+     "medido": "16 tramos de pin atraviesan núcleo MACIZO (hasta 2.5 mm = su radio) · bebedero ↔ cavidad 4.46 mm",
+     "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)",
+     "v": "falla"
+    },
+    {
+     "id": "4.1",
+     "preg": "4 · ¿CABE EN LA INYECTORA?",
+     "que": "la inyectora del taller juzgada en la lámina de análisis",
+     "medido": "FCS HT-150SV (taller) CUMPLE · altura del molde 302 mm + apertura 88.8 mm",
+     "pide": "CUMPLE (luz, barras, tonelaje, carrera)",
+     "v": "ok"
+    },
+    {
+     "id": "8.1",
+     "preg": "8 · ¿EL PLANO = EL 3D?",
+     "que": "el juego de láminas existe y se deja mirar",
+     "medido": "17 láminas capturadas (la comparación cota-por-cota contra el sólido AÚN no existe)",
+     "pide": "≥ 3 láminas · cada cota = el sólido",
+     "v": "mirar"
+    }
+   ],
+   "otrasColisiones": [
+    {
+     "a": "tornillos-core",
+     "b": "rieles",
+     "mm3": 19500,
+     "pen": 0.4
+    },
+    {
+     "a": "bottom",
+     "b": "tornillos-core",
+     "mm3": 7500,
+     "pen": 0.4
+    },
+    {
+     "a": "support",
+     "b": "tornillos-core",
+     "mm3": 6000,
+     "pen": 0.4
+    },
+    {
+     "a": "clamp",
+     "b": "tornillos-cav",
+     "mm3": 5000,
+     "pen": 0.46
+    }
+   ]
+  },
+  "ensamble": {
+   "archivo": "1557BGY.stp",
+   "armado": true,
+   "resumen": {
+    "ok": 6,
+    "falla": 8,
+    "mirar": 3
+   },
+   "base": [
+    246,
+    246
+   ],
+   "alturaPiezaMm": 31.2,
+   "pared": 3.86,
+   "telemetria": "E2 4.2s · E3 42.1s · E4 2.1s · E5 74.5s · E6 2.5s · E7 3.5s · E8 7.9s",
+   "ficha": "SIMULADO · §9.2 · Eq 9.5, t_c = h²/(π²α)·ln(4/π·ΔT)El ciclo lo manda lo más lento: 48.4 s, en 4 lugares iguales. El resto está listo en 31.3 s.El molde no abre hasta que el ÚLTIMO punto está firme, así que ese máximo es tu ciclo, no el promedio. Lo más lento tarda 1.5× más que la mitad de la pieza, porque ahí la pared llega a 4.8 mm. El tiempo va con el CUADRADO del espesor (Eq 9.5): bajarle 30 % ",
+   "planos": {
+    "paginas": 17,
+    "maquina": "FCS HT-150SV (taller) CUMPLE"
+   },
+   "puntos": [
+    {
+     "id": "0",
+     "preg": "EL MOLDE",
+     "que": "el molde entero, cerrado",
+     "medido": "70 componentes · base 246×246 · altura 238 mm · armado: E2 4.2s · E3 42.1s · E4 2.1s · E5 74.5s · E6 2.5s · E7 3.5s · E8 7.9s",
+     "pide": "",
+     "v": "info"
+    },
+    {
+     "id": "1.1",
+     "preg": "1 · ¿CIERRA?",
+     "que": "el macho está DENTRO de la pieza: su techo toca el piso interior",
+     "medido": "techo del macho z 174.4 · piso interior de la pieza z 172.8 → 1.56 mm",
+     "pide": "|Δ| ≤ 0.5 mm",
+     "v": "falla"
+    },
+    {
+     "id": "1.2",
+     "preg": "1 · ¿CIERRA?",
+     "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+     "medido": "partición z 146 · anillo y bebedero sobre el eje (123, 123)",
+     "pide": "todo alineado al eje",
+     "v": "mirar"
+    },
+    {
+     "id": "2.1",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua B ↔ cara INFERIOR de la placa B",
+     "medido": "-1.14 mm de acero bajo la línea (⌀ 4.76)",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "falla"
+    },
+    {
+     "id": "2.2",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua A ↔ cara SUPERIOR de la placa A",
+     "medido": "8.38 mm de acero sobre la línea",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "ok"
+    },
+    {
+     "id": "2.3",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "agua B ↔ el pin más cercano (en planta, al nivel del agua)",
+     "medido": "0 mm entre agua-B-linea1 y pin-punta-2",
+     "pide": "≥ ½ D = 2.38 mm",
+     "v": "falla"
+    },
+    {
+     "id": "2.4",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "los pines de RETORNO ↔ el inserto de núcleo",
+     "medido": "sin contacto",
+     "pide": "0 mm³ compartidos",
+     "v": "ok"
+    },
+    {
+     "id": "2.5",
+     "preg": "2 · ¿HAY ACERO?",
+     "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+     "medido": "agua-B-linea1↔support 0.4 mm ; agua-B-linea2↔support 0.4 mm ; agua-B-linea3↔support 0.4 mm ; agua-B-linea0↔support 0.4 mm",
+     "pide": "0 mm de penetración",
+     "v": "falla"
+    },
+    {
+     "id": "3.1",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "la apertura saca la pieza CON su bebedero",
+     "medido": "apertura 2.5·H = 78 mm · pieza 31.2 + bebedero 61.3 + 10 = 102.5",
+     "pide": "apertura ≥ pieza + bebedero + 10",
+     "v": "falla"
+    },
+    {
+     "id": "3.2",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "medido": "libre 31 mm · la pieza pide 39.2 (H + 8) → la retenedora entra 8.2 mm en el soporte",
+     "pide": "libre ≥ pedida",
+     "v": "falla"
+    },
+    {
+     "id": "3.3",
+     "preg": "3 · ¿ABRE Y EXPULSA?",
+     "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+     "medido": "guía sobre la partición 49.8 mm · macho 28.4 mm",
+     "pide": "guía > macho",
+     "v": "ok"
+    },
+    {
+     "id": "5.1",
+     "preg": "5 · ¿LLENA Y ENFRÍA?",
+     "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+     "medido": "el ciclo lo manda lo más lento: 48.4 s; el resto está listo en 31.3 s → 1.5× (la pared llega a 4.8 mm; la medida es 3.86)",
+     "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)",
+     "v": "ok"
+    },
+    {
+     "id": "6.1",
+     "preg": "6 · ¿EXPULSA SIN DAÑAR?",
+     "que": "los pines: la punta en el piso de la pieza y la cabeza en la retenedora",
+     "medido": "punta ↔ piso 0 mm · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+     "pide": "ambos ≤ 0.5 mm",
+     "v": "ok"
+    },
+    {
+     "id": "6.2",
+     "preg": "6 · ¿EXPULSA SIN DAÑAR?",
+     "que": "el paquete expulsor visto DESDE ABAJO: pines, retornos, pilares",
+     "medido": "8 pines · retenedora z 58..71",
+     "pide": "nada encimado",
+     "v": "mirar"
+    },
+    {
+     "id": "7.1",
+     "preg": "7 · ¿SE PUEDE FABRICAR?",
+     "que": "cada línea de agua se taladra desde un canto",
+     "medido": "13 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 51.7",
+     "pide": "0 ciegas · largo/⌀ ≤ 50",
+     "v": "falla"
+    },
+    {
+     "id": "7.2",
+     "preg": "7 · ¿SE PUEDE FABRICAR?",
+     "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+     "medido": "8 tramos de pin atraviesan núcleo MACIZO (hasta 1.12 mm = su radio) · bebedero ↔ cavidad 3.56 mm",
+     "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)",
+     "v": "falla"
+    },
+    {
+     "id": "4.1",
+     "preg": "4 · ¿CABE EN LA INYECTORA?",
+     "que": "la inyectora del taller juzgada en la lámina de análisis",
+     "medido": "FCS HT-150SV (taller) CUMPLE · altura del molde 238 mm + apertura 78 mm",
+     "pide": "CUMPLE (luz, barras, tonelaje, carrera)",
+     "v": "ok"
+    },
+    {
+     "id": "8.1",
+     "preg": "8 · ¿EL PLANO = EL 3D?",
+     "que": "el juego de láminas existe y se deja mirar",
+     "medido": "17 láminas capturadas (la comparación cota-por-cota contra el sólido AÚN no existe)",
+     "pide": "≥ 3 láminas · cada cota = el sólido",
+     "v": "mirar"
+    }
+   ],
+   "otrasColisiones": []
+  }
+ },
+ "fallasPorPunto": [
+  {
+   "punto": "2.1 · agua B ↔ cara INFERIOR de la placa B",
+   "piezas": [
+    "carcasa",
+    "tapa",
+    "alta",
+    "ensamble"
+   ],
+   "n": 4
+  },
+  {
+   "punto": "2.5 · el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+   "piezas": [
+    "carcasa",
+    "tapa",
+    "alta",
+    "ensamble"
+   ],
+   "n": 4
+  },
+  {
+   "punto": "3.1 · la apertura saca la pieza CON su bebedero",
+   "piezas": [
+    "carcasa",
+    "tapa",
+    "alta",
+    "ensamble"
+   ],
+   "n": 4
+  },
+  {
+   "punto": "7.2 · los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+   "piezas": [
+    "carcasa",
+    "tapa",
+    "alta",
+    "ensamble"
+   ],
+   "n": 4
+  },
+  {
+   "punto": "3.2 · la carrera de expulsión CABE en la caja expulsora",
+   "piezas": [
+    "carcasa",
+    "alta",
+    "ensamble"
+   ],
+   "n": 3
+  },
+  {
+   "punto": "7.1 · cada línea de agua se taladra desde un canto",
+   "piezas": [
+    "carcasa",
+    "alta",
+    "ensamble"
+   ],
+   "n": 3
+  },
+  {
+   "punto": "1.1 · el macho está DENTRO de la pieza: su techo toca el piso interior",
+   "piezas": [
+    "tapa",
+    "alta",
+    "ensamble"
+   ],
+   "n": 3
+  },
+  {
+   "punto": "2.4 · los pines de RETORNO ↔ el inserto de núcleo",
+   "piezas": [
+    "carcasa",
+    "tapa"
+   ],
+   "n": 2
+  },
+  {
+   "punto": "5.1 · lo más lento contra lo de en medio (la lente de enfriamiento)",
+   "piezas": [
+    "carcasa",
+    "alta"
+   ],
+   "n": 2
+  },
+  {
+   "punto": "2.3 · agua B ↔ el pin más cercano (en planta, al nivel del agua)",
+   "piezas": [
+    "alta",
+    "ensamble"
+   ],
+   "n": 2
+  }
+ ],
+ "orden": "2026-09-21-el-plan-de-inspeccion",
+ "medido": "2026-09-21 · iangpu · la app en dev2 :5194 · 4 piezas × 16 tarjetas + láminas · 4 revisores Opus (uno por pieza, solo lectura)",
+ "vistas": {
+  "veredictoDeLosRevisores": "de 64 tarjetas, ~36 «no se ve / no»: la cámara de esta pasada NO deja ver lo que mide",
+  "sirvieron": [
+   "1.2 corte por el eje (parcial)",
+   "2.5 agua↔soporte",
+   "3.1 abierto",
+   "3.2 expulsado (parcial)",
+   "3.3 guías",
+   "6.2 paquete desde abajo"
+  ],
+  "noSirvieron": [
+   "1.1 y 6.1: la pieza pintada por la lente NO obedece al corte y tapa al macho",
+   "2.1/2.2: zoom sin la cara de la placa en cuadro ni cota",
+   "2.3/7.1: la planta no enseña ni agua ni pines",
+   "7.2: cámara DENTRO del acero (cuadro vacío)",
+   "5.1: la lente sale lavada, sin escala"
+  ]
+ },
+ "cruceConRevisores": [
+  {
+   "hallazgo": "el agua del 3D (⌀4.76, JP-250) ≠ el agua de la lámina (⌀6.35 / 9.53 / 15.9 según la pieza)",
+   "estado": "VERIFICADO en código",
+   "nota": "NO es «radio por diámetro»: son dos fuentes — el ciclo (estacion8Dado → cd.diaMm) y packageToAssemblySpec (piso 6.35 + plug del paquete). Es el ticket EL AGUA DICE DOS COSAS. El 3D queda bajo el piso «maquinable» que la lámina declara.",
+   "piezas": 4
+  },
+  {
+   "hallazgo": "punto 6.1 TAUTOLÓGICO: la punta del pin se coloca y se mide con la MISMA fórmula (techo − pared mediana)",
+   "estado": "VERIFICADO en código (useMoldStudio: zPiso = zBaseCerrada − wallMm)",
+   "nota": "piso real ≠ pared mediana: tapa 2.76 vs 3.86 (puntas 1.06 mm hundidas) · ensamble 1.56 hundidas · alta 1.04 mm METIDAS en el plástico · carcasa coincide por suerte",
+   "piezas": 3
+  },
+  {
+   "hallazgo": "expulsión DESBALANCEADA: el agarre coloca por puntaje, sin equilibrio",
+   "estado": "VERIFICADO con las posiciones del arnés",
+   "nota": "centroide de pines vs centro: carcasa 15.6 mm (6 de un lado, 2 del otro) · alta 32.5/17 mm (4 en fila sobre una orilla, paso 12 mm) · ensamble 11.5 mm (los 8 en 54×40 de 80×80) · tapa 0.5 ✓",
+   "piezas": 3
+  },
+  {
+   "hallazgo": "el punto 2.3 reporta solo el par MÍNIMO agua↔pin y no mira los retornos",
+   "estado": "VERIFICADO en mi propio JSON",
+   "nota": "alta: 3 cruces (1 pin + 2 retornos ⌀12) · ensamble: 2 pines sobre agua B",
+   "piezas": 2
+  },
+  {
+   "hallazgo": "el punto 2.2 dio ✓ mirando la cara equivocada: el agua A entra 1.6–2.2 mm en el INSERTO de cavidad",
+   "estado": "VERIFICADO en mi propio JSON (cavidad↔agua-A-*)",
+   "piezas": 2
+  },
+  {
+   "hallazgo": "rótulo de material «PP» en la pieza vs ABS en todo el cálculo",
+   "estado": "VERIFICADO en código (cursoPart clava PP para el rol pieza)",
+   "piezas": 4
+  },
+  {
+   "hallazgo": "LA PIEZA ESTÁ AL REVÉS (ensamble)",
+   "estado": "FALSO",
+   "nota": "macho z 146→174.4 dentro de la pieza z 146→177.2; en el corte la base cerrada mira al bebedero. El revisor lo dedujo de la lámina de la pieza sola y de una planta donde se ve el macho: la vista lo engañó — culpa de la cámara.",
+   "piezas": 1
+  },
+  {
+   "hallazgo": "«no hay lámina de ensamble ni BOM; 16 archivos de 17»",
+   "estado": "FALSO — error de MI captura",
+   "nota": "las páginas se numeran desde 0 y capturé 1..16: me salté la 0 (ensamble + BOM)",
+   "piezas": 4
+  },
+  {
+   "hallazgo": "láminas: cabezas de pin «PASANTE» (ninguna placa las captura) · expulsoras dibujadas al contorno de la base y a 110×206 en otra hoja · el agua no está en las tablas de barrenos · espesores 36 vs 30 en la misma placa · KO 2×⌀20 en lámina vs un vástago central en 3D",
+   "estado": "de los revisores, consistente entre los 4; sin verificar por mí",
+   "piezas": 4
+  },
+  {
+   "hallazgo": "la placa de soporte es de 22 mm también en la base de 396×296 (flecha ×6.7) · una columna de ~302 mm que cruza el paquete expulsor · anillo centrador ⌀34.4 en lámina",
+   "estado": "de un revisor; SIN verificar",
+   "piezas": 1
+  }
+ ]
+}

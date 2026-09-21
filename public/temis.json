@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-21 21:20",
+ "generado": "2026-09-21 22:31",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -11,11 +11,11 @@
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 94,
+  "cerrado": 95,
   "probado": 0,
-  "porProbar": 58,
+  "porProbar": 59,
   "sinDesplegar": 12,
-  "despues": 26
+  "despues": 27
  },
  "deploy": {
   "commit": "36e8e93",
@@ -1403,6 +1403,98 @@
   ],
   "cerrado": [
    {
+    "file": "ordenes/2026-09-21-el-plan-de-inspeccion.md",
+    "slug": "2026-09-21-el-plan-de-inspeccion",
+    "titulo": "EL PLAN DE INSPECCIÓN — lo que una IA revisa para saber que un molde está bien: 8 preguntas, sus distancias, y la cámara para MIRAR cada punto",
+    "fecha": "2026-09-21",
+    "estado": "cerrado",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[x] `__forgeBrep.inspeccion`: `corte(eje, mm, voltea)` y `estado(apertura, expulsión)`.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] el recorrido de inspección (script del arnés, fuera del repo) sobre la carcasa: tarjetas + números.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] las otras 3 piezas: 1594C Lid (plana)",
+      "titulo": "1599HBK (alta)",
+      "herramientas": "1557BGY (de ensamble).",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] la tabla: qué puntos fallan más",
+      "titulo": "cuáles NO se pudieron mirar por falta de cámara",
+      "herramientas": "el orden de arreglo propuesto.",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] video del recorrido en las dos PCs — APLAZADO por ian (2026-09-21: «no es necesario que me entregues grabaciones aún… las inspecciones es lo crucial»); los 4 webm quedaron en iangpu:/home/ian/el-plan/*/video.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 5
+    },
+    "objetivo": "ian (2026-09-21, tras el video 35): «¿QUÉ COSAS VERIFICARÍAS TÚ COMO IA PARA SABER QUE ESTÉ BIEN? ¿hay puntos críticos… distancias?… hagamos una lista, y necesitas poder controlar la cámara para revisar los puntos… pon varias piezas y ve s…",
+    "toca": 3,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "Una tarjeta por punto de inspección (captura desde SU vista + el número + veredicto) para 4 piezas.",
+     "La tabla de fallas por pregunta y la lista de lo que no se pudo mirar.",
+     "Video del recorrido en ambas PCs; tsc sin errores nuevos; orden-gate VERDE."
+    ],
+    "cierre": "Existe el plan: 8 preguntas → 17 puntos con número, umbral y vista; corrido sobre 4 piezas (carcasa honda, tapa plana, caja grande 396×296, caja que llegó como ensamble) y juzgado por 4 revisores Opu…",
+    "cierreCompleto": "Existe el plan: 8 preguntas → 17 puntos con número, umbral y vista; corrido sobre 4 piezas (carcasa honda, tapa plana, caja grande 396×296, caja que llegó como ensamble) y juzgado por 4 revisores Opus, uno por pieza. ian pidió dejar el video para después («el mp4 no es tan crucial, son las inspecciones»): no se entrega video en esta pasada. Manijas nuevas (__forgeBrep.inspeccion): corte(eje, mm, voltea) por coordenada ABSOLUTA del molde y estado(apertura, expulsión) que detiene el ciclo y fija la pose. tsc 66 = 66. LA TABLA (✗ = falla) — resultados.json - 4/4 piezas: el agua B rompe la cara inferior de su placa (−1.14 mm, CONSTANTE) · el agua entra al soporte · la apertura 2.5·H no saca pieza + bebedero (faltan 25–47 mm) · los insertos no traen sus barrenos (pines, bebedero, agua A). - 3/4: la carrera no cabe (8–12 mm dentro del soporte) · las puntas de los pines NO están en la cara del macho (±1.0–1.6 mm). - 2/4: retornos a través del inserto de núcleo · un pin (o un retorno) cruzando una línea de agua B · macizos que mandan el ciclo (6.2× y 4×). - 4/4 ✓: agua A bajo su cara · las guías enganchan antes que el macho · cabe en la inyectora del taller. Lo que los revisores cazaron y YO VERIFIQUÉ (detalle y estado de cada uno en resultados.json → cruceConRevisores) - El punto 6.1 era TAUTOLÓGICO: el código coloca la punta en zBaseCerrada − pared mediana y yo medía contra lo mismo. El piso real no es la pared mediana → puntas 1.06 / 1.56 mm hundidas (botón de plástico) o 1.04 mm metidas en la pieza. - Expulsión DESBALANCEADA: el agarre coloca por puntaje sin equilibrio — centr…",
+    "evidenciaSS": [
+     "evidencia/2026-09-21-el-plan-de-inspeccion/tarjetas-4-piezas.png",
+     "evidencia/2026-09-21-el-plan-de-inspeccion/tarjetas-carcasa.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
     "file": "ordenes/2026-09-18-la-entrada.md",
     "slug": "2026-09-18-la-entrada",
     "titulo": "LA ENTRADA — el STEP que suelta el cliente llega al molde como UNA pieza, con su tamaño real y parada en su eje de apertura",
@@ -1595,7 +1687,7 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "faccade",
+    "commit": "2909271",
     "despliegue": "sin-desplegar"
    },
    {
@@ -6324,6 +6416,10 @@
   {
    "grupo": "Hallazgos de LA ENTRADA (2026-09-19) — registrados; PRÓXIMO estaba 7/7, ian decide cuándo suben",
    "texto": "TESSELLATE NO REMALLA — `BRepTools.Clean` no surte efecto: pedir malla más gruesa (u otro ángulo) devuelve la vieja → `ordenes/despues/2026-09-19-tessellate-no-remalla.md`."
+  },
+  {
+   "grupo": "Hallazgos de LA ENTRADA (2026-09-19) — registrados; PRÓXIMO estaba 7/7, ian decide cuándo suben",
+   "texto": "LA CÁMARA DEL INSPECTOR — más de la mitad de las 64 tarjetas del plan de inspección «no se ve»: corte que obedezca la pieza pintada, aislar conjuntos, cota dibujada, ortográfica → `ordenes/despues/2026-09-21-la-camara-del-inspector.md`."
   }
  ],
  "cine": {

@@ -5266,6 +5266,10 @@ export default function ForgeBRepStudio() {
   const [sectionAxis, setSectionAxis] = useState<'x' | 'y' | 'z'>('y');
   const [sectionOffset, setSectionOffset] = useState(0);   // −1..1 sobre el bbox
   const [sectionFlip, setSectionFlip] = useState(false);
+  // EL PLAN DE INSPECCIÓN (orden 2026-09-21): corte por coordenada ABSOLUTA del marco del MOLDE (mm). `setSection` se mueve
+  // sobre la caja de la PIEZA en el marco de su STEP (−1..1) y no alcanza el centro de la base (x = 123 en una 246): un
+  // inspector necesita decir «córtame en x = 123» o «en el plano del agua B, z = 141». null = sin corte de inspección.
+  const [corteAbs, setCorteAbs] = useState<{ eje: 'x' | 'y' | 'z'; mm: number; voltea: boolean } | null>(null);
   const meshBBox = useMemo(() => {
     // fuente: la pieza del doc, o (si el doc está vacío) el MOLDE en vivo — SOLO los
     // componentes VISIBLES (si aíslas el anillo, Encuadrar debe llenar con el anillo).
@@ -5339,6 +5343,14 @@ export default function ForgeBRepStudio() {
   // desde la flecha — así el corte también funciona en MODO MOVIMIENTO (donde el
   // gizmo no se renderiza). Modelo→mundo: (x,y,z)→(x,z,−y) por la rotación −90°X.
   useEffect(() => {
+    if (corteAbs) {
+      // conserva el lado − del eje (se ve la cara del corte mirando desde +eje); `voltea` conserva el otro
+      const ai0 = corteAbs.eje === 'x' ? 0 : corteAbs.eje === 'y' ? 1 : 2;
+      const n0 = [0, 0, 0]; n0[ai0] = corteAbs.voltea ? 1 : -1;
+      const p0 = [0, 0, 0]; p0[ai0] = corteAbs.mm;
+      sectionClip[0].setFromNormalAndCoplanarPoint(new THREE.Vector3(n0[0], n0[2], -n0[1]).normalize(), new THREE.Vector3(p0[0], p0[2], -p0[1]));
+      return;
+    }
     if (!sectionOn || !meshBBox) { sectionClip[0].set(new THREE.Vector3(0, 1, 0), 1e6); return; }
     const ai = sectionAxis === 'x' ? 0 : sectionAxis === 'y' ? 1 : 2;
     const sign = sectionFlip ? -1 : 1;
@@ -5348,10 +5360,10 @@ export default function ForgeBRepStudio() {
     const nW = new THREE.Vector3(nM[0], nM[2], -nM[1]).normalize();
     const pW = new THREE.Vector3(pM[0], pM[2], -pM[1]);
     sectionClip[0].setFromNormalAndCoplanarPoint(nW, pW);
-  }, [sectionOn, sectionAxis, sectionOffset, sectionFlip, meshBBox, sectionClip]);
+  }, [sectionOn, sectionAxis, sectionOffset, sectionFlip, meshBBox, sectionClip, corteAbs]);
   // SOLO atar el clip cuando la sección está ACTIVA: el plano "lejano" (constante 1e6)
   // permanentemente atado ditherea los bordes en ANGLE/D3D12 (bordes aserrados).
-  const sectionPlanes = sectionOn ? sectionClip : null;
+  const sectionPlanes = sectionOn || corteAbs ? sectionClip : null;
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
   // ── CAM · CAREADO (libro Cimo cap 9): stock = bbox del sólido; zigzag + G-code ──
@@ -6093,6 +6105,20 @@ export default function ForgeBRepStudio() {
       // SECCIÓN + EJEMPLOS — driver de QA
       setSection: (on: boolean, axis?: 'x' | 'y' | 'z', offset?: number) => { setSectionOn(on); if (axis) setSectionAxis(axis); if (offset != null) setSectionOffset(offset); },
       setSectionOffset: (o: number) => setSectionOffset(o),
+      // EL PLAN DE INSPECCIÓN: las manijas para MIRAR cada punto crítico del molde (las usa el inspector — IA o humano).
+      inspeccion: {
+        /** corte por coordenada ABSOLUTA del marco del molde, en mm. `corte(null)` lo quita. Conserva el lado − del eje
+         *  (la cara del corte se ve desde +eje); `voltea` conserva el otro. */
+        corte: (eje: 'x' | 'y' | 'z' | null, mm = 0, voltea = false) => { setCorteAbs(eje ? { eje, mm, voltea } : null); return eje ? { eje, mm, voltea } : null; },
+        /** DETIENE el ciclo animado (su lazo pisaba `__moldOpen` en cada cuadro) y deja el molde en una pose fija:
+         *  apertura y expulsión ∈ [0..1]. `estado(null)` suelta el control. */
+        estado: (apertura: number | null, expulsion = 0) => {
+          mold.cicloPlayStop();
+          const w = window as unknown as { __moldOpen?: (t: number | null, e?: number | null) => void };
+          w.__moldOpen?.(apertura, apertura == null ? null : expulsion);
+          return { apertura, expulsion };
+        },
+      },
       get sectionOn() { return sectionOn; },
       get sectionPlaneCount() { return sectionOn ? 1 : 0; },
       // Plano de corte EN MUNDO (lo muta la flecha cada frame) — QA verifica que mover
