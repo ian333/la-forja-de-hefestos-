@@ -47,7 +47,8 @@
     "programar": "2026-09-21T18:45:00-06:00",
     "nota_programar": "Hoy lunes a la hora canon (18:45 CDMX = 21:45 AR/CL). La cola de Instagram estaba libre hoy; el 16:9 de colonia sale a las 21:00 solo en YouTube.",
     "primer_comentario": "Te lo explico fácil 👇\n\nDon Chuy recibe 100 naranjas y le debe $500 al proveedor. Las vende a $10 cada una.\n\n✅ Si todos le pagan: entran $1,000. Paga $500. Le quedan $500 para su casa.\n❌ Si fía la mitad: entran $500. Paga $500. Le quedan $0.\n\nLas dos veces vendió las MISMAS naranjas. Lo único que cambió es cuánto cobró.\n\nFiar no está mal. Lo que duele es fiar sin anotar y sin fecha. ¿Tú llevas tu libreta del fiado?",
-    "subidas": {
+    "subidas_reemplazadas": {
+      "nota": "2026-09-21 17:00: decían «Don Chu» (ian lo cachó). Se dejaron PRIVADOS sin publishAt, no se borraron; los reemplaza la toma con Chúy y sombras.",
       "yt": {
         "id": "hQTvJ7bDcGw",
         "url": "https://youtu.be/hQTvJ7bDcGw",
@@ -65,6 +66,24 @@
         "fecha": "2026-09-21T16:06"
       }
     },
-    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-fiado.mp4?v=9209bceee9"
+    "subidas": {
+      "yt": {
+        "id": "zBCo8KZ8tq0",
+        "url": "https://youtu.be/zBCo8KZ8tq0",
+        "privacidad": "private",
+        "publishAt": "2026-09-21T18:45:00-06:00",
+        "captions": "AUieDaYur1QO9vSdxuIADYBm-vTVNIXwwaq1qSB_nZVQohIpsJWDjaAqfg",
+        "fecha": "2026-09-21T16:52"
+      },
+      "yt16x9": {
+        "id": "R3KN7Jzh_p0",
+        "url": "https://youtu.be/R3KN7Jzh_p0",
+        "privacidad": "private",
+        "publishAt": "2026-09-21T18:45:00-06:00",
+        "captions": "AUieDaZr88bikDsOOZzBpwbwuF8ufeG_KpHoMC6R8n-NOa0HIkcAbpvUyA",
+        "fecha": "2026-09-21T16:53"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-fiado.mp4?v=74f159dd06"
   }
 }
