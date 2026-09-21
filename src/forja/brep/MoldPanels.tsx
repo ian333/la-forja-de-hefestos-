@@ -69,7 +69,7 @@ export function MoldBuildingBanner({ on }: { on: boolean }) {
 export function CursoPanel({ mold }: { mold: MoldBag }) {
   const { cursoStage, cursoReport, cursoCollapsed, setCursoCollapsed, ciclo: cicloCurso } = mold;
   // el molde de una pieza soltada tiene 7 estaciones (…agua, botadores); el curso clásico, 6. Decía «7/6».
-  const cursoTotal = cicloCurso?.pieza ? 7 : 6;
+  const cursoTotal = cicloCurso?.pieza ? 8 : 6;   // TU pieza: …agua · botadores · PORTAMOLDES (2026-09-21)
   if (cursoReport.length === 0) return null;
           const gate = cursoReport.find((l) => l.startsWith('La línea de partición'));   // el mensaje verde nunca se pierde
           const tail = cursoReport.slice(-6);
@@ -635,7 +635,18 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {/* LOS BOTADORES DE TU PIEZA: la estación 7 del molde de la pieza soltada es la EXPULSIÓN (la del cubo es la 10) */}
       {ciclo.estacion === 7 && !ciclo.e7 && ciclo.e10 && ciclo.pieza && <CicloE10 e10={ciclo.e10} />}
       {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} onE8={cicloEstacion8} />}
-      {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
+      {/* EL PORTAMOLDES DE TU PIEZA: la estación 8 del molde de la pieza soltada es el molde ENTERO (la del cubo es el agua) */}
+      {ciclo.estacion === 8 && ciclo.pieza && ciclo.portamoldes && (
+        <div data-testid="ciclo-portamoldes" style={{ padding: '4px 6px', fontSize: 11, color: '#c7d2df', lineHeight: 1.45 }}>
+          <div className="fb-comp-row hdr">🧱 EL PORTAMOLDES · Fig 1.4–1.6 · {ciclo.portamoldes.roles.length} componentes · {ciclo.portamoldes.tris.toLocaleString()} △ · {(ciclo.portamoldes.ms / 1000).toFixed(1)} s</div>
+          <div style={{ opacity: 0.85 }}>sujeción superior e inferior con ranuras de clamp · soporte · rieles + pilares · expulsora + retenedora · guías + bujes · anillo centrador · retornos · tornillería</div>
+          <div style={{ color: ciclo.portamoldes.carreraLibreMm >= ciclo.portamoldes.carreraPedidaMm ? '#7ee0a0' : '#ffb347' }}>
+            carrera de expulsión: la caja deja {ciclo.portamoldes.carreraLibreMm} mm · tu pieza pide {ciclo.portamoldes.carreraPedidaMm} mm (H + 8)
+            {ciclo.portamoldes.carreraLibreMm >= ciclo.portamoldes.carreraPedidaMm ? ' ✓' : ' — NO CABE: la caja expulsora debe crecer'}
+          </div>
+        </div>
+      )}
+      {ciclo.estacion === 8 && ciclo.e8 && !ciclo.pieza && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
       {ciclo.estacion === 9 && ciclo.e9 && <CicloE9 e9={ciclo.e9} onE10={cicloEstacion10} />}
       {ciclo.estacion === 10 && ciclo.e10 && <CicloE10 e10={ciclo.e10} onE11={cicloEstacion11} />}
       {ciclo.estacion === 11 && ciclo.e11 && <CicloE11 e11={ciclo.e11} onE12={cicloEstacion12} />}

@@ -1,0 +1,133 @@
+{
+ "orden": "2026-09-18-el-portamoldes-de-tu-pieza",
+ "medido": "2026-09-21 · iangpu (RTX 4070 Ti) · carcasa 1594C Box, pared 3.2 · node + kernel y la app en dev2 :5194",
+ "constructorEnNode": {
+  "buildMoldPartsS": 6.2,
+  "componentes": 25,
+  "triangulos": 68824,
+  "funcionalS": 0.54,
+  "mismoMarco": "partición del ciclo 160 = plateStackZ().A",
+  "expulsoraEntreRieles": "x 65..181 dentro del hueco 50..196"
+ },
+ "enLaApp": {
+  "estacion8S": [
+   6.7,
+   9.2,
+   8.8
+  ],
+  "kernelPortamoldesS": 5.4,
+  "componentesDelPortamoldes": 14,
+  "rolesE3EnBloques": [
+   "clamp",
+   "support",
+   "ejector-ret",
+   "ejector",
+   "bottom",
+   "rieles"
+  ],
+  "rolesEstacion8": [
+   "clamp",
+   "support",
+   "ejector-ret",
+   "ejector",
+   "bottom",
+   "guias",
+   "bujes",
+   "tornillos-cav",
+   "tornillos-core",
+   "interlocks",
+   "pines-retorno",
+   "rieles",
+   "pilares-soporte",
+   "anillo"
+  ]
+ },
+ "animacion": {
+  "botadoresSubenMm": 41.3,
+  "expulsoraSubeMm": 41.3,
+  "elMoldeTrabajaPctPixeles": 33.6
+ },
+ "carrera": {
+  "libreMm": 31,
+  "pedidaMm": 41.3,
+  "cabe": false,
+  "causa": "packageToAssemblySpec clava ejectorHousing: 66 (y bottomClamp/topClamp 36) para cualquier pieza",
+  "siguiente": "ordenes/2026-09-21-la-carrera-cabe.md"
+ },
+ "colisiones_moldSolidCollisions": {
+  "arregladoAqui": [
+   {
+    "par": "nucleo ↔ support",
+    "antesMm3": 434000,
+    "antesPenMm": 9.5,
+    "despues": "sin contacto",
+    "causa": "el núcleo se pintaba ABIERTO −40 mm en E3 y nunca regresaba"
+   },
+   {
+    "par": "nucleo ↔ pilares-soporte",
+    "antesPenMm": 11.07,
+    "despues": "sin contacto"
+   },
+   {
+    "par": "pin-cuerpo-k ↔ support / ejector-ret",
+    "antesPenMm": [
+     0.55,
+     0.5
+    ],
+    "despuesPenMm": 0.02,
+    "causa": "barrenos con el ⌀ de la punta; por ahí pasa el CUERPO ⌀4.763"
+   }
+  ],
+  "realesRegistrados": [
+   {
+    "par": "nucleo ↔ pines-retorno",
+    "mm3": 15000,
+    "penMm": 5.3,
+    "nota": "los 4 retornos atraviesan la esquina del inserto de núcleo: el constructor los pone por las esquinas de la expulsora (65+26, 20+26) sin mirar el inserto (57..189 × 36.5..209.5)"
+   },
+   {
+    "par": "agua-tapon-B-* ↔ support",
+    "penMm": 1.14,
+    "nota": "CAUSA 2 confirmada en la app por otra vía: el mismo 1.14 mm de los revisores"
+   },
+   {
+    "par": "agua-B-linea* ↔ support",
+    "penMm": 0.4
+   },
+   {
+    "par": "agua-B-linea0/2 ↔ pines-retorno",
+    "penMm": 0.63
+   }
+  ],
+  "falsosPositivos": [
+   {
+    "par": "nucleo/cavidad ↔ guias/bujes",
+    "nota": "las 4 guías van en UNA malla; por poste x 21.7..49.7 y el inserto empieza en 57: 7 mm de acero entre ellos. El detector se confunde con mallas de varios cuerpos."
+   }
+  ],
+  "dentroDelPortamoldes": 0
+ },
+ "cubo": {
+  "cicloDadoTest": "266/266",
+  "nota": "265/266 al abrir: el check del CARGADOR pedía «FUSIONADOS» (deuda de LA ENTRADA, mía); ahora pide y MIDE la pieza mayor (kernel 25.16 cc, malla 25.11 cc)"
+ },
+ "tsc": "66 = 66, lista idéntica",
+ "camino": {
+  "checks": 46,
+  "ok": 44,
+  "rojos": [
+   {
+    "id": "p6-5",
+    "que": "colada en ≤60 s",
+    "medido": "61.0 / 62.3 s",
+    "nota": "reloj, con el host cargado (E5 75–80 s contra 57.5 sola)"
+   },
+   {
+    "id": "p6-12",
+    "que": "la carrera cabe",
+    "medido": "31 < 41.3",
+    "nota": "ROJO A PROPÓSITO: se lo debe LA CARRERA CABE"
+   }
+  ]
+ }
+}

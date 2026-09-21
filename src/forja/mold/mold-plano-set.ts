@@ -74,6 +74,25 @@ export function supportPillarPositions(spec: MoldAssemblySpec, D: number): Array
   return chosen;
 }
 
+// ── EL PORTAMOLDES, UNA SOLA VERDAD (orden 2026-09-18-el-portamoldes-de-tu-pieza) ──
+// Estas cotas vivían como literales sueltos (65/20/130/40 en la expulsora, 50 en el riel, la oreja y el tinte dentro de
+// buildMoldParts). El ciclo de la pieza pinta la PILA en bloques desde E3 y el detalle al final: los dos salen de aquí.
+export const EXPULSORA_MARGEN_X_MM = 65;       // la expulsora vive ENTRE los rieles (Fig 1.4/1.5): 65 por lado en X
+export const EXPULSORA_MARGEN_Y_MM = 20;       // y 20 por lado en Y
+export const RIEL_ANCHO_MM = 50;
+/** oreja de sujeción (Fig 1.4): lo que SOBRESALEN en ±X las dos placas de sujeción, con su ranura de clamp */
+export const orejaDeSujecionMm = (spec: MoldAssemblySpec) => Math.max(28, Math.round(spec.widthMm * 0.09));
+const ACERO_BASE = '#8a97ab';
+/** COLOR PROPIO por placa (para diferenciarlas como en Fusion) — tonos de acero distinguibles. */
+export const tinteDePlaca = (spec: MoldAssemblySpec): Record<string, string> => ({
+  clamp: '#8ea2c6', A: '#9784c2',
+  // El ANILLO STRIPPER es el protagonista de la expulsión: dorado brillante
+  // (familia del paquete expulsor) para que se distinga de las placas quietas
+  // — si se ve azul-acero como una placa más, la expulsión no se entiende.
+  B: spec.ejectors?.type === 'stripper' ? '#f2c14e' : '#5fa8c4',
+  support: '#9aa6ba', ejector: '#c39457', 'ejector-ret': '#d4b06a', bottom: '#7f95a8',
+});
+
 export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: PlateDef, detail: 'full' | 'blocks' = 'full', ext = 0, shaveMm = 0): { solid: any; drilled: number; holes: number } {
   const W = spec.widthMm, D = plateDepth(spec), t = def.thick;
   // ext = oreja de sujeción (Fig 1.4): la placa de los extremos SOBRESALE `ext` mm en
@@ -100,7 +119,7 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
   // La PLACA EXPULSORA vive DENTRO del housing (entre los rieles): más angosta que el
   // molde (Fig 1.4/1.5 — el housing en U deja verla por los costados abiertos).
   if (def.role === 'ejector' || def.role === 'ejector-ret') {
-    solid = K.transformShape(oc, K.makeBox(oc, W - 130, D - 40, t), { translate: [65, 20, 0] });
+    solid = K.transformShape(oc, K.makeBox(oc, W - 2 * EXPULSORA_MARGEN_X_MM, D - 2 * EXPULSORA_MARGEN_Y_MM, t), { translate: [EXPULSORA_MARGEN_X_MM, EXPULSORA_MARGEN_Y_MM, 0] });
     // LIBRAMIENTO de los SUPPORT PILLARS (Fig 1.6): las placas expulsoras SUBEN Y BAJAN
     // por los pilares ⌀40 (en W·0.35 y W·0.65) — sin este barreno el pilar y la placa
     // ocupan el mismo acero (imposible). Holgura REAL de fits.ts (no inventada).
@@ -1281,16 +1300,16 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     // de los rieles → cada riel lleva sus barrenos pasantes (railX cae dentro del riel).
     const railScrews = standardHoles(spec, 'bottom').filter((h) => /tornillo/.test(h.type));
     const railWithHoles = (x0: number) => {
-      let rail = boxAt(50 - 0.3, D - 0.6, eh, x0, 0.3, bc);
+      let rail = boxAt(RIEL_ANCHO_MM - 0.3, D - 0.6, eh, x0, 0.3, bc);
       for (const s of railScrews) {
-        if (s.x < x0 || s.x > x0 + 50) continue;                 // solo los que caen en ESTE riel
+        if (s.x < x0 || s.x > x0 + RIEL_ANCHO_MM) continue;                 // solo los que caen en ESTE riel
         try { rail = K.cut(oc, rail, K.makeCylinder(oc, s.dia / 2, eh + 2, { origin: [s.x, s.y, bc - 1], dir: [0, 0, 1] })); } catch { /* barreno de riel */ }
       }
       return rail;
     };
     push('rieles', 'Rieles del housing (2)', spec.baseSteel ?? '1.1730',
-      [railWithHoles(0.3), railWithHoles(W - 50)], '#8a97ab', 0.95,
-      ['housing en "U" (Fig 1.4)', `2 rieles 50×${D}×${eh} mm`, 'la expulsora corre entre ellos', 'barrenos pasantes de la tornillería del núcleo (§12.2.3)']);
+      [railWithHoles(0.3), railWithHoles(W - RIEL_ANCHO_MM)], ACERO_BASE, 0.95,
+      ['housing en "U" (Fig 1.4)', `2 rieles ${RIEL_ANCHO_MM}×${D}×${eh} mm`, 'la expulsora corre entre ellos', 'barrenos pasantes de la tornillería del núcleo (§12.2.3)']);
     // SUPPORT PILLARS (Fig 1.6): postes que evitan que la placa de soporte flexione.
     const pillarPos = supportPillarPositions(spec, D);            // MISMA fuente que las holguras
     push('pilares-soporte', `Support pillars (${pillarPos.length})`, spec.baseSteel ?? '1.1730',
@@ -1358,25 +1377,47 @@ export function buildMountParts(K: any, oc: any, spec: MoldAssemblySpec): MoldPa
   return out;
 }
 
+/** Una caja envolvente del portamoldes: esquina (x0,y0,z0) y tamaño (w,l,h), en el marco de la base. */
+export interface CajaDelPortamoldes { x0: number; y0: number; z0: number; w: number; l: number; h: number }
+export interface BloqueDelPortamoldes { role: string; name: string; color: string; cajas: CajaDelPortamoldes[] }
+/** LA PILA EN BLOQUES (orden el-portamoldes-de-tu-pieza): las placas de sujeción con su oreja, el soporte, los dos rieles
+ *  y el paquete expulsor como CAJAS — sin ranuras ni barrenos, así que cuestan milisegundos. Es lo que el ciclo de la
+ *  pieza enseña desde E3 («la base se COMPRA primero»); el detalle fresado llega con `soloPortamoldes` al final.
+ *  MISMAS cotas, roles y tintes que `buildMoldParts` (salen de las constantes de arriba). A y B NO van: las pinta el ciclo. */
+export function portamoldesEnBloques(spec: MoldAssemblySpec): BloqueDelPortamoldes[] {
+  const W = spec.widthMm, D = plateDepth(spec), z = plateStackZ(spec), tinte = tinteDePlaca(spec), oreja = orejaDeSujecionMm(spec);
+  const out: BloqueDelPortamoldes[] = [];
+  for (const def of plateDefs(spec)) {
+    if (def.role === 'A' || def.role === 'B') continue;
+    const ext = def.role === 'clamp' || def.role === 'bottom' ? oreja : 0;
+    const expulsora = def.role === 'ejector' || def.role === 'ejector-ret';
+    out.push({ role: def.role, name: def.name, color: tinte[def.role] ?? ACERO_BASE, cajas: [expulsora
+      ? { x0: EXPULSORA_MARGEN_X_MM, y0: EXPULSORA_MARGEN_Y_MM, z0: z[def.role] ?? 0, w: W - 2 * EXPULSORA_MARGEN_X_MM, l: D - 2 * EXPULSORA_MARGEN_Y_MM, h: def.thick }
+      : { x0: -ext, y0: 0, z0: z[def.role] ?? 0, w: W + 2 * ext, l: D, h: def.thick }] });
+  }
+  const bc = spec.plates.bottomClamp, eh = spec.plates.ejectorHousing;
+  out.push({ role: 'rieles', name: 'Rieles del housing (2)', color: ACERO_BASE,
+    cajas: [0, W - RIEL_ANCHO_MM].map((x0) => ({ x0, y0: 0, z0: bc, w: RIEL_ANCHO_MM, l: D, h: eh })) });
+  return out;
+}
+/** Roles del constructor que SON portamoldes (placas de la base + herrajes). Lo demás que `buildMoldParts` arma — su pieza,
+ *  sus insertos, su colada, su agua, sus pines, las platinas — el ciclo de la pieza ya lo tiene, mejor y con SUS números:
+ *  mezclarlos serían dos aguas y dos juegos de pines en pantalla. A y B tampoco: son la ventana del ciclo al interior. */
+export const ROLES_DEL_PORTAMOLDES = ['clamp', 'support', 'ejector', 'ejector-ret', 'bottom', 'rieles', 'pilares-soporte',
+  'guias', 'bujes', 'anillo', 'pines-retorno', 'tornillos-cav', 'tornillos-core', 'interlocks'] as const;
+export const soloPortamoldes = (parts: MoldPart[]): MoldPart[] => parts.filter((p) => (ROLES_DEL_PORTAMOLDES as readonly string[]).includes(p.role));
+
 /** El molde como COMPONENTES separados — para el árbol de La Forja: aislar / ocultar
  *  / opacidad, como Fusion/SolidWorks. PLACAS (con cavidad ciega + barrenos) MÁS los
  *  componentes funcionales (pines, agua, guías, pieza, colada). Todo con primitivas. */
 export function buildMoldParts(K: any, oc: any, spec: MoldAssemblySpec, detail: 'full' | 'blocks' = 'blocks', partMesh?: { positions: Float32Array; indices: Uint32Array },
   realSolids?: { cav: any; core: any; piece?: any; zPartSplit: number }): MoldPart[] {
   const z = plateStackZ(spec);
-  // COLOR PROPIO por placa (para diferenciarlas como en Fusion) — tonos de acero
-  // distinguibles; A/B (cavidad/núcleo) quedan translúcidas para ver adentro.
-  const PLATE_TINT: Record<string, string> = {
-    clamp: '#8ea2c6', A: '#9784c2',
-    // El ANILLO STRIPPER es el protagonista de la expulsión: dorado brillante
-    // (familia del paquete expulsor) para que se distinga de las placas quietas
-    // — si se ve azul-acero como una placa más, la expulsión no se entiende.
-    B: spec.ejectors?.type === 'stripper' ? '#f2c14e' : '#5fa8c4',
-    support: '#9aa6ba', ejector: '#c39457', 'ejector-ret': '#d4b06a', bottom: '#7f95a8',
-  };
-  const STEEL = '#8a97ab';
+  // COLOR PROPIO por placa: `tinteDePlaca` (arriba, fuente única); A/B (cavidad/núcleo) quedan translúcidas para ver adentro.
+  const PLATE_TINT = tinteDePlaca(spec);
+  const STEEL = ACERO_BASE;
   const out: MoldPart[] = [];
-  const CLAMP_EXT = Math.max(28, Math.round(spec.widthMm * 0.09));   // oreja de sujeción (sobresale)
+  const CLAMP_EXT = orejaDeSujecionMm(spec);   // oreja de sujeción (sobresale)
   // PLANES de partes móviles UNA vez: las placas cortan el CANAL de la corredera
   // ("the A plate, cavity insert, B plate, and core insert all required modifications
   //  to accommodate the moving core" — §11.3.6) y el kit usa los mismos marcos.

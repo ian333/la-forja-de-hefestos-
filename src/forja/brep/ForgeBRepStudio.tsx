@@ -3960,8 +3960,10 @@ export default function ForgeBRepStudio() {
       // EL AGUA DE TU PIEZA (2026-09-17): la E5 ya no es el final. El circuito del cap 9 se barrena
       // sobre el molde de ESTA pieza — el paso 6 del camino pedía «agua» y hasta hoy decía ✗.
       : c.estacion === 5 ? mold.cicloAguaPieza
-      // LOS BOTADORES DE TU PIEZA (2026-09-17): después del agua, los expulsores — y el ciclo arranca solo
-      : c.estacion === 6 ? mold.cicloBotadoresPieza : null;
+      // LOS BOTADORES DE TU PIEZA (2026-09-17): después del agua, los expulsores
+      : c.estacion === 6 ? mold.cicloBotadoresPieza
+      // EL PORTAMOLDES DE TU PIEZA (2026-09-21): el molde ENTERO — y entonces el ciclo arranca solo
+      : c.estacion === 7 ? mold.cicloPortamoldesPieza : null;
     if (!paso) return;
     // LO QUE HAY SE VE (2026-09-09): de E3 en adelante, 400 ms de aire en vez de 80. Medido en el arnés
     // (step_25): E3 se pintaba OSCURA porque el salto de cámara (30 ms después del commit) no alcanzaba a
@@ -7337,14 +7339,19 @@ export default function ForgeBRepStudio() {
                 const placas = tiene('cavidad') && tiene('nucleo');
                 const agua = roles.some((r) => r.startsWith('agua-'));
                 const expulsores = roles.some((r) => r.startsWith('pin-'));
+                // EL PORTAMOLDES (2026-09-21): la pila en bloques ya trae `clamp`/`bottom`/`ejector` desde E3, así que la palomita
+                // solo se gana con el ACERO FRESADO de la estación 8: los herrajes que un bloque no tiene (anillo + guías + retornos).
+                const portamoldes = tiene('clamp') && tiene('bottom') && tiene('ejector') && tiene('anillo') && tiene('guias') && tiene('pines-retorno');
+                const pm = c?.portamoldes;
                 const est = c?.pieza ? c.estacion : 0;
                 const pg = mold.progreso; void tickMolde;
                 const enCurso = pg && pg.i < pg.n;
                 const txt = !c?.pieza ? (result ? 'esperando el sólido…' : 'necesita el sólido del STEP (un STL no trae)')
                   : mold.intake.wallMm == null ? 'midiendo la pared en el Foco…'
-                  : est < 7 ? `E${est}/7 · armando…` : 'E7/7';
+                  : est < 8 ? `E${est}/8 · armando…` : 'E8/8';
                 return (
                   <div data-testid="molde-de-la-pieza" data-estacion={est} data-roles={roles.join(' ')} data-pared={mold.intake.wallMm ?? ''}
+                    data-portamoldes={portamoldes ? '1' : '0'} data-carrera-libre={pm?.carreraLibreMm ?? ''} data-carrera-pedida={pm?.carreraPedidaMm ?? ''}
                     data-partes={mold.moldParts.length} data-tris={mold.moldParts.reduce((n, p) => n + (p.indices ? p.indices.length / 3 : 0), 0)} data-bbox={moldeBBoxRef.current} data-enc={moldeEncRef.current}
                     style={{ display: 'flex', alignItems: 'center', gap: 7, marginLeft: 6, fontSize: 9.5, color: '#9fb0c4' }}>
                     <span style={{ width: 16, height: 3, borderRadius: 2, background: '#ffcc33' }} />
@@ -7366,7 +7373,11 @@ export default function ForgeBRepStudio() {
                       {/* EL AGUA DE TU PIEZA: el agua ya es la de ESTA pieza, así que la leyenda deja de
                           estar clavada en ✗ y dice lo que hay (los expulsores siguen siendo del cubo: se dice). */}
                       <span style={{ color: agua ? '#7ee2a8' : '#6f8095' }}>{agua ? '✓' : '·'} agua</span>{' '}
-                      <span style={{ color: expulsores ? '#7ee2a8' : '#6f8095' }}>{expulsores ? '✓' : '·'} expulsores</span>
+                      <span style={{ color: expulsores ? '#7ee2a8' : '#6f8095' }}>{expulsores ? '✓' : '·'} expulsores</span>{' '}
+                      <span style={{ color: portamoldes ? '#7ee2a8' : '#6f8095' }}>{portamoldes ? '✓' : '·'} portamoldes</span>
+                      {pm && pm.carreraLibreMm < pm.carreraPedidaMm && (
+                        <span data-testid="aviso-carrera" style={{ color: '#ffb347', marginLeft: 6 }}>⚠ la carrera no cabe: {pm.carreraLibreMm} &lt; {pm.carreraPedidaMm} mm</span>
+                      )}
                     </span>
                   </div>
                 );

@@ -1350,11 +1350,16 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       lid.fuente === 'step' && lid.solidos === 1 && cerca(vaLid.volumeMm3, lid.volKernelMm3, lid.volKernelMm3 * 0.005),
       `malla ${vaLid.volumeMm3.toFixed(1)} vs kernel ${lid.volKernelMm3.toFixed(1)} mm³ (${(100 * Math.abs(vaLid.volumeMm3 - lid.volKernelMm3) / lid.volKernelMm3).toFixed(2)} %)`);
 
-    // 4 · MULTI-SÓLIDO DECLARADO: el defecto que el v1-gate destapó, dicho en voz alta
+    // 4 · MULTI-SÓLIDO DECLARADO: el defecto que el v1-gate destapó, dicho en voz alta. Desde LA ENTRADA (2026-09-19) el
+    //     cargador ya no mide el conjunto FUSIONADO: moldea la pieza MAYOR y lo dice. El check pedía la palabra del defecto
+    //     viejo y se quedó rojo sin que nadie lo corriera (cazado 2026-09-21); ahora pide la verdad nueva Y LA MIDE: el
+    //     volumen que sale es el del sólido mayor (25.16 cc), no el del ladrillo de 10.
     const multi = await mallaDesdeArchivo('1553B.stp', leer('inyeccion-reales/1553B.stp'));
-    check('CARGADOR · un STEP con varios sólidos lo DICE (no cotiza el conjunto en silencio)',
-      multi.solidos === 10 && multi.notas.some((n) => /10 sólidos/.test(n) && /FUSIONADOS/i.test(n)),
-      `${multi.solidos} sólidos · nota: ${(multi.notas.find((n) => /sólidos/.test(n)) || '').slice(0, 90)}`);
+    const vaMulti = rm.meshVolumeArea(multi.mesh);
+    check('CARGADOR · un STEP con varios sólidos lo DICE y moldea la pieza MAYOR (no cotiza el conjunto en silencio)',
+      multi.solidos === 10 && multi.notas.some((n) => /10 sólidos/.test(n) && /pieza MAYOR/i.test(n))
+        && cerca(multi.volKernelMm3, 25160, 25160 * 0.01) && cerca(vaMulti.volumeMm3, multi.volKernelMm3, multi.volKernelMm3 * 0.01),
+      `${multi.solidos} sólidos · kernel ${(multi.volKernelMm3 / 1000).toFixed(2)} cc · malla ${(vaMulti.volumeMm3 / 1000).toFixed(2)} cc · nota: ${(multi.notas.find((n) => /sólidos/.test(n)) || '').slice(0, 80)}`);
 
     // 5 · CONTROL NEGATIVO: basura y extensión ajena fallan con mensaje LEGIBLE
     let msgBasura = '', msgExt = '';

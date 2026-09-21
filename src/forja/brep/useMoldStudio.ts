@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import * as THREE from 'three';
 import * as OCC from './occt';
 import { tessellate, makeCompound } from './occt';
-import { buildMoldParts, packageToAssemblySpec, plateStackZ, type MoldPart } from '../mold/mold-plano-set';
+import { buildMoldParts, packageToAssemblySpec, plateStackZ, portamoldesEnBloques, soloPortamoldes, type MoldPart } from '../mold/mold-plano-set';
 import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
 import { flanera } from '../mold/flanera';
 import { splitMold, shapeBBox, scaleForShrinkage } from '../mold/mold';
@@ -134,6 +134,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
     e9?: Estacion9Dado;
     /** ESTACIÓN 10 · EXPULSIÓN (cap 11): los pines — los ciclos ejercidos */
     e10?: Estacion10Dado;
+    /** estación 8 de TU pieza — EL PORTAMOLDES: lo que se armó y la carrera que cabe en la caja expulsora */
+    portamoldes?: { roles: string[]; tris: number; ms: number; carreraLibreMm: number; carreraPedidaMm: number };
     /** ESTACIÓN 11 · ESTRUCTURA (cap 12): el acero que quedó, rindiendo cuentas */
     e11?: Estacion11Dado;
     /** ESTACIÓN 12 · EL ACTA (§13.10): el cubo, firmado */
@@ -931,9 +933,16 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       // 0.07 la base pre-pintada era invisible sobre el fondo.
       const pA = cursoPart(OCC.transformShape(oc, OCC.makeBox(oc, col0.baseWmm, col0.baseLmm, col0.plates.A), { translate: [0, 0, zPart0] }), 'placa-a-ghost', `placa A ${col0.baseWmm}×${col0.baseLmm}×${col0.plates.A} — el acero COMPRADO que aloja la cavidad`, '#8fa0b8', 0.30, 0.01);
       const pB = cursoPart(OCC.transformShape(oc, OCC.makeBox(oc, col0.baseWmm, col0.baseLmm, col0.plates.B), { translate: [0, 0, zPart0 - col0.plates.B] }), 'placa-b-ghost', `placa B ${col0.baseWmm}×${col0.baseLmm}×${col0.plates.B} — aloja el núcleo`, '#8fa0b8', 0.30, 0.01);
+      // EL PORTAMOLDES EN BLOQUES (orden el-portamoldes-de-tu-pieza · ian 2026-09-21: «falta literal TODO el molde»): la base
+      // se COMPRA entera — las dos placas de sujeción con su oreja, el soporte, los rieles y el paquete expulsor aparecen con
+      // A y B desde el primer cuadro. Son cajas (milisegundos), translúcidas como toda la base comprada; el acero fresado
+      // (ranuras de clamp, guías, anillo, retornos) llega en la estación final y las REEMPLAZA por rol. El cubo no las lleva.
+      const pila: MoldPart[] = pieza ? portamoldesEnBloques(packageToAssemblySpec(pkg)).map((b) => cursoPart(
+        OCC.makeCompound(oc, b.cajas.map((c) => OCC.transformShape(oc, OCC.makeBox(oc, c.w, c.l, c.h), { translate: [c.x0, c.y0, c.z0] }))),
+        b.role, `${b.name} — base COMPRADA (§4.3.2), en bloque: el fresado llega con el portamoldes`, b.color, 0.30, 0.8)) : [];
       setMoldOpacity({});
       setCollapsed((c) => ({ ...c, features: false }));
-      cursoSet(3, [cab, `base ${col0.baseWmm}×${col0.baseLmm} comprada (§4.3.2) · tallando la cavidad y el núcleo…`], [...(pPieza ? [pPieza] : []), pPart, pA, pB]);
+      cursoSet(3, [cab, `base ${col0.baseWmm}×${col0.baseLmm} comprada (§4.3.2) · tallando la cavidad y el núcleo…`], [...(pPieza ? [pPieza] : []), pPart, pA, pB, ...pila]);
       t = marca(3, base2 ? 'base y pieza colocada (malla de E2)' : `base y pieza colocada (SIN malla de E2 en el closure: roles ${moldParts.map((p) => p.role).join('+') || 'ninguno'}; teselada del kernel)`, t);
       // ── paso 1/5: EL ACERO (los cortes booleanos del kernel: el paso atómico más largo) ──
       setProgreso({ estacion: 3, paso: 'tallando la cavidad y el núcleo en el acero (booleanas del kernel)', i: 0, n: 5, t0: T0 });
@@ -961,14 +970,14 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       setProgreso({ estacion: 3, paso: 'acero tallado ✓ · teselando la cavidad', i: 0, n: 5, t0: T0 });
       await respira();
       const pCav = cursoPart(r.cavityPlate, 'cavidad', 'INSERTO DE CAVIDAD (hembra) · P20 · talla el exterior', '#9db4d0', 0.40, 0.03);
-      cursoSet(3, [cab, compra, 'cavidad ✓ · teselando el núcleo…'], [pPieza, pPart, pA, pB, pCav]);
+      cursoSet(3, [cab, compra, 'cavidad ✓ · teselando el núcleo…'], [pPieza, pPart, pA, pB, pCav, ...pila]);
       t = marca(3, 'tessellate cavidad', t);
       setProgreso({ estacion: 3, paso: 'cavidad en pantalla · teselando el núcleo', i: 0, n: 5, t0: T0 });
       await respira();
       // el explode ABRE hacia B (−z): con el volteo, +34 clavaba el núcleo A TRAVÉS
       // de la cavidad (medido: nucleo z 164..217.5 vs cavidad 146..206 — traslape)
       const pNuc = cursoPart(OCC.transformShape(oc, r.corePlate, { translate: [0, 0, -40] }), 'nucleo', 'INSERTO DE NÚCLEO + macho · P20 (abierto −40 mm hacia B)', '#b8c6da', 0.92, 0.07);
-      cursoSet(3, [cab, compra, 'tallado ✓ · midiendo…'], [pCav, pNuc, pPieza, pPart, pA, pB]);
+      cursoSet(3, [cab, compra, 'tallado ✓ · midiendo…'], [pCav, pNuc, pPieza, pPart, pA, pB, ...pila]);
       t = marca(3, 'tessellate núcleo', t);
       // ── paso 2/5: LA VERIFICACIÓN (17 cotas del B-Rep) ──
       setProgreso({ estacion: 3, paso: 'midiendo el acero: 17 cotas declarado ≈ medido, draft por rebanadas', i: 1, n: 5, t0: T0 });
@@ -1022,13 +1031,25 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       // clase de bug del onE4). La colocación viaja en el resultado: acero.colocacion.
       // (partición y placas ya viven desde el paso 0: pPart/pA/pB — mismas cotas, col0 ≡ col3)
       if (Math.abs(zPart3 - zPart0) > 1e-9) console.warn('E3: zPart0 ≠ zPart3', zPart0, zPart3);
+      // EL NÚCLEO CIERRA (orden el-portamoldes-de-tu-pieza · cazado con `moldSolidCollisions` sobre el molde entero): el
+      // núcleo se pinta ABIERTO −40 mm para MEDIR los dos cuerpos por separado, y así se quedaba para siempre — en el molde
+      // «armado» de tu pieza el macho colgaba 40 mm debajo de la pieza y se metía 9.5 mm en la placa de soporte (434,000 mm³
+      // de acero compartido), 11 mm en los pilares y 5 mm en los retornos. Sin portamoldes no había contra qué chocar y nadie
+      // lo veía. Medido ya todo, el molde de TU pieza CIERRA: el núcleo sube a su lugar y sus cotas con él. El cubo se queda
+      // abierto como lo firmó ian (su ciclo enseña las mitades separadas hasta la E12).
+      let pNucFinal = pNuc;
+      if (pieza) {
+        const pos = new Float32Array(pNuc.positions); for (let k = 2; k < pos.length; k += 3) pos[k] += 40;
+        pNucFinal = { ...pNuc, positions: pos, name: 'INSERTO DE NÚCLEO + macho · P20 — en su lugar: el molde cierra sobre tu pieza' };
+        setCiclo((c) => ({ ...(c as NonNullable<typeof c>), e3cotas: cotasCicloE3(e3v, acero, 0, marco3) }));
+      }
       cursoSet(3, [
         cab, compra,
         pieza
           ? 'el acero talla TU sólido TAL CUAL — el draft es el que TU pieza trae (la E1 lo juzgó §2.3.6; aquí se MIDE del B-Rep)'
           : 'draft 1.5° TALLADO — y los semáforos §4.3.3 despiertan (mira el panel de análisis)',
       ], [
-        pCav, pNuc, pPieza, pPart, pA, pB,
+        pCav, pNucFinal, pPieza, pPart, pA, pB, ...pila,
       ]);
       marca(3, 'placas', t); marca(3, 'E3 total', T0);
       setProgreso({ estacion: 3, paso: 'acero listo', i: 5, n: 5, t0: T0 });
@@ -1410,12 +1431,23 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       await respira();
       // la punta termina en el PISO INTERIOR de tu pieza (base cerrada − pared): empuja desde el macho
       const zPiso = col.zBaseCerradaMm - wallMm;
+      const asmPila = packageToAssemblySpec(ciclo.e2.pkg);
+      const zRetenedora = plateStackZ(asmPila)['ejector-ret'];                    // cara de la expulsora = base de la retenedora
+      const espRetenedora = Math.max(12, Math.round(asmPila.plates.ejectorHousing * 0.2));   // = plateDefs('ejector-ret')
       const parts: MoldPart[] = [];
       for (let k = 0; k < e10.pines.posiciones.length; k++) {
         const pin = e10.pines.posiciones[k];
         const zHombro = zPiso - punta.puntaMm;
         const tip = OCC.makeCylinder(oc, punta.puntaDiaMm / 2, punta.puntaMm, { origin: [pin.x, pin.y, zHombro], dir: [0, 0, 1] });
-        const body = OCC.makeCylinder(oc, punta.cuerpoDiaMm / 2, punta.libreCuerpoMm, { origin: [pin.x, pin.y, zHombro - punta.libreCuerpoMm], dir: [0, 0, 1] });
+        // EL CUERPO LLEGA A LA RETENEDORA (orden el-portamoldes-de-tu-pieza): `libreCuerpoMm` se midió de la retenedora a la
+        // PARTICIÓN, pero la punta sube hasta el piso de la pieza (zPiso > partición): el cuerpo acababa en el aire (29.6 mm
+        // sobre la expulsora en la carcasa). Ahora baja hasta la cara de la expulsora, donde la CABEZA queda capturada
+        // entre expulsora y retenedora (Fig 1.6): ⌀ cuerpo + 4, dentro del espesor de la retenedora.
+        const largoCuerpo = Math.max(punta.libreCuerpoMm, zHombro - zRetenedora);
+        const body = OCC.makeCompound(oc, [
+          OCC.makeCylinder(oc, punta.cuerpoDiaMm / 2, largoCuerpo, { origin: [pin.x, pin.y, zHombro - largoCuerpo], dir: [0, 0, 1] }),
+          OCC.makeCylinder(oc, punta.cuerpoDiaMm / 2 + 2, Math.min(5, espRetenedora - 1), { origin: [pin.x, pin.y, zRetenedora], dir: [0, 0, 1] }),
+        ]);
         parts.push(
           cursoPart(tip, `pin-punta-${k}`, `PIN ${k} (agarre §11.2.5) · punta ⌀${punta.puntaDiaMm} × ${punta.puntaMm} GUIADA en su barreno — empuja el piso de tu pieza junto a la pared, donde abraza al macho`, '#d8dde4', 0.95, 0.95),
           cursoPart(body, `pin-cuerpo-${k}`, `cuerpo ⌀${punta.cuerpoDiaMm} al hombro (+1 → catálogo, R52) — el pandeo se verifica AQUÍ (SF ${e10.pines.pandeoNuestro.sf})`, '#aab4c0', 0.9, 0.9),
@@ -1434,11 +1466,62 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         `AGARRE §11.2.5: ${grip.nParedes} columnas de pared, ${grip.nCandidatos} candidatos, ${posiciones.length} pines junto a donde abraza al macho · juez contra el agua: ${e10.juez.ok ? 'VERDE' : 'ROJO'} (peor ${Math.min(...e10.juez.claros.map((c) => c.claroMm)).toFixed(1)} mm)`,
         ...grip.notas,
       ], [...moldParts, ...parts]);
-      // LA ANIMACIÓN: el molde ya está completo; que se vea TRABAJAR (llenar · abrir · expulsar), no posar
-      if (cicloRafRef.current == null) cicloPlayToggle();
+      // la animación arranca cuando el molde está ENTERO: la estación 8 (el portamoldes) la enciende
     } catch (e) { console.warn('E10_PIEZA_ERR', e); }
-    finally { marca(7, 'E7 botadores total', T); setProgreso({ estacion: 7, paso: 'botadores listos · el ciclo corre', i: N, n: N, t0: T }); setCursoBusy(false); }
-  }, [oc, ciclo, moldParts, cursoPart, cursoSet, setDocName, setCollapsed, respira, marca, cicloPlayToggle]);
+    finally { marca(7, 'E7 botadores total', T); setProgreso({ estacion: 7, paso: 'botadores listos · falta el portamoldes', i: N, n: N, t0: T }); setCursoBusy(false); }
+  }, [oc, ciclo, moldParts, cursoPart, cursoSet, setDocName, setCollapsed, respira, marca]);
+  // ── ESTACIÓN 8 DE TU PIEZA: EL PORTAMOLDES (Fig 1.4–1.6) ──
+  // ian 2026-09-21, tras el video 34: «en verdad se hace el molde, PERO FALTA EL PORTAMOLDE, FALTA LITERAL TODO EL MOLDE».
+  // El constructor de la Máquina de Moldes (`buildMoldParts`) ya arma la base entera con sus ranuras de clamp, rieles,
+  // pilares, guías + bujes, anillo centrador, retornos y tornillería, CADA PLACA CON SU TINTE; el ciclo de la pieza nunca
+  // lo llamaba. Se toma SOLO el portamoldes (`soloPortamoldes`): pieza, insertos, colada, agua y pines ya son los de TU
+  // pieza — mezclarlos serían dos aguas y dos juegos de pines. Los barrenos de la expulsora y la retenedora son los de
+  // TUS pines de la E7 (misma regla que la lámina). Medido en node (carcasa): 6.2 s → por eso es la ÚLTIMA estación y no E3.
+  const cicloPortamoldesPieza = useCallback(async () => {
+    if (!oc || !ciclo?.e2 || !ciclo?.e10 || !ciclo?.pieza || ciclo.estacion !== 7) return;
+    const T = performance.now(); let t = T; setCursoBusy(true);
+    const N = 3;
+    setProgreso({ estacion: 8, paso: 'el portamoldes: fresando ranuras de clamp, guías, anillo y retornos en el acero de la base (kernel)', i: 0, n: N, t0: T });
+    await respiraCuadro(120);
+    try {
+      const aspec = packageToAssemblySpec(ciclo.e2.pkg);
+      const e10 = ciclo.e10, d5 = ciclo.e5datums;
+      // POR EL SOPORTE, LA RETENEDORA Y LA EXPULSORA PASA EL CUERPO del pin escalonado (⌀ cuerpo), no la punta: con el ⌀ de la
+      // punta el estudio de contacto medía 0.55 mm de acero compartido por pin en el soporte y 0.50 en la retenedora. De este
+      // constructor solo se toman esas placas (B es del ciclo), así que aquí el ⌀ correcto es el del CUERPO. La LÁMINA sigue
+      // barrenando todas las placas con el ⌀ de la punta: es la causa 3 de LAS 20 PIEZAS («el escalonado no llega a barrenos»).
+      if (d5) aspec.ejectors = { ...aspec.ejectors, type: 'pin', count: e10.pines.n, diaMm: e10.pines.escalonado.cuerpoDiaMm,
+        positions: e10.pines.posiciones.map((pp) => ({ x: pp.x - d5.ejeX, y: pp.y - d5.ejeY })) };
+      const porta = soloPortamoldes(buildMoldParts(OCC, oc, aspec, 'full'));
+      t = marca(8, `portamoldes (kernel · ${porta.length} componentes)`, t);
+      setProgreso({ estacion: 8, paso: 'acero de la base en pantalla · ¿cabe la carrera de expulsión en la caja?', i: 1, n: N, t0: T });
+      await respira();
+      // LA CARRERA CONTRA LA CAJA: lo que la retenedora puede subir antes de tocar el soporte vs lo que la pieza pide (H + 8)
+      const z = plateStackZ(aspec);
+      const espRet = Math.max(12, Math.round(aspec.plates.ejectorHousing * 0.2));
+      const carreraLibreMm = +(z.support - (z['ejector-ret'] + espRet)).toFixed(1);
+      const carreraPedidaMm = +((ciclo.pieza.local?.alturaMm ?? 40) + 8).toFixed(1);
+      const cabe = carreraLibreMm >= carreraPedidaMm;
+      const roles = new Set(porta.map((p) => p.role));
+      const tris = porta.reduce((a, p) => a + p.indices.length / 3, 0) | 0;
+      setCiclo({ ...ciclo, estacion: 8, portamoldes: { roles: [...roles], tris, ms: Math.round(performance.now() - T), carreraLibreMm, carreraPedidaMm } });
+      setDocName(`${ciclo.pieza.nombre} · estación 8 — EL PORTAMOLDES: el molde ENTERO (${porta.length} componentes de la base)`);
+      setCollapsed((c: any) => ({ ...c, features: false }));
+      cursoSet(8, [
+        `EL MOLDE DE ${ciclo.pieza.nombre.toUpperCase()} · estación 8 — EL PORTAMOLDES (Fig 1.4–1.6)`,
+        `la base ${aspec.widthMm}×${aspec.depthMm ?? aspec.widthMm} con su acero fresado: sujeción superior e inferior con RANURAS de clamp, soporte, rieles + pilares, expulsora + retenedora, guías + bujes, anillo centrador, retornos y tornillería`,
+        `los barrenos del paquete expulsor son los de TUS ${e10.pines.n} pines (E7), no la rejilla del paquete`,
+        cabe
+          ? `la carrera CABE: la retenedora sube ${carreraLibreMm} mm antes del soporte y tu pieza pide ${carreraPedidaMm} (H + 8)`
+          : `⚠ LA CARRERA NO CABE: la retenedora sube ${carreraLibreMm} mm antes de tocar el soporte y tu pieza pide ${carreraPedidaMm} (H + 8) — la caja expulsora debe crecer ${(carreraPedidaMm - carreraLibreMm).toFixed(1)} mm`,
+      ], [...moldParts.filter((p: any) => !roles.has(p.role)), ...porta]);
+      setProgreso({ estacion: 8, paso: 'el molde está entero · arranca el ciclo', i: 2, n: N, t0: T });
+      await respira();
+      // LA ANIMACIÓN: ahora sí el molde está completo; que se vea TRABAJAR (llenar · abrir · expulsar), no posar
+      if (cicloRafRef.current == null) cicloPlayToggle();
+    } catch (e) { console.warn('PORTAMOLDES_ERR', e); if (cicloRafRef.current == null) cicloPlayToggle(); }
+    finally { marca(8, 'E8 portamoldes total', T); setProgreso({ estacion: 8, paso: 'portamoldes listo · el ciclo corre', i: N, n: N, t0: T }); setCursoBusy(false); }
+  }, [oc, ciclo, moldParts, cursoSet, setDocName, setCollapsed, respira, respiraCuadro, marca, cicloPlayToggle]);
   // ── ESTACIÓN 6: EMPAQUE (cap 7) — el retorno de la E4 se cierra aquí ──
   // El gate REAL (sprue directo, Fig 7.2) contra el empaque que la pieza necesita,
   // la contracción pvT con su número para la E9, y LA EXAGERACIÓN CON BANDERA que
@@ -2016,5 +2099,5 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   // props de los paneles — con moldParts (Float32Arrays de millones) eso es el
   // main thread muerto. Cazado con Debugger.pause el 2026-07-27.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => ({ progreso, telemetria: telemetriaRef.current, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloAguaPieza, cicloBotadoresPieza, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [progreso, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloAguaPieza, cicloBotadoresPieza, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
+  return useMemo(() => ({ progreso, telemetria: telemetriaRef.current, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloAguaPieza, cicloBotadoresPieza, cicloPortamoldesPieza, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [progreso, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloAguaPieza, cicloBotadoresPieza, cicloPortamoldesPieza, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
 }

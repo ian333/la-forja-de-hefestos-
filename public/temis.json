@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-20 00:45",
+ "generado": "2026-09-21 21:20",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
@@ -11,10 +11,10 @@
   "enCurso": 0,
   "imprevisto": 0,
   "supertickets": 9,
-  "cerrado": 93,
+  "cerrado": 94,
   "probado": 0,
-  "porProbar": 57,
-  "sinDesplegar": 11,
+  "porProbar": 58,
+  "sinDesplegar": 12,
   "despues": 26
  },
  "deploy": {
@@ -24,6 +24,82 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
+   {
+    "file": "ordenes/2026-09-21-la-carrera-cabe.md",
+    "slug": "2026-09-21-la-carrera-cabe",
+    "titulo": "LA CARRERA CABE — la caja expulsora se dimensiona por la pieza (hoy es un literal de 66 mm y ninguna pieza de más de 23 mm puede expulsarse)",
+    "fecha": "2026-09-21",
+    "estado": "proximo",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] la regla de la caja expulsora con su cita (Kazmer cap 11/12",
+      "titulo": "Fig 1.6) y la serie comercial del código.",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] `packageToAssemblySpec` la aplica; la cotización (masa de acero) y las 17 láminas se mueven con ella: UNA verdad.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] el cubo: decisión de ian; si se re-firma, los literales del test se actualizan con su acta.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] camino: el check «la carrera cabe» en verde; las 20 piezas como juez (ninguna con carrera > caja).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 4
+    },
+    "objetivo": "que el molde de TU pieza pueda EXPULSARLA. packageToAssemblySpec (mold-plano-set.ts) clava bottomClamp: 36, ejectorHousing: 66, topClamp: 36 para cualquier pieza. Con la expulsora (28 % de la caja = 18) y la retenedora (20 % = 13) adentro …",
+    "toca": 1,
+    "crea": 0,
+    "evidencia": 1,
+    "evidenciaDeclarada": [
+     "carreraLibre ≥ carreraPedida en las 20 piezas; en el paseo la retenedora se detiene ANTES del soporte."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
    {
     "file": "ordenes/2026-09-18-las-20-piezas.md",
     "slug": "2026-09-18-las-20-piezas",
@@ -68,107 +144,6 @@
     "evidencia": 1,
     "evidenciaDeclarada": [
      "El reporte consolidado, los 19 PDF y TABLA.json en Downloads de las dos PCs (y E:\\forja-videos)."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-18-el-portamoldes-de-tu-pieza.md",
-    "slug": "2026-09-18-el-portamoldes-de-tu-pieza",
-    "titulo": "EL PORTAMOLDES DE TU PIEZA — las placas de sujeción con sus ranuras de clamp, rieles, soporte, expulsora y retenedora en el 3D del molde de la pieza soltada",
-    "fecha": "2026-09-18",
-    "estado": "proximo",
-    "prioridad": 4,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "[ ] medir en node `buildMoldParts(spec de la carcasa, 'blocks' y 'full')`: tiempo y triángulos por rol.",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] E3 con la pila completa en bloques (roles del constructor, no `-ghost`); cubo bit-igual (266/266).",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] estación final con el detalle; los cuerpos de los pines llegan a la retenedora (cabeza capturada, Fig 1.6).",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] la animación: `animZ('ejector')` ≈ la carrera de expulsión; `animZ('clamp')` ≈ la apertura.",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] kernel: los pines y el agua NO chocan con el portamoldes (traslape 0 mm³ fuera de sus barrenos).",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] RUNNER paso 6: check «portamoldes» (roles `clamp` + `bottom` + `ejector`) y encuadre todavía ≥ 0.30 / centrado.",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "ian (2026-09-18, tras el video 32): «por primera vez tenemos el ciclo completo, aún faltan los portamoldes y las placas iniciales para poner los clamps, pero a mi parecer hemos llegado». Hoy el molde de la pieza soltada es el CORAZÓN — ins…",
-    "toca": 9,
-    "crea": 3,
-    "evidencia": 4,
-    "evidenciaDeclarada": [
-     "Paso 6: el check «portamoldes» del RUNNER pasa y no se pierde ninguno de los 13 de hoy; el camino sigue 8/8.",
-     "Las ranuras de clamp se VEN en las dos placas de sujeción; la expulsora sube con los pines en el ciclo animado",
-     "Traslape 0 mm³ entre pines/agua y el portamoldes (kernel); ciclo-dado-test 266/266.",
-     "Paseo con el molde COMPLETO; video en ambas PCs; orden-gate VERDE."
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1516,7 +1491,111 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "30ce513",
+    "commit": "f79cd70",
+    "despliegue": "sin-desplegar"
+   },
+   {
+    "file": "ordenes/2026-09-18-el-portamoldes-de-tu-pieza.md",
+    "slug": "2026-09-18-el-portamoldes-de-tu-pieza",
+    "titulo": "EL PORTAMOLDES DE TU PIEZA — las placas de sujeción con sus ranuras de clamp, rieles, soporte, expulsora y retenedora en el 3D del molde de la pieza soltada",
+    "fecha": "2026-09-18",
+    "estado": "cerrado",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[x] medir en node `buildMoldParts(spec de la carcasa, 'blocks' y 'full')`: tiempo y triángulos por rol.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] E3 con la pila completa en bloques (roles del constructor, no `-ghost`); cubo bit-igual (266/266).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] estación final con el detalle; los cuerpos de los pines llegan a la retenedora (cabeza capturada, Fig 1.6).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] la animación: `animZ('ejector')` ≈ la carrera de expulsión; `animZ('clamp')` ≈ la apertura.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] kernel: los pines y el agua contra el portamoldes — MEDIDO con `moldSolidCollisions`: pines 0.02 mm (ajuste) tras el arreglo; el agua B SÍ entra al soporte (causa 2, registrada) y los retornos al núcleo (registrado).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] RUNNER paso 6: check «portamoldes» (roles `clamp` + `bottom` + `ejector`) y encuadre todavía ≥ 0.30 / centrado.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian (2026-09-18, tras el video 32): «por primera vez tenemos el ciclo completo, aún faltan los portamoldes y las placas iniciales para poner los clamps, pero a mi parecer hemos llegado». Hoy el molde de la pieza soltada es el CORAZÓN — ins…",
+    "toca": 10,
+    "crea": 3,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "Paso 6: el check «portamoldes» del RUNNER pasa y no se pierde ninguno de los 13 de hoy; el camino sigue 8/8.",
+     "Las ranuras de clamp se VEN en las dos placas de sujeción; la expulsora sube con los pines en el ciclo animado",
+     "Traslape 0 mm³ entre pines/agua y el portamoldes (kernel); ciclo-dado-test 266/266.",
+     "Paseo con el molde COMPLETO; video en ambas PCs; orden-gate VERDE."
+    ],
+    "cierre": "El molde de TU pieza ya es un MOLDE ENTERO, y se mueve entero. Carcasa 1594C: desde E3 aparece la pila comprada en bloques (sujeción superior e inferior con su oreja, soporte, rieles, expulsora + ret…",
+    "cierreCompleto": "El molde de TU pieza ya es un MOLDE ENTERO, y se mueve entero. Carcasa 1594C: desde E3 aparece la pila comprada en bloques (sujeción superior e inferior con su oreja, soporte, rieles, expulsora + retenedora) junto con A y B; tras los botadores, la estación 8 · EL PORTAMOLDES cambia los bloques por el acero fresado del constructor — 14 componentes: ranuras de clamp en las dos sujeciones, anillo centrador + bushing, postes guía + bujes, pilares, retornos, tornillería e interlocks, cada placa con SU tinte — en 5.4 s de kernel (6.7–9.2 s la estación), y entonces arranca el ciclo: el lado A sube completo con su sujeción y su anillo, y la expulsora + retenedora SUBEN con los pines. Runner: portamoldes ✓ · «el molde TRABAJA 33.6 %» · «los botadores SUBEN 41.3 mm» · «la expulsora SUBE con los pines: 41.3 mm» · encuadre centrado (fill 0.68). Lo que se entregó - mold-plano-set.ts: las cotas del portamoldes con NOMBRE y una sola fuente (EXPULSORA_MARGEN_*, RIEL_ANCHO_MM, orejaDeSujecionMm, tinteDePlaca — mismos números de antes); portamoldesEnBloques(spec) (la pila en cajas, ms) y soloPortamoldes(parts) (del constructor se toma SOLO la base: nada de su pieza, insertos, colada, agua ni pines). - useMoldStudio.ts: la pila en E3 (solo con pieza; el cubo bit-igual) · cicloPortamoldesPieza (estación 8, con los barrenos de TUS pines) · la animación arranca cuando el molde está entero · los pines llegan a la retenedora (el cuerpo acababa en z 87.6, en el aire; ahora baja a z 58 con su cabeza capturada, Fig 1.6). - La tira: E8/8, ✓ portamoldes (solo con el acero fresado: anillo + guías + ret…",
+    "evidenciaSS": [
+     "evidencia/2026-09-18-el-portamoldes-de-tu-pieza/paseo-contactos.png",
+     "evidencia/2026-09-18-el-portamoldes-de-tu-pieza/portamoldes-en-el-molde.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "faccade",
     "despliegue": "sin-desplegar"
    },
    {
@@ -7184,9 +7263,9 @@
     {
      "n": 6,
      "gesto": "EL MOLDE",
-     "seVe": "el molde se va armando estación por estación sobre ESA pieza (placas, colada, agua, expulsores) y luego TRABAJA (llenar, abrir, expulsar), siempre centrado, nunca negro, primera placa en ≤10 s",
+     "seVe": "el molde se va armando estación por estación sobre ESA pieza (placas, colada, agua, expulsores) hasta quedar ENTERO — con su portamoldes (sujeción con ranuras de clamp, soporte, rieles, expulsora + retenedora, guías, anillo) — y luego TRABAJA (llenar, abrir, expulsar, con la expulsora subiendo y una carrera que CABE en su caja), siempre centrado, nunca negro, primera placa en ≤10 s",
      "estado": "parcial",
-     "ticket": "2026-09-10-los-botadores-de-tu-pieza"
+     "ticket": "2026-09-18-el-portamoldes-de-tu-pieza"
     },
     {
      "n": 7,
@@ -7208,7 +7287,7 @@
    "rompeEn": 0,
    "parciales": 1,
    "medido": {
-    "fecha": "2026-09-20 00:36",
+    "fecha": "2026-09-21 21:09",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "Ian"
