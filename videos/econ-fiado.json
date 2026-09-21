@@ -1,0 +1,70 @@
+{
+  "id": "econ-fiado",
+  "titulo": "El fiado — Don Chuy y sus naranjas, La economía de tu negocio",
+  "nota": "Hecho en el motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia, commit 5e72697: projects/economia/negocio/00-el-fiado). ian 2026-09-21: «el principio es tan básico que yo lo explicaría en 30-50 segundos… mejor un vendedor de naranjas… ultrasimplificar y un CTA» y al verlo: «ES DE LOS MEJORES VIDEOS QUE HAZ HECHO NETA». Dibujo plano animado (plantilla ElPuesto), voz Matilda XTTS, sin intro: el gancho en el cuadro 0. Un producto, un precio, una cuenta: 100 naranjas, proveedor $500, venta a $10; fiando la mitad trabaja gratis.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 39.5,
+    "nota_dur": "voz 37.96 s + 1.4 s de cola para el CTA"
+  },
+  "audio": {
+    "dir": "dist-video/econ-fiado-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el generador de la Forja (narracion-gen.py con GUION=/OUT=), una frase por renglón, atempo 1.10"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-fiado-4k.mp4",
+    "h264": "econ-fiado-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 y out/short-16x9.mp4 del motor a H.264 CBR 24 Mbps (el dibujo plano salía a 0.8 Mbps y la ley de subida pide ≥15)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-fiado.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Vendió todas sus naranjas y se fue sin un peso · La economía de tu negocio",
+      "descripcion": "Don Chuy vende naranjas. 🍊 Cada mañana el proveedor le deja 100 y le cobra $500. Él las vende a $10.\n\nSi le pagan todas, junta $1,000: le paga al proveedor y le quedan $500.\n\nPero hoy fió la mitad. «Mañana te pago, Don Chuy.» Cobró $500… y se los llevó el proveedor.\n\nVendió todo y hoy trabajó gratis. No le faltaron ventas: le faltó cobrar.\n\n💬 Y a ti, ¿cuánto te deben ahorita? Escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#fiado",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque es la libreta del fiado de cualquier negocio: el que ya cerró se ve en Don Chuy"
+    },
+    "autorizado": "2026-09-21 yt,ig — dicho por ian en sesión al ver el video final: \"SUBELO A TODOS LADOS, ES DE LOS MEJORES VIDEOS QUE HAZ HECHO NETA\"",
+    "programar": "2026-09-21T18:45:00-06:00",
+    "nota_programar": "Hoy lunes a la hora canon (18:45 CDMX = 21:45 AR/CL). La cola de Instagram estaba libre hoy; el 16:9 de colonia sale a las 21:00 solo en YouTube.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nDon Chuy recibe 100 naranjas y le debe $500 al proveedor. Las vende a $10 cada una.\n\n✅ Si todos le pagan: entran $1,000. Paga $500. Le quedan $500 para su casa.\n❌ Si fía la mitad: entran $500. Paga $500. Le quedan $0.\n\nLas dos veces vendió las MISMAS naranjas. Lo único que cambió es cuánto cobró.\n\nFiar no está mal. Lo que duele es fiar sin anotar y sin fecha. ¿Tú llevas tu libreta del fiado?",
+    "subidas": {
+      "yt": {
+        "id": "hQTvJ7bDcGw",
+        "url": "https://youtu.be/hQTvJ7bDcGw",
+        "privacidad": "private",
+        "publishAt": "2026-09-21T18:45:00-06:00",
+        "captions": "AUieDabftcDoy6xoUFWaLnHyE1LNOn3ZemYlOxtd0s2JmMSV6Pc2ENtoPg",
+        "fecha": "2026-09-21T16:05"
+      },
+      "yt16x9": {
+        "id": "5mTBJslsl0o",
+        "url": "https://youtu.be/5mTBJslsl0o",
+        "privacidad": "private",
+        "publishAt": "2026-09-21T18:45:00-06:00",
+        "captions": "AUieDaYw-nv5MkE--YBmGjhmIZdnZ4VmNE5VZOX2b3MNFFbpcON-3qo3aA",
+        "fecha": "2026-09-21T16:06"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-fiado.mp4?v=9209bceee9"
+  }
+}
