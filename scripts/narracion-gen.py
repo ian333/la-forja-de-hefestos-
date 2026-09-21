@@ -149,6 +149,8 @@ def gen_trim(text, final):
     # "Chuy" lo dice "Chu": medido 2026-09-21 con Whisper large-v3 y small sobre la toma de
     # el fiado ("Don Chu vendió…"). Con la tilde en la u, large-v3 oye "Don Chuy".
     tts_text = tts_text.replace('Chuy', 'Chúy')
+    # Nombres de fuera que el capítulo de Yunus (Nobel de la Paz 2006) dice en voz alta.
+    tts_text = tts_text.replace('Muhammad Yunus', 'Mujámad Iúnus').replace('Bangladesh', 'Bangladés')
 # ⚠ Si tocas los respelados de arriba, SUBE PREPRO_V (invalida el caché de líneas).
     tts_text = tts_text.strip()
     if tts_text.endswith('.'):
@@ -240,7 +242,7 @@ def gen_line(text, final):
 # OJO: en zsh "LINES" es variable especial ENTERA (alto del terminal) — asignarle
 # "7,8,9" la evalua como aritmetica (operador coma) y queda solo el ULTIMO numero.
 # Usar LINEAS; LINES se mantiene por compatibilidad para valores de un solo numero.
-PREPRO_V = '4'   # versión del preprocesado TTS (enláce=2, +Práim=3, +Chúy=4)
+PREPRO_V = '5'   # versión del preprocesado TTS (enláce=2, +Práim=3, +Chúy=4, +Iúnus=5)
 ONLY = os.environ.get('LINEAS') or os.environ.get('LINES')   # "4" o "4,7": regenerar SOLO esas lineas
 VEL = float(os.environ.get('VEL', '1.0'))
 TAKES = int(os.environ.get('TAKES', '1'))  # >1: genera N tomas y se queda con la MEDIANA.
