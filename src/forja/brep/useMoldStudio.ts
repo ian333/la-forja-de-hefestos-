@@ -12,7 +12,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import * as THREE from 'three';
 import * as OCC from './occt';
 import { tessellate, makeCompound } from './occt';
-import { buildMoldParts, packageToAssemblySpec, plateStackZ, portamoldesEnBloques, soloPortamoldes, type MoldPart } from '../mold/mold-plano-set';
+import { buildMoldParts, packageToAssemblySpec, plateStackZ, portamoldesEnBloques, soloPortamoldes, coladaSobrePiezaMm, type MoldPart } from '../mold/mold-plano-set';
+// la carrera y la caja expulsora las dimensiona `platesizing` (§4.3.2): la estación 8 MIDE con
+// las mismas funciones que construyen, no con una copia.
+import { carreraLibreEnCaja, carreraDeExpulsionMm } from '../mold/platesizing';
 import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
 import { flanera } from '../mold/flanera';
 import { splitMold, shapeBBox, scaleForShrinkage } from '../mold/mold';
@@ -25,7 +28,7 @@ import { moldAnalysis, componentAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
 import { tcLocalMap, waterAdvice } from '../mold/mold-tc-map';
 import { insertDims } from '../mold/mold-drawing-set';
-import { moldOpeningStrokeMm } from '../mold/threeplate';
+import { carreraDeApertura } from '../mold/threeplate';
 import { surfaceFlowLength } from '../mold/flowlen-surface';
 import { measureFlowLength } from '../mold/flowlen';
 import { convergeVelocityCross, ABS_CROSS, PP_CROSS, type MeltMaterial } from '../mold/filling';
@@ -316,12 +319,21 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       return { maxFlowLenMm: sf.maxFlowLenMm, rows };
     } catch (e) { console.warn('FLOW_ERR', e); return null; }
   }, [flowOn, liveMoldSpec, moldParts]);
-  // CARRERA DE APERTURA (§6.3.2 = 2.5 × altura de pieza) — la MISMA función que usa el
-  // selector de máquina para juzgar el daylight. Sin spec no hay pieza que medir: 0
-  // (el molde se queda cerrado) en vez de inventar un número.
+  // CARRERA DE APERTURA (§6.3.2) — la MISMA función que usa el selector de máquina para
+  // juzgar el daylight (`carreraDeApertura`, threeplate.ts). Sin spec no hay pieza que
+  // medir: 0 (el molde se queda cerrado) en vez de inventar un número.
+  // 2026-09-21: aquí iba 2.5 × altura de pieza PELADO y el molde de la pantalla abría sin
+  // sacar el bebedero — medido en 4 piezas reales, la colada sobresalía 58-87 mm sobre la
+  // pieza (punto 3.1 del plan de inspección, fallaba 4/4). El largo de colada se MIDE del
+  // sólido que ya está en pantalla, no se estima.
   const moldOpenStrokeMm = useMemo(
-    () => (liveMoldSpec ? moldOpeningStrokeMm(liveMoldSpec.cavity.depthMm) : 0),
-    [liveMoldSpec],
+    () => (liveMoldSpec
+      ? carreraDeApertura({
+        alturaPiezaMm: ciclo?.pieza?.local?.alturaMm ?? liveMoldSpec.cavity.depthMm,
+        coladaMm: coladaSobrePiezaMm(moldParts),
+      }).mm
+      : 0),
+    [liveMoldSpec, moldParts, ciclo?.pieza?.local?.alturaMm],
   );
   // ESTUDIO DE TORNILLERÍA EN VIVO (Shigley cap.8 + FED-STD-H28): la ELECCIÓN del
   // tornillo por CARGA para cada mitad. fastenerPlan es PURA y toma el spec → se llama
@@ -1496,11 +1508,13 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       t = marca(8, `portamoldes (kernel · ${porta.length} componentes)`, t);
       setProgreso({ estacion: 8, paso: 'acero de la base en pantalla · ¿cabe la carrera de expulsión en la caja?', i: 1, n: N, t0: T });
       await respira();
-      // LA CARRERA CONTRA LA CAJA: lo que la retenedora puede subir antes de tocar el soporte vs lo que la pieza pide (H + 8)
-      const z = plateStackZ(aspec);
-      const espRet = Math.max(12, Math.round(aspec.plates.ejectorHousing * 0.2));
-      const carreraLibreMm = +(z.support - (z['ejector-ret'] + espRet)).toFixed(1);
-      const carreraPedidaMm = +((ciclo.pieza.local?.alturaMm ?? 40) + 8).toFixed(1);
+      // LA CARRERA CONTRA LA CAJA: lo que la retenedora puede subir antes de tocar el soporte
+      // vs lo que la pieza pide. Las dos cifras salen ahora de `platesizing` (§4.3.2), que es
+      // quien DIMENSIONÓ la caja — antes esto tecleaba su propia copia de `max(12, 0.20·EH)`
+      // y del `+8`, y medir con una fórmula distinta a la que construye es como se fabrican
+      // los gates que aprueban solos.
+      const carreraLibreMm = carreraLibreEnCaja(aspec.plates.ejectorHousing);
+      const carreraPedidaMm = carreraDeExpulsionMm(ciclo.pieza.local?.alturaMm ?? 40);
       const cabe = carreraLibreMm >= carreraPedidaMm;
       const roles = new Set(porta.map((p) => p.role));
       const tris = porta.reduce((a, p) => a + p.indices.length / 3, 0) | 0;
@@ -1512,7 +1526,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         `la base ${aspec.widthMm}×${aspec.depthMm ?? aspec.widthMm} con su acero fresado: sujeción superior e inferior con RANURAS de clamp, soporte, rieles + pilares, expulsora + retenedora, guías + bujes, anillo centrador, retornos y tornillería`,
         `los barrenos del paquete expulsor son los de TUS ${e10.pines.n} pines (E7), no la rejilla del paquete`,
         cabe
-          ? `la carrera CABE: la retenedora sube ${carreraLibreMm} mm antes del soporte y tu pieza pide ${carreraPedidaMm} (H + 8)`
+          ? `la carrera CABE: la caja expulsora de ${aspec.plates.ejectorHousing} mm se dimensionó por TU pieza (§4.3.2: la carrera manda, la caja se le asigna) — la retenedora sube ${carreraLibreMm} mm y tu pieza pide ${carreraPedidaMm} (H + 8)`
           : `⚠ LA CARRERA NO CABE: la retenedora sube ${carreraLibreMm} mm antes de tocar el soporte y tu pieza pide ${carreraPedidaMm} (H + 8) — la caja expulsora debe crecer ${(carreraPedidaMm - carreraLibreMm).toFixed(1)} mm`,
       ], [...moldParts.filter((p: any) => !roles.has(p.role)), ...porta]);
       setProgreso({ estacion: 8, paso: 'el molde está entero · arranca el ciclo', i: 2, n: N, t0: T });

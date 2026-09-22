@@ -38,7 +38,10 @@ const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL
 import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
 import * as OCC from './occt';                                   // namespace del kernel para armar el molde
-import { buildMoldParts, packageToAssemblySpec, plateStackZ, buildMoldLaminas, laminasToPrintHTML, type MoldPart, type DrawingPage } from '../mold/mold-plano-set';
+import { buildMoldParts, packageToAssemblySpec, plateStackZ, buildMoldLaminas, laminasToPrintHTML, coladaSobrePiezaMm, type MoldPart, type DrawingPage } from '../mold/mold-plano-set';
+// UNA verdad de las carreras: §6.3.2 (apertura, con su bebedero) y §4.3.2 (expulsión).
+import { carreraDeApertura } from '../mold/threeplate';
+import { carreraDeExpulsionMm } from '../mold/platesizing';
 import { cotizacionPieza, cotizacionSvg, piezaDesdeArbol } from '../mold/estudio-molde-datos';   // PASO 8 · la hoja de cotización de la pieza, dentro del expediente
 import type { RevisionModelo } from '../mold/revisar-modelo';   // PASO 8 · el dictamen completo (no solo la fila) para el expediente
 import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
@@ -7132,10 +7135,16 @@ export default function ForgeBRepStudio() {
                 {/* APERTURA ANIMADA: lado A sube y las CORREDERAS se retraen con la
                     cinemática real del perno (u = apertura·tanφ, tope en S) */}
                 <MoldOpenDriver refs={moldAnimRefs} ctl={moldOpenRef} parts={moldParts}
-                  // las carreras salen de la ALTURA de la pieza del ciclo: apertura 2.5·H (§6.3.2) y expulsión
-                  // H + 8 para LIBRAR el núcleo (cap 11). El cubo (H 40) da los 100 y 48 de siempre.
-                  openMm={moldOpenStrokeMm || (ciclo?.e5datums ? 2.5 * (ciclo.pieza?.local?.alturaMm ?? 40) : 0)}
-                  ejectMm={ciclo?.e5datums ? (ciclo.pieza?.local?.alturaMm ?? 40) + 8 : (liveMoldSpec?.cavity.depthMm ?? 30) + 8}
+                  // las carreras salen de la ALTURA de la pieza del ciclo, por las MISMAS funciones
+                  // que usan el estudio y el selector de máquina: apertura = `carreraDeApertura`
+                  // (§6.3.2: 2.5·H de pieza + el bebedero que sale con ella) y expulsión =
+                  // `carreraDeExpulsionMm` (§4.3.2: E = profundidad de la pieza, +8 nuestro para
+                  // LIBRAR el macho). Aquí estaban las dos tecleadas a mano — y la apertura sin el
+                  // bebedero abría 83 mm cuando la carcasa necesitaba 152 (punto 3.1, 4/4 en rojo).
+                  openMm={moldOpenStrokeMm || (ciclo?.e5datums
+                    ? carreraDeApertura({ alturaPiezaMm: ciclo.pieza?.local?.alturaMm ?? 40, coladaMm: coladaSobrePiezaMm(moldParts) }).mm
+                    : 0)}
+                  ejectMm={carreraDeExpulsionMm(ciclo?.e5datums ? (ciclo.pieza?.local?.alturaMm ?? 40) : (liveMoldSpec?.cavity.depthMm ?? 30))}
                   stripperRing={liveMoldSpec?.ejectors?.type === 'stripper'}
                   aSideRoles={ciclo?.e5datums ? ['cavidad', 'placa-a-ghost'] : undefined}
                   aSidePrefixes={ciclo?.e5datums ? ['agua-A-', 'agua-tapon-A-', 'agua-oring-A-'] : undefined}
@@ -7561,7 +7570,7 @@ export default function ForgeBRepStudio() {
         )}
         {cotasOn && liveMoldSpec && moldOpenStrokeMm > 0 && (
           <CotaAperturaLabel labelRef={cotaAperturaRef}
-            why={`§6.3.2: la apertura típica = 2-3 × la altura de la pieza (${liveMoldSpec.cavity.depthMm} mm) para que salga del núcleo y caiga. Tabla 6.1: daylight = stack + carrera (264 + 75 = 339).`} />
+            why={`§6.3.2: 2-3 × la altura de la pieza (${liveMoldSpec.cavity.depthMm} mm) para que salga del núcleo y caiga, MÁS el bebedero que sale con ella ("sufficient to allow for the removal of the feed system"). Aquí: ${moldOpenStrokeMm} mm. Tabla 6.1: daylight = stack + carrera (264 + 75 = 339).`} />
         )}
 
         {/* EDITOR DE CROQUIS 2D — dibujar perfil con restricciones (solver en vivo). */}

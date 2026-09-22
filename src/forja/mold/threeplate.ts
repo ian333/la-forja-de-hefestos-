@@ -43,8 +43,11 @@ export function moldOpeningVelocity(clampTons: number): number {
  *  pieza". 2.5 = el centro del rango. */
 export const OPEN_FACTOR = 2.5;
 
-/** CARRERA DE APERTURA de la partición A-B (mm) — §6.3.2. La pieza tiene que salir
- *  del núcleo Y dejar el hueco para caer, por eso son 2-3 alturas y no una.
+/** CARRERA DE APERTURA de la partición A-B (mm) — §6.3.2, TÉRMINO DE LA PIEZA.
+ *  La pieza tiene que salir del núcleo Y dejar el hueco para caer, por eso son 2-3
+ *  alturas y no una. ⚠ Esto NO es la carrera completa: el § pide además sacar el
+ *  FEED SYSTEM. Para la carrera que se le pide a la máquina usa `carreraDeApertura`,
+ *  que suma el bebedero — esta función es su primer sumando.
  *
  *  FUENTE ÚNICA: la usan el layout de 3 placas, el selector de máquina (el daylight
  *  debe tragar stack + ESTO) y la apertura animada. Si alguien vuelve a teclear un
@@ -52,6 +55,54 @@ export const OPEN_FACTOR = 2.5;
  *  de ser el molde del estudio. */
 export function moldOpeningStrokeMm(partHeightMm: number, factor = OPEN_FACTOR): number {
   return +(factor * Math.max(0, partHeightMm)).toFixed(1);
+}
+
+/**
+ * CARRERA DE APERTURA COMPLETA (mm) — §6.3.2 · LA ÚNICA VERDAD de "cuánto abre".
+ * ============================================================================
+ * El § le pide DOS cosas al MISMO movimiento, y hasta 2026-09-21 el código solo
+ * contaba la primera:
+ *   1) *"The free length of the stripper bolt must be sufficient to allow for the
+ *      EJECTION OF THE MOLDED PARTS. A typical mold open distance between the A and
+ *      B plates is equal to TWO TO THREE TIMES THE HEIGHT of the molded parts."*
+ *      → `moldOpeningStrokeMm` = 2.5 · H (sacar la pieza del núcleo Y el hueco
+ *      para que caiga: por eso son 2-3 alturas y no una).
+ *   2) *"…the length of the X plate stripper bolt must be sufficient to allow for
+ *      the REMOVAL OF THE FEED SYSTEM."* Y §1.4.1: *"a large mold opening stroke is
+ *      needed to eject the cold runner"*.
+ * La COLADA no cabe dentro del 2.5·H de la pieza: es material moldeado EXTRA que
+ * sale con ella (bebedero cónico de la partición a la cara de la sujeción). Por eso
+ * la carrera = (2-3)·H + el largo de colada que viaja SOBRE la pieza. Con colada 0
+ * la fórmula se reduce EXACTAMENTE a la regla vieja: no cambia nada donde no hay
+ * bebedero que sacar.
+ *
+ * MEDIDO (plan de inspección 2026-09-21, 4 piezas reales — punto 3.1 fallaba 4/4):
+ *   carcasa 1594C Box  2.5·H = 83.3 → 152.5 mm (pide 112.5)
+ *   tapa    1594C Lid  2.5·H = 35.2 →  93.7 mm (pide  82.5)
+ *   1599HBK            2.5·H = 88.8 → 175.8 mm (pide 132.5)
+ *   1557BGY            2.5·H = 78.0 → 139.3 mm (pide 102.5)
+ *
+ * PURA. La consumen: el 3D (`useMoldStudio.moldOpenStrokeMm` → `MoldOpenDriver`),
+ * el selector de máquina (`moldmachine` → `selectInjectionMachine` → daylight) y
+ * la lámina L5 de apertura. Si alguien vuelve a teclear `2.5 * altura` en su rincón,
+ * el molde de la pantalla deja de ser el molde del estudio (ya pasó dos veces).
+ */
+export function carreraDeApertura(o: {
+  /** altura de la pieza moldeada SOBRE la partición (mm) */
+  alturaPiezaMm: number;
+  /** largo de colada/bebedero que sale CON la pieza, medido SOBRE ella (mm). 0 = colada caliente o sin bebedero. */
+  coladaMm?: number;
+  /** 2..3 del libro; default OPEN_FACTOR = 2.5 (el centro del rango) */
+  factor?: number;
+}): { mm: number; piezaMm: number; coladaMm: number; factor: number; porque: string } {
+  const factor = o.factor ?? OPEN_FACTOR;
+  const H = Math.max(0, Number.isFinite(o.alturaPiezaMm) ? o.alturaPiezaMm : 0);
+  const colada = Math.max(0, Number.isFinite(o.coladaMm ?? 0) ? (o.coladaMm ?? 0) : 0);
+  const pieza = +(factor * H).toFixed(1);
+  return {
+    mm: +(pieza + colada).toFixed(1), piezaMm: pieza, coladaMm: +colada.toFixed(1), factor,
+    porque: `§6.3.2: ${factor}×${H.toFixed(1)} mm de pieza = ${pieza} mm (sale del núcleo y cae) + ${colada.toFixed(1)} mm de colada que viaja con ella ("sufficient to allow for the removal of the feed system")`,
+  };
 }
 
 /** DAYLIGHT REQUERIDO (mm) = altura de cierre + carrera de apertura (Tabla 6.1:

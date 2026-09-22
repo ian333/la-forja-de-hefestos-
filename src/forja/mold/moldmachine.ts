@@ -31,7 +31,7 @@ import { designCoolingLines, type CoolingLineDesign } from './coolinglines';
 import { ABS_EJECT, ejectionVector, effectiveArea, ejectorPinSizing, type EjectionVector } from './ejection';
 import { optimizeSupportPlate, sizeCavityPlate, sizeCorePlate, type PlateSizing, type CavityPlateSizing } from './platesizing';
 import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection } from './machinesizing';
-import { moldOpeningStrokeMm } from './threeplate';
+import { carreraDeApertura } from './threeplate';
 import { designFeedSystem, estPartVolumeCc, type FeedSystemDesign } from './feed';
 import { shrinkageRecommendation, ABS_TAIT } from './shrinkage';
 import { designGateProcess, type GateProcessDesign, type GateType } from './gating';
@@ -373,10 +373,24 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   });
   // altura de cierre = placas A+B + soporte + (2 placas de sujeción ~60 + housing
   //  del expulsor ~140): estimado realista de shut height del stack del mold base
+  // ⚠ 2026-09-21: la caja expulsora ya NO es 66 fijo (`sizeEjectorHousing`, §4.3.2), así que
+  // estos 200 dejaron de ser un techo garantizado — con una pieza muy honda (caja ≥ 130) el
+  // estimado se queda CORTO y el daylight se juzgaría optimista. Hoy la geometría real da
+  // 2×36 + caja ≤ 178 en las 4 piezas del plan, así que sigue conservador; y el semáforo
+  // `daylight` de estudio-molde-datos ya IMPRIME la diferencia contra el stack geométrico
+  // ("el juicio es CONSERVADOR/OPTIMISTA por N mm"). La verdad única del stack es otra orden.
   const stackMm = base.plateAmm + base.plateBmm + (soporte.best.plateThkMm ?? 60) + 200;
-  // la máquina no solo tiene que CERRARLO: tiene que ABRIRLO 2-3 alturas de pieza
-  // para que salga del núcleo y caiga (§6.3.2 · Tabla 6.1: 264 + 75 = 339).
-  const openStrokeMm = moldOpeningStrokeMm(spec.Hmm);
+  // la máquina no solo tiene que CERRARLO: tiene que ABRIRLO lo suficiente para sacar la
+  // pieza Y SU COLADA (§6.3.2 · Tabla 6.1: 264 + 75 = 339). Hasta 2026-09-21 aquí iba
+  // `moldOpeningStrokeMm(spec.Hmm)` = 2.5·H a secas, que solo cuenta la pieza: el mismo §
+  // pide además que la carrera alcance para *"the removal of the feed system"*, y en las
+  // 4 piezas del plan de inspección el bebedero medía 58-87 mm (más que la pieza entera).
+  // `sprueLenMm` va de la cara de la boquilla al plano de partición y la pieza ocupa H de
+  // ese tramo ⇒ lo que sobresale SOBRE la pieza es `sprueLenMm − H`.
+  const openStrokeMm = carreraDeApertura({
+    alturaPiezaMm: spec.Hmm,
+    coladaMm: win.arch === 'hot-runner' ? 0 : Math.max(0, sprueLenMm - spec.Hmm),
+  }).mm;
   const seleccion = selectInjectionMachine(requerimientos, { wmm: base.base.wmm, lmm: base.base.lmm, stackMm, openStrokeMm });
 
   return {

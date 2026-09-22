@@ -35,6 +35,7 @@ import type { MoldAssemblySpec } from './mold-assembly';
 import { moldMachine, Q_ANUAL_ASUMIDA, type MoldPackage, type MachineSpec, type Arch } from './moldmachine';
 import { CATALOGO_BASES } from './moldbase';   // sprint 3: la base con fuente declarada
 import { packageToAssemblySpec, plateStackZ } from './mold-plano-set';
+import { ejectorPlateMm, EJECTOR_REST_MM } from './platesizing';   // la fraccion del paquete expulsor, en UN solo lugar
 import {
   plateDefs, plateDepth, moldStackHeight, coolingCircuit, standardHoles, moldBoltSizing,
   cavityFootprint, cavityGrid, insertDims,
@@ -911,8 +912,10 @@ export function juzgarPines(spec: MoldAssemblySpec, pkg: MoldPackage | null): Ju
   // L LIBRE del pin: de la cara superior de la retenedora a la partición — la misma
   // aritmética de zonas de mold-plano-set (bottom+4+retH … top de B).
   const p = spec.plates;
-  const retH = Math.max(15, Math.round(p.ejectorHousing * 0.28));
-  const libre = p.ejectorHousing + p.support + p.B - 4 - retH;
+  // ojo al nombre: lo que se resta es la placa EXPULSORA (0.28), no la retenedora — la
+  // fraccion vive en `platesizing` desde 2026-09-21 (la caja se DIMENSIONA con ella).
+  const ejH = ejectorPlateMm(p.ejectorHousing);
+  const libre = p.ejectorHousing + p.support + p.B - EJECTOR_REST_MM - ejH;
   const zPart = p.bottomClamp + p.ejectorHousing + p.support + p.B;   // partición (top de B)
 
   // fuerza por pin: del paquete (vector §11.1); sin paquete, esos checks van SIN MEDIR
@@ -3781,8 +3784,7 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
   // L libre del pin: de la retenedora a la partición (aritmética de juzgarPines)
   const asm = packageToAssemblySpec(pkg);
   const pl = asm.plates;
-  const retH = Math.max(15, Math.round(pl.ejectorHousing * 0.28));
-  const libreMm = pl.ejectorHousing + pl.support + pl.B - 4 - retH;
+  const libreMm = pl.ejectorHousing + pl.support + pl.B - EJECTOR_REST_MM - ejectorPlateMm(pl.ejectorHousing);
   const cicloDecision = [
     `F_eject = μ·cosφ·σ_res·Aeff = ${m.mu}·cos(${pz ? pz.draftDeg.toFixed(2) : '1.5'}°)·${(residualStress(m) / 1e6).toFixed(2)} MPa·${(aEffM2 * 1e6).toFixed(0)} mm² = ${fEjectN.toFixed(0)} N (Eq 11.7-11.8)`,
     `con 4 pines: cortante (Eq 11.12, gobierna R45) pide ⌀${s4.dMinMm.toFixed(2)} → catálogo ${d4} mm`,

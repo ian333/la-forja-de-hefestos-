@@ -16,6 +16,7 @@ import { sideActionDesign } from './sideactions';
 import { ejectorPinFit } from './fits';   // holgura pin↔barreno 0.13mm (Kazmer §8.3.2)
 import { coolingDesign, PLASTICOS_A, ACEROS_MOLDE } from './cooling-design';   // el proceso §9.2 completo
 import { estPartVolumeCc } from './feed';
+import { ejectorPlateMm, ejectorRetainerMm } from './platesizing';   // las fracciones del paquete expulsor, en UN solo lugar
 
 export interface DrawingPage { name: string; svg: string }
 export interface MoldDrawingSet { title: string; code: string; pages: DrawingPage[] }
@@ -68,8 +69,10 @@ export function plateDefs(s: MoldAssemblySpec): PlateDef[] {
     // between the A plate and the support plate" — mismo rol/zona del stack, otra función.
     { role: 'B', code: `${s.code ?? 'MLD'}-03`, name: s.ejectors.type === 'stripper' ? 'Placa STRIPPER (expulsa el anillo, flota)' : 'Placa B (núcleo)', thick: s.plates.B, mat: s.cavityMetal },
     { role: 'support', code: `${s.code ?? 'MLD'}-04`, name: 'Placa de soporte', thick: s.plates.support, mat: s.baseSteel ?? '1.1730' },
-    { role: 'ejector-ret', code: `${s.code ?? 'MLD'}-05a`, name: 'Placa retenedora (cabezas)', thick: Math.max(12, Math.round(s.plates.ejectorHousing * 0.2)), mat: s.baseSteel ?? '1.1730' },
-    { role: 'ejector', code: `${s.code ?? 'MLD'}-05b`, name: 'Placa expulsora', thick: Math.max(15, Math.round(s.plates.ejectorHousing * 0.28)), mat: s.baseSteel ?? '1.1730' },
+    // las fracciones del paquete expulsor las manda `platesizing` (una sola copia): la caja
+    // ahora se DIMENSIONA con ellas (§4.3.2), y seis copias tecleadas = cinco que pueden mentir.
+    { role: 'ejector-ret', code: `${s.code ?? 'MLD'}-05a`, name: 'Placa retenedora (cabezas)', thick: ejectorRetainerMm(s.plates.ejectorHousing), mat: s.baseSteel ?? '1.1730' },
+    { role: 'ejector', code: `${s.code ?? 'MLD'}-05b`, name: 'Placa expulsora', thick: ejectorPlateMm(s.plates.ejectorHousing), mat: s.baseSteel ?? '1.1730' },
     { role: 'bottom', code: `${s.code ?? 'MLD'}-06`, name: 'Placa de sujeción inferior', thick: s.plates.bottomClamp, mat: s.baseSteel ?? '1.1730' },
   ];
 }
