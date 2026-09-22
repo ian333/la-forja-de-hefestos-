@@ -33,6 +33,19 @@ def token():
     if not os.path.exists(TOK): sys.exit('✗ sin token: corre `subir-instagram.py login`')
     return json.load(open(TOK))
 
+def guardar_app():
+    """`subir-instagram.py app`: pide el Instagram app ID y el secreto por teclado (no por argv, no por chat)
+    y escribe ~/.config/gaia-pub/instagram-app.json con permisos 600. Existe porque el 2026-09-21 hubo que
+    crear una app de Meta NUEVA solo con el caso de uso de Instagram: la vieja (1720060929218563) traía
+    ocho casos de uso de anuncios sin terminar, Meta no deja quitarlos y por eso no se podía publicar."""
+    import getpass
+    app_id = input('Instagram app ID: ').strip(); secret = getpass.getpass('Instagram app secret (no se muestra): ').strip()
+    if not app_id.isdigit() or len(secret) < 20: sys.exit('✗ id o secreto raros; no escribo nada')
+    prev = app() if os.path.exists(APP) else {}
+    os.makedirs(CONF, exist_ok=True)
+    json.dump({'app_id': app_id, 'app_secret': secret, 'redirect_uri': prev.get('redirect_uri', 'https://university.gaiaprime.com.mx/ig-oauth/')}, open(APP, 'w'), indent=1)
+    os.chmod(APP, 0o600); print(f'✓ {APP} (app {app_id}) · ahora: subir-instagram.py login')
+
 def login():
     a = app()
     url = 'https://www.instagram.com/oauth/authorize?' + urllib.parse.urlencode({'client_id': a['app_id'], 'redirect_uri': a['redirect_uri'], 'scope': SCOPES, 'response_type': 'code'})
@@ -203,4 +216,4 @@ def probar(archivo):
 if __name__ == '__main__':
     a = sys.argv[1:]
     if not a: sys.exit(__doc__)
-    {'login': login, 'refresh': refresh, 'probar': lambda: probar(a[1])}.get(a[0], lambda: publicar(a[0], '--yo-autorizo' in a, '--resumable' not in a))()
+    {'app': guardar_app, 'login': login, 'refresh': refresh, 'probar': lambda: probar(a[1])}.get(a[0], lambda: publicar(a[0], '--yo-autorizo' in a, '--resumable' not in a))()
