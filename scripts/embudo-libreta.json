@@ -1,0 +1,23 @@
+{
+ "activo": false,
+ "palabra": "LIBRETA",
+ "link": "https://university.gaiaprime.com.mx/chuy.html?c={c}&s={s}",
+ "respuesta_publica": "Te la mandé por DM 🍊",
+ "dm": "Aquí está la libreta de Don Chuy 🍊 Es gratis y es tuya: {link}\n\nSi fías, ahí apuntas. Si tiras, ahí lo ves.",
+ "dm_desconocido": null,
+ "capitulo_default": "00",
+ "capitulos": {
+  "18379315024227597": "00"
+ },
+ "titulos": {
+  "Vendió todas sus naranjas": "00",
+  "Le rebajó $2 a su compadre": "01",
+  "Tenía $1,000 en la lata": "02",
+  "Pagó 100 naranjas": "03",
+  "Vendió menos naranjas": "04",
+  "Le prestaron $500": "05",
+  "Nadie le robó y le faltan $200": "06"
+ },
+ "detectar_por_caption": "La economía de tu negocio",
+ "espera_s": [25, 45]
+}
