@@ -14,7 +14,7 @@ import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
 import { ventMaxThickness } from './venting';
 import { sideActionDesign } from './sideactions';
 import { ejectorPinFit } from './fits';   // holgura pin↔barreno 0.13mm (Kazmer §8.3.2)
-import { coolingDesign, PLASTICOS_A, ACEROS_MOLDE } from './cooling-design';   // el proceso §9.2 completo
+import { coolingDesign, PLASTICOS_A, ACEROS_MOLDE, PISO_MAQUINABLE_MM } from './cooling-design';   // el proceso §9.2 completo
 import { estPartVolumeCc } from './feed';
 import { ejectorPlateMm, ejectorRetainerMm } from './platesizing';   // las fracciones del paquete expulsor, en UN solo lugar
 
@@ -152,12 +152,31 @@ export function cavityGrid(s: MoldAssemblySpec, D: number): Array<{ cx: number; 
 }
 
 /**
+ * ══ LA FUENTE ÚNICA DEL CIRCUITO DE AGUA (orden 2026-09-10 EL AGUA DICE DOS COSAS) ══
  * EL PROCESO §9.2 APLICADO AL MOLDE REAL — traduce el spec del ensamble a la
  * entrada de `coolingDesign` y devuelve, además del diseño, la BANDA en Y que
  * las líneas tienen que cubrir (la huella COMPLETA de la rejilla, no la de una
- * cavidad). Es la fuente única: el trazo, el plano y el reporte leen esto.
+ * cavidad). El trazo, el plano, el reporte **y el 3D de la estación 8** leen esto.
+ *
+ * ANTES había DOS: la lámina FORZABA el ⌀ del porta-molde (`forceDiaMm: s.cooling.diaMm`)
+ * y el 3D (`estacion8Dado`) dejaba que el caudal eligiera, con su propio t_c. El MISMO
+ * molde salía con dos circuitos (carcasa 1594C: lámina ⌀9.53·H32·W64·t_c 21.7 s vs 3D
+ * ⌀4.76·H19·W38.1·t_c 75.7 s). Un cliente que compare su plano con la vista 3D ve dos moldes.
+ *
+ * LAS DOS DECISIONES QUE LO CIERRAN (ian 2026-09-21):
+ *  1) **manda el CAUDAL con piso maquinable** — §9.2.5 elige D por el caudal y DESPUÉS
+ *     verifica que quepa; el piso 6.35 es del taller (ver `PISO_MAQUINABLE_MM`). Ya no se
+ *     fuerza ningún ⌀: `s.cooling.diaMm` pasa a ser el ⌀ que ESTE motor eligió (lo escribe
+ *     `packageToAssemblySpec`), no una entrada que compita con él.
+ *  2) **el t_c es el de §9.2.1: el MÁXIMO sobre todas las secciones** — "the cycle time can
+ *     be dominated by the cooling of the cold runners". La colada es parte del disparo
+ *     (Eq 9.10 ya suma su volumen), así que su t_c también cuenta. El spec lo trae en
+ *     `cooling.tcS`; si no viene, se cae a Eq 9.5 sobre la pared (lo de antes).
  */
-export function coolingCircuitDesign(s: MoldAssemblySpec, D: number) {
+export function coolingCircuitDesign(s: MoldAssemblySpec, D: number, o?: {
+  /** CONTROL NEGATIVO del gate (lo usa `estacion8Dado`): sacar H/W de las reglas a propósito */
+  hOverD?: number; wOverH?: number;
+}) {
   const cells = cavityGrid(s, D), { fy } = cavityFootprint(s);
   const ys = cells.map((c) => c.cy);
   const bandY0 = Math.min(...ys) - fy / 2, bandY1 = Math.max(...ys) + fy / 2;
@@ -169,12 +188,16 @@ export function coolingCircuitDesign(s: MoldAssemblySpec, D: number) {
   const cd = coolingDesign({
     // volumen REAL si el sólido lo trae; si no, el estimador de cascarón
     nCav: cells.length, partVolCc: s.cavity.volMm3 ? s.cavity.volMm3 / 1000 : estPartVolumeCc(s.cavity),
+    runnerVolCc: s.cooling.runnerVolCc,
     thickestMm: s.cavity.wallMm ?? 2,
     rhoRTKgM3: mat.rhoRTKgM3, cpJkgC: mat.cpJkgC, alphaM2s: mat.alphaM2s,
     tMeltC: mat.tMeltC, tEjectC: mat.tEjectC, tCoolantC: mat.tCoolC,
     kMoldWmC: acero.kWmC, sigmaEnduranceMPa: acero.sigmaEnduranceMPa,
     bandMm: bandY1 - bandY0, lineLenMm: s.widthMm - 2 * edge,
-    linesInSeries: 2, sides: 2, forceDiaMm: s.cooling.diaMm,
+    linesInSeries: 2, sides: 2,
+    tcS: s.cooling.tcS,                       // §9.2.1: el máximo sobre TODAS las secciones
+    pisoDiaMm: PISO_MAQUINABLE_MM,            // el caudal manda, con piso de taller
+    hOverD: o?.hOverD, wOverH: o?.wOverH,
   });
   return { ...cd, bandY0, bandY1 };
 }
@@ -184,7 +207,6 @@ export function coolingCircuitDesign(s: MoldAssemblySpec, D: number) {
  *  impresiones, conectados en extremos alternos (cross-drill) y sellados con plugs;
  *  puertos IN/OUT en un extremo. Base para el diseño generativo de refrigeración. */
 export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
-  const dia = s.cooling.diaMm;
   const edge = Math.max(16, Math.round(s.widthMm * 0.05));
   // ══ EL TRAZO SALE DEL PROCESO §9.2, NO DE UNA REGLA SUELTA ══════════════
   // Antes: H = 4·D y W = 1.75·H, a secas. El 4·D es la regla ESTRUCTURAL
@@ -193,6 +215,10 @@ export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
   // `coolingDesign`, que resuelve la cadena completa (t_c → Q̇ → V̇ → D → H →
   // W → n_lines) con el lazo cerrado y RECORTA H con la térmica.
   const cd = coolingCircuitDesign(s, D);
+  // EL ⌀ LO ELIGE EL MOTOR, no el spec: antes esta línea decía `s.cooling.diaMm` y el motor
+  // recibía ese mismo número como `forceDiaMm` — un lazo cerrado sobre sí mismo que hacía
+  // ver «una fuente» lo que en realidad era el ⌀ del porta-molde imponiéndose al caudal.
+  const dia = cd.diaMm;
   const H = Math.round(cd.hLineMm);
   const pitch = Math.round(cd.wLineMm);
   // BANDA A CUBRIR = la huella COMPLETA de la rejilla de cavidades, no la de UNA.
@@ -381,7 +407,7 @@ export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
   // tabla de barrenos). El detalle completo del proceso vive en `design`.
   return {
     diaMm: dia, zBehindMm: behind, zAboveMm: zAbove, aWarn, segs, ports, plugs, design: cd, avisos,
-    note: `serpentín §9.2 · ⌀${dia} ${s.cooling.plug ?? ''} · ${nCh2} líneas/lado · H ${H} (B) / ${zAbove != null ? Math.round(zAbove) : '—'} (A) · paso ${pitch} · ${cd.qCoolingW.toFixed(0)} W @ t_c ${cd.tcS.toFixed(1)} s${avisos.length ? ' · ⚠ ' + avisos.length + ' aviso(s)' : ''}`,
+    note: `serpentín §9.2 · ⌀${dia} ${cd.plug} · ${nCh2} líneas/lado · H ${H} (B) / ${zAbove != null ? Math.round(zAbove) : '—'} (A) · paso ${pitch} · ${cd.qCoolingW.toFixed(0)} W @ t_c ${cd.tcS.toFixed(1)} s${avisos.length ? ' · ⚠ ' + avisos.length + ' aviso(s)' : ''}`,
   };
 }
 
@@ -421,14 +447,18 @@ export function moldBoltSizing(s: MoldAssemblySpec): {
  *  para que CADA barreno tenga propósito y número. */
 export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
   const b = moldBoltSizing(s);
-  const dia = s.cooling.diaMm, depth = +(dia * 4).toFixed(1), pitch = +(dia * 7).toFixed(1);   // Eq 9.22: H=4D · Eq 9.24: W=1.75H=7D
+  // LA HOJA DE ANÁLISIS LEE LA FUENTE ÚNICA. Antes cotizaba H = 4·D y W = 7·D a secas: para
+  // la carcasa imprimía «⌀9.53 · H 38.1 · W 66.7» mientras el trazo de la MISMA hoja dibujaba
+  // H 32 (Eq 9.21 recorta a k/1000) y el 3D dibujaba H 19. Tres números para una sola cosa.
+  const cdRows = coolingCircuitDesign(s, plateDepth(s));
+  const dia = cdRows.diaMm, depth = +cdRows.hLineMm.toFixed(1), pitch = +cdRows.wLineMm.toFixed(1);
   const rows: AnalysisRow[] = [
     { grupo: 'Tornillería §12.4', param: 'masa del molde (stack real)', valor: `${b.massKg.toFixed(0)} kg`, ref: `${b.Hmm}×${s.widthMm}×${plateDepth(s)} mm` },
     { grupo: 'Tornillería §12.4', param: 'fuerza peor caso (izaje, n_g=10)', valor: `${(b.forceN / 1000).toFixed(1)} kN`, ref: 'Fig 12.33', ok: true },
     { grupo: 'Tornillería §12.4', param: 'tornillo de sujeción (Ø mín → DIN 912)', valor: `${b.din} (⌀mín ${b.dMinMm.toFixed(1)} mm) · por revisar contra el taller`, ref: 'Eq 12.32' },
-    { grupo: 'Enfriamiento §9.2', param: 'línea de agua (plug DME)', valor: `${s.cooling.plug} · ⌀${dia} mm`, ref: '§9.2.4', ok: true },
-    { grupo: 'Enfriamiento §9.2', param: 'profundidad a la cavidad H = 4·D (2D<H<5D)', valor: `${depth} mm`, ref: 'Eq 9.22', ok: true },
-    { grupo: 'Enfriamiento §9.2', param: 'paso entre líneas W ∈ [H, 2H]', valor: `${pitch} mm`, ref: 'Eq 9.24', ok: true },
+    { grupo: 'Enfriamiento §9.2', param: 'línea de agua (plug DME, ⌀ por caudal §9.2.5 con piso maquinable)', valor: `${cdRows.plug} · ⌀${dia} mm`, ref: '§9.2.4 · Tabla 9.2', ok: true },
+    { grupo: 'Enfriamiento §9.2', param: `profundidad a la cavidad H = ${(depth / dia).toFixed(1)}·D (2D<H<5D, recortada por Eq 9.21)`, valor: `${depth} mm`, ref: 'Eqs 9.21/9.22', ok: depth >= 2 * dia - 1e-6 && depth <= cdRows.hLineMaxMm + 1e-6 },
+    { grupo: 'Enfriamiento §9.2', param: 'paso entre líneas W ∈ [H, 2H]', valor: `${pitch} mm (${cdRows.nPerSide}/lado)`, ref: 'Eq 9.24', ok: pitch >= depth - 1 && pitch <= 2 * depth + 1 },
   ];
   // VENTEO §8 — el aire tiene que salir o quema/short-shot. Máx antes de rebaba
   //   por la LEY del land (geometría real, defaults del libro); práctica en partición.

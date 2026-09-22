@@ -1,0 +1,781 @@
+{
+ "orden": "ordenes/2026-09-10-el-agua-dice-dos-cosas.md",
+ "cuando": "2026-09-21",
+ "donde": "iangpu /home/ian/forja-dev4 (node, kernel OCC) + app vite :5195",
+ "decision": "ian 2026-09-21: MANDA EL CAUDAL CON PISO MAQUINABLE. D = el plug DME mas chico que cumpla [D_min (Eq 9.17), D_max (Eq 9.15)] y no baje de 6.35 mm (piso de taller, regla NUESTRA, sin cita). La lamina y el 3D consumen coolingCircuitDesign: LA FUENTE UNICA.",
+ "la_pregunta": "que numero manda: el ⌀ del porta-molde (lamina) o el ⌀ del caudal (3D)",
+ "antes_vs_despues": {
+  "1594C Box": {
+   "ANTES": {
+    "lamina": {
+     "dia": 9.53,
+     "plug": "JP-352",
+     "H": 32,
+     "W": 64,
+     "nPorLado": 3,
+     "tc": 21.7,
+     "banda": [
+      69.5,
+      176.5
+     ]
+    },
+    "tresD": {
+     "dia": 4.76,
+     "plug": "JP-250",
+     "H": 19,
+     "W": 38.1,
+     "nPorLado": 3,
+     "tc": 75.7,
+     "ciclo": {
+      "tcPiezaS": 21.7,
+      "tcSprueS": 75.7,
+      "mandaS": 75.7,
+      "manda": "bebedero",
+      "factor": 3.5
+     }
+    },
+    "coinciden": false
+   },
+   "DESPUES": {
+    "lamina": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 4,
+     "tc": 145.13,
+     "banda": [
+      69.5,
+      176.5
+     ]
+    },
+    "tresD": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 4,
+     "tc": 145.13,
+     "ciclo": {
+      "tcPiezaS": 21.7,
+      "tcSprueS": 75.7,
+      "mandaS": 75.7,
+      "manda": "bebedero",
+      "factor": 3.5
+     }
+    },
+    "coinciden": true
+   },
+   "specCooling_DESPUES": {
+    "diaMm": 6.35,
+    "plug": "JP-251",
+    "insetMm": 37,
+    "tcS": 145.13,
+    "runnerVolCc": 5.08
+   },
+   "avisos_del_trazo": [
+    "Re = 871 ≤ 4000: flujo LAMINAR, el agua no arranca el calor (Eq 9.14)",
+    "⌀6.35 > D_max 1.38 mm: pierde turbulencia (Eq 9.15) — lo empuja el PISO MAQUINABLE 6.35 mm: el caudal pedía menos. Se bombea por Re (extensión declarada), no por ΔT",
+    "trazo 2/4 líneas/lado (barrenos en medio)",
+    "paso real 107 mm > 2H = 51 (Eq 9.24): los expulsores/barrenos tapizan la banda — §9.3.5.2 pide baffles o bubblers"
+   ],
+   "laminaAguaVs3D_del_arnes": {
+    "lamina": {
+     "dia": 6.35,
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 4,
+     "plug": "JP-251"
+    },
+    "tresD": {
+     "dia": 6.35,
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 4,
+     "plug": "JP-251"
+    }
+   },
+   "laminaAguaVs3D_IDENTICO": true,
+   "aguaVsPieza_invasiones": []
+  },
+  "1594C Lid": {
+   "ANTES": {
+    "lamina": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "tc": 31.58,
+     "banda": [
+      65,
+      131
+     ]
+    },
+    "tresD": {
+     "dia": 4.76,
+     "plug": "JP-250",
+     "H": 19,
+     "W": 38.1,
+     "nPorLado": 4,
+     "tc": 66.2,
+     "ciclo": {
+      "tcPiezaS": 31.6,
+      "tcSprueS": 66.2,
+      "mandaS": 66.2,
+      "manda": "bebedero",
+      "factor": 2.1
+     }
+    },
+    "coinciden": false
+   },
+   "DESPUES": {
+    "lamina": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "tc": 84.75,
+     "banda": [
+      65,
+      131
+     ]
+    },
+    "tresD": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "tc": 84.75,
+     "ciclo": {
+      "tcPiezaS": 31.6,
+      "tcSprueS": 66.2,
+      "mandaS": 66.2,
+      "manda": "bebedero",
+      "factor": 2.1
+     }
+    },
+    "coinciden": true
+   },
+   "specCooling_DESPUES": {
+    "diaMm": 6.35,
+    "plug": "JP-251",
+    "insetMm": 29,
+    "tcS": 84.75,
+    "runnerVolCc": 2.63
+   },
+   "avisos_del_trazo": [
+    "Re = 1172 ≤ 4000: flujo LAMINAR, el agua no arranca el calor (Eq 9.14)",
+    "⌀6.35 > D_max 1.86 mm: pierde turbulencia (Eq 9.15) — lo empuja el PISO MAQUINABLE 6.35 mm: el caudal pedía menos. Se bombea por Re (extensión declarada), no por ΔT"
+   ],
+   "laminaAguaVs3D_del_arnes": {
+    "lamina": {
+     "dia": 6.35,
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "plug": "JP-251"
+    },
+    "tresD": {
+     "dia": 6.35,
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "plug": "JP-251"
+    }
+   },
+   "laminaAguaVs3D_IDENTICO": true,
+   "aguaVsPieza_invasiones": []
+  },
+  "1599HBK": {
+   "ANTES": {
+    "lamina": {
+     "dia": 15.9,
+     "plug": "JP-554",
+     "H": 32,
+     "W": 64,
+     "nPorLado": 3,
+     "tc": 12.83,
+     "banda": [
+      93,
+      203
+     ]
+    },
+    "tresD": {
+     "dia": 4.76,
+     "plug": "JP-250",
+     "H": 19,
+     "W": 38.1,
+     "nPorLado": 7,
+     "tc": 93.1,
+     "ciclo": {
+      "tcPiezaS": 12.8,
+      "tcSprueS": 93.1,
+      "mandaS": 93.1,
+      "manda": "bebedero",
+      "factor": 7.3
+     }
+    },
+    "coinciden": false
+   },
+   "DESPUES": {
+    "lamina": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 4,
+     "tc": 65.21,
+     "banda": [
+      93,
+      203
+     ]
+    },
+    "tresD": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 4,
+     "tc": 65.21,
+     "ciclo": {
+      "tcPiezaS": 12.8,
+      "tcSprueS": 93.1,
+      "mandaS": 93.1,
+      "manda": "bebedero",
+      "factor": 7.3
+     }
+    },
+    "coinciden": true
+   },
+   "specCooling_DESPUES": {
+    "diaMm": 6.35,
+    "plug": "JP-251",
+    "insetMm": 44,
+    "tcS": 65.21,
+    "runnerVolCc": 2.88
+   },
+   "avisos_del_trazo": [
+    "Re = 3868 ≤ 4000: flujo LAMINAR, el agua no arranca el calor (Eq 9.14)",
+    "⌀6.35 > D_max 6.14 mm: pierde turbulencia (Eq 9.15) — lo empuja el PISO MAQUINABLE 6.35 mm: el caudal pedía menos. Se bombea por Re (extensión declarada), no por ΔT",
+    "trazo 2/4 líneas/lado (barrenos en medio)",
+    "paso real 110 mm > 2H = 51 (Eq 9.24): los expulsores/barrenos tapizan la banda — §9.3.5.2 pide baffles o bubblers"
+   ],
+   "laminaAguaVs3D_del_arnes": {
+    "lamina": {
+     "dia": 6.35,
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 4,
+     "plug": "JP-251"
+    },
+    "tresD": {
+     "dia": 6.35,
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 4,
+     "plug": "JP-251"
+    }
+   },
+   "laminaAguaVs3D_IDENTICO": true,
+   "aguaVsPieza_invasiones": []
+  },
+  "1557BGY": {
+   "ANTES": {
+    "lamina": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "tc": 31.58,
+     "banda": [
+      83,
+      163
+     ]
+    },
+    "tresD": {
+     "dia": 4.76,
+     "plug": "JP-250",
+     "H": 19,
+     "W": 38.1,
+     "nPorLado": 4,
+     "tc": 68.7,
+     "ciclo": {
+      "tcPiezaS": 31.6,
+      "tcSprueS": 68.7,
+      "mandaS": 68.7,
+      "manda": "bebedero",
+      "factor": 2.2
+     }
+    },
+    "coinciden": false
+   },
+   "DESPUES": {
+    "lamina": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "tc": 143.75,
+     "banda": [
+      83,
+      163
+     ]
+    },
+    "tresD": {
+     "dia": 6.35,
+     "plug": "JP-251",
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "tc": 143.75,
+     "ciclo": {
+      "tcPiezaS": 31.6,
+      "tcSprueS": 68.7,
+      "mandaS": 68.7,
+      "manda": "bebedero",
+      "factor": 2.2
+     }
+    },
+    "coinciden": true
+   },
+   "specCooling_DESPUES": {
+    "diaMm": 6.35,
+    "plug": "JP-251",
+    "insetMm": 37,
+    "tcS": 143.75,
+    "runnerVolCc": 4.45
+   },
+   "avisos_del_trazo": [
+    "Re = 1054 ≤ 4000: flujo LAMINAR, el agua no arranca el calor (Eq 9.14)",
+    "⌀6.35 > D_max 1.67 mm: pierde turbulencia (Eq 9.15) — lo empuja el PISO MAQUINABLE 6.35 mm: el caudal pedía menos. Se bombea por Re (extensión declarada), no por ΔT",
+    "trazo 2/3 líneas/lado (barrenos en medio)",
+    "paso real 80 mm > 2H = 51 (Eq 9.24): los expulsores/barrenos tapizan la banda — §9.3.5.2 pide baffles o bubblers"
+   ],
+   "laminaAguaVs3D_del_arnes": {
+    "lamina": {
+     "dia": 6.35,
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "plug": "JP-251"
+    },
+    "tresD": {
+     "dia": 6.35,
+     "H": 25.4,
+     "W": 50.8,
+     "nPorLado": 3,
+     "plug": "JP-251"
+    }
+   },
+   "laminaAguaVs3D_IDENTICO": true,
+   "aguaVsPieza_invasiones": []
+  }
+ },
+ "juez_del_agua": {
+  "1594C Box": {
+   "paresEvaluados": 273,
+   "resumenPorCategoria": {
+    "placa": {
+     "evaluados": 5,
+     "fallan": 0
+    },
+    "inserto": {
+     "evaluados": 3,
+     "fallan": 0
+    },
+    "pin": {
+     "evaluados": 10,
+     "fallan": 10
+    },
+    "retorno": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "ko": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "tornillo": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "colada": {
+     "evaluados": 1,
+     "fallan": 0
+    },
+    "pieza": {
+     "evaluados": 2,
+     "fallan": 0
+    }
+   },
+   "cruzaInserto": {
+    "cavidad": true,
+    "nucleo": true
+   },
+   "ladoA": {
+    "zMm": 208.65,
+    "hMm": 15.85,
+    "hOverD": 2.5,
+    "semiMm": 43,
+    "nBarrenos": 6,
+    "nTapones": 6,
+    "nSellos": 2
+   },
+   "ladoB": {
+    "zMm": 136.35,
+    "hMm": 23.65,
+    "hOverD": 3.72,
+    "nBarrenos": 10,
+    "nTapones": 12,
+    "nSellos": 1
+   },
+   "rojos": [
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea2 ↔ expulsor (pin) · placa B",
+     "claroMm": -2.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    }
+   ],
+   "recortes": [
+    "lado A: H 25.40 pedía z=218.20 pero el techo legal está en 208.65 (inserto 215 / cara superior de la placa A 226, §9.2.7 pide r+½⌀ = 6.35 mm de acero encima) ⇒ z=208.65 (H 15.85 = 2.50D, sigue en 2D..5D) — en la E8a esto ROMPÍA el acero (claro −6.38 mm)",
+    "lado B: la línea va DENTRO del inserto de núcleo (z 136.35 ± 3.17; bolsillo 130..160, alto 30) — §4.2.1 Fig 4.13: el respaldo del inserto se dimensiona PARA hospedarla. Se declara cruzaInserto.nucleo: el barreno lo lleva EL INSERTO, no la placa",
+    "lado B: H 25.40 pedía z=134.60 ⇒ z=136.35 (H 23.65 = 3.72D, sigue en 2D..5D). La cara INFERIOR de la placa B está en 124: §9.2.7 pide r+½⌀ = 6.35 mm de acero bajo la línea y ahora los tiene (9.18)",
+    "lado B: 4 líneas/lado (Eq 9.24) → 5: el BAFFLE exige una línea EN el eje del macho para alimentarse (§9.3.5.2) y con n par ninguna pasa por ahí. El paso baja de 50.80 a 50.80 mm nominal con la línea central añadida — más cobertura, nunca menos",
+    "lado B: 2 de 5 líneas se CORRIERON en X (máx 7.5 mm) para librar pines/retornos/KO/tornillos con ½⌀ de acero (§9.2.7). Paso real 58.3 mm contra 2H = 47.30 (Eq 9.24)"
+   ]
+  },
+  "1594C Lid": {
+   "paresEvaluados": 105,
+   "resumenPorCategoria": {
+    "placa": {
+     "evaluados": 5,
+     "fallan": 0
+    },
+    "inserto": {
+     "evaluados": 3,
+     "fallan": 0
+    },
+    "pin": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "retorno": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "ko": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "tornillo": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "colada": {
+     "evaluados": 1,
+     "fallan": 0
+    },
+    "pieza": {
+     "evaluados": 2,
+     "fallan": 0
+    }
+   },
+   "cruzaInserto": {
+    "cavidad": true,
+    "nucleo": true
+   },
+   "ladoA": {
+    "zMm": 169.65,
+    "hMm": 10.05,
+    "hOverD": 1.58,
+    "semiMm": 43,
+    "nBarrenos": 6,
+    "nTapones": 6,
+    "nSellos": 2
+   },
+   "ladoB": {
+    "zMm": 130.35,
+    "hMm": 15.65,
+    "hOverD": 2.46,
+    "nBarrenos": 6,
+    "nTapones": 6,
+    "nSellos": 1
+   },
+   "rojos": [],
+   "recortes": [
+    "lado A: no hay ventana para ⌀6.35 — el techo legal está en 169.65 (inserto 176 / placa 182) y Eq 9.22 pide z ≥ 172.30 (2D sobre la impresión). §9.2.4: baffles, o engrosar A / subir el inserto",
+    "lado A: H 25.40 pedía z=185.00 pero el techo legal está en 169.65 (inserto 176 / cara superior de la placa A 182, §9.2.7 pide r+½⌀ = 6.35 mm de acero encima) ⇒ z=169.65 (H 10.05 = 1.58D, ⚠ SE SALE de 2D..5D (§9.2.6) — el bolsillo del inserto lo empuja a 1.58D) — en la E8a esto ROMPÍA el acero (claro −12.18 mm)",
+    "lado B: la línea CRUZA LA COSTURA inserto↔placa (z 130.35 ± 3.17, costura en 130) — el inserto de 16 mm no da 2D+½⌀ = 19.05 para alojarla entera, y bajo su bolsillo sólo hay 6.00 mm de los 12.70 que pide ½⌀ por lado. Se sella (§9.3.2, O-ring) y se declara cruzaInserto.nucleo; si el cliente no quiere junta en el circuito: engrosar B o baffle/bubbler (§9.3.5.2)",
+    "lado B: H 25.40 pedía z=120.60 ⇒ z=130.35 (H 15.65 = 2.46D, sigue en 2D..5D). La cara INFERIOR de la placa B está en 124: §9.2.7 pide r+½⌀ = 6.35 mm de acero bajo la línea y ahora los tiene (3.17)",
+    "lado B: 1 de 3 líneas se CORRIERON en X (máx 11.5 mm) para librar pines/retornos/KO/tornillos con ½⌀ de acero (§9.2.7). Paso real 62.3 mm contra 2H = 31.30 (Eq 9.24)"
+   ]
+  },
+  "1599HBK": {
+   "paresEvaluados": 501,
+   "resumenPorCategoria": {
+    "placa": {
+     "evaluados": 5,
+     "fallan": 0
+    },
+    "inserto": {
+     "evaluados": 3,
+     "fallan": 0
+    },
+    "pin": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "retorno": {
+     "evaluados": 4,
+     "fallan": 4
+    },
+    "ko": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "tornillo": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "colada": {
+     "evaluados": 1,
+     "fallan": 0
+    },
+    "pieza": {
+     "evaluados": 2,
+     "fallan": 0
+    }
+   },
+   "cruzaInserto": {
+    "cavidad": true,
+    "nucleo": true
+   },
+   "ladoA": {
+    "zMm": 231.65,
+    "hMm": 16.65,
+    "hOverD": 2.62,
+    "semiMm": 65,
+    "nBarrenos": 6,
+    "nTapones": 6,
+    "nSellos": 2
+   },
+   "ladoB": {
+    "zMm": 154.6,
+    "hMm": 25.4,
+    "hOverD": 4,
+    "nBarrenos": 10,
+    "nTapones": 12,
+    "nSellos": 1
+   },
+   "rojos": [
+    {
+     "contra": "B-linea0 ↔ holgura pin de retorno (0.13mm) · placa B",
+     "claroMm": -3.84,
+     "minMm": 3.17,
+     "categoria": "retorno"
+    },
+    {
+     "contra": "B-linea0 ↔ holgura pin de retorno (0.13mm) · placa B",
+     "claroMm": -3.84,
+     "minMm": 3.17,
+     "categoria": "retorno"
+    },
+    {
+     "contra": "B-linea4 ↔ holgura pin de retorno (0.13mm) · placa B",
+     "claroMm": -3.84,
+     "minMm": 3.17,
+     "categoria": "retorno"
+    },
+    {
+     "contra": "B-linea4 ↔ holgura pin de retorno (0.13mm) · placa B",
+     "claroMm": -3.84,
+     "minMm": 3.17,
+     "categoria": "retorno"
+    }
+   ],
+   "recortes": [
+    "lado A: H 25.40 pedía z=240.40 pero el techo legal está en 231.65 (inserto 238 / cara superior de la placa A 266, §9.2.7 pide r+½⌀ = 6.35 mm de acero encima) ⇒ z=231.65 (H 16.65 = 2.62D, sigue en 2D..5D) — en la E8a esto ROMPÍA el acero (claro −5.58 mm)",
+    "lado B: la línea va DENTRO del inserto de núcleo (z 154.60 ± 3.17; bolsillo 130..180, alto 50) — §4.2.1 Fig 4.13: el respaldo del inserto se dimensiona PARA hospedarla. Se declara cruzaInserto.nucleo: el barreno lo lleva EL INSERTO, no la placa",
+    "lado B: 4 líneas/lado (Eq 9.24) → 5: el BAFFLE exige una línea EN el eje del macho para alimentarse (§9.3.5.2) y con n par ninguna pasa por ahí. El paso baja de 50.80 a 50.80 mm nominal con la línea central añadida — más cobertura, nunca menos",
+    "lado B: 2 de 5 líneas se CORRIERON en X (máx 12 mm) para librar pines/retornos/KO/tornillos con ½⌀ de acero (§9.2.7). Paso real 62.8 mm contra 2H = 50.80 (Eq 9.24)"
+   ]
+  },
+  "1557BGY": {
+   "paresEvaluados": 140,
+   "resumenPorCategoria": {
+    "placa": {
+     "evaluados": 5,
+     "fallan": 0
+    },
+    "inserto": {
+     "evaluados": 3,
+     "fallan": 0
+    },
+    "pin": {
+     "evaluados": 7,
+     "fallan": 7
+    },
+    "retorno": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "ko": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "tornillo": {
+     "evaluados": 0,
+     "fallan": 0
+    },
+    "colada": {
+     "evaluados": 1,
+     "fallan": 0
+    },
+    "pieza": {
+     "evaluados": 2,
+     "fallan": 0
+    }
+   },
+   "cruzaInserto": {
+    "cavidad": true,
+    "nucleo": true
+   },
+   "ladoA": {
+    "zMm": 189.65,
+    "hMm": 12.95,
+    "hOverD": 2.04,
+    "semiMm": 49.985,
+    "nBarrenos": 6,
+    "nTapones": 6,
+    "nSellos": 2
+   },
+   "ladoB": {
+    "zMm": 130.35,
+    "hMm": 15.65,
+    "hOverD": 2.46,
+    "nBarrenos": 6,
+    "nTapones": 6,
+    "nSellos": 1
+   },
+   "rojos": [
+    {
+     "contra": "B-linea1 ↔ expulsor (pin) · placa B",
+     "claroMm": -0.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea1 ↔ expulsor (pin) · placa B",
+     "claroMm": -0.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea1 ↔ expulsor (pin) · placa B",
+     "claroMm": -0.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea1 ↔ expulsor (pin) · placa B",
+     "claroMm": -0.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea1 ↔ expulsor (pin) · placa B",
+     "claroMm": -0.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea1 ↔ expulsor (pin) · placa B",
+     "claroMm": -0.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    },
+    {
+     "contra": "B-linea1 ↔ expulsor (pin) · placa B",
+     "claroMm": -0.24,
+     "minMm": 3.17,
+     "categoria": "pin"
+    }
+   ],
+   "recortes": [
+    "lado A: H 25.40 pedía z=202.10 pero el techo legal está en 189.65 (inserto 196 / cara superior de la placa A 202, §9.2.7 pide r+½⌀ = 6.35 mm de acero encima) ⇒ z=189.65 (H 12.95 = 2.04D, sigue en 2D..5D) — en la E8a esto ROMPÍA el acero (claro −9.28 mm)",
+    "lado B: la línea CRUZA LA COSTURA inserto↔placa (z 130.35 ± 3.17, costura en 130) — el inserto de 16 mm no da 2D+½⌀ = 19.05 para alojarla entera, y bajo su bolsillo sólo hay 6.00 mm de los 12.70 que pide ½⌀ por lado. Se sella (§9.3.2, O-ring) y se declara cruzaInserto.nucleo; si el cliente no quiere junta en el circuito: engrosar B o baffle/bubbler (§9.3.5.2)",
+    "lado B: H 25.40 pedía z=120.60 ⇒ z=130.35 (H 15.65 = 2.46D, sigue en 2D..5D). La cara INFERIOR de la placa B está en 124: §9.2.7 pide r+½⌀ = 6.35 mm de acero bajo la línea y ahora los tiene (3.17)"
+   ]
+  }
+ },
+ "cubo_acta_R93": {},
+ "inspector": {
+  "BLOQUEADO": "El inspector de la app (inspecciona.cjs contra vite :5195) NO pudo correr: la app revienta con \"R3F: Hooks can only be used within the Canvas component!\" desde node_modules/.vite/deps. node_modules de forja-dev2..7 es un SYMLINK al del repo principal, asi que las 6 copias de vite comparten UN solo cache de prebundle y se lo pisan entre ellas (dos copias del store de R3F). No se limpio el cache a proposito: hay otros 4 agentes corriendo sobre el mismo. No lo causa esta orden: no se toco ningun archivo React/JSX (los 7 archivos del commit son .ts de modelo y el .cjs del gate). Lo que el inspector mide en 2.1/2.2/2.5 lo mide aqui el juez del agua, con numero, en juez_del_agua[*].resumenPorCategoria.placa (caras) e .inserto (asiento)."
+ },
+ "abierto": [
+  "PINES: el juez del agua ahora VE los pines y los reprueba (1594C Box 13 rojos, peor 0.16 mm; 1557BGY 7 rojos, peor -0.24 mm). El campo de expulsores tapiza la banda y el esquive en X no encuentra hueco: §9.3.5.2 pide baffle/bubbler o mover los pines. ES DE LA ORDEN DE LOS PINES (los pines en la cara del macho / A-239): aqui se entrega la lista completa con numero y nombre.",
+  "DOS COLADAS: feed.ts (designFeedSystem) y colada.ts (datumsColada) declaran bebederos distintos (carcasa: t_c 145.13 s vs 75.7 s). El circuito usa el del feed (el que viaja en el spec) y la E8 lo REPORTA en su fila t_c y en un anuncio a la E5. Es de la orden del bebedero, no de esta.",
+  "PISO MAQUINABLE: en las 4 piezas el caudal pide MENOS de 6.35 mm, asi que manda el piso y el flujo queda laminar (Re 871 en la carcasa). El motor lo dice en sus avisos y la E8 ya bombea por Re (extension declarada). Si ian quiere el ⌀ del caudal puro, se quita el piso en PISO_MAQUINABLE_MM.",
+  "EL ESPESOR DE LAS PLACAS lo sigue eligiendo el estimador viejo (coolinglines.designCoolingLines en moldmachine.ts, §4.2.1 t = prof + 3·⌀). No es el circuito, es el dimensionado del acero, y da un ⌀ IGUAL O MAYOR que el del circuito en las 4 piezas (9.53/4.76/15.9/6.35 vs 6.35) — o sea, placas sobradas, nunca cortas. Unificar tambien eso mueve TODAS las placas: no cabe en esta orden."
+ ]
+}
