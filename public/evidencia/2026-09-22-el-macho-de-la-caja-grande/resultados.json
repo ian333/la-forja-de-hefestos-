@@ -1,0 +1,379 @@
+{
+ "orden": "ordenes/2026-09-22-el-macho-de-la-caja-grande.md",
+ "medido": "2026-09-22 · iangpu · forja-dev3 (:5199) · base 2438d60",
+ "causa": "splitMold tomaba el macho como el cuerpo MÁS CHICO del bloque partido (keepSolid smallest). La 1599HBK tiene 4 torres de tornillo huecas (agujero 4×4) que llegan a la partición: el acero dentro de cada torre queda separado del macho por la torre → 6 cuerpos (cavidad 2 270 050 mm³, macho 692 077, 4 postes de 395.8). El «más chico» era un poste: el núcleo = placa plana en la partición + un poste de 4×4×31.5.",
+ "arreglo": "splitMold: la cavidad sigue siendo el cuerpo mayor; el macho = la UNIÓN de todos los demás cuerpos que llegan a la cara de la partición (macho + postes), unida a la placa. Un cuerpo que no llegue a la partición no se une y se reporta (no pasó en las 4 piezas). Con 2 cuerpos (carcasa, tapa, ensamble, cubo) el resultado es bit-igual (mismos volúmenes al 0.001 mm³).",
+ "rejillaNode": {
+  "1594C Box": {
+   "antes": {
+    "tocan": "50/50",
+    "clases": {
+     "toca": 50
+    },
+    "cuerpos": 2,
+    "volMachoMm3": 170887.0,
+    "volCavidadMm3": 1029782.7,
+    "e3ms": 5896,
+    "reporte": [
+     "bloque 132×173×55.00 @(0,0,-28.000) · partición z=-0.5000 · escala 1",
+     "molde 1200669.713 mm³ · cuerpos: 2",
+     "cavity 1029782.722 · macho 170886.990 · core(+placa 30) 855966.997"
+    ],
+    "huecos": []
+   },
+   "despues": {
+    "tocan": "50/50",
+    "clases": {
+     "toca": 50
+    },
+    "cuerpos": 2,
+    "volMachoMm3": 170887.0,
+    "volCavidadMm3": 1029782.7,
+    "e3ms": 5634,
+    "reporte": [
+     "bloque 132×173×55.00 @(0,0,-28.000) · partición z=-0.5000 · escala 1",
+     "molde 1200669.713 mm³ · cuerpos: 2",
+     "cavity 1029782.722 · macho 170886.990 · core(+placa 30) 855966.997"
+    ],
+    "huecos": []
+   }
+  },
+  "1594C Lid": {
+   "antes": {
+    "tocan": "50/50",
+    "clases": {
+     "toca": 50
+    },
+    "cuerpos": 2,
+    "volMachoMm3": 57474.3,
+    "volCavidadMm3": 362590.6,
+    "e3ms": 2734,
+    "reporte": [
+     "bloque 145.1×104.1×30.00 @(0,0,-13.500) · partición z=1.5000 · escala 1",
+     "molde 420064.897 mm³ · cuerpos: 2",
+     "cavity 362590.597 · macho 57474.301 · core(+placa 16) 299152.839"
+    ],
+    "huecos": []
+   },
+   "despues": {
+    "tocan": "50/50",
+    "clases": {
+     "toca": 50
+    },
+    "cuerpos": 2,
+    "volMachoMm3": 57474.3,
+    "volCavidadMm3": 362590.6,
+    "e3ms": 2456,
+    "reporte": [
+     "bloque 145.1×104.1×30.00 @(0,0,-13.500) · partición z=1.5000 · escala 1",
+     "molde 420064.897 mm³ · cuerpos: 2",
+     "cavity 362590.597 · macho 57474.301 · core(+placa 16) 299152.839"
+    ],
+    "huecos": []
+   }
+  },
+  "1599HBK": {
+   "antes": {
+    "tocan": "1/50",
+    "clases": {
+     "HUECO": 49,
+     "toca": 1
+    },
+    "cuerpos": 6,
+    "volMachoMm3": 395.8,
+    "volCavidadMm3": 2270049.8,
+    "e3ms": 10410,
+    "reporte": [
+     "bloque 292×182×58.00 @(0,0,-29.000) · partición z=0.0000 · escala 1",
+     "molde 2963709.944 mm³ · cuerpos: 6",
+     "cavity 2270049.816 · macho 395.841 · core(+placa 50) 2657595.841"
+    ],
+    "huecos": [
+     {
+      "x": 99.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 121.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 143.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 165.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 187.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 209.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 231.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 253.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 275.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 297.14,
+      "y": 104.11,
+      "d": 31.5
+     },
+     {
+      "x": 99.14,
+      "y": 126.11,
+      "d": 31.5
+     },
+     {
+      "x": 121.14,
+      "y": 126.11,
+      "d": 31.5
+     }
+    ]
+   },
+   "despues": {
+    "tocan": "50/50",
+    "clases": {
+     "toca": 50
+    },
+    "cuerpos": 6,
+    "volMachoMm3": 693660.1,
+    "volCavidadMm3": 2270049.8,
+    "e3ms": 17821,
+    "reporte": [
+     "bloque 292×182×58.00 @(0,0,-29.000) · partición z=0.0000 · escala 1",
+     "molde 2963709.944 mm³ · cuerpos: 6",
+     "macho = 5 cuerpos que suben a la partición (692076.8 + 395.8 + 395.8 + 395.8 + 395.8 mm³), unidos a la placa",
+     "cavity 2270049.816 · macho 693660.128 · core(+placa 50) 3350860.127"
+    ],
+    "huecos": []
+   }
+  },
+  "1557BGY": {
+   "antes": {
+    "tocan": "38/50",
+    "clases": {
+     "fuera (acero de la cavidad bajo un ala)": 9,
+     "toca": 38,
+     "sin pieza encima": 3
+    },
+    "cuerpos": 2,
+    "volMachoMm3": 106024.3,
+    "volCavidadMm3": 851970.1,
+    "e3ms": 11596,
+    "reporte": [
+     "bloque 142×142×50.00 @(0,29.4,-9.900) · partición z=15.1000 · escala 1",
+     "molde 957994.738 mm³ · cuerpos: 2",
+     "cavity 851970.071 · macho 106024.345 · core(+placa 16) 428648.389"
+    ],
+    "huecos": []
+   },
+   "despues": {
+    "tocan": "38/50",
+    "clases": {
+     "fuera (acero de la cavidad bajo un ala)": 9,
+     "toca": 38,
+     "sin pieza encima": 3
+    },
+    "cuerpos": 2,
+    "volMachoMm3": 106024.3,
+    "volCavidadMm3": 851970.1,
+    "e3ms": 9118,
+    "reporte": [
+     "bloque 142×142×50.00 @(0,29.4,-9.900) · partición z=15.1000 · escala 1",
+     "molde 957994.738 mm³ · cuerpos: 2",
+     "cavity 851970.071 · macho 106024.345 · core(+placa 16) 428648.389"
+    ],
+    "huecos": []
+   }
+  }
+ },
+ "rejillaApp": {
+  "1594C Box": {
+   "despues": {
+    "clases": {
+     "toca": 50
+    },
+    "nucleo": "INSERTO DE NÚCLEO + macho · P20 · BARRENADO: punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua B-linea1 ⌀6.35 · agua B-linea2 ⌀6.35 · agua B-linea3 ⌀6.35 · agua B-baffle ⌀9.53 · O-ring 2 ⌀10.75",
+    "nucleoBbox": [
+     [
+      57,
+      36.5,
+      160
+     ],
+     [
+      189,
+      209.5,
+      219.8
+     ]
+    ],
+    "piezaBbox": [
+     [
+      90,
+      69.75,
+      189.5
+     ],
+     [
+      156,
+      176.25,
+      222.8
+     ]
+    ]
+   }
+  },
+  "1594C Lid": {
+   "despues": {
+    "clases": {
+     "toca": 50
+    },
+    "nucleo": "INSERTO DE NÚCLEO + macho · P20 · BARRENADO: punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua B-linea0 ⌀6.35 · agua B-linea1 ⌀6.35 · agua B-linea2 ⌀6.35 · agua B-baffle ⌀9.53 · O-ring 2 ⌀10.75 · O-ring 3 ⌀10.75 · O-ring 4 ⌀10.75 · O-ring 5 ⌀10.75",
+    "nucleoBbox": [
+     [
+      50.45,
+      45.95,
+      130
+     ],
+     [
+      195.55,
+      150.05,
+      156.8
+     ]
+    ],
+    "piezaBbox": [
+     [
+      69.75,
+      65,
+      145.5
+     ],
+     [
+      176.25,
+      131,
+      159.6
+     ]
+    ]
+   }
+  },
+  "1599HBK": {
+   "despues": {
+    "clases": {
+     "toca": 50
+    },
+    "nucleo": "INSERTO DE NÚCLEO + macho · P20 · BARRENADO: punta de 8 pines ⌀4.893 · asiento del hombro de 8 pines ⌀6.48 · agua B-linea0 ⌀6.35 · agua B-linea1 ⌀6.35 · agua B-linea2 ⌀6.35 · agua B-linea3 ⌀6.35 · agua B-linea4 ⌀6.35 · agua B-baffle ⌀9.53 · O-ring 2 ⌀10.75",
+    "nucleoBbox": [
+     [
+      52,
+      57,
+      160
+     ],
+     [
+      344,
+      239,
+      241.5
+     ]
+    ],
+    "piezaBbox": [
+     [
+      88,
+      93,
+      209.5
+     ],
+     [
+      308,
+      203,
+      245
+     ]
+    ]
+   }
+  },
+  "1557BGY": {
+   "despues": {
+    "clases": {
+     "fuera (acero de la cavidad bajo un ala)": 10,
+     "toca": 38,
+     "sin pieza encima": 2
+    },
+    "nucleo": "INSERTO DE NÚCLEO + macho · P20 · BARRENADO: punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua B-linea0 ⌀6.35 · agua B-linea1 ⌀6.35 · agua B-linea2 ⌀6.35 · agua B-baffle ⌀9.53 · O-ring 2 ⌀10.75 · O-ring 3 ⌀10.75 · O-ring 4 ⌀10.75 · O-ring 5 ⌀10.75",
+    "nucleoBbox": [
+     [
+      52,
+      52,
+      160
+     ],
+     [
+      194,
+      194,
+      204.4
+     ]
+    ],
+    "piezaBbox": [
+     [
+      83.01,
+      83.01,
+      175.5
+     ],
+     [
+      162.99,
+      162.99,
+      206.7
+     ]
+    ]
+   }
+  }
+ },
+ "inspector1599HBK": {
+  "resumen": {
+   "ok": 10,
+   "falla": 4,
+   "mirar": 1
+  },
+  "p1_1": {
+   "v": "ok",
+   "medido": "rayo en (198.4, 148.3): techo del macho (cara real) z 241.5 · piso interior de la pieza z 241.5 (pared ahí 2.5 mm) → 0 mm · [la fórmula «techo − pared mediana» habría dicho z 242.54]"
+  },
+  "p6_1": {
+   "v": "ok",
+   "medido": "la tira dice puntas↔cara 0 mm · medido por rayo: la peor punta pin-punta-0 está 0 mm HUNDIDA en el acero (cara real z 241.5) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines"
+  },
+  "fallas": [
+   "2.3",
+   "2.5",
+   "5.1",
+   "6.2"
+  ],
+  "antesEnLaFusion": {
+   "ok": 9,
+   "falla": 6,
+   "mirar": 2,
+   "fallas": [
+    "1.1",
+    "2.3",
+    "2.5",
+    "5.1",
+    "6.1",
+    "6.2"
+   ],
+   "1.1": "−56.9 mm en (198.4, 148.3)"
+  }
+ },
+ "nota": "Rejilla 10×5 sobre la caja de la pieza (corrida 0.137/0.113 mm para no caer en aristas). «toca» = |techo del macho − piso de la pieza| ≤ 0.5 mm. «fuera» = a media altura del hueco el punto está DENTRO del acero de la cavidad (paridad de cruces): la pieza no está encima del macho ahí, es su exterior (1557BGY: dos franjas a lo largo de los lados largos donde el plástico solo está arriba, z 200–204, con acero de cavidad debajo). «sin pieza encima» = el rayo no cruza la pieza (esquinas redondeadas)."
+}

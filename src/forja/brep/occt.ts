@@ -728,13 +728,13 @@ function draftFacesMin(
 }
 
 /**
- * CONSERVAR UN SÓLIDO del compound (cap 6: partir el molde): bloque−pieza con el
- * bloque hasta el plano de partición da DOS cuerpos disjuntos — la CAVITY PLATE
- * (mayor) y el MACHO del core (menor), separados por la pieza fantasma. Este
- * filtro extrae uno: 'largest' → cavity; 'smallest' → macho (que luego se UNE
- * a la placa superior = core plate, Fig 6-34).
+ * TODOS los cuerpos del resultado de un boolean, uno por sólido (o por SHELL cerrado si el cut() de
+ * OCCT regresó UN solid con varios shells disjuntos). Es el mismo desarme que usaba `keepSolid`, sacado
+ * aquí para que `splitMold` pueda mirar CADA cuerpo (EL MACHO DE LA CAJA GRANDE, 2026-09-22: la 1599HBK
+ * parte en 6 cuerpos — cavidad, macho y 4 postes dentro de sus torres — y 'smallest' se quedaba con un
+ * poste de 4×4×31.5 mm como si fuera EL macho). `[shape]` si no hay nada que separar.
  */
-export function keepSolid(oc: OC, shape: Shape, which: 'largest' | 'smallest'): Shape {
+export function solidsOf(oc: OC, shape: Shape): Shape[] {
   // uniqueSubShapes (helper probado) — el explorer crudo devuelve refs que se
   // invalidan con Next() y el filtro se volvía no-op silencioso.
   let cands = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_SOLID);
@@ -743,7 +743,7 @@ export function keepSolid(oc: OC, shape: Shape, which: 'largest' | 'smallest'): 
     // disjuntos (el molde partido: cavity+macho+pilar). Separar por SHELL y
     // reconstruir un sólido por cada uno.
     const shells = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_SHELL);
-    if (shells.length <= 1) return shape;
+    if (shells.length <= 1) return [shape];
     cands = shells.map((sh) => {
       const shell = oc.TopoDS.Shell_1(sh);
       const mk = typeof oc.BRepBuilderAPI_MakeSolid_3 === 'function'
@@ -752,6 +752,20 @@ export function keepSolid(oc: OC, shape: Shape, which: 'largest' | 'smallest'): 
       return mk.Solid();
     });
   }
+  return cands;
+}
+
+/**
+ * CONSERVAR UN SÓLIDO del compound (cap 6: partir el molde): bloque−pieza con el
+ * bloque hasta el plano de partición da DOS cuerpos disjuntos — la CAVITY PLATE
+ * (mayor) y el MACHO del core (menor), separados por la pieza fantasma. Este
+ * filtro extrae uno: 'largest' → cavity; 'smallest' → macho (que luego se UNE
+ * a la placa superior = core plate, Fig 6-34).
+ *  OJO: con MÁS de dos cuerpos 'smallest' NO es el macho — `splitMold` ya no lo usa así (usa `solidsOf`).
+ */
+export function keepSolid(oc: OC, shape: Shape, which: 'largest' | 'smallest'): Shape {
+  const cands = solidsOf(oc, shape);
+  if (cands.length <= 1) return cands[0] ?? shape;
   let best = cands[0], bestV = Math.abs(volume(oc, cands[0]));
   for (let i = 1; i < cands.length; i++) {
     const v = Math.abs(volume(oc, cands[i]));
