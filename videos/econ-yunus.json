@@ -1,0 +1,52 @@
+{
+  "id": "econ-yunus",
+  "titulo": "El préstamo con trampa (y el Nobel de Muhammad Yunus) — Don Chuy, La economía de tu negocio (capítulo 05)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/05-a-cambio-de-que (guion + escaleta → ElPuesto). Voz Matilda XTTS, sin intro, dibujo plano con sombras. Ver docs/EL-EMBUDO-DE-DON-CHUY.md.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": null,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
+  },
+  "audio": {
+    "dir": "dist-video/econ-yunus-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda vía narracion-gen.py (GUION=/OUT=), atempo 1.10"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-yunus-4k.mp4",
+    "h264": "econ-yunus-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 y out/short-16x9.mp4 del motor a H.264 CBR 24 Mbps (la ley de subida pide ≥15)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-yunus.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Le prestaron $500 y trabajó para otro (esto ganó un Nobel) · La economía de tu negocio",
+      "descripcion": "Don Chuy no tenía para surtir. 🍊 Le prestaron $500… con una condición: venderle todas sus naranjas al que le prestó, a $5.\n\nCobró $500, pagó el préstamo y quedó en $0. El prestamista las revendió a $10.\n\nEsa misma trampa la vio Muhammad Yunus, profesor de economía, en Jobra, una aldea de Bangladesh: 42 personas atrapadas por 27 dólares entre todas.\n\nPuso el dinero de su bolsa y fundó el Grameen Bank. En 2006 ganó el Premio Nobel de la Paz.\n\nAntes de que te presten, pregunta: ¿a cambio de qué?\n\n💬 ¿Has trabajado para el que te prestó? Sí o no.\n\nFuente: conferencia Nobel de Muhammad Yunus, 2006 (nobelprize.org).",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#préstamos",
+        "#premionobel",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "una sola cuenta de Don Chuy: Si el que te presta también decide a cuánto le vendes, trabajas para él. Romper esa trampa le valió el Nobel de la Paz a Muhammad Yunus."
+    },
+    "autorizado": "",
+    "programar": "2026-09-26T18:45:00-06:00",
+    "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX). Sin publicar.autorizado NADA sube.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nDon Chuy pidió $500 para surtir. El que se los prestó le dijo: «me vendes todas tus naranjas a mí, a $5».\n\n➡️ Don Chuy: le entraron $500 y pagó $500. Le quedó $0.\n➡️ El prestamista: compró a $5 y vendió a $10. Se quedó con los $500 que eran de Don Chuy.\n\nDon Chuy trabajó igual que siempre. Lo que cambió fue el trato.\n\nMuhammad Yunus ganó el Nobel de la Paz por fundar un banco que le presta poquito a gente pobre, sin esa trampa.\n\nAntes de que te presten, pregunta: ¿a cambio de qué?",
+    "nota_palabra_clave": "Cuando el respondedor (scripts/dm-libreta.py) esté encendido, se agrega al final del primer comentario y de la descripción: «Comenta LIBRETA y te la mando por DM 🍊». Antes no: nadie contestaría."
+  }
+}

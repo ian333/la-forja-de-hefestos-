@@ -1,0 +1,52 @@
+{
+  "id": "econ-descuento",
+  "titulo": "La rebaja sale de lo que ganas — Don Chuy, La economía de tu negocio (capítulo 01)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/01-te-la-dejo-en-8 (guion + escaleta → ElPuesto). Voz Matilda XTTS, sin intro, dibujo plano con sombras. Ver docs/EL-EMBUDO-DE-DON-CHUY.md.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": null,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
+  },
+  "audio": {
+    "dir": "dist-video/econ-descuento-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda vía narracion-gen.py (GUION=/OUT=), atempo 1.10"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-descuento-4k.mp4",
+    "h264": "econ-descuento-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 y out/short-16x9.mp4 del motor a H.264 CBR 24 Mbps (la ley de subida pide ≥15)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-descuento.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Le rebajó $2 a su compadre y ganó $200 menos · La economía de tu negocio",
+      "descripcion": "Don Chuy vende naranjas. 🍊 El proveedor le cobra $5 por cada una y él las vende a $10: le quedan $5.\n\nSu compadre le pide rebaja. «Te la dejo en $8, compadre.» Y en la colonia… todos son su compadre.\n\nHoy vendió 100 a $8: juntó $800, le pagó $500 al proveedor y le quedaron $300. No $500.\n\nNo rebajó $2 de $10. Rebajó $2 de sus $5. La rebaja la pagas tú.\n\n💬 Y tú, ¿le haces descuento a tus amigos? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#descuentos",
+        "#precios",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "una sola cuenta de Don Chuy: Una rebaja no sale del precio: sale de lo que tú ganas. Rebajar dos pesos de diez es regalar dos de tus cinco."
+    },
+    "autorizado": "",
+    "programar": "2026-09-22T18:45:00-06:00",
+    "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX). Sin publicar.autorizado NADA sube.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nDe cada naranja de $10, $5 son del proveedor y $5 son de Don Chuy.\n\n✅ A $10: le quedan $5 por naranja. 100 naranjas = $500.\n❌ A $8: le quedan $3 por naranja. 100 naranjas = $300.\n\nLa rebaja de $2 no sale de los $10: sale de sus $5. De cada $5 que ganaba, se le fueron $2.\n\nHacerle descuento al compadre no está mal. Solo hay que saber de dónde sale. ¿Tú sabes cuánto te queda de cada cosa que vendes?",
+    "nota_palabra_clave": "Cuando el respondedor (scripts/dm-libreta.py) esté encendido, se agrega al final del primer comentario y de la descripción: «Comenta LIBRETA y te la mando por DM 🍊». Antes no: nadie contestaría."
+  }
+}

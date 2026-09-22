@@ -1,0 +1,52 @@
+{
+  "id": "econ-lata",
+  "titulo": "Lo que hay en la caja no es todo tuyo — Don Chuy, La economía de tu negocio (capítulo 02)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/02-esa-lata-no-es-tuya (guion + escaleta → ElPuesto). Voz Matilda XTTS, sin intro, dibujo plano con sombras. Ver docs/EL-EMBUDO-DE-DON-CHUY.md.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": null,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
+  },
+  "audio": {
+    "dir": "dist-video/econ-lata-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda vía narracion-gen.py (GUION=/OUT=), atempo 1.10"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-lata-4k.mp4",
+    "h264": "econ-lata-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 y out/short-16x9.mp4 del motor a H.264 CBR 24 Mbps (la ley de subida pide ≥15)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-lata.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Tenía $1,000 en la lata y no le alcanzó para surtir · La economía de tu negocio",
+      "descripcion": "Don Chuy vendió sus 100 naranjas a $10. 🍊 En la lata hay $1,000. Parecen suyos… pero $500 son del proveedor.\n\nEsa noche saca $300 para el gas de su casa. Y $400 para la luz.\n\nEn la mañana llega el proveedor: le cobra $500. En la lata hay $300.\n\nNo gastó en lujos. Gas y luz. Pero $200 de esos pesos eran del proveedor. Esa lata no es toda tuya.\n\n💬 Y tú, ¿separas el dinero de tu casa del de tu negocio? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#dinero",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "una sola cuenta de Don Chuy: Lo que hay en la lata no es todo tuyo: si gastas la parte del proveedor en tu casa, mañana no tienes con qué surtir."
+    },
+    "autorizado": "",
+    "programar": "2026-09-23T18:45:00-06:00",
+    "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX). Sin publicar.autorizado NADA sube.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nEn la lata hay $1,000, pero no todo es de Don Chuy:\n• $500 son del proveedor (lo que costaron las naranjas).\n• $500 son suyos.\n\n✅ Si para la casa saca solo sus $500: en la mañana paga y vuelve a surtir.\n❌ Sacó $700 (gas $300 + luz $400): quedan $300 y el proveedor pide $500.\n\nNo gastó en tonterías. Solo que $200 no eran suyos.\n\nUn truco sencillo: dos latas, una para el proveedor y otra para la casa. ¿Tú cómo le haces?",
+    "nota_palabra_clave": "Cuando el respondedor (scripts/dm-libreta.py) esté encendido, se agrega al final del primer comentario y de la descripción: «Comenta LIBRETA y te la mando por DM 🍊». Antes no: nadie contestaría."
+  }
+}
