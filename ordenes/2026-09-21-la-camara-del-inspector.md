@@ -1,8 +1,10 @@
 # ORDEN: LA CÁMARA DEL INSPECTOR — que cada punto del plan de inspección SE VEA (hoy ~36 de 64 tarjetas «no se ve»)
 
-ESTADO: despues (registrada; PRÓXIMO está 7/7 — sube con `git mv` cuando ian diga)
+ESTADO: en-curso
+PRIORIDAD: 1
+AGENTE: Opus · worktree propio · iangpu forja-dev7 :5198
 
-BASE: 9be0f7a
+BASE: eca3df0
 
 OBJETIVO: el plan de inspección (orden 2026-09-21-el-plan-de-inspeccion) mide bien y MIRA mal. Cuatro revisores Opus, uno
 por pieza, juzgaron las 64 tarjetas: en más de la mitad la imagen no deja ver el número que dice el letrero, y a uno la
@@ -27,11 +29,32 @@ vista lo ENGAÑÓ (creyó que la pieza estaba al revés). Al final de esta orden
   barreno móvil con lista completa · cabeza capturada (alojamiento ciego) · retorno dentro del contorno de su placa ·
   flecha de la placa de soporte · nada sobresale de las caras de montaje · ⌀ declarado = ⌀ modelado · anillo vs platina.
 
+## EJERCICIOS
+- [ ] el inspector entra al repo: `scripts/inspecciona-molde.cjs` (nace de scratchpad plan/inspecciona.cjs) con los arreglos del
+      inspector: láminas desde la página 0 · 6.1 por la cara REAL (lee `data-puntas-vs-cara` si existe; si no, rayo) · 2.2
+      contra el inserto de cavidad · 2.3 con LISTA completa incl. retornos y KO · 7.1 con el umbral marcado «nuestro, sin
+      cita» · < 0.6 mm = «no concluyente» · roles multi-cuerpo juzgados por cuerpo · la cámara NUNCA dentro de un sólido.
+- [ ] manijas en `__forgeBrep.inspeccion`: `aislar(roles[])` (solo esos, el resto oculto) · `cota(a, b)` (la distancia dibujada
+      entre los dos puntos medidos, en el mundo) · `ortografica(on)` con escala conocida · el corte ya existe (`corte`).
+- [ ] la pieza pintada por una lente OBEDECE el plano de corte (hoy sale entera y tapa al macho — 1.1/1.2/6.1); macho opaco +
+      pieza en alambre para los acercamientos; encuadre que incluya la carrera al abrir.
+- [ ] las 4 piezas re-inspeccionadas con las vistas nuevas: montaje de 64 tarjetas y TU juicio honesto por tarjeta (sí/no/no se
+      ve) — la meta es ≥ 90 % «sí»; lo que siga sin verse, dicho.
+
 ## TOCA
-- (se declara al abrir)
+- src/forja/brep/ForgeBRepStudio.tsx
+- src/forja/brep/MoldScene.tsx
 
 ## CREA
-- (nada)
+- scripts/inspecciona-molde.cjs
+- public/evidencia/2026-09-21-la-camara-del-inspector/tarjetas-4-piezas.png
+- public/evidencia/2026-09-21-la-camara-del-inspector/resultados.json
+
+## PREEXISTENTE
+- (nada — worktree limpio)
 
 ## EVIDENCIA (se declara ANTES de trabajar)
-- Las mismas 4 piezas, mismos revisores: ≥ 90 % de las tarjetas «sí confirma».
+- Las mismas 4 piezas: ≥ 90 % de las 64 tarjetas «sí confirma» (juicio propio por tarjeta, honesto); montaje + resultados.json.
+- tsc: cero errores nuevos contra la base de 66 · censo igual (0 Canvas nuevos) · orden-gate VERDE · sin deploy.
+
+## CIERRE (se llena al terminar)

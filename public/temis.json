@@ -1,21 +1,21 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-21 22:31",
+ "generado": "2026-09-22 03:06",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 7,
+  "proximo": 5,
   "enCurso": 0,
   "imprevisto": 0,
-  "supertickets": 9,
+  "supertickets": 15,
   "cerrado": 95,
   "probado": 0,
   "porProbar": 59,
-  "sinDesplegar": 12,
-  "despues": 27
+  "sinDesplegar": 13,
+  "despues": 26
  },
  "deploy": {
   "commit": "36e8e93",
@@ -24,82 +24,6 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-09-21-la-carrera-cabe.md",
-    "slug": "2026-09-21-la-carrera-cabe",
-    "titulo": "LA CARRERA CABE — la caja expulsora se dimensiona por la pieza (hoy es un literal de 66 mm y ninguna pieza de más de 23 mm puede expulsarse)",
-    "fecha": "2026-09-21",
-    "estado": "proximo",
-    "prioridad": 1,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "[ ] la regla de la caja expulsora con su cita (Kazmer cap 11/12",
-      "titulo": "Fig 1.6) y la serie comercial del código.",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] `packageToAssemblySpec` la aplica; la cotización (masa de acero) y las 17 láminas se mueven con ella: UNA verdad.",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] el cubo: decisión de ian; si se re-firma, los literales del test se actualizan con su acta.",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] camino: el check «la carrera cabe» en verde; las 20 piezas como juez (ninguna con carrera > caja).",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 4
-    },
-    "objetivo": "que el molde de TU pieza pueda EXPULSARLA. packageToAssemblySpec (mold-plano-set.ts) clava bottomClamp: 36, ejectorHousing: 66, topClamp: 36 para cualquier pieza. Con la expulsora (28 % de la caja = 18) y la retenedora (20 % = 13) adentro …",
-    "toca": 1,
-    "crea": 0,
-    "evidencia": 1,
-    "evidenciaDeclarada": [
-     "carreraLibre ≥ carreraPedida en las 20 piezas; en el paseo la retenedora se detiene ANTES del soporte."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
    {
     "file": "ordenes/2026-09-18-las-20-piezas.md",
     "slug": "2026-09-18-las-20-piezas",
@@ -174,73 +98,6 @@
      "La carcasa 1594C: clamp requerido en el rango 20-40 t con la fórmula del libro citada; la fila de la",
      "Cuando la HT-150SV dispare: el clamp real (lectura del controlador) contra el calculado, en el doc.",
      "runner sin regresión; orden-gate VERDE."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-10-el-agua-dice-dos-cosas.md",
-    "slug": "2026-09-10-el-agua-dice-dos-cosas",
-    "titulo": "EL AGUA DICE DOS COSAS — la lámina de la placa y el 3D del molde no dibujan el mismo circuito",
-    "fecha": "2026-09-10",
-    "estado": "proximo",
-    "prioridad": 5,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "[ ] medir los dos caminos lado a lado para cubo, vaso y carcasa (tabla: D, H, W, n, plug, ΔT, Re).",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] UNA fuente: `estacion8Circuito` como origen y la lámina leyendo sus segmentos (o al revés, según la",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] gate nuevo: «lámina y 3D dicen lo mismo» (D, H, W, n, plug) para las tres piezas.",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 3
-    },
-    "objetivo": "hallazgo de EL AGUA DE TU PIEZA (2026-09-17, medido en node sobre la carcasa 1594C con pared 3.2): el MISMO molde tiene DOS circuitos de agua distintos según quién lo dibuje. La lámina de la placa (coolingCircuitDesign en mold-drawing-set.…",
-    "toca": 4,
-    "crea": 0,
-    "evidencia": 3,
-    "evidenciaDeclarada": [
-     "La tabla de los dos caminos ANTES y DESPUÉS para las tres piezas.",
-     "ciclo-dado-test verde (266/266 o el número nuevo, firmado y explicado).",
-     "Captura de la lámina y del 3D del MISMO molde con los mismos números a la vista."
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1399,6 +1256,511 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-10-el-agua-dice-dos-cosas.md",
+    "slug": "2026-09-10-el-agua-dice-dos-cosas",
+    "titulo": "EL AGUA DICE DOS COSAS — la lámina de la placa y el 3D del molde no dibujan el mismo circuito",
+    "fecha": "2026-09-10",
+    "estado": "en-curso",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] una sola función del circuito (⌀, H, W, líneas por lado, tapones, serie/paralelo) que consuman `estacion8Dado` (3D) y",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] la profundidad H contra las CARAS de la placa: acero ≥ ½D bajo/sobre la línea (cita §9.2.7); cero −1.14.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] el juez del agua: caras",
+      "titulo": "inserto · pines · retornos",
+      "herramientas": "KO",
+      "oraculo": "tornillos, lista completa; rojo detiene o mueve la línea.",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] el cubo: ACTA R93; ciclo-dado-test verde.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] las 4 piezas: 2.1, 2.2 (contra el inserto), 2.3, 2.5 ✓ y `laminaAguaVs3D` del arnés idéntico; capturas.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 5
+    },
+    "objetivo": "hallazgo de EL AGUA DE TU PIEZA (2026-09-17, medido en node sobre la carcasa 1594C con pared 3.2): el MISMO molde tiene DOS circuitos de agua distintos según quién lo dibuje. La lámina de la placa (coolingCircuitDesign en mold-drawing-set.…",
+    "toca": 7,
+    "crea": 2,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "4/4 piezas: 2.1, 2.2, 2.3, 2.5 ✓ con números antes → después; lámina y 3D con el mismo ⌀/H/W/n; capturas por pieza.",
+     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test verde (con acta R93) · orden-gate VERDE · sin deploy."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-21-el-reparto-de-la-inspeccion.md",
+    "slug": "2026-09-21-el-reparto-de-la-inspeccion",
+    "titulo": "EL REPARTO DE LA INSPECCIÓN — cinco órdenes en paralelo, cinco agentes Opus, cinco worktrees, una fusión",
+    "fecha": "2026-09-21",
+    "estado": "en-curso",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] las 5 órdenes abiertas y en Temis; infraestructura (dev3..7 + vites) viva.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] los 5 agentes terminan con gate VERDE en su rama y CIERRE escrito.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] fusión en main una por una (rebase), conflictos resueltos, tsc/ciclo/camino/inspección sobre lo fusionado.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] Temis regenerado",
+      "titulo": "deploy ÚNICO",
+      "herramientas": "verificación del sello y del bundle.",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 4
+    },
+    "objetivo": "ian (2026-09-21): «reparte el trabajo padrino, recuerda que para todo debe de haber tickets; pueden crear sus tickets y trabajarlo en paralelo con Opus». Las causas raíz del plan de inspección se atacan a la vez, cada una bajo SU orden, en…",
+    "toca": 2,
+    "crea": 0,
+    "evidencia": 1,
+    "evidenciaDeclarada": [
+     "5 ramas fusionadas; la inspección de las 4 piezas después de la fusión: 3.1, 3.2, 2.1, 2.2, 2.3, 2.5, 7.2, 2.4 ✓ y puntas en la cara."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-21-la-camara-del-inspector.md",
+    "slug": "2026-09-21-la-camara-del-inspector",
+    "titulo": "LA CÁMARA DEL INSPECTOR — que cada punto del plan de inspección SE VEA (hoy ~36 de 64 tarjetas «no se ve»)",
+    "fecha": "2026-09-21",
+    "estado": "en-curso",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] el inspector entra al repo: `scripts/inspecciona-molde.cjs` (nace de scratchpad plan/inspecciona.cjs) con los arreglos del",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] manijas en `__forgeBrep.inspeccion`: `aislar(roles[])` (solo esos, el resto oculto)",
+      "titulo": "cota(a, b) (la distancia dibujada",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] la pieza pintada por una lente OBEDECE el plano de corte (hoy sale entera y tapa al macho — 1.1/1.2/6.1); macho opaco +",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] las 4 piezas re-inspeccionadas con las vistas nuevas: montaje de 64 tarjetas y TU juicio honesto por tarjeta (sí/no/no se",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 4
+    },
+    "objetivo": "el plan de inspección (orden 2026-09-21-el-plan-de-inspeccion) mide bien y MIRA mal. Cuatro revisores Opus, uno por pieza, juzgaron las 64 tarjetas: en más de la mitad la imagen no deja ver el número que dice el letrero, y a uno la vista l…",
+    "toca": 2,
+    "crea": 3,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "Las mismas 4 piezas: ≥ 90 % de las 64 tarjetas «sí confirma» (juicio propio por tarjeta, honesto); montaje + resultados.json.",
+     "tsc: cero errores nuevos contra la base de 66 · censo igual (0 Canvas nuevos) · orden-gate VERDE · sin deploy."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-21-la-carrera-cabe.md",
+    "slug": "2026-09-21-la-carrera-cabe",
+    "titulo": "LA CARRERA CABE — la pila del molde se dimensiona por LA PIEZA (caja expulsora, sujeciones, soporte) y la apertura saca la pieza CON su bebedero",
+    "fecha": "2026-09-21",
+    "estado": "en-curso",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] la caja expulsora por la carrera: EH ≥ (carrera + descanso + holgura) / (1 − 0.28 − 0.20) → serie comercial. Cita Kazmer",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] `carreraDeApertura(...)` = altura de pieza + bebedero + margen (cita §6.3.2 / daylight cap 4) en estudio-molde-datos.ts, y",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] sujeciones (36) y soporte: si `sizeSupportPlate` ya dimensiona y algo lo pisa con 22, arreglar la fuente; si son literales,",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] el cubo: ACTA R93 en el CIERRE; `ciclo-dado-test` verde con los literales nuevos.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] las 4 piezas: 3.1 ✓ (`__forgeBrep.animZ('clamp')` con `inspeccion.estado(1,0)` ≥ pieza + bebedero + margen) y 3.2 ✓",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] camino de la carcasa: «la carrera cabe» en verde; runner 8/8 salvo relojes (anota la carga del host si falla un reloj).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "que el molde de TU pieza pueda ABRIRSE y EXPULSARLA. Hoy packageToAssemblySpec (mold-plano-set.ts ~1614) clava bottomClamp: 36, ejectorHousing: 66, topClamp: 36 para cualquier pieza, y la apertura del 3D es 2.5 · H sin contar el bebedero. …",
+    "toca": 8,
+    "crea": 2,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "4/4 piezas: 3.1 ✓ y 3.2 ✓ con sus números (antes → después) en resultados.json; una captura por pieza abierta + expulsada.",
+     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test verde (con acta R93) · orden-gate VERDE · sin deploy."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-21-los-insertos-se-barrenan.md",
+    "slug": "2026-09-21-los-insertos-se-barrenan",
+    "titulo": "LOS INSERTOS SE BARRENAN — la cavidad y el núcleo dejan de ser macizos: pines, bebedero y agua con su barreno; los retornos fuera del inserto",
+    "fecha": "2026-09-21",
+    "estado": "en-curso",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] paso «barrenar insertos» después de E7: cavidad − bebedero (⌀ del sprue en la partición + holgura) − agua A que la cruce;",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] retornos fuera del inserto: posición en función de `insertDims` y del paquete (≥ ⌀ al inserto, ≥ 1.5·⌀ al canto de la",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] las 4 piezas: `moldSolidCollisions` con 0 pares inserto↔{pin, colada, agua, retorno} (o ≤ 0.6 mm = ruido de vóxel,",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] tiempo: el barrenado no debe subir la estación 8 más de ~10 s en la carcasa (mide y anota).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 4
+    },
+    "objetivo": "que los insertos del molde de TU pieza sean fabricables. Hoy construirAceroE3 talla cavidad y núcleo de la pieza y AHÍ se quedan macizos: los 8 pines atraviesan el núcleo (16 tramos, hasta 2.5 mm = su radio, 7.2 falla 4/4), el bebedero com…",
+    "toca": 4,
+    "crea": 2,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "4/4 piezas: 7.2 ✓ y 2.4 ✓ (0 mm³ inserto↔pin/colada/agua/retorno), números antes → después; capturas.",
+     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test 266/266 (o acta si el cubo cambia) · orden-gate VERDE · sin deploy."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-21-los-pines-en-la-cara-del-macho.md",
+    "slug": "2026-09-21-los-pines-en-la-cara-del-macho",
+    "titulo": "LOS PINES EN LA CARA DEL MACHO — la punta donde el acero de verdad termina, la expulsión balanceada, la cabeza capturada",
+    "fecha": "2026-09-21",
+    "estado": "en-curso",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] piso REAL: rayo −Z en (x,y) de cada pin sobre la malla local → z de la cara interior; la punta termina AHÍ (y el macho",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] equilibrio: restricción en el agarre — centroide de pines dentro de 0.1·L del centroide del área proyectada Y cada pin a",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] cabeza capturada: `standardHoles` de `ejector-ret` con alojamiento CIEGO (prof = cabeza + holgura) y `ejector`",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] el juez pin↔agua con LISTA completa (todos los pares bajo ½D), no el mínimo — usa el circuito que haya (el agua la",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] las 4 piezas: puntas en la cara (|Δ| ≤ 0.05), centroide dentro de la regla, 7.2 sin pin↔núcleo (o con el barreno que",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 5
+    },
+    "objetivo": "que cada pin expulse. Hoy la punta se coloca en zPiso = zBaseCerrada − pared MEDIANA (useMoldStudio.ts cicloBotadoresPieza ~1412) y el piso real de la pieza NO es la pared mediana: en la tapa el piso mide 2.76 (pared 3.86) → las 8 puntas q…",
+    "toca": 6,
+    "crea": 2,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "4/4 piezas: |punta − cara del macho| ≤ 0.05 mm en los 8 pines · centroide dentro de la regla · láminas con cabeza capturada;",
+     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test 266/266 (el cubo tiene piso = pared: no debería cambiar;"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -1491,8 +1853,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "4d9bbd2",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-09-18-la-entrada.md",
@@ -6416,10 +6778,6 @@
   {
    "grupo": "Hallazgos de LA ENTRADA (2026-09-19) — registrados; PRÓXIMO estaba 7/7, ian decide cuándo suben",
    "texto": "TESSELLATE NO REMALLA — `BRepTools.Clean` no surte efecto: pedir malla más gruesa (u otro ángulo) devuelve la vieja → `ordenes/despues/2026-09-19-tessellate-no-remalla.md`."
-  },
-  {
-   "grupo": "Hallazgos de LA ENTRADA (2026-09-19) — registrados; PRÓXIMO estaba 7/7, ian decide cuándo suben",
-   "texto": "LA CÁMARA DEL INSPECTOR — más de la mitad de las 64 tarjetas del plan de inspección «no se ve»: corte que obedezca la pieza pintada, aislar conjuntos, cota dibujada, ortográfica → `ordenes/despues/2026-09-21-la-camara-del-inspector.md`."
   }
  ],
  "cine": {

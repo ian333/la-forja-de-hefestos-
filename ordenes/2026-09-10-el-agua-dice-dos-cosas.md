@@ -1,9 +1,10 @@
 # ORDEN: EL AGUA DICE DOS COSAS — la lámina de la placa y el 3D del molde no dibujan el mismo circuito
 
-ESTADO: proximo
-PRIORIDAD: 5
+ESTADO: en-curso
+PRIORIDAD: 1
+AGENTE: Opus · worktree propio · iangpu forja-dev4 :5195
 
-BASE: a9331a7
+BASE: eca3df0
 
 OBJETIVO: hallazgo de EL AGUA DE TU PIEZA (2026-09-17, medido en node sobre la carcasa 1594C con pared 3.2):
 el MISMO molde tiene DOS circuitos de agua distintos según quién lo dibuje. La lámina de la placa
@@ -33,60 +34,54 @@ manda el **caudal** (el ⌀ que la térmica pide, y entonces la lámina y la spe
 El libro (§9.2.5) elige D por el caudal y DESPUÉS verifica que quepa; eso apunta al caudal, pero el acero
 comprado es un hecho.
 
+
+## LA RESPUESTA (ian 2026-09-21: «reparte el trabajo», sobre mi recomendación) y LO QUE EL PLAN DE INSPECCIÓN MIDIÓ
+- **Manda el caudal con piso maquinable** (§9.2.5 elige D por el caudal y DESPUÉS verifica que quepa; el piso 6.35 «maquinable»
+  que la lámina ya declara es el hecho del taller): D = max(⌀ del caudal, 6.35) → tapón del catálogo (JP-251/352/553…). La
+  lámina y el 3D consumen EL MISMO circuito. El cubo cambia → **ACTA R93 pendiente de firma de ian** (literales de
+  ciclo-dado-test actualizados y listados en el CIERRE). Si ian dice que no, se revierte antes de fusionar.
+- Plan de inspección 2026-09-21 (4 piezas, public/evidencia/2026-09-21-el-plan-de-inspeccion/resultados.json):
+  · **2.1 falla 4/4 con la MISMA constante:** el agua B queda −1.14 mm bajo la cara inferior de la placa B (una regla mal
+    puesta, no una coincidencia): 6 mm bajo el bolsillo contra 9.52 que pide ⌀4.76 con ½⌀ por lado.
+  · **2.5 falla 4/4:** las líneas B entran 0.40 mm al soporte; los tapones 1.14 mm; en 1599HBK dos RETORNOS ⌀12 cruzan agua B.
+  · **2.2 dio ✓ FALSO:** medía contra la cara superior de A; el agua A entra 1.56–2.15 mm en el INSERTO de cavidad
+    (cavidad↔agua-A-norte/sur/este/oeste/ext) — nadie lo miraba.
+  · **2.3:** un pin cruza una línea B en 1599HBK (0 mm) y dos en 1557BGY; el juez del agua no lo detiene.
+  · 3D ⌀4.76 vs lámina ⌀6.35 (tapa, 1557BGY) / 9.53 (carcasa) / 15.9 (1599HBK); «3 líneas/lado» vs 13; t_c 31.6 vs 48.4 s;
+    las hojas de A y de B llevan el MISMO serpentín (revisores Opus, 4 de 4).
+- El juez del agua debe medir contra: las CARAS de su placa (½D de acero mínimo), el asiento del inserto (si la línea cae
+  dentro del inserto, o se mueve o se declara «cruza el inserto» para que LOS INSERTOS SE BARRENAN la corte — NO se deja
+  en silencio), los barrenos móviles (pines, retornos, KO) y la tornillería. Con LISTA completa de pares, no el mínimo.
+
 ## EJERCICIOS
-- [ ] medir los dos caminos lado a lado para cubo, vaso y carcasa (tabla: D, H, W, n, plug, ΔT, Re).
-- [ ] UNA fuente: `estacion8Circuito` como origen y la lámina leyendo sus segmentos (o al revés, según la
-      decisión), con el cubo bit-igual o con su cambio DECLARADO y re-firmado.
-- [ ] gate nuevo: «lámina y 3D dicen lo mismo» (D, H, W, n, plug) para las tres piezas.
+- [ ] una sola función del circuito (⌀, H, W, líneas por lado, tapones, serie/paralelo) que consuman `estacion8Dado` (3D) y
+      `coolingCircuit`/`coolingCircuitDesign` (láminas); las dos vistas dan los mismos números en las 4 piezas.
+- [ ] la profundidad H contra las CARAS de la placa: acero ≥ ½D bajo/sobre la línea (cita §9.2.7); cero −1.14.
+- [ ] el juez del agua: caras · inserto · pines · retornos · KO · tornillos, lista completa; rojo detiene o mueve la línea.
+- [ ] el cubo: ACTA R93; ciclo-dado-test verde.
+- [ ] las 4 piezas: 2.1, 2.2 (contra el inserto), 2.3, 2.5 ✓ y `laminaAguaVs3D` del arnés idéntico; capturas.
 
 ## TOCA
-- public/temis.json
-- src/forja/mold/mold-drawing-set.ts
 - src/forja/mold/estudio-molde-datos.ts
+- src/forja/mold/cooling-design.ts
+- src/forja/mold/coolinglines.ts
+- src/forja/mold/mold-drawing-set.ts
+- src/forja/mold/mold-plano-set.ts
+- src/forja/brep/useMoldStudio.ts
 - scripts/ciclo-dado-test.cjs
 
 ## CREA
-- (nada)
+- public/evidencia/2026-09-10-el-agua-dice-dos-cosas/resultados.json
+- public/evidencia/2026-09-10-el-agua-dice-dos-cosas/el-agua-dice-una-cosa.png
 
 ## BORRA
 - (nada)
 
 ## PREEXISTENTE
-(la otra sesión trabaja en el mismo árbol; git status al registrar el ticket, 2026-09-17)
-- videos/tutorial-01-nota-de-venta.json
-- videos/tutorial-02-alta-de-producto.json
-- videos/tutorial-03-alta-de-cliente.json
-- videos/tutorial-04-cotizacion.json
-- videos/tutorial-05-facturacion-portal.json
-- videos/tutorial-06-remision.json
-- videos/tutorial-07-editar-nota.json
-- videos/tutorial-08-orden-de-compra.json
-- videos/tutorial-09-cancelar-nota.json
-- videos/tutorial-10-registrar-pago.json
-- videos/tutorial-11-factura-desde-erp.json
-- videos/tutorial-12-factura-global.json
-- videos/tutorial-13-rep-complemento-pago.json
-- videos/tutorial-14-calculadora-precios.json
-- videos/tutorial-15-nota-de-venta-pro.json
-- videos/tutorial-16-detalle-de-producto.json
-- videos/tutorial-18-ajuste-masivo-inventario.json
-- videos/tutorial-20-pdf-imprimir.json
-- videos/tutorial-21-nota-de-credito.json
-- videos/tutorial-22-gasto-operativo.json
-- videos/tutorial-23-alta-de-proveedor.json
-- videos/tutorial-24-buscar-clave-sat.json
-- videos/tutorial-25-reportes-jugosos.json
-- scripts/captions-pendientes.py
-- scripts/estado-yt.py
-- scripts/playlist-tutoriales.py
-- scripts/reemplazar-yt.py
-- scripts/reprogramar-yt.py
-- scripts/yt-pendientes.sh
-- videos/tutorial-29-anatomia-producto.json
+- (nada — worktree limpio)
 
 ## EVIDENCIA (se declara ANTES de trabajar)
-- La tabla de los dos caminos ANTES y DESPUÉS para las tres piezas.
-- `ciclo-dado-test` verde (266/266 o el número nuevo, firmado y explicado).
-- Captura de la lámina y del 3D del MISMO molde con los mismos números a la vista.
+- 4/4 piezas: 2.1, 2.2, 2.3, 2.5 ✓ con números antes → después; lámina y 3D con el mismo ⌀/H/W/n; capturas por pieza.
+- tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test verde (con acta R93) · orden-gate VERDE · sin deploy.
 
 ## CIERRE (se llena al terminar)
