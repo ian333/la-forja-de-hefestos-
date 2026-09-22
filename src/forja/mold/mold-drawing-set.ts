@@ -14,6 +14,7 @@ import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
 import { ventMaxThickness } from './venting';
 import { sideActionDesign } from './sideactions';
 import { ejectorPinFit } from './fits';   // holgura pin↔barreno 0.13mm (Kazmer §8.3.2)
+import { ejectorHeadGeom } from './eject-layout';   // cabeza + contrataladro (§11.2.6 Fig 11.15 Det. D) — 1 fuente con el sólido
 import { coolingDesign, PLASTICOS_A, ACEROS_MOLDE, PISO_MAQUINABLE_MM } from './cooling-design';   // el proceso §9.2 completo
 import { estPartVolumeCc } from './feed';
 import { ejectorPlateMm, ejectorRetainerMm } from './platesizing';   // las fracciones del paquete expulsor, en UN solo lugar
@@ -536,6 +537,20 @@ export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
     { grupo: 'Enfriamiento §9.2', param: `profundidad a la cavidad H = ${(depth / dia).toFixed(1)}·D (2D<H<5D, recortada por Eq 9.21)`, valor: `${depth} mm`, ref: 'Eqs 9.21/9.22', ok: depth >= 2 * dia - 1e-6 && depth <= cdRows.hLineMaxMm + 1e-6 },
     { grupo: 'Enfriamiento §9.2', param: 'paso entre líneas W ∈ [H, 2H]', valor: `${pitch} mm (${cdRows.nPerSide}/lado)`, ref: 'Eq 9.24', ok: pitch >= depth - 1 && pitch <= 2 * depth + 1 },
   ];
+  // EXPULSIÓN §11.2.6 — la CABEZA CAPTURADA: sin esto las hojas decían «aloj. cabeza
+  // ⌀+3 PASANTE» (la cabeza se cae) y nadie la retenía. Fig 11.15 Det. D.
+  if (s.ejectors.type !== 'stripper') {
+    const tRet = plateDefs(s).find((p) => p.role === 'ejector-ret')?.thick ?? 12;
+    const hd = ejectorHeadGeom(s.ejectors.diaMm, tRet);
+    rows.push(
+      { grupo: 'Expulsión §11.2.6', param: `cabeza del pin ⌀${hd.diaMm} × ${hd.thickMm} — contrataladro CIEGO en la retenedora`,
+        valor: `⌀${hd.boreDiaMm} × prof ${hd.boreDepthMm} desde la cara inferior (${plateDefs(s).find((p) => p.role === 'ejector-ret')?.code ?? '05a'})`, ref: 'Fig 11.15 Det. D', ok: hd.boreDepthMm < tRet },
+      { grupo: 'Expulsión §11.2.6', param: 'pasaje del cuerpo (holgura de barrenado)',
+        valor: `⌀${hd.pasajeDiaMm} = cuerpo ⌀${s.ejectors.diaMm} + 0.5 · pasante en expulsora y retenedora`, ref: '§11.2.6', ok: true },
+      { grupo: 'Expulsión §11.2.6', param: 'la cabeza queda CAPTURADA',
+        valor: `cabeza ⌀${hd.diaMm} > pasaje ⌀${hd.pasajeDiaMm} de la expulsora — la respalda al empujar y el contrataladro la jala al retroceder`, ref: 'Fig 1.6 · Fig 11.15', ok: hd.diaMm > hd.pasajeDiaMm },
+    );
+  }
   // VENTEO §8 — el aire tiene que salir o quema/short-shot. Máx antes de rebaba
   //   por la LEY del land (geometría real, defaults del libro); práctica en partición.
   const hMax = ventMaxThickness(0.8e-3) * 1000;   // land de escape 0.8 mm
@@ -661,7 +676,16 @@ function ejectorCellPositions(s: MoldAssemblySpec, cell: { cx: number; cy: numbe
   return ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame, ejectorKeepOutMm(s.ejectors.diaMm));
 }
 
-export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[] {
+/**
+ * @param o.lamina  true SOLO desde el generador de LÁMINAS. Añade los rasgos que el
+ *   plano debe COTAR pero que el sólido corta aparte: hoy, el contrataladro CIEGO de la
+ *   cabeza en la retenedora. No se mete en la lista que consume `buildPlateSolid` porque
+ *   ésa se barrena en UN compound, y meter dos cilindros CONCÉNTRICOS traslapados en un
+ *   solo cut de OCC corrompe el resultado y deja la placa MACIZA (ya pagado con el
+ *   asiento del buje guía: el poste quedaba enterrado 91 cc). El sólido corta ese mismo
+ *   contrataladro SECUENCIALMENTE, con las mismas medidas de `ejectorHeadGeom`.
+ */
+export function standardHoles(s: MoldAssemblySpec, role: PlateRole, o?: { lamina?: boolean }): PlateHole[] {
   const W = s.widthMm, D = plateDepth(s);
   const inset = Math.max(20, Math.round(W * 0.06));
   const holes: PlateHole[] = [];
@@ -735,16 +759,35 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
     }
   }
 
-  // PLACA EXPULSORA + RETENEDORA: aloja la CABEZA de cada expulsor (barreno de la
-  // cabeza) + pines de RETORNO en 4 esquinas (regresan el paquete al cerrar).
+  // PLACA EXPULSORA + RETENEDORA: la CABEZA queda CAPTURADA entre las dos (Fig 1.6 ·
+  // §11.2.6 Fig 11.15 Det. D) + pines de RETORNO en 4 esquinas (regresan el paquete).
+  //
+  // ANTES (cazado el 2026-09-21 leyendo las hojas): la EXPULSORA barrenaba ⌀+3 PASANTE
+  // con el rótulo «aloj. cabeza de expulsor» — un pasante más ancho que la cabeza NO la
+  // aloja: la cabeza se cae por ahí. Y la RETENEDORA («placa retenedora (cabezas)») solo
+  // traía ⌀+0.5 pasante: ninguna de las dos placas capturaba nada. Ahora, literal:
+  //   · RETENEDORA (arriba del paquete): pasaje del CUERPO ⌀+0.5 (§11.2.6) + CONTRATALADRO
+  //     CIEGO de la cabeza desde su cara INFERIOR (Fig 11.15 Det. D) — es el que "pulls the
+  //     head of the ejector pin away from the parting plane when the ejector system is
+  //     reversed". Mismas medidas que el contrataladro que el sólido YA corta.
+  //   · EXPULSORA (abajo): pasante al ⌀ del CUERPO — más angosto que la cabeza, así que la
+  //     respalda al empujar y la cabeza no puede salirse hacia abajo.
   if (role === 'ejector' || role === 'ejector-ret') {
     const cells = cavityGrid(s, D), { fx, fy, round } = cavityFootprint(s);
     const perCav = Math.max(1, Math.round(s.ejectors.count / Math.max(1, cells.length)));
     const frame = s.cavity.frameMm ? { frameMm: s.cavity.frameMm, ribs: s.cavity.ribs ?? 0 } : undefined;
+    const tRet = plateDefs(s).find((p) => p.role === 'ejector-ret')?.thick ?? 12;
+    const hd = ejectorHeadGeom(s.ejectors.diaMm, tRet);
     if (s.ejectors.type !== 'stripper')   // stripper: sin pines → sin alojamientos de cabeza
-      for (const cell of cells) for (const [x, y] of ejectorCellPositions(s, cell, fx, fy, round, perCav, frame))
-        holes.push({ x, y, dia: role === 'ejector' ? s.ejectors.diaMm + 3 : s.ejectors.diaMm + 0.5,
-          type: role === 'ejector' ? 'aloj. cabeza de expulsor' : 'pasaje de expulsor' });
+      for (const cell of cells) for (const [x, y] of ejectorCellPositions(s, cell, fx, fy, round, perCav, frame)) {
+        holes.push({ x, y, dia: hd.pasajeDiaMm,
+          type: `pasaje de expulsor · ⌀ CUERPO +0.5 (§11.2.6)`,
+          note: role === 'ejector' ? `más angosto que la cabeza ⌀${hd.diaMm}: la respalda` : undefined });
+        if (role === 'ejector-ret' && o?.lamina)
+          holes.push({ x, y, dia: hd.boreDiaMm, depth: hd.boreDepthMm,
+            type: 'aloj. CIEGO de cabeza de expulsor (contrataladro)',
+            note: `desde la cara INFERIOR · cabeza ⌀${hd.diaMm}×${hd.thickMm} (Fig 11.15 Det. D)` });
+      }
     // pines de retorno en las esquinas de la PLACA EXPULSORA real (más angosta que el
     // molde: vive dentro del housing en U, Fig 1.4) — no en las esquinas del molde, y FUERA
     // del inserto de núcleo (`returnPinLayout`: una sola fuente para pin y barrenos).
@@ -798,7 +841,7 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
     const spec: PlateSpec = {
       code: p.code, name: p.name, material: p.mat,
       wmm: s.widthMm, dmm: D, thickMm: p.thick,
-      holes: standardHoles(s, p.role),
+      holes: standardHoles(s, p.role, { lamina: true }),
       openings: (p.role === 'A' || p.role === 'B') ? cavityOpenings(s, D) : undefined,
       cooling: (p.role === 'A' || p.role === 'B') ? coolingCircuit(s, D) : undefined,
     };

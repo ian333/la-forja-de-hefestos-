@@ -53,7 +53,7 @@ import { moldMachine, type MoldPackage } from '../mold/moldmachine';
 import { predicadoDeMalla } from '../mold/flowlen';   // sprint 1: E4/E5 POR PIEZA
 import { estacion1Dado, estacion2Dado, estacion1, estacion2, piezaDesdeArbol, DADO_PIEZA, type PiezaSpec, estacion3Dado, dadoRectoShape, construirAceroE3, barrenarInsertos, verificacionE3, declDePieza, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, EJECTOR_PIN_DIAS_MM, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type PiezaParaElAgua, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { ABS_EJECT, effectiveArea, ejectionForce, ejectorPinSizing } from '../mold/ejection';
-import { gripEjectorLayout } from '../mold/eject-layout';
+import { gripEjectorLayout, pisoInteriorPorRayo, ejectorHeadGeom } from '../mold/eject-layout';
 import { resolverLlenadoFAN, resolverLlenadoFANAsync } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
@@ -1441,23 +1441,37 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       const mLocal = OCC.tessellate(oc, ciclo.piezaShape, 0.5, 0.6);
       t = marca(7, 'tessellate local', t);
       const grip = gripEjectorLayout({ positions: mLocal.positions, indices: mLocal.indices }, { nPins: 8, pinDiaMm: dia8, wallMm });
-      const posiciones = grip.positions.map((p) => { const g = col.aGlobal(p.x, p.y, 0); return { x: +g[0].toFixed(2), y: +g[1].toFixed(2) }; });
-      t = marca(7, `agarre §11.2.5 (${grip.nParedes} columnas de pared, ${posiciones.length} pines)`, t);
+      // EL PISO REAL BAJO CADA PIN (2026-09-21): un rayo vertical sobre la MISMA malla local.
+      // La punta no termina en `zBaseCerrada − pared MEDIANA` (eso dejaba las 8 puntas 1.06 mm
+      // hundidas en la tapa, 1.56 en la 1557BGY y 1.04 METIDAS en la pieza en la 1599HBK):
+      // termina donde el acero del macho termina — la primera cara INTERIOR sobre (x,y).
+      const pisos = pisoInteriorPorRayo({ positions: mLocal.positions, indices: mLocal.indices }, grip.positions);
+      const posiciones = grip.positions.map((p, k) => {
+        const g = col.aGlobal(p.x, p.y, 0);
+        const zl = pisos[k]?.zMm;
+        // el volteo (global = tz − z_local) convierte la cara interior a la cota de la base
+        return { x: +g[0].toFixed(2), y: +g[1].toFixed(2), zPisoMm: zl == null ? undefined : +col.aGlobal(p.x, p.y, zl)[2].toFixed(3) };
+      });
+      const sinRayo = posiciones.filter((p) => p.zPisoMm == null).length;
+      t = marca(7, `agarre §11.2.5 (${grip.nParedes} columnas de pared, ${posiciones.length} pines) + piso por rayo (${posiciones.length - sinRayo}/${posiciones.length})`, t);
       const e10 = estacion10Dado(ciclo.e2.pkg, d, ciclo.e8.circuito, {
         pieza: { semiXmm: lo.semiXmm, semiYmm: lo.semiYmm, wallMm, zBaseCerradaMm: col.zBaseCerradaMm, alturaMm: lo.alturaMm,
-          volCc: ciclo.e5tuberia?.volPiezaCc ?? ciclo.pieza.pieza.volCc, draftDeg, posiciones },
+          volCc: ciclo.e5tuberia?.volPiezaCc ?? ciclo.pieza.pieza.volCc, draftDeg, posiciones, equilibrio: grip.equilibrio },
       });
       const punta = e10.pines.escalonado;
       setProgreso({ estacion: 7, paso: `${e10.pines.n} pines escalonados ⌀${punta.puntaDiaMm}/${punta.cuerpoDiaMm} subiendo por el macho (kernel)`, i: 2, n: N, t0: T });
       await respira();
-      // la punta termina en el PISO INTERIOR de tu pieza (base cerrada − pared): empuja desde el macho
-      const zPiso = col.zBaseCerradaMm - wallMm;
+      // la punta termina en la CARA DEL MACHO bajo ESE pin (rayo sobre la malla). El respaldo
+      // `zBaseCerrada − pared MEDIANA` solo se usa si el rayo no cruzó dos caras ahí, y se DICE.
+      const zPisoMediana = col.zBaseCerradaMm - wallMm;
       const asmPila = packageToAssemblySpec(ciclo.e2.pkg);
       const zRetenedora = plateStackZ(asmPila)['ejector-ret'];                    // cara de la expulsora = base de la retenedora
       const espRetenedora = Math.max(12, Math.round(asmPila.plates.ejectorHousing * 0.2));   // = plateDefs('ejector-ret')
+      const cab = ejectorHeadGeom(punta.cuerpoDiaMm, espRetenedora);              // 1 fuente con la LÁMINA (§11.2.6 Fig 11.15 Det. D)
       const parts: MoldPart[] = [];
       for (let k = 0; k < e10.pines.posiciones.length; k++) {
         const pin = e10.pines.posiciones[k];
+        const zPiso = pin.zPisoMm ?? zPisoMediana;
         const zHombro = zPiso - punta.puntaMm;
         const tip = OCC.makeCylinder(oc, punta.puntaDiaMm / 2, punta.puntaMm, { origin: [pin.x, pin.y, zHombro], dir: [0, 0, 1] });
         // EL CUERPO LLEGA A LA RETENEDORA (orden el-portamoldes-de-tu-pieza): `libreCuerpoMm` se midió de la retenedora a la
@@ -1467,11 +1481,11 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         const largoCuerpo = Math.max(punta.libreCuerpoMm, zHombro - zRetenedora);
         const body = OCC.makeCompound(oc, [
           OCC.makeCylinder(oc, punta.cuerpoDiaMm / 2, largoCuerpo, { origin: [pin.x, pin.y, zHombro - largoCuerpo], dir: [0, 0, 1] }),
-          OCC.makeCylinder(oc, punta.cuerpoDiaMm / 2 + 2, Math.min(5, espRetenedora - 1), { origin: [pin.x, pin.y, zRetenedora], dir: [0, 0, 1] }),
+          OCC.makeCylinder(oc, cab.diaMm / 2, cab.thickMm, { origin: [pin.x, pin.y, zRetenedora], dir: [0, 0, 1] }),
         ]);
         parts.push(
-          cursoPart(tip, `pin-punta-${k}`, `PIN ${k} (agarre §11.2.5) · punta ⌀${punta.puntaDiaMm} × ${punta.puntaMm} GUIADA en su barreno — empuja el piso de tu pieza junto a la pared, donde abraza al macho`, '#d8dde4', 0.95, 0.95),
-          cursoPart(body, `pin-cuerpo-${k}`, `cuerpo ⌀${punta.cuerpoDiaMm} al hombro (+1 → catálogo, R52) — el pandeo se verifica AQUÍ (SF ${e10.pines.pandeoNuestro.sf})`, '#aab4c0', 0.9, 0.9),
+          cursoPart(tip, `pin-punta-${k}`, `PIN ${k} (agarre §11.2.5) · punta ⌀${punta.puntaDiaMm} × ${punta.puntaMm} GUIADA en su barreno — termina en la CARA DEL MACHO (z ${zPiso.toFixed(2)}${pin.zPisoMm == null ? ', pared MEDIANA: el rayo no cruzó ahí' : ', rayo sobre la malla'}), junto a la pared donde la pieza abraza al macho`, '#d8dde4', 0.95, 0.95),
+          cursoPart(body, `pin-cuerpo-${k}`, `cuerpo ⌀${punta.cuerpoDiaMm} al hombro (+1 → catálogo, R52) — el pandeo se verifica AQUÍ (SF ${e10.pines.pandeoNuestro.sf}) · cabeza ⌀${cab.diaMm}×${cab.thickMm} CAPTURADA en el contrataladro ⌀${cab.boreDiaMm} de la retenedora (Fig 11.15 Det. D)`, '#aab4c0', 0.9, 0.9),
         );
       }
       t = marca(7, 'pines (kernel)', t);
@@ -1484,7 +1498,10 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         `EL MOLDE DE ${ciclo.pieza.nombre.toUpperCase()} · estación 7 — EXPULSIÓN (cap 11)`,
         `F_eject ${e10.fuerza.fEjectN} N (Eq 11.7-11.8 con TU perímetro, pared ${wallMm} y draft medido ${draftDeg.toFixed(2)}°) = ${e10.fuerza.pctClamp} % del clamp · ${e10.fuerza.pctEyectorMaq} % del eyector`,
         `el ciclo R34→R46: 4 pines piden ⌀${dia4} ${dia4 > wallMm ? '> pared (punto caliente)' : '≤ pared'} → 8 pines ⌀${punta.puntaDiaMm} ✓ · recto PANDEA (SF ${punta.sfRectoK2}) → ESCALONADO SF ${e10.pines.pandeoNuestro.sf}`,
-        `AGARRE §11.2.5: ${grip.nParedes} columnas de pared, ${grip.nCandidatos} candidatos, ${posiciones.length} pines junto a donde abraza al macho · juez contra el agua: ${e10.juez.ok ? 'VERDE' : 'ROJO'} (peor ${Math.min(...e10.juez.claros.map((c) => c.claroMm)).toFixed(1)} mm)`,
+        `AGARRE §11.2.5: ${grip.nParedes} columnas de pared, ${grip.nCandidatos} candidatos, ${posiciones.length} pines junto a donde abraza al macho · juez contra el agua: ${e10.juez.conflictos.length === 0 ? 'VERDE' : `ROJO (${e10.juez.conflictos.length} pares bajo ½⌀)`} — ${e10.juez.paresExaminados} pares examinados, peor ${Math.min(...e10.juez.claros.map((c) => c.claroMm)).toFixed(1)} mm`,
+        e10.pines.pisoPorRayo?.fuente === 'rayo sobre la malla'
+          ? `LA PUNTA EN LA CARA DEL MACHO: piso medido por RAYO bajo cada pin (la pared mediana ${wallMm} mm se equivocaba hasta ${e10.pines.pisoPorRayo.peorMm} mm — eso era el botón de plástico)`
+          : `⚠ el rayo no cruzó dos caras bajo ${sinRayo} de ${posiciones.length} pines: ésos caen a la pared MEDIANA (${wallMm} mm) y se declara`,
         ...grip.notas,
       ], [...moldParts, ...parts]);
       // la animación arranca cuando el molde está ENTERO: la estación 8 (el portamoldes) la enciende
