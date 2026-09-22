@@ -96,6 +96,8 @@ export default defineConfig({
         premio: resolve(import.meta.dirname, "premio.html"),
         clase: resolve(import.meta.dirname, "clase.html"),
         comando: resolve(import.meta.dirname, "comando.html"),
+        // donde aterriza el embudo de Don Chuy (?c=00..06 desde el DM de Instagram)
+        chuy: resolve(import.meta.dirname, "chuy.html"),
         "econ-lab": resolve(import.meta.dirname, "econ-lab.html"),
         "physics-nobel": resolve(import.meta.dirname, "physics-nobel.html"),
         "math-prizes": resolve(import.meta.dirname, "math-prizes.html"),

@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0E14" />
+    <!-- Sin esto el navegador pide /favicon.ico y se lleva un 404 en cada visita. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="robots" content="index,follow" />
+    <title>La libreta de Don Chuy · GAIA Prime</title>
+    <meta name="description" content="La cuenta de Don Chuy con TUS números, y una libreta de fiados, gastos y merma que se queda en tu teléfono." />
+
+    <!--
+      LAS FUENTES, SIN BLOQUEAR EL PRIMER PIXEL.
+      Esta página se abre DENTRO del navegador de Instagram, sobre datos móviles,
+      compitiendo con el feed que está a un swipe. `display=swap` hace que el texto
+      pinte YA con la fuente del sistema y se recambie cuando Manrope/Caveat bajen;
+      el preconnect se adelanta al handshake de los dos dominios de Google Fonts.
+      (Los pesos son los que de verdad se usan: 600/700/800 de Manrope para la UI
+      y 700 de Caveat para lo escrito a mano. Cada peso extra es peso de más.)
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Caveat:wght@700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!--
+      TODO EL CSS VA AQUÍ, EN LÍNEA, A PROPÓSITO.
+      Medido el 2026-08-05 en este mismo repo: una hoja externa bloqueante costaba
+      1708 ms de FCP y el 87 % de la gente se iba antes de que la página pintara.
+      La landing del embudo no puede pagar ni una petición de CSS: el estilo viaja
+      con el HTML y el puesto de Don Chuy aparece en el primer cuadro útil.
+      Por lo mismo esta entrada NO importa `main.css` (Tailwind, 201 KB) ni nada 3D.
+    -->
+    <style>
+      :root {
+        --fondo: #0b0e14;
+        --panel: #141926;
+        --panel-alto: #1a2130;
+        --borde: #2a3446;
+        --texto: #f2f5fa;
+        --apagado: #a8b3c6;
+        --tenue: #7c8899;
+        --ambar: #f7b32b;
+        --verde: #3ddc97;
+        --rojo: #ff5c6c;
+        --naranja: #f28c28;
+        --papel: #fbf6ea;
+        --tinta: #23304a;
+        --renglon: #c7d3e4;
+        --margen: #e0776f;
+        --ui: "Manrope", system-ui, -apple-system, sans-serif;
+        --mano: "Caveat", cursive;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--fondo);
+        /* sin scroll horizontal, pase lo que pase */
+        overflow-x: hidden;
+      }
+
+      body {
+        font-family: var(--ui);
+        color: var(--texto);
+        font-weight: 600;
+        line-height: 1.45;
+        /* Instagram abre con el texto agrandado en algunos Android: lo fijamos. */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        -webkit-tap-highlight-color: rgba(247, 179, 43, 0.25);
+      }
+
+      /* A 1280 px la página se centra en una columna de ancho de teléfono grande:
+         la misma lectura, sin líneas de 1200 px que nadie lee. */
+      .app {
+        max-width: 640px;
+        margin: 0 auto;
+        padding-bottom: 28px;
+      }
+
+      section { padding: 26px 16px 8px; }
+      section:last-of-type { padding-bottom: 20px; }
+
+      /* ── 1. EL PUESTO ────────────────────────────────────────────── */
+      .hero { padding: 0; }
+      .hero svg { display: block; width: 100%; height: auto; }
+
+      .rotulo {
+        display: inline-block;
+        margin: 0 0 8px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: rgba(247, 179, 43, 0.14);
+        color: var(--ambar);
+        font-size: 12.5px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(27px, 8vw, 38px);
+        font-weight: 800;
+        line-height: 1.12;
+        letter-spacing: -0.015em;
+      }
+
+      .titular { padding: 18px 16px 4px; }
+      .subtitular { margin: 10px 0 0; color: var(--apagado); font-size: 15.5px; }
+
+      h2 {
+        margin: 0 0 4px;
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .pie-seccion { margin: 0 0 16px; color: var(--tenue); font-size: 14px; }
+
+      /* ── 2. LA CUENTA ────────────────────────────────────────────── */
+      /* DOS columnas exactas, nunca tres.
+         Los campos se leen de a pares (precio de hoy / cuántas vendes a ese
+         precio), y `auto-fit` metía tres columnas en cuanto había ancho: el par
+         se partía entre dos filas y la cuenta se leía mal. Abajo de 340 px pasa
+         a una sola columna, donde el orden vertical conserva los pares. */
+      .campos {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 340px) {
+        .campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+
+      /* Los cuadros de una misma fila tienen que quedar A LA MISMA ALTURA aunque
+         una etiqueta ocupe dos renglones y la de al lado una. Se logra con la
+         etiqueta creciendo (flex:1) dentro de una columna: el cuadro se va al
+         fondo de la celda y la fila queda cuadrada. */
+      .campo { display: flex; flex-direction: column; }
+      /* El campo suelto se aparta en su propia fila: ver `ancho` en capitulos.ts. */
+      .campo.ancho { grid-column: 1 / -1; }
+
+      .campo label {
+        flex: 1 0 auto;
+        margin: 0 0 6px;
+        color: var(--apagado);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.25;
+      }
+
+      .caja {
+        display: flex;
+        align-items: center;
+        min-height: 56px;
+        background: var(--panel-alto);
+        border: 2px solid var(--borde);
+        border-radius: 14px;
+        transition: border-color 0.15s;
+      }
+      .caja:focus-within { border-color: var(--ambar); }
+
+      .caja .signo {
+        padding-left: 13px;
+        color: var(--ambar);
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .caja .unidad {
+        padding-right: 12px;
+        color: var(--tenue);
+        font-size: 11.5px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      /* 24 px no es capricho: abajo de 16 px iOS hace zoom al enfocar el campo
+         y saca al usuario de cuadro. Y un número grande se teclea sin errar. */
+      .caja input {
+        flex: 1;
+        min-width: 0;
+        min-height: 52px;
+        padding: 0 10px 0 12px;
+        border: 0;
+        background: transparent;
+        color: var(--texto);
+        font-family: var(--ui);
+        font-size: 24px;
+        font-weight: 800;
+      }
+      .caja input:focus { outline: none; }
+      .caja input::-webkit-outer-spin-button,
+      .caja input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      .caja input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+
+      .lineas { margin: 18px 0 0; }
+      .lineas p {
+        margin: 0 0 8px;
+        padding-left: 12px;
+        border-left: 3px solid var(--borde);
+        font-size: 16.5px;
+        line-height: 1.4;
+      }
+      .lineas p:first-child { font-weight: 800; }
+      .lineas p.rojo { border-left-color: var(--rojo); }
+      .lineas p.verde { border-left-color: var(--verde); }
+      .lineas p.ambar { border-left-color: var(--ambar); }
+
+      .nota {
+        margin: 16px 0 0;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: var(--panel);
+        color: var(--apagado);
+        font-size: 14px;
+      }
+
+      /* ── 3. LA LIBRETA ───────────────────────────────────────────── */
+      .pestanas { display: flex; gap: 6px; }
+      .pestanas button {
+        flex: 1;
+        min-height: 48px;
+        padding: 0 4px;
+        border: 2px solid var(--borde);
+        border-bottom: 0;
+        border-radius: 12px 12px 0 0;
+        background: var(--panel);
+        color: var(--apagado);
+        font-family: var(--ui);
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .pestanas button[aria-selected="true"] {
+        background: var(--papel);
+        border-color: var(--papel);
+        color: var(--tinta);
+      }
+
+      /* El papel: renglones que nacen de cada anotación (no de un fondo fijo, que
+         se desalinea en cuanto el texto envuelve) y el margen rojo de toda libreta. */
+      .papel {
+        position: relative;
+        padding: 14px 14px 14px 40px;
+        border-radius: 14px;
+        background: var(--papel);
+        color: var(--tinta);
+      }
+      /* La esquina de arriba-izquierda se cuadra SOLO cuando la pestaña activa es
+         la primera: ahí la hoja y la pestaña son una misma pieza de papel y una
+         curva dejaría una muesca. Con Gastos o Merma activas, esa esquina ya no
+         le toca a nadie y va redondeada como el resto de la hoja. */
+      .papel[data-primera="si"] { border-top-left-radius: 0; }
+      .papel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 26px;
+        width: 2px;
+        background: var(--margen);
+        opacity: 0.6;
+      }
+
+      .deben {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 0 0 10px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--renglon);
+      }
+      .deben span { font-size: 14px; font-weight: 800; color: #5a6a86; }
+      .deben strong {
+        font-size: 28px;
+        font-weight: 800;
+        color: #b07a00; /* el ámbar de la marca, oscurecido para leerse sobre papel */
+      }
+
+      .alta { display: flex; gap: 8px; margin: 0 0 12px; }
+      .alta input {
+        min-width: 0;
+        min-height: 48px;
+        padding: 0 12px;
+        border: 2px solid var(--renglon);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--tinta);
+        font-family: var(--mano);
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .alta input:focus { outline: none; border-color: #8fa4c2; }
+      .alta .que { flex: 1.6; }
+      .alta .cuanto { flex: 1; min-width: 78px; }
+      .alta button {
+        min-width: 56px;
+        min-height: 48px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--tinta);
+        color: var(--papel);
+        font-family: var(--ui);
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .alta button:disabled { opacity: 0.4; }
+
+      ul.renglones { margin: 0; padding: 0; list-style: none; }
+      ul.renglones li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 48px;
+        padding: 4px 0;
+        border-bottom: 2px solid var(--renglon);
+      }
+      .renglon-que {
+        flex: 1;
+        min-width: 0;
+        font-family: var(--mano);
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+      .renglon-fecha { color: #7d8ba3; font-size: 12px; font-weight: 700; white-space: nowrap; }
+      .renglon-monto {
+        font-family: var(--mano);
+        font-size: 27px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      li.pagado .renglon-que,
+      li.pagado .renglon-monto { text-decoration: line-through; opacity: 0.45; }
+
+      .cobrar {
+        min-height: 48px;
+        padding: 0 11px;
+        border: 2px solid #b9c6d8;
+        border-radius: 10px;
+        background: #fff;
+        color: #4a5c7a;
+        font-family: var(--ui);
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .cobrar[data-hecho="si"] { background: #e9f7ef; border-color: #a6d9bf; color: #2e7d55; }
+
+      .vacio {
+        margin: 6px 0 2px;
+        font-family: var(--mano);
+        font-size: 24px;
+        font-weight: 700;
+        color: #8a97ac;
+      }
+      .guardado { margin: 10px 0 0; color: var(--tenue); font-size: 12.5px; text-align: center; }
+
+      /* ── 4 y 5. LOS DOS BOTONES ──────────────────────────────────── */
+      .wa {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 62px;
+        padding: 0 18px;
+        border-radius: 16px;
+        background: var(--verde);
+        color: #06281b;
+        font-size: 18px;
+        font-weight: 800;
+        text-align: center;
+        text-decoration: none;
+      }
+
+      .hermes {
+        padding: 18px 16px 20px;
+        border: 2px solid var(--borde);
+        border-radius: 16px;
+        background: var(--panel);
+      }
+      .hermes h2 { margin-bottom: 8px; }
+      .hermes p { margin: 0 0 16px; color: var(--apagado); font-size: 16px; }
+      .hermes a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 56px;
+        padding: 0 16px;
+        border-radius: 14px;
+        background: var(--ambar);
+        color: #221703;
+        font-size: 17px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      footer {
+        padding: 22px 16px 34px;
+        color: var(--tenue);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      /* Quien pidió menos movimiento no ve ni el parpadeo. */
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 24px 16px; font-family: system-ui, sans-serif; color: #f2f5fa">
+        <h1 style="font-size: 26px">La libreta de Don Chuy</h1>
+        <p>
+          Esta página necesita JavaScript para hacer las cuentas contigo. Si no puedes
+          activarlo, escríbenos por WhatsApp y te mandamos la libreta:
+        </p>
+        <p><a style="color: #3ddc97" href="https://wa.me/525573633622">wa.me/525573633622</a></p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/chuy-main.tsx"></script>
+  </body>
+</html>
