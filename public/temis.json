@@ -1,17 +1,17 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-22 16:40",
+ "generado": "2026-09-22 21:34",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 6,
-  "enCurso": 0,
+  "proximo": 5,
+  "enCurso": 1,
   "imprevisto": 0,
-  "supertickets": 9,
-  "cerrado": 102,
+  "supertickets": 13,
+  "cerrado": 104,
   "probado": 0,
   "porProbar": 65,
   "sinDesplegar": 19,
@@ -21,74 +21,11 @@
   "commit": "36e8e93",
   "fecha": "2026-09-04 22:17"
  },
- "violaciones": [],
+ "violaciones": [
+  "CERRADA SIN EVIDENCIA VISUAL: 2026-09-22-el-embudo-en-themis — pon los ss en public/evidencia/2026-09-22-el-embudo-en-themis/ antes de pedir revisión"
+ ],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-09-22-el-macho-de-la-caja-grande.md",
-    "slug": "2026-09-22-el-macho-de-la-caja-grande",
-    "titulo": "EL MACHO DE LA CAJA GRANDE — en la 1599HBK el núcleo no sube a llenar la pieza: 31.5 mm de plástico macizo donde debía haber acero",
-    "fecha": "2026-09-22",
-    "estado": "proximo",
-    "prioridad": 1,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "[ ] medir la cara del núcleo en una rejilla de 10×5 puntos de la huella (inspeccion.caraEn) antes → después.",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] encontrar la causa en E3 con evidencia (malla del núcleo vs malla de la pieza, en corte por x y por y).",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] las 4 piezas: 1.1 ✓ en la rejilla completa; cubo 266/266; tsc sin nuevos.",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 3
-    },
-    "objetivo": "que el núcleo de TODA pieza soltada forme su interior. En la 1599HBK (caja grande, 220×110×35.5, base 396×296) el acero del núcleo se queda plano a la altura de la partición en el centro de la pieza, y la pieza queda hueca encima: moldeado…",
-    "toca": 1,
-    "crea": 0,
-    "evidencia": 1,
-    "evidenciaDeclarada": [
-     "Rejilla de la huella: |cara del núcleo − piso interior| ≤ 0.5 mm en ≥ 95 % de los puntos de las 4 piezas; tarjeta 1.1 de la 1599HBK."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
    {
     "file": "ordenes/2026-09-18-las-20-piezas.md",
     "slug": "2026-09-18-las-20-piezas",
@@ -1321,9 +1258,405 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-22-el-corte-unico.md",
+    "slug": "2026-09-22-el-corte-unico",
+    "titulo": "EL CORTE ÚNICO — un solo lugar corta el acero, y un juez que avisa si una broca no quitó su material",
+    "fecha": "2026-09-22",
+    "estado": "en-curso",
+    "prioridad": 2,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] inventario de TODOS los cortes booleanos (archivo:línea, qué corta, cuántas herramientas) en el CIERRE.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] la función + juez; los caminos migrados; tiempo antes → después (el híbrido no puede ser 10× más lento).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] prueba: las 4 piezas + el cubo, cero herramientas que no quitaron material; volumen de cada placa antes → después.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] estudio de contacto: residuo del agua contra sus barrenos antes (≤1.0) → después (<0.1).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 4
+    },
+    "objetivo": "que el error de «el corte que se come un barreno» NO pueda volver. Hoy el CAD corta con un COMPOUND de todas las herramientas y, cuando dos brocas se cruzan, OCCT pierde material (agua-A-este y agua-A-ext-out se quedaban dentro del inserto…",
+    "toca": 3,
+    "crea": 0,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "tabla por pieza: herramientas · racimos · herramientas sin material (antes → después = 0) · ms.",
+     "ciclo-dado-test verde, tsc sin nuevos, orden-gate VERDE; captura del inserto con el agua A barrenada en las 4 piezas."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-22-el-macho-de-la-caja-grande.md",
+    "slug": "2026-09-22-el-macho-de-la-caja-grande",
+    "titulo": "EL MACHO DE LA CAJA GRANDE — en la 1599HBK el núcleo no sube a llenar la pieza: 31.5 mm de plástico macizo donde debía haber acero",
+    "fecha": "2026-09-22",
+    "estado": "en-curso",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] medir la cara del núcleo en una rejilla de 10×5 puntos de la huella (inspeccion.caraEn) antes → después.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] encontrar la causa en E3 con evidencia (malla del núcleo vs malla de la pieza, en corte por x y por y).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] las 4 piezas: 1.1 ✓ en la rejilla completa; cubo 266/266; tsc sin nuevos.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 3
+    },
+    "objetivo": "que el núcleo de TODA pieza soltada forme su interior. En la 1599HBK (caja grande, 220×110×35.5, base 396×296) el acero del núcleo se queda plano a la altura de la partición en el centro de la pieza, y la pieza queda hueca encima: moldeado…",
+    "toca": 1,
+    "crea": 0,
+    "evidencia": 1,
+    "evidenciaDeclarada": [
+     "Rejilla de la huella: |cara del núcleo − piso interior| ≤ 0.5 mm en ≥ 95 % de los puntos de las 4 piezas; tarjeta 1.1 de la 1599HBK."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-22-el-segundo-reparto.md",
+    "slug": "2026-09-22-el-segundo-reparto",
+    "titulo": "EL SEGUNDO REPARTO — cuatro órdenes en paralelo tras la firma del ACTA R93",
+    "fecha": "2026-09-22",
+    "estado": "en-curso",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "trabajar en paralelo, con un agente Opus por orden (worktree propio + copia forja-devN en iangpu), lo que ian decidió el 2026-09-22, y fusionar en main UNA vez con tsc + cubo + inspección de las 4 piezas + camino de la carcasa; desplegar u…",
+    "toca": 5,
+    "crea": 4,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "orden-gate VERDE en cada rama y en la fusión; tsc sin nuevos; ciclo-dado-test verde o ACTA R94 firmada por ian.",
+     "inspección de las 4 piezas sobre la fusión: fallas 2/2/6/1 → menos; temis-deploy.json y bundle servido con el commit."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-22-las-reglas-de-hefestos.md",
+    "slug": "2026-09-22-las-reglas-de-hefestos",
+    "titulo": "LAS REGLAS DE HEFESTOS — la placa que se dobla guarda margen, los retornos caben y lo que es nuestro se llama por su nombre",
+    "fecha": "2026-09-22",
+    "estado": "en-curso",
+    "prioridad": 2,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] soporte: factor de venteo 0.70 default / 0.85 tope, UNA constante con su rótulo «regla de Hefestos» y su razón; el optimizador",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] el contrato de mold-contratos mide contra la MISMA constante (una sola verdad).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] retornos: la placa expulsora crece lo necesario para que el retorno ⌀12 quede fuera del inserto con su holgura; 2.4 de carcasa y tapa ✓.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] rótulo: cada «regla nuestra / REGLA NUESTRA» fuera de eject-layout pasa a «regla de Hefestos» (UI, láminas, contratos, comentarios).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] cubo: si cambian literales, lista ACTA R94 en el CIERRE (check",
+      "titulo": "viejo",
+      "herramientas": "nuevo",
+      "oraculo": "por qué).",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 5
+    },
+    "objetivo": "aplicar las decisiones que ian firmó el 2026-09-22 (ACTA R93, preguntas 3 y 6, y el nombre): (a) la placa soporte se dimensiona para doblarse ≤ 70 % del venteo por defecto, con tope duro de 85 %; (b) los pines de retorno ⌀12 que no caben f…",
+    "toca": 4,
+    "crea": 0,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "flecha/venteo de la placa soporte en las 4 piezas antes → después (≤ 70 %), con la base elegida.",
+     "inspector 2.4 en carcasa y tapa ✓ (tarjeta), ciclo-dado-test verde (o ACTA R94), tsc sin nuevos, orden-gate VERDE.",
+     "grep: cero «regla nuestra» fuera de eject-layout/equilibrio; las explicaciones al estilo de feedback_explicar_el_molde."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-09-22-los-botadores-con-nombre.md",
+    "slug": "2026-09-22-los-botadores-con-nombre",
+    "titulo": "LOS BOTADORES CON NOMBRE — cada pin a su largo, con llave y etiqueta; y cuando chocan con el agua, se mueve el pin",
+    "fecha": "2026-09-22",
+    "estado": "en-curso",
+    "prioridad": 2,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] pin↔agua: la colocación evita la línea de agua con su claro; tabla por pieza (pares antes → después); si queda alguno,",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] largos: cada pin con su largo medido a SU piso; id (p. ej. `<pieza>-EP-01`) en BOM, lámina de la retenedora y rótulo 3D; la llave",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] rótulo «regla de Hefestos» en el 0.1·L (eject-layout, estudio, ForgeBRepStudio fila de expulsión).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] equilibrio sigue ✓ tras mover pines; cubo verde (o ACTA R94).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 4
+    },
+    "objetivo": "aplicar las decisiones de ian del 2026-09-22 (preguntas 5, 7 y 8): (a) donde un pin cruza una línea de agua de la placa B, primero se mueve el pin; baffles/bubblers (§9.3.5.2) solo si no queda lugar, y el molde dice cuál pasó; (b) en pieza…",
+    "toca": 2,
+    "crea": 0,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "pares pin↔agua por pieza antes → después; tarjeta 2.3 de tapa y 1557BGY; lámina de la retenedora y BOM de la 1557BGY con los ids.",
+     "ciclo-dado-test verde (o ACTA R94), tsc sin nuevos, orden-gate VERDE."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-09-22-la-cara-de-gaia.md",
+    "slug": "2026-09-22-la-cara-de-gaia",
+    "titulo": "La cara de GAIA — los logos, en el Comando",
+    "fecha": "2026-09-22",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "una pestaña MARCA en el Centro de Comando con TODOS los logos dibujados en vector: 6 propuestas para GAIA (para elegir una) y una por módulo (Hermes, Hefestos, Iris, Athena), cada una vista en negro, en blanco, en tamaño de favicon (32 px)…",
+    "toca": 1,
+    "crea": 1,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "node scripts/orden-gate.cjs verde.",
+     "Capturas de la pestaña MARCA a 1440×900 y a 390×844, hechas en forja-dev2 (:5194) con",
+     "Cada marca legible a 32 px y reconocible en una sola tinta (negro sobre blanco).",
+     "censo esperado: html igual, vite igual, canvas igual."
+    ],
+    "cierre": "botón y panel) y se creó src/comando/Logos.tsx. - números: ORDEN_GATE VERDE (html 47→47, vite 42→42, canvas 8→8) · npx vite build en forja-dev2 compila en 31.5 s · consola limpia en las dos capturas …",
+    "cierreCompleto": "botón y panel) y se creó src/comando/Logos.tsx. - números: ORDEN_GATE VERDE (html 47→47, vite 42→42, canvas 8→8) · npx vite build en forja-dev2 compila en 31.5 s · consola limpia en las dos capturas · pliego en Downloads/gaia-logos (1440×900 y 390×844, deviceScaleFactor 2). - tres marcas se rehicieron DESPUÉS de mirarlas: la semilla v1 se leía como el ojo tachado de «ocultar contraseña»; Hermes v1 parecía una pluma y v2 una lupa (quedó moneda con alas); Hefestos v1 parecía copa de cóctel (quedó yunque). El anillo abierto se descartó y entró «el enlace». Riesgo anotado: a 32 px «el enlace» puede leerse como unos lentes.",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "500d732",
+    "despliegue": "sin-desplegar"
+   },
+   {
+    "file": "ordenes/2026-09-22-el-embudo-en-themis.md",
+    "slug": "2026-09-22-el-embudo-en-themis",
+    "titulo": "El embudo de GAIA, como camino de Themis",
+    "fecha": "2026-09-22",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "el embudo deja de ser un documento y pasa a ser un CAMINO medible en Themis: cada estación con su evidencia y su comando, para que el tablero diga en qué punto se rompe. Y la escalera de herramientas gratuitas queda decidida por escrito (u…",
+    "toca": 1,
+    "crea": 1,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "node scripts/orden-gate.cjs verde.",
+     "El camino se parsea: node scripts/temis-tablero.cjs lo incluye sin error.",
+     "Cada estación con estado HONESTO (ok/parcial/bloqueado) y un comando que lo comprueba.",
+     "censo esperado: html igual, vite igual, canvas igual."
+    ],
+    "cierre": "- números:",
+    "cierreCompleto": "- números:",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
    {
     "file": "ordenes/2026-09-21-los-pines-en-la-cara-del-macho.md",
     "slug": "2026-09-21-los-pines-en-la-cara-del-macho",
@@ -1782,8 +2115,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "f338bec",
-    "despliegue": "sin-desplegar"
+    "commit": "2b3ed99",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-09-21-el-plan-de-inspeccion.md",
@@ -7780,6 +8113,91 @@
    "total": 8,
    "rompeEn": 0,
    "parciales": 5,
+   "medido": null
+  },
+  {
+   "slug": "el-embudo-de-gaia",
+   "titulo": "EL EMBUDO DE GAIA",
+   "actor": "una dueña de puesto en Neza que vio un video de Don Chuy a las 9 de la noche, con el teléfono en la mano y tres segundos de paciencia",
+   "promesa": "de ese video sale con UNA herramienta que usa esa misma noche (su libreta del fiado), la vuelve a abrir el viernes, y el día que se le queda chica ya sabe cómo se llama lo que sigue — sin que nadie le haya vendido nada",
+   "pieza": "econ-fiado (el capítulo 00, publicado el 21-sep) + chuy.html?c=00",
+   "nota": "el embudo NO depende de que Meta publique la app (medido 22-sep: se LEE por Facebook Login y se CONTESTA el DM por Instagram Login; ver reference_dm_comentarios_dos_puertas). Lo que sí depende: los DMs que la gente manda por su cuenta. La regla del canal no cambia: puro valor, la venta nunca entra al video. Métrica del camino: no son vistas, son LIBRETAS ABIERTAS DOS VECES.",
+   "pasos": [
+    {
+     "n": 1,
+     "gesto": "EL VIDEO (uno diario, 18:45 CDMX): una cuenta, un dibujo, un debate",
+     "seVe": "11 capítulos encolados 22-sep→2-oct, YouTube 9:16+16:9 con publishAt y cola de PRIME",
+     "estado": "ok",
+     "ticket": "2026-09-21-la-libreta-de-don-chuy"
+    },
+    {
+     "n": 2,
+     "gesto": "LA PALABRA (comenta LIBRETA): el CTA parte la sala y deja rastro público",
+     "seVe": "el copy de los capítulos lo pide; hoy sale sin la palabra hasta que el respondedor viva",
+     "estado": "parcial",
+     "ticket": "2026-09-21-la-libreta-de-don-chuy"
+    },
+    {
+     "n": 3,
+     "gesto": "LEER LOS COMENTARIOS (Facebook Login, `instagram_manage_comments`): la lista de quién escribió la palabra",
+     "seVe": "`dm-libreta.py estado` los lista; medido con 2 «LIBRETA» el 22-sep",
+     "estado": "ok",
+     "ticket": "2026-09-21-la-libreta-de-don-chuy"
+    },
+    {
+     "n": 4,
+     "gesto": "CONTESTAR POR DM (Instagram Login, respuesta privada al comentario) + respuesta pública corta",
+     "seVe": "2 DMs entregados con message_id + 2 respuestas públicas (22-sep, app SIN publicar)",
+     "estado": "ok",
+     "ticket": "2026-09-21-la-libreta-de-don-chuy"
+    },
+    {
+     "n": 5,
+     "gesto": "LA HERRAMIENTA (chuy.html): el mismo puesto, la cuenta con SUS números y la libreta que vive en su teléfono",
+     "seVe": "construida y probada en forja-dev2; NO desplegada (el deploy lo corre ian)",
+     "estado": "bloqueado",
+     "ticket": "2026-09-21-la-libreta-de-don-chuy"
+    },
+    {
+     "n": 6,
+     "gesto": "QUE VUELVA (WhatsApp + canal de difusión de IG): un corte al cierre del día, no una promoción",
+     "seVe": "el botón de WhatsApp está en la página; el canal de difusión lo crea ian; el corte automático espera la API de WhatsApp (portafolio en verificación)",
+     "estado": "bloqueado",
+     "ticket": ""
+    },
+    {
+     "n": 7,
+     "gesto": "GUARDARLA (la cuenta): la libreta sube a la nube y ahí nace la identidad — es el ÚNICO momento en que se pide algo, y a cambio de no perder lo anotado",
+     "seVe": "falta: chuy.html guarda solo en el teléfono; university-api ya tiene magic-link y cuentas",
+     "estado": "bloqueado",
+     "ticket": ""
+    },
+    {
+     "n": 8,
+     "gesto": "EL ESCALÓN (Hermes): cuando la libreta pasa de 5 nombres, ofrecer importarla al ERP con saldos, no empezar de cero",
+     "seVe": "falta el importador; la prueba gratis del ERP ya existe",
+     "estado": "bloqueado",
+     "ticket": ""
+    },
+    {
+     "n": 9,
+     "gesto": "PAGAR CUANDO GANA: el peldaño Emprender (1 % del flujo, ya existe en Mercuria) en vez del muro de $500/usuario",
+     "seVe": "decisión de ian pendiente",
+     "estado": "bloqueado",
+     "ticket": ""
+    },
+    {
+     "n": 10,
+     "gesto": "MEDIR EL EMBUDO ENTERO: una fila por capítulo con vistas → comentarios/mil → DMs → aperturas → libretas con ≥1 fiado → WhatsApp → trials",
+     "seVe": "falta el tablero; hoy solo hay métricas de video",
+     "estado": "parcial",
+     "ticket": ""
+    }
+   ],
+   "verdes": 3,
+   "total": 10,
+   "rompeEn": 0,
+   "parciales": 2,
    "medido": null
   },
   {

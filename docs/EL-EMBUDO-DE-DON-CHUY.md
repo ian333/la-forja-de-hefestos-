@@ -70,9 +70,37 @@ que en ningún paso se sientan tontos ni vendidos.
 - **Comentarios con «LIBRETA» de gente que no quiere nada.** Se les manda igual: un mensaje, cero insistencia.
 - **La voz.** XTTS no permite uso comercial; antes de la temporada 2 se decide la voz (Chatterbox, MIT, con una voz con permiso).
 
+## 5b. Las herramientas gratuitas: UNA, no cinco
+
+ian, 2026-09-22: «si puede vivir sin Meta, debemos dar herramientas gratuitas para que nos
+empiecen a usar». Sí, y la disciplina está en el número. Cinco herramientas a la vez es cinco
+veces el trabajo de mantenerlas y cero veces la costumbre: nadie vuelve a una navaja suiza que
+no domina. Una herramienta que se usa dos veces vale más que cinco que se abren una.
+
+**La herramienta es la libreta del fiado**, y no es un regalo: es la primera pantalla de Hermes
+disfrazada de libreta. Por eso el escalón al ERP después no se siente venta, se siente
+continuación.
+
+**La escalera, en orden, y cada escalón SOLO si el anterior retiene** (medida: que la abran dos
+veces en una semana):
+
+| # | Herramienta | Qué resuelve | De qué capítulo sale | En Hermes se llama |
+|---|---|---|---|---|
+| 1 | **La libreta del fiado** | quién me debe y cuánto | 00, 06 | cuentas por cobrar |
+| 2 | **El corte del día** | vendí $X, gasté $Y, me queda $Z (y lo fiado no es tuyo) | 02 | corte de caja |
+| 3 | **El precio mínimo** | cuánto me cuesta de verdad con merma y mi tiempo | 03, 04, 09 | lista de precios |
+
+Nada de calculadoras sueltas. Las tres comparten la misma libreta y los mismos números: lo que
+anotó en la 1 alimenta la 2, y la 2 alimenta la 3. Ese encadenamiento es lo que hace que al
+llegar a Hermes ya tenga datos y no una pantalla en blanco.
+
+**Lo que NO es herramienta gratuita:** un PDF, un «diagnóstico» de 10 preguntas, una plantilla
+de Excel. Todo eso se descarga y se olvida; no deja rastro, no vuelve y no se puede medir.
+
 ## 6. Lo que decide ian
 
 1. El precio del peldaño Emprender para Don Chuy (1 % del flujo, plan chico, o el muro de $500 tal cual).
 2. Autorizar el deploy de `chuy.html` a ATLAS cuando vea las capturas.
 3. Crear el canal de difusión «La libreta de Don Chuy» en la app de IG.
-4. Programar los 6 capítulos de la semana (18:45 diario) — un sí.
+4. Programar los capítulos — HECHO el 22-sep: 11 encolados, uno diario 22-sep→2-oct.
+5. El escalón 2 («el corte del día») solo cuando la libreta retenga: ¿lo medimos a 7 días?
