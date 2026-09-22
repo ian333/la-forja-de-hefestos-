@@ -115,6 +115,22 @@ ENCENDERLO (lo hace ian, no este script)
   3) el cron de PRIME (NO se instala desde aquí):
        */5 * * * * flock -n /tmp/dm-libreta.lock python3 ~/forja-cola/dm-libreta.py tick >> ~/forja-cola/dm-libreta.log 2>&1
 """
+# ─────────────────────────────────────────────────────────────────────────────
+# HALLAZGO 2026-09-22 (medido, no leído): EL EMBUDO YA PUEDE CORRER SIN PUBLICAR LA APP.
+#
+# La app de Meta sigue en modo Desarrollo, así que `graph.instagram.com/{ig}/comments`
+# devuelve 0 filas con cursores (Meta esconde lo que genera quien no tiene rol). PERO:
+#   · LEER los comentarios SÍ funciona por la puerta de Facebook Login
+#     (`graph.facebook.com/{media}/comments` con el token de usuario de FB, que trae
+#     instagram_manage_comments) — ahí aparecieron los dos «LIBRETA».
+#   · MANDAR la respuesta privada SÍ funciona con el token de Instagram Login
+#     (`graph.instagram.com/{ig}/messages` con recipient={comment_id}) — probado en vivo:
+#     dos DMs entregados con message_id, con la app todavía «Sin publicar».
+#   · La respuesta PÚBLICA al comentario va por Facebook (`{comment_id}/replies`).
+# O sea: se lee por una puerta y se contesta por la otra. Lo que sigue bloqueado hasta
+# publicar la app son los DMs que la gente manda por su cuenta (conversations = 0 filas).
+# ─────────────────────────────────────────────────────────────────────────────
+
 import os, sys, json, time, random, hashlib, unicodedata, datetime as dt
 import urllib.request, urllib.parse, urllib.error
 
