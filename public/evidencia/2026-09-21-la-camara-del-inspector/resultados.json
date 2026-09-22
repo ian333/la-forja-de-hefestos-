@@ -1,0 +1,2346 @@
+{
+ "orden": "ordenes/2026-09-21-la-camara-del-inspector.md",
+ "que": "que cada punto del PLAN DE INSPECCIÓN se VEA: 4 piezas × 16 puntos = 64 tarjetas, cada una encuadrada por lo que mide, con contraste y con la cota dibujada.",
+ "inspector": "scripts/inspecciona-molde.cjs (nace de la pasada 1, entra al repo con esta orden)",
+ "corrida": {
+  "app": "forja-dev7 :5198 (iangpu, GPU real ANGLE/D3D12 RTX 4070 Ti)",
+  "viewport": "1600×1000",
+  "pageerrors": 0,
+  "laminas": "17 por pieza, capturadas DESDE LA PÁGINA 0 (ensamble + BOM)"
+ },
+ "antesDespues": {
+  "pasada1": "28 de 64 «sí» (44 %) — los 4 revisores Opus: «de 64 tarjetas, ~36 no se ve»",
+  "ahora": "63 de 64 «sí» (98 %)",
+  "elUnicoNo": "carcasa 5.1 — el mapa de t_c sale parejo y no enseña DÓNDE están los 134 s"
+ },
+ "laReglaDeOro": [
+  "ENCUADRAR lo que se mide (los dos puntos en cuadro, nada de acero entre ellos y la cámara)",
+  "CONTRASTE (lo medido opaco y con color; el sólido que lo esconde, TRANSLÚCIDO; el resto al 5 %)",
+  "LA COTA VISIBLE (línea + cruz en cada extremo + etiqueta con 2 decimales)"
+ ],
+ "manijasNuevas": [
+  "inspeccion.aislar(roles[], {tenues, opacs, colores, opacTenue, opac}) — un CONJUNTO de roles (moldIsolate deja uno solo); acepta prefijos 'agua-*'",
+  "inspeccion.cota(a, b, etiqueta, ok) / inspeccion.cotas([...]) — la distancia DIBUJADA entre los dos puntos medidos, en el marco del molde",
+  "inspeccion.geomPose() — las cajas de moldGeom CON el desplazamiento que la animación puso en pantalla (sin esto el encuadre del molde abierto no incluye la carrera)",
+  "inspeccion.caraEn(role, x, y) — rayo vertical contra la malla: la CARA REAL bajo un punto (mata la tautología de 1.1 y 6.1)"
+ ],
+ "cambiosDeEscena": [
+  "la pintura de una lente (t_c, llenado, frente de fundido) obedece el plano de CORTE y vuelve a respetar la profundidad cuando hay corte (`pintaCorte` en MoldScene)",
+  "y se apaga con su pieza: si la pieza se ocultó o se dejó translúcida (< 0.5), su pintura también (`piezaPintable`)"
+ ],
+ "defectosDelInspectorCorregidos": [
+  "1.1 y 6.1 ya NO son tautológicos: rayo contra la cara real (y el rayo DEDUPLICA caras coincidentes — el centro exacto cae sobre una arista de la triangulación y daba el techo dos veces)",
+  "2.2 mide contra el ASIENTO DEL INSERTO de cavidad (antes daba ✓ mirando la cara de la placa)",
+  "2.3 da la lista COMPLETA agua↔pin y dice que los retornos/KO son roles de VARIOS CUERPOS (su caja abarca la placa): esos se juzgan por MALLA",
+  "7.1 marca su umbral largo/⌀ ≤ 50 como «REGLA NUESTRA, SIN CITA»",
+  "pen < 0.6 mm = «no concluyente (vóxel)», no colisión",
+  "las láminas se capturan desde la página 0 (la de ensamble + BOM que la pasada 1 se saltó)",
+  "la cámara nunca queda dentro de un sólido: el lado del corte se elige por la dirección del ojo, y sin corte se empuja el radio hasta salir de toda caja visible"
+ ],
+ "hallazgosNuevosDeEstaPasada": [
+  {
+   "pieza": "alta (1599HBK)",
+   "que": "el macho NO llega al piso de la pieza: techo del macho z 180 vs piso interior z 211.5 → 31.5 mm de hueco, y las puntas de los pines quedan 32.54 mm METIDAS en el plástico. La pasada 1 lo daba ✓ CUMPLE porque medía contra la propia fórmula.",
+   "tarjetas": [
+    "alta/tarjetas/p1_1.png",
+    "alta/tarjetas/p6_1.png"
+   ],
+   "deQuienEs": "LOS PINES EN LA CARA DEL MACHO / la pila"
+  },
+  {
+   "pieza": "4/4",
+   "que": "el agua A entra al inserto de cavidad 1.56–2.19 mm en las cuatro piezas (2.2 con la cara correcta)",
+   "tarjetas": [
+    "*/tarjetas/p2_2.png"
+   ],
+   "deQuienEs": "EL AGUA DICE DOS COSAS / los insertos se barrenan"
+  },
+  {
+   "pieza": "carcasa",
+   "que": "el agua B toca los pines de RETORNO por malla (0.62 y 0.64 mm) — el par que la caja no puede medir",
+   "tarjetas": [
+    "carcasa/tarjetas/p2_3.png"
+   ],
+   "deQuienEs": "EL AGUA DICE DOS COSAS"
+  }
+ ],
+ "visto_es_de_otra_orden": [
+  "el rótulo «PP» de la pieza es un literal de cursoPart (se reporta, no se toca)",
+  "la apertura 2.5·H no saca pieza + bebedero en 4/4 · la carrera de expulsión no cabe en 4/4 · los insertos no traen sus barrenos en 4/4 · el agua B rompe la cara inferior de su placa (−1.14 mm) en 4/4: son de LA CARRERA CABE, EL AGUA DICE DOS COSAS y LOS INSERTOS SE BARRENAN"
+ ],
+ "loQueSigueSinVerse": [
+  "carcasa 5.1: el mapa de t_c sale parejo y no enseña dónde están los 134 s (en la caja grande sí se ve: el bebedero rojo). La lente pinta la SUPERFICIE; el punto caliente vive adentro.",
+  "cuando varias cotas caen juntas (2.3 con 4 pares) las etiquetas se encinan: falta repartirlas (no hay colisión de etiquetas en el proyecto)",
+  "la TAPA SÓLIDA del corte sigue sin existir: al cortar se ven cascarones. Se esquivó cortando POR ENCIMA del circuito en las plantas, no resolviéndolo.",
+  "la ORTOGRÁFICA con escala no entró (el Canvas del estudio crea una cámara perspectiva; cambiarla en caliente es otra orden)",
+  "la comparación cota-por-cota lámina ↔ sólido (punto 8.1) sigue sin existir: solo se cuenta que las 17 láminas salen"
+ ],
+ "piezas": [
+  {
+   "id": "carcasa",
+   "archivo": "1594C Box.stp",
+   "que": "carcasa honda 246×246, H 33.3, pared 3.2",
+   "base": [
+    246,
+    246
+   ],
+   "alturaPiezaMm": 33.3,
+   "pared": 3.2,
+   "dAgua": 4.76,
+   "componentes": null,
+   "resumen": {
+    "ok": 4,
+    "falla": 11,
+    "mirar": 2
+   },
+   "tArmadoS": 319,
+   "planos": {
+    "paginas": 17,
+    "capturadas": 17,
+    "maquina": "FCS HT-150SV (taller) CUMPLE"
+   },
+   "caraReal": {
+    "pisoPorRayo": 189.8,
+    "pisoPorFormula": 189.6,
+    "techoMacho": 189.8,
+    "puntasVsCara": [
+     {
+      "role": "pin-punta-0",
+      "x": 105,
+      "y": 161.2,
+      "punta": 189.6,
+      "cara": 189.8,
+      "d": -0.2
+     },
+     {
+      "role": "pin-punta-1",
+      "x": 141,
+      "y": 161.2,
+      "punta": 189.6,
+      "cara": 189.8,
+      "d": -0.2
+     },
+     {
+      "role": "pin-punta-2",
+      "x": 105,
+      "y": 84.8,
+      "punta": 189.6,
+      "cara": 189.8,
+      "d": -0.2
+     },
+     {
+      "role": "pin-punta-3",
+      "x": 141,
+      "y": 84.8,
+      "punta": 189.6,
+      "cara": 189.8,
+      "d": -0.2
+     },
+     {
+      "role": "pin-punta-4",
+      "x": 99,
+      "y": 155.2,
+      "punta": 189.6,
+      "cara": 189.8,
+      "d": -0.2
+     },
+     {
+      "role": "pin-punta-5",
+      "x": 147,
+      "y": 155.2,
+      "punta": 189.6,
+      "cara": 189.8,
+      "d": -0.2
+     },
+     {
+      "role": "pin-punta-6",
+      "x": 99,
+      "y": 147.1,
+      "punta": 189.6,
+      "cara": 189.8,
+      "d": -0.2
+     },
+     {
+      "role": "pin-punta-7",
+      "x": 147,
+      "y": 147.1,
+      "punta": 189.6,
+      "cara": 189.8,
+      "d": -0.2
+     }
+    ],
+    "tiraPuntasVsCara": null
+   },
+   "balanceExpulsion": {
+    "centroidePines": [
+     123,
+     137.08
+    ],
+    "centroPieza": [
+     123,
+     123
+    ],
+    "desbalanceMm": 14.08
+   },
+   "crucesAguaBajoMedioD": [],
+   "noConcluyentesVoxel": 13,
+   "noJuzgadasMulticuerpo": 3,
+   "puntos": [
+    {
+     "id": "0",
+     "v": "info",
+     "que": "el molde entero, cerrado",
+     "medido": "65 componentes · base 246×246 · altura 262 mm · armado: E2 4.7s · E3 38.8s · E4 1.5s · E5 133.8s · E6 3.9s · E7 5.2s · E8 12.0s",
+     "pide": "",
+     "tarjeta": "carcasa/tarjetas/p0.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "1.1",
+     "v": "ok",
+     "que": "el macho está DENTRO de la pieza: su techo toca el PISO REAL (rayo, no fórmula)",
+     "medido": "rayo en (123.4, 123.3): techo del macho (cara real) z 189.8 · piso interior de la pieza z 189.8 (pared ahí 3 mm) → 0 mm · [la fórmula «techo − pared mediana» habría dicho z 189.6]",
+     "pide": "|Δ| ≤ 0.5 mm",
+     "tarjeta": "carcasa/tarjetas/p1_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "1.2",
+     "v": "mirar",
+     "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+     "medido": "partición z 160 · anillo y bebedero sobre el eje (123, 123) · altura total 262 mm",
+     "pide": "todo alineado al eje",
+     "tarjeta": "carcasa/tarjetas/p1_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.1",
+     "v": "falla",
+     "que": "agua B ↔ cara INFERIOR de la placa B",
+     "medido": "-1.14 mm de acero bajo la línea (⌀ 4.76)",
+     "pide": "≥ ½ D = 2.38 mm",
+     "tarjeta": "carcasa/tarjetas/p2_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.2",
+     "v": "falla",
+     "que": "agua A ↔ el ASIENTO DEL INSERTO de cavidad (la cara que importa, no la cara de la placa)",
+     "medido": "el agua A ENTRA al inserto de cavidad: cavidad↔agua-A-este 2.18 mm ; cavidad↔agua-A-oeste 2.18 mm ; cavidad↔agua-A-norte 2.03 mm ; cavidad↔agua-A-sur 2.03 mm ; cavidad↔agua-A-ext-in 1.82 mm ; cavidad↔agua-A-ext-out 1.82 mm",
+     "pide": "0 mm dentro del inserto (y ≥ ½ D de acero a la cara)",
+     "tarjeta": "carcasa/tarjetas/p2_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.3",
+     "v": "falla",
+     "que": "el agua ↔ TODO barreno móvil (pines, retornos, KO) — lista completa",
+     "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (2.38 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea0↔pin-cuerpo-4 7.38 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → TOCAN: agua-B-linea0↔pines-retorno 0.62 mm ; agua-B-linea2↔pines-retorno 0.64 mm",
+     "pide": "todo par ≥ ½ D = 2.38 mm · 0 mm de penetración con retornos/KO",
+     "tarjeta": "carcasa/tarjetas/p2_3.png",
+     "seVe": "sí",
+     "nota": "sí, con reserva: cuando cuatro cotas caen juntas las etiquetas se encinan y una tapa a otra."
+    },
+    {
+     "id": "2.4",
+     "v": "falla",
+     "que": "los pines de RETORNO ↔ el inserto de núcleo",
+     "medido": "15000 mm³ · 5.3 mm",
+     "pide": "0 mm³ compartidos",
+     "tarjeta": "carcasa/tarjetas/p2_4.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.5",
+     "v": "falla",
+     "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+     "medido": "agua-B-linea0↔pines-retorno 0.62 mm ; agua-B-linea2↔pines-retorno 0.64 mm ; agua-tapon-B-10↔support 1.14 mm ; agua-tapon-B-11↔support 1.14 mm",
+     "pide": "0 mm de penetración",
+     "tarjeta": "carcasa/tarjetas/p2_5.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.1",
+     "v": "falla",
+     "que": "la apertura saca la pieza CON su bebedero",
+     "medido": "apertura 2.5·H = 83.3 mm · pieza 33.3 + bebedero 69.2 + 10 = 112.5",
+     "pide": "apertura ≥ pieza + bebedero + 10",
+     "tarjeta": "carcasa/tarjetas/p3_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.2",
+     "v": "falla",
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "medido": "libre 31 mm · la pieza pide 41.3 (H + 8) → la retenedora entra 10.3 mm en el soporte",
+     "pide": "libre ≥ pedida",
+     "tarjeta": "carcasa/tarjetas/p3_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.3",
+     "v": "ok",
+     "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+     "medido": "guía sobre la partición 57.8 mm · macho 29.8 mm",
+     "pide": "guía > macho",
+     "tarjeta": "carcasa/tarjetas/p3_3.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "5.1",
+     "v": "falla",
+     "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+     "medido": "el ciclo lo manda lo más lento: 134 s; el resto está listo en 21.5 s → 6.2× (la pared llega a 8 mm; la medida es 3.2)",
+     "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)",
+     "tarjeta": "carcasa/tarjetas/p5_1.png",
+     "seVe": "no",
+     "nota": "el letrero dice 134 s (6.2× lo de en medio) pero el mapa sale PAREJO: la zona lenta no se distingue en la pieza (en la caja grande sí: el bebedero se pinta rojo). Único «no» de las 64."
+    },
+    {
+     "id": "6.1",
+     "v": "ok",
+     "que": "los pines: la punta en la CARA REAL del macho (rayo) y la cabeza en la retenedora",
+     "medido": "medido por rayo: la peor punta pin-punta-0 está -0.2 mm HUNDIDA en el acero (cara real z 189.8) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+     "pide": "punta ↔ cara real ≤ 0.5 mm · cuerpo ↔ retenedora ≤ 0.5 mm",
+     "tarjeta": "carcasa/tarjetas/p6_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "6.2",
+     "v": "falla",
+     "que": "el paquete expulsor desde ABAJO y el BALANCE de la expulsión",
+     "medido": "8 pines · centroide de los pines a 14.08 mm del centro de la pieza · retenedora z 58..71",
+     "pide": "centroide ≤ 5 % de la diagonal de la pieza (regla NUESTRA, sin cita: el libro no da un número)",
+     "tarjeta": "carcasa/tarjetas/p6_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "7.1",
+     "v": "falla",
+     "que": "cada línea de agua se taladra desde un canto",
+     "medido": "11 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 51.7 (agua-B-linea0)",
+     "pide": "0 ciegas · largo/⌀ ≤ 50 — REGLA NUESTRA, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)",
+     "tarjeta": "carcasa/tarjetas/p7_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "7.2",
+     "v": "falla",
+     "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+     "medido": "16 tramos de pin atraviesan núcleo MACIZO (hasta 2.19 mm = su radio) · bebedero ↔ cavidad 3.88 mm",
+     "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)",
+     "tarjeta": "carcasa/tarjetas/p7_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "4.1",
+     "v": "ok",
+     "que": "la inyectora del taller juzgada en la lámina de análisis",
+     "medido": "FCS HT-150SV (taller) CUMPLE · altura del molde 262 mm + apertura 83.3 mm",
+     "pide": "CUMPLE (luz, barras, tonelaje, carrera)",
+     "tarjeta": "carcasa/tarjetas/p4_1.png",
+     "seVe": "—",
+     "nota": null
+    },
+    {
+     "id": "8.1",
+     "v": "mirar",
+     "que": "el juego de láminas existe y se deja mirar (desde la página 0 = ensamble + BOM)",
+     "medido": "17 de 17 láminas capturadas, empezando en la 0 (la comparación cota-por-cota contra el sólido AÚN no existe)",
+     "pide": "≥ 3 láminas · cada cota = el sólido",
+     "tarjeta": "carcasa/tarjetas/p8_1.png",
+     "seVe": "—",
+     "nota": null
+    }
+   ],
+   "bitacoraDeVistas": [
+    {
+     "id": "0",
+     "az": 40,
+     "el": 26,
+     "r": 1034.8,
+     "t": [
+      114.5,
+      133.2,
+      163.2
+     ],
+     "corte": null,
+     "aislado": "todo visible",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "1.1",
+     "az": 90,
+     "el": 6,
+     "r": 267.8,
+     "t": [
+      122.2,
+      123,
+      168.9
+     ],
+     "corte": "x=123",
+     "aislado": "2 protagonistas · 2 tenues · 61 ocultos",
+     "cotas": [
+      "techo del macho ↔ piso de la pieza 0 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "1.2",
+     "az": 90,
+     "el": 4,
+     "r": 707.2,
+     "t": [
+      121.6,
+      123,
+      156.7
+     ],
+     "corte": "x=123",
+     "aislado": "todo visible",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.1",
+     "az": 180,
+     "el": 4,
+     "r": 131.3,
+     "t": [
+      84.9,
+      122.7,
+      129.2
+     ],
+     "corte": "y=123",
+     "aislado": "7 protagonistas · 2 tenues · 56 ocultos",
+     "cotas": [
+      "acero bajo la línea 1.14 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.2",
+     "az": 180,
+     "el": 8,
+     "r": 180.9,
+     "t": [
+      166,
+      122.2,
+      215.6
+     ],
+     "corte": "y=123",
+     "aislado": "7 protagonistas · 1 tenues · 57 ocultos",
+     "cotas": [
+      "traslape agua A ↔ inserto de cavidad 4.64 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.3",
+     "az": 0,
+     "el": 80,
+     "r": 438,
+     "t": [
+      123,
+      138.3,
+      127.9
+     ],
+     "corte": null,
+     "aislado": "45 protagonistas · 2 tenues · 18 ocultos",
+     "cotas": [
+      "B-linea0↔cuerpo-4 7.38 mm",
+      "B-linea0↔cuerpo-6 7.38 mm",
+      "B-linea2↔cuerpo-5 7.38 mm",
+      "B-linea2↔cuerpo-7 7.38 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.4",
+     "az": 25,
+     "el": 55,
+     "r": 313.9,
+     "t": [
+      119.8,
+      130,
+      150.4
+     ],
+     "corte": "z=159",
+     "aislado": "2 protagonistas · 2 tenues · 61 ocultos",
+     "cotas": [
+      "retorno ↔ inserto de núcleo 30 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.5",
+     "az": 200,
+     "el": 12,
+     "r": 266.8,
+     "t": [
+      85.7,
+      121.5,
+      132.8
+     ],
+     "corte": "y=123",
+     "aislado": "2 protagonistas · 1 tenues · 62 ocultos",
+     "cotas": [
+      "agua-B-linea0 ↔ pines-retorno 4.15 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.1",
+     "az": 90,
+     "el": 5,
+     "r": 865.3,
+     "t": [
+      120.7,
+      123,
+      204
+     ],
+     "corte": "x=123",
+     "aislado": "todo visible",
+     "cotas": [
+      "apertura REAL 83.25 mm",
+      "pieza + bebedero (lo que hay que sacar) 102.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.2",
+     "az": 90,
+     "el": 4,
+     "r": 451.8,
+     "t": [
+      122.2,
+      123,
+      73.2
+     ],
+     "corte": "x=123",
+     "aislado": "23 protagonistas · 2 tenues · 40 ocultos",
+     "cotas": [
+      "la retenedora ENTRA en el soporte 10.3 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.3",
+     "az": 35,
+     "el": 14,
+     "r": 550.5,
+     "t": [
+      121,
+      126,
+      202.8
+     ],
+     "corte": null,
+     "aislado": "4 protagonistas · 2 tenues · 59 ocultos",
+     "cotas": [
+      "guía sobre la partición 57.84 mm",
+      "macho sobre la partición 29.8 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "5.1",
+     "az": 40,
+     "el": 30,
+     "r": 256.5,
+     "t": [
+      120.6,
+      125.8,
+      182.5
+     ],
+     "corte": null,
+     "aislado": "1 protagonistas · 0 tenues · 64 ocultos",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "6.1",
+     "az": 90,
+     "el": 6,
+     "r": 69.1,
+     "t": [
+      104.8,
+      161.2,
+      191.8
+     ],
+     "corte": "x=105",
+     "aislado": "17 protagonistas · 1 tenues · 47 ocultos",
+     "cotas": [
+      "punta del pin ↔ cara real del macho 0.2 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "6.2",
+     "az": 30,
+     "el": -62,
+     "r": 407,
+     "t": [
+      128.4,
+      113.6,
+      129.6
+     ],
+     "corte": null,
+     "aislado": "20 protagonistas · 1 tenues · 44 ocultos",
+     "cotas": [
+      "centroide de los pines ↔ centro de la pieza 14.08 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "7.1",
+     "az": 0,
+     "el": 82,
+     "r": 428.1,
+     "t": [
+      123,
+      138.4,
+      212.4
+     ],
+     "corte": null,
+     "aislado": "28 protagonistas · 3 tenues · 34 ocultos",
+     "cotas": [
+      "agua-B-linea0 · largo (⌀ 4.76) 246 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "7.2",
+     "az": 30,
+     "el": 24,
+     "r": 285.5,
+     "t": [
+      103.2,
+      164.3,
+      172.6
+     ],
+     "corte": "y=161.2 (volteado: la cámara del lado removido)",
+     "aislado": "19 protagonistas · 2 tenues · 44 ocultos",
+     "cotas": [
+      "pin ↔ acero del inserto 2.32 mm"
+     ],
+     "camaraDentroDe": null
+    }
+   ]
+  },
+  {
+   "id": "tapa",
+   "archivo": "1594C Lid.stp",
+   "que": "tapa plana 246×196, H 14.1",
+   "base": [
+    246,
+    196
+   ],
+   "alturaPiezaMm": 14.1,
+   "pared": 3.86,
+   "dAgua": 4.76,
+   "componentes": null,
+   "resumen": {
+    "ok": 8,
+    "falla": 7,
+    "mirar": 2
+   },
+   "tArmadoS": 144,
+   "planos": {
+    "paginas": 17,
+    "capturadas": 17,
+    "maquina": "FCS HT-150SV (taller) CUMPLE"
+   },
+   "caraReal": {
+    "pisoPorRayo": 156.8,
+    "pisoPorFormula": 155.74,
+    "techoMacho": 156.8,
+    "puntasVsCara": [
+     {
+      "role": "pin-punta-0",
+      "x": 84.8,
+      "y": 116,
+      "punta": 155.74,
+      "cara": 156.8,
+      "d": -1.06
+     },
+     {
+      "role": "pin-punta-1",
+      "x": 161.2,
+      "y": 116,
+      "punta": 155.74,
+      "cara": 156.8,
+      "d": -1.06
+     },
+     {
+      "role": "pin-punta-2",
+      "x": 84.8,
+      "y": 80,
+      "punta": 155.74,
+      "cara": 156.8,
+      "d": -1.06
+     },
+     {
+      "role": "pin-punta-3",
+      "x": 161.2,
+      "y": 80,
+      "punta": 155.74,
+      "cara": 156.8,
+      "d": -1.06
+     },
+     {
+      "role": "pin-punta-4",
+      "x": 74.8,
+      "y": 114,
+      "punta": 155.74,
+      "cara": 156.8,
+      "d": -1.06
+     },
+     {
+      "role": "pin-punta-5",
+      "x": 169.2,
+      "y": 114,
+      "punta": 155.74,
+      "cara": 156.8,
+      "d": -1.06
+     },
+     {
+      "role": "pin-punta-6",
+      "x": 74.8,
+      "y": 82,
+      "punta": 155.74,
+      "cara": 156.8,
+      "d": -1.06
+     },
+     {
+      "role": "pin-punta-7",
+      "x": 169.2,
+      "y": 82,
+      "punta": 155.74,
+      "cara": 156.8,
+      "d": -1.06
+     }
+    ],
+    "tiraPuntasVsCara": null
+   },
+   "balanceExpulsion": {
+    "centroidePines": [
+     122.5,
+     98
+    ],
+    "centroPieza": [
+     123,
+     98
+    ],
+    "desbalanceMm": 0.5
+   },
+   "crucesAguaBajoMedioD": [],
+   "noConcluyentesVoxel": 17,
+   "noJuzgadasMulticuerpo": 3,
+   "puntos": [
+    {
+     "id": "0",
+     "v": "info",
+     "que": "el molde entero, cerrado",
+     "medido": "70 componentes · base 246×196 · altura 218 mm · armado: E2 1.2s · E3 19.8s · E4 0.9s · E5 33.6s · E6 1.4s · E7 1.6s · E8 12.2s",
+     "pide": "",
+     "tarjeta": "tapa/tarjetas/p0.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "1.1",
+     "v": "ok",
+     "que": "el macho está DENTRO de la pieza: su techo toca el PISO REAL (rayo, no fórmula)",
+     "medido": "rayo en (123.4, 98.3): techo del macho (cara real) z 156.8 · piso interior de la pieza z 156.8 (pared ahí 2.8 mm) → 0 mm · [la fórmula «techo − pared mediana» habría dicho z 155.74]",
+     "pide": "|Δ| ≤ 0.5 mm",
+     "tarjeta": "tapa/tarjetas/p1_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "1.2",
+     "v": "mirar",
+     "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+     "medido": "partición z 146 · anillo y bebedero sobre el eje (123, 98) · altura total 218 mm",
+     "pide": "todo alineado al eje",
+     "tarjeta": "tapa/tarjetas/p1_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.1",
+     "v": "falla",
+     "que": "agua B ↔ cara INFERIOR de la placa B",
+     "medido": "-1.14 mm de acero bajo la línea (⌀ 4.76)",
+     "pide": "≥ ½ D = 2.38 mm",
+     "tarjeta": "tapa/tarjetas/p2_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.2",
+     "v": "falla",
+     "que": "agua A ↔ el ASIENTO DEL INSERTO de cavidad (la cara que importa, no la cara de la placa)",
+     "medido": "el agua A ENTRA al inserto de cavidad: cavidad↔agua-A-norte 2.18 mm ; cavidad↔agua-A-sur 2.18 mm ; cavidad↔agua-A-este 2.03 mm ; cavidad↔agua-A-oeste 2.03 mm ; cavidad↔agua-A-ext-in 1.82 mm ; cavidad↔agua-A-ext-out 1.82 mm",
+     "pide": "0 mm dentro del inserto (y ≥ ½ D de acero a la cara)",
+     "tarjeta": "tapa/tarjetas/p2_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.3",
+     "v": "ok",
+     "que": "el agua ↔ TODO barreno móvil (pines, retornos, KO) — lista completa",
+     "medido": "56 pares agua↔pin se cruzan en z · bajo ½D (2.38 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea0↔pin-punta-4 5.41 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto",
+     "pide": "todo par ≥ ½ D = 2.38 mm · 0 mm de penetración con retornos/KO",
+     "tarjeta": "tapa/tarjetas/p2_3.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.4",
+     "v": "falla",
+     "que": "los pines de RETORNO ↔ el inserto de núcleo",
+     "medido": "3328 mm³ · 2.71 mm",
+     "pide": "0 mm³ compartidos",
+     "tarjeta": "tapa/tarjetas/p2_4.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.5",
+     "v": "falla",
+     "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+     "medido": "agua-tapon-B-12↔support 1.14 mm ; agua-tapon-B-13↔support 1.14 mm ; agua-tapon-B-14↔support 1.14 mm ; agua-tapon-B-6↔support 1.14 mm",
+     "pide": "0 mm de penetración",
+     "tarjeta": "tapa/tarjetas/p2_5.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.1",
+     "v": "falla",
+     "que": "la apertura saca la pieza CON su bebedero",
+     "medido": "apertura 2.5·H = 35.2 mm · pieza 14.1 + bebedero 58.4 + 10 = 82.5",
+     "pide": "apertura ≥ pieza + bebedero + 10",
+     "tarjeta": "tapa/tarjetas/p3_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.2",
+     "v": "ok",
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "medido": "libre 31 mm · la pieza pide 22.1 (H + 8) → la retenedora entra 0 mm en el soporte",
+     "pide": "libre ≥ pedida",
+     "tarjeta": "tapa/tarjetas/p3_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.3",
+     "v": "ok",
+     "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+     "medido": "guía sobre la partición 31.4 mm · macho 10.8 mm",
+     "pide": "guía > macho",
+     "tarjeta": "tapa/tarjetas/p3_3.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "5.1",
+     "v": "ok",
+     "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+     "medido": "el ciclo lo manda lo más lento: 62.7 s; el resto está listo en 31.3 s → 2× (la pared llega a 5.5 mm; la medida es 3.86)",
+     "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)",
+     "tarjeta": "tapa/tarjetas/p5_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "6.1",
+     "v": "falla",
+     "que": "los pines: la punta en la CARA REAL del macho (rayo) y la cabeza en la retenedora",
+     "medido": "medido por rayo: la peor punta pin-punta-0 está -1.06 mm HUNDIDA en el acero (cara real z 156.8) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+     "pide": "punta ↔ cara real ≤ 0.5 mm · cuerpo ↔ retenedora ≤ 0.5 mm",
+     "tarjeta": "tapa/tarjetas/p6_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "6.2",
+     "v": "ok",
+     "que": "el paquete expulsor desde ABAJO y el BALANCE de la expulsión",
+     "medido": "8 pines · centroide de los pines a 0.5 mm del centro de la pieza · retenedora z 58..71",
+     "pide": "centroide ≤ 5 % de la diagonal de la pieza (regla NUESTRA, sin cita: el libro no da un número)",
+     "tarjeta": "tapa/tarjetas/p6_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "7.1",
+     "v": "ok",
+     "que": "cada línea de agua se taladra desde un canto",
+     "medido": "13 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 41.2 (agua-B-linea0)",
+     "pide": "0 ciegas · largo/⌀ ≤ 50 — REGLA NUESTRA, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)",
+     "tarjeta": "tapa/tarjetas/p7_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "7.2",
+     "v": "falla",
+     "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+     "medido": "8 tramos de pin atraviesan núcleo MACIZO (hasta 1.12 mm = su radio) · bebedero ↔ cavidad 3.38 mm",
+     "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)",
+     "tarjeta": "tapa/tarjetas/p7_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "4.1",
+     "v": "ok",
+     "que": "la inyectora del taller juzgada en la lámina de análisis",
+     "medido": "FCS HT-150SV (taller) CUMPLE · altura del molde 218 mm + apertura 35.2 mm",
+     "pide": "CUMPLE (luz, barras, tonelaje, carrera)",
+     "tarjeta": "tapa/tarjetas/p4_1.png",
+     "seVe": "—",
+     "nota": null
+    },
+    {
+     "id": "8.1",
+     "v": "mirar",
+     "que": "el juego de láminas existe y se deja mirar (desde la página 0 = ensamble + BOM)",
+     "medido": "17 de 17 láminas capturadas, empezando en la 0 (la comparación cota-por-cota contra el sólido AÚN no existe)",
+     "pide": "≥ 3 láminas · cada cota = el sólido",
+     "tarjeta": "tapa/tarjetas/p8_1.png",
+     "seVe": "—",
+     "nota": null
+    }
+   ],
+   "bitacoraDeVistas": [
+    {
+     "id": "0",
+     "az": 40,
+     "el": 26,
+     "r": 899,
+     "t": [
+      115.6,
+      106.8,
+      137.5
+     ],
+     "corte": null,
+     "aislado": "todo visible",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "1.1",
+     "az": 90,
+     "el": 6,
+     "r": 193.4,
+     "t": [
+      122.5,
+      98,
+      149.3
+     ],
+     "corte": "x=123",
+     "aislado": "2 protagonistas · 2 tenues · 66 ocultos",
+     "cotas": [
+      "techo del macho ↔ piso de la pieza 0 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "1.2",
+     "az": 90,
+     "el": 4,
+     "r": 623.5,
+     "t": [
+      121.8,
+      98,
+      131.6
+     ],
+     "corte": "x=123",
+     "aislado": "todo visible",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.1",
+     "az": 180,
+     "el": 4,
+     "r": 131.3,
+     "t": [
+      65.9,
+      97.7,
+      129.2
+     ],
+     "corte": "y=98",
+     "aislado": "9 protagonistas · 2 tenues · 59 ocultos",
+     "cotas": [
+      "acero bajo la línea 1.14 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.2",
+     "az": 180,
+     "el": 8,
+     "r": 184.4,
+     "t": [
+      123,
+      140.2,
+      176.7
+     ],
+     "corte": "y=141",
+     "aislado": "7 protagonistas · 1 tenues · 62 ocultos",
+     "cotas": [
+      "traslape agua A ↔ inserto de cavidad 4.64 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.3",
+     "az": 0,
+     "el": 80,
+     "r": 350.9,
+     "t": [
+      123,
+      110.2,
+      127.4
+     ],
+     "corte": null,
+     "aislado": "50 protagonistas · 2 tenues · 18 ocultos",
+     "cotas": [
+      "B-linea0↔punta-4 5.41 mm",
+      "B-linea0↔punta-6 5.41 mm",
+      "B-linea3↔punta-5 7.41 mm",
+      "B-linea3↔punta-7 7.41 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.4",
+     "az": 25,
+     "el": 55,
+     "r": 292.9,
+     "t": [
+      120,
+      104.5,
+      143
+     ],
+     "corte": "z=145",
+     "aislado": "2 protagonistas · 2 tenues · 66 ocultos",
+     "cotas": [
+      "retorno ↔ inserto de núcleo 16 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.5",
+     "az": 200,
+     "el": 12,
+     "r": 270.1,
+     "t": [
+      64.1,
+      174.5,
+      130.5
+     ],
+     "corte": "y=176",
+     "aislado": "2 protagonistas · 1 tenues · 67 ocultos",
+     "cotas": [
+      "agua-tapon-B-12 ↔ support 2.34 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.1",
+     "az": 90,
+     "el": 5,
+     "r": 692.6,
+     "t": [
+      121.2,
+      98,
+      151.6
+     ],
+     "corte": "x=123",
+     "aislado": "todo visible",
+     "cotas": [
+      "apertura REAL 35.25 mm",
+      "pieza + bebedero (lo que hay que sacar) 72.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.2",
+     "az": 90,
+     "el": 4,
+     "r": 434.8,
+     "t": [
+      122.3,
+      98,
+      72.6
+     ],
+     "corte": "x=123",
+     "aislado": "23 protagonistas · 2 tenues · 45 ocultos",
+     "cotas": [
+      "claro a la cara del soporte 8.9 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.3",
+     "az": 35,
+     "el": 14,
+     "r": 452.5,
+     "t": [
+      121.4,
+      100.5,
+      169.9
+     ],
+     "corte": null,
+     "aislado": "4 protagonistas · 2 tenues · 64 ocultos",
+     "cotas": [
+      "guía sobre la partición 31.36 mm",
+      "macho sobre la partición 10.8 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "5.1",
+     "az": 40,
+     "el": 30,
+     "r": 221,
+     "t": [
+      121,
+      100.4,
+      158
+     ],
+     "corte": null,
+     "aislado": "1 protagonistas · 0 tenues · 69 ocultos",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "6.1",
+     "az": 90,
+     "el": 6,
+     "r": 70.7,
+     "t": [
+      84.6,
+      116,
+      158.4
+     ],
+     "corte": "x=84.8",
+     "aislado": "17 protagonistas · 1 tenues · 52 ocultos",
+     "cotas": [
+      "punta del pin ↔ cara real del macho 1.06 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "6.2",
+     "az": 30,
+     "el": -62,
+     "r": 333,
+     "t": [
+      126.5,
+      90.2,
+      111.6
+     ],
+     "corte": null,
+     "aislado": "20 protagonistas · 1 tenues · 49 ocultos",
+     "cotas": [
+      "centroide de los pines ↔ centro de la pieza 0.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "7.1",
+     "az": 0,
+     "el": 82,
+     "r": 341.4,
+     "t": [
+      123,
+      110.2,
+      173
+     ],
+     "corte": null,
+     "aislado": "33 protagonistas · 3 tenues · 34 ocultos",
+     "cotas": [
+      "agua-B-linea0 · largo (⌀ 4.76) 196 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "7.2",
+     "az": 30,
+     "el": 24,
+     "r": 285.5,
+     "t": [
+      83,
+      119.1,
+      138.8
+     ],
+     "corte": "y=116 (volteado: la cámara del lado removido)",
+     "aislado": "19 protagonistas · 2 tenues · 49 ocultos",
+     "cotas": [
+      "pin ↔ acero del inserto 2.32 mm"
+     ],
+     "camaraDentroDe": null
+    }
+   ]
+  },
+  {
+   "id": "alta",
+   "archivo": "1599HBK.stp",
+   "que": "caja grande 396×296, H 35.5",
+   "base": [
+    396,
+    296
+   ],
+   "alturaPiezaMm": 35.5,
+   "pared": 2.46,
+   "dAgua": 4.76,
+   "componentes": null,
+   "resumen": {
+    "ok": 3,
+    "falla": 12,
+    "mirar": 2
+   },
+   "tArmadoS": 364,
+   "planos": {
+    "paginas": 17,
+    "capturadas": 17,
+    "maquina": "FCS HT-150SV (taller) CUMPLE"
+   },
+   "caraReal": {
+    "pisoPorRayo": 211.5,
+    "pisoPorFormula": 212.54,
+    "techoMacho": 180,
+    "puntasVsCara": [
+     {
+      "role": "pin-punta-0",
+      "x": 101,
+      "y": 180,
+      "punta": 212.54,
+      "cara": 180,
+      "d": 32.54
+     },
+     {
+      "role": "pin-punta-1",
+      "x": 295,
+      "y": 180,
+      "punta": 212.54,
+      "cara": 180,
+      "d": 32.54
+     },
+     {
+      "role": "pin-punta-2",
+      "x": 101,
+      "y": 116,
+      "punta": 212.54,
+      "cara": 180,
+      "d": 32.54
+     },
+     {
+      "role": "pin-punta-3",
+      "x": 295,
+      "y": 116,
+      "punta": 212.54,
+      "cara": 180,
+      "d": 32.54
+     },
+     {
+      "role": "pin-punta-4",
+      "x": 113,
+      "y": 180,
+      "punta": 212.54,
+      "cara": 180,
+      "d": 32.54
+     },
+     {
+      "role": "pin-punta-5",
+      "x": 125,
+      "y": 180,
+      "punta": 212.54,
+      "cara": 180,
+      "d": 32.54
+     },
+     {
+      "role": "pin-punta-6",
+      "x": 137,
+      "y": 180,
+      "punta": 212.54,
+      "cara": 180,
+      "d": 32.54
+     },
+     {
+      "role": "pin-punta-7",
+      "x": 149,
+      "y": 180,
+      "punta": 212.54,
+      "cara": 180,
+      "d": 32.54
+     }
+    ],
+    "tiraPuntasVsCara": null
+   },
+   "balanceExpulsion": {
+    "centroidePines": [
+     164.5,
+     164
+    ],
+    "centroPieza": [
+     198,
+     148
+    ],
+    "desbalanceMm": 37.12
+   },
+   "crucesAguaBajoMedioD": [
+    "agua-B-linea1↔pin-cuerpo-5 0",
+    "agua-B-linea1↔pin-cuerpo-4 1.34"
+   ],
+   "noConcluyentesVoxel": 27,
+   "noJuzgadasMulticuerpo": 1,
+   "puntos": [
+    {
+     "id": "0",
+     "v": "info",
+     "que": "el molde entero, cerrado",
+     "medido": "85 componentes · base 396×296 · altura 302 mm · armado: E2 11.4s · E3 58.3s · E4 3.2s · E5 30.7s · E6 7.0s · E7 9.3s · E8 15.9s",
+     "pide": "",
+     "tarjeta": "alta/tarjetas/p0.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "1.1",
+     "v": "falla",
+     "que": "el macho está DENTRO de la pieza: su techo toca el PISO REAL (rayo, no fórmula)",
+     "medido": "rayo en (198.4, 148.3): techo del macho (cara real) z 180 · piso interior de la pieza z 211.5 (pared ahí 2.5 mm) → -31.5 mm · [la fórmula «techo − pared mediana» habría dicho z 212.54]",
+     "pide": "|Δ| ≤ 0.5 mm",
+     "tarjeta": "alta/tarjetas/p1_1.png",
+     "seVe": "sí",
+     "nota": "sí — y saca a la luz lo que la fórmula escondía: el techo del macho queda 31.5 mm bajo el piso de la pieza (la pasada 1 daba ✓ porque medía contra la misma fórmula que coloca la punta)."
+    },
+    {
+     "id": "1.2",
+     "v": "mirar",
+     "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+     "medido": "partición z 180 · anillo y bebedero sobre el eje (198, 148) · altura total 302 mm",
+     "pide": "todo alineado al eje",
+     "tarjeta": "alta/tarjetas/p1_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.1",
+     "v": "falla",
+     "que": "agua B ↔ cara INFERIOR de la placa B",
+     "medido": "-1.14 mm de acero bajo la línea (⌀ 4.76)",
+     "pide": "≥ ½ D = 2.38 mm",
+     "tarjeta": "alta/tarjetas/p2_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.2",
+     "v": "falla",
+     "que": "agua A ↔ el ASIENTO DEL INSERTO de cavidad (la cara que importa, no la cara de la placa)",
+     "medido": "el agua A ENTRA al inserto de cavidad: cavidad↔agua-A-norte 1.56 mm ; cavidad↔agua-A-sur 1.56 mm ; cavidad↔agua-A-este 2.15 mm ; cavidad↔agua-A-oeste 2.15 mm ; cavidad↔agua-A-ext-in 1.82 mm ; cavidad↔agua-A-ext-out 1.82 mm",
+     "pide": "0 mm dentro del inserto (y ≥ ½ D de acero a la cara)",
+     "tarjeta": "alta/tarjetas/p2_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.3",
+     "v": "falla",
+     "que": "el agua ↔ TODO barreno móvil (pines, retornos, KO) — lista completa",
+     "medido": "104 pares agua↔pin se cruzan en z · bajo ½D (2.38 mm): agua-B-linea1↔pin-cuerpo-5 0 ; agua-B-linea1↔pin-cuerpo-4 1.34 · el más cerrado que SÍ pasa: agua-B-linea2↔pin-cuerpo-7 3.42 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → roce < 0.6 mm, no concluyente (vóxel)",
+     "pide": "todo par ≥ ½ D = 2.38 mm · 0 mm de penetración con retornos/KO",
+     "tarjeta": "alta/tarjetas/p2_3.png",
+     "seVe": "sí",
+     "nota": "sí: se VE un pin ámbar montado sobre la línea cian (agua-B-linea1 ↔ pin-cuerpo-5 = 0.00 mm)."
+    },
+    {
+     "id": "2.4",
+     "v": "ok",
+     "que": "los pines de RETORNO ↔ el inserto de núcleo",
+     "medido": "sin contacto",
+     "pide": "0 mm³ compartidos",
+     "tarjeta": "alta/tarjetas/p2_4.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.5",
+     "v": "falla",
+     "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+     "medido": "agua-tapon-B-18↔support 1.14 mm ; agua-tapon-B-19↔support 1.14 mm ; agua-tapon-B-20↔support 1.14 mm ; agua-tapon-B-21↔support 1.14 mm",
+     "pide": "0 mm de penetración",
+     "tarjeta": "alta/tarjetas/p2_5.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.1",
+     "v": "falla",
+     "que": "la apertura saca la pieza CON su bebedero",
+     "medido": "apertura 2.5·H = 88.8 mm · pieza 35.5 + bebedero 87 + 10 = 132.5",
+     "pide": "apertura ≥ pieza + bebedero + 10",
+     "tarjeta": "alta/tarjetas/p3_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.2",
+     "v": "falla",
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "medido": "libre 31 mm · la pieza pide 43.5 (H + 8) → la retenedora entra 12.5 mm en el soporte",
+     "pide": "libre ≥ pedida",
+     "tarjeta": "alta/tarjetas/p3_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.3",
+     "v": "ok",
+     "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+     "medido": "guía sobre la partición 74.6 mm · macho 31.5 mm",
+     "pide": "guía > macho",
+     "tarjeta": "alta/tarjetas/p3_3.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "5.1",
+     "v": "falla",
+     "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+     "medido": "el ciclo lo manda lo más lento: 51.0 s; el resto está listo en 12.7 s → 4× (la pared llega a 4.9 mm; la medida es 2.46)",
+     "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)",
+     "tarjeta": "alta/tarjetas/p5_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "6.1",
+     "v": "falla",
+     "que": "los pines: la punta en la CARA REAL del macho (rayo) y la cabeza en la retenedora",
+     "medido": "medido por rayo: la peor punta pin-punta-0 está 32.54 mm METIDA en el plástico (cara real z 180) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+     "pide": "punta ↔ cara real ≤ 0.5 mm · cuerpo ↔ retenedora ≤ 0.5 mm",
+     "tarjeta": "alta/tarjetas/p6_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "6.2",
+     "v": "falla",
+     "que": "el paquete expulsor desde ABAJO y el BALANCE de la expulsión",
+     "medido": "8 pines · centroide de los pines a 37.12 mm del centro de la pieza · retenedora z 58..71",
+     "pide": "centroide ≤ 5 % de la diagonal de la pieza (regla NUESTRA, sin cita: el libro no da un número)",
+     "tarjeta": "alta/tarjetas/p6_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "7.1",
+     "v": "falla",
+     "que": "cada línea de agua se taladra desde un canto",
+     "medido": "19 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 62.2 (agua-B-linea0)",
+     "pide": "0 ciegas · largo/⌀ ≤ 50 — REGLA NUESTRA, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)",
+     "tarjeta": "alta/tarjetas/p7_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "7.2",
+     "v": "falla",
+     "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+     "medido": "16 tramos de pin atraviesan núcleo MACIZO (hasta 2.5 mm = su radio) · bebedero ↔ cavidad 4.46 mm",
+     "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)",
+     "tarjeta": "alta/tarjetas/p7_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "4.1",
+     "v": "ok",
+     "que": "la inyectora del taller juzgada en la lámina de análisis",
+     "medido": "FCS HT-150SV (taller) CUMPLE · altura del molde 302 mm + apertura 88.8 mm",
+     "pide": "CUMPLE (luz, barras, tonelaje, carrera)",
+     "tarjeta": "alta/tarjetas/p4_1.png",
+     "seVe": "—",
+     "nota": null
+    },
+    {
+     "id": "8.1",
+     "v": "mirar",
+     "que": "el juego de láminas existe y se deja mirar (desde la página 0 = ensamble + BOM)",
+     "medido": "17 de 17 láminas capturadas, empezando en la 0 (la comparación cota-por-cota contra el sólido AÚN no existe)",
+     "pide": "≥ 3 láminas · cada cota = el sólido",
+     "tarjeta": "alta/tarjetas/p8_1.png",
+     "seVe": "—",
+     "nota": null
+    }
+   ],
+   "bitacoraDeVistas": [
+    {
+     "id": "0",
+     "az": 40,
+     "el": 26,
+     "r": 1301.3,
+     "t": [
+      187.4,
+      160.6,
+      189.8
+     ],
+     "corte": null,
+     "aislado": "todo visible",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "1.1",
+     "az": 90,
+     "el": 6,
+     "r": 361.3,
+     "t": [
+      197.2,
+      148,
+      180.5
+     ],
+     "corte": "x=198",
+     "aislado": "2 protagonistas · 2 tenues · 81 ocultos",
+     "cotas": [
+      "techo del macho ↔ piso de la pieza 31.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "1.2",
+     "az": 90,
+     "el": 4,
+     "r": 887.7,
+     "t": [
+      196.3,
+      148,
+      180.3
+     ],
+     "corte": "x=198",
+     "aislado": "todo visible",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.1",
+     "az": 180,
+     "el": 4,
+     "r": 131.3,
+     "t": [
+      83.8,
+      147.7,
+      129.2
+     ],
+     "corte": "y=148",
+     "aislado": "15 protagonistas · 2 tenues · 68 ocultos",
+     "cotas": [
+      "acero bajo la línea 1.14 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.2",
+     "az": 180,
+     "el": 8,
+     "r": 184.4,
+     "t": [
+      198,
+      212.2,
+      238.7
+     ],
+     "corte": "y=213",
+     "aislado": "7 protagonistas · 1 tenues · 77 ocultos",
+     "cotas": [
+      "traslape agua A ↔ inserto de cavidad 4.64 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.3",
+     "az": 0,
+     "el": 80,
+     "r": 525.1,
+     "t": [
+      198,
+      166.4,
+      128.5
+     ],
+     "corte": null,
+     "aislado": "65 protagonistas · 2 tenues · 18 ocultos",
+     "cotas": [
+      "B-linea1↔cuerpo-5 4.34 mm",
+      "B-linea1↔cuerpo-4 1.34 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.4",
+     "az": 25,
+     "el": 55,
+     "r": 343.9,
+     "t": [
+      194.5,
+      155.6,
+      160.9
+     ],
+     "corte": "z=179",
+     "aislado": "2 protagonistas · 2 tenues · 81 ocultos",
+     "cotas": [
+      "retorno ↔ inserto de núcleo 50 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.5",
+     "az": 200,
+     "el": 12,
+     "r": 270.1,
+     "t": [
+      81.9,
+      274.5,
+      130.5
+     ],
+     "corte": "y=276",
+     "aislado": "2 protagonistas · 1 tenues · 82 ocultos",
+     "cotas": [
+      "agua-tapon-B-18 ↔ support 2.34 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.1",
+     "az": 90,
+     "el": 5,
+     "r": 1059.9,
+     "t": [
+      195.3,
+      148,
+      230.9
+     ],
+     "corte": "x=198",
+     "aislado": "todo visible",
+     "cotas": [
+      "apertura REAL 88.75 mm",
+      "pieza + bebedero (lo que hay que sacar) 122.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.2",
+     "az": 90,
+     "el": 4,
+     "r": 595.1,
+     "t": [
+      197.1,
+      148,
+      75.5
+     ],
+     "corte": "x=198",
+     "aislado": "23 protagonistas · 2 tenues · 60 ocultos",
+     "cotas": [
+      "la retenedora ENTRA en el soporte 12.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.3",
+     "az": 35,
+     "el": 14,
+     "r": 759.3,
+     "t": [
+      195.2,
+      152.1,
+      221
+     ],
+     "corte": null,
+     "aislado": "4 protagonistas · 2 tenues · 79 ocultos",
+     "cotas": [
+      "guía sobre la partición 74.64 mm",
+      "macho sobre la partición 31.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "5.1",
+     "az": 40,
+     "el": 30,
+     "r": 426.7,
+     "t": [
+      194.1,
+      152.6,
+      207.7
+     ],
+     "corte": null,
+     "aislado": "1 protagonistas · 0 tenues · 84 ocultos",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "6.1",
+     "az": 90,
+     "el": 6,
+     "r": 131.9,
+     "t": [
+      100.5,
+      180,
+      200.6
+     ],
+     "corte": "x=101",
+     "aislado": "17 protagonistas · 1 tenues · 67 ocultos",
+     "cotas": [
+      "punta del pin ↔ cara real del macho 32.54 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "6.2",
+     "az": 30,
+     "el": -62,
+     "r": 577,
+     "t": [
+      205.8,
+      134.4,
+      143.6
+     ],
+     "corte": null,
+     "aislado": "20 protagonistas · 1 tenues · 64 ocultos",
+     "cotas": [
+      "centroide de los pines ↔ centro de la pieza 37.12 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "7.1",
+     "az": 0,
+     "el": 82,
+     "r": 514.8,
+     "t": [
+      198,
+      166.5,
+      235.8
+     ],
+     "corte": null,
+     "aislado": "48 protagonistas · 3 tenues · 34 ocultos",
+     "cotas": [
+      "agua-B-linea0 · largo (⌀ 4.76) 296 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "7.2",
+     "az": 30,
+     "el": 24,
+     "r": 285.5,
+     "t": [
+      99.2,
+      183.1,
+      195.6
+     ],
+     "corte": "y=180 (volteado: la cámara del lado removido)",
+     "aislado": "19 protagonistas · 2 tenues · 64 ocultos",
+     "cotas": [
+      "pin ↔ acero del inserto 4.64 mm"
+     ],
+     "camaraDentroDe": null
+    }
+   ]
+  },
+  {
+   "id": "ensamble",
+   "archivo": "1557BGY.stp",
+   "que": "llegó como ensamble de 19 sólidos → caja 80×80×31.2",
+   "base": [
+    246,
+    246
+   ],
+   "alturaPiezaMm": 31.2,
+   "pared": 3.86,
+   "dAgua": 4.76,
+   "componentes": null,
+   "resumen": {
+    "ok": 6,
+    "falla": 9,
+    "mirar": 2
+   },
+   "tArmadoS": 424,
+   "planos": {
+    "paginas": 17,
+    "capturadas": 17,
+    "maquina": "FCS HT-150SV (taller) CUMPLE"
+   },
+   "caraReal": {
+    "pisoPorRayo": 173.7,
+    "pisoPorFormula": 172.84,
+    "techoMacho": 173.7,
+    "puntasVsCara": [
+     {
+      "role": "pin-punta-0",
+      "x": 110,
+      "y": 148,
+      "punta": 172.84,
+      "cara": 173.609,
+      "d": -0.77
+     },
+     {
+      "role": "pin-punta-1",
+      "x": 136,
+      "y": 148,
+      "punta": 172.84,
+      "cara": 173.611,
+      "d": -0.77
+     },
+     {
+      "role": "pin-punta-2",
+      "x": 104,
+      "y": 140,
+      "punta": 172.84,
+      "cara": 173.7,
+      "d": -0.86
+     },
+     {
+      "role": "pin-punta-3",
+      "x": 142,
+      "y": 140,
+      "punta": 172.84,
+      "cara": 173.7,
+      "d": -0.86
+     },
+     {
+      "role": "pin-punta-4",
+      "x": 98,
+      "y": 110,
+      "punta": 172.84,
+      "cara": 173.62,
+      "d": -0.78
+     },
+     {
+      "role": "pin-punta-5",
+      "x": 148,
+      "y": 110,
+      "punta": 172.84,
+      "cara": 173.611,
+      "d": -0.77
+     },
+     {
+      "role": "pin-punta-6",
+      "x": 106,
+      "y": 104,
+      "punta": 172.84,
+      "cara": 173.7,
+      "d": -0.86
+     },
+     {
+      "role": "pin-punta-7",
+      "x": 140,
+      "y": 104,
+      "punta": 172.84,
+      "cara": 173.7,
+      "d": -0.86
+     }
+    ],
+    "tiraPuntasVsCara": null
+   },
+   "balanceExpulsion": {
+    "centroidePines": [
+     123,
+     125.5
+    ],
+    "centroPieza": [
+     123,
+     123
+    ],
+    "desbalanceMm": 2.5
+   },
+   "crucesAguaBajoMedioD": [
+    "agua-B-linea1↔pin-punta-2 0",
+    "agua-B-linea1↔pin-punta-6 0",
+    "agua-B-linea2↔pin-punta-3 0",
+    "agua-B-linea2↔pin-punta-7 0"
+   ],
+   "noConcluyentesVoxel": 15,
+   "noJuzgadasMulticuerpo": 0,
+   "puntos": [
+    {
+     "id": "0",
+     "v": "info",
+     "que": "el molde entero, cerrado",
+     "medido": "70 componentes · base 246×246 · altura 238 mm · armado: E2 9.4s · E3 76.2s · E4 3.3s · E5 112.5s · E6 4.3s · E7 6.5s · E8 15.0s",
+     "pide": "",
+     "tarjeta": "ensamble/tarjetas/p0.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "1.1",
+     "v": "ok",
+     "que": "el macho está DENTRO de la pieza: su techo toca el PISO REAL (rayo, no fórmula)",
+     "medido": "rayo en (123.4, 123.3): techo del macho (cara real) z 173.7 · piso interior de la pieza z 173.7 (pared ahí 3 mm) → 0 mm · [la fórmula «techo − pared mediana» habría dicho z 172.84]",
+     "pide": "|Δ| ≤ 0.5 mm",
+     "tarjeta": "ensamble/tarjetas/p1_1.png",
+     "seVe": "sí",
+     "nota": "sí — ESTA es la tarjeta que engañó a un revisor en la pasada 1 («la pieza está al revés»): ahora el macho ÁMBAR se ve dentro de la pieza CIAN, con la base cerrada mirando al bebedero."
+    },
+    {
+     "id": "1.2",
+     "v": "mirar",
+     "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+     "medido": "partición z 146 · anillo y bebedero sobre el eje (123, 123) · altura total 238 mm",
+     "pide": "todo alineado al eje",
+     "tarjeta": "ensamble/tarjetas/p1_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.1",
+     "v": "falla",
+     "que": "agua B ↔ cara INFERIOR de la placa B",
+     "medido": "-1.14 mm de acero bajo la línea (⌀ 4.76)",
+     "pide": "≥ ½ D = 2.38 mm",
+     "tarjeta": "ensamble/tarjetas/p2_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.2",
+     "v": "falla",
+     "que": "agua A ↔ el ASIENTO DEL INSERTO de cavidad (la cara que importa, no la cara de la placa)",
+     "medido": "el agua A ENTRA al inserto de cavidad: cavidad↔agua-A-norte 2.19 mm ; cavidad↔agua-A-sur 2.19 mm ; cavidad↔agua-A-este 2.19 mm ; cavidad↔agua-A-oeste 2.19 mm ; cavidad↔agua-A-ext-in 1.82 mm ; cavidad↔agua-A-ext-out 1.82 mm",
+     "pide": "0 mm dentro del inserto (y ≥ ½ D de acero a la cara)",
+     "tarjeta": "ensamble/tarjetas/p2_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.3",
+     "v": "falla",
+     "que": "el agua ↔ TODO barreno móvil (pines, retornos, KO) — lista completa",
+     "medido": "56 pares agua↔pin se cruzan en z · bajo ½D (2.38 mm): agua-B-linea1↔pin-punta-2 0 ; agua-B-linea1↔pin-punta-6 0 ; agua-B-linea2↔pin-punta-3 0 ; agua-B-linea2↔pin-punta-7 0 · el más cerrado que SÍ pasa: agua-B-linea1↔pin-punta-4 2.45 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto",
+     "pide": "todo par ≥ ½ D = 2.38 mm · 0 mm de penetración con retornos/KO",
+     "tarjeta": "ensamble/tarjetas/p2_3.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.4",
+     "v": "ok",
+     "que": "los pines de RETORNO ↔ el inserto de núcleo",
+     "medido": "sin contacto",
+     "pide": "0 mm³ compartidos",
+     "tarjeta": "ensamble/tarjetas/p2_4.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "2.5",
+     "v": "falla",
+     "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+     "medido": "agua-tapon-B-12↔support 1.14 mm ; agua-tapon-B-13↔support 1.14 mm ; agua-tapon-B-14↔support 1.14 mm ; agua-tapon-B-6↔support 1.14 mm",
+     "pide": "0 mm de penetración",
+     "tarjeta": "ensamble/tarjetas/p2_5.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.1",
+     "v": "falla",
+     "que": "la apertura saca la pieza CON su bebedero",
+     "medido": "apertura 2.5·H = 78 mm · pieza 31.2 + bebedero 61.3 + 10 = 102.5",
+     "pide": "apertura ≥ pieza + bebedero + 10",
+     "tarjeta": "ensamble/tarjetas/p3_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.2",
+     "v": "falla",
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "medido": "libre 31 mm · la pieza pide 39.2 (H + 8) → la retenedora entra 8.2 mm en el soporte",
+     "pide": "libre ≥ pedida",
+     "tarjeta": "ensamble/tarjetas/p3_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "3.3",
+     "v": "ok",
+     "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+     "medido": "guía sobre la partición 49.8 mm · macho 28.4 mm",
+     "pide": "guía > macho",
+     "tarjeta": "ensamble/tarjetas/p3_3.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "5.1",
+     "v": "ok",
+     "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+     "medido": "el ciclo lo manda lo más lento: 48.4 s; el resto está listo en 31.3 s → 1.5× (la pared llega a 4.8 mm; la medida es 3.86)",
+     "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)",
+     "tarjeta": "ensamble/tarjetas/p5_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "6.1",
+     "v": "falla",
+     "que": "los pines: la punta en la CARA REAL del macho (rayo) y la cabeza en la retenedora",
+     "medido": "medido por rayo: la peor punta pin-punta-2 está -0.86 mm HUNDIDA en el acero (cara real z 173.7) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+     "pide": "punta ↔ cara real ≤ 0.5 mm · cuerpo ↔ retenedora ≤ 0.5 mm",
+     "tarjeta": "ensamble/tarjetas/p6_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "6.2",
+     "v": "ok",
+     "que": "el paquete expulsor desde ABAJO y el BALANCE de la expulsión",
+     "medido": "8 pines · centroide de los pines a 2.5 mm del centro de la pieza · retenedora z 58..71",
+     "pide": "centroide ≤ 5 % de la diagonal de la pieza (regla NUESTRA, sin cita: el libro no da un número)",
+     "tarjeta": "ensamble/tarjetas/p6_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "7.1",
+     "v": "falla",
+     "que": "cada línea de agua se taladra desde un canto",
+     "medido": "13 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 51.7 (agua-B-linea0)",
+     "pide": "0 ciegas · largo/⌀ ≤ 50 — REGLA NUESTRA, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)",
+     "tarjeta": "ensamble/tarjetas/p7_1.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "7.2",
+     "v": "falla",
+     "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+     "medido": "8 tramos de pin atraviesan núcleo MACIZO (hasta 1.12 mm = su radio) · bebedero ↔ cavidad 3.56 mm",
+     "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)",
+     "tarjeta": "ensamble/tarjetas/p7_2.png",
+     "seVe": "sí",
+     "nota": null
+    },
+    {
+     "id": "4.1",
+     "v": "ok",
+     "que": "la inyectora del taller juzgada en la lámina de análisis",
+     "medido": "FCS HT-150SV (taller) CUMPLE · altura del molde 238 mm + apertura 78 mm",
+     "pide": "CUMPLE (luz, barras, tonelaje, carrera)",
+     "tarjeta": "ensamble/tarjetas/p4_1.png",
+     "seVe": "—",
+     "nota": null
+    },
+    {
+     "id": "8.1",
+     "v": "mirar",
+     "que": "el juego de láminas existe y se deja mirar (desde la página 0 = ensamble + BOM)",
+     "medido": "17 de 17 láminas capturadas, empezando en la 0 (la comparación cota-por-cota contra el sólido AÚN no existe)",
+     "pide": "≥ 3 láminas · cada cota = el sólido",
+     "tarjeta": "ensamble/tarjetas/p8_1.png",
+     "seVe": "—",
+     "nota": null
+    }
+   ],
+   "bitacoraDeVistas": [
+    {
+     "id": "0",
+     "az": 40,
+     "el": 26,
+     "r": 987.8,
+     "t": [
+      114.9,
+      132.7,
+      149.8
+     ],
+     "corte": null,
+     "aislado": "todo visible",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "1.1",
+     "az": 90,
+     "el": 6,
+     "r": 236.3,
+     "t": [
+      122.4,
+      123,
+      159.5
+     ],
+     "corte": "x=123",
+     "aislado": "2 protagonistas · 2 tenues · 66 ocultos",
+     "cotas": [
+      "techo del macho ↔ piso de la pieza 0 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "1.2",
+     "az": 90,
+     "el": 4,
+     "r": 661.6,
+     "t": [
+      121.7,
+      123,
+      143
+     ],
+     "corte": "x=123",
+     "aislado": "todo visible",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.1",
+     "az": 180,
+     "el": 4,
+     "r": 131.3,
+     "t": [
+      65.9,
+      122.7,
+      129.2
+     ],
+     "corte": "y=123",
+     "aislado": "9 protagonistas · 2 tenues · 59 ocultos",
+     "cotas": [
+      "acero bajo la línea 1.14 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.2",
+     "az": 180,
+     "el": 8,
+     "r": 184.4,
+     "t": [
+      123,
+      172.2,
+      196.7
+     ],
+     "corte": "y=173",
+     "aislado": "7 protagonistas · 1 tenues · 62 ocultos",
+     "cotas": [
+      "traslape agua A ↔ inserto de cavidad 4.65 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.3",
+     "az": 0,
+     "el": 80,
+     "r": 438,
+     "t": [
+      123,
+      138.3,
+      127.9
+     ],
+     "corte": null,
+     "aislado": "50 protagonistas · 2 tenues · 18 ocultos",
+     "cotas": [
+      "B-linea1↔punta-2 2.32 mm",
+      "B-linea1↔punta-6 1.47 mm",
+      "B-linea2↔punta-3 2.32 mm",
+      "B-linea2↔punta-7 1.47 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.4",
+     "az": 25,
+     "el": 55,
+     "r": 292.9,
+     "t": [
+      120,
+      129.5,
+      143
+     ],
+     "corte": "z=145",
+     "aislado": "2 protagonistas · 2 tenues · 66 ocultos",
+     "cotas": [
+      "retorno ↔ inserto de núcleo 16 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "2.5",
+     "az": 200,
+     "el": 12,
+     "r": 270.1,
+     "t": [
+      64.1,
+      224.5,
+      130.5
+     ],
+     "corte": "y=226",
+     "aislado": "2 protagonistas · 1 tenues · 67 ocultos",
+     "cotas": [
+      "agua-tapon-B-12 ↔ support 2.34 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.1",
+     "az": 90,
+     "el": 5,
+     "r": 810.4,
+     "t": [
+      120.9,
+      123,
+      187.3
+     ],
+     "corte": "x=123",
+     "aislado": "todo visible",
+     "cotas": [
+      "apertura REAL 78 mm",
+      "pieza + bebedero (lo que hay que sacar) 92.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.2",
+     "az": 90,
+     "el": 4,
+     "r": 451.8,
+     "t": [
+      122.2,
+      123,
+      73.2
+     ],
+     "corte": "x=123",
+     "aislado": "23 protagonistas · 2 tenues · 45 ocultos",
+     "cotas": [
+      "la retenedora ENTRA en el soporte 8.2 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "3.3",
+     "az": 35,
+     "el": 14,
+     "r": 514.1,
+     "t": [
+      121.2,
+      125.7,
+      190.9
+     ],
+     "corte": null,
+     "aislado": "4 protagonistas · 2 tenues · 64 ocultos",
+     "cotas": [
+      "guía sobre la partición 49.76 mm",
+      "macho sobre la partición 28.4 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "5.1",
+     "az": 40,
+     "el": 30,
+     "r": 235,
+     "t": [
+      120.8,
+      125.6,
+      166.9
+     ],
+     "corte": null,
+     "aislado": "1 protagonistas · 0 tenues · 69 ocultos",
+     "cotas": [],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "6.1",
+     "az": 90,
+     "el": 6,
+     "r": 70.3,
+     "t": [
+      103.8,
+      140,
+      175.4
+     ],
+     "corte": "x=104",
+     "aislado": "17 protagonistas · 1 tenues · 52 ocultos",
+     "cotas": [
+      "punta del pin ↔ cara real del macho 0.86 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "6.2",
+     "az": 30,
+     "el": -62,
+     "r": 325.2,
+     "t": [
+      127.3,
+      118.6,
+      120
+     ],
+     "corte": null,
+     "aislado": "20 protagonistas · 1 tenues · 49 ocultos",
+     "cotas": [
+      "centroide de los pines ↔ centro de la pieza 2.5 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "7.1",
+     "az": 0,
+     "el": 82,
+     "r": 428.1,
+     "t": [
+      123,
+      138.4,
+      193.4
+     ],
+     "corte": null,
+     "aislado": "33 protagonistas · 3 tenues · 34 ocultos",
+     "cotas": [
+      "agua-B-linea0 · largo (⌀ 4.76) 246 mm"
+     ],
+     "camaraDentroDe": null
+    },
+    {
+     "id": "7.2",
+     "az": 30,
+     "el": 24,
+     "r": 285.5,
+     "t": [
+      108.2,
+      151.1,
+      155.9
+     ],
+     "corte": "y=148 (volteado: la cámara del lado removido)",
+     "aislado": "19 protagonistas · 2 tenues · 49 ocultos",
+     "cotas": [
+      "pin ↔ acero del inserto 2.32 mm"
+     ],
+     "camaraDentroDe": null
+    }
+   ]
+  }
+ ]
+}

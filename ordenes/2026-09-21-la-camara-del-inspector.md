@@ -4,7 +4,9 @@ ESTADO: en-curso
 PRIORIDAD: 1
 AGENTE: Opus · worktree propio · iangpu forja-dev7 :5198
 
-BASE: eca3df0
+BASE: ae41a29
+(el worktree nació 33 commits atrás, sin las órdenes ni el API `inspeccion` de la pasada 1: se avanzó
+con `merge --ff-only main` — avance rápido, cero commits propios que perder, cero de lo mío hacia main.)
 
 OBJETIVO: el plan de inspección (orden 2026-09-21-el-plan-de-inspeccion) mide bien y MIRA mal. Cuatro revisores Opus, uno
 por pieza, juzgaron las 64 tarjetas: en más de la mitad la imagen no deja ver el número que dice el letrero, y a uno la
@@ -57,4 +59,70 @@ vista lo ENGAÑÓ (creyó que la pieza estaba al revés). Al final de esta orden
 - Las mismas 4 piezas: ≥ 90 % de las 64 tarjetas «sí confirma» (juicio propio por tarjeta, honesto); montaje + resultados.json.
 - tsc: cero errores nuevos contra la base de 66 · censo igual (0 Canvas nuevos) · orden-gate VERDE · sin deploy.
 
-## CIERRE (se llena al terminar)
+## CIERRE (2026-09-21 · MEDIDO, no contado)
+
+**Las 64 tarjetas se ven: 63 de 64 «sí» (98 %) contra 28 de 64 (44 %) de la pasada 1.** El juicio es mío,
+tarjeta por tarjeta, abriendo cada PNG (no un contador): el único «no» es `carcasa 5.1` (el letrero dice
+134 s y el mapa de t_c sale parejo: no enseña DÓNDE). Las 4 piezas re-inspeccionadas con
+`scripts/inspecciona-molde.cjs` desde `forja-dev7 :5198` (GPU real, ANGLE/D3D12 RTX 4070 Ti), **0 PAGEERR
+en los cuatro logs**, 17/17 láminas por pieza capturadas **desde la página 0**.
+
+**LA REGLA DE ORO DE UNA VISTA, ya en código:** encuadrar lo que se mide · contraste (lo medido opaco y con
+color, el sólido que lo esconde TRANSLÚCIDO, el resto al 5 %) · la cota DIBUJADA.
+
+**Manijas nuevas (`window.__forgeBrep.inspeccion`)**
+- `aislar(roles[], {tenues, opacs, colores, opacTenue, opac})` — un CONJUNTO de roles (`moldIsolate` deja UNO);
+  acepta prefijos (`'agua-*'`, `'pin-*'`). `aislar(null)` vuelve a todo.
+- `cota(a, b, etiqueta, ok)` y `cotas([…])` — la distancia DIBUJADA entre los dos puntos medidos (línea +
+  CRUZ en cada extremo + etiqueta con 2 decimales), en el marco del molde.
+- `geomPose()` — las cajas de `moldGeom` CON el desplazamiento que la animación puso en pantalla.
+- `caraEn(role, x, y)` — rayo vertical contra la malla: la CARA REAL bajo un punto (con dedupe de caras
+  coincidentes: el centro exacto cae sobre una arista de la triangulación y devolvía el techo dos veces).
+
+**Escena**: la pintura de una lente (t_c / llenado / frente) ahora OBEDECE el plano de corte y vuelve a
+respetar la profundidad cuando hay corte (`pintaCorte`, MoldScene), y se apaga con su pieza cuando la pieza
+se oculta o se deja translúcida (`piezaPintable`, ForgeBRepStudio). Era el reclamo #1 de los 4 revisores.
+
+**Lo que se arregló del INSPECTOR** (además de la cámara): 1.1 y 6.1 dejaron de ser tautológicos (rayo contra
+la cara real) · 2.2 mide contra el ASIENTO DEL INSERTO · 2.3 da la lista completa y declara que los
+retornos/KO son roles de VARIOS CUERPOS (se juzgan por malla) · 7.1 marca su umbral «REGLA NUESTRA, SIN
+CITA» · pen < 0.6 mm = «no concluyente (vóxel)» · láminas desde la 0 · la cámara nunca queda dentro del
+acero (el lado del corte se elige por la dirección del ojo; sin corte se empuja el radio hasta salir).
+
+**HALLAZGO NUEVO, por quitar la tautología** — `1599HBK` (la caja grande): el techo del macho está en z 180
+y el piso interior de la pieza en z 211.5 → **31.5 mm de hueco**, y las puntas de los pines quedan
+**32.54 mm METIDAS en el plástico**. La pasada 1 daba ✓ CUMPLE porque medía contra la misma fórmula que
+coloca la punta. Tarjetas `alta/p1_1.png` y `alta/p6_1.png`. Es de LOS PINES EN LA CARA DEL MACHO / la pila.
+También, con la cara correcta: el agua A entra 1.56–2.19 mm al inserto de cavidad en **4 de 4** piezas.
+
+**Números**: tsc 66 = 66 (cero nuevos) · censo igual (0 `<Canvas>` nuevos) · ciclo del dado **266/266** ·
+sin ACTA R93 (no se tocó ningún literal del cubo) · sin deploy, sin push, sin video.
+
+**Evidencia** · `public/evidencia/2026-09-21-la-camara-del-inspector/`: `tarjetas-4-piezas.png` (las 64, 8×8)
+y `resultados.json` (los 16 puntos × 4 piezas con su número, su tarjeta, mi juicio y la BITÁCORA DE VISTAS —
+az/el/r/objetivo/corte/aislado/cotas de cada tarjeta, para poder repetir cualquiera). Las tarjetas sueltas y
+las 17 láminas por pieza quedan en iangpu: `/home/ian/el-plan-dev7/<pieza>/`.
+
+**LO QUE SIGUE SIN VERSE (dicho, no escondido)**
+1. `carcasa 5.1`: el mapa de t_c pinta la SUPERFICIE y el punto caliente vive adentro; en la caja grande sí
+   se ve (el bebedero rojo), en la carcasa no. Falta una vista del INTERIOR de la pieza para ese punto.
+2. Cuando varias cotas caen juntas (2.3 con 4 pares) las etiquetas se encinan: no hay reparto de etiquetas.
+3. La **tapa sólida del corte** sigue sin existir (se ven cascarones). Se ESQUIVÓ cortando por encima del
+   circuito en las plantas, no se resolvió. Con el corte a la mitad de un tubo, en planta, no se lee nada.
+4. La **ortográfica con escala** no entró: el Canvas del estudio crea una cámara perspectiva y cambiarla en
+   caliente es otra orden.
+5. El punto **8.1** sigue contando láminas, no comparando cota por cota contra el sólido.
+
+**Preguntas abiertas para ian**
+- ¿El hueco de 31.5 mm del 1599HBK es de la pila (el macho no se dimensiona por la pieza) o del agarre?
+  Lo dejo registrado, no lo toco: es de otra orden.
+- ¿Quieres video del recorrido ahora que las vistas sí prueban algo? (La pasada 1 lo aplazaste.)
+
+**Archivos tocados (para la fusión)**: `src/forja/brep/ForgeBRepStudio.tsx` · `src/forja/brep/MoldScene.tsx` ·
+`scripts/inspecciona-molde.cjs` (nuevo) · `public/evidencia/2026-09-21-la-camara-del-inspector/*` (nuevo) ·
+esta orden. **NO** se tocó `MoldPanels.tsx`, `useMoldStudio.ts`, `packageToAssemblySpec`, el agua, los pines
+ni los insertos (son de las otras cuatro órdenes en paralelo).
+
+**Desviación declarada**: el worktree nació 33 commits atrás de `main` (sin las órdenes de hoy ni el API
+`inspeccion` de la pasada 1, que es el punto de partida de esta orden). Se hizo `git merge --ff-only main`:
+avance rápido puro, sin commits propios que perder y sin meter nada mío a main. BASE quedó en `ae41a29`.
