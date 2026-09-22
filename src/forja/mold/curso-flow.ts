@@ -20,7 +20,7 @@
  */
 import type { OC, Shape, SketchPlane3D } from '../brep/occt';
 import {
-  extrudePolygon, extrudePolygonWithHoles, fuse, cut, common, volume,
+  extrudePolygon, extrudePolygonWithHoles, cut, common, volume, cortarHerramientas,
   transformShape, makeBox, makeCylinder, tessellate, uniqueSubShapes,
   PLANE_XZ, PLANE_XY,
 } from '../brep/occt';
@@ -307,9 +307,13 @@ export function guiasCurso(
   for (const sx of [1, -1]) for (const sy of [1, -1]) {
     const x = px * sx, y = py * sy;
     // placa CAVIDAD (superior): bushing ⌀48 pasante + caja ⌀54×10 en la cara exterior
-    cav = cut(oc, cav, fuse(oc, cil(24, top + 2, [x, y, zP - 1]), cil(27, 10.2, [x, y, zP + top - 10.1])));
+    // EL CORTE ÚNICO: el escalonado (pasante + caja) va como DOS herramientas concéntricas en la lista de
+    // `cortarHerramientas` — ya no hace falta fundirlas antes (la lista resuelve herramientas que se tocan).
+    cav = cortarHerramientas(oc, cav, [cil(24, top + 2, [x, y, zP - 1]), cil(27, 10.2, [x, y, zP + top - 10.1])],
+      { donde: 'curso · guía en la cavidad', etiquetas: ['bushing ⌀48 pasante', 'caja ⌀54×10'] }).shape;
     // placa NÚCLEO (inferior): perno ⌀35 pasante + caja ⌀40×8 en la cara exterior
-    cor = cut(oc, cor, fuse(oc, cil(17.5, bottom + 2, [x, y, zP - bottom - 1]), cil(20, 8.2, [x, y, zP - bottom - 0.1])));
+    cor = cortarHerramientas(oc, cor, [cil(17.5, bottom + 2, [x, y, zP - bottom - 1]), cil(20, 8.2, [x, y, zP - bottom - 0.1])],
+      { donde: 'curso · guía en el núcleo', etiquetas: ['perno ⌀35 pasante', 'caja ⌀40×8'] }).shape;
   }
   const volQuitadoCav = v0c - volume(oc, cav);
   const volQuitadoCore = v0n - volume(oc, cor);

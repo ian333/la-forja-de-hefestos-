@@ -38,7 +38,7 @@ export function buildMoldFeaSolid(K: any, oc: any, spec: MoldAssemblySpec): any 
   // bolsillo somero en el tope = huella de la cavidad → su piso es la cara de carga
   const { fx, fy } = cavityFootprint(spec);
   const cx = W / 2, cy = D / 2, dep = 2;
-  solid = K.cut(oc, solid, box(fx, fy, dep + 1, cx - fx / 2, cy - fy / 2, zPart - dep));
+  solid = K.cortarHerramientas(oc, solid, [box(fx, fy, dep + 1, cx - fx / 2, cy - fy / 2, zPart - dep)], { donde: 'FEA · bolsillo de la cavidad', etiquetas: ['huella de la cavidad'] }).shape;   // EL CORTE ÚNICO
   return solid;
 }
 

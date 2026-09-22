@@ -1704,7 +1704,7 @@ export function estacion3Dado(pkg: MoldPackage, pieza?: PiezaSpec): Estacion3Dad
  * trae DOS cifras — la declarada y la MEDIDA del B-Rep — y si no cuadran, ROJO.
  */
 import { makeBox as occMakeBox, transformShape as occTransform, cut as occCut, loftSections as occLoft, common as occCommon, volume as occVolume, tessellate as occTess,
-  makeCylinder as occCylinder, makeCone as occCone, makeCompound as occCompound } from '../brep/occt';
+  makeCylinder as occCylinder, makeCone as occCone, cortarHerramientas, type ReporteCorte } from '../brep/occt';
 import { ejectorPinFit } from './fits';           // holgura pin↔barreno 0.13 mm LITERAL (Kazmer §8.3.2)
 import { clasificarVisibilidad } from './visibilidad';
 import { splitMold, shapeBBox, draftAnalysis, type SplitMoldResult } from './mold';
@@ -1873,6 +1873,8 @@ export interface InsertosBarrenados {
   /** acero REMOVIDO por el barrenado [mm³] — la prueba de que la booleana mordió */
   quitadoCavMm3: number; quitadoCoreMm3: number;
   msCav: number; msCore: number; notas: string[];
+  /** el veredicto del juez del corte, por inserto (occt.ts `cortarHerramientas`) */
+  cortes: ReporteCorte[];
 }
 export function barrenarInsertos(oc: any, o: {
   cav: any; core: any;
@@ -1901,6 +1903,7 @@ export function barrenarInsertos(oc: any, o: {
     mx: [Math.max(p0[0], p1[0]) + r, Math.max(p0[1], p1[1]) + r, Math.max(p0[2], p1[2]) + r],
   });
   const herramientasCav: any[] = [], herramientasCore: any[] = [];
+  const etCav: string[] = [], etCore: string[] = [];   // el nombre de cada broca: el juez del corte lo reporta por nombre
 
   // ── 1) EL BEBEDERO en la cavidad (§6.3.1) ──
   if (o.sprue) {
@@ -1910,7 +1913,7 @@ export function barrenarInsertos(oc: any, o: {
     const cono = occCone(oc, Math.max(0.1, rA), Math.max(0.1, rB), L + 2 * EXT,
       { origin: [s.x, s.y, s.zGateMm - EXT], dir: [0, 0, 1] });
     if (cruza(bbCav, [s.x - Math.max(rA, rB), s.y - Math.max(rA, rB), s.zGateMm - EXT], [s.x + Math.max(rA, rB), s.y + Math.max(rA, rB), s.zGateMm + L + EXT])) {
-      herramientasCav.push(cono);
+      herramientasCav.push(cono); etCav.push('bebedero');
       barrenos.push({ rol: 'cavidad', que: 'bebedero cónico', diaMm: +(2 * s.rBaseMm).toFixed(2), fuente: '§6.3.1 — el barreno ES la superficie moldeante (cero holgura)' });
     } else notas.push('el bebedero no cruza el inserto de cavidad (no se barrena)');
   }
@@ -1927,8 +1930,8 @@ export function barrenarInsertos(oc: any, o: {
     const zFondo = bbCore.min[2] - 2;
     for (let k = 0; k < p.posiciones.length; k++) {
       const q = p.posiciones[k];
-      if (zTope > zHombro) herramientasCore.push(occCylinder(oc, dPunta / 2, zTope - zHombro, { origin: [q.x, q.y, zHombro], dir: [0, 0, 1] }));
-      if (zHombro > zFondo) herramientasCore.push(occCylinder(oc, dCuerpo / 2, zHombro - zFondo, { origin: [q.x, q.y, zFondo], dir: [0, 0, 1] }));
+      if (zTope > zHombro) { herramientasCore.push(occCylinder(oc, dPunta / 2, zTope - zHombro, { origin: [q.x, q.y, zHombro], dir: [0, 0, 1] })); etCore.push(`pin ${k + 1} punta`); }
+      if (zHombro > zFondo) { herramientasCore.push(occCylinder(oc, dCuerpo / 2, zHombro - zFondo, { origin: [q.x, q.y, zFondo], dir: [0, 0, 1] })); etCore.push(`pin ${k + 1} hombro`); }
     }
     barrenos.push(
       { rol: 'nucleo', que: `punta de ${p.posiciones.length} pines`, diaMm: dPunta, fuente: `Ø${p.puntaDiaMm}+0.13 reamed (Kazmer §8.3.2) · punta GUIADA en el núcleo (Fig 1.6)` },
@@ -1937,16 +1940,33 @@ export function barrenarInsertos(oc: any, o: {
   }
 
   // ── 3) EL AGUA que cruza un inserto (cap 9) ──
+  //  LA BROCA PASA EL CRUCE (EL CORTE ÚNICO, 2026-09-22): donde DOS tramos MUEREN en el mismo punto (la esquina
+  //  norte-este del anillo A), cortar dos cilindros que terminan exactamente ahí deja un B-Rep degenerado: el
+  //  kernel lo resta bien (∩ = 0.00 mm³ por tramo) pero OCCT NO lo puede mallar — medido en la caja 1557BGY:
+  //  39 aristas abiertas justo en esa esquina (169.8–173, 169.8–173, z 216–223), y el estudio de contacto leía
+  //  52 mm³ · 1.46 mm de «agua dentro del acero» por el hoyo de la MALLA, no del acero. Si la broca pasa el cruce
+  //  un radio, la malla sale hermética (0 aristas abiertas). Regla de Hefestos (el libro no la da): +r en cada
+  //  extremo compartido; es además lo que hace la broca real, cuya punta cónica siempre pasa del eje que busca.
+  const extremosCompartidos = (() => {
+    const pts: number[][] = [];
+    for (const sg of o.agua ?? []) pts.push(sg.p0, sg.p1);
+    const cuenta = (p: number[]) => pts.filter((q) => Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]) < 1e-3).length;
+    return (p: number[]) => cuenta(p) > 1;
+  })();
   for (const sg of o.agua ?? []) {
     const dx = sg.p1[0] - sg.p0[0], dy = sg.p1[1] - sg.p0[1], dz = sg.p1[2] - sg.p0[2];
-    const len = Math.hypot(dx, dy, dz);
-    if (len < 1e-6 || !(sg.diaMm > 0)) continue;
+    const len0 = Math.hypot(dx, dy, dz);
+    if (len0 < 1e-6 || !(sg.diaMm > 0)) continue;
+    const u = [dx / len0, dy / len0, dz / len0], r = sg.diaMm / 2;
+    const e0 = extremosCompartidos(sg.p0) ? r : 0, e1 = extremosCompartidos(sg.p1) ? r : 0;
+    const q0: [number, number, number] = [sg.p0[0] - u[0] * e0, sg.p0[1] - u[1] * e0, sg.p0[2] - u[2] * e0];
+    const len = len0 + e0 + e1;
     const c = cajaCil(sg.p0, sg.p1, sg.diaMm / 2);
     const enCav = cruza(bbCav, c.mn, c.mx), enCore = cruza(bbCore, c.mn, c.mx);
     if (!enCav && !enCore) continue;
-    const cil = () => occCylinder(oc, sg.diaMm / 2, len, { origin: sg.p0, dir: [dx / len, dy / len, dz / len] });
-    if (enCav) { herramientasCav.push(cil()); barrenos.push({ rol: 'cavidad', que: `agua ${sg.id}`, diaMm: sg.diaMm, fuente: 'cap 9 — el agua dentro del inserto se BARRENA (el barreno es su pared)' }); }
-    if (enCore) { herramientasCore.push(cil()); barrenos.push({ rol: 'nucleo', que: `agua ${sg.id}`, diaMm: sg.diaMm, fuente: 'cap 9 — el agua dentro del inserto se BARRENA (el barreno es su pared)' }); }
+    const cil = () => occCylinder(oc, r, len, { origin: q0, dir: [u[0], u[1], u[2]] });
+    if (enCav) { herramientasCav.push(cil()); etCav.push(`agua ${sg.id}`); barrenos.push({ rol: 'cavidad', que: `agua ${sg.id}`, diaMm: sg.diaMm, fuente: 'cap 9 — el agua dentro del inserto se BARRENA (el barreno es su pared)' }); }
+    if (enCore) { herramientasCore.push(cil()); etCore.push(`agua ${sg.id}`); barrenos.push({ rol: 'nucleo', que: `agua ${sg.id}`, diaMm: sg.diaMm, fuente: 'cap 9 — el agua dentro del inserto se BARRENA (el barreno es su pared)' }); }
   }
 
   // ── 3b) TAPONES NPT y O-RINGS que caen sobre un inserto (cap 9) ──
@@ -1961,62 +1981,38 @@ export function barrenarInsertos(oc: any, o: {
     const enCav = cruza(bbCav, c.mn, c.mx), enCore = cruza(bbCore, c.mn, c.mx);
     if (!enCav && !enCore) continue;
     const cil = () => occCylinder(oc, h.radioMm, h.largoMm, { origin: p0, dir: h.dir });
-    if (enCav) { herramientasCav.push(cil()); barrenos.push({ rol: 'cavidad', que: h.id, diaMm: +(2 * h.radioMm).toFixed(2), fuente: 'cap 9 — el tapón/O-ring se aloja EN el acero que lo recibe' }); }
-    if (enCore) { herramientasCore.push(cil()); barrenos.push({ rol: 'nucleo', que: h.id, diaMm: +(2 * h.radioMm).toFixed(2), fuente: 'cap 9 — el tapón/O-ring se aloja EN el acero que lo recibe' }); }
+    if (enCav) { herramientasCav.push(cil()); etCav.push(h.id); barrenos.push({ rol: 'cavidad', que: h.id, diaMm: +(2 * h.radioMm).toFixed(2), fuente: 'cap 9 — el tapón/O-ring se aloja EN el acero que lo recibe' }); }
+    if (enCore) { herramientasCore.push(cil()); etCore.push(h.id); barrenos.push({ rol: 'nucleo', que: h.id, diaMm: +(2 * h.radioMm).toFixed(2), fuente: 'cap 9 — el tapón/O-ring se aloja EN el acero que lo recibe' }); }
   }
 
-  // ── EL CORTE: HÍBRIDO — un compound con las brocas SUELTAS y corte de una en una donde se CRUZAN ──
-  //  ⚠ GOTCHA MEDIDO (2026-09-21) sobre el inserto REAL de la carcasa 1594C Box, no sobre un ejemplo:
-  //  el inserto de CAVIDAD lleva 8 brocas — el bebedero (al centro), el anillo de agua A (6 tramos que
-  //  se CRUZAN en las esquinas) y el baffle. Acero removido por estrategia:
-  //      cut(compound de las 8)      →  6,851 mm³ ·   176 ms   ← se le escapan 2 tramos del anillo
-  //      cut(fuseAll de las 8)       →  1,539 mm³ ·   529 ms   ← PEOR: se le escapa el anillo entero
-  //      8 cuts SECUENCIALES         →  9,439 mm³ ·   802 ms   ← completo
-  //      HÍBRIDO (comp 2 + sec 6)    →  9,439 mm³ ·   730 ms   ← completo y el más barato
-  //  Y en el NÚCLEO (17 brocas, ninguna se cruza con otra): compound 7,310 mm³ · 1,901 ms vs
-  //  secuencial 7,310 · 19,654 ms — ahí cortar una por una cuesta 10× y no gana nada.
-  //  De ahí la regla: agrupar en RACIMOS conexos (traslape de cajas), mandar todos los racimos de UNA
-  //  broca en un solo compound, y cortar una por una SOLO dentro de los racimos que se cruzan.
-  //  (La misma trampa vive en `cutAll` de mold-plano-set.ts, que corta con compound: visto, no tocado
-  //  — es otro camino y otra orden.)
-  const cajaTool = (sh: any) => { try { return arbolBBoxExacta(oc, sh); } catch { return shapeBBox(oc, sh); } };
-  const racimosDe = (tools: any[]) => {
-    const bx = tools.map(cajaTool);
-    const toca = (i: number, j: number) => { for (let k = 0; k < 3; k++) if (Math.min(bx[i].max[k], bx[j].max[k]) - Math.max(bx[i].min[k], bx[j].min[k]) <= 0) return false; return true; };
-    const padre = tools.map((_, i) => i);
-    const raiz = (i: number): number => (padre[i] === i ? i : (padre[i] = raiz(padre[i])));
-    for (let i = 0; i < tools.length; i++) for (let j = i + 1; j < tools.length; j++) if (toca(i, j)) padre[raiz(i)] = raiz(j);
-    const m = new Map<number, any[]>();
-    tools.forEach((t, i) => { const k = raiz(i); if (!m.has(k)) m.set(k, []); m.get(k)!.push(t); });
-    return [...m.values()];
+  // ── EL CORTE: `cortarHerramientas` (occt.ts) — EL CORTE ÚNICO del molde, con su juez ──
+  //  Aquí nació el híbrido por racimos (2026-09-21): sobre el inserto REAL de la carcasa, `cut(compound)`
+  //  perdía 2 tramos del anillo de agua A (6,851 de 9,439 mm³). La orden EL CORTE ÚNICO encontró la causa
+  //  (un compound promete que sus piezas no se tocan; las brocas del anillo se cruzan → 3 sólidos sueltos)
+  //  y la cura de fondo: la LISTA de herramientas de OCCT (SetTools), 9,439 mm³ en UNA operación. El híbrido
+  //  sigue vivo DENTRO de `cortarHerramientas` como segundo intento, y el juez revisa broca por broca.
+  const cortaInserto = (shape: any, tools: any[], et: string[], rol: string, volAntesMm3: number) => {
+    if (!tools.length) return { shape, quitado: 0 };
+    const { shape: out, reporte } = cortarHerramientas(oc, shape, tools, { donde: `inserto ${rol}`, etiquetas: et, volAntesMm3 });
+    if (!reporte.ok) notas.push(`⚠ ${rol}: ${reporte.noEntraron.length} broca(s) NO quitaron su acero — ${reporte.noEntraron.join(', ')}`);
+    if (reporte.reintentadas) notas.push(`${rol}: ${reporte.reintentadas} broca(s) entraron al REINTENTARLAS solas`);
+    if (reporte.intentos.length > 1) notas.push(`${rol}: el primer intento no pasó el juez (${reporte.intentos[0]}); quedó «${reporte.estrategia}»`);
+    reportesCorte.push(reporte);
+    return { shape: out, quitado: reporte.quitadoMm3 };
   };
-  const corta = (shape: any, tools: any[], rol: string) => {
-    if (!tools.length) return shape;
-    const R = racimosDe(tools);
-    const sueltas = R.filter((g) => g.length === 1).map((g) => g[0]);
-    const cruzadas = R.filter((g) => g.length > 1);
-    let acc = shape;
-    if (sueltas.length) {
-      try { acc = occCut(oc, acc, sueltas.length === 1 ? sueltas[0] : occCompound(oc, sueltas)); }
-      catch (e) { notas.push(`${rol}: el compound de ${sueltas.length} brocas sueltas falló (${String(e).slice(0, 50)})`); }
-    }
-    let fallidas = 0;
-    for (const g of cruzadas) for (const t of g) { try { acc = occCut(oc, acc, t); } catch { fallidas++; } }
-    if (fallidas) notas.push(`${rol}: ${fallidas} brocas cruzadas no entraron`);
-    return acc;
-  };
+  const reportesCorte: ReporteCorte[] = [];
   const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  const cav = corta(o.cav, herramientasCav, 'cavidad');
+  const rCav = cortaInserto(o.cav, herramientasCav, etCav, 'cavidad', volCav0);
   const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  const core = corta(o.core, herramientasCore, 'núcleo');
+  const rCore = cortaInserto(o.core, herramientasCore, etCore, 'núcleo', volCore0);
   const t2 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  // LA PRUEBA de que la booleana mordió: acero que YA NO ESTÁ (si sale 0 con barrenos
-  // declarados, el corte no entró — se ve en el panel, no se supone).
-  const quitadoCavMm3 = Math.round(volCav0 - occVolume(oc, cav));
-  const quitadoCoreMm3 = Math.round(volCore0 - occVolume(oc, core));
+  const cav = rCav.shape, core = rCore.shape;
+  // LA PRUEBA de que la booleana mordió: acero que YA NO ESTÁ (lo mide el juez del corte; si sale 0 con
+  // barrenos declarados, el corte no entró — se ve en el panel, no se supone).
+  const quitadoCavMm3 = rCav.quitado, quitadoCoreMm3 = rCore.quitado;
   if (herramientasCav.length && quitadoCavMm3 <= 0) notas.push('⚠ la cavidad no perdió acero: el barreno no entró');
   if (herramientasCore.length && quitadoCoreMm3 <= 0) notas.push('⚠ el núcleo no perdió acero: el barreno no entró');
-  return { cav, core, barrenos, quitadoCavMm3, quitadoCoreMm3, msCav: Math.round(t1 - t0), msCore: Math.round(t2 - t1), notas };
+  return { cav, core, barrenos, quitadoCavMm3, quitadoCoreMm3, msCav: Math.round(t1 - t0), msCore: Math.round(t2 - t1), notas, cortes: reportesCorte };
 }
 
 export interface MedidaE3 {
@@ -2913,7 +2909,7 @@ export function espiralAcero(oc: any, e: CampoEspiral): {
   // superior y ABIERTO en la partición z=h (lo cierra la tapa plana)
   const lado = 2 * halfMm, fondo = 12;
   const caja = occTransform(oc, occMakeBox(oc, lado, lado, fondo + h), { translate: [0, 0, -fondo] });
-  const placa = occCut(oc, caja, canal);
+  const placa = cortarHerramientas(oc, caja, [canal], { donde: 'espiral de enfriamiento', etiquetas: ['canal en espiral'] }).shape;   // EL CORTE ÚNICO
   const tapa = occTransform(oc, occMakeBox(oc, lado, lado, 8), { translate: [0, 0, h] });
   const canalMm3 = occVolume(oc, canal);
   const placaMm3 = occVolume(oc, placa);
