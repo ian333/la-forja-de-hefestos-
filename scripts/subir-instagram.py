@@ -33,6 +33,15 @@ def token():
     if not os.path.exists(TOK): sys.exit('✗ sin token: corre `subir-instagram.py login`')
     return json.load(open(TOK))
 
+def _respaldar(ruta):
+    """Copia `ruta` a `ruta.AAAAMMDD-HHMM.bak` antes de pisarla. `app` y `login` reescriben los mismos
+    archivos con los que se publican los reels (y `cola-publicar.py armar` los sube a PRIME): si la
+    app nueva falla, se vuelve a la vieja copiando el respaldo, sin tocar Meta."""
+    if os.path.exists(ruta):
+        import shutil
+        dst = f"{ruta}.{time.strftime('%Y%m%d-%H%M')}.bak"; shutil.copy2(ruta, dst); os.chmod(dst, 0o600)
+        print(f'   respaldo: {dst}')
+
 def guardar_app():
     """`subir-instagram.py app`: pide el Instagram app ID y el secreto por teclado (no por argv, no por chat)
     y escribe ~/.config/gaia-pub/instagram-app.json con permisos 600. Existe porque el 2026-09-21 hubo que
@@ -42,6 +51,7 @@ def guardar_app():
     app_id = input('Instagram app ID: ').strip(); secret = getpass.getpass('Instagram app secret (no se muestra): ').strip()
     if not app_id.isdigit() or len(secret) < 20: sys.exit('✗ id o secreto raros; no escribo nada')
     prev = app() if os.path.exists(APP) else {}
+    _respaldar(APP)
     os.makedirs(CONF, exist_ok=True)
     json.dump({'app_id': app_id, 'app_secret': secret, 'redirect_uri': prev.get('redirect_uri', 'https://university.gaiaprime.com.mx/ig-oauth/')}, open(APP, 'w'), indent=1)
     os.chmod(APP, 0o600); print(f'✓ {APP} (app {app_id}) · ahora: subir-instagram.py login')
@@ -56,6 +66,7 @@ def login():
     l = requests.get(f'https://graph.instagram.com/access_token', params={'grant_type': 'ig_exchange_token', 'client_secret': a['app_secret'], 'access_token': r['access_token']}).json()
     if 'access_token' not in l: sys.exit(f'✗ largo: {l}')
     me = requests.get(f'https://graph.instagram.com/{V}/me', params={'fields': 'user_id,username', 'access_token': l['access_token']}).json()
+    _respaldar(TOK)
     json.dump({'access_token': l['access_token'], 'expires_in': l.get('expires_in'), 'ig_id': me.get('user_id') or r.get('user_id'), 'username': me.get('username'), 'obtenido': time.strftime('%F %H:%M')}, open(TOK, 'w'), indent=1)
     print(f'✓ token de 60 días para @{me.get("username")} (ig_id {me.get("user_id")}) → {TOK}')
 
