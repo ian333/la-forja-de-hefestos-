@@ -3600,6 +3600,32 @@ function feaLegendGradient(): string {
   return `linear-gradient(90deg, ${stops.join(', ')})`;
 }
 
+/** ETIQUETAS de LA COTA DEL INSPECTOR (orden 2026-09-21). No se reusa `CotaLabels` porque su texto es el de
+ *  AUDITORÍA («receta = sólido») y aquí no hay receta: hay UNA distancia medida entre dos puntos, y con 2
+ *  decimales — los pares que importan (agua↔pin, punta↔piso) viven entre 0.4 y 1.6 mm y a 1 decimal se
+ *  pierden. Divs HUD fuera del Canvas (drei <Text> es el gotcha de la casa); `CotaDriver` los mueve. */
+function CotaInspLabels({ sets, refs }: { sets: CotaSet[]; refs: React.MutableRefObject<Array<HTMLDivElement | null>> }) {
+  const flat = sets.flatMap((s) => s.dims);
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 7 }} data-testid="cota-inspeccion">
+      {flat.map((d, i) => {
+        const c = d.ok === false ? '#ff6b6b' : d.ok === true ? '#7ee0a0' : '#ffcc33';
+        return (
+          <div key={d.id} ref={(el) => { refs.current[i] = el; }} data-testid={`cota-insp-${d.id}`}
+            style={{
+              position: 'absolute', left: 0, top: 0, whiteSpace: 'nowrap',
+              font: '700 13px ui-monospace,Menlo,monospace', color: c,
+              background: 'rgba(6,10,16,0.90)', border: `1px solid ${c}`,
+              borderRadius: 4, padding: '2px 7px', letterSpacing: '0.2px',
+            }}>
+            {d.label ? `${d.label} · ` : ''}{d.value.toFixed(2)} mm
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ──────────────────────────────────────────────────────────────────
 // Componente principal
 // ──────────────────────────────────────────────────────────────────
@@ -5270,6 +5296,28 @@ export default function ForgeBRepStudio() {
   // sobre la caja de la PIEZA en el marco de su STEP (−1..1) y no alcanza el centro de la base (x = 123 en una 246): un
   // inspector necesita decir «córtame en x = 123» o «en el plano del agua B, z = 141». null = sin corte de inspección.
   const [corteAbs, setCorteAbs] = useState<{ eje: 'x' | 'y' | 'z'; mm: number; voltea: boolean } | null>(null);
+  // LA CÁMARA DEL INSPECTOR (orden 2026-09-21): LA COTA DIBUJADA entre los DOS puntos que el punto de
+  // inspección mide. Los 4 revisores Opus coincidieron: «0.4–1.1 mm son subpíxel si nadie dibuja de
+  // dónde a dónde». Vive en el marco del MOLDE (mm CAD) y se dibuja con la misma maquinaria de las
+  // cotas del molde (líneas dentro del Canvas + etiqueta DOM proyectada por CotaDriver).
+  const [cotaInsp, setCotaInsp] = useState<CotaSet[]>([]);
+  const cotaInspRefs = useRef<Array<HTMLDivElement | null>>([]);
+  // CRUZ en cada extremo de la cota: la línea sola no dice cuál es el punto exacto (y en un acercamiento
+  // 10× la línea puede caer sobre una arista y confundirse con ella). Tamaño ligado a la distancia, con
+  // piso de 1.5 mm para que un claro de 0.4 mm siga teniendo extremos visibles.
+  const cotaCruces = useMemo<CotaSet[]>(() => {
+    const dims: CotaSet['dims'] = [];
+    let n = 0;
+    for (const s of cotaInsp) for (const d of s.dims) {
+      const L = Math.max(2.5, 0.12 * Math.hypot(d.b[0] - d.a[0], d.b[1] - d.a[1], d.b[2] - d.a[2]));
+      for (const p of [d.a, d.b]) for (let k = 0; k < 3; k++) {
+        const q1 = [...p] as [number, number, number], q2 = [...p] as [number, number, number];
+        q1[k] -= L; q2[k] += L;
+        dims.push({ id: `x${n++}`, label: '', kind: 'lineal', a: q1, b: q2, value: 0, ok: d.ok });
+      }
+    }
+    return dims.length ? [{ role: 'insp-cruz', dims }] : [];
+  }, [cotaInsp]);
   const meshBBox = useMemo(() => {
     // fuente: la pieza del doc, o (si el doc está vacío) el MOLDE en vivo — SOLO los
     // componentes VISIBLES (si aíslas el anillo, Encuadrar debe llenar con el anillo).
@@ -5364,6 +5412,11 @@ export default function ForgeBRepStudio() {
   // SOLO atar el clip cuando la sección está ACTIVA: el plano "lejano" (constante 1e6)
   // permanentemente atado ditherea los bordes en ANGLE/D3D12 (bordes aserrados).
   const sectionPlanes = sectionOn || corteAbs ? sectionClip : null;
+  // ¿SE PINTA LA PIEZA? La pintura de una lente (t_c, llenado, frente) es una capa de DATO que va casi opaca
+  // y por encima. Si la pieza se ocultó o se dejó TRANSLÚCIDA como contexto (`inspeccion.aislar`), la pintura
+  // tiene que irse con ella: si no, sigue tapando al macho en los acercamientos — el reclamo «la lente de otra
+  // pestaña se queda pintando» de los 4 revisores del plan de inspección (2026-09-21).
+  const piezaPintable = !moldHidden['pieza'] && (moldOpacity['pieza'] ?? 1) >= 0.5;
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
   // ── CAM · CAREADO (libro Cimo cap 9): stock = bbox del sólido; zigzag + G-code ──
@@ -6118,6 +6171,89 @@ export default function ForgeBRepStudio() {
           w.__moldOpen?.(apertura, apertura == null ? null : expulsion);
           return { apertura, expulsion };
         },
+        /** AISLAR UN CONJUNTO de roles (2026-09-21, LA CÁMARA DEL INSPECTOR). `moldIsolate` deja UN rol y los
+         *  4 revisores pidieron lo contrario: «planta con SOLO agua + pines + retornos + contorno del inserto».
+         *  `roles` acepta el rol exacto o un prefijo con `*` (`'agua-B-*'`, `'pin-'` no: usa `'pin-*'`).
+         *  `tenues` = lo que queda de CONTEXTO al 5 % (el contorno de la placa) en vez de desaparecer.
+         *  `aislar(null)` vuelve a todo (con las platinas ocultas, como el estado de reposo del estudio). */
+        aislar: (roles: string[] | null, opts?: { tenues?: string[]; opacTenue?: number; colores?: Record<string, string>; opac?: number; opacs?: Record<string, number> }) => {
+          const casa = (r: string, pats: string[]) => pats.some((p) => (p.endsWith('*') ? r.startsWith(p.slice(0, -1)) : r === p));
+          if (!roles) {
+            setMoldHidden({ 'platina-fija': true, 'platina-movil': true }); setMoldOpacity({}); setMoldColors({}); setMoldXray(false);
+            return { protagonistas: [], tenues: [], ocultos: [] };
+          }
+          const tenues = opts?.tenues ?? [], opTenue = opts?.opacTenue ?? 0.05, opProta = opts?.opac ?? 1;
+          const hid: Record<string, boolean> = {}, opac: Record<string, number> = {};
+          const prota: string[] = [], ten: string[] = [], oc: string[] = [];
+          for (const pt of moldParts) {
+            const esProta = casa(pt.role, roles), esTenue = !esProta && casa(pt.role, tenues);
+            hid[pt.role] = !esProta && !esTenue;
+            // `opacs` manda por rol: el acercamiento pide el macho OPACO y la pieza CASI EN ALAMBRE —
+            // con los dos al 95 % la pieza gana el empate de profundidad (`winDepth`, sus caras COINCIDEN
+            // con las moldeantes) y tapa al macho justo en la vista que prueba que está dentro.
+            opac[pt.role] = opts?.opacs?.[pt.role] ?? (esProta ? opProta : opTenue);
+            (esProta ? prota : esTenue ? ten : oc).push(pt.role);
+          }
+          setMoldHidden(hid); setMoldOpacity(opac); setMoldColors(opts?.colores ?? {}); setMoldXray(false);
+          return { protagonistas: prota, tenues: ten, ocultos: oc.length };
+        },
+        /** LA COTA DIBUJADA entre los dos puntos medidos (mm, marco del molde). Devuelve la distancia REAL
+         *  entre ellos — la misma que el letrero dice, medida por la cota que se ve. `cota(null)` la quita. */
+        cota: (a: [number, number, number] | null, b?: [number, number, number], etiqueta = '', ok?: boolean) => {
+          if (!a || !b) { setCotaInsp([]); return null; }
+          const d = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+          setCotaInsp([{ role: 'insp', dims: [{ id: 'c0', label: etiqueta, kind: 'lineal', a, b, value: +d.toFixed(2), ok }] }]);
+          return +d.toFixed(3);
+        },
+        /** VARIAS cotas a la vez (p. ej. TODOS los pares agua↔barreno bajo ½D del punto 2.3). */
+        cotas: (lista: Array<{ a: [number, number, number]; b: [number, number, number]; etiqueta?: string; ok?: boolean }>) => {
+          setCotaInsp(lista.length ? [{ role: 'insp', dims: lista.map((c, i) => ({
+            id: `c${i}`, label: c.etiqueta ?? '', kind: 'lineal' as const, a: c.a, b: c.b, ok: c.ok,
+            value: +Math.hypot(c.b[0] - c.a[0], c.b[1] - c.a[1], c.b[2] - c.a[2]).toFixed(2) })) }] : []);
+          return lista.length;
+        },
+        /** LA CARA REAL bajo un punto (x, y) del marco del molde: dispara un rayo VERTICAL contra la malla
+         *  del rol y devuelve las z donde la cruza. Existe porque el punto 6.1 era TAUTOLÓGICO: el código
+         *  coloca la punta del pin en `zBaseCerrada − pared mediana` y el inspector la medía contra la MISMA
+         *  fórmula (siempre 0.00 mm). El piso real de una pieza no es la pared mediana: aquí se mide contra
+         *  el acero que de verdad hay en el eje del pin. `null` si el rayo no cruza nada (pin fuera del rol). */
+        caraEn: (role: string, x: number, y: number) => {
+          const pt = moldParts.find((p) => p.role === role);
+          if (!pt) return null;
+          const g = role === 'pieza' ? piezaEjectRef.current : moldAnimRefs.current[role];
+          const ox = g?.position.x ?? 0, oy = g?.position.y ?? 0, oz = g?.position.z ?? 0;
+          const P = pt.positions, I = pt.indices; const zs: number[] = [];
+          const px = x - ox, py = y - oy;                       // al marco LOCAL de la malla
+          for (let t = 0; t < I.length; t += 3) {
+            const i0 = 3 * I[t], i1 = 3 * I[t + 1], i2 = 3 * I[t + 2];
+            const ax = P[i0], ay = P[i0 + 1], bx = P[i1], by = P[i1 + 1], cx2 = P[i2], cy2 = P[i2 + 1];
+            const d = (by - cy2) * (ax - cx2) + (cx2 - bx) * (ay - cy2);
+            if (Math.abs(d) < 1e-9) continue;                    // triángulo de canto: no tiene sombra en planta
+            const l1 = ((by - cy2) * (px - cx2) + (cx2 - bx) * (py - cy2)) / d;
+            const l2 = ((cy2 - ay) * (px - cx2) + (ax - cx2) * (py - cy2)) / d;
+            const l3 = 1 - l1 - l2;
+            if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+            zs.push(l1 * P[i0 + 2] + l2 * P[i1 + 2] + l3 * P[i2 + 2] + oz);
+          }
+          if (!zs.length) return null;
+          zs.sort((a, b) => a - b);
+          // DEDUPE: si (x, y) cae sobre una ARISTA de la triangulación, dos o más triángulos devuelven la
+          // MISMA z y «la segunda cara más alta» sale siendo la misma cara de arriba (medido: el piso de la
+          // carcasa salía 3.0 mm arriba, justo el espesor de pared). 0.05 mm = bajo cualquier pared real.
+          const u = zs.filter((v, i) => i === 0 || v - zs[i - 1] > 0.05);
+          return { role, x, y, n: zs.length, caras: u.length, zMin: +u[0].toFixed(3), zMax: +u[u.length - 1].toFixed(3), zs: u.map((v) => +v.toFixed(3)) };
+        },
+        /** Las cajas de `moldGeom` EN LA POSE ACTUAL: `moldGeom` lee geometría cruda y con el molde ABIERTO
+         *  (estado(1,·)) mentía por la carrera entera — por eso el punto 3.1 se salía de cuadro. Aquí cada
+         *  caja lleva sumado el desplazamiento que la animación puso de verdad en pantalla. */
+        geomPose: () => moldParts.map((pt) => {
+          const P = pt.positions; const mn = [1e18, 1e18, 1e18]; const mx = [-1e18, -1e18, -1e18];
+          for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { if (P[i + k] < mn[k]) mn[k] = P[i + k]; if (P[i + k] > mx[k]) mx[k] = P[i + k]; }
+          const g = pt.role === 'pieza' ? piezaEjectRef.current : moldAnimRefs.current[pt.role];
+          const o = g ? [g.position.x, g.position.y, g.position.z] : [0, 0, 0];
+          return { role: pt.role, name: pt.name, off: o.map((v) => +v.toFixed(2)),
+            min: mn.map((v, k) => +(v + o[k]).toFixed(2)), max: mx.map((v, k) => +(v + o[k]).toFixed(2)) };
+        }),
       },
       get sectionOn() { return sectionOn; },
       get sectionPlaneCount() { return sectionOn ? 1 : 0; },
@@ -7024,6 +7160,16 @@ export default function ForgeBRepStudio() {
                     <CotaDriver sets={liveCotas} refs={cotaRefs} />
                   </>
                 )}
+                {/* LA COTA DEL INSPECTOR (`inspeccion.cota`): la línea entre los dos puntos medidos + una
+                    CRUZ en cada extremo, para que se vea DE DÓNDE A DÓNDE (los revisores: sin esto, 0.4 mm
+                    es subpíxel y la tarjeta no prueba nada). Cuelga del grupo del molde, como las otras. */}
+                {cotaInsp.length > 0 && (
+                  <>
+                    <CotaLines sets={cotaCruces} />
+                    <CotaLines sets={cotaInsp} />
+                    <CotaDriver sets={cotaInsp} refs={cotaInspRefs} />
+                  </>
+                )}
                 {moldParts.map((pt) => {
                   // con 💧 encendido la colada la dibuja FeedFill (el revelado del
                   // frente) — el mesh estático encima lo tapaba por completo
@@ -7088,7 +7234,9 @@ export default function ForgeBRepStudio() {
                 {alarmCloud && alarmCloud.length > 0 && <AlarmCloud pts={alarmCloud} />}
                 {/* MAPA DEL RAYO: las mitades pintadas por su clase de desmoldeo — el
                     número del panel (atrapadas) es este color sobre el acero. */}
-                {ciclo?.e4paint && <LlenadoPaint part={ciclo.e4paint.part} flow={ciclo.e4paint.flow} max={ciclo.e4paint.max} />}
+                {/* LA CÁMARA DEL INSPECTOR: la pintura de una lente es LA PIEZA — si la pieza se oculta
+                    (`inspeccion.aislar`) su pintura también, y con corte activo obedece el plano. */}
+                {ciclo?.e4paint && piezaPintable && <LlenadoPaint part={ciclo.e4paint.part} flow={ciclo.e4paint.flow} max={ciclo.e4paint.max} clip={sectionPlanes} />}
                 {/* EL FUNDIDO, COMO LO DIBUJA LA INDUSTRIA: una SUPERFICIE sombreada
                     coloreada por fill time (el resultado #1 de Moldflow/Moldex3D), no
                     una nube de bolitas. ian: "se supone que es un líquido… se ve de
@@ -7112,13 +7260,13 @@ export default function ForgeBRepStudio() {
                   const cx = ciclo.e5datums.ejeX, cy = ciclo.e5datums.ejeY, cz = ciclo.e5datums.zPartMm + 19.75;
                   return (
                     <group position={[cx * (1 - k), cy * (1 - k), cz * (1 - k)]} scale={[k, k, k]}>
-                      <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={1} ocupacion={ciclo.ocupacion} />
+                      <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={1} ocupacion={ciclo.ocupacion} clip={sectionPlanes} />
                     </group>
                   );
                 })()}
-                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && !(ciclo?.estacion === 6 && ciclo?.e6) && (
+                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && !(ciclo?.estacion === 6 && ciclo?.e6) && piezaPintable && (
                   <group ref={piezaEjectRef}>
-                    <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} />
+                    <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} clip={sectionPlanes} />
                   </group>
                 )}
                 {/* E5: el fundido en la colada YA NO es FeedFill (reloj de pared en
@@ -7127,7 +7275,7 @@ export default function ForgeBRepStudio() {
                     BAJANDO por el bebedero y entrando a la pieza — un reloj, una tubería. */}
                 {ciclo?.rayo && ciclo.estacion === 3 && ciclo.rayo.mitades.map((mi, k) => {
                   const pt = moldParts.find((p) => p.role === (mi.sube ? 'nucleo' : 'cavidad'));
-                  return pt && !moldHidden[pt.role] ? <RayoPaint key={k} part={pt} clase={mi.clase} /> : null;
+                  return pt && !moldHidden[pt.role] ? <RayoPaint key={k} part={pt} clase={mi.clase} clip={sectionPlanes} /> : null;
                 })}
                 {/* APERTURA ANIMADA: lado A sube y las CORREDERAS se retraen con la
                     cinemática real del perno (u = apertura·tanφ, tope en S) */}
@@ -7159,8 +7307,8 @@ export default function ForgeBRepStudio() {
                   const cavParts = moldParts.find((p) => p.role === 'cavidades');
                   if (!pieza) return coladaSola
                     ? (<>
-                        <FeedFill part={coladaSola} delayS={coladaSola.flowT ? 4 : 1.2} />
-                        {cavParts?.flowT && <FeedFill part={cavParts} delayS={4} />}
+                        <FeedFill part={coladaSola} delayS={coladaSola.flowT ? 4 : 1.2} clip={sectionPlanes} />
+                        {cavParts?.flowT && <FeedFill part={cavParts} delayS={4} clip={sectionPlanes} />}
                       </>)
                     : null;
                   const P = pieza.positions;
@@ -7178,18 +7326,18 @@ export default function ForgeBRepStudio() {
                     : { x: cx, y: cy, z: zHi };
                   const feedS = colada?.flowT ? 2.2 : 1.2;       // cámara lenta honesta de la red
                   return (<>
-                    {colada && <FeedFill part={colada} delayS={feedS} />}
+                    {colada && <FeedFill part={colada} delayS={feedS} clip={sectionPlanes} />}
                     <MoldFlowPaint part={pieza} gate={gates}
-                      wallMm={liveMoldSpec.cavity.wallMm ?? 2} delayS={colada ? feedS : 0} />
+                      wallMm={liveMoldSpec.cavity.wallMm ?? 2} delayS={colada ? feedS : 0} clip={sectionPlanes} />
                   </>);
                 })()}
                 {/* ⏱ t_c LOCAL: pieza pintada por SU pared + baffle fantasma propuesto */}
-                {moldTc && liveMoldSpec && (() => {
+                {moldTc && liveMoldSpec && piezaPintable && (() => {
                   const pieza = moldParts.find((p) => p.role === 'pieza');
                   if (!pieza) return null;
                   return <MoldTcPaint part={pieza} map={moldTc.map}
                     cells={moldCavityGrid(liveMoldSpec, moldPlateDepth(liveMoldSpec))}
-                    marker={moldTc.advice.marker} />;
+                    marker={moldTc.advice.marker} clip={sectionPlanes} />;
                 })()}
                 {/* SIMULACIÓN TÉRMICA: TRANSITORIO vivo (PDE FDM 3D) — plano + cuerpos A/B */}
                 {moldSimOn && moldThermalSim && (
@@ -7266,6 +7414,7 @@ export default function ForgeBRepStudio() {
             del Canvas es el gotcha conocido, y el texto DOM sale nítido a cualquier zoom.
             CotaDriver (dentro del Canvas) les mueve el transform por frame. */}
         {cotasOn && liveCotas.length > 0 && <CotaLabels sets={liveCotas} refs={cotaRefs} />}
+        {cotaInsp.length > 0 && <CotaInspLabels sets={cotaInsp} refs={cotaInspRefs} />}
         {/* Las etiquetas van AL PAR de sus líneas 3D: con una lente prendida el
             sólido ya está pintado y las cotas encima serían ruido sobre ruido.
             (Cazado A OJO en el drive de U10: la lente de enfriamiento salía con

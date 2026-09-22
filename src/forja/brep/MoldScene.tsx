@@ -36,10 +36,22 @@ function thermalRamp(t: number): [number, number, number] {
 /** ⏱ t_c LOCAL SOBRE LA PIEZA: cada vértice coloreado por lo que tarda SU pared
  *  (Eq 9.5) — azul enfría rápido, ROJO detiene el ciclo. Si hay consejo de baffle,
  *  se dibuja el BAFFLE FANTASMA (cian) desde la línea B hasta bajo la zona. */
-export function MoldTcPaint({ part, map, cells, marker }: {
+/** LA CÁMARA DEL INSPECTOR (2026-09-21) — las lentes pintan la pieza con `depthTest:false` (un mapa CAE se
+ *  quiere ver A TRAVÉS del acero). Con un plano de CORTE eso mentía: la pieza salía ENTERA y encima de todo,
+ *  y tapaba al macho justo en la vista que prueba que el macho está dentro (puntos 1.1 / 1.2 / 6.1 — 4 de 4
+ *  revisores lo reclamaron, y a uno lo hizo concluir «la pieza está al revés»). Regla: con corte activo la
+ *  pintura OBEDECE el plano y vuelve a respetar la profundidad; sin corte, todo queda como estaba. */
+export const pintaCorte = (clip?: THREE.Plane[] | null) => ({
+  clippingPlanes: clip ?? undefined,
+  clipShadows: true,
+  depthTest: !!(clip && clip.length),
+});
+
+export function MoldTcPaint({ part, map, cells, marker, clip }: {
   part: MoldPart; map: TcMap;
   cells: Array<{ cx: number; cy: number }>;
   marker?: WaterAdvice['marker'];
+  clip?: THREE.Plane[] | null;
 }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -68,7 +80,7 @@ export function MoldTcPaint({ part, map, cells, marker }: {
       <mesh geometry={geo} renderOrder={4}>
         {/* SIN luz ni tonemapping: un mapa CAE es dato, no objeto iluminado —
             las luces + ACES pasteleaban el colormap a blanco */}
-        <meshBasicMaterial vertexColors toneMapped={false} depthTest={false} transparent opacity={0.92} />
+        <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.92} {...pintaCorte(clip)} />
       </mesh>
       {marker && (
         <group position={[marker.x, marker.y, (marker.z0 + marker.z1) / 2]}>
@@ -105,7 +117,7 @@ export function MoldTcPaint({ part, map, cells, marker }: {
  *  Pintado POR VÉRTICES (como MoldFlowPaint, probado): clippingPlanes son de
  *  espacio MUNDO y el grupo del molde va transformado (CAD Z-arriba) — el
  *  plano recortaba en un eje ajeno y el cono jamás se veía. */
-export function FeedFill({ part, delayS }: { part: MoldPart; delayS: number }) {
+export function FeedFill({ part, delayS, clip }: { part: MoldPart; delayS: number; clip?: THREE.Plane[] | null }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
@@ -150,12 +162,12 @@ export function FeedFill({ part, delayS }: { part: MoldPart; delayS: number }) {
   });
   return (
     <mesh geometry={geo} renderOrder={9}>
-      <meshBasicMaterial vertexColors toneMapped={false} depthTest={false} transparent opacity={0.95} side={THREE.DoubleSide} />
+      <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.95} side={THREE.DoubleSide} {...pintaCorte(clip)} />
     </mesh>
   );
 }
 
-export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35, delayS = 0 }: {
+export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35, delayS = 0, clip }: {
   part: MoldPart;
   gate: { x: number; y: number; z: number } | Array<{ x: number; y: number; z: number }>;
   /** pared nominal (mm) — empareja las caras opuestas de la pared (dual domain) */
@@ -166,6 +178,8 @@ export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35, delayS = 0 }: 
   speed?: number;
   /** espera (s) mientras la COLADA se llena antes de pintar la pieza */
   delayS?: number;
+  /** plano(s) de corte del estudio: con corte la pintura obedece (ver `pintaCorte`) */
+  clip?: THREE.Plane[] | null;
 }) {
   // ⚠ LA MALLA MANDA — y la del kernel es GRUESA (aristas de 32.8 mm de media, hasta 135).
   // Dijkstra sobre aristas NO puede ir recto en una malla así: ZIGZAGUEA. Medido contra el
@@ -209,7 +223,7 @@ export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35, delayS = 0 }: 
       <mesh geometry={geo} renderOrder={8}>
         {/* SIN luz ni tonemapping: un mapa de flujo es DATO, no objeto iluminado — las
             luces + ACES pastelean el colormap (la misma lección que el mapa de t_c) */}
-        <meshBasicMaterial vertexColors toneMapped={false} depthTest={false} transparent opacity={0.92} />
+        <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.92} {...pintaCorte(clip)} />
       </mesh>
       {/* la(s) COMPUERTA(s): por donde entra el fundido */}
       {(Array.isArray(gate) ? gate : [gate]).map((g, gi) => (
@@ -574,7 +588,7 @@ export function computeMoldAlarm(parts: MoldPart[], fitMm = 0.6, volFitMm3 = 15)
  *  colors + basic material sin luz (un mapa es DATO, no objeto iluminado — las
  *  luces + ACES pastelean el colormap). Verde = libre · azul = se libera por
  *  draft · gris = pared vertical · ROJO = ATRAPADA (el undercut que mata el molde). */
-export function RayoPaint({ part, clase }: { part: MoldPart; clase: Uint8Array }) {
+export function RayoPaint({ part, clase, clip }: { part: MoldPart; clase: Uint8Array; clip?: THREE.Plane[] | null }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
@@ -623,11 +637,11 @@ export function RayoPaint({ part, clase }: { part: MoldPart; clase: Uint8Array }
   return (
     <group>
       <mesh geometry={geo} renderOrder={5}>
-        <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.88} side={THREE.DoubleSide} />
+        <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.88} side={THREE.DoubleSide} clippingPlanes={clip ?? undefined} />
       </mesh>
       {geoRoja && (
         <mesh geometry={geoRoja} renderOrder={9999}>
-          <meshBasicMaterial color="#ff1030" toneMapped={false} depthTest={false} transparent opacity={0.85} side={THREE.DoubleSide} />
+          <meshBasicMaterial color="#ff1030" toneMapped={false} transparent opacity={0.85} side={THREE.DoubleSide} {...pintaCorte(clip)} />
         </mesh>
       )}
     </group>
@@ -637,7 +651,7 @@ export function RayoPaint({ part, clase }: { part: MoldPart; clase: Uint8Array }
 /** LLENADO POR TIEMPO DE LLEGADA (estación 4) — la pieza pintada por CUÁNDO le llega
  *  el fundido: amarillo entra primero, morado último. El morado NO es decoración: es
  *  dónde muere el aire, y ese punto es el dato que la estación 7 (venteo) consume. */
-export function LlenadoPaint({ part, flow, max }: { part: MoldPart; flow: Float32Array; max: number }) {
+export function LlenadoPaint({ part, flow, max, clip }: { part: MoldPart; flow: Float32Array; max: number; clip?: THREE.Plane[] | null }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
@@ -657,7 +671,7 @@ export function LlenadoPaint({ part, flow, max }: { part: MoldPart; flow: Float3
   useEffect(() => () => geo.dispose(), [geo]);
   return (
     <mesh geometry={geo} renderOrder={5}>
-      <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.95} />
+      <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.95} clippingPlanes={clip ?? undefined} />
     </mesh>
   );
 }
@@ -703,12 +717,14 @@ function rampaFillTime(u: number): [number, number, number] {
   return [S[S.length - 1][1], S[S.length - 1][2], S[S.length - 1][3]];
 }
 
-export function FrenteSuperficie({ frente, grid, t, ocupacion }: {
+export function FrenteSuperficie({ frente, grid, t, ocupacion, clip }: {
   frente: Float32Array;
   grid: { nx: number; ny: number; nz: number; cellMm: number; x0: number; y0: number; z0: number };
   t: number;
   /** ocupación fraccional (verdad sub-vóxel): sin ella el cono salía escalonado */
   ocupacion?: Float32Array;
+  /** plano(s) de corte del estudio (LA CÁMARA DEL INSPECTOR): el fundido ES la pieza y tapaba al macho */
+  clip?: THREE.Plane[] | null;
 }) {
   const geo = useMemo(() => {
     // suavizado 0: lo que se DIBUJA es lo que el gate MIDE. Con una pasada de caja
@@ -752,6 +768,7 @@ export function FrenteSuperficie({ frente, grid, t, ocupacion }: {
         roughness={0.32} metalness={0.0}
         clearcoat={0.28} clearcoatRoughness={0.22}
         envMapIntensity={0.30}
+        clippingPlanes={clip ?? undefined} clipShadows
       />
     </mesh>
   );
