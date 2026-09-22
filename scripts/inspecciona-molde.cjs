@@ -28,7 +28,7 @@
  *     la cara superior de la placa mientras el agua entraba 1.6–2.2 mm al inserto).
  *   · 2.3 da la LISTA COMPLETA agua ↔ {pin, retorno, KO}, no el par mínimo.
  *   · 6.2 mide el BALANCE de la expulsión (centroide de los pines vs el centro de la pieza).
- *   · 7.1 marca su umbral como «regla NUESTRA, sin cita».
+ *   · 7.1 marca su umbral como «regla de Hefestos, sin cita».
  *   · pen < 0.6 mm = «no concluyente (vóxel)»; los roles de VARIOS CUERPOS no se juzgan por su caja entera.
  *   · las láminas se numeran desde la página 0 (la de ensamble + BOM, que la pasada 1 se saltó).
  *
@@ -474,7 +474,7 @@ const parDeCota = (A, B) => {
 
     { id: '6.2', preg: '6 · ¿EXPULSA SIN DAÑAR?', que: 'el paquete expulsor desde ABAJO y el BALANCE de la expulsión',
       medido: `${puntas.length} pines · centroide de los pines a ${r2(desbalance)} mm del centro de la pieza · retenedora z ${r1(ret.min[2])}..${r1(ret.max[2])}`,
-      pide: 'centroide ≤ 5 % de la diagonal de la pieza (regla NUESTRA, sin cita: el libro no da un número)',
+      pide: 'centroide ≤ 5 % de la diagonal de la pieza (regla de Hefestos, sin cita: el libro no da un número)',
       v: ok(desbalance <= 0.05 * Math.hypot(pz.max[0] - pz.min[0], pz.max[1] - pz.min[1])),
       vista: { az: 30, el: -62, aislar: ['pin-*', 'pines-retorno', 'ejector', 'ejector-ret', 'pilares-soporte'], tenues: ['pieza'], opacTenue: 0.12,
         colores: { ...colorFam(/^pin-/, AMBAR), 'pines-retorno': '#9fb3c8' }, opacs: { ejector: 0.3, 'ejector-ret': 0.3 },
@@ -484,7 +484,7 @@ const parDeCota = (A, B) => {
 
     { id: '7.1', preg: '7 · ¿SE PUEDE FABRICAR?', que: 'cada línea de agua se taladra desde un canto',
       medido: `${todasAgua.length} líneas · ciegas (no tocan un canto): ${ciegas.length ? ciegas.map((l) => l.role).join(', ') : 'ninguna'} · largo/⌀ máx ${r1(largoSobreD)} (${peorLargo ? peorLargo.l.role : '—'})`,
-      pide: '0 ciegas · largo/⌀ ≤ 50 — REGLA NUESTRA, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)',
+      pide: '0 ciegas · largo/⌀ ≤ 50 — REGLA DE HEFESTOS, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)',
       v: ok(ciegas.length === 0 && largoSobreD <= 50),
       vista: { az: 0, el: 82, aislar: ['agua-*'], tenues: ['placa-a-ghost', 'placa-b-ghost', 'cavidad'], opacTenue: 0.06,
         enc: [{ min: [A.min[0], A.min[1], zAguaA - 1], max: [A.max[0], A.max[1], zAguaA + 1] }], margen: 1.06,

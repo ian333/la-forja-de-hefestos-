@@ -29,7 +29,7 @@ import {
 import { heatToRemove, ABS_KAZMER } from './cooling';
 import { designCoolingLines, type CoolingLineDesign } from './coolinglines';
 import { ABS_EJECT, ejectionVector, effectiveArea, ejectorPinSizing, type EjectionVector } from './ejection';
-import { optimizeSupportPlate, sizeCavityPlate, sizeCorePlate, type PlateSizing, type CavityPlateSizing } from './platesizing';
+import { optimizeSupportPlate, sizeCavityPlate, sizeCorePlate, venteoDeReferenciaMm, type PlateSizing, type CavityPlateSizing } from './platesizing';
 import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection } from './machinesizing';
 import { carreraDeApertura } from './threeplate';
 import { designFeedSystem, estPartVolumeCc, type FeedSystemDesign } from './feed';
@@ -352,7 +352,11 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   // ── PLACAS: soporte por deflexión (+pilares óptimos) + cavidad por enfriamiento ──
   const spanM = (Math.min(base.base.wmm, base.base.lmm) / 1000) * 0.6;   // claro entre rieles
   const widthM = Math.max(base.base.wmm, base.base.lmm) / 1000;
-  const soporte = optimizeSupportPlate({ clampTons: win.clampTons, spanM, widthM, maxPillars: 4 });
+  // El venteo contra el que se dimensiona la placa es EL MISMO que juzga el contrato estructural
+  // (`venteoDeReferenciaMm`: la más estricta entre la práctica 0.02 de la partición y el venteo de
+  // la E7) — antes aquí caía el default 0.02 y el contrato miraba el de la E7: dos verdades. Con la
+  // flecha objetivo al 70 % (regla de Hefestos, dentro de `sizeSupportPlate`).
+  const soporte = optimizeSupportPlate({ clampTons: win.clampTons, spanM, widthM, maxPillars: 4, ventGapM: venteoDeReferenciaMm(venteo.hSpecMm) * 1e-3 });
   // §4.2.1: la placa cavidad = prof + 3·⌀ de la línea REAL. DEBE usar el ⌀ de `lineas`
   // (designCoolingLines, física §9.2.4) — NO el estimado preliminar de sizeInserts, o la
   // placa queda demasiado fina para la línea real → el lado A NO cabe y solo enfría B.
@@ -458,7 +462,7 @@ function buildReport(spec: MachineSpec, dfm: DFMReport, metal: { metal: MoldMeta
     `║ LLENADO: ${d.fillMPa} MPa · cavidad ${d.cavityMPa} MPa`,
     `║ ENFRIAMIENTO: ${d.enfriamiento.qTotalW} W → ${(cl.flowM3s * 1e6).toFixed(0)} cm³/s · Ø ${cl.dMinMm.toFixed(1)}-${cl.dMaxMm.toFixed(1)} mm → plug ${cl.plug?.dme ?? '—'} (${cl.plug?.diaMm ?? '—'} mm) · Re ${cl.reAtPlug.toFixed(0)} ${cl.turbulento ? 'turbulento ✓' : '⚠ laminar'} · ${cl.controller ?? '—'}`,
     `║ EXPULSIÓN: F_eject ${ev.fEjectN.toFixed(0)} N (σ ${(ev.sigmaPa / 1e6).toFixed(1)} MPa · peso ${ev.weightN.toFixed(1)} N g=${ev.gUsed}) → ${d.expulsion.pines.dMinMm.toFixed(2)} mm/pin (cortante gobierna)`,
-    `║ PLACAS: soporte ${sp.plateThkMm ?? '—'} mm ${sp.nPillars > 0 ? `+ ${sp.nPillars} pilar(es)` : 'sin pilares'} (δ ${sp.deflectionAtPlateMm} mm ${sp.flashOk ? 'ok' : '⚠ FLASH'}, ${sp.steelMassKg} kg vs ${kgBase.toFixed(0)} sin pilares) · cavidad ${d.placas.cavidad.plateThkMm ?? '—'} mm (${d.placas.cavidad.governs})`,
+    `║ PLACAS: soporte ${sp.plateThkMm ?? '—'} mm ${sp.nPillars > 0 ? `+ ${sp.nPillars} pilar(es)` : 'sin pilares'} (δ ${sp.deflectionAtPlateMm} mm = ${sp.hefestos.usoPct} % del venteo ${sp.flashOk ? (sp.hefestos.estado === 'CUMPLE' ? 'ok' : `⚠ ${sp.hefestos.estado} regla de Hefestos`) : '⚠ FLASH'}, ${sp.steelMassKg} kg vs ${kgBase.toFixed(0)} sin pilares) · cavidad ${d.placas.cavidad.plateThkMm ?? '—'} mm (${d.placas.cavidad.governs})`,
     `║ MÁQUINA: ${ms.machine?.name ?? '—'} ${ms.ok ? '✓' : '⚠'} · clamp ${d.maquina.requerimientos.clampNeedTons.toFixed(0)} t (util ${ms.clampUtilPct}%) · shot ${ms.shotPct}% del barril${ms.issues.length ? ' · ' + ms.issues[0].slice(0, 40) : ''}`,
     `╠── DECISIÓN ECONÓMICA ───────────────────────────────────────────`,
     ...be.map((s) => `║ ${s}`),

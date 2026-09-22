@@ -133,7 +133,7 @@ export function solveSteadyMoldField(o: {
   const sdf = o.sdfMm;
   // Fracción mínima de celda: una interfaz casi pegada a un centro dispararía la
   // conductancia (el "small cell problem" de las fronteras embebidas). EXTENSIÓN
-  // DECLARADA — es una cota nuestra, no un resultado del esquema.
+  // DECLARADA — es regla de Hefestos, no un resultado del esquema.
   const TH_MIN = 1e-3;
   let nCortadas = 0;
   const harm = (a: number, b: number) => {

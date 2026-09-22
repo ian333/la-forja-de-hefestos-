@@ -35,7 +35,7 @@ import type { MoldAssemblySpec } from './mold-assembly';
 import { moldMachine, Q_ANUAL_ASUMIDA, type MoldPackage, type MachineSpec, type Arch } from './moldmachine';
 import { CATALOGO_BASES } from './moldbase';   // sprint 3: la base con fuente declarada
 import { packageToAssemblySpec, plateStackZ } from './mold-plano-set';
-import { ejectorPlateMm, EJECTOR_REST_MM } from './platesizing';   // la fraccion del paquete expulsor, en UN solo lugar
+import { ejectorPlateMm, EJECTOR_REST_MM, juicioFlecha, REGLA_DE_HEFESTOS_FLECHA, type JuicioFlecha } from './platesizing';   // la fraccion del paquete expulsor y la flecha de Hefestos, en UN solo lugar
 import {
   plateDefs, plateDepth, moldStackHeight, coolingCircuit, coolingCircuitDesign, standardHoles, moldBoltSizing,
   cavityFootprint, cavityGrid, insertDims,
@@ -1951,7 +1951,7 @@ export function barrenarInsertos(oc: any, o: {
   // ── 3b) TAPONES NPT y O-RINGS que caen sobre un inserto (cap 9) ──
   //  El tapón se ROSCA en el acero y el O-ring vive en una CAJA rebajada: donde el extremo muerto
   //  de un barreno o un cruce de interfaz cae dentro del inserto, es el INSERTO el que lleva la
-  //  rosca y la caja — no se «hunden» en acero macizo. (Regla nuestra, sin cita: el libro habla
+  //  rosca y la caja — no se «hunden» en acero macizo. (Regla de Hefestos, sin cita: el libro habla
   //  del tapón §9.2.6 pero no dice en qué pieza va cuando el barreno muere en un inserto.)
   for (const h of o.aguaHerrajes ?? []) {
     const p0: [number, number, number] = [h.centro[0], h.centro[1], h.centro[2]];
@@ -3869,11 +3869,43 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   });
   const yCr0 = 20, yCr1 = baseL - 20;
   for (let k = 0; k < nB; k++) segs.push({ id: `B-linea${k}`, p0: [xs[k], 0, zB], p1: [xs[k], baseL, zB], diaMm: D, tipo: 'linea' });
+  // ── EL CRUCE TAMBIÉN SE MUEVE (§9.2.7, la misma estrategia B de las líneas) ──────────────
+  // Los cruces vivían en y = 20 / L−20 clavados y nadie los esquivaba: las líneas se corrían en X
+  // para librar pines/retornos/KO/tornillos, pero el cruce que las une pasaba por encima de lo que
+  // hubiera en esa franja. MEDIDO (orden LAS REGLAS DE HEFESTOS): cuando la placa expulsora crece
+  // en Y para sacar los retornos ⌀12 del inserto, el retorno cae en y ≈ 18.5 — encima del cruce
+  // (carcasa 1594C Box: agua-B-cruce ↔ pines-retorno 2.65 mm en la app; el cubo ya tenía 4 rojos de
+  // retorno en el juez con los retornos DENTRO del inserto). Aquí cada cruce busca el corrimiento
+  // MÁS CHICO en Y que le deje ½⌀ contra TODOS los barrenos de su franja de z, sin salirse de la
+  // placa (½⌀ a la cara); si no existe, se queda y el juez lo reprueba — no se finge.
+  // …y ½⌀ contra las paredes del BOLSILLO del inserto de núcleo (§9.2.7 «any other mold component»)
+  // cuando el cruce corre a la altura del inserto y su tramo pasa por encima de él: correrse hasta
+  // quedar a 2 mm de la pared (lo primero que salió en la carcasa, y = 31 contra la pared en 36.5)
+  // cambiaba un rojo por otro que el juez no ve. Cruzar la pared DE LLENO, como las líneas, sí vale.
+  const paredesInsB = zB + r > pisoInsB ? [bordeInsY0, bordeInsY1] : [];
+  const segLibre = (x0: number, x1: number, y: number) => estorbanB.every((b) =>
+    distPlanta(x0, y, x1, y, b.x, b.y) - r - b.r >= medio - 1e-9)
+    && (Math.max(x0, x1) < bordeInsX0 || Math.min(x0, x1) > bordeInsX1 || paredesInsB.every((yw) => Math.abs(y - yw) - r >= medio - 1e-9));
+  const yCrMin = r + medio, yCrMax = baseL - r - medio;
+  const yCruce: number[] = [];
+  const cruceCorrido: string[] = [];
+  for (let k = 0; k < nB - 1; k++) {
+    const lejos = k % 2 === 0, y0c = lejos ? yCr1 : yCr0;
+    let y = y0c;
+    if (!segLibre(xs[k], xs[k + 1], y0c)) {
+      busca: for (let dd = 0.5; dd <= baseL / 4; dd += 0.5)
+        for (const yy of [y0c - dd, y0c + dd]) if (yy >= yCrMin && yy <= yCrMax && segLibre(xs[k], xs[k + 1], yy)) { y = +yy.toFixed(2); break busca; }
+      cruceCorrido.push(`${lejos ? 'lejos' : 'cerca'}-${k} y ${y0c} → ${y}`);
+    }
+    yCruce.push(y);
+  }
   // los cruces alternan extremo (serpentín): el par va al fondo, el impar al frente
   for (let k = 0; k < nB - 1; k++) {
-    const lejos = k % 2 === 0, yCr = lejos ? yCr1 : yCr0;
+    const lejos = k % 2 === 0, yCr = yCruce[k];
     segs.push({ id: `B-cruce-${lejos ? 'lejos' : 'cerca'}${nB > 3 ? `-${k}` : ''}`, p0: [xs[k], yCr, zB], p1: [xs[k + 1], yCr, zB], diaMm: D, tipo: 'cruce' });
   }
+  if (cruceCorrido.length) recortes.push(
+    `lado B: ${cruceCorrido.length} cruce(s) se CORRIERON en Y para librar retornos/pines/KO/tornillos con ½⌀ de acero (§9.2.7): ${cruceCorrido.join(' · ')} mm`);
   // el agua ENTRA por la línea 0 (y=0) y SALE por la última (y=baseL): esos dos extremos quedan
   // abiertos; todos los demás se tapan. (El cubo: 4 tapones de línea + 2 bocas de cruce = 6.)
   for (let k = 0; k < nB; k++) {
@@ -3883,8 +3915,8 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   for (let k = 0; k < nB - 1; k++) {                     // bocas de los cruces (se barrenan desde x)
     const lejos = k % 2 === 0;
     tapones.push(lejos
-      ? { x: xs[0] - r, y: yCr1, z: zB, dir: [-1, 0, 0] }
-      : { x: xs[nB - 1] + r, y: yCr0, z: zB, dir: [1, 0, 0] });
+      ? { x: xs[0] - r, y: yCruce[k], z: zB, dir: [-1, 0, 0] }
+      : { x: xs[nB - 1] + r, y: yCruce[k], z: zB, dir: [1, 0, 0] });
   }
   inOut.push({ etiqueta: 'B-IN', x: xs[0], y: 0, z: zB }, { etiqueta: 'B-OUT', x: xs[nB - 1], y: baseL, z: zB });
   if (corridas.length) recortes.push(
@@ -4395,7 +4427,9 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
 export interface Estacion11Dado {
   filas: FilaLlenado[];
   limites: { endurance: number; yieldDerivado: number; pEsperadaMPa: number; pSobreMPa: number; errata: string };
-  soporte: { tMm: number | null; deltaMm: number; ventGapMm: number; flashOk: boolean; nPillars: number; governs: string };
+  soporte: { tMm: number | null; deltaMm: number; ventGapMm: number; flashOk: boolean; nPillars: number; governs: string;
+    /** flecha / venteo con la REGLA DE HEFESTOS (≤ 70 % por defecto, tope 85 %) — `juicioFlecha` */
+    hefestos: JuicioFlecha };
   barrenos: Array<{ id: string; diaMm: number; distMm: number; K: number; sigmaEsperadaMPa: number; sigmaSobreMPa: number; fatigaOk: boolean; yieldOk: boolean; r81?: boolean }>;
   hoop: { sigmaEsperada: number; sigmaSobre: number; huecoMaxMm: number; boreMm: number; reglaP20Ok: boolean; fatigaOk: boolean; yieldOk: boolean };
   r90: { yieldOk: boolean; fatigaOk: boolean; flashOk: boolean };
@@ -4413,7 +4447,10 @@ export function estacion11Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
 
   // ── el lado móvil: la placa de SOPORTE del paquete (motor ya corrido) ──
   const sop = dz.placas.soporte;
-  const soporte = { tMm: sop.plateThkMm, deltaMm: sop.deflectionAtPlateMm, ventGapMm: sop.ventGapMm, flashOk: sop.flashOk, nPillars: sop.nPillars, governs: sop.governs };
+  // el juicio de Hefestos sale de la MISMA función que dimensionó la placa (si el paquete viene de
+  // antes de la regla y no lo trae, se recalcula igual — nunca se inventa otro criterio aquí)
+  const soporte = { tMm: sop.plateThkMm, deltaMm: sop.deflectionAtPlateMm, ventGapMm: sop.ventGapMm, flashOk: sop.flashOk, nPillars: sop.nPillars, governs: sop.governs,
+    hefestos: (sop.hefestos as JuicioFlecha | undefined) ?? juicioFlecha(sop.deflectionAtPlateMm, sop.ventGapMm) };
 
   // ── LOS BARRENOS NUESTROS (Eq 12.19; R79: K≈3 aunque esté lejos) ──
   const D = circuito.segmentos[0].diaMm;                    // ⌀4.76 del agua
@@ -4463,10 +4500,10 @@ export function estacion11Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
     'NUNCA factor de seguridad + peor caso a la vez (R68, prohibición literal)',
     'CUMPLE', '§12.1.1', lim.errata ?? '');
   fila('soporte', 'la ALARMA MAESTRA (R70): deflexión del soporte vs EL VENTEO DE LA E7',
-    `placa ${soporte.tMm} mm · δ ${soporte.deltaMm} mm < ${soporte.ventGapMm} mm (el vent h de la E7) · ${soporte.nPillars} pilares`,
-    'si la placa abre más que el vent = FLASH seguro; en tolerancia apretada la DEFLEXIÓN manda sobre el esfuerzo',
-    soporte.flashOk ? 'CUMPLE' : 'VIOLA', '§12.1.2 · §12.2.2 · R70',
-    `gobierna ${soporte.governs}; 0 pilares = la placa aguanta SOLA (R74 declarado — el juez pilar↔pin queda escrito para la pieza que los pida). El lazo E7↔E11 ya estaba cableado: el ventGap del motor ES nuestro vent.`);
+    `placa ${soporte.tMm} mm · δ ${soporte.deltaMm} mm = ${soporte.hefestos.usoPct} % del venteo ${soporte.ventGapMm} mm (el vent h de la E7) · ${soporte.nPillars} pilares`,
+    `≤ ${REGLA_DE_HEFESTOS_FLECHA.defecto * 100} % del venteo por defecto, tope ${REGLA_DE_HEFESTOS_FLECHA.tope * 100} % (regla de Hefestos) — si la placa abre más que el vent = FLASH seguro (§12.1.2)`,
+    soporte.flashOk ? soporte.hefestos.estado : 'VIOLA', '§12.1.2 · §12.2.2 · R70 · regla de Hefestos',
+    `gobierna ${soporte.governs}; 0 pilares = la placa aguanta SOLA (R74 declarado — el juez pilar↔pin queda escrito para la pieza que los pida). El lazo E7↔E11 cableado DE VERDAD (orden LAS REGLAS DE HEFESTOS): el ventGap del motor ES venteoDeReferenciaMm(vent de la E7) — el mismo número que juzga el contrato estructural.`);
   for (const b of barrenos) {
     fila(`k-${b.id.split(' ')[0]}`, `K del barreno: ${b.id}`,
       `⌀${b.diaMm} a ${b.distMm} mm ⇒ K ${b.K} → σ ${b.sigmaEsperadaMPa} @${pEsperadaMPa} · ${b.sigmaSobreMPa} @${pSobreMPa} MPa`,

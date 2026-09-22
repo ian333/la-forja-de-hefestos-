@@ -1,5 +1,5 @@
 /**
- * COSTO POR PLACA — EXTENSIÓN NUESTRA, no una cita del libro.
+ * COSTO POR PLACA — REGLA DE HEFESTOS, no una cita del libro.
  * ============================================================================
  * "cada placa individual debe de cotizarse, estoy 100% seguro de que el libro lo pone
  *  así" (user 2026-07-16). Fui a verificar y **el libro NO lo pone así**:
@@ -27,7 +27,7 @@
  *  · el $830 fijo (utillaje/setup del mold base, no acero) se reparte a PRORRATA de masa:
  *    inventarle otro reparto sería inventar.
  *
- * Etiquetar esto como "Kazmer" sería fabricar una cita. Es NUESTRO, y lo dice.
+ * Etiquetar esto como "Kazmer" sería fabricar una cita. Es regla de Hefestos, y lo dice.
  */
 import type { MoldAssemblySpec } from './mold-assembly';
 import { plateDefs, plateDepth } from './mold-drawing-set';
@@ -119,7 +119,7 @@ export function plateCosts(spec: MoldAssemblySpec, o?: { moldBaseEq315USD?: numb
     errorPct: +(100 * Math.abs(total - eq315) / Math.max(1e-9, eq315)).toFixed(3),
     massTotalKg: +massTotal.toFixed(1),
     notas: [
-      'DESGLOSE POR PLACA = extensión NUESTRA, no del libro. Kazmer §3.3.2 (Eq 3.15) cotiza',
+      'DESGLOSE POR PLACA = regla de Hefestos, no del libro. Kazmer §3.3.2 (Eq 3.15) cotiza',
       'el mold base como UN bloque comprado ($830 + M·κ) porque asume DME/HASCO armado.',
       'En LATAM el taller CORTA el acero, así que el costo por placa es lo que el cliente',
       'necesita ver. LA SUMA DE AQUÍ CUADRA CON LA Eq 3.15: el desglose informa, no reinventa.',

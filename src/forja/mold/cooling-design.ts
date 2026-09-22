@@ -61,7 +61,7 @@ export const ACEROS_MOLDE: Record<string, { kWmC: number; sigmaEnduranceMPa: num
 };
 
 /**
- * PISO MAQUINABLE — **regla nuestra, SIN cita del libro**. Razón: §9.2.5 elige D por el
+ * PISO MAQUINABLE — **regla de Hefestos, SIN cita del libro**. Razón: §9.2.5 elige D por el
  * caudal y DESPUÉS verifica que quepa, pero en piezas chicas la carga térmica es diminuta
  * y el caudal pide el ⌀ más chico del catálogo (JP-250, 4.76 mm). Un barreno de 4.76 mm a
  * lo ancho de una placa de 246 mm (L/D = 52) no se taladra derecho en el taller: se va de
@@ -116,7 +116,7 @@ export const hLineMaxM = (kMoldWmC: number): number => kMoldWmC / 1000;
 /**
  * Eq (9.19) + Fig 9.4: presión de fusión máxima = σ_endurance / SCF.
  * El libro SOLO da dos puntos del SCF (3.3 a H=1D, 2.6 a H=4D) → interpolación
- * lineal DECLARADA como extensión nuestra, extrapolación acotada a [2.6, 3.3].
+ * lineal DECLARADA como regla de Hefestos, extrapolación acotada a [2.6, 3.3].
  */
 export function stressConcentration(hOverD: number): number {
   const scf = 3.3 + ((2.6 - 3.3) * (hOverD - 1)) / (4 - 1);
