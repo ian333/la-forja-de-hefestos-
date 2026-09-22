@@ -1,0 +1,51 @@
+{
+  "id": "econ-naranja",
+  "titulo": "Dejar ver lo de adentro (y el Nobel de George Akerlof) — Don Chuy, La economía de tu negocio (capítulo 08)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/08-parte-una-naranja (guion + escaleta → ElPuesto). Voz Matilda XTTS, sin intro, dibujo plano con sombras.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": null,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
+  },
+  "audio": {
+    "dir": "dist-video/econ-naranja-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda vía narracion-gen.py, atempo 1.10"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-naranja-4k.mp4",
+    "h264": "econ-naranja-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 y out/short-16x9.mp4 a H.264 CBR 24 Mbps (la ley de subida pide ≥15)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-naranja.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Regaló una naranja y vendió 30 más (esto ganó un Nobel) · La economía de tu negocio",
+      "descripcion": "Ayer, los vecinos de Don Chuy dudaban: ¿vendrán dulces o agrias? 🍊 Vendió 60.\n\nHoy partió una a la mitad y la dio a probar. Estaba dulce… y vendió 90.\n\nUna naranja regalada: 30 naranjas más, $300 más en la lata.\n\nCuando el que compra no puede ver lo de adentro, desconfía. George Akerlof lo explicó con coches usados (en inglés, al coche malo le dicen «limón») y ganó el Nobel de Economía 2001.\n\nFuente: nobelprize.org, Premio de Ciencias Económicas 2001.\n\n💬 Y tú, ¿das a probar lo que vendes? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#ventas",
+        "#premionobel",
+        "#tianguis",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "una sola cuenta de Don Chuy: Cuando el cliente no puede ver lo de adentro, desconfía y compra menos; dejarlo probar vende más que bajar el precio."
+    },
+    "autorizado": "2026-09-22 yt,ig — dicho por ian en sesión: \"puedes encolarlos todos? 9:16 y 16:9 por favor? ME MAMA LA SERIE\"",
+    "programar": "2026-09-29T18:45:00-06:00",
+    "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX), del 22 de septiembre al 2 de octubre.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nPor fuera, una naranja dulce y una agria se ven igual. Si no sabes cuál te toca, compras menos.\n\n❌ Sin dar a probar: vendió 60 → $600.\n✅ Dando a probar una: vendió 90 → $900.\n\nLa naranja que regaló ya la había pagado ($5) y le trajo $300 más.\n\nGeorge Akerlof ganó el Nobel de Economía en 2001 (junto con otros dos) por explicar esto: cuando el que compra no puede ver la calidad, desconfía y se vende menos.\n\n¿Tú dejas probar?"
+  }
+}

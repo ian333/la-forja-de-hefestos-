@@ -1,0 +1,51 @@
+{
+  "id": "econ-hora",
+  "titulo": "Lo que te queda, dividido entre tus horas — Don Chuy, La economía de tu negocio (capítulo 09)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/09-cincuenta-la-hora (guion + escaleta → ElPuesto). Voz Matilda XTTS, sin intro, dibujo plano con sombras.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": null,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
+  },
+  "audio": {
+    "dir": "dist-video/econ-hora-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda vía narracion-gen.py, atempo 1.10"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-hora-4k.mp4",
+    "h264": "econ-hora-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 y out/short-16x9.mp4 a H.264 CBR 24 Mbps (la ley de subida pide ≥15)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-hora.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Dice que gana $500 al día… y gana $50 · La economía de tu negocio",
+      "descripcion": "Don Chuy vende 100 naranjas a $10. 🍊 Le paga $500 al proveedor y le quedan $500.\n\nPero abre a las 8 de la mañana y cierra a las 6 de la tarde: 10 horas parado.\n\n$500 entre 10 horas = $50 la hora.\n\nEsos $500 no son lo que gana el puesto: son su sueldo.\n\nAntes de decir cuánto ganas, divide entre tus horas.\n\n💬 Y tú, ¿tu negocio te deja más que un sueldo? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#autoempleo",
+        "#sueldo",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "una sola cuenta de Don Chuy: Lo que te queda al día no dice cuánto ganas: divídelo entre tus horas; esos quinientos son tu sueldo, no la ganancia del negocio."
+    },
+    "autorizado": "2026-09-22 yt,ig — dicho por ian en sesión: \"puedes encolarlos todos? 9:16 y 16:9 por favor? ME MAMA LA SERIE\"",
+    "programar": "2026-09-30T18:45:00-06:00",
+    "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX), del 22 de septiembre al 2 de octubre.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nSi Don Chuy le pagara a alguien $50 la hora para atender el puesto esas 10 horas, se le irían los $500 completos.\n\n❌ «Gano $500 al día»: así se siente.\n✅ «Gano $50 por cada hora que estoy parado»: así es.\n\nNo está mal ganar $50 la hora. Lo que importa es saberlo: así decides si te conviene abrir más horas, cerrar antes o subir el precio.\n\n¿Tú ya dividiste lo que te queda entre tus horas?"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "econ-credito",
+  "titulo": "El crédito del proveedor también es deuda — Don Chuy, La economía de tu negocio (capítulo 11)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/11-lo-que-te-fian (guion + escaleta → ElPuesto). Voz Matilda XTTS, sin intro, dibujo plano con sombras.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": null,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
+  },
+  "audio": {
+    "dir": "dist-video/econ-credito-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda vía narracion-gen.py, atempo 1.10"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-credito-4k.mp4",
+    "h264": "econ-credito-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 y out/short-16x9.mp4 a H.264 CBR 24 Mbps (la ley de subida pide ≥15)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-credito.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Nunca pidió prestado y debe $2,500 · La economía de tu negocio",
+      "descripcion": "Don Chuy nunca ha pedido un préstamo. 🍊\n\nEl proveedor le dice: «llévatelas y me pagas el viernes». Lunes, 100 naranjas. Martes, 100. Y así toda la semana.\n\nNadie le cobra… y se siente con dinero.\n\nEl viernes llega la cuenta: 5 días × $500 = $2,500.\n\nNo fue al banco ni firmó nada. Pero lo que te fían, también lo debes.\n\n💬 Y tú, ¿aceptas crédito del proveedor? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#proveedores",
+        "#deudas",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "una sola cuenta de Don Chuy: Lo que el proveedor te fía también es deuda, aunque no firmes nada: ayuda si la cuentas como deuda."
+    },
+    "autorizado": "2026-09-22 yt,ig — dicho por ian en sesión: \"puedes encolarlos todos? 9:16 y 16:9 por favor? ME MAMA LA SERIE\"",
+    "programar": "2026-10-02T18:45:00-06:00",
+    "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX), del 22 de septiembre al 2 de octubre.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nCuando el proveedor te deja la mercancía y te cobra después, te está prestando.\n\n✅ Lo anotas como deuda y apartas cada día lo del proveedor → el viernes pagas tranquilo.\n❌ Lo sientes como dinero tuyo porque hoy nadie te lo cobra → el viernes no te alcanza.\n\nEl crédito del proveedor es bueno: muchas veces no cobra intereses y te deja vender antes de pagar. Solo hay que contarlo como lo que es: deuda.\n\n¿Tú sabes cuánto le debes hoy a tus proveedores?"
+  }
+}

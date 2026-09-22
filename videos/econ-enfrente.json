@@ -1,0 +1,51 @@
+{
+  "id": "econ-enfrente",
+  "titulo": "La guerra de precios con el de enfrente — Don Chuy, La economía de tu negocio (capítulo 10)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/10-el-de-enfrente (guion + escaleta → ElPuesto). Voz Matilda XTTS, sin intro, dibujo plano con sombras.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": null,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
+  },
+  "audio": {
+    "dir": "dist-video/econ-enfrente-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda vía narracion-gen.py, atempo 1.10"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-enfrente-4k.mp4",
+    "h264": "econ-enfrente-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 y out/short-16x9.mp4 a H.264 CBR 24 Mbps (la ley de subida pide ≥15)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-enfrente.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "Vendió más barato que nadie y trabajó gratis · La economía de tu negocio",
+      "descripcion": "A Don Chuy cada naranja le cuesta $5 y la vende a $10. 🍊\n\nUn día, el de enfrente las pone a $9. Don Chuy le baja a $8. El otro, a $7. Don Chuy, a $6…\n\nHasta que los dos llegan a $5.\n\nVende sus 100 naranjas: $500. Justo lo que le cobra el proveedor. Trabajó gratis.\n\nEn esa pelea no gana ningún puesto: ganan los que compran.\n\n💬 Y tú, ¿le bajas cuando el de enfrente le baja? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#precios",
+        "#competencia",
+        "#finanzas",
+        "#economía",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "una sola cuenta de Don Chuy: Si le bajas cuando el de enfrente baja y él te sigue, llegan los dos a lo que les cuesta: venden igual y trabajan gratis."
+    },
+    "autorizado": "2026-09-22 yt,ig — dicho por ian en sesión: \"puedes encolarlos todos? 9:16 y 16:9 por favor? ME MAMA LA SERIE\"",
+    "programar": "2026-10-01T18:45:00-06:00",
+    "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX), del 22 de septiembre al 2 de octubre.",
+    "primer_comentario": "Te lo explico fácil 👇\n\nDe cada naranja, $5 son del proveedor. Lo que gana Don Chuy es lo que cobra ENCIMA de esos $5.\n\n✅ A $10: le quedan $5 por naranja → $500 al día.\n❌ A $5: le queda $0 por naranja → $0 al día.\n\nCada peso que le baja para ganarle al de enfrente sale de su bolsa, no de la del proveedor. Y el de enfrente también le baja.\n\nA veces conviene bajar. Pero antes pregúntate: ¿cuánto me queda a mí?"
+  }
+}
