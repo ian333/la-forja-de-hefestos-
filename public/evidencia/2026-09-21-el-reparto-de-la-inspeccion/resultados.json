@@ -1,0 +1,417 @@
+{
+ "orden": "2026-09-21-el-reparto-de-la-inspeccion",
+ "medido": "2026-09-22 · iangpu · la app con las 5 ramas fusionadas (main b3815ba) en dev2 :5194 · inspector scripts/inspecciona-molde.cjs · 4 piezas",
+ "nota": "ANTES = pasada 1 (2026-09-21, inspector viejo con 2 checks tautológicos/equivocados: 6.1 y 2.2 daban ✓ falso). DESPUÉS = la fusión con el inspector corregido (rayo contra la cara real, 2.2 contra el inserto, 2.3 con lista completa, apertura REAL leída de la app).",
+ "resumenPorPieza": {
+  "carcasa": {
+   "antes": {
+    "ok": 6,
+    "falla": 8,
+    "mirar": 3
+   },
+   "despues": {
+    "ok": 13,
+    "falla": 2,
+    "mirar": 2
+   }
+  },
+  "tapa": {
+   "antes": {
+    "ok": 8,
+    "falla": 6,
+    "mirar": 3
+   },
+   "despues": {
+    "ok": 13,
+    "falla": 2,
+    "mirar": 2
+   }
+  },
+  "alta": {
+   "antes": {
+    "ok": 5,
+    "falla": 9,
+    "mirar": 3
+   },
+   "despues": {
+    "ok": 9,
+    "falla": 6,
+    "mirar": 2
+   }
+  },
+  "ensamble": {
+   "antes": {
+    "ok": 6,
+    "falla": 8,
+    "mirar": 3
+   },
+   "despues": {
+    "ok": 14,
+    "falla": 1,
+    "mirar": 2
+   }
+  }
+ },
+ "puntos": [
+  {
+   "punto": "0",
+   "que": "el molde entero, cerrado",
+   "antes": {
+    "carcasa": "info",
+    "tapa": "info",
+    "alta": "info",
+    "ensamble": "info"
+   },
+   "despues": {
+    "carcasa": "info",
+    "tapa": "info",
+    "alta": "info",
+    "ensamble": "info"
+   }
+  },
+  {
+   "punto": "1.1",
+   "que": "el macho está DENTRO de la pieza: su techo toca el PISO REAL (rayo, no fórmula)",
+   "antes": {
+    "carcasa": "ok",
+    "tapa": "falla",
+    "alta": "falla",
+    "ensamble": "falla"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "1.2",
+   "que": "la pila completa en CORTE por el eje de apertura: bebedero, cavidad, macho, pines, expulsora",
+   "antes": {
+    "carcasa": "mirar",
+    "tapa": "mirar",
+    "alta": "mirar",
+    "ensamble": "mirar"
+   },
+   "despues": {
+    "carcasa": "mirar",
+    "tapa": "mirar",
+    "alta": "mirar",
+    "ensamble": "mirar"
+   }
+  },
+  {
+   "punto": "2.1",
+   "que": "agua B ↔ cara INFERIOR de la placa B",
+   "antes": {
+    "carcasa": "falla",
+    "tapa": "falla",
+    "alta": "falla",
+    "ensamble": "falla"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "2.2",
+   "que": "agua A ↔ el ASIENTO DEL INSERTO de cavidad (la cara que importa, no la cara de la placa)",
+   "antes": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "falla"
+   }
+  },
+  {
+   "punto": "2.3",
+   "que": "el agua ↔ TODO barreno móvil (pines, retornos, KO) — lista completa",
+   "antes": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "falla"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "falla",
+    "alta": "falla",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "2.4",
+   "que": "los pines de RETORNO ↔ el inserto de núcleo",
+   "antes": {
+    "carcasa": "falla",
+    "tapa": "falla",
+    "alta": "ok",
+    "ensamble": "ok"
+   },
+   "despues": {
+    "carcasa": "falla",
+    "tapa": "falla",
+    "alta": "ok",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "2.5",
+   "que": "el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+   "antes": {
+    "carcasa": "falla",
+    "tapa": "falla",
+    "alta": "falla",
+    "ensamble": "falla"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "3.1",
+   "que": "la apertura saca la pieza CON su bebedero",
+   "antes": {
+    "carcasa": "falla",
+    "tapa": "falla",
+    "alta": "falla",
+    "ensamble": "falla"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "3.2",
+   "que": "la carrera de expulsión CABE en la caja expulsora",
+   "antes": {
+    "carcasa": "falla",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "falla"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "3.3",
+   "que": "las guías enganchan ANTES de que el macho entre a la cavidad",
+   "antes": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "4.1",
+   "que": "la inyectora del taller juzgada en la lámina de análisis",
+   "antes": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "5.1",
+   "que": "lo más lento contra lo de en medio (la lente de enfriamiento)",
+   "antes": {
+    "carcasa": "falla",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "ok"
+   },
+   "despues": {
+    "carcasa": "falla",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "6.1",
+   "que": "los pines: la punta en la CARA REAL del macho (rayo) y la cabeza en la retenedora",
+   "antes": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "6.2",
+   "que": "el paquete expulsor desde ABAJO y el BALANCE de la expulsión",
+   "antes": {
+    "carcasa": "mirar",
+    "tapa": "mirar",
+    "alta": "mirar",
+    "ensamble": "mirar"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "7.1",
+   "que": "cada línea de agua se taladra desde un canto",
+   "antes": {
+    "carcasa": "falla",
+    "tapa": "ok",
+    "alta": "falla",
+    "ensamble": "falla"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "7.2",
+   "que": "los insertos traen SUS barrenos: pines en el núcleo, bebedero en la cavidad",
+   "antes": {
+    "carcasa": "falla",
+    "tapa": "falla",
+    "alta": "falla",
+    "ensamble": "falla"
+   },
+   "despues": {
+    "carcasa": "ok",
+    "tapa": "ok",
+    "alta": "ok",
+    "ensamble": "ok"
+   }
+  },
+  {
+   "punto": "8.1",
+   "que": "el juego de láminas existe y se deja mirar (desde la página 0 = ensamble + BOM)",
+   "antes": {
+    "carcasa": "mirar",
+    "tapa": "mirar",
+    "alta": "mirar",
+    "ensamble": "mirar"
+   },
+   "despues": {
+    "carcasa": "mirar",
+    "tapa": "mirar",
+    "alta": "mirar",
+    "ensamble": "mirar"
+   }
+  }
+ ],
+ "fallasDespues": [
+  {
+   "punto": "2.4 · los pines de RETORNO ↔ el inserto de núcleo",
+   "piezas": [
+    "carcasa",
+    "tapa"
+   ],
+   "n": 2
+  },
+  {
+   "punto": "5.1 · lo más lento contra lo de en medio (la lente de enfriamiento)",
+   "piezas": [
+    "carcasa",
+    "alta"
+   ],
+   "n": 2
+  },
+  {
+   "punto": "2.3 · el agua ↔ TODO barreno móvil (pines, retornos, KO) — lista completa",
+   "piezas": [
+    "tapa",
+    "alta"
+   ],
+   "n": 2
+  },
+  {
+   "punto": "1.1 · el macho está DENTRO de la pieza: su techo toca el PISO REAL (rayo, no fórmula)",
+   "piezas": [
+    "alta"
+   ],
+   "n": 1
+  },
+  {
+   "punto": "2.5 · el agua ↔ el portamoldes (soporte, retornos, tornillos)",
+   "piezas": [
+    "alta"
+   ],
+   "n": 1
+  },
+  {
+   "punto": "6.1 · los pines: la punta en la CARA REAL del macho (rayo) y la cabeza en la retenedora",
+   "piezas": [
+    "alta"
+   ],
+   "n": 1
+  },
+  {
+   "punto": "6.2 · el paquete expulsor desde ABAJO y el BALANCE de la expulsión",
+   "piezas": [
+    "alta"
+   ],
+   "n": 1
+  },
+  {
+   "punto": "2.2 · agua A ↔ el ASIENTO DEL INSERTO de cavidad (la cara que importa, no la cara de la placa)",
+   "piezas": [
+    "ensamble"
+   ],
+   "n": 1
+  }
+ ],
+ "gates": {
+  "tsc": "66 = base, 0 nuevos",
+  "cicloDadoTest": "266/266 con las 5 ramas",
+  "caminoCarcasa": "6/8 · 44/46 — los 2 rojos son RELOJES (p3-2 15.0 s vs 15; p6-5 colada 61.5 s vs 60) con el host recién reiniciado; p6 portamoldes ✓, la expulsora SUBE 41.3 ✓, la carrera cabe 46/41.3 ✓"
+ },
+ "hallazgoNuevo": {
+  "pieza": "1599HBK",
+  "que": "el núcleo NO sube a llenar la pieza en su centro: la cara del macho queda a la altura de la partición (z 210) y el piso interior de la pieza está en z 241.5 — 31.5 mm de plástico macizo donde debía haber acero",
+  "orden": "ordenes/2026-09-22-el-macho-de-la-caja-grande.md",
+  "evidencia": "tarjeta 1.1 de la fusión"
+ }
+}

@@ -1,20 +1,20 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-09-22 03:06",
+ "generado": "2026-09-22 16:40",
  "wip": {
   "proximo": 7,
   "enCurso": 1,
   "imprevisto": 3
  },
  "conteo": {
-  "proximo": 5,
+  "proximo": 6,
   "enCurso": 0,
   "imprevisto": 0,
-  "supertickets": 15,
-  "cerrado": 95,
+  "supertickets": 9,
+  "cerrado": 102,
   "probado": 0,
-  "porProbar": 59,
-  "sinDesplegar": 13,
+  "porProbar": 65,
+  "sinDesplegar": 19,
   "despues": 26
  },
  "deploy": {
@@ -24,6 +24,71 @@
  "violaciones": [],
  "columnas": {
   "proximo": [
+   {
+    "file": "ordenes/2026-09-22-el-macho-de-la-caja-grande.md",
+    "slug": "2026-09-22-el-macho-de-la-caja-grande",
+    "titulo": "EL MACHO DE LA CAJA GRANDE — en la 1599HBK el núcleo no sube a llenar la pieza: 31.5 mm de plástico macizo donde debía haber acero",
+    "fecha": "2026-09-22",
+    "estado": "proximo",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[ ] medir la cara del núcleo en una rejilla de 10×5 puntos de la huella (inspeccion.caraEn) antes → después.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] encontrar la causa en E3 con evidencia (malla del núcleo vs malla de la pieza, en corte por x y por y).",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] las 4 piezas: 1.1 ✓ en la rejilla completa; cubo 266/266; tsc sin nuevos.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 3
+    },
+    "objetivo": "que el núcleo de TODA pieza soltada forme su interior. En la 1599HBK (caja grande, 220×110×35.5, base 396×296) el acero del núcleo se queda plano a la altura de la partición en el centro de la pieza, y la pieza queda hueca encima: moldeado…",
+    "toca": 1,
+    "crea": 0,
+    "evidencia": 1,
+    "evidenciaDeclarada": [
+     "Rejilla de la huella: |cara del núcleo − piso interior| ≤ 0.5 mm en ≥ 95 % de los puntos de las 4 piezas; tarjeta 1.1 de la 1599HBK."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
    {
     "file": "ordenes/2026-09-18-las-20-piezas.md",
     "slug": "2026-09-18-las-20-piezas",
@@ -1256,19 +1321,21 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
-   },
+   }
+  ],
+  "cerrado": [
    {
-    "file": "ordenes/2026-09-10-el-agua-dice-dos-cosas.md",
-    "slug": "2026-09-10-el-agua-dice-dos-cosas",
-    "titulo": "EL AGUA DICE DOS COSAS — la lámina de la placa y el 3D del molde no dibujan el mismo circuito",
-    "fecha": "2026-09-10",
-    "estado": "en-curso",
+    "file": "ordenes/2026-09-21-los-pines-en-la-cara-del-macho.md",
+    "slug": "2026-09-21-los-pines-en-la-cara-del-macho",
+    "titulo": "LOS PINES EN LA CARA DEL MACHO — la punta donde el acero de verdad termina, la expulsión balanceada, la cabeza capturada",
+    "fecha": "2026-09-21",
+    "estado": "cerrado",
     "prioridad": 1,
     "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
-      "id": "[ ] una sola función del circuito (⌀, H, W, líneas por lado, tapones, serie/paralelo) que consuman `estacion8Dado` (3D) y",
+      "id": "[ ] piso REAL: rayo −Z en (x,y) de cada pin sobre la malla local → z de la cara interior; la punta termina AHÍ (y el macho",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1279,7 +1346,7 @@
       "nota": ""
      },
      {
-      "id": "[ ] la profundidad H contra las CARAS de la placa: acero ≥ ½D bajo/sobre la línea (cita §9.2.7); cero −1.14.",
+      "id": "[ ] equilibrio: restricción en el agarre — centroide de pines dentro de 0.1·L del centroide del área proyectada Y cada pin a",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1290,18 +1357,7 @@
       "nota": ""
      },
      {
-      "id": "[ ] el juez del agua: caras",
-      "titulo": "inserto · pines · retornos",
-      "herramientas": "KO",
-      "oraculo": "tornillos, lista completa; rojo detiene o mueve la línea.",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] el cubo: ACTA R93; ciclo-dado-test verde.",
+      "id": "[ ] cabeza capturada: `standardHoles` de `ejector-ret` con alojamiento CIEGO (prof = cabeza + holgura) y `ejector`",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1312,7 +1368,18 @@
       "nota": ""
      },
      {
-      "id": "[ ] las 4 piezas: 2.1, 2.2 (contra el inserto), 2.3, 2.5 ✓ y `laminaAguaVs3D` del arnés idéntico; capturas.",
+      "id": "[ ] el juez pin↔agua con LISTA completa (todos los pares bajo ½D), no el mínimo — usa el circuito que haya (el agua la",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] las 4 piezas: puntas en la cara (|Δ| ≤ 0.05), centroide dentro de la regla, 7.2 sin pin↔núcleo (o con el barreno que",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1328,35 +1395,37 @@
      "rojos": 0,
      "total": 5
     },
-    "objetivo": "hallazgo de EL AGUA DE TU PIEZA (2026-09-17, medido en node sobre la carcasa 1594C con pared 3.2): el MISMO molde tiene DOS circuitos de agua distintos según quién lo dibuje. La lámina de la placa (coolingCircuitDesign en mold-drawing-set.…",
-    "toca": 7,
+    "objetivo": "que cada pin expulse. Hoy la punta se coloca en zPiso = zBaseCerrada − pared MEDIANA (useMoldStudio.ts cicloBotadoresPieza ~1412) y el piso real de la pieza NO es la pared mediana: en la tapa el piso mide 2.76 (pared 3.86) → las 8 puntas q…",
+    "toca": 6,
     "crea": 2,
     "evidencia": 2,
     "evidenciaDeclarada": [
-     "4/4 piezas: 2.1, 2.2, 2.3, 2.5 ✓ con números antes → después; lámina y 3D con el mismo ⌀/H/W/n; capturas por pieza.",
-     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test verde (con acta R93) · orden-gate VERDE · sin deploy."
+     "4/4 piezas: |punta − cara del macho| ≤ 0.05 mm en los 8 pines · centroide dentro de la regla · láminas con cabeza capturada;",
+     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test 266/266 (el cubo tiene piso = pared: no debería cambiar;"
     ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
+    "cierre": "ciego se emite SOLO para la lámina, y data-puntas-vs-cara viene acompañado de data-piso-vs-pared). ### 1 · LA PUNTA EN LA CARA DEL MACHO (el piso REAL, por rayo) pisoInteriorPorRayo (eject-layout.ts)…",
+    "cierreCompleto": "ciego se emite SOLO para la lámina, y data-puntas-vs-cara viene acompañado de data-piso-vs-pared). ### 1 · LA PUNTA EN LA CARA DEL MACHO (el piso REAL, por rayo) pisoInteriorPorRayo (eject-layout.ts) tira un rayo vertical en el (x,y) de cada pin sobre la MISMA malla local que ya se tesela en E7 y devuelve el primer tramo de material desde abajo: entra por la cara exterior, sale por la cara INTERIOR — y ésa es la cara del macho, porque el macho llena el interior. cicloBotadoresPieza construye la punta AHÍ (pin.zPisoMm, con el volteo col.aGlobal); zBaseCerrada − pared MEDIANA quedó solo como respaldo, y cuando se usa se DICE (en la tira y en la ficha del pin). MEDIDO en la app (max[2] de cada pin-punta-k contra max[2] de nucleo — el techo del macho sale de la booleana del kernel en E3, otra ruta que el rayo, por eso no es tautológico): 1557BGY es un ENSAMBLE de 19 sólidos y su piso no es plano: el espesor bajo los pines va de 2.94 a 3.10 mm y las 8 puntas quedan ahora a 4 cotas distintas (173.60/173.61/173.62/173.70), cada una en SU piso — antes estaban todas en UNA sola cota. max[2] de nucleo es el punto más ALTO del macho y ese punto NO cae bajo ningún pin: el residuo de 0.7–0.8 mm mide esa diferencia de geometría, no un error de colocación. CONTROL DEL RAYO (para que el número no se mida contra sí mismo, como el 6.1 del inspector): el MISMO piso, medido en node por dos caminos — rayo +Z (primer tramo, lo nuevo) y paridad +X (solidFromMesh, código viejo, otra dirección y otra aritmética): diferencia 0.000 mm en 31 de 32 pines. El único que discrepa es (101, 36) de la 1599H…",
+    "evidenciaSS": [
+     "evidencia/2026-09-21-los-pines-en-la-cara-del-macho/pines-en-la-cara.png"
+    ],
+    "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "157f7b1",
+    "despliegue": "sin-desplegar"
    },
    {
-    "file": "ordenes/2026-09-21-el-reparto-de-la-inspeccion.md",
-    "slug": "2026-09-21-el-reparto-de-la-inspeccion",
-    "titulo": "EL REPARTO DE LA INSPECCIÓN — cinco órdenes en paralelo, cinco agentes Opus, cinco worktrees, una fusión",
+    "file": "ordenes/2026-09-21-los-insertos-se-barrenan.md",
+    "slug": "2026-09-21-los-insertos-se-barrenan",
+    "titulo": "LOS INSERTOS SE BARRENAN — la cavidad y el núcleo dejan de ser macizos: pines, bebedero y agua con su barreno; los retornos fuera del inserto",
     "fecha": "2026-09-21",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 1,
     "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
-      "id": "[ ] las 5 órdenes abiertas y en Temis; infraestructura (dev3..7 + vites) viva.",
+      "id": "[ ] paso «barrenar insertos» después de E7: cavidad − bebedero (⌀ del sprue en la partición + holgura) − agua A que la cruce;",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1367,7 +1436,7 @@
       "nota": ""
      },
      {
-      "id": "[ ] los 5 agentes terminan con gate VERDE en su rama y CIERRE escrito.",
+      "id": "[ ] retornos fuera del inserto: posición en función de `insertDims` y del paquete (≥ ⌀ al inserto, ≥ 1.5·⌀ al canto de la",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1378,7 +1447,7 @@
       "nota": ""
      },
      {
-      "id": "[ ] fusión en main una por una (rebase), conflictos resueltos, tsc/ciclo/camino/inspección sobre lo fusionado.",
+      "id": "[ ] las 4 piezas: `moldSolidCollisions` con 0 pares inserto↔{pin, colada, agua, retorno} (o ≤ 0.6 mm = ruido de vóxel,",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1389,83 +1458,7 @@
       "nota": ""
      },
      {
-      "id": "[ ] Temis regenerado",
-      "titulo": "deploy ÚNICO",
-      "herramientas": "verificación del sello y del bundle.",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 4
-    },
-    "objetivo": "ian (2026-09-21): «reparte el trabajo padrino, recuerda que para todo debe de haber tickets; pueden crear sus tickets y trabajarlo en paralelo con Opus». Las causas raíz del plan de inspección se atacan a la vez, cada una bajo SU orden, en…",
-    "toca": 2,
-    "crea": 0,
-    "evidencia": 1,
-    "evidenciaDeclarada": [
-     "5 ramas fusionadas; la inspección de las 4 piezas después de la fusión: 3.1, 3.2, 2.1, 2.2, 2.3, 2.5, 7.2, 2.4 ✓ y puntas en la cara."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-09-21-la-camara-del-inspector.md",
-    "slug": "2026-09-21-la-camara-del-inspector",
-    "titulo": "LA CÁMARA DEL INSPECTOR — que cada punto del plan de inspección SE VEA (hoy ~36 de 64 tarjetas «no se ve»)",
-    "fecha": "2026-09-21",
-    "estado": "en-curso",
-    "prioridad": 1,
-    "tipo": "",
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "[ ] el inspector entra al repo: `scripts/inspecciona-molde.cjs` (nace de scratchpad plan/inspecciona.cjs) con los arreglos del",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] manijas en `__forgeBrep.inspeccion`: `aislar(roles[])` (solo esos, el resto oculto)",
-      "titulo": "cota(a, b) (la distancia dibujada",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] la pieza pintada por una lente OBEDECE el plano de corte (hoy sale entera y tapa al macho — 1.1/1.2/6.1); macho opaco +",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] las 4 piezas re-inspeccionadas con las vistas nuevas: montaje de 64 tarjetas y TU juicio honesto por tarjeta (sí/no/no se",
+      "id": "[ ] tiempo: el barrenado no debe subir la estación 8 más de ~10 s en la carcasa (mide y anota).",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1481,29 +1474,65 @@
      "rojos": 0,
      "total": 4
     },
-    "objetivo": "el plan de inspección (orden 2026-09-21-el-plan-de-inspeccion) mide bien y MIRA mal. Cuatro revisores Opus, uno por pieza, juzgaron las 64 tarjetas: en más de la mitad la imagen no deja ver el número que dice el letrero, y a uno la vista l…",
-    "toca": 2,
-    "crea": 3,
+    "objetivo": "que los insertos del molde de TU pieza sean fabricables. Hoy construirAceroE3 talla cavidad y núcleo de la pieza y AHÍ se quedan macizos: los 8 pines atraviesan el núcleo (16 tramos, hasta 2.5 mm = su radio, 7.2 falla 4/4), el bebedero com…",
+    "toca": 5,
+    "crea": 5,
     "evidencia": 2,
     "evidenciaDeclarada": [
-     "Las mismas 4 piezas: ≥ 90 % de las 64 tarjetas «sí confirma» (juicio propio por tarjeta, honesto); montaje + resultados.json.",
-     "tsc: cero errores nuevos contra la base de 66 · censo igual (0 Canvas nuevos) · orden-gate VERDE · sin deploy."
+     "4/4 piezas: 7.2 ✓ y 2.4 ✓ (0 mm³ inserto↔pin/colada/agua/retorno), números antes → después; capturas.",
+     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test 266/266 (o acta si el cubo cambia) · orden-gate VERDE · sin deploy."
     ],
-    "cierre": "",
-    "cierreCompleto": "",
+    "cierre": "### ORDEN vs ENTREGADO ### NÚMEROS — antes → después (arnés barrenos-vista.cjs sobre la app real, moldSolidCollisions con el filtro del inspector) Acero REMOVIDO por el barrenado (la prueba de que la…",
+    "cierreCompleto": "### ORDEN vs ENTREGADO ### NÚMEROS — antes → después (arnés barrenos-vista.cjs sobre la app real, moldSolidCollisions con el filtro del inspector) Acero REMOVIDO por el barrenado (la prueba de que la booleana mordió, medida con volume() antes/después): carcasa cavidad −10,204 mm³ · núcleo −7,310 · tapa −9,301 / −2,464 · alta −16,273 / −14,778 · ensamble −9,422 / −4,381. Tiempo del paso (E8): barrenado 4.1–5.6 s + teselar cavidad 0.8–1.8 s + teselar núcleo 0.5–3.9 s ⇒ +5.4 a +9.2 s, dentro de los ~10 s pedidos. (El TOTAL de la E8 en la carcasa: 11.0 s antes → 22.4 s en la corrida final. El resto de la diferencia es el paso portamoldes, que con el MISMO código midió 9.2 / 11.5 / 12.1 / 16.3 s según la carga de iangpu — cinco agentes a la vez.) ### EL HALLAZGO QUE COSTÓ LA MITAD DE LA ORDEN: un cut con COMPOUND pierde brocas Medido en node sobre el INSERTO REAL de la carcasa (prueba-barreno-real.cjs, 3 corridas coincidentes): Por eso barrenarInsertos agrupa las brocas en RACIMOS conexos (traslape de cajas), manda todos los racimos de UNA broca en un solo compound y corta una por una SOLO dentro de los racimos que se cruzan. El síntoma en pantalla era exactamente eso: con compound, agua-A-este y agua-A-ext-out se quedaban DENTRO del inserto mientras sus gemelas oeste/ext-in salían. (La misma trampa vive en cutAll de mold-plano-set.ts — visto, no tocado: es otro camino, el del molde en vivo, y otra orden.) ### EL RESIDUO DE AGUA DE LA CARCASA ES MALLA, NO ACERO (probado, no supuesto) moldSolidCollisions sigue reportando 34 / 17 / 14 mm³ con 0.78–1.0 mm en cavidad↔agua-A-*. Se m…",
+    "evidenciaSS": [
+     "evidencia/2026-09-21-los-insertos-se-barrenan/cavidad-desde-abajo.png",
+     "evidencia/2026-09-21-los-insertos-se-barrenan/insertos-barrenados.png",
+     "evidencia/2026-09-21-los-insertos-se-barrenan/nucleo-desde-arriba.png",
+     "evidencia/2026-09-21-los-insertos-se-barrenan/retornos-fuera-del-inserto.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "dcedf6f",
+    "despliegue": "sin-desplegar"
+   },
+   {
+    "file": "ordenes/2026-09-21-la-libreta-de-don-chuy.md",
+    "slug": "2026-09-21-la-libreta-de-don-chuy",
+    "titulo": "La libreta de Don Chuy — la página donde aterriza el embudo",
+    "fecha": "2026-09-21",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "tipo": "",
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "chuy.html?c=<capítulo>&s=<sid> abre DENTRO del navegador de Instagram en < 1 s con el puesto de Don Chuy dibujado y la cuenta del capítulo del que viene la persona, con los números editables («¿Y en tu negocio?») y una libreta de fiados/ga…",
+    "toca": 2,
+    "crea": 14,
+    "evidencia": 5,
+    "evidenciaDeclarada": [
+     "node scripts/orden-gate.cjs verde con esta orden.",
+     "Capturas a 390×844 (Playwright en iangpu contra forja-dev2 :5194) de chuy.html?c=00..06:",
+     "Cambiar un número mueve la lata; anotar un fiado sobrevive a recargar la página.",
+     "npx vite build compila en iangpu.",
+     "censo esperado: html +1, vite +1, canvas igual."
+    ],
+    "cierre": "(paréntesis en TOCA, seis rutas en una línea en CREA, letras de git status en PREEXISTENTE) ponía el gate en rojo sin culpa de nadie; se corrigió el formato sin cambiar lo declarado. - números: ORDEN…",
+    "cierreCompleto": "(paréntesis en TOCA, seis rutas en una línea en CREA, letras de git status en PREEXISTENTE) ponía el gate en rojo sin culpa de nadie; se corrigió el formato sin cambiar lo declarado. - números: ORDEN_GATE VERDE (html 46→47 +1 permitido, vite 41→42 +1 permitido, canvas 8→8); QC_CHUY VERDE (390×844: sin scroll horizontal, botones ≥48 px, número mueve la pastilla, dos fiados sobreviven a recargar); npx vite build en iangpu compila (entry 23.7 KB, sin CSS global); 32 capturas en Downloads/chuy-landing. NO desplegado a ATLAS (espera autorización).",
     "evidenciaSS": [],
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "0f2356b",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-09-21-la-carrera-cabe.md",
     "slug": "2026-09-21-la-carrera-cabe",
     "titulo": "LA CARRERA CABE — la pila del molde se dimensiona por LA PIEZA (caja expulsora, sujeciones, soporte) y la apertura saca la pieza CON su bebedero",
     "fecha": "2026-09-21",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 1,
     "tipo": "",
     "superticket": true,
@@ -1581,34 +1610,36 @@
      "total": 6
     },
     "objetivo": "que el molde de TU pieza pueda ABRIRSE y EXPULSARLA. Hoy packageToAssemblySpec (mold-plano-set.ts ~1614) clava bottomClamp: 36, ejectorHousing: 66, topClamp: 36 para cualquier pieza, y la apertura del 3D es 2.5 · H sin contar el bebedero. …",
-    "toca": 8,
+    "toca": 12,
     "crea": 2,
     "evidencia": 2,
     "evidenciaDeclarada": [
      "4/4 piezas: 3.1 ✓ y 3.2 ✓ con sus números (antes → después) en resultados.json; una captura por pieza abierta + expulsada.",
      "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test verde (con acta R93) · orden-gate VERDE · sin deploy."
     ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
+    "cierre": "### ORDEN VS ENTREGADO ### LAS DOS CITAS QUE MANDAN (literales del libro, no paráfrasis) 1. §4.3.2 · Fig 4.22 — *\"The travel of the ejector plate should be selected to eject the part from the mold. O…",
+    "cierreCompleto": "### ORDEN VS ENTREGADO ### LAS DOS CITAS QUE MANDAN (literales del libro, no paráfrasis) 1. §4.3.2 · Fig 4.22 — *\"The travel of the ejector plate should be selected to eject the part from the mold. Often, the ejector travel is set to be equal to the depth of the molded part. From the ejector travel, the height of the ejector housing, dimension 'C', is assigned by the mold base supplier.\"* → manda LA CARRERA y la caja se le asigna. El código lo tenía al revés: C = 66 clavado y la carrera salía de restarle las placas (libre = 66 − 4 − 0.28·66 − 0.20·66 = 31 mm, IGUAL para cualquier pieza). 2. §6.3.2 — *\"The free length of the stripper bolt must be sufficient to allow for the ejection of the molded parts. A typical mold open distance between the A and B plates is equal to two to three times the height of the molded parts\"* Y *\"the length of the X plate stripper bolt must be sufficient to allow for the removal of the feed system\"* (§1.4.1 lo repite: *\"a large mold opening stroke is needed to eject the cold runner\"*). Son DOS términos del MISMO movimiento y el código solo contaba el primero → carreraDeApertura = factor·H + colada. Con colada 0 se reduce EXACTAMENTE a la regla vieja: donde no hay bebedero que sacar, nada cambia. Lo que NO tiene cita y queda DECLARADO NUESTRO (el libro no da número — se dice, no se disfraza): EJECCION_MARGEN_MM = 8 (la carrera pedida es H + 8; §4.3.2 dice E = profundidad de la pieza, el +8 es para que LIBRE el macho) · EJECTOR_REST_MM = 4 (descanso donde van los stop pins, Fig 11.1) · EJECTOR_CLEARANCE_MM = 2 (acero entre retenedora y soporte al …",
+    "evidenciaSS": [
+     "evidencia/2026-09-21-la-carrera-cabe/la-carrera-cabe.png"
+    ],
+    "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "03e6b51",
+    "despliegue": "sin-desplegar"
    },
    {
-    "file": "ordenes/2026-09-21-los-insertos-se-barrenan.md",
-    "slug": "2026-09-21-los-insertos-se-barrenan",
-    "titulo": "LOS INSERTOS SE BARRENAN — la cavidad y el núcleo dejan de ser macizos: pines, bebedero y agua con su barreno; los retornos fuera del inserto",
+    "file": "ordenes/2026-09-21-la-camara-del-inspector.md",
+    "slug": "2026-09-21-la-camara-del-inspector",
+    "titulo": "LA CÁMARA DEL INSPECTOR — que cada punto del plan de inspección SE VEA (hoy ~36 de 64 tarjetas «no se ve»)",
     "fecha": "2026-09-21",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 1,
     "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
-      "id": "[ ] paso «barrenar insertos» después de E7: cavidad − bebedero (⌀ del sprue en la partición + holgura) − agua A que la cruce;",
+      "id": "[ ] el inspector entra al repo: `scripts/inspecciona-molde.cjs` (nace de scratchpad plan/inspecciona.cjs) con los arreglos del",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1619,7 +1650,18 @@
       "nota": ""
      },
      {
-      "id": "[ ] retornos fuera del inserto: posición en función de `insertDims` y del paquete (≥ ⌀ al inserto, ≥ 1.5·⌀ al canto de la",
+      "id": "[ ] manijas en `__forgeBrep.inspeccion`: `aislar(roles[])` (solo esos, el resto oculto)",
+      "titulo": "cota(a, b) (la distancia dibujada",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[ ] la pieza pintada por una lente OBEDECE el plano de corte (hoy sale entera y tapa al macho — 1.1/1.2/6.1); macho opaco +",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1630,18 +1672,7 @@
       "nota": ""
      },
      {
-      "id": "[ ] las 4 piezas: `moldSolidCollisions` con 0 pares inserto↔{pin, colada, agua, retorno} (o ≤ 0.6 mm = ruido de vóxel,",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] tiempo: el barrenado no debe subir la estación 8 más de ~10 s en la carcasa (mide y anota).",
+      "id": "[ ] las 4 piezas re-inspeccionadas con las vistas nuevas: montaje de 64 tarjetas y TU juicio honesto por tarjeta (sí/no/no se",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1657,35 +1688,37 @@
      "rojos": 0,
      "total": 4
     },
-    "objetivo": "que los insertos del molde de TU pieza sean fabricables. Hoy construirAceroE3 talla cavidad y núcleo de la pieza y AHÍ se quedan macizos: los 8 pines atraviesan el núcleo (16 tramos, hasta 2.5 mm = su radio, 7.2 falla 4/4), el bebedero com…",
-    "toca": 4,
-    "crea": 2,
+    "objetivo": "el plan de inspección (orden 2026-09-21-el-plan-de-inspeccion) mide bien y MIRA mal. Cuatro revisores Opus, uno por pieza, juzgaron las 64 tarjetas: en más de la mitad la imagen no deja ver el número que dice el letrero, y a uno la vista l…",
+    "toca": 2,
+    "crea": 3,
     "evidencia": 2,
     "evidenciaDeclarada": [
-     "4/4 piezas: 7.2 ✓ y 2.4 ✓ (0 mm³ inserto↔pin/colada/agua/retorno), números antes → después; capturas.",
-     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test 266/266 (o acta si el cubo cambia) · orden-gate VERDE · sin deploy."
+     "Las mismas 4 piezas: ≥ 90 % de las 64 tarjetas «sí confirma» (juicio propio por tarjeta, honesto); montaje + resultados.json.",
+     "tsc: cero errores nuevos contra la base de 66 · censo igual (0 Canvas nuevos) · orden-gate VERDE · sin deploy."
     ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
+    "cierre": "Las 64 tarjetas se ven: 63 de 64 «sí» (98 %) contra 28 de 64 (44 %) de la pasada 1. El juicio es mío, tarjeta por tarjeta, abriendo cada PNG (no un contador): el único «no» es carcasa 5.1 (el letrero…",
+    "cierreCompleto": "Las 64 tarjetas se ven: 63 de 64 «sí» (98 %) contra 28 de 64 (44 %) de la pasada 1. El juicio es mío, tarjeta por tarjeta, abriendo cada PNG (no un contador): el único «no» es carcasa 5.1 (el letrero dice 134 s y el mapa de t_c sale parejo: no enseña DÓNDE). Las 4 piezas re-inspeccionadas con scripts/inspecciona-molde.cjs desde forja-dev7 :5198 (GPU real, ANGLE/D3D12 RTX 4070 Ti), 0 PAGEERR en los cuatro logs, 17/17 láminas por pieza capturadas desde la página 0. LA REGLA DE ORO DE UNA VISTA, ya en código: encuadrar lo que se mide · contraste (lo medido opaco y con color, el sólido que lo esconde TRANSLÚCIDO, el resto al 5 %) · la cota DIBUJADA. Manijas nuevas (window.__forgeBrep.inspeccion) - aislar(roles[], {tenues, opacs, colores, opacTenue, opac}) — un CONJUNTO de roles (moldIsolate deja UNO); acepta prefijos ('agua-*', 'pin-*'). aislar(null) vuelve a todo. - cota(a, b, etiqueta, ok) y cotas([…]) — la distancia DIBUJADA entre los dos puntos medidos (línea + CRUZ en cada extremo + etiqueta con 2 decimales), en el marco del molde. - geomPose() — las cajas de moldGeom CON el desplazamiento que la animación puso en pantalla. - caraEn(role, x, y) — rayo vertical contra la malla: la CARA REAL bajo un punto (con dedupe de caras coincidentes: el centro exacto cae sobre una arista de la triangulación y devolvía el techo dos veces). Escena: la pintura de una lente (t_c / llenado / frente) ahora OBEDECE el plano de corte y vuelve a respetar la profundidad cuando hay corte (pintaCorte, MoldScene), y se apaga con su pieza cuando la pieza se oculta o se deja translúcida (piezaPintab…",
+    "evidenciaSS": [
+     "evidencia/2026-09-21-la-camara-del-inspector/tarjetas-4-piezas.png"
+    ],
+    "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "cb873aa",
+    "despliegue": "sin-desplegar"
    },
    {
-    "file": "ordenes/2026-09-21-los-pines-en-la-cara-del-macho.md",
-    "slug": "2026-09-21-los-pines-en-la-cara-del-macho",
-    "titulo": "LOS PINES EN LA CARA DEL MACHO — la punta donde el acero de verdad termina, la expulsión balanceada, la cabeza capturada",
+    "file": "ordenes/2026-09-21-el-reparto-de-la-inspeccion.md",
+    "slug": "2026-09-21-el-reparto-de-la-inspeccion",
+    "titulo": "EL REPARTO DE LA INSPECCIÓN — cinco órdenes en paralelo, cinco agentes Opus, cinco worktrees, una fusión",
     "fecha": "2026-09-21",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 1,
     "tipo": "",
     "superticket": true,
     "ejercicios": [
      {
-      "id": "[ ] piso REAL: rayo −Z en (x,y) de cada pin sobre la malla local → z de la cara interior; la punta termina AHÍ (y el macho",
+      "id": "[x] las 5 órdenes abiertas y en Temis; infraestructura (dev3..7 + vites) viva.",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1696,7 +1729,7 @@
       "nota": ""
      },
      {
-      "id": "[ ] equilibrio: restricción en el agarre — centroide de pines dentro de 0.1·L del centroide del área proyectada Y cada pin a",
+      "id": "[x] los 5 agentes terminan con gate VERDE en su rama y CIERRE escrito.",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1707,7 +1740,7 @@
       "nota": ""
      },
      {
-      "id": "[ ] cabeza capturada: `standardHoles` de `ejector-ret` con alojamiento CIEGO (prof = cabeza + holgura) y `ejector`",
+      "id": "[x] fusión en main una por una (rebase), conflictos resueltos, tsc/ciclo/camino/inspección sobre lo fusionado.",
       "titulo": "",
       "herramientas": "",
       "oraculo": "",
@@ -1718,20 +1751,9 @@
       "nota": ""
      },
      {
-      "id": "[ ] el juez pin↔agua con LISTA completa (todos los pares bajo ½D), no el mínimo — usa el circuito que haya (el agua la",
-      "titulo": "",
-      "herramientas": "",
-      "oraculo": "",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "[ ] las 4 piezas: puntas en la cara (|Δ| ≤ 0.05), centroide dentro de la regla, 7.2 sin pin↔núcleo (o con el barreno que",
-      "titulo": "",
-      "herramientas": "",
+      "id": "[x] Temis regenerado",
+      "titulo": "deploy ÚNICO",
+      "herramientas": "verificación del sello y del bundle.",
       "oraculo": "",
       "estado": "pendiente",
       "checks": "",
@@ -1743,27 +1765,26 @@
     "progreso": {
      "verdes": 0,
      "rojos": 0,
-     "total": 5
+     "total": 4
     },
-    "objetivo": "que cada pin expulse. Hoy la punta se coloca en zPiso = zBaseCerrada − pared MEDIANA (useMoldStudio.ts cicloBotadoresPieza ~1412) y el piso real de la pieza NO es la pared mediana: en la tapa el piso mide 2.76 (pared 3.86) → las 8 puntas q…",
-    "toca": 6,
-    "crea": 2,
-    "evidencia": 2,
+    "objetivo": "ian (2026-09-21): «reparte el trabajo padrino, recuerda que para todo debe de haber tickets; pueden crear sus tickets y trabajarlo en paralelo con Opus». Las causas raíz del plan de inspección se atacan a la vez, cada una bajo SU orden, en…",
+    "toca": 5,
+    "crea": 3,
+    "evidencia": 1,
     "evidenciaDeclarada": [
-     "4/4 piezas: |punta − cara del macho| ≤ 0.05 mm en los 8 pines · centroide dentro de la regla · láminas con cabeza capturada;",
-     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test 266/266 (el cubo tiene piso = pared: no debería cambiar;"
+     "5 ramas fusionadas; la inspección de las 4 piezas después de la fusión: 3.1, 3.2, 2.1, 2.2, 2.3, 2.5, 7.2, 2.4 ✓ y puntas en la cara."
     ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
+    "cierre": "Cinco órdenes, cinco agentes Opus en paralelo, cinco ramas fusionadas en main sin perder nada. Sobre la fusión (las 5 juntas) la inspección de las 4 piezas pasó de 6/5/8/6 ✓ a 13/13/9/14 ✓, y las fal…",
+    "cierreCompleto": "Cinco órdenes, cinco agentes Opus en paralelo, cinco ramas fusionadas en main sin perder nada. Sobre la fusión (las 5 juntas) la inspección de las 4 piezas pasó de 6/5/8/6 ✓ a 13/13/9/14 ✓, y las fallas de 8/6/9/8 a 2/2/6/1 (carcasa / tapa / caja grande / ensamble). tsc 66 = base (cero nuevos) · ciclo-dado-test 266/266 con las cinco ramas · camino de la carcasa 44/46 (los dos rojos son relojes con iangpu recién reiniciado; todos los checks del molde pasan: portamoldes, la expulsora sube 41.3 mm, la carrera cabe 46/41.3). En la fusión (mío): el único conflicto fue un import en mold-drawing-set.ts (los dos lados; se quedan ambos) · la rama de los pines arrastraba el commit de reparto ya enmendado → rebase --onto main · el inspector suponía 2.5·H para la apertura: ahora LEE la apertura real de la app · y medía la punta del pin DENTRO de su propio barreno (falso «50 mm metida» en cuanto los insertos se barrenaron): ahora muestrea la cara del núcleo junto al barreno. Infraestructura: las seis copias compartían el caché de vite («Hooks can only be used within the Canvas») → cada copia con su node_modules/.vite. LO QUE QUEDA ROJO (y por qué) — resultados.json - 1599HBK: el núcleo no llena la pieza en su centro (1.1/6.1): hallazgo NUEVO de esta fusión, nace en el acero de E3 → ordenes/2026-09-22-el-macho-de-la-caja-grande.md (PRÓXIMO 1). Sus 6.2/2.3/2.5 se re-miden después de arreglarlo. - 2.4 carcasa y tapa: los retornos ⌀12 no caben fuera del inserto (banda 16.5 / 26 mm, piden 36) → decisión de ian. - 2.3 tapa (y alta): pines que cruzan líneas de agua B → decisión de ian: se mue…",
+    "evidenciaSS": [
+     "evidencia/2026-09-21-el-reparto-de-la-inspeccion/antes-despues.png"
+    ],
+    "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
-   }
-  ],
-  "cerrado": [
+    "commit": "f338bec",
+    "despliegue": "sin-desplegar"
+   },
    {
     "file": "ordenes/2026-09-21-el-plan-de-inspeccion.md",
     "slug": "2026-09-21-el-plan-de-inspeccion",
@@ -2156,6 +2177,96 @@
     "probado": "",
     "falla": "",
     "commit": "860e073",
+    "despliegue": "sin-desplegar"
+   },
+   {
+    "file": "ordenes/2026-09-10-el-agua-dice-dos-cosas.md",
+    "slug": "2026-09-10-el-agua-dice-dos-cosas",
+    "titulo": "EL AGUA DICE DOS COSAS — la lámina de la placa y el 3D del molde no dibujan el mismo circuito",
+    "fecha": "2026-09-10",
+    "estado": "cerrado",
+    "prioridad": 1,
+    "tipo": "",
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "[x] una sola función del circuito (⌀, H, W, líneas por lado, tapones, serie/paralelo) que consuman `estacion8Dado` (3D) y",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] la profundidad H contra las CARAS de la placa: acero ≥ ½D bajo/sobre la línea (cita §9.2.7); cero −1.14.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] el juez del agua: caras",
+      "titulo": "inserto · pines · retornos",
+      "herramientas": "KO",
+      "oraculo": "tornillos, lista completa; rojo detiene o mueve la línea.",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[x] el cubo: ACTA R93; ciclo-dado-test verde.",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "[~] las 4 piezas: 2.1, 2.2 (contra el inserto), 2.5 ✓ y `laminaAguaVs3D` del arnés idéntico 4/4; **2.3 sigue ROJO**",
+      "titulo": "",
+      "herramientas": "",
+      "oraculo": "",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 5
+    },
+    "objetivo": "hallazgo de EL AGUA DE TU PIEZA (2026-09-17, medido en node sobre la carcasa 1594C con pared 3.2): el MISMO molde tiene DOS circuitos de agua distintos según quién lo dibuje. La lámina de la placa (coolingCircuitDesign en mold-drawing-set.…",
+    "toca": 8,
+    "crea": 2,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "4/4 piezas: 2.1, 2.2, 2.3, 2.5 ✓ con números antes → después; lámina y 3D con el mismo ⌀/H/W/n; capturas por pieza.",
+     "tsc: cero errores nuevos contra la base de 66 · ciclo-dado-test verde (con acta R93) · orden-gate VERDE · sin deploy."
+    ],
+    "cierre": "### ORDEN vs ENTREGADO ### NÚMEROS · ANTES → DESPUÉS El mismo molde decía dos cosas. Ahora dice una: El juez del agua (verde/total por categoría): - 2.1 · agua B ↔ cara inferior de la placa B: −1.14 …",
+    "cierreCompleto": "### ORDEN vs ENTREGADO ### NÚMEROS · ANTES → DESPUÉS El mismo molde decía dos cosas. Ahora dice una: El juez del agua (verde/total por categoría): - 2.1 · agua B ↔ cara inferior de la placa B: −1.14 mm (4/4) → ≥ +3.17 mm (4/4). Dónde nacía el 6: insertDims hace el inserto de núcleo placas.B − 6 de alto, o sea 6 mm de suelo bajo su bolsillo, y ⌀4.76 pide 2·(r+½⌀) = 9.52. El ruteo viejo se colgaba del PISO DEL BOLSILLO (zB = pisoInsB − D) y nunca miraba la cara de la placa: por eso la constante salía igual en las cuatro piezas. No era coincidencia, era una regla que faltaba. - 2.2 · agua A ↔ el INSERTO de cavidad: el ✓ era FALSO (medía la cara de la placa). Ahora el anillo A se acota también contra el techo del inserto Y la cara superior de A, y cuando cae dentro del inserto se DECLARA (cruzaInserto.cavidad = true en 4/4) para que LOS INSERTOS SE BARRENAN lo corte. Cero silencio. - 2.3 · pines: 10 rojos en 1594C Box (peor 0.16 mm), 7 en 1557BGY (peor −0.24 mm), 4 retornos en 1599HBK. Antes: invisibles. Las líneas B ya se CORREN en X buscando ½⌀ contra todo (rojo mueve la línea); donde el campo de expulsores tapiza la banda no hay hueco y ahí manda §9.3.5.2 (baffle/bubbler o mover los pines) → es de la orden de los pines, y se entrega con nombre, número y par. - agua ↔ pieza (kernel OCC): 0 invasiones en 4/4 (interferencia.aguaVsPieza). ### LO QUE SE DECIDIÓ Y POR QUÉ (con cita) 1. Manda el caudal, con piso maquinable (ian 2026-09-21). PISO_MAQUINABLE_MM = 6.35 en cooling-design.ts, declarado como regla NUESTRA, sin cita del libro (razón: un ⌀4.76 a lo ancho de una placa de 2…",
+    "evidenciaSS": [
+     "evidencia/2026-09-10-el-agua-dice-dos-cosas/el-agua-dice-una-cosa.png"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "16f4550",
     "despliegue": "sin-desplegar"
    },
    {
@@ -7697,7 +7808,7 @@
      "n": 3,
      "gesto": "ENFRIAMIENTO",
      "seVe": "el campo pintado en ≤2.5 s con su ESCALA en segundos junto a la pieza, LA FICHA sobre el punto que manda, y la pieza enfriándose EN EL TIEMPO con el reloj corriendo (nada de pantallas fijas)",
-     "estado": "ok",
+     "estado": "parcial",
      "ticket": "2026-09-10-el-enfriamiento-se-ve"
     },
     {
@@ -7736,12 +7847,12 @@
      "ticket": "2026-08-28-t5-expediente-que-se-ve"
     }
    ],
-   "verdes": 7,
+   "verdes": 6,
    "total": 8,
    "rompeEn": 0,
-   "parciales": 1,
+   "parciales": 2,
    "medido": {
-    "fecha": "2026-09-21 21:09",
+    "fecha": "2026-09-22 06:28",
     "url": "http://localhost:5194/forja-brep.html",
     "servido": "6f70032",
     "maquina": "Ian"

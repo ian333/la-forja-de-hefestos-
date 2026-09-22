@@ -199,6 +199,15 @@ const parDeCota = (A, B) => {
       mat: (m.dataset.material ?? null),
       tel: (window.__forgeBrep.telemetria || []).filter((x) => /total/.test(x.paso)).map((x) => `E${x.estacion} ${(x.ms / 1000).toFixed(1)}s`).join(' · ') };
   });
+  // LA APERTURA REAL (fusión 2026-09-21): la pila ya la dimensiona `carreraDeApertura` (pieza + colada, §6.3.2) y el 3D la
+  // aplica en `openMm`; el inspector la LEE del molde abierto (`animZ('clamp')` con `estado(1,0)`) en vez de suponer 2.5·H.
+  const aperturaReal = await page.evaluate(async () => {
+    const f = window.__forgeBrep; f.inspeccion.estado(1, 0);
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 60))));
+    const z = f.animZ('clamp'); f.inspeccion.estado(0, 0);
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return Number.isFinite(z) ? z : null;
+  });
   const cotasOff = await page.evaluate(() => { const b = document.querySelector('[data-testid="mold-cotas-toggle"]'); if (b && b.classList.contains('on')) { b.click(); return true; } return false; });
   const g = (role) => D.G.find((p) => p.role === role);
   const gs = (re) => D.G.filter((p) => re.test(p.role));
@@ -247,6 +256,15 @@ const parDeCota = (A, B) => {
 
   // ── 1.1 y 6.1 · LA CARA REAL (rayo), no la fórmula que los coloca ───────────────────────────────────
   const caraEn = (role, x, y) => page.evaluate(({ role, x, y }) => window.__forgeBrep.inspeccion.caraEn(role, x, y), { role, x, y });
+  // LA CARA JUNTO AL BARRENO (fusión 2026-09-22): desde LOS INSERTOS SE BARRENAN el núcleo trae el agujero de cada pin (y otros).
+  // Un rayo en el centro exacto del pin cae DENTRO de su barreno y lee el fondo (50 mm «metida» en la carcasa, falso). La
+  // cara real del macho se muestrea en un anillo alrededor (radio = ⌀/2 + 1.5 mm, 4 puntos) y se toma la más alta que exista.
+  const caraCerca = async (role, x, y, off) => {
+    const pts = [[x, y], [x + off, y], [x - off, y], [x, y + off], [x, y - off]];
+    let mejor = null;
+    for (const [px, py] of pts) { const c = await caraEn(role, px, py); if (c && Number.isFinite(c.zMax) && (!mejor || c.zMax > mejor.zMax)) mejor = c; }
+    return mejor;
+  };
   // el CENTRO EXACTO suele caer sobre una arista de la triangulación (y sobre el bebedero): se muestrea
   // corrido un pelo, y se toma el primer punto donde la pieza enseña ≥ 2 caras (fuera y dentro).
   const dx = (pz.max[0] - pz.min[0]) * 0.18, dy = (pz.max[1] - pz.min[1]) * 0.18;
@@ -254,7 +272,7 @@ const parDeCota = (A, B) => {
   let sonda = sondas[0], rPieza = null;
   for (const sxy of sondas) { const c = await caraEn('pieza', sxy[0], sxy[1]); if (c && c.zs.length >= 2) { rPieza = c; sonda = sxy; break; } if (!rPieza) rPieza = c; }
   const [sx, sy] = sonda;
-  const rNucleo = await caraEn('nucleo', sx, sy);
+  const rNucleo = await caraCerca('nucleo', sx, sy, 4);      // ±4 mm: un barreno chico en el eje no engaña al 1.1
   // la pieza va VOLTEADA (boca en la partición, base cerrada hacia A): en el eje, las dos z más altas son la
   // cara INTERIOR (el piso que el macho toca) y la EXTERIOR. El macho debe llegar a la interior.
   const zPisoReal = rPieza && rPieza.zs.length >= 2 ? rPieza.zs[rPieza.zs.length - 2] : NaN;
@@ -266,7 +284,7 @@ const parDeCota = (A, B) => {
   const puntasCara = [];
   for (const p of puntas.slice(0, 12)) {
     const x = cen(p, 0), y = cen(p, 1);
-    const c = await caraEn('nucleo', x, y);
+    const c = await caraCerca('nucleo', x, y, (p.max[0] - p.min[0]) / 2 + 1.5);   // fuera del barreno del propio pin
     puntasCara.push({ role: p.role, x: r2(x), y: r2(y), punta: r2(p.max[2]), cara: c ? c.zMax : null, d: c ? +(p.max[2] - c.zMax).toFixed(2) : null });
   }
   const conCara = puntasCara.filter((p) => p.d != null);
@@ -290,7 +308,7 @@ const parDeCota = (A, B) => {
   // 2.2 · el agua A contra el ASIENTO DEL INSERTO de cavidad (la cara que la pasada 1 NO miraba)
   const aguaVsInserto = par(/^agua-A-/, /^cavidad$/).concat(parDudoso(/^agua-A-/, /^cavidad$/).map((c) => ({ ...c, dudosa: true })));
   const lineaEnInserto = aguaVsInserto.length ? (lineasA.find((l) => l.role === aguaVsInserto[0].a) || lineasA.find((l) => l.role === aguaVsInserto[0].b) || lineasA[0]) : (lineasA[0] || null);
-  const apertura = 2.5 * Hp, bebedero = col ? col.max[2] - Math.max(col.min[2], pz.max[2]) : 0, aperturaPide = Hp + bebedero + 10;
+  const apertura = Number.isFinite(aperturaReal) && aperturaReal > 0 ? aperturaReal : 2.5 * Hp, bebedero = col ? col.max[2] - Math.max(col.min[2], pz.max[2]) : 0, aperturaPide = Hp + bebedero + 10;
   const penRet = (ret.max[2] + D.pedida) - sup.min[2];
   const guiaSobre = guias ? guias.max[2] - zPart : NaN, machoSobre = nuc.max[2] - zPart;
   // TALADRABLE: el tramo toca un canto, o sobre su MISMO eje hay un tapón / una entrada-salida
@@ -398,7 +416,7 @@ const parDeCota = (A, B) => {
           mira: 'corte por el eje de la línea · la línea CIAN dentro del sólido TRANSLÚCIDO que invade' }; })() },
 
     { id: '3.1', preg: '3 · ¿ABRE Y EXPULSA?', que: 'la apertura saca la pieza CON su bebedero',
-      medido: `apertura 2.5·H = ${r1(apertura)} mm · pieza ${r1(Hp)} + bebedero ${r1(bebedero)} + 10 = ${r1(aperturaPide)}`, pide: 'apertura ≥ pieza + bebedero + 10', v: ok(apertura >= aperturaPide),
+      medido: `apertura ${Number.isFinite(aperturaReal) && aperturaReal > 0 ? 'REAL (animZ clamp)' : '2.5·H (sin animZ)'} = ${r1(apertura)} mm · pieza ${r1(Hp)} + bebedero ${r1(bebedero)} + 10 = ${r1(aperturaPide)}`, pide: 'apertura ≥ pieza + bebedero + 10', v: ok(apertura >= aperturaPide),
       vista: { estado: [1, 0], pose: true, az: 90, el: 5, corte: ['x', cx], margen: 1.16,
         cotasPose: (Gp) => { const Ap = Gp.find((p) => p.role === 'placa-a-ghost'), Bp = Gp.find((p) => p.role === 'placa-b-ghost');
           const pzp = Gp.find((p) => p.role === 'pieza'), colp = Gp.find((p) => p.role === 'colada');
