@@ -1,9 +1,9 @@
 # ORDEN: EL MACHO DE LA CAJA GRANDE — en la 1599HBK el núcleo no sube a llenar la pieza: 31.5 mm de plástico macizo donde debía haber acero
 
-ESTADO: proximo
+ESTADO: hoy
 PRIORIDAD: 1
 
-BASE: b3815ba
+BASE: 2b3ed99
 
 OBJETIVO: que el núcleo de TODA pieza soltada forme su interior. En la 1599HBK (caja grande, 220×110×35.5, base 396×296) el acero
 del núcleo se queda plano a la altura de la partición en el centro de la pieza, y la pieza queda hueca encima: moldeado así, el
