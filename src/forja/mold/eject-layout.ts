@@ -54,6 +54,17 @@ export interface GripLayout {
     desvioAntesMm: number;                 // lo que daba el greedy por dWall, antes de equilibrar
     nSwaps: number;
   };
+  /** EL PIN SE MUEVE ANTES QUE EL AGUA (ian 2026-09-22, pregunta 5): solo con `o.evitar`.
+   *  `antes` = el reparto sin mirar el agua (el de siempre) · `movidos` = cuántos de esos
+   *  caían sobre una línea y se cambiaron por otro candidato del agarre · `forzados` = los
+   *  que NO encontraron lugar libre: ésos se quedan y piden baffle/bubbler (§9.3.5.2). */
+  agua?: {
+    vetados: number;                        // candidatos del agarre que caen sobre el agua
+    antes: Array<{ x: number; y: number }>;
+    enAguaAntes: number;                    // pines del reparto de siempre que caían sobre el agua
+    movidos: number;
+    forzados: Array<{ x: number; y: number }>;
+  };
   notas: string[];
 }
 
@@ -163,6 +174,10 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
   /** pared nominal de la pieza (mm) — ATA el muestreo vertical y el umbral de
    *  agarre. Sin ella se asume 2 mm y se DECLARA en las notas. */
   wallMm?: number;
+  /** EL AGUA (orden LOS BOTADORES CON NOMBRE, 2026-09-22): `true` = ese (x, y) LOCAL cae
+   *  sobre una línea de agua sin su ½⌀ de acero (§9.2.7). El candidato no se usa mientras
+   *  quede otro del agarre; si no queda ninguno, se usa y se DECLARA (`agua.forzados`). */
+  evitar?: (x: number, y: number) => boolean;
 }): GripLayout {
   const notas: string[] = [];
   const q = solidFromMesh(mesh);
@@ -248,12 +263,21 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
 
   // ── selección greedy con separación mínima ──
   const sep = Math.max(8, 2.5 * o.pinDiaMm);
-  const selIdx: number[] = [];
-  for (let k = 0; k < candidatos.length; k++) {
-    if (selIdx.length >= o.nPins) break;
-    const c = candidatos[k];
-    if (selIdx.every((s) => Math.hypot(candidatos[s].x - c.x, candidatos[s].y - c.y) >= sep)) selIdx.push(k);
-  }
+  // EL AGUA MANDA DÓNDE NO (2026-09-22): los candidatos que caen sobre una línea quedan
+  // VETADOS. Sin `evitar` no hay vetos y todo lo de abajo es bit-igual a antes.
+  const vetado = candidatos.map((c) => !!o.evitar?.(c.x, c.y));
+  const nVetados = vetado.filter(Boolean).length;
+  const cabe = (idx: number[], k: number, salvo = -1) =>
+    idx.every((s2, n) => n === salvo || Math.hypot(candidatos[s2].x - candidatos[k].x, candidatos[s2].y - candidatos[k].y) >= sep);
+  const greedy = (permite: (k: number) => boolean, ya: number[] = []) => {
+    const idx = ya.slice();
+    for (let k = 0; k < candidatos.length; k++) {
+      if (idx.length >= o.nPins) break;
+      if (!permite(k) || idx.indexOf(k) >= 0) continue;
+      if (cabe(idx, k)) idx.push(k);
+    }
+    return idx;
+  };
 
   // ── EL EQUILIBRIO (2026-09-21) — la mitad que faltaba de §11.2.5 ──────────────
   // El greedy por dWall coloca donde MÁS agarra, y se apiña de un lado: medido en las
@@ -265,8 +289,9 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
   //             is stripped off the core."
   //   §11.3.4: "unbalanced ejection forces can lead to uneven wear in the mold."
   // O sea: el libro nombra el MOMENTO y el DESGASTE, pero NO da un número de desvío.
-  // EL NÚMERO ES NUESTRO — REGLA NUESTRA, sin cita: el centroide de los pines a
-  // ≤ 0.1·L del centroide del ÁREA PROYECTADA (L = lado mayor de la huella). Razón:
+  // EL NÚMERO ES NUESTRO — REGLA DE HEFESTOS (sin cita del libro; ian 2026-09-22: «ME GUSTA
+  // COMO REGLA DE HEFESTOS»): el centroide de los pines a ≤ 0.1·L del centroide del ÁREA
+  // PROYECTADA (L = lado mayor de la huella). Razón:
   // 0.1·L es el desvío que la propia rejilla de referencia produce (media celda de una
   // malla 4×4 sobre la huella) — pedir menos sería inventar precisión que la colocación
   // por agarre no tiene, y pedir más deja pasar el caso 4-en-una-orilla que ya medimos.
@@ -289,22 +314,60 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
     let X = 0, Y = 0; for (const k of idx) { X += candidatos[k].x; Y += candidatos[k].y; }
     return Math.hypot(X / idx.length - areaX, Y / idx.length - areaY);
   };
-  const desvioAntesMm = desvioDe(selIdx);
-  let desvioMm = desvioAntesMm, nSwaps = 0;
-  for (let iter = 0; iter < 60 && desvioMm > topeMm; iter++) {
-    let mejorD = desvioMm, mejorS = -1, mejorA = -1;
-    for (let s = 0; s < selIdx.length; s++) {
-      for (let a = 0; a < candidatos.length; a++) {
-        if (selIdx.indexOf(a) >= 0) continue;
-        const ca = candidatos[a];
-        if (!selIdx.every((k, n) => n === s || Math.hypot(candidatos[k].x - ca.x, candidatos[k].y - ca.y) >= sep)) continue;
-        const probe = selIdx.slice(); probe[s] = a;
-        const d = desvioDe(probe);
-        if (d < mejorD - 1e-6) { mejorD = d; mejorS = s; mejorA = a; }
+  // el lazo de intercambios, con la bolsa de candidatos PERMITIDOS (sin veto = todos)
+  const equilibra = (idx0: number[], permite: (k: number) => boolean) => {
+    const idx = idx0.slice();
+    const desvioAntes = desvioDe(idx);
+    let dv = desvioAntes, swaps = 0;
+    for (let iter = 0; iter < 60 && dv > topeMm; iter++) {
+      let mejorD = dv, mejorS = -1, mejorA = -1;
+      for (let s2 = 0; s2 < idx.length; s2++) {
+        for (let a = 0; a < candidatos.length; a++) {
+          if (idx.indexOf(a) >= 0 || !permite(a)) continue;
+          if (!cabe(idx, a, s2)) continue;
+          const probe = idx.slice(); probe[s2] = a;
+          const d = desvioDe(probe);
+          if (d < mejorD - 1e-6) { mejorD = d; mejorS = s2; mejorA = a; }
+        }
       }
+      if (mejorS < 0) break;                                   // ningún intercambio mejora: se DECLARA, no se fuerza
+      idx[mejorS] = mejorA; dv = mejorD; swaps++;
     }
-    if (mejorS < 0) break;                                   // ningún intercambio mejora: se DECLARA, no se fuerza
-    selIdx[mejorS] = mejorA; desvioMm = mejorD; nSwaps++;
+    return { idx, desvioAntes, desvio: dv, swaps };
+  };
+  // EL REPARTO DE SIEMPRE (sin mirar el agua): es el «antes» de la tabla pin↔agua.
+  const rep0 = equilibra(greedy(() => true), () => true);
+  let selIdx = rep0.idx, desvioAntesMm = rep0.desvioAntes, desvioMm = rep0.desvio, nSwaps = rep0.swaps;
+  let agua: GripLayout['agua'];
+  if (o.evitar) {
+    const enAguaAntes = rep0.idx.filter((k) => vetado[k]).length;
+    let forzadosIdx: number[] = [];
+    if (enAguaAntes > 0) {
+      // PRIMERO SE MUEVE EL PIN (ian 2026-09-22, pregunta 5 · §11.2.5): el reparto se rehace con
+      // los candidatos LIBRES del agarre — siguen en la banda [keepOut, keepOut+6] de su pared,
+      // así que el pin movido sigue empujando donde la pieza abraza al macho.
+      const libre = (k: number) => !vetado[k];
+      let idx = greedy(libre);
+      // SOLO si no queda lugar libre se usa un candidato sobre el agua, y se DECLARA: ése pide
+      // baffle/bubbler en ese tramo de la línea (§9.3.5.2), no un pin en silencio sobre el agua.
+      if (idx.length < o.nPins) {
+        const n0 = idx.length;
+        idx = greedy((k) => vetado[k], idx);
+        forzadosIdx = idx.slice(n0);
+      }
+      const rep = equilibra(idx, (k) => !vetado[k]);
+      selIdx = rep.idx; desvioMm = rep.desvio; nSwaps = rep.swaps;
+      // el «antes» del equilibrio es el del reparto de siempre (lo que se tenía ANTES de mover)
+      desvioAntesMm = rep0.desvioAntes;
+      forzadosIdx = forzadosIdx.filter((k) => selIdx.indexOf(k) >= 0);
+    }
+    agua = {
+      vetados: nVetados,
+      antes: rep0.idx.map((k) => ({ x: +candidatos[k].x.toFixed(1), y: +candidatos[k].y.toFixed(1) })),
+      enAguaAntes,
+      movidos: rep0.idx.filter((k) => vetado[k] && selIdx.indexOf(k) < 0).length,
+      forzados: forzadosIdx.map((k) => ({ x: +candidatos[k].x.toFixed(1), y: +candidatos[k].y.toFixed(1) })),
+    };
   }
   const sel = selIdx.map((k) => ({ x: +candidatos[k].x.toFixed(1), y: +candidatos[k].y.toFixed(1) }));
   const equilibrio = {
@@ -319,8 +382,13 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
     notas.push(`solo ${sel.length} de ${o.nPins} pines caben JUNTO al agarre (keepOut ${keepOut.toFixed(1)} mm, separación ${sep.toFixed(0)} mm) — el resto se declara, no se inventa: subir ⌀ chico o aceptar menos pines §11.2.4`);
   }
   notas.push(`${nParedes} columnas de pared · ${candidatos.length} candidatos junto al agarre · ${sel.length} pines colocados (§11.2.5 Fig 11.11)`);
+  if (agua) notas.push(agua.enAguaAntes === 0
+    ? `EL AGUA: ${agua.vetados} de ${candidatos.length} candidatos caen sobre una línea; el reparto no usaba ninguno — ningún pin se movió`
+    : agua.forzados.length === 0
+      ? `EL AGUA: ${agua.enAguaAntes} pin(es) caían sobre una línea de agua → SE MOVIERON a otro candidato del agarre (${agua.vetados} candidatos vetados) — el agua conserva sus carriles, sin baffle`
+      : `⚠ EL AGUA: ${agua.enAguaAntes} pin(es) sobre una línea; ${agua.movidos} se movieron y ${agua.forzados.length} NO encontraron lugar libre del agarre → en ese tramo va baffle/bubbler (§9.3.5.2), declarado`);
   notas.push(equilibrio.ok
-    ? `EQUILIBRIO: centroide de los pines a ${equilibrio.desvioMm} mm del centroide del área proyectada (tope 0.1·L = ${equilibrio.topeMm} mm, REGLA NUESTRA) — ${nSwaps} intercambios desde ${equilibrio.desvioAntesMm} mm`
+    ? `EQUILIBRIO: centroide de los pines a ${equilibrio.desvioMm} mm del centroide del área proyectada (tope 0.1·L = ${equilibrio.topeMm} mm, regla de Hefestos) — ${nSwaps} intercambios desde ${equilibrio.desvioAntesMm} mm`
     : `⚠ EQUILIBRIO NO ALCANZADO: ${equilibrio.desvioMm} mm > tope ${equilibrio.topeMm} mm (desde ${equilibrio.desvioAntesMm} mm, ${nSwaps} intercambios) — con estos candidatos §11.2.5 no hay reparto mejor: se DECLARA (subir nPins o bajar ⌀)`);
 
   return {
@@ -329,6 +397,140 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
     nParedes, nCandidatos: candidatos.length, keepOutMm: keepOut,
     grid: { nx, ny, sx, sy, x0: b.x0, y0: b.y0, wall, push },
     equilibrio,
+    agua,
     notas,
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* LOS BOTADORES CON NOMBRE (orden 2026-09-22)                                 */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/** El pin ESCALONADO en z (para juzgarlo contra el agua sección por sección: a la altura
+ *  de la línea puede pasar la PUNTA o el CUERPO, y cada una abre un barreno distinto). */
+export interface PinEnZ {
+  puntaDiaMm: number; puntaMm: number; cuerpoDiaMm: number;
+  /** z de la cara de la retenedora = donde asienta la cabeza (plateStackZ['ejector-ret']) */
+  zRetenedoraMm: number;
+}
+/** un tramo de agua (la forma de `SegmentoAgua` del circuito de la E8, sin importarlo) */
+export interface TramoAgua { id: string; p0: [number, number, number]; p1: [number, number, number]; diaMm: number; tipo: string }
+
+/**
+ * EL CLARO pin ↔ agua — UNA SOLA FUENTE para quien coloca (E7) y quien juzga (E10).
+ * ============================================================================
+ * §9.2.7 LITERAL: "at least half a cooling diameter between the surface of the cooling line and
+ * the surface of ANY OTHER MOLD COMPONENT". La superficie del otro componente es la pared de su
+ * BARRENO (donde termina el acero), no el pin: la punta corre en su barreno (`ejectorPinFit`,
+ * el ajuste que ventea, §8.3.2) y el cuerpo en su pasaje ⌀+0.5 (§11.2.6).
+ * El juez viejo de la E10 medía con el radio de la PUNTA en toda la altura; con el pin
+ * escalonado, a la altura de la línea B suele pasar el CUERPO (1599HBK: el conflicto era
+ * `pin-cuerpo-5`, que ese juez no veía). Aquí se mira qué sección comparte la franja de z de
+ * cada tramo y se usa SU barreno. Un tramo que no comparte z con ninguna sección no se juzga.
+ * `margenZMm` ensancha la franja: al COLOCAR (E7) el piso exacto del candidato aún no se
+ * midió y el hombro puede caer a ±1 mm de la línea; al JUZGAR (E10) va 0.
+ */
+export function claroPinAgua(pin: { x: number; y: number; zPisoMm: number }, g: PinEnZ, tramos: TramoAgua[], zPartMm: number, o?: { margenZMm?: number }) {
+  const m = o?.margenZMm ?? 0;
+  const zHombro = pin.zPisoMm - g.puntaMm;
+  const secciones = [
+    { seccion: 'punta' as const, z0: zHombro, z1: pin.zPisoMm, rHoyo: ejectorPinFit(g.puntaDiaMm).holeDiaMm / 2 },
+    { seccion: 'cuerpo' as const, z0: g.zRetenedoraMm, z1: zHombro, rHoyo: (g.cuerpoDiaMm + 0.5) / 2 },
+  ];
+  const out: Array<{ segmento: string; seccion: 'punta' | 'cuerpo'; claroMm: number; minMm: number }> = [];
+  for (const sg of tramos) {
+    if (sg.tipo === 'extension') continue;                               // lado A: arriba de la partición
+    if (sg.tipo !== 'baffle' && Math.min(sg.p0[2], sg.p1[2]) > zPartMm) continue;
+    const r = sg.diaMm / 2;
+    const zl = Math.min(sg.p0[2], sg.p1[2]) - r - m, zh = Math.max(sg.p0[2], sg.p1[2]) + r + m;
+    // distancia en PLANTA del eje del pin al eje del tramo (el baffle es vertical: a su eje)
+    const dx = sg.p1[0] - sg.p0[0], dy = sg.p1[1] - sg.p0[1], L2 = dx * dx + dy * dy;
+    const t = sg.tipo === 'baffle' || L2 < 1e-9 ? 0 : Math.max(0, Math.min(1, ((pin.x - sg.p0[0]) * dx + (pin.y - sg.p0[1]) * dy) / L2));
+    const dPlanta = Math.hypot(pin.x - (sg.p0[0] + t * dx), pin.y - (sg.p0[1] + t * dy));
+    let peor: { seccion: 'punta' | 'cuerpo'; claro: number } | null = null;
+    for (const sc of secciones) {
+      if (!(zh > sc.z0 && zl < sc.z1)) continue;                         // no comparten franja de z
+      const claro = dPlanta - r - sc.rHoyo;
+      if (!peor || claro < peor.claro) peor = { seccion: sc.seccion, claro };
+    }
+    if (peor) out.push({ segmento: sg.id, seccion: peor.seccion, claroMm: +peor.claro.toFixed(2), minMm: +(sg.diaMm / 2).toFixed(2) });
+  }
+  return out;
+}
+
+/** El nombre de la pieza como IDENTIFICADOR de GAIA: sin acentos, sin extensión, MAYÚSCULAS, guiones. */
+export function slugPieza(nombre: string): string {
+  return (nombre || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\.(stp|step|stl|iges?)$/i, '')
+    .toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'PIEZA';
+}
+/** «cada pieza dentro de GAIA tendrá su identificador» (ian 2026-09-22): el pin k de la pieza P = `P-EP-0k`. */
+export function idBotador(piezaNombre: string, k: number): string {
+  return `${slugPieza(piezaNombre)}-EP-${String(k + 1).padStart(2, '0')}`;
+}
+
+/**
+ * LA TABLA DE EYECTORES — cada pin a SU largo, con su nombre, y la llave cuando los largos difieren.
+ * ============================================================================
+ * §11.2.6 LITERAL: "Whenever possible, the mold designer should specify the same length and
+ * diameter of ejector pins to facilitate mold assembly and maintenance." — y cuando NO es posible:
+ * "The mold designer should always avoid designing ejector pins that vary only slightly in their
+ * design, since similar pins may accidentally be considered interchangeable by the molder. The
+ * incorrect assembly of ejector pins may cause damage to the pins as well as the opposing mold
+ * cavity surfaces" … "key and label each ejector pin and matching location on the ejector
+ * retainer plate". (§11.1.7 / R37 lo hace entregable: la tabla de eyectores.)
+ * ian 2026-09-22 (pregunta 8): «EL HUMANO ACEPTA EL STANDARD POR NATURALEZA, cada uno a su largo y
+ * etiqueta, cada pieza dentro de GAIA tendrá su identificador». Por eso NO se igualan rebajando al
+ * piso más bajo (eso deja un botón de plástico en los demás): cada pin llega a SU piso.
+ *
+ * LARGO = de la cara de asiento de la cabeza (la retenedora) a la punta (el piso real del rayo).
+ * «Distintos» = distintos a la centésima, la cota que va al taller. En la 1557BGY los pisos
+ * difieren 0.01–0.10 mm: exactamente el caso «vary only slightly» que el libro nombra — por
+ * eso cualquier diferencia cuenta; no hay umbral que la perdone.
+ * LA LLAVE (anti-giro; el pin contorneado de §11.2.6 lleva plano en la cabeza + localizador en la
+ * retenedora para conservar su orientación angular): un PLANO en la cabeza y el mismo plano en su
+ * contrataladro. La distancia del plano al eje es REGLA DE HEFESTOS (el libro pide la llave, no
+ * da la cota): a media corona de la cabeza, ½(r_cuerpo + r_cabeza) — deja acero de la cabeza a
+ * los dos lados del cuerpo y una cara de apoyo de ½(r_cabeza − r_cuerpo) de ancho.
+ */
+export interface FilaEyector {
+  id: string; k: number;
+  x: number; y: number;
+  zPisoMm: number;
+  /** largo total: asiento de la cabeza → punta (mm, a la centésima) */
+  largoMm: number;
+  /** largo del CUERPO: asiento de la cabeza → hombro */
+  cuerpoMm: number;
+  puntaMm: number;
+  fuentePiso: 'rayo' | 'pared mediana';
+}
+export interface TablaEyectores {
+  piezaId: string;
+  filas: FilaEyector[];
+  /** cuántos largos distintos hay (a la centésima) — 1 = todos iguales */
+  largosDistintos: number;
+  minMm: number; maxMm: number;
+  /** keyed cuando los largos difieren (§11.2.6) — la llave va en TODAS las cabezas */
+  llave: { requerida: boolean; planoAlEjeMm: number; regla: string };
+  etiqueta: string;
+}
+export function tablaDeEyectores(piezaNombre: string, pines: Array<{ x: number; y: number; zPisoMm?: number }>, g: PinEnZ & { cabezaDiaMm: number; zPisoRespaldoMm: number }): TablaEyectores {
+  const filas: FilaEyector[] = pines.map((p, k) => {
+    const rayo = Number.isFinite(p.zPisoMm);
+    const zPiso = rayo ? (p.zPisoMm as number) : g.zPisoRespaldoMm;
+    return {
+      id: idBotador(piezaNombre, k), k, x: p.x, y: p.y, zPisoMm: +zPiso.toFixed(3),
+      largoMm: +(zPiso - g.zRetenedoraMm).toFixed(2),
+      cuerpoMm: +(zPiso - g.puntaMm - g.zRetenedoraMm).toFixed(2),
+      puntaMm: g.puntaMm, fuentePiso: rayo ? 'rayo' : 'pared mediana',
+    };
+  });
+  const largos = [...new Set(filas.map((f) => f.largoMm.toFixed(2)))];
+  return {
+    piezaId: slugPieza(piezaNombre), filas, largosDistintos: largos.length,
+    minMm: filas.length ? Math.min(...filas.map((f) => f.largoMm)) : 0,
+    maxMm: filas.length ? Math.max(...filas.map((f) => f.largoMm)) : 0,
+    llave: { requerida: largos.length > 1, planoAlEjeMm: +((g.cuerpoDiaMm / 2 + g.cabezaDiaMm / 2) / 2).toFixed(2),
+      regla: 'regla de Hefestos: plano a ½(r cuerpo + r cabeza) del eje — el libro pide la llave, no da la cota' },
+    etiqueta: 'cada pin grabado con su id en la cabeza + el mismo id junto a su barreno en la retenedora (§11.2.6: "key and label each ejector pin and matching location on the ejector retainer plate")',
   };
 }

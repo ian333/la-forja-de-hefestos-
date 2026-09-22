@@ -53,7 +53,7 @@ import { moldMachine, type MoldPackage } from '../mold/moldmachine';
 import { predicadoDeMalla } from '../mold/flowlen';   // sprint 1: E4/E5 POR PIEZA
 import { estacion1Dado, estacion2Dado, estacion1, estacion2, piezaDesdeArbol, DADO_PIEZA, type PiezaSpec, estacion3Dado, dadoRectoShape, construirAceroE3, barrenarInsertos, verificacionE3, declDePieza, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, EJECTOR_PIN_DIAS_MM, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type PiezaParaElAgua, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { ABS_EJECT, effectiveArea, ejectionForce, ejectorPinSizing } from '../mold/ejection';
-import { gripEjectorLayout, pisoInteriorPorRayo, ejectorHeadGeom } from '../mold/eject-layout';
+import { gripEjectorLayout, pisoInteriorPorRayo, ejectorHeadGeom, claroPinAgua } from '../mold/eject-layout';
 import { resolverLlenadoFAN, resolverLlenadoFANAsync } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
@@ -1440,7 +1440,25 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       // el piso por donde los pines empujan desde el macho. La de E2/E3 ya está volteada a la base: no sirve.
       const mLocal = OCC.tessellate(oc, ciclo.piezaShape, 0.5, 0.6);
       t = marca(7, 'tessellate local', t);
-      const grip = gripEjectorLayout({ positions: mLocal.positions, indices: mLocal.indices }, { nPins: 8, pinDiaMm: dia8, wallMm });
+      // PRIMERO SE MUEVE EL PIN (orden LOS BOTADORES CON NOMBRE · ian 2026-09-22, pregunta 5): el agua de
+      // la E6 ya existe cuando llegan los pines, así que el agarre VETA los candidatos que caerían sobre una
+      // línea sin su ½⌀ de acero (§9.2.7) — con la MISMA regla que el juez de la E10 (`claroPinAgua`):
+      // sección por sección (punta o cuerpo) contra la pared de SU barreno. Solo si no queda candidato libre
+      // del agarre se usa uno sobre el agua, y ése se declara para baffle/bubbler (§9.3.5.2).
+      // El piso de un candidato todavía no se midió (el rayo va después, sobre los 8 elegidos): se juzga con
+      // la pared mediana y la franja de z se ensancha 2 mm (el rayo corrigió la mediana hasta 1.56 mm en
+      // la 1557BGY) — margen de COLOCACIÓN, regla de Hefestos; el juez de la E10 va con el piso real y sin margen.
+      const asmPila = packageToAssemblySpec(ciclo.e2.pkg);
+      const zRetenedora = plateStackZ(asmPila)['ejector-ret'];                    // cara de la expulsora = base de la retenedora
+      const pinEnZ = { puntaDiaMm: dia8, puntaMm: 50, cuerpoDiaMm: cat(dia8 + 1), zRetenedoraMm: zRetenedora };   // = estacion10Dado (R52)
+      const zPisoMedianaG = col.zBaseCerradaMm - wallMm;
+      const tramos = ciclo.e8.circuito.segmentos;
+      const sobreElAgua = (xl: number, yl: number) => {
+        const g = col.aGlobal(xl, yl, 0);
+        return claroPinAgua({ x: g[0], y: g[1], zPisoMm: zPisoMedianaG }, pinEnZ, tramos, d.zPartMm, { margenZMm: 2 })
+          .some((c) => c.claroMm < c.minMm - 1e-9);
+      };
+      const grip = gripEjectorLayout({ positions: mLocal.positions, indices: mLocal.indices }, { nPins: 8, pinDiaMm: dia8, wallMm, evitar: sobreElAgua });
       // EL PISO REAL BAJO CADA PIN (2026-09-21): un rayo vertical sobre la MISMA malla local.
       // La punta no termina en `zBaseCerrada − pared MEDIANA` (eso dejaba las 8 puntas 1.06 mm
       // hundidas en la tapa, 1.56 en la 1557BGY y 1.04 METIDAS en la pieza en la 1599HBK):
@@ -1453,24 +1471,40 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         return { x: +g[0].toFixed(2), y: +g[1].toFixed(2), zPisoMm: zl == null ? undefined : +col.aGlobal(p.x, p.y, zl)[2].toFixed(3) };
       });
       const sinRayo = posiciones.filter((p) => p.zPisoMm == null).length;
+      // el reparto de SIEMPRE (sin mirar el agua), con SU piso por rayo: la E10 lo juzga con la misma regla → la tabla antes → después
+      const aguaE7 = grip.agua ? (() => {
+        const pisosAntes = pisoInteriorPorRayo({ positions: mLocal.positions, indices: mLocal.indices }, grip.agua!.antes);
+        const aG = (p: { x: number; y: number }, zl?: number | null) => {
+          const g = col.aGlobal(p.x, p.y, zl ?? 0);
+          return { x: +g[0].toFixed(2), y: +g[1].toFixed(2), zPisoMm: zl == null ? undefined : +g[2].toFixed(3) };
+        };
+        return { ...grip.agua!, antes: grip.agua!.antes.map((p, k) => aG(p, pisosAntes[k]?.zMm)),
+          forzados: grip.agua!.forzados.map((p) => { const g = aG(p); return { x: g.x, y: g.y }; }) };
+      })() : undefined;
       t = marca(7, `agarre §11.2.5 (${grip.nParedes} columnas de pared, ${posiciones.length} pines) + piso por rayo (${posiciones.length - sinRayo}/${posiciones.length})`, t);
       const e10 = estacion10Dado(ciclo.e2.pkg, d, ciclo.e8.circuito, {
         pieza: { semiXmm: lo.semiXmm, semiYmm: lo.semiYmm, wallMm, zBaseCerradaMm: col.zBaseCerradaMm, alturaMm: lo.alturaMm,
-          volCc: ciclo.e5tuberia?.volPiezaCc ?? ciclo.pieza.pieza.volCc, draftDeg, posiciones, equilibrio: grip.equilibrio },
+          volCc: ciclo.e5tuberia?.volPiezaCc ?? ciclo.pieza.pieza.volCc, draftDeg, posiciones, equilibrio: grip.equilibrio,
+          nombre: ciclo.pieza.nombre, agua: aguaE7 },
       });
       const punta = e10.pines.escalonado;
       setProgreso({ estacion: 7, paso: `${e10.pines.n} pines escalonados ⌀${punta.puntaDiaMm}/${punta.cuerpoDiaMm} subiendo por el macho (kernel)`, i: 2, n: N, t0: T });
       await respira();
       // la punta termina en la CARA DEL MACHO bajo ESE pin (rayo sobre la malla). El respaldo
       // `zBaseCerrada − pared MEDIANA` solo se usa si el rayo no cruzó dos caras ahí, y se DICE.
-      const zPisoMediana = col.zBaseCerradaMm - wallMm;
-      const asmPila = packageToAssemblySpec(ciclo.e2.pkg);
-      const zRetenedora = plateStackZ(asmPila)['ejector-ret'];                    // cara de la expulsora = base de la retenedora
+      const zPisoMediana = zPisoMedianaG;
       const espRetenedora = Math.max(12, Math.round(asmPila.plates.ejectorHousing * 0.2));   // = plateDefs('ejector-ret')
       const cab = ejectorHeadGeom(punta.cuerpoDiaMm, espRetenedora);              // 1 fuente con la LÁMINA (§11.2.6 Fig 11.15 Det. D)
+      // LOS BOTADORES CON NOMBRE: cada pin con su id de GAIA y SU largo (la tabla de la E10); cuando los largos
+      // difieren la cabeza lleva la LLAVE — un plano a `planoAlEjeMm` del eje (regla de Hefestos) que calza con
+      // el plano de su contrataladro: el pin entra en UN solo lugar y en UNA sola orientación (§11.2.6).
+      const tabla = e10.pines.tabla;
+      const llave = tabla?.llave.requerida ? tabla.llave.planoAlEjeMm : null;
       const parts: MoldPart[] = [];
       for (let k = 0; k < e10.pines.posiciones.length; k++) {
         const pin = e10.pines.posiciones[k];
+        const fila = tabla?.filas[k];
+        const nombrePin = fila ? `${fila.id} · L ${fila.largoMm}` : `PIN ${k}`;
         const zPiso = pin.zPisoMm ?? zPisoMediana;
         const zHombro = zPiso - punta.puntaMm;
         const tip = OCC.makeCylinder(oc, punta.puntaDiaMm / 2, punta.puntaMm, { origin: [pin.x, pin.y, zHombro], dir: [0, 0, 1] });
@@ -1479,13 +1513,23 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         // sobre la expulsora en la carcasa). Ahora baja hasta la cara de la expulsora, donde la CABEZA queda capturada
         // entre expulsora y retenedora (Fig 1.6): ⌀ cuerpo + 4, dentro del espesor de la retenedora.
         const largoCuerpo = Math.max(punta.libreCuerpoMm, zHombro - zRetenedora);
+        let cabeza = OCC.makeCylinder(oc, cab.diaMm / 2, cab.thickMm, { origin: [pin.x, pin.y, zRetenedora], dir: [0, 0, 1] });
+        // la LLAVE: se rebaja la cabeza a un plano en +X (una caja del tamaño de la cabeza, del plano hacia afuera).
+        // Un solo corte de un primitivo contra otro — no es un racimo de brocas (ver EL CORTE ÚNICO).
+        if (llave != null) {
+          try {
+            const caja = OCC.transformShape(oc, OCC.makeBox(oc, cab.diaMm, cab.diaMm + 2, cab.thickMm + 2), {
+              translate: [pin.x + llave, pin.y - cab.diaMm / 2 - 1, zRetenedora - 1] });
+            cabeza = OCC.cut(oc, cabeza, caja);
+          } catch (e) { console.warn('LLAVE_ERR', e); }
+        }
         const body = OCC.makeCompound(oc, [
           OCC.makeCylinder(oc, punta.cuerpoDiaMm / 2, largoCuerpo, { origin: [pin.x, pin.y, zHombro - largoCuerpo], dir: [0, 0, 1] }),
-          OCC.makeCylinder(oc, cab.diaMm / 2, cab.thickMm, { origin: [pin.x, pin.y, zRetenedora], dir: [0, 0, 1] }),
+          cabeza,
         ]);
         parts.push(
-          cursoPart(tip, `pin-punta-${k}`, `PIN ${k} (agarre §11.2.5) · punta ⌀${punta.puntaDiaMm} × ${punta.puntaMm} GUIADA en su barreno — termina en la CARA DEL MACHO (z ${zPiso.toFixed(2)}${pin.zPisoMm == null ? ', pared MEDIANA: el rayo no cruzó ahí' : ', rayo sobre la malla'}), junto a la pared donde la pieza abraza al macho`, '#d8dde4', 0.95, 0.95),
-          cursoPart(body, `pin-cuerpo-${k}`, `cuerpo ⌀${punta.cuerpoDiaMm} al hombro (+1 → catálogo, R52) — el pandeo se verifica AQUÍ (SF ${e10.pines.pandeoNuestro.sf}) · cabeza ⌀${cab.diaMm}×${cab.thickMm} CAPTURADA en el contrataladro ⌀${cab.boreDiaMm} de la retenedora (Fig 11.15 Det. D)`, '#aab4c0', 0.9, 0.9),
+          cursoPart(tip, `pin-punta-${k}`, `${nombrePin} (agarre §11.2.5) · punta ⌀${punta.puntaDiaMm} × ${punta.puntaMm} GUIADA en su barreno — termina en la CARA DEL MACHO (z ${zPiso.toFixed(2)}${pin.zPisoMm == null ? ', pared MEDIANA: el rayo no cruzó ahí' : ', rayo sobre la malla'}), junto a la pared donde la pieza abraza al macho`, '#d8dde4', 0.95, 0.95),
+          cursoPart(body, `pin-cuerpo-${k}`, `cuerpo ⌀${punta.cuerpoDiaMm} al hombro (+1 → catálogo, R52) — el pandeo se verifica AQUÍ (SF ${e10.pines.pandeoNuestro.sf}) · cabeza ⌀${cab.diaMm}×${cab.thickMm} CAPTURADA en el contrataladro ⌀${cab.boreDiaMm} de la retenedora (Fig 11.15 Det. D)${fila ? ` · ${fila.id}: largo ${fila.largoMm} mm (retenedora → su piso), grabado en la cabeza y junto a su barreno${llave != null ? ` · LLAVE: plano a ${llave} mm del eje (§11.2.6)` : ''}` : ''}`, '#aab4c0', 0.9, 0.9),
         );
       }
       t = marca(7, 'pines (kernel)', t);
@@ -1502,6 +1546,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         e10.pines.pisoPorRayo?.fuente === 'rayo sobre la malla'
           ? `LA PUNTA EN LA CARA DEL MACHO: piso medido por RAYO bajo cada pin (la pared mediana ${wallMm} mm se equivocaba hasta ${e10.pines.pisoPorRayo.peorMm} mm — eso era el botón de plástico)`
           : `⚠ el rayo no cruzó dos caras bajo ${sinRayo} de ${posiciones.length} pines: ésos caen a la pared MEDIANA (${wallMm} mm) y se declara`,
+        ...(tabla ? [`LOS BOTADORES CON NOMBRE: ${tabla.filas.map((f) => `${f.id} L ${f.largoMm}`).join(' · ')} — ${tabla.largosDistintos === 1 ? 'un solo largo: sin llave' : `${tabla.largosDistintos} largos distintos → LLAVE en cada cabeza + etiqueta (§11.2.6)`}`] : []),
+        ...(e10.pines.agua ? [`EL AGUA: ${e10.pines.agua.camino} · pares bajo ½⌀ ${e10.pines.agua.paresAntes?.length ?? '—'} → ${e10.juez.conflictos.length}${e10.pines.agua.bafflesDeclarados.length ? ` · ${e10.pines.agua.bafflesDeclarados.length} tramo(s) para baffle/bubbler` : ''}`] : []),
         ...grip.notas,
       ], [...moldParts, ...parts]);
       // la animación arranca cuando el molde está ENTERO: la estación 8 (el portamoldes) la enciende
