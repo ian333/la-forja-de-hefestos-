@@ -13,6 +13,7 @@
  * obtenga el juego de planos completo, sin teclear cotas de molde.
  */
 import type { MoldPackage } from './moldmachine';
+import type { ReporteCorte } from '../brep/occt';   // solo el TIPO: el kernel lo pasa el llamador (K.cortarHerramientas)
 import type { MoldAssemblySpec } from './mold-assembly';
 import {
   moldDrawingSet, plateDefs, plateDepth, standardHoles, holeLegend, cavityGrid, coolingCircuit,
@@ -101,7 +102,7 @@ export const tinteDePlaca = (spec: MoldAssemblySpec): Record<string, string> => 
   support: '#9aa6ba', ejector: '#c39457', 'ejector-ret': '#d4b06a', bottom: '#7f95a8',
 });
 
-export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: PlateDef, detail: 'full' | 'blocks' = 'full', ext = 0, shaveMm = 0): { solid: any; drilled: number; holes: number } {
+export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: PlateDef, detail: 'full' | 'blocks' = 'full', ext = 0, shaveMm = 0): { solid: any; drilled: number; holes: number; corte: ReporteCorte } {
   const W = spec.widthMm, D = plateDepth(spec), t = def.thick;
   // ext = oreja de sujeción (Fig 1.4): la placa de los extremos SOBRESALE `ext` mm en
   // ±X (los DOS lados de montaje, no los cuatro) y lleva la RANURA DE SUJECIÓN fresada
@@ -112,6 +113,14 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
   let solid = ext > 0
     ? K.transformShape(oc, K.makeBox(oc, W + 2 * ext - 2 * s, D - 2 * s, t), { translate: [-ext + s, s, 0] })
     : K.transformShape(oc, K.makeBox(oc, W - 2 * s, D - 2 * s, t), { translate: [s, s, 0] });
+  // EL CORTE ÚNICO (orden 2026-09-22): TODAS las herramientas de la placa (ranuras, holguras, bolsas, agua,
+  // barrenos, contrataladros, asientos) se juntan aquí y se cortan en UNA llamada a `cortarHerramientas`
+  // (occt.ts), que las pasa a OCCT como LISTA —la que sí resuelve brocas que se cruzan o son concéntricas— y
+  // JUZGA broca por broca. Antes eran ~12 `try { cut } catch {}` mudos + un compound de barrenos que, con
+  // cilindros concéntricos, «dejaba la placa MACIZA» (lo dicen los comentarios de abajo): por eso había
+  // cortes secuenciales sueltos. Con la lista esa distinción ya no existe.
+  const herr: any[] = [], etq: string[] = [];
+  const mete = (et: string, mk: () => any) => { let h: any = null; try { h = mk(); } catch { h = null; } herr.push(h); etq.push(et); };
   if (ext > 0) {
     // clamp slot (Fig 1.4): ranura ANGOSTA a lo largo de Y en cada oreja, en la CARA
     // que toca la platina, con material SÓLIDO a ambos lados (antes era tan ancha que
@@ -121,7 +130,7 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
     const sd = Math.max(6, Math.round(t * 0.35));               // profundidad
     const zSlot = def.role === 'clamp' ? t - sd : -0.5;
     for (const x0 of [-ext + land, W + ext - land - sw]) {
-      try { solid = K.cut(oc, solid, K.transformShape(oc, K.makeBox(oc, sw, D + 2, sd + 0.5), { translate: [x0, -1, zSlot] })); } catch { /* ranura opcional */ }
+      mete(`ranura de sujeción x=${Math.round(x0)}`, () => K.transformShape(oc, K.makeBox(oc, sw, D + 2, sd + 0.5), { translate: [x0, -1, zSlot] }));
     }
   }
   // La PLACA EXPULSORA vive DENTRO del housing (entre los rieles): más angosta que el
@@ -132,10 +141,8 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
     // por los pilares ⌀40 (en W·0.35 y W·0.65) — sin este barreno el pilar y la placa
     // ocupan el mismo acero (imposible). Holgura REAL de fits.ts (no inventada).
     const pillarClearR = pillarClearanceFit(40).holeDiaMm / 2;   // ⌀40 + holgura del libro
-    for (const pp of supportPillarPositions(spec, D)) {           // MISMA fuente que el componente
-      try { solid = K.cut(oc, solid, K.makeCylinder(oc, pillarClearR, t + 2, { origin: [pp.x, pp.y, -1], dir: [0, 0, 1] })); }
-      catch { /* holgura opcional (no aborta la placa) */ }
-    }
+    for (const pp of supportPillarPositions(spec, D))             // MISMA fuente que el componente
+      mete(`holgura del pilar (${Math.round(pp.x)},${Math.round(pp.y)})`, () => K.makeCylinder(oc, pillarClearR, t + 2, { origin: [pp.x, pp.y, -1], dir: [0, 0, 1] }));
   }
   // ── STRIPPER (§11.3.4): la "B" es el ANILLO EXPULSOR — sin bolsa de inserto, sin
   //    agua (flota); lleva el BORE deslizante que abraza el LAND del núcleo. El bore =
@@ -150,10 +157,8 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
     try { solid = K.transformShape(oc, K.makeBox(oc, W - 2 * s, D - 2 * s, t - 16), { translate: [s, s, 16] }); } catch { /* conserva la placa completa */ }
     const id0 = insertDims(spec);
     const boreDia = Math.max(6, id0.fx - 2 * id0.wall) + 0.10;
-    for (const cell of cavityGrid(spec, D)) {
-      try { solid = K.cut(oc, solid, K.makeCylinder(oc, boreDia / 2, t + 2, { origin: [cell.cx, cell.cy, -1], dir: [0, 0, 1] })); }
-      catch { /* bore que falla no aborta la placa */ }
-    }
+    for (const cell of cavityGrid(spec, D))
+      mete(`bore del stripper (${Math.round(cell.cx)},${Math.round(cell.cy)})`, () => K.makeCylinder(oc, boreDia / 2, t + 2, { origin: [cell.cx, cell.cy, -1], dir: [0, 0, 1] }));
   }
   if (def.role === 'support' && isStripper) {
     // el agua del lado núcleo corre AQUÍ (el stripper flota — no puede llevar agua):
@@ -161,11 +166,10 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
     try {
       const cc = coolingCircuit(spec, D);
       const r = cc.diaMm / 2, zc = t - 2 * cc.diaMm;
-      const wtools = cc.segs.map((g) => g.y0 === g.y1
+      cc.segs.forEach((g, k) => mete(`agua del soporte ${k}`, () => (g.y0 === g.y1
         ? K.makeCylinder(oc, r, Math.abs(g.x1 - g.x0) + 6, { origin: [Math.min(g.x0, g.x1) - 3, g.y0, zc], dir: [1, 0, 0] })
-        : K.makeCylinder(oc, r, Math.abs(g.y1 - g.y0) + 6, { origin: [g.x0, Math.min(g.y0, g.y1) - 3, zc], dir: [0, 1, 0] }));
-      for (const w of wtools) { if (w) { try { solid = K.cut(oc, solid, w); } catch { /* segmento */ } } }
-    } catch { /* agua de soporte opcional */ }
+        : K.makeCylinder(oc, r, Math.abs(g.y1 - g.y0) + 6, { origin: [g.x0, Math.min(g.y0, g.y1) - 3, zc], dir: [0, 1, 0] }))));
+    } catch (e) { console.warn('CORTE: el circuito de agua del soporte no se pudo trazar', e); }
   }
   if ((def.role === 'A' || def.role === 'B') && !(def.role === 'B' && isStripper)) {
     // BOLSA DEL INSERTO (pocket ciego desde la CARA DE PARTICIÓN): las placas A/B no
@@ -176,14 +180,11 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
     const dep = Math.min((def.role === 'A' ? id0.Hc : id0.Hk) + 0.5, t - 3);
     const bw = id0.ifx + 0.5, bl = id0.ify + 0.5;
     for (const cell of cavityGrid(spec, D)) {
-      try {
-        const zTool = def.role === 'A' ? -1 : t - dep;           // origen del tool en Z local
-        const tool = K.extrudePolygon(oc, [
-          { x: cell.cx - bw / 2, y: cell.cy - bl / 2 }, { x: cell.cx + bw / 2, y: cell.cy - bl / 2 },
-          { x: cell.cx + bw / 2, y: cell.cy + bl / 2 }, { x: cell.cx - bw / 2, y: cell.cy + bl / 2 },
-        ], dep + 1, K.offsetPlane(K.PLANE_XY, zTool));
-        solid = K.cut(oc, solid, tool);
-      } catch { /* una cavidad que falla no aborta la placa */ }
+      const zTool = def.role === 'A' ? -1 : t - dep;             // origen del tool en Z local
+      mete(`bolsa del inserto (${Math.round(cell.cx)},${Math.round(cell.cy)})`, () => K.extrudePolygon(oc, [
+        { x: cell.cx - bw / 2, y: cell.cy - bl / 2 }, { x: cell.cx + bw / 2, y: cell.cy - bl / 2 },
+        { x: cell.cx + bw / 2, y: cell.cy + bl / 2 }, { x: cell.cx - bw / 2, y: cell.cy + bl / 2 },
+      ], dep + 1, K.offsetPlane(K.PLANE_XY, zTool)));
     }
     // CANALES DE AGUA REALES — en TODO detalle, y ALINEADOS con el componente de agua
     // (misma fórmula que buildFunctionalParts, si no el tubo flota fuera del barreno).
@@ -197,25 +198,21 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
         ? (cc.zAboveMm != null ? Math.min(cc.zAboveMm, t - r - 1) : null)
         : t - Math.min(spec.plates.B - r - 1, cc.zBehindMm);
       if (zc != null) {
-        const wtools = cc.segs.map((g) => g.y0 === g.y1
+        // (Antes: SECUENCIAL, porque con la placa fina + el pocket del inserto el cut COMPUESTO se rompía y
+        //  el try/catch se lo tragaba → sin barreno = agua en acero. Era la misma trampa del compound; la
+        //  LISTA de `cortarHerramientas` la resuelve y el juez ya no deja que se trague nada.)
+        cc.segs.forEach((g, k) => mete(`agua ${def.role} ${k}`, () => (g.y0 === g.y1
           ? K.makeCylinder(oc, r, Math.abs(g.x1 - g.x0) + 6, { origin: [Math.min(g.x0, g.x1) - 3, g.y0, zc], dir: [1, 0, 0] })
-          : K.makeCylinder(oc, r, Math.abs(g.y1 - g.y0) + 6, { origin: [g.x0, Math.min(g.y0, g.y1) - 3, zc], dir: [0, 1, 0] }));
-        // SECUENCIAL, no compound: con la placa fina + el pocket del inserto, el cut
-        // compuesto se rompía (y el try/catch se lo tragaba → sin barreno = agua en acero).
-        for (const w of wtools) { if (w) { try { solid = K.cut(oc, solid, w); } catch { /* un segmento que falla no aborta los demás */ } } }
+          : K.makeCylinder(oc, r, Math.abs(g.y1 - g.y0) + 6, { origin: [g.x0, Math.min(g.y0, g.y1) - 3, zc], dir: [0, 1, 0] }))));
       }
-    } catch { /* canal que falla se omite */ }
+    } catch (e) { console.warn(`CORTE: el circuito de agua de la placa ${def.role} no se pudo trazar`, e); }
   }
   // barrenos: TODOS (los pasajes ⌀3 de los pines y las cabezas también existen — la
   // revisión placa-por-placa exige que cada componente tenga su barreno real).
-  // OPTIMIZACIÓN: un SOLO cut con el compound de todas las brocas (30 cuts → 1);
-  // si el compound falla, cae al taladro uno-por-uno.
+  // Todas van a la MISMA lista de `cortarHerramientas` (una sola booleana para la placa).
   const list = standardHoles(spec, def.role);
-  let drilled = 0;
-  const tools: any[] = [];
-  for (const h of list) {
-    try { tools.push(K.makeCylinder(oc, h.dia / 2, t + 2, { origin: [h.x, h.y, -1], dir: [0, 0, 1] })); } catch { /* broca inválida */ }
-  }
+  const i0Barrenos = herr.length;
+  for (const h of list) mete(`${h.type} ⌀${h.dia} (${Math.round(h.x)},${Math.round(h.y)})`, () => K.makeCylinder(oc, h.dia / 2, t + 2, { origin: [h.x, h.y, -1], dir: [0, 0, 1] }));
   // HEMBRA del interlock §12.2.5: bolsa CIEGA en la placa A, del MISMO plan que el
   // macho (fuente única `planInterlocks` — ver el comentario en el componente
   // 'interlocks'). Sin esta bolsa, al CERRAR la nariz del macho queda clavada dentro
@@ -228,8 +225,8 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
       const dF = (il.diaMm ?? 19.05) + 0.4;                 // +0.4: la hembra RECIBE, no aprieta
       const depth = Math.min(t - 4, Math.max(8, Math.round((il.diaMm ?? 19) * 0.75)));
       for (const q of il.positions)
-        tools.push(K.makeCylinder(oc, dF / 2, depth, { origin: [q.x, q.y, -0.5], dir: [0, 0, 1] }));
-    } catch { /* sin datos de cavidad no hay interlock */ }
+        mete(`hembra del interlock (${Math.round(q.x)},${Math.round(q.y)})`, () => K.makeCylinder(oc, dF / 2, depth, { origin: [q.x, q.y, -0.5], dir: [0, 0, 1] }));
+    } catch { /* sin datos de cavidad no hay interlock (el plan no existe: no hay herramienta que perder) */ }
   }
   // ASIENTO del BUJE guía en A (Fig 1.5): el buje es un CASQUILLO de OD = ⌀pilar+8 pegado
   // a presión en A; el poste corre por su ID. El barreno estándar es ⌀pilar (para el POSTE)
@@ -239,12 +236,14 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
   // CONCÉNTRICOS) → se cortan SECUENCIALMENTE sobre el sólido, NO en el compound (meter
   // cilindros concéntricos traslapados en un solo cut de OCC corrompe el resultado y deja
   // la placa MACIZA → el poste quedaba enterrado 91 cc). guideGeom = misma fuente que el buje.
+  // (EL CORTE ÚNICO: esa corrupción era la del COMPOUND; en la LISTA de herramientas los concéntricos van
+  //  juntos sin problema, y el juez lo comprueba en cada placa.)
   if (def.role === 'A') {
     const gp = standardHoles(spec, 'A').filter((h) => /pilar/.test(h.type));
     for (const g of gp) {
       const G = guideGeom(g.dia);
-      try { solid = K.cut(oc, solid, K.makeCylinder(oc, G.boreA_bushingMm / 2, t + 2, { origin: [g.x, g.y, -1], dir: [0, 0, 1] })); } catch { /* asiento del buje */ }
-      try { solid = K.cut(oc, solid, K.makeCylinder(oc, G.cboreA_flangeMm / 2, G.flangeHMm + 2, { origin: [g.x, g.y, t - G.flangeHMm - 1], dir: [0, 0, 1] })); } catch { /* contrataladro de la brida */ }
+      mete(`asiento del buje (${Math.round(g.x)},${Math.round(g.y)})`, () => K.makeCylinder(oc, G.boreA_bushingMm / 2, t + 2, { origin: [g.x, g.y, -1], dir: [0, 0, 1] }));
+      mete(`contrataladro de la brida (${Math.round(g.x)},${Math.round(g.y)})`, () => K.makeCylinder(oc, G.cboreA_flangeMm / 2, G.flangeHMm + 2, { origin: [g.x, g.y, t - G.flangeHMm - 1], dir: [0, 0, 1] }));
     }
   }
   // ASIENTO del interlock en B: el CUERPO del macho (⌀dI, bodyH ≈ 1.6·dI) vive DENTRO de
@@ -257,8 +256,8 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
       const dI = il.diaMm ?? 19.05;
       const bodyH = Math.min(t - 4, Math.round(dI * 1.6));
       for (const q of il.positions)
-        tools.push(K.makeCylinder(oc, (dI + 0.4) / 2, bodyH + 1, { origin: [q.x, q.y, t - bodyH - 0.5], dir: [0, 0, 1] }));
-    } catch { /* sin datos de cavidad no hay interlock */ }
+        mete(`asiento del interlock (${Math.round(q.x)},${Math.round(q.y)})`, () => K.makeCylinder(oc, (dI + 0.4) / 2, bodyH + 1, { origin: [q.x, q.y, t - bodyH - 0.5], dir: [0, 0, 1] }));
+    } catch { /* sin datos de cavidad no hay interlock (el plan no existe: no hay herramienta que perder) */ }
   }
   // CONTRATALADRO del HOMBRO del poste guía en B (Fig 1.5): el hombro (⌀nominal+6) se aloja
   // en la cara de atrás de B (z local 0). SECUENCIAL (concéntrico con el barreno del poste).
@@ -267,7 +266,7 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
     const gp = standardHoles(spec, 'B').filter((h) => /pilar/.test(h.type));
     for (const g of gp) {
       const G = guideGeom(g.dia);
-      try { solid = K.cut(oc, solid, K.makeCylinder(oc, G.cboreB_shoulderMm / 2, G.shoulderHMm + 1, { origin: [g.x, g.y, -0.5], dir: [0, 0, 1] })); } catch { /* contrataladro del hombro */ }
+      mete(`contrataladro del hombro (${Math.round(g.x)},${Math.round(g.y)})`, () => K.makeCylinder(oc, G.cboreB_shoulderMm / 2, G.shoulderHMm + 1, { origin: [g.x, g.y, -0.5], dir: [0, 0, 1] }));
     }
   }
   // CONTRATALADRO de las CABEZAS de pines en la RETENEDORA (Fig 1.6): la cabeza (expulsor
@@ -281,7 +280,7 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
       const isRet = /retorno/.test(h.type);
       const cbDia = isRet ? 16 + 0.4 : spec.ejectors.diaMm + 4 + 0.4;
       const cbH = (isRet ? rHeadH : headH) + 1;
-      try { solid = K.cut(oc, solid, K.makeCylinder(oc, cbDia / 2, cbH, { origin: [h.x, h.y, -0.5], dir: [0, 0, 1] })); } catch { /* contrataladro de cabeza */ }
+      mete(`contrataladro de cabeza ${isRet ? 'de retorno' : 'de pin'} (${Math.round(h.x)},${Math.round(h.y)})`, () => K.makeCylinder(oc, cbDia / 2, cbH, { origin: [h.x, h.y, -0.5], dir: [0, 0, 1] }));
     }
   }
   // CONTRATALADRO de la CABEZA del TORNILLO SHCS (⌀dk × k, DIN 912): avellanada a ras. La
@@ -296,25 +295,22 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
       const seatRole = def.role === 'clamp' ? 'clamp' : 'bottom';
       const z0 = def.role === 'clamp' ? t - hd.k - 0.5 : -0.5;                  // clamp: cabeza al TOP · bottom: cabeza en su cara de ABAJO
       for (const s of standardHoles(spec, seatRole).filter((h) => /tornillo/.test(h.type)))
-        try { solid = K.cut(oc, solid, K.makeCylinder(oc, (hd.dk + 0.8) / 2, hd.k + 1.5, { origin: [s.x, s.y, z0], dir: [0, 0, 1] })); } catch { /* contrataladro de cabeza */ }
-    } catch { /* sin plan de tornillería */ }
+        mete(`cabeza SHCS (${Math.round(s.x)},${Math.round(s.y)})`, () => K.makeCylinder(oc, (hd.dk + 0.8) / 2, hd.k + 1.5, { origin: [s.x, s.y, z0], dir: [0, 0, 1] }));
+    } catch (e) { console.warn(`CORTE: sin plan de tornillería para la placa ${def.role}`, e); }
   }
   // ASIENTO del SPRUE BUSHING en el clamp (§1.3.1/§6.3.2): la brida del bushing (⌀34)
   // registra 2 mm en la cara superior del clamp — su caja ⌀+0.4, SECUENCIAL (concéntrica
   // con el barreno de la boquilla). Sin ella compartían acero (clamp↔anillo, 2.2k mm³).
   if (def.role === 'clamp') {
     const cx = spec.widthMm / 2, cyy = Math.round(D / 2);
-    try { solid = K.cut(oc, solid, K.makeCylinder(oc, 17.2, 2.5 + 0.5, { origin: [cx, cyy, t - 2.5], dir: [0, 0, 1] })); } catch { /* caja del bushing */ }
+    mete('caja del sprue bushing', () => K.makeCylinder(oc, 17.2, 2.5 + 0.5, { origin: [cx, cyy, t - 2.5], dir: [0, 0, 1] }));
   }
-  try {
-    if (tools.length) { solid = K.cut(oc, solid, K.makeCompound(oc, tools)); drilled = tools.length; }
-  } catch {
-    for (const h of list) {
-      try { solid = K.drillHole(oc, solid, { x: h.x, y: h.y, diameter: h.dia, zTop: t, depth: t, through: true }); drilled++; }
-      catch { /* barreno que no cabe: se omite */ }
-    }
-  }
-  return { solid, drilled, holes: list.length };
+  // ── EL CORTE: una llamada, con su juez ──
+  const { shape: cortada, reporte } = K.cortarHerramientas(oc, solid, herr, { donde: `placa ${def.role}`, etiquetas: etq });
+  // `drilled` = barrenos de la lista estándar que de verdad quedaron en el acero (el juez lo sabe por broca)
+  let drilled = 0;
+  for (let k = 0; k < list.length; k++) { const e = reporte.estados[i0Barrenos + k]; if (e === 'quitó' || e === 'reintentada' || e === 'aire') drilled++; }
+  return { solid: cortada, drilled, holes: list.length, corte: reporte };
 }
 
 /** Z de cada placa en el stack (cota inferior). */
@@ -631,7 +627,8 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       try {
         const G = guideGeom(g.dia);
         let tube = K.makeCylinder(oc, G.bushingODMm / 2, tA * 0.75, { origin: [g.x, g.y, z.A + tA * 0.25], dir: [0, 0, 1] });
-        tube = K.cut(oc, tube, K.makeCylinder(oc, G.bushingIDMm / 2, tA, { origin: [g.x, g.y, z.A], dir: [0, 0, 1] }));   // ID = poste + 0.03 (H7/g6)
+        tube = K.cortarHerramientas(oc, tube, [K.makeCylinder(oc, G.bushingIDMm / 2, tA, { origin: [g.x, g.y, z.A], dir: [0, 0, 1] })],   // ID = poste + 0.03 (H7/g6)
+          { donde: 'buje guía', etiquetas: ['ID del buje'] }).shape;
         bushShapes.push(tube);
         bushShapes.push(cyl(G.flangeDiaMm / 2, G.flangeHMm, [g.x, g.y, z.A + tA - G.flangeHMm], [0, 0, 1]));   // brida (va en contrataladro de A)
       } catch { /* buje opcional */ }
@@ -928,7 +925,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
         const pocket = id.round
           ? K.makeCylinder(oc, id.fx / 2, id.dep + 0.5, { origin: [c.cx, c.cy, zPart - 0.25], dir: [0, 0, 1] })
           : box(id.fx, id.fy, id.dep + 0.5, c.cx, c.cy, zPart - 0.25);
-        cav = K.cut(oc, cav, pocket);
+        cav = K.cortarHerramientas(oc, cav, [pocket], { donde: 'inserto de cavidad (impresión)', etiquetas: ['impresión de la pieza'] }).shape;
         cavS.push(cav);
         // INSERTO DE NÚCLEO (macho): bloque en B + BOSS que llena el interior de la pieza.
         let core = box(id.ifx, id.ify, id.Hk, c.cx, c.cy, zPart - id.Hk);
@@ -945,7 +942,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
         const bossPart = id.round
           ? K.makeCylinder(oc, bw / 2, bh, { origin: [c.cx, c.cy, zPart], dir: [0, 0, 1] })
           : box(bw, bl, bh, c.cx, c.cy, zPart);
-        part = K.cut(oc, part, bossPart);
+        part = K.cortarHerramientas(oc, part, [bossPart], { donde: 'pieza (cascarón)', etiquetas: ['hueco del macho'] }).shape;
         partS.push(part);
       } catch { /* una impresión que falla no aborta las demás */ }
     }
@@ -977,32 +974,34 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       // MISMA fuente que el componente y que los barrenos de las placas (`returnPinLayout`): este
       // camino taladraba el núcleo en `65+26` a mano, así que si el pin se movía el barreno no.
       const rets: [number, number][] = returnPinLayout(spec, D).pts;
-      // UN SOLO cut con el COMPOUND de todas las brocas (patrón PROBADO de buildPlateSolid;
-      // los cuts secuenciales acumulaban invalidez y "fugaban" la broca fusionándola).
-      const cutAll = (s: any, tools: any[]) => { const ok = tools.filter(Boolean); if (!ok.length) return s; try { return K.cut(oc, s, ok.length === 1 ? ok[0] : K.makeCompound(oc, ok)); } catch { return s; } };
-      const drillCav = (s: any) => {                       // cavidad (placa A): guías + colada + agua A
-        const tools: any[] = [];
-        for (const g of guides) tools.push(vCyl(g.x, g.y, g.dia / 2 + 4.4));      // OD del buje (holgura)
-        for (const f of feed) tools.push(vCyl(f.x, f.y, f.dia / 2 + 0.3));        // bebedero/colada
-        if (cc.zAboveMm != null) tools.push(...waterTools(zPart + Math.min(cc.zAboveMm, tA - cc.diaMm / 2 - 1)));
-        return cutAll(s, tools);
+      // EL CORTE ÚNICO (orden 2026-09-22): aquí vivía `cutAll` — `cut(s, COMPOUND)` y `catch { return s }`. Las
+      // brocas del agua se CRUZAN en las esquinas del circuito y un compound con piezas que se tocan es justo lo
+      // que OCCT no resuelve (medido en el inserto real de la carcasa: 6,851 de 9,439 mm³, 3 sólidos sueltos);
+      // y si tronaba, el inserto salía MACIZO sin decir nada. Ahora: `cortarHerramientas` (lista + juez).
+      const cutAll = (s: any, tools: any[], et: string[], donde: string) => K.cortarHerramientas(oc, s, tools, { donde, etiquetas: et }).shape;
+      const drillCav = (s: any, k: number) => {            // cavidad (placa A): guías + colada + agua A
+        const tools: any[] = [], et: string[] = [];
+        for (const g of guides) { tools.push(vCyl(g.x, g.y, g.dia / 2 + 4.4)); et.push(`guía (${Math.round(g.x)},${Math.round(g.y)})`); }   // OD del buje (holgura)
+        for (const f of feed) { tools.push(vCyl(f.x, f.y, f.dia / 2 + 0.3)); et.push(f.type); }                                           // bebedero/colada
+        if (cc.zAboveMm != null) waterTools(zPart + Math.min(cc.zAboveMm, tA - cc.diaMm / 2 - 1)).forEach((w, i) => { tools.push(w); et.push(`agua A ${i}`); });
+        return cutAll(s, tools, et, `inserto de cavidad real · celda ${k + 1}`);
       };
-      const drillCore = (s: any) => {                      // núcleo (placa B): pines + return + guías + agua B
-        const tools: any[] = [];
-        for (const e of eps) tools.push(vCyl(e.x, e.y, e.dia / 2 + 0.2));         // pin eyector + holgura §8.3.2
-        for (const [x, y] of rets) tools.push(vCyl(x, y, 6 + 0.2));              // return pin ⌀12
-        for (const g of guides) tools.push(vCyl(g.x, g.y, g.dia / 2 + 4.4));
-        if (spec.ejectors.type !== 'stripper') tools.push(...waterTools(zPart - Math.min(tB - cc.diaMm / 2 - 1, cc.zBehindMm)));
-        return cutAll(s, tools);
+      const drillCore = (s: any, k: number) => {           // núcleo (placa B): pines + return + guías + agua B
+        const tools: any[] = [], et: string[] = [];
+        for (const e of eps) { tools.push(vCyl(e.x, e.y, e.dia / 2 + 0.2)); et.push(`pin (${Math.round(e.x)},${Math.round(e.y)})`); }   // pin eyector + holgura §8.3.2
+        for (const [x, y] of rets) { tools.push(vCyl(x, y, 6 + 0.2)); et.push(`retorno (${Math.round(x)},${Math.round(y)})`); }         // return pin ⌀12
+        for (const g of guides) { tools.push(vCyl(g.x, g.y, g.dia / 2 + 4.4)); et.push(`guía (${Math.round(g.x)},${Math.round(g.y)})`); }
+        if (spec.ejectors.type !== 'stripper') waterTools(zPart - Math.min(tB - cc.diaMm / 2 - 1, cc.zBehindMm)).forEach((w, i) => { tools.push(w); et.push(`agua B ${i}`); });
+        return cutAll(s, tools, et, `inserto de núcleo real · celda ${k + 1}`);
       };
       const _tI = performance.now();
       // FINO (0.15): cav/macho/pieza están separados por la PARED (1.2 mm) — a 0.6 las
       // facetas se interpenetran y el estudio de contacto reporta colisión FALSA.
       push('inserto-cav', `Inserto de cavidad · FIGURA REAL (sólido taladrado) ×${cells.length}`, spec.cavityMetal ?? 'AISI P20',
-        cells.map((c) => drillCav(place(cav, c))), '#7d90ad', 0.6,
+        cells.map((c, k) => drillCav(place(cav, c), k)), '#7d90ad', 0.6,
         ['HEMBRA del sólido real (splitMold)', 'holguras de guías/colada/agua TALADRADAS en el sólido — nadie comparte acero'], undefined, 0.3);
       push('inserto-core', `Inserto de núcleo · FIGURA REAL (sólido taladrado) ×${cells.length}`, spec.core?.material ?? 'AISI P20',
-        cells.map((c) => drillCore(place(core, c))), '#6b7e9a', 1,
+        cells.map((c, k) => drillCore(place(core, c), k)), '#6b7e9a', 1,
         ['MACHO del sólido real (splitMold)', 'holguras de pines/return/guías/agua TALADRADAS en el sólido'], undefined, 0.3);
       if (piece) push('pieza', `Pieza moldeada ×${cells.length} (vaso real, alineado)`, 'plástico (PP/ABS)',
         cells.map((c) => place(piece, c)), '#eb9438', 0.95, ['el vaso real, mismo transform que los insertos → sin interpenetración'], undefined, 0.3);
@@ -1286,7 +1285,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
               rotateAngle: (alongX ? 1 : -1) * sgn * ang,
               rotateAxis: { origin: [ax, ay, zH], dir: alongX ? [0, 1, 0] : [1, 0, 0] },
             });
-            heel = K.cut(oc, heel, cutter);
+            heel = K.cortarHerramientas(oc, heel, [cutter], { donde: 'talón de la corredera', etiquetas: ['cara inclinada del talón'] }).shape;
             fij.push(heel);
           } catch { /* talón que falla se omite */ }
         } else {
@@ -1340,12 +1339,11 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     // de los rieles → cada riel lleva sus barrenos pasantes (railX cae dentro del riel).
     const railScrews = standardHoles(spec, 'bottom').filter((h) => /tornillo/.test(h.type));
     const railWithHoles = (x0: number) => {
-      let rail = boxAt(RIEL_ANCHO_MM - 0.3, D - 0.6, eh, x0, 0.3, bc);
-      for (const s of railScrews) {
-        if (s.x < x0 || s.x > x0 + RIEL_ANCHO_MM) continue;                 // solo los que caen en ESTE riel
-        try { rail = K.cut(oc, rail, K.makeCylinder(oc, s.dia / 2, eh + 2, { origin: [s.x, s.y, bc - 1], dir: [0, 0, 1] })); } catch { /* barreno de riel */ }
-      }
-      return rail;
+      const rail = boxAt(RIEL_ANCHO_MM - 0.3, D - 0.6, eh, x0, 0.3, bc);
+      const mias = railScrews.filter((s) => !(s.x < x0 || s.x > x0 + RIEL_ANCHO_MM));   // solo los que caen en ESTE riel
+      if (!rail || !mias.length) return rail;
+      const brocas = mias.map((s) => { try { return K.makeCylinder(oc, s.dia / 2, eh + 2, { origin: [s.x, s.y, bc - 1], dir: [0, 0, 1] }); } catch { return null; } });
+      return K.cortarHerramientas(oc, rail, brocas, { donde: `riel x=${Math.round(x0)}`, etiquetas: mias.map((s) => `tornillo (${Math.round(s.x)},${Math.round(s.y)})`) }).shape;
     };
     push('rieles', 'Rieles del housing (2)', spec.baseSteel ?? '1.1730',
       [railWithHoles(0.3), railWithHoles(W - RIEL_ANCHO_MM)], ACERO_BASE, 0.95,
@@ -1364,7 +1362,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     let ring: any = null;
     try {
       ring = K.makeCylinder(oc, 50, 10, { origin: [W / 2, D / 2, topZ], dir: [0, 0, 1] });
-      ring = K.cut(oc, ring, K.makeCylinder(oc, 20, 12, { origin: [W / 2, D / 2, topZ - 1], dir: [0, 0, 1] }));
+      ring = K.cortarHerramientas(oc, ring, [K.makeCylinder(oc, 20, 12, { origin: [W / 2, D / 2, topZ - 1], dir: [0, 0, 1] })], { donde: 'anillo centrador', etiquetas: ['hueco del anillo'] }).shape;
     } catch { ring = null; }
     // El SPRUE BUSHING lleva el CANAL del bebedero POR DENTRO (§6.3.2: el sprue cónico
     // corre a través del bushing hasta la partición) — antes era un cilindro MACIZO y la
@@ -1372,7 +1370,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     let bushing: any = null;
     try {
       bushing = K.makeCylinder(oc, 17, 8, { origin: [W / 2, D / 2, topZ - 2], dir: [0, 0, 1] });
-      bushing = K.cut(oc, bushing, K.makeCylinder(oc, 4.5, 12, { origin: [W / 2, D / 2, topZ - 3], dir: [0, 0, 1] }));
+      bushing = K.cortarHerramientas(oc, bushing, [K.makeCylinder(oc, 4.5, 12, { origin: [W / 2, D / 2, topZ - 3], dir: [0, 0, 1] })], { donde: 'sprue bushing', etiquetas: ['canal del bebedero'] }).shape;
     } catch { bushing = cyl(17, 8, [W / 2, D / 2, topZ - 2], [0, 0, 1]); }
     push('anillo', 'Anillo centrador ⌀100 + sprue bushing', 'acero 1.7131',
       [ring, bushing], '#4e5a6e', 1,
@@ -1475,11 +1473,12 @@ export function buildMoldParts(K: any, oc: any, spec: MoldAssemblySpec, detail: 
       if (def.role === 'A' || def.role === 'B') {
         const id = insertDims(spec), t = def.thick, H = def.role === 'A' ? id.Hc : id.Hk;
         const zc = def.role === 'A' ? -1 : t - H;
+        // asientos + canales de corredera: UNA llamada a `cortarHerramientas` (EL CORTE ÚNICO) con su juez
+        const herr2: any[] = [], etq2: string[] = [];
         for (const c of cavityGrid(spec, plateDepth(spec))) {
-          try {
-            const seat = K.transformShape(oc, K.makeBox(oc, id.ifx + 1, id.ify + 1, H + 1), { translate: [c.cx - (id.ifx + 1) / 2, c.cy - (id.ify + 1) / 2, zc] });
-            solid = K.cut(oc, solid, seat);
-          } catch { /* asiento que falla se omite */ }
+          try { herr2.push(K.transformShape(oc, K.makeBox(oc, id.ifx + 1, id.ify + 1, H + 1), { translate: [c.cx - (id.ifx + 1) / 2, c.cy - (id.ify + 1) / 2, zc] })); }
+          catch { herr2.push(null); }
+          etq2.push(`asiento del inserto (${Math.round(c.cx)},${Math.round(c.cy)})`);
         }
         // CANAL DE LA CORREDERA (§11.3.6-7): A abre el túnel completo del mecanismo
         // (del borde del inserto al canto de la placa); B lleva la bolsa del GIB
@@ -1496,10 +1495,11 @@ export function buildMoldParts(K: any, oc: any, spec: MoldAssemblySpec, detail: 
             const y0 = f.alongX ? f.vC - chW / 2 : u0;
             const zc2 = def.role === 'A' ? -1 : t - 6.5;
             const hh = def.role === 'A' ? f.bodyHup + 2.5 : 7.5;
-            const canal = K.transformShape(oc, K.makeBox(oc, f.alongX ? uL : chW, f.alongX ? chW : uL, hh), { translate: [x0, y0, zc2] });
-            solid = K.cut(oc, solid, canal);
-          } catch { /* canal que falla se omite */ }
+            herr2.push(K.transformShape(oc, K.makeBox(oc, f.alongX ? uL : chW, f.alongX ? chW : uL, hh), { translate: [x0, y0, zc2] }));
+          } catch { herr2.push(null); }
+          etq2.push('canal de la corredera');
         }
+        solid = K.cortarHerramientas(oc, solid, herr2, { donde: `placa ${def.role} · asiento del inserto`, etiquetas: etq2 }).shape;
       }
       const z0 = z[def.role] ?? 0;
       const placed = z0 ? K.transformShape(oc, solid, { translate: [0, 0, z0] }) : solid;

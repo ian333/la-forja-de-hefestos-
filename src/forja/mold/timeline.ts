@@ -172,7 +172,7 @@ export function rebuild(K: any, oc: any, timeline: Feature[]): RebuildResult {
           if (!shape) throw new Error('bolsa sin sólido');
           const tool = K.extrudePolygon(oc, rectPts(num(f.params.cx), num(f.params.cy), num(f.params.w, 10), num(f.params.h, 10)),
             num(f.params.depth, 5), K.offsetPlane(K.PLANE_XY, num(f.params.z)));
-          shape = K.cut(oc, shape, tool);
+          shape = K.cortarHerramientas(oc, shape, [tool], { donde: `bolsa ${f.id}`, etiquetas: ['bolsa'] }).shape;   // EL CORTE ÚNICO (juez incluido)
           break;
         }
         case 'draft':

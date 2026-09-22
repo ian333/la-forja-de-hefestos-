@@ -59,6 +59,14 @@ import { datumsColada, construirColada, verificacionColada, dentroColada, type V
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
+/** FLECHA de teselado del AGUA (barrenos, tapones NPT, O-rings) en el estudio — EL CORTE ÚNICO, pregunta 10 de ian
+ *  («sí» a teselar más fino). Antes 0.9 mm (y 0.9 rad de ángulo): en un ⌀6.35 eso es un HEPTÁGONO cuya cuerda se
+ *  hunde r·(1−cos 0.45) ≈ 0.31 mm, y el estudio de contacto leía hasta 1.0 mm de «colisión» agua↔inserto contra el
+ *  barreno del propio inserto (mallado a 0.03). Con 0.05 manda el piso angular de `cursoPart` (0.2 rad → 32 lados):
+ *  r·(1−cos 0.1) = 0.016 mm. ~70 triángulos por tramo: no cuesta nada. (regla de Hefestos: el límite <0.1 mm lo
+ *  puso la orden; el libro no habla de mallas.) */
+const AGUA_FLECHA_MM = 0.05;
+
 /** EL DADO como sólido: caja − caja, abierto abajo (pared 2, techo 2).
  *  UNA fuente para todas las estaciones — la spec numérica es DADO_SPEC. */
 function dadoShape(oc: any) {
@@ -1374,7 +1382,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
           sg.tipo === 'baffle'
             ? `BAFFLE del macho · bore ⌀${sg.diaMm} (Tabla 9.3) sube hasta ${cir.baffle.claroApiceMm} mm del ápice interior de TU pieza`
             : `${sg.id} · ⌀${sg.diaMm} · ${sg.tipo} (§9.2.4-9.2.7)`,
-          cl, sg.tipo === 'baffle' ? 0.9 : 0.85, 0.9));
+          cl, sg.tipo === 'baffle' ? 0.9 : 0.85, AGUA_FLECHA_MM));
       }
       t8 = marca(6, 'segmentos', t8);
       setProgreso({ estacion: 6, paso: `tapones NPT (${e8.lineas.plug}) y O-rings donde el agua cruza una interfaz`, i: 2, n: N8, t0: T8 });
@@ -1387,12 +1395,12 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         const tp = cir.tapones[k];
         const cil = OCC.makeCylinder(oc, e8.lineas.diaMm / 2 + 1.2, 6, { origin: [tp.x - tp.dir[0] * 3, tp.y - tp.dir[1] * 3, tp.z - tp.dir[2] * 3], dir: tp.dir });
         // el LADO va en el rol (los 6 primeros son del anillo A): la apertura lleva consigo lo del lado A
-        parts.push(cursoPart(cil, `agua-tapon-${k < 6 ? 'A' : 'B'}-${k}`, `tapón NPT (${e8.lineas.plug}) — extremo muerto del barreno (lado ${k < 6 ? 'A' : 'B'})`, '#8a6a3a', 0.95, 0.95));
+        parts.push(cursoPart(cil, `agua-tapon-${k < 6 ? 'A' : 'B'}-${k}`, `tapón NPT (${e8.lineas.plug}) — extremo muerto del barreno (lado ${k < 6 ? 'A' : 'B'})`, '#8a6a3a', 0.95, AGUA_FLECHA_MM));
       }
       for (let k = 0; k < cir.sellos.length; k++) {
         const sl = cir.sellos[k];
         const or_ = OCC.makeCylinder(oc, e8.lineas.diaMm / 2 + 2.2, 1.6, { origin: [sl.x, sl.y, sl.z - 0.8], dir: [0, 0, 1] });
-        parts.push(cursoPart(or_, `agua-oring-${k < 2 ? 'A' : 'B'}-${k}`, sl.nota, '#e05050', 0.95, 0.95));
+        parts.push(cursoPart(or_, `agua-oring-${k < 2 ? 'A' : 'B'}-${k}`, sl.nota, '#e05050', 0.95, AGUA_FLECHA_MM));
       }
       t8 = marca(6, 'tapones y sellos', t8);
       setProgreso({ estacion: 6, paso: 'pintando el circuito sobre el molde', i: 3, n: N8, t0: T8 });
@@ -1720,7 +1728,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
           sg.tipo === 'baffle'
             ? `BAFFLE del macho · bore ⌀${sg.diaMm} (Tabla 9.3) sube hasta ${cir.baffle.claroApiceMm} mm del ápice — el agua sube-y-baja DENTRO del core`
             : `${sg.id} · ⌀${sg.diaMm} · ${sg.tipo} (§9.2.4-9.2.7)`,
-          col, sg.tipo === 'baffle' ? 0.9 : 0.85, 0.9));
+          col, sg.tipo === 'baffle' ? 0.9 : 0.85, AGUA_FLECHA_MM));
       }
       // la LÁMINA del baffle (latón): divide el bore en dos medias lunas
       const bl = cir.baffle;
@@ -1731,13 +1739,13 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       for (let k = 0; k < cir.tapones.length; k++) {
         const t = cir.tapones[k];
         const tp = OCC.makeCylinder(oc, e8.lineas.diaMm / 2 + 1.2, 6, { origin: [t.x - t.dir[0] * 3, t.y - t.dir[1] * 3, t.z - t.dir[2] * 3], dir: t.dir });
-        parts.push(cursoPart(tp, `agua-tapon-${k < 6 ? 'A' : 'B'}-${k}`, `tapón NPT (${e8.lineas.plug}) — extremo muerto del barreno (lado ${k < 6 ? 'A' : 'B'})`, '#8a6a3a', 0.95, 0.95));
+        parts.push(cursoPart(tp, `agua-tapon-${k < 6 ? 'A' : 'B'}-${k}`, `tapón NPT (${e8.lineas.plug}) — extremo muerto del barreno (lado ${k < 6 ? 'A' : 'B'})`, '#8a6a3a', 0.95, AGUA_FLECHA_MM));
       }
       // O-RINGS (rojos) donde el agua cruza una interfaz (§9.3.2: fuga esperada sin sello)
       for (let k = 0; k < cir.sellos.length; k++) {
         const sl = cir.sellos[k];
         const or_ = OCC.makeCylinder(oc, e8.lineas.diaMm / 2 + 2.2, 1.6, { origin: [sl.x, sl.y, sl.z - 0.8], dir: [0, 0, 1] });
-        parts.push(cursoPart(or_, `agua-oring-${k < 2 ? 'A' : 'B'}-${k}`, sl.nota, '#e05050', 0.95, 0.95));
+        parts.push(cursoPart(or_, `agua-oring-${k < 2 ? 'A' : 'B'}-${k}`, sl.nota, '#e05050', 0.95, AGUA_FLECHA_MM));
       }
       setTFill(1); tFillRef.current = 1;
       setCiclo({ ...ciclo, estacion: 8, e8 });

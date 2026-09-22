@@ -98,6 +98,7 @@ import {
   makeCylinder,
   cut,
   common,
+  cortarHerramientas,
   PLANE_XY,
   PLANE_YZ,
   PLANE_XZ,
@@ -1073,9 +1074,8 @@ function applyPocket(oc: OC, shape: Shape, op: PocketOp, zTop: number): Shape {
     tool = transformShape(oc, b, { translate: [op.x - op.w / 2, op.y - op.h / 2, top - span] });
     b.delete?.();
   }
-  const out = cut(oc, shape, tool);
-  tool.delete?.();
-  return out;
+  // EL CORTE ÚNICO (orden 2026-09-22): la bolsa pasa por el juez del corte (bitácora + aviso si no entró)
+  return cortarHerramientas(oc, shape, [tool], { donde: 'bolsa (pocket)', etiquetas: [op.profile === 'circle' ? `⌀${op.diameter}` : `${op.w}×${op.h}`] }).shape;
 }
 
 /**

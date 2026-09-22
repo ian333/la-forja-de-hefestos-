@@ -521,6 +521,298 @@ export function common(oc: OC, a: Shape, b: Shape): Shape {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// EL CORTE ÚNICO (orden 2026-09-22-el-corte-unico) — TODO barreno, caja, bolsa o canal que se le
+// quita al acero del molde pasa por AQUÍ. Una función, un juez, una bitácora.
+// ─────────────────────────────────────────────────────────────────
+//  POR QUÉ (medido en node sobre el inserto REAL de la cavidad de la carcasa 1594C Box, 8 brocas:
+//  bebedero + anillo de agua A que se CRUZA en las esquinas + baffle; /home/ian/el-plan-dev6/juez2.log):
+//      cut(sólido, COMPOUND de las 8)            →  6,851 mm³ ·  75 ms · 3 SÓLIDOS, 7 cáscaras  ← pierde 2 brocas
+//      BRepAlgoAPI_Cut con SetTools(LISTA de 8)  →  9,439 mm³ · 196 ms · 1 sólido, 1 cáscara    ← completo
+//      8 cuts uno por uno                        →  9,439 mm³ · 402 ms                          ← completo, 2× más caro
+//    y en el NÚCLEO (17 brocas que no se cruzan): compound 7,310 · 750 ms · lista 7,310 · 720 ms · una por una
+//    7,310 · 10,264 ms (14× más caro sin ganar nada).
+//  LA CAUSA: un COMPOUND pasado como UNA herramienta le promete a OCCT que sus piezas NO se tocan entre sí
+//  (un argumento del Boolean no puede interferir consigo mismo). Dos brocas que se cruzan rompen esa promesa
+//  y el resultado sale con sólidos sueltos y material que no se fue. La LISTA de herramientas (SetTools) es
+//  el camino que OCCT sí resuelve cuando las herramientas se cruzan: las interseca entre ellas primero.
+//  PERO la lista tampoco es infalible: en la caja 1557BGY (dos tramos de agua que MUEREN en el mismo punto) devolvió
+//  un resultado VACÍO — «quitó» 851,970 mm³, el inserto entero — y el híbrido por racimos dio el correcto (14,683 =
+//  una-por-una). Por eso hay TRES intentos (lista · híbrido por racimos · una por una) y un JUEZ que elige.
+//
+//  EL JUEZ (lo que ninguna llamada devolvía antes: todas tenían `catch { return s }` o `catch {}` mudo):
+//   · por herramienta — la HISTORIA de la booleana: si alguna cara de la herramienta sobrevive (o sale
+//     modificada) en el resultado, esa herramienta mordió acero. Cuesta ~0 ms.
+//   · la que no dejó ninguna cara y su caja toca la del sólido es SOSPECHOSA: se mide con el kernel
+//     vol(resultado ∩ herramienta). ≈0 → cortaba AIRE (legítimo: una broca que cae en una bolsa ya abierta).
+//     >0 → acero que se quedó donde había broca: se REINTENTA sola, y si tampoco entra se REGISTRA.
+//   · global — (a) el volumen quitado cabe entre 0 y la suma de las herramientas (medido: un cut roto llegó
+//     a «quitar» −1,027,196 mm³); (b) no aparecen sólidos de más (el síntoma exacto del compound: 1 → 3).
+//     Si el global falla, se repite con el siguiente intento; si ninguno pasa, se devuelve el MEJOR con
+//     `ok: false`, un console.warn y su renglón en la bitácora. Nunca el sólido intacto en silencio.
+export type EstadoHerramienta = 'quitó' | 'aire' | 'reintentada' | 'no-entró' | 'nula';
+export interface ReporteCorte {
+  donde: string;
+  herramientas: number;
+  /** con qué intento quedó el resultado entregado */
+  estrategia: 'lista' | 'racimos' | 'una-por-una' | 'ninguna';
+  intentos: string[];
+  quitadoMm3: number;
+  volHerramientasMm3: number;
+  solidos: [number, number];
+  estados: EstadoHerramienta[];
+  aire: number; reintentadas: number;
+  /** la geometría PARTE el sólido (dos algoritmos coinciden): no es falla del kernel, pero se dice */
+  parte: boolean;
+  /** etiquetas (o índices) de las herramientas que NO quitaron el acero que debían */
+  noEntraron: string[];
+  ms: number;
+  ok: boolean;
+  notas: string[];
+}
+/** La bitácora de cortes: los últimos 400 cortes con su veredicto (la lee el arnés y la consola del
+ *  navegador en `globalThis.__forjaCortes`). Un corte que falla deja AQUÍ su renglón. */
+export const bitacoraDeCortes: ReporteCorte[] = [];
+try { (globalThis as any).__forjaCortes = bitacoraDeCortes; } catch { /* sin globalThis */ }
+const ahoraMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+function contarSub(oc: OC, sh: Shape, tipo: any): number {
+  let n = 0;
+  const ex = new oc.TopExp_Explorer_2(sh, tipo, oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
+  for (; ex.More(); ex.Next()) n++;
+  ex.delete?.();
+  return n;
+}
+function carasDe(oc: OC, sh: Shape): Shape[] {
+  const out: Shape[] = [];
+  const ex = new oc.TopExp_Explorer_2(sh, oc.TopAbs_ShapeEnum.TopAbs_FACE, oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
+  for (; ex.More(); ex.Next()) out.push(ex.Current());
+  ex.delete?.();
+  return out;
+}
+/** caja EXACTA (Bnd_Box AddOptimal) — la de malla tesela y además REUSA la malla previa (gotcha pagado). */
+function cajaKernel(oc: OC, sh: Shape): { min: number[]; max: number[] } {
+  const b = new oc.Bnd_Box_1();
+  try { oc.BRepBndLib.AddOptimal(sh, b, false, false); } catch { oc.BRepBndLib.Add(sh, b, false); }
+  const a = b.CornerMin(), c = b.CornerMax();
+  const r = { min: [a.X(), a.Y(), a.Z()], max: [c.X(), c.Y(), c.Z()] };
+  b.delete?.();
+  return r;
+}
+const cajasTocan = (p: { min: number[]; max: number[] }, q: { min: number[]; max: number[] }) => {
+  for (let k = 0; k < 3; k++) if (Math.min(p.max[k], q.max[k]) - Math.max(p.min[k], q.min[k]) <= 0) return false;
+  return true;
+};
+/** ¿cuántas caras de la herramienta sobreviven (o salen modificadas) en el resultado de `op`? */
+function carasVivas(op: any, caras: Shape[]): number {
+  let n = 0;
+  for (const f of caras) {
+    let viva = false;
+    try { viva = op.IsDeleted(f) === false; } catch { /* sin historia */ }
+    if (!viva) { try { viva = op.Modified(f).Size() > 0; } catch { /* sin historia */ } }
+    if (viva) n++;
+  }
+  return n;
+}
+
+/**
+ * EL CORTE ÚNICO: sólido − {herramientas}, con JUEZ. Devuelve el sólido cortado y su reporte (que además
+ * queda en `bitacoraDeCortes`). Las herramientas `null/undefined` (una broca que no se pudo construir) se
+ * CUENTAN como falla — no desaparecen.
+ */
+export function cortarHerramientas(
+  oc: OC, solid: Shape, herramientas: Array<Shape | null | undefined>,
+  opts: { donde: string; etiquetas?: string[]; /** si el llamador ya lo midió: se ahorra una integración */ volAntesMm3?: number },
+): { shape: Shape; reporte: ReporteCorte } {
+  const t0 = ahoraMs();
+  const et = (i: number) => opts.etiquetas?.[i] ?? `#${i}`;
+  const idx: number[] = [], tools: Shape[] = [];
+  const estados: EstadoHerramienta[] = herramientas.map(() => 'nula');
+  herramientas.forEach((h, i) => { if (h) { idx.push(i); tools.push(h); } });
+  const rep: ReporteCorte = {
+    donde: opts.donde, herramientas: herramientas.length, estrategia: 'ninguna', intentos: [],
+    quitadoMm3: 0, volHerramientasMm3: 0, solidos: [0, 0], estados, aire: 0, reintentadas: 0, parte: false,
+    noEntraron: [], ms: 0, ok: true, notas: [],
+  };
+  let globalMalo = false;
+  const cierra = (shape: Shape) => {
+    rep.noEntraron = estados.map((e, i) => (e === 'no-entró' || e === 'nula' ? et(i) : '')).filter(Boolean);
+    rep.ok = rep.noEntraron.length === 0 && rep.estrategia !== 'ninguna' && !globalMalo;
+    rep.ms = Math.round(ahoraMs() - t0);
+    bitacoraDeCortes.push(rep);
+    if (bitacoraDeCortes.length > 400) bitacoraDeCortes.splice(0, bitacoraDeCortes.length - 400);
+    if (!rep.ok) console.warn(`CORTE ✗ ${rep.donde}: ${rep.noEntraron.length ? `${rep.noEntraron.length} herramienta(s) NO quitaron su acero (${rep.noEntraron.join(', ')}) · ` : ''}${rep.notas.join(' · ')} · intentos: ${rep.intentos.join(' | ')}`);
+    return { shape, reporte: rep };
+  };
+  if (!solid) { rep.notas.push('sin sólido'); return cierra(solid); }
+  if (!tools.length) { rep.estrategia = herramientas.length ? 'ninguna' : 'lista'; if (herramientas.length) rep.notas.push('todas las herramientas son nulas'); return cierra(solid); }
+
+  const SOLID = oc.TopAbs_ShapeEnum.TopAbs_SOLID;
+  const v0 = Number.isFinite(opts.volAntesMm3) ? (opts.volAntesMm3 as number) : volume(oc, solid), n0 = contarSub(oc, solid, SOLID);
+  const volT = tools.map((t) => { try { return Math.abs(volume(oc, t)); } catch { return 0; } });
+  rep.volHerramientasMm3 = Math.round(volT.reduce((a, b) => a + b, 0));
+  const caras = tools.map((t) => carasDe(oc, t));
+  const cajaS = cajaKernel(oc, solid);
+  const cajasT = tools.map((t) => { try { return cajaKernel(oc, t); } catch { return null; } });
+  // tolerancia de volumen: 1e-6 del sólido (redondeo de la integración de GProp) y nunca < 0.05 mm³
+  const tolV = Math.max(0.05, 1e-6 * Math.abs(v0));
+
+  // ── los tres intentos. Cada uno da el resultado y, por herramienta, sus caras vivas ──
+  const lista = (): { res: Shape; vivas: number[] } => {
+    const L = new oc.TopTools_ListOfShape_1(), A = new oc.TopTools_ListOfShape_1();
+    A.Append_1(solid);
+    for (const t of tools) L.Append_1(t);
+    const op = new oc.BRepAlgoAPI_Cut_1();
+    op.SetArguments(A); op.SetTools(L); op.Build();
+    try { if (op.IsDone && !op.IsDone()) throw new Error('BRepAlgoAPI_Cut no terminó'); } catch (e) { op.delete?.(); throw e; }
+    const res = op.Shape();
+    const vivas = caras.map((c) => carasVivas(op, c));
+    op.delete?.(); A.delete?.(); L.delete?.();
+    return { res, vivas };
+  };
+  const unaPorUna = (sel: number[], base: Shape, vivas: number[]): Shape => {
+    let acc = base;
+    for (const k of sel) {
+      const op = new oc.BRepAlgoAPI_Cut_3(acc, tools[k]);
+      acc = op.Shape();
+      vivas[k] = carasVivas(op, caras[k]);
+      op.delete?.();
+    }
+    return acc;
+  };
+  // RACIMOS: herramientas conexas por traslape de cajas. También deciden el ORDEN de los intentos (abajo).
+  const padre = tools.map((_, i) => i);
+  const raiz = (i: number): number => (padre[i] === i ? i : (padre[i] = raiz(padre[i])));
+  let paresCruzados = 0;
+  for (let i = 0; i < tools.length; i++) for (let j = i + 1; j < tools.length; j++) {
+    const a = cajasT[i], b = cajasT[j];
+    if (!a || !b || cajasTocan(a, b)) { padre[raiz(i)] = raiz(j); paresCruzados++; }
+  }
+  const grupos = new Map<number, number[]>();
+  tools.forEach((_, i) => { const r = raiz(i); if (!grupos.has(r)) grupos.set(r, []); grupos.get(r)!.push(i); });
+  const sueltas = [...grupos.values()].filter((x) => x.length === 1).map((x) => x[0]);
+  const cruzadas = [...grupos.values()].filter((x) => x.length > 1).flat();
+  const racimos = (): { res: Shape; vivas: number[] } => {
+    // el híbrido medido en LOS INSERTOS SE BARRENAN: compound de las SUELTAS (no se tocan: la promesa del
+    // compound se cumple) + una por una dentro de los racimos que se cruzan.
+    const vivas = tools.map(() => 0);
+    let acc = solid;
+    if (sueltas.length) {
+      const comp = sueltas.length === 1 ? tools[sueltas[0]] : makeCompound(oc, sueltas.map((k) => tools[k]));
+      const op = new oc.BRepAlgoAPI_Cut_3(acc, comp);
+      acc = op.Shape();
+      for (const k of sueltas) vivas[k] = carasVivas(op, caras[k]);
+      op.delete?.();
+    }
+    acc = unaPorUna(cruzadas, acc, vivas);
+    return { res: acc, vivas };
+  };
+  const todas = (): { res: Shape; vivas: number[] } => {
+    const vivas = tools.map(() => 0);
+    return { res: unaPorUna(tools.map((_, k) => k), solid, vivas), vivas };
+  };
+
+  // ── EL JUEZ de un resultado ──
+  type Juicio = { res: Shape; vivas: number[]; quitado: number; nSol: number; globalOk: boolean; sospechosas: number[]; aire: number[]; malos: string[] };
+  const juzga = (r: { res: Shape; vivas: number[] }): Juicio => {
+    const malos: string[] = [];
+    const v1 = volume(oc, r.res), nSol = contarSub(oc, r.res, SOLID), quitado = v0 - v1;
+    if (quitado < -tolV) malos.push(`el volumen CRECIÓ ${(-quitado).toFixed(1)} mm³`);
+    if (quitado > rep.volHerramientasMm3 + tolV + 0.5) malos.push(`quitó ${quitado.toFixed(0)} mm³ > la suma de las herramientas (${rep.volHerramientasMm3})`);
+    if (nSol > n0) malos.push(`${n0} sólido(s) → ${nSol}`);
+    const sospechosas: number[] = [], aire: number[] = [];
+    r.vivas.forEach((n, k) => {
+      if (n > 0) return;
+      const cb = cajasT[k];
+      if (cb && !cajasTocan(cb, cajaS)) { aire.push(k); return; }       // ni siquiera se acerca: aire
+      let resto = 0;
+      try { resto = Math.abs(volume(oc, common(oc, r.res, tools[k]))); } catch { resto = Infinity; }
+      if (resto <= Math.max(0.05, 1e-4 * volT[k])) aire.push(k); else sospechosas.push(k);
+    });
+    return { ...r, quitado, nSol, globalOk: malos.length === 0, sospechosas, aire, malos };
+  };
+
+  // EL ORDEN de los intentos sale de cuánto se cruzan las herramientas (medido 2026-09-22, cubo = dado 40 mm,
+  // 21 pines ⌀8 en una base de 196: los contrataladros ⌀12.4 de pines vecinos se enciman entre sí):
+  //      placa retenedora, 50 herramientas:  compound 206,716 mm³ ✗ 105 s · LISTA 26,648 ✓ 118.6 s · una-por-una 26,648 ✓ 3.3 s
+  //      placa B, 45 herramientas:           compound 827,554 mm³ ✗ 12.0 s · LISTA 297,369 ✓ 16.3 s · una-por-una 297,369 ✓ 3.5 s
+  //    (el compound le quitaba a la placa B del cubo 2.8× el acero que debía: la placa salía casi hueca — 285 mm³ de malla)
+  //  contra el inserto de la carcasa (8 brocas, el anillo de agua se cruza en 4 esquinas): LISTA 196 ms · racimos 589 ms.
+  //  La LISTA de OCCT paga cada PAR de herramientas que se toca (las interseca entre sí, con caras coplanares); cortar
+  //  una por una solo paga herramienta contra sólido. Lo que separa los dos casos NO es el número de pares sino su
+  //  DENSIDAD (pares por herramienta), medido sobre los portamoldes de las 4 piezas + el cubo:
+  //      cubo retenedora 718/50 = 14.4 → híbrido 3.6 s  (lista 118.6 s)
+  //      cubo placa B    171/45 =  3.8 → híbrido 3.5 s  (lista  16.3 s)
+  //      alta retenedora 187/91 =  2.1 → LISTA   6.8 s  (híbrido 16.9 s)
+  //      carcasa retenedora 67/47 = 1.4 → LISTA 2.0 s   (híbrido 3.5 s)
+  //  Regla de Hefestos (rendimiento, no corrección — el juez revisa igual cualquiera que gane): con más de 3 pares
+  //  cruzados por herramienta va primero el HÍBRIDO por racimos; si no, la LISTA.
+  const DENSIDAD_LISTA_MAX = 3;
+  rep.notas.push(`${tools.length} herramientas · ${grupos.size} racimos · ${paresCruzados} pares cruzados`);
+  const intentos: Array<['lista' | 'racimos' | 'una-por-una', () => { res: Shape; vivas: number[] }]> = paresCruzados <= DENSIDAD_LISTA_MAX * tools.length
+    ? [['lista', lista], ['racimos', racimos], ['una-por-una', todas]]
+    : [['racimos', racimos], ['lista', lista], ['una-por-una', todas]];
+  let mejor: Juicio | null = null, mejorNombre: ReporteCorte['estrategia'] = 'ninguna';
+  const hechos: Array<{ nombre: ReporteCorte['estrategia']; j: Juicio }> = [];
+  let parteConfirmado = false;
+  for (const [nombre, fn] of intentos) {
+    // se para en el PRIMERO que pasa: una-por-una cuesta ~0.6 s por broca en un inserto real (núcleo de la
+    // carcasa: 10,264 ms) y solo corre si la lista y los racimos fallaron.
+    let j: Juicio;
+    try { j = juzga(fn()); }
+    catch (e) { rep.intentos.push(`${nombre}: EXCEPCIÓN ${String(e).slice(0, 60)}`); continue; }
+    rep.intentos.push(`${nombre}: quitó ${Math.round(j.quitado)} mm³ · ${j.nSol} sólido(s) · sospechosas ${j.sospechosas.length}${j.malos.length ? ' · ' + j.malos.join('; ') : ''}`);
+    const puntos = (x: Juicio) => (x.globalOk ? 0 : 1000) + x.sospechosas.length;
+    if (!mejor || puntos(j) < puntos(mejor)) { mejor = j; mejorNombre = nombre; }
+    if (j.globalOk && j.sospechosas.length === 0) break;
+    // ¿LA GEOMETRÍA parte el sólido? (una ranura que atraviesa, una bolsa que deja una astilla): si DOS algoritmos
+    // distintos dan el MISMO acero quitado y el MISMO número de sólidos, no es el kernel perdiendo brocas (eso da
+    // resultados distintos: compound 6,851 vs lista 9,439) — es la pieza. Se acepta y se DICE, con los volúmenes.
+    const soloParte = j.malos.length === 1 && j.nSol > n0 && j.sospechosas.length === 0;
+    const gemelo = soloParte && hechos.find((h) => h.j.nSol === j.nSol && h.j.sospechosas.length === 0 && h.j.malos.length === 1
+      && Math.abs(h.j.quitado - j.quitado) <= Math.max(tolV, 1e-4 * Math.abs(j.quitado)));
+    hechos.push({ nombre, j });
+    if (gemelo) {
+      mejor = gemelo.j; mejorNombre = gemelo.nombre; mejor.globalOk = true; parteConfirmado = true;
+      const vols: number[] = [];
+      const ex = new oc.TopExp_Explorer_2(mejor.res, SOLID, oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
+      for (; ex.More(); ex.Next()) { try { vols.push(Math.round(volume(oc, ex.Current()))); } catch { vols.push(NaN); } }
+      ex.delete?.();
+      rep.notas.push(`la geometría PARTE el sólido en ${j.nSol} (lo confirman «${gemelo.nombre}» y «${nombre}»): ${vols.sort((a, b) => b - a).join(' + ')} mm³`);
+      break;
+    }
+  }
+  if (!mejor) { rep.notas.push('ningún intento terminó: el sólido sale SIN cortar'); tools.forEach((_, k) => { estados[idx[k]] = 'no-entró'; }); rep.solidos = [n0, n0]; return cierra(solid); }
+
+  // ── REINTENTO de las sospechosas, SOLAS, sobre el mejor resultado ──
+  let res = mejor.res;
+  for (const k of mejor.sospechosas) {
+    let entro = false;
+    try {
+      const antes = volume(oc, res);
+      const r2 = cut(oc, res, tools[k]);
+      const quit = antes - volume(oc, r2);
+      const resto = Math.abs(volume(oc, common(oc, r2, tools[k])));
+      if (quit > tolV && resto <= Math.max(0.05, 1e-4 * volT[k]) && contarSub(oc, r2, SOLID) <= n0) { res = r2; entro = true; }
+    } catch { /* se registra abajo */ }
+    estados[idx[k]] = entro ? 'reintentada' : 'no-entró';
+    if (entro) rep.reintentadas++;
+  }
+  // las que no fueron sospechosas: mordieron (caras vivas) o cortaban aire (medido)
+  tools.forEach((_, k) => { if (estados[idx[k]] === 'nula') estados[idx[k]] = mejor!.aire.includes(k) ? 'aire' : 'quitó'; });
+  rep.aire = mejor.aire.length;
+  rep.parte = parteConfirmado;
+  rep.estrategia = mejorNombre;
+  // sin reintentos el resultado ES el juzgado: no se vuelve a integrar (el volumen de un inserto real cuesta
+  // ~350 ms — núcleo de la carcasa, medido)
+  rep.quitadoMm3 = Math.round(res === mejor.res ? mejor.quitado : v0 - volume(oc, res));
+  rep.solidos = [n0, res === mejor.res ? mejor.nSol : contarSub(oc, res, SOLID)];
+  if (!mejor.globalOk) { globalMalo = true; rep.notas.push(`ningún intento pasó el juez global: ${mejor.malos.join('; ')}`); }
+  const nulas = herramientas.length - tools.length;
+  if (nulas) rep.notas.push(`${nulas} herramienta(s) no se pudieron construir`);
+  return cierra(res);
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Transformaciones rígidas (gp_Trsf) — para POSICIONAR instancias en un
 // ENSAMBLE (cada componente = su shape + su transform propio). Es la primitiva
 // del MATE: el engrane 2 se coloca a C sobre la línea de centros y se rota su
@@ -1308,9 +1600,8 @@ export function drillHole(
     origin: [opts.x, opts.y, top],
     dir: [0, 0, -1],
   });
-  const out = cut(oc, shape, tool);
-  tool.delete?.();
-  return out;
+  // EL CORTE ÚNICO: un barreno también pasa por el juez (si no entra, queda en la bitácora y en consola)
+  return cortarHerramientas(oc, shape, [tool], { donde: 'barreno (drillHole)', etiquetas: [`⌀${opts.diameter} (${opts.x},${opts.y})`] }).shape;
 }
 
 // ─────────────────────────────────────────────────────────────────

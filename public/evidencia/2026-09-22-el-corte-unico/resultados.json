@@ -1,0 +1,735 @@
+{
+ "orden": "2026-09-22-el-corte-unico",
+ "base": "2438d60",
+ "fecha": "2026-09-22",
+ "que_es": "EL CORTE UNICO: cortarHerramientas (occt.ts) + su juez. Números MEDIDOS en iangpu (forja-dev6).",
+ "estrategias_kernel": {
+  "carcasa_cavidad_8_brocas_circuito_viejo_ae41a29": {
+   "compound": {
+    "mm3": 6851,
+    "ms": 75,
+    "solidos": 3
+   },
+   "lista": {
+    "mm3": 9439,
+    "ms": 196,
+    "solidos": 1
+   },
+   "una_por_una": {
+    "mm3": 9439,
+    "ms": 402
+   },
+   "fuente": "juez2.log"
+  },
+  "carcasa_nucleo_17_brocas": {
+   "compound": {
+    "mm3": 7310,
+    "ms": 750
+   },
+   "lista": {
+    "mm3": 7310,
+    "ms": 720
+   },
+   "una_por_una": {
+    "mm3": 7310,
+    "ms": 10264
+   }
+  },
+  "ensamble_cavidad_8_brocas_hoy": {
+   "compound": {
+    "mm3": 11065
+   },
+   "lista": {
+    "mm3": 851970,
+    "solidos": 0,
+    "nota": "resultado VACÍO: el juez lo rechaza (quitó > suma de herramientas 22,233)"
+   },
+   "racimos": {
+    "mm3": 14683
+   },
+   "una_por_una": {
+    "mm3": 14683
+   },
+   "con_la_broca_que_pasa_el_cruce": {
+    "lista_mm3": 15943,
+    "aristas_abiertas_malla": 0
+   }
+  },
+  "cubo_placa_retenedora_50_herr": {
+   "compound": {
+    "mm3": 206716,
+    "ms": 105131
+   },
+   "lista": {
+    "mm3": 26648,
+    "ms": 118599
+   },
+   "una_por_una": {
+    "mm3": 26648,
+    "ms": 3310
+   }
+  },
+  "cubo_placa_B_45_herr": {
+   "compound": {
+    "mm3": 827554,
+    "ms": 11970
+   },
+   "lista": {
+    "mm3": 297369,
+    "ms": 16272
+   },
+   "una_por_una": {
+    "mm3": 297369,
+    "ms": 3505
+   }
+  }
+ },
+ "codigo_viejo_trazado": {
+  "alta_1599HBK": {
+   "ejector": "compound → 24 sólidos, quitó 12,215 de 181,079 mm³ de brocas (los barrenos quedaban como tapones de acero)",
+   "support": "24 sólidos, quitó 18,567",
+   "B": "24 sólidos, quitó 291,309 de 598,168"
+  },
+  "cubo": {
+   "B": "volumen final 286 mm³ (la placa desaparecía)",
+   "support": "1,142 mm³",
+   "ejector": "0 (vacía)",
+   "ejector-ret": "0 (vacía, 88.6 s)"
+  }
+ },
+ "portamoldes_por_pieza": {
+  "cubo": {
+   "ms_antes": 131639,
+   "ms_despues": 13070,
+   "cortes": 19,
+   "herramientas": 216,
+   "no_ok": 0,
+   "reintentadas": 0,
+   "aire": 12,
+   "estrategias": [
+    "lista",
+    "racimos"
+   ],
+   "parte": [],
+   "volumen_malla_cambio": {
+    "B": [
+     285,
+     543188
+    ],
+    "ejector": [
+     null,
+     282632
+    ],
+    "ejector-ret": [
+     null,
+     189631
+    ],
+    "support": [
+     1139,
+     805636
+    ]
+   },
+   "volumen_malla_despues": {
+    "clamp": 1699337,
+    "A": 1472990,
+    "B": 543188,
+    "support": 805636,
+    "ejector-ret": 189631,
+    "ejector": 282632,
+    "bottom": 1677826,
+    "guias": 106856,
+    "bujes": 78118,
+    "tornillos-cav": 14276,
+    "tornillos-core": 12869,
+    "interlocks": 21148,
+    "pines": 138619,
+    "pines-retorno": 66751,
+    "agua-a": 11635,
+    "agua-b": 11635,
+    "inserto-cav": 799600,
+    "inserto-core": 279648,
+    "pieza": 14752,
+    "colada": 2006,
+    "rieles": 2047002,
+    "anillo": 72201,
+    "platina-fija": 5407392,
+    "platina-movil": 5407392
+   }
+  },
+  "carcasa": {
+   "ms_antes": 6581,
+   "ms_despues": 6610,
+   "cortes": 19,
+   "herramientas": 208,
+   "no_ok": 0,
+   "reintentadas": 0,
+   "aire": 4,
+   "estrategias": [
+    "lista"
+   ],
+   "parte": [],
+   "volumen_malla_cambio": {},
+   "volumen_malla_despues": {
+    "clamp": 2577204,
+    "A": 2435530,
+    "B": 1345610,
+    "support": 1265321,
+    "ejector-ret": 377273,
+    "ejector": 550534,
+    "bottom": 2554850,
+    "guias": 190755,
+    "bujes": 96586,
+    "tornillos-cav": 14579,
+    "tornillos-core": 12176,
+    "interlocks": 26662,
+    "pines": 202841,
+    "pines-retorno": 68287,
+    "agua-a": 14639,
+    "agua-b": 14639,
+    "inserto-cav": 1021169,
+    "inserto-core": 863754,
+    "pieza": 54372,
+    "colada": 2368,
+    "rieles": 2327146,
+    "pilares-soporte": 118845,
+    "anillo": 72201,
+    "platina-fija": 7104792,
+    "platina-movil": 7104792
+   }
+  },
+  "tapa": {
+   "ms_antes": 5029,
+   "ms_despues": 7024,
+   "cortes": 19,
+   "herramientas": 152,
+   "no_ok": 0,
+   "reintentadas": 0,
+   "aire": 5,
+   "estrategias": [
+    "lista"
+   ],
+   "parte": [],
+   "volumen_malla_cambio": {},
+   "volumen_malla_despues": {
+    "clamp": 2052419,
+    "A": 1107055,
+    "B": 715853,
+    "support": 1017342,
+    "ejector-ret": 196484,
+    "ejector": 278861,
+    "bottom": 2029978,
+    "guias": 116166,
+    "bujes": 62312,
+    "tornillos-cav": 11052,
+    "tornillos-core": 10097,
+    "interlocks": 31563,
+    "pines": 55279,
+    "pines-retorno": 47934,
+    "agua-a": 17516,
+    "agua-b": 17516,
+    "inserto-cav": 352514,
+    "inserto-core": 300349,
+    "pieza": 40198,
+    "colada": 1814,
+    "rieles": 1274549,
+    "pilares-soporte": 81706,
+    "anillo": 72201,
+    "platina-fija": 6134192,
+    "platina-movil": 6134192
+   }
+  },
+  "alta": {
+   "ms_antes": 20724,
+   "ms_despues": 20977,
+   "cortes": 19,
+   "herramientas": 334,
+   "no_ok": 0,
+   "reintentadas": 0,
+   "aire": 4,
+   "estrategias": [
+    "lista"
+   ],
+   "parte": [],
+   "volumen_malla_cambio": {
+    "B": [
+     3524748,
+     3491203
+    ],
+    "ejector": [
+     1844174,
+     1640441
+    ],
+    "ejector-ret": [
+     1223280,
+     1142719
+    ],
+    "support": [
+     2594469,
+     2435794
+    ]
+   },
+   "volumen_malla_despues": {
+    "clamp": 4831525,
+    "A": 6398397,
+    "B": 3491203,
+    "support": 2435794,
+    "ejector-ret": 1142719,
+    "ejector": 1640441,
+    "bottom": 4802775,
+    "guias": 425459,
+    "bujes": 152159,
+    "tornillos-cav": 54489,
+    "tornillos-core": 53544,
+    "interlocks": 109633,
+    "pines": 716197,
+    "pines-retorno": 77200,
+    "agua-a": 23839,
+    "agua-b": 23839,
+    "inserto-cav": 2205102,
+    "inserto-core": 3415224,
+    "pieza": 113176,
+    "colada": 3384,
+    "rieles": 2782726,
+    "pilares-soporte": 118845,
+    "anillo": 72201,
+    "platina-fija": 11251968,
+    "platina-movil": 11251968
+   }
+  },
+  "ensamble": {
+   "ms_antes": 6816,
+   "ms_despues": 4660,
+   "cortes": 19,
+   "herramientas": 183,
+   "no_ok": 0,
+   "reintentadas": 0,
+   "aire": 4,
+   "estrategias": [
+    "lista"
+   ],
+   "parte": [],
+   "volumen_malla_cambio": {},
+   "volumen_malla_despues": {
+    "clamp": 2577204,
+    "A": 2094837,
+    "B": 877276,
+    "support": 1274154,
+    "ejector-ret": 383763,
+    "ejector": 558587,
+    "bottom": 2554850,
+    "guias": 150070,
+    "bujes": 85161,
+    "tornillos-cav": 13454,
+    "tornillos-core": 12176,
+    "interlocks": 63253,
+    "pines": 133900,
+    "pines-retorno": 62047,
+    "agua-a": 13785,
+    "agua-b": 13785,
+    "inserto-cav": 808200,
+    "inserto-core": 464414,
+    "pieza": 56610,
+    "colada": 1957,
+    "rieles": 2327146,
+    "pilares-soporte": 118845,
+    "anillo": 72201,
+    "platina-fija": 7104792,
+    "platina-movil": 7104792
+   }
+  },
+  "flanera": {
+   "ms_antes": 9398,
+   "ms_despues": 10011,
+   "cortes": 33,
+   "herramientas": 248,
+   "no_ok": 0,
+   "reintentadas": 0,
+   "aire": 96,
+   "estrategias": [
+    "lista"
+   ],
+   "parte": [
+    "la geometría PARTE el sólido en 2 (lo confirman «lista» y «racimos»): 282554 + 5734 mm³",
+    "la geometría PARTE el sólido en 2 (lo confirman «lista» y «racimos»): 172285 + 23709 mm³",
+    "la geometría PARTE el sólido en 2 (lo confirman «lista» y «racimos»): 172212 + 23709 mm³"
+   ],
+   "volumen_malla_cambio": {},
+   "volumen_malla_despues": {
+    "clamp": 2578812,
+    "A": 1644606,
+    "B": 288289,
+    "support": 1279372,
+    "ejector-ret": 429480,
+    "ejector": 615049,
+    "bottom": 2566118,
+    "guias": 207707,
+    "bujes": 108010,
+    "tornillos-cav": 15401,
+    "tornillos-core": 12869,
+    "interlocks": 154100,
+    "pines-retorno": 64077,
+    "agua-a": 26685,
+    "agua-b": 26685,
+    "inserto-cav": 1525353,
+    "inserto-core": 729859,
+    "pieza": 59075,
+    "colada": 2346,
+    "rieles": 2569557,
+    "pilares-soporte": 262450,
+    "anillo": 72201,
+    "platina-fija": 7104792,
+    "platina-movil": 7104792
+   }
+  }
+ },
+ "app_por_pieza": {
+  "carcasa": {
+   "agua_vs_inserto_antes": [
+    {
+     "a": "cavidad",
+     "b": "agua-A-sur",
+     "mm3": 0,
+     "pen": 0.4
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-ext-in",
+     "mm3": 0,
+     "pen": 0.4
+    }
+   ],
+   "agua_vs_inserto_despues": [],
+   "agua_max_pen_antes": 0.4,
+   "agua_max_pen_despues": 0,
+   "cortes_en_la_app": 21,
+   "cortes_no_ok": 0,
+   "herramientas_sin_entrar": 0,
+   "insertos": [
+    {
+     "donde": "inserto cavidad",
+     "n": 16,
+     "est": "lista",
+     "q": 17093,
+     "ms": 809,
+     "ok": true,
+     "aire": 1,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "16 herramientas · 9 racimos · 10 pares cruzados"
+     ]
+    },
+    {
+     "donde": "inserto núcleo",
+     "n": 21,
+     "est": "lista",
+     "q": 23224,
+     "ms": 1541,
+     "ok": true,
+     "aire": 0,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "21 herramientas · 20 racimos · 1 pares cruzados"
+     ]
+    },
+    {
+     "donde": "inserto de cavidad (impresión)",
+     "n": 1,
+     "est": "lista",
+     "q": 234812,
+     "ms": 26,
+     "ok": true,
+     "aire": 0,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "1 herramientas · 1 racimos · 0 pares cruzados"
+     ]
+    }
+   ],
+   "telemetriaE8_antes": [
+    "E8 barrenado de insertos (kernel · 23 familias · cav 661 ms · core 1729 ms) 4116ms",
+    "E8 tessellate cavidad barrenada 697ms",
+    "E8 tessellate núcleo barrenado 1375ms",
+    "E8 portamoldes (kernel · 14 componentes) 7064ms",
+    "E8 E8 portamoldes total 14536ms"
+   ],
+   "telemetriaE8_despues": [
+    "E8 barrenado de insertos (kernel · 23 familias · cav 810 ms · core 1541 ms) 3923ms",
+    "E8 tessellate cavidad barrenada 759ms",
+    "E8 tessellate núcleo barrenado 1406ms",
+    "E8 portamoldes (kernel · 14 componentes) 6170ms",
+    "E8 E8 portamoldes total 13434ms"
+   ],
+   "reporteE8_despues": "LOS INSERTOS TRAEN SUS BARRENOS: cavidad −17093 mm³ (810 ms) · núcleo −23224 mm³ (1541 ms) — bebedero cónico ⌀8.62 · punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua A-norte ⌀6.35 · agua A-sur ⌀6.35 · agua A-este ⌀6.35 · agua A-oeste ⌀6.35 · agua A-ext-in ⌀6.35 · agua A-ext-out ⌀6.35 · agua B-linea1 ⌀6.35 · agua B-linea2 ⌀6.35 · agua B-linea3 ⌀6.35 · agua B-baffle ⌀9.53 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀8.75 · tapón NPT 1 ⌀8.75 · tapón NPT 2 ⌀8.75 · tapón NPT 3 ⌀8.75 · tapón NPT 4 ⌀8.75 · tapón NPT 5 ⌀8.75 · O-ring 0 ⌀10.75 · O-ring 1 ⌀10.75 · O-ring 2 ⌀10.75"
+  },
+  "tapa": {
+   "agua_vs_inserto_antes": [
+    {
+     "a": "cavidad",
+     "b": "agua-A-sur",
+     "mm3": 0,
+     "pen": 0.4
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-ext-in",
+     "mm3": 0,
+     "pen": 0.4
+    }
+   ],
+   "agua_vs_inserto_despues": [],
+   "agua_max_pen_antes": 0.4,
+   "agua_max_pen_despues": 0,
+   "cortes_en_la_app": 21,
+   "cortes_no_ok": 0,
+   "herramientas_sin_entrar": 0,
+   "insertos": [
+    {
+     "donde": "inserto cavidad",
+     "n": 16,
+     "est": "lista",
+     "q": 15845,
+     "ms": 946,
+     "ok": true,
+     "aire": 1,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "16 herramientas · 9 racimos · 10 pares cruzados"
+     ]
+    },
+    {
+     "donde": "inserto núcleo",
+     "n": 16,
+     "est": "lista",
+     "q": 8164,
+     "ms": 660,
+     "ok": true,
+     "aire": 0,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "16 herramientas · 10 racimos · 6 pares cruzados"
+     ]
+    },
+    {
+     "donde": "inserto de cavidad (impresión)",
+     "n": 1,
+     "est": "lista",
+     "q": 100634,
+     "ms": 28,
+     "ok": true,
+     "aire": 0,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "1 herramientas · 1 racimos · 0 pares cruzados"
+     ]
+    }
+   ],
+   "telemetriaE8_antes": [
+    "E8 barrenado de insertos (kernel · 26 familias · cav 1194 ms · core 1014 ms) 2952ms",
+    "E8 tessellate cavidad barrenada 433ms",
+    "E8 tessellate núcleo barrenado 345ms",
+    "E8 portamoldes (kernel · 14 componentes) 4898ms",
+    "E8 E8 portamoldes total 9177ms"
+   ],
+   "telemetriaE8_despues": [
+    "E8 barrenado de insertos (kernel · 26 familias · cav 946 ms · core 660 ms) 2160ms",
+    "E8 tessellate cavidad barrenada 473ms",
+    "E8 tessellate núcleo barrenado 346ms",
+    "E8 portamoldes (kernel · 14 componentes) 5148ms",
+    "E8 E8 portamoldes total 8637ms"
+   ],
+   "reporteE8_despues": "LOS INSERTOS TRAEN SUS BARRENOS: cavidad −15845 mm³ (946 ms) · núcleo −8164 mm³ (660 ms) — bebedero cónico ⌀8.06 · punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua A-norte ⌀6.35 · agua A-sur ⌀6.35 · agua A-este ⌀6.35 · agua A-oeste ⌀6.35 · agua A-ext-in ⌀6.35 · agua A-ext-out ⌀6.35 · agua B-linea0 ⌀6.35 · agua B-linea1 ⌀6.35 · agua B-linea2 ⌀6.35 · agua B-baffle ⌀9.53 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀8.75 · tapón NPT 1 ⌀8.75 · tapón NPT 2 ⌀8.75 · tapón NPT 3 ⌀8.75 · tapón NPT 4 ⌀8.75 · tapón NPT 5 ⌀8.75 · O-ring 0 ⌀10.75 · O-ring 1 ⌀10.75 · O-ring 2 ⌀10.75 · O-ring 3 ⌀10.75 · O-ring 4 ⌀10.75 · O-ring 5 ⌀10.75"
+  },
+  "alta": {
+   "agua_vs_inserto_antes": [
+    {
+     "a": "cavidad",
+     "b": "agua-A-sur",
+     "mm3": 0,
+     "pen": 0.4
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-ext-in",
+     "mm3": 0,
+     "pen": 0.4
+    }
+   ],
+   "agua_vs_inserto_despues": [],
+   "agua_max_pen_antes": 0.4,
+   "agua_max_pen_despues": 0,
+   "cortes_en_la_app": 21,
+   "cortes_no_ok": 0,
+   "herramientas_sin_entrar": 0,
+   "insertos": [
+    {
+     "donde": "inserto cavidad",
+     "n": 16,
+     "est": "lista",
+     "q": 27651,
+     "ms": 828,
+     "ok": true,
+     "aire": 1,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "16 herramientas · 9 racimos · 10 pares cruzados"
+     ]
+    },
+    {
+     "donde": "inserto núcleo",
+     "n": 23,
+     "est": "lista",
+     "q": 41528,
+     "ms": 644,
+     "ok": true,
+     "aire": 0,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "23 herramientas · 17 racimos · 6 pares cruzados"
+     ]
+    },
+    {
+     "donde": "inserto de cavidad (impresión)",
+     "n": 1,
+     "est": "lista",
+     "q": 877250,
+     "ms": 28,
+     "ok": true,
+     "aire": 0,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "1 herramientas · 1 racimos · 0 pares cruzados"
+     ]
+    }
+   ],
+   "telemetriaE8_antes": [
+    "E8 barrenado de insertos (kernel · 25 familias · cav 747 ms · core 886 ms) 3060ms",
+    "E8 tessellate cavidad barrenada 1176ms",
+    "E8 tessellate núcleo barrenado 1204ms",
+    "E8 portamoldes (kernel · 14 componentes) 8945ms",
+    "E8 E8 portamoldes total 16566ms"
+   ],
+   "telemetriaE8_despues": [
+    "E8 barrenado de insertos (kernel · 25 familias · cav 828 ms · core 644 ms) 2844ms",
+    "E8 tessellate cavidad barrenada 1256ms",
+    "E8 tessellate núcleo barrenado 1265ms",
+    "E8 portamoldes (kernel · 14 componentes) 6937ms",
+    "E8 E8 portamoldes total 14588ms"
+   ],
+   "reporteE8_despues": "LOS INSERTOS TRAEN SUS BARRENOS: cavidad −27651 mm³ (828 ms) · núcleo −41528 mm³ (644 ms) — bebedero cónico ⌀9.56 · punta de 8 pines ⌀4.893 · asiento del hombro de 8 pines ⌀6.48 · agua A-norte ⌀6.35 · agua A-sur ⌀6.35 · agua A-este ⌀6.35 · agua A-oeste ⌀6.35 · agua A-ext-in ⌀6.35 · agua A-ext-out ⌀6.35 · agua B-linea0 ⌀6.35 · agua B-linea1 ⌀6.35 · agua B-linea2 ⌀6.35 · agua B-linea3 ⌀6.35 · agua B-linea4 ⌀6.35 · agua B-baffle ⌀9.53 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀8.75 · tapón NPT 1 ⌀8.75 · tapón NPT 2 ⌀8.75 · tapón NPT 3 ⌀8.75 · tapón NPT 4 ⌀8.75 · tapón NPT 5 ⌀8.75 · O-ring 0 ⌀10.75 · O-ring 1 ⌀10.75 · O-ring 2 ⌀10.75"
+  },
+  "ensamble": {
+   "agua_vs_inserto_antes": [
+    {
+     "a": "cavidad",
+     "b": "agua-A-norte",
+     "mm3": 39.3,
+     "pen": 1.51
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-este",
+     "mm3": 39.3,
+     "pen": 1.21
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-sur",
+     "mm3": 0,
+     "pen": 0.4
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-ext-in",
+     "mm3": 0,
+     "pen": 0.4
+    }
+   ],
+   "agua_vs_inserto_despues": [],
+   "agua_max_pen_antes": 1.51,
+   "agua_max_pen_despues": 0,
+   "cortes_en_la_app": 21,
+   "cortes_no_ok": 0,
+   "herramientas_sin_entrar": 0,
+   "insertos": [
+    {
+     "donde": "inserto cavidad",
+     "n": 16,
+     "est": "lista",
+     "q": 15943,
+     "ms": 3196,
+     "ok": true,
+     "aire": 1,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "16 herramientas · 9 racimos · 10 pares cruzados"
+     ]
+    },
+    {
+     "donde": "inserto núcleo",
+     "n": 16,
+     "est": "lista",
+     "q": 11961,
+     "ms": 1749,
+     "ok": true,
+     "aire": 0,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "16 herramientas · 11 racimos · 8 pares cruzados"
+     ]
+    },
+    {
+     "donde": "inserto de cavidad (impresión)",
+     "n": 1,
+     "est": "lista",
+     "q": 200000,
+     "ms": 27,
+     "ok": true,
+     "aire": 0,
+     "re": 0,
+     "parte": false,
+     "no": [],
+     "notas": [
+      "1 herramientas · 1 racimos · 0 pares cruzados"
+     ]
+    }
+   ],
+   "telemetriaE8_antes": [
+    "E8 barrenado de insertos (kernel · 26 familias · cav 4576 ms · core 3682 ms) 12402ms",
+    "E8 tessellate cavidad barrenada 1218ms",
+    "E8 tessellate núcleo barrenado 1279ms",
+    "E8 portamoldes (kernel · 14 componentes) 6759ms",
+    "E8 E8 portamoldes total 23040ms"
+   ],
+   "telemetriaE8_despues": [
+    "E8 barrenado de insertos (kernel · 26 familias · cav 3196 ms · core 1749 ms) 8435ms",
+    "E8 tessellate cavidad barrenada 1218ms",
+    "E8 tessellate núcleo barrenado 1284ms",
+    "E8 portamoldes (kernel · 14 componentes) 6300ms",
+    "E8 E8 portamoldes total 18590ms"
+   ],
+   "reporteE8_despues": "LOS INSERTOS TRAEN SUS BARRENOS: cavidad −15943 mm³ (3196 ms) · núcleo −11961 mm³ (1749 ms) — bebedero cónico ⌀8.21 · punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua A-norte ⌀6.35 · agua A-sur ⌀6.35 · agua A-este ⌀6.35 · agua A-oeste ⌀6.35 · agua A-ext-in ⌀6.35 · agua A-ext-out ⌀6.35 · agua B-linea0 ⌀6.35 · agua B-linea1 ⌀6.35 · agua B-linea2 ⌀6.35 · agua B-baffle ⌀9.53 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀8.75 · tapón NPT 1 ⌀8.75 · tapón NPT 2 ⌀8.75 · tapón NPT 3 ⌀8.75 · tapón NPT 4 ⌀8.75 · tapón NPT 5 ⌀8.75 · O-ring 0 ⌀10.75 · O-ring 1 ⌀10.75 · O-ring 2 ⌀10.75 · O-ring 3 ⌀10.75 · O-ring 4 ⌀10.75 · O-ring 5 ⌀10.75"
+  }
+ }
+}
