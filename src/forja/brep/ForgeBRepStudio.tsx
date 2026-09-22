@@ -4014,7 +4014,10 @@ export default function ForgeBRepStudio() {
         // dibuja ESOS (misma fuente que el 3D), no la rejilla genérica del paquete (19 × ⌀10 para la carcasa).
         const e10 = mold.ciclo?.e10, d5 = mold.ciclo?.e5datums;
         if (e10 && d5 && mold.ciclo?.pieza) {
-          aspec.ejectors = { ...aspec.ejectors, type: 'pin', count: e10.pines.n, diaMm: e10.pines.diaMm,
+          // EL MISMO ⌀ QUE EL 3D (2026-09-21): la hoja barrenaba con el ⌀ de la PUNTA (2.381) mientras el
+          // acero pasa el CUERPO (4.763) — «el escalonado no llega a los barrenos», causa 3 de LAS 20 PIEZAS.
+          // `cicloPortamoldesPieza` ya le pasa `cuerpoDiaMm` al sólido; la lámina va con el MISMO número.
+          aspec.ejectors = { ...aspec.ejectors, type: 'pin', count: e10.pines.n, diaMm: e10.pines.escalonado.cuerpoDiaMm,
             positions: e10.pines.posiciones.map((pp) => ({ x: pp.x - d5.ejeX, y: pp.y - d5.ejeY })) };
         }
         const r = pkg.recomendacion;
@@ -4034,6 +4037,17 @@ export default function ForgeBRepStudio() {
             : { grupo: 'Dictamen', param: 'contratos (el juez)', valor: 'sin dictamen: pulsa D sobre la pieza', ref: '§13' },
           { grupo: 'DFM', param: 'moldeabilidad DFM (la puerta 0, no el juez)', valor: `${pkg.dfm.score}/100`, ref: '§2.3', ok: pkg.dfm.score >= 60 },
         ];
+        // EL ESCALONADO EN LA TABLA (2026-09-21): la hoja tenía UN solo ⌀ y el pin tiene DOS
+        // (punta guiada + cuerpo al hombro, R52). Quien lea la lámina tiene que poder pedir el pin.
+        if (e10) {
+          const es = e10.pines.escalonado, pr = e10.pines.pisoPorRayo, eq = e10.pines.equilibrio;
+          rows.push(
+            { grupo: 'Expulsión §11.2.3', param: `pin ESCALONADO ×${e10.pines.n} (R52: el recto pandea, SF ${es.sfRectoK2})`, valor: `punta ⌀${es.puntaDiaMm} × ${es.puntaMm} GUIADA + cuerpo ⌀${es.cuerpoDiaMm} · los barrenos de placa van al ⌀ del CUERPO`, ref: '§11.2.3 · R52', ok: true },
+            { grupo: 'Expulsión §11.2.5', param: 'la punta termina en la CARA DEL MACHO (piso real, no pared mediana)', valor: pr?.fuente === 'rayo sobre la malla' ? `rayo sobre la malla bajo cada pin · la pared mediana erraba hasta ${pr.peorMm} mm` : 'sin rayo: pared MEDIANA (declarado)', ref: '§11.2.5 · medido', ok: pr?.fuente === 'rayo sobre la malla' },
+            ...(eq ? [{ grupo: 'Expulsión §11.2.5', param: 'equilibrio del reparto (centroide pines ↔ centroide del área)', valor: `${eq.desvioMm} mm de ${eq.topeMm} mm permitidos (0.1·L, REGLA NUESTRA) · antes ${eq.desvioAntesMm} mm`, ref: '§11.2.5 · §11.3.4', ok: eq.ok }] : []),
+            { grupo: 'Expulsión §11.2.5', param: 'juez pines ↔ agua (LISTA completa, no el mínimo)', valor: e10.juez.conflictos.length === 0 ? `${e10.juez.paresExaminados} pares examinados · 0 bajo ½⌀` : `${e10.juez.conflictos.length} de ${e10.juez.paresExaminados} pares bajo ½⌀: ${e10.juez.conflictos.slice(0, 3).map((c) => `${c.pin}↔${c.segmento} ${c.claroMm}`).join(' · ')}`, ref: 'A-239 · §9.2.7', ok: e10.juez.conflictos.length === 0 },
+          );
+        }
         const pages = buildMoldLaminas(OCC, oc, aspec, rows, shape);
         setPlanosMolde(pages); setPlanosIdx(0); setPlanosOn(true);
       } catch (e) { console.warn('PLANOS_MOLDE_ERR', e); setPlanosMolde([]); }
@@ -7536,6 +7550,11 @@ export default function ForgeBRepStudio() {
                 return (
                   <div data-testid="molde-de-la-pieza" data-estacion={est} data-roles={roles.join(' ')} data-pared={mold.intake.wallMm ?? ''}
                     data-portamoldes={portamoldes ? '1' : '0'} data-carrera-libre={pm?.carreraLibreMm ?? ''} data-carrera-pedida={pm?.carreraPedidaMm ?? ''}
+                    /* LOS PINES EN LA CARA DEL MACHO: `puntas-vs-cara` es 0 POR CONSTRUCCIÓN (la punta se
+                       fabrica en el z que dio el rayo) — el número que MUERDE es `piso-vs-pared`: cuánto
+                       se equivocaba la pared MEDIANA. La prueba de verdad la hace el arnés midiendo
+                       `pin-punta-k` contra el techo del núcleo (otra ruta: la booleana de la E3). */
+                    {...{ 'data-puntas-vs-cara': c?.e10?.pines.pisoPorRayo ? Math.max(0, ...c.e10.pines.pisoPorRayo.puntasVsCaraMm.map(Math.abs)) : '', 'data-piso-vs-pared': c?.e10?.pines.pisoPorRayo?.peorMm ?? '', 'data-piso-fuente': c?.e10?.pines.pisoPorRayo?.fuente ?? '', 'data-equilibrio': c?.e10?.pines.equilibrio ? `${c.e10.pines.equilibrio.desvioMm}/${c.e10.pines.equilibrio.topeMm}` : '', 'data-pin-agua': c?.e10 ? `${c.e10.juez.conflictos.length}/${c.e10.juez.paresExaminados}` : '' }}
                     data-partes={mold.moldParts.length} data-tris={mold.moldParts.reduce((n, p) => n + (p.indices ? p.indices.length / 3 : 0), 0)} data-bbox={moldeBBoxRef.current} data-enc={moldeEncRef.current}
                     style={{ display: 'flex', alignItems: 'center', gap: 7, marginLeft: 6, fontSize: 9.5, color: '#9fb0c4' }}>
                     <span style={{ width: 16, height: 3, borderRadius: 2, background: '#ffcc33' }} />

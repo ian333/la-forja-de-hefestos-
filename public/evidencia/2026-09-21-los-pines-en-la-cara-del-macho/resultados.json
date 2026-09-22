@@ -1,0 +1,1059 @@
+{
+ "orden": "2026-09-21-los-pines-en-la-cara-del-macho",
+ "base": "eca3df0",
+ "que_se_arreglo": [
+  "el piso bajo cada pin se MIDE con un rayo sobre la malla local (pisoInteriorPorRayo), ya no es 'zBaseCerrada - pared MEDIANA'",
+  "el reparto de los pines se EQUILIBRA: centroide de los pines a <= 0.1*L del centroide del area proyectada (regla NUESTRA; el libro nombra el defecto, no da el numero)",
+  "la CABEZA del pin queda capturada en la lamina: contrataladro CIEGO en la retenedora (Fig 11.15 Det. D) + pasaje al diametro del CUERPO en la expulsora",
+  "la lamina barrena con el mismo diametro de CUERPO que el 3D (antes iba con el de la PUNTA)",
+  "el juez pin<->agua lista TODOS los pares bajo 1/2 diametro, no solo el minimo por pin"
+ ],
+ "como_se_midio": {
+  "punta_vs_cara_del_macho": "en la app: max[2] de cada 'pin-punta-k' contra max[2] de 'nucleo' (el techo del macho sale de la booleana del kernel en E3 — otra ruta que el rayo, por eso NO es tautologico)",
+  "control_del_rayo": "en node: el mismo piso medido por rayo +Z (primer tramo de material desde abajo) y por paridad +X (solidFromMesh, codigo viejo, otra direccion) sobre la MISMA malla",
+  "equilibrio": "centroide de los centros de 'pin-punta-k' contra el centro de la huella de 'pieza', tope 0.1*L",
+  "arnes": "scratchpad/mide-pines.cjs (app) y scratchpad/cruza-rayo.cjs (node) — copias en iangpu /home/ian/el-plan-dev5/"
+ },
+ "kazmer": {
+  "11.2.5": "LITERAL: 'ejectors will be more effective when placed near the locations where the ejection forces are generated' / 'By placing the ejector pin far from these two sticking points, a significant moment and deflection will be applied before the molding is stripped off the core'",
+  "11.3.4": "LITERAL: 'unbalanced ejection forces can lead to uneven wear in the mold'",
+  "11.2.6 Fig 11.15 Det. D": "LITERAL: 'a counterbore is provided in the ejector retainer plate to pull the head of the ejector pin(s) away from the parting plane of the mold when the ejector system is reversed'",
+  "11.2.6 holgura": "LITERAL: 'a clearance of 0.5 mm should be sufficient in most molding applications'",
+  "el_numero_del_equilibrio": "REGLA NUESTRA, sin cita: 0.1*L (L = lado mayor de la huella). Razon: es el desvio que la propia rejilla de referencia produce (media celda de una malla 4x4 sobre la huella); pedir menos seria inventar precision que la colocacion por agarre no tiene, y pedir mas deja pasar el caso 4-pines-en-una-orilla que se midio."
+ },
+ "piezas": {
+  "carcasa": {
+   "archivo": "1594C Box.stp",
+   "paredMedianaMm": 3.2,
+   "caraMachoZ": 189.8,
+   "punta_vs_cara_del_macho_mm": {
+    "antes": 0.2,
+    "despues": 0,
+    "deltas_despues": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "equilibrio_mm": {
+    "antes": 14.08,
+    "despues": 3.85,
+    "topeMm": 10.65,
+    "Lmm": 106.5,
+    "ok_despues": true
+   },
+   "posiciones_de_los_pines": {
+    "antes": [
+     [
+      105,
+      161.2
+     ],
+     [
+      141,
+      161.2
+     ],
+     [
+      105,
+      84.8
+     ],
+     [
+      141,
+      84.8
+     ],
+     [
+      99,
+      155.2
+     ],
+     [
+      147,
+      155.2
+     ],
+     [
+      99,
+      147.1
+     ],
+     [
+      147,
+      147.1
+     ]
+    ],
+    "despues": [
+     [
+      111,
+      78.8
+     ],
+     [
+      141,
+      161.2
+     ],
+     [
+      105,
+      84.8
+     ],
+     [
+      141,
+      84.8
+     ],
+     [
+      99,
+      155.2
+     ],
+     [
+      147,
+      155.2
+     ],
+     [
+      99,
+      147.1
+     ],
+     [
+      147,
+      147.1
+     ]
+    ]
+   },
+   "tira_data_attrs_despues": {
+    "puntasVsCara": "0",
+    "pisoVsPared": "0.2",
+    "pisoFuente": "rayo sobre la malla",
+    "equilibrio": "3.84/10.65",
+    "pinAgua": "0/48"
+   },
+   "estudio_de_contacto_despues": {
+    "pinVsNucleo": [
+     "nucleo↔pin-punta-0 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-1 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-2 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-3 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-4 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-5 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-6 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-7 286 mm³ · 1.12 mm",
+     "nucleo↔pin-cuerpo-0 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-1 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-2 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-3 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-4 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-5 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-6 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-7 154 mm³ · 2.19 mm"
+    ],
+    "pinVsPieza": [],
+    "pinVsRetenedora": [],
+    "pinVsAgua": []
+   },
+   "estudio_de_contacto_antes": {
+    "pinVsNucleo": [
+     "nucleo↔pin-punta-0 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-1 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-2 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-3 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-4 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-5 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-6 286 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-7 286 mm³ · 1.12 mm",
+     "nucleo↔pin-cuerpo-0 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-1 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-2 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-3 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-4 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-5 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-6 154 mm³ · 2.19 mm",
+     "nucleo↔pin-cuerpo-7 154 mm³ · 2.19 mm"
+    ],
+    "pinVsPieza": [],
+    "pinVsRetenedora": [],
+    "pinVsAgua": []
+   },
+   "control_del_rayo": {
+    "peor_dif_rayo_vs_paridad_mm": 0,
+    "espesor_del_piso_menos_pared_mediana_mm": [
+     -0.2,
+     -0.2,
+     -0.2,
+     -0.2,
+     -0.2,
+     -0.2,
+     -0.2,
+     -0.2
+    ],
+    "equilibrio_en_node": {
+     "areaX": 0,
+     "areaY": 0,
+     "agarreX": 0,
+     "agarreY": 0,
+     "pinesX": 0.5,
+     "pinesY": -5.03,
+     "desvioMm": 5.05,
+     "topeMm": 10.65,
+     "ok": true,
+     "desvioAntesMm": 15.57,
+     "nSwaps": 1
+    },
+    "filas": [
+     {
+      "pin": 0,
+      "x": -14,
+      "y": 44.2,
+      "rayoZ": -30.3,
+      "paridadZ": -30.3,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 1,
+      "x": 18,
+      "y": -40.2,
+      "rayoZ": -30.3,
+      "paridadZ": -30.3,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 2,
+      "x": -20,
+      "y": 38.2,
+      "rayoZ": -30.3,
+      "paridadZ": -30.3,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 3,
+      "x": 20,
+      "y": 38.2,
+      "rayoZ": -30.3,
+      "paridadZ": -30.3,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 4,
+      "x": -24,
+      "y": -34.2,
+      "rayoZ": -30.3,
+      "paridadZ": -30.3,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 5,
+      "x": 24,
+      "y": -34.2,
+      "rayoZ": -30.3,
+      "paridadZ": -30.3,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 6,
+      "x": -24,
+      "y": -26.1,
+      "rayoZ": -30.3,
+      "paridadZ": -30.3,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 7,
+      "x": 24,
+      "y": -26.1,
+      "rayoZ": -30.3,
+      "paridadZ": -30.3,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     }
+    ]
+   }
+  },
+  "tapa": {
+   "archivo": "1594C Lid.stp",
+   "paredMedianaMm": 3.86,
+   "caraMachoZ": 156.8,
+   "punta_vs_cara_del_macho_mm": {
+    "antes": 1.06,
+    "despues": 0,
+    "deltas_despues": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "equilibrio_mm": {
+    "antes": 0.5,
+    "despues": 0.5,
+    "topeMm": 10.65,
+    "Lmm": 106.5,
+    "ok_despues": true
+   },
+   "posiciones_de_los_pines": {
+    "antes": [
+     [
+      84.8,
+      116
+     ],
+     [
+      161.2,
+      116
+     ],
+     [
+      84.8,
+      80
+     ],
+     [
+      161.2,
+      80
+     ],
+     [
+      74.8,
+      114
+     ],
+     [
+      169.2,
+      114
+     ],
+     [
+      74.8,
+      82
+     ],
+     [
+      169.2,
+      82
+     ]
+    ],
+    "despues": [
+     [
+      84.8,
+      116
+     ],
+     [
+      161.2,
+      116
+     ],
+     [
+      84.8,
+      80
+     ],
+     [
+      161.2,
+      80
+     ],
+     [
+      74.8,
+      114
+     ],
+     [
+      169.2,
+      114
+     ],
+     [
+      74.8,
+      82
+     ],
+     [
+      169.2,
+      82
+     ]
+    ]
+   },
+   "tira_data_attrs_despues": {
+    "puntasVsCara": "0",
+    "pisoVsPared": "1.06",
+    "pisoFuente": "rayo sobre la malla",
+    "equilibrio": "0.5/10.65",
+    "pinAgua": "0/64"
+   },
+   "estudio_de_contacto_despues": {
+    "pinVsNucleo": [
+     "nucleo↔pin-punta-0 157 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-1 157 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-2 157 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-3 157 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-5 157 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-7 157 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-4 135 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-6 135 mm³ · 1.12 mm"
+    ],
+    "pinVsPieza": [],
+    "pinVsRetenedora": [],
+    "pinVsAgua": []
+   },
+   "estudio_de_contacto_antes": {
+    "pinVsNucleo": [
+     "nucleo↔pin-punta-0 148 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-1 148 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-2 148 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-3 148 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-5 148 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-7 148 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-4 129 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-6 129 mm³ · 1.12 mm"
+    ],
+    "pinVsPieza": [],
+    "pinVsRetenedora": [],
+    "pinVsAgua": []
+   },
+   "control_del_rayo": {
+    "peor_dif_rayo_vs_paridad_mm": 0,
+    "espesor_del_piso_menos_pared_mediana_mm": [
+     -1.06,
+     -1.06,
+     -1.06,
+     -1.06,
+     -1.06,
+     -1.06,
+     -1.06,
+     -1.06
+    ],
+    "equilibrio_en_node": {
+     "areaX": 0,
+     "areaY": 0,
+     "agarreX": 0,
+     "agarreY": 0,
+     "pinesX": -0.25,
+     "pinesY": -0.5,
+     "desvioMm": 0.56,
+     "topeMm": 10.65,
+     "ok": true,
+     "desvioAntesMm": 0.56,
+     "nSwaps": 0
+    },
+    "filas": [
+     {
+      "pin": 0,
+      "x": -38.2,
+      "y": -20,
+      "rayoZ": -9.3,
+      "paridadZ": -9.3,
+      "difMm": 0,
+      "espesorPisoMm": 2.8,
+      "nCruces": 2
+     },
+     {
+      "pin": 1,
+      "x": 38.2,
+      "y": -20,
+      "rayoZ": -9.3,
+      "paridadZ": -9.3,
+      "difMm": 0,
+      "espesorPisoMm": 2.8,
+      "nCruces": 2
+     },
+     {
+      "pin": 2,
+      "x": -40.2,
+      "y": 18,
+      "rayoZ": -9.3,
+      "paridadZ": -9.3,
+      "difMm": 0,
+      "espesorPisoMm": 2.8,
+      "nCruces": 2
+     },
+     {
+      "pin": 3,
+      "x": 40.2,
+      "y": 18,
+      "rayoZ": -9.3,
+      "paridadZ": -9.3,
+      "difMm": 0,
+      "espesorPisoMm": 2.8,
+      "nCruces": 2
+     },
+     {
+      "pin": 4,
+      "x": -48.2,
+      "y": -16,
+      "rayoZ": -9.3,
+      "paridadZ": -9.3,
+      "difMm": 0,
+      "espesorPisoMm": 2.8,
+      "nCruces": 2
+     },
+     {
+      "pin": 5,
+      "x": 46.2,
+      "y": -16,
+      "rayoZ": -9.3,
+      "paridadZ": -9.3,
+      "difMm": 0,
+      "espesorPisoMm": 2.8,
+      "nCruces": 2
+     },
+     {
+      "pin": 6,
+      "x": -48.2,
+      "y": 16,
+      "rayoZ": -9.3,
+      "paridadZ": -9.3,
+      "difMm": 0,
+      "espesorPisoMm": 2.8,
+      "nCruces": 2
+     },
+     {
+      "pin": 7,
+      "x": 48.2,
+      "y": 16,
+      "rayoZ": -9.3,
+      "paridadZ": -9.3,
+      "difMm": 0,
+      "espesorPisoMm": 2.8,
+      "nCruces": 2
+     }
+    ]
+   }
+  },
+  "alta": {
+   "archivo": "1599HBK.stp",
+   "paredMedianaMm": 2.46,
+   "caraMachoZ": 211.5,
+   "punta_vs_cara_del_macho_mm": {
+    "antes": 1.04,
+    "despues": 0,
+    "deltas_despues": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "equilibrio_mm": {
+    "antes": 37.12,
+    "despues": 13.26,
+    "topeMm": 22,
+    "Lmm": 220,
+    "ok_despues": true
+   },
+   "posiciones_de_los_pines": {
+    "antes": [
+     [
+      101,
+      180
+     ],
+     [
+      295,
+      180
+     ],
+     [
+      101,
+      116
+     ],
+     [
+      295,
+      116
+     ],
+     [
+      113,
+      180
+     ],
+     [
+      125,
+      180
+     ],
+     [
+      137,
+      180
+     ],
+     [
+      149,
+      180
+     ]
+    ],
+    "despues": [
+     [
+      295,
+      128
+     ],
+     [
+      295,
+      180
+     ],
+     [
+      101,
+      116
+     ],
+     [
+      295,
+      116
+     ],
+     [
+      113,
+      180
+     ],
+     [
+      125,
+      180
+     ],
+     [
+      137,
+      180
+     ],
+     [
+      149,
+      180
+     ]
+    ]
+   },
+   "tira_data_attrs_despues": {
+    "puntasVsCara": "0",
+    "pisoVsPared": "1.04",
+    "pisoFuente": "rayo sobre la malla",
+    "equilibrio": "13.26/22",
+    "pinAgua": "1/112"
+   },
+   "estudio_de_contacto_despues": {
+    "pinVsNucleo": [
+     "nucleo↔pin-cuerpo-0 1054 mm³ · 2.45 mm",
+     "nucleo↔pin-cuerpo-1 1054 mm³ · 2.45 mm",
+     "nucleo↔pin-cuerpo-2 1054 mm³ · 2.45 mm",
+     "nucleo↔pin-cuerpo-3 1054 mm³ · 2.45 mm",
+     "nucleo↔pin-cuerpo-4 1054 mm³ · 2.45 mm",
+     "nucleo↔pin-cuerpo-5 1054 mm³ · 2.45 mm",
+     "nucleo↔pin-cuerpo-6 1054 mm³ · 2.45 mm",
+     "nucleo↔pin-cuerpo-7 1054 mm³ · 2.45 mm",
+     "nucleo↔pin-punta-0 330 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-1 330 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-2 330 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-3 330 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-4 330 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-5 330 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-6 330 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-7 330 mm³ · 1.82 mm"
+    ],
+    "pinVsPieza": [],
+    "pinVsRetenedora": [],
+    "pinVsAgua": [
+     "agua-B-linea1↔pin-cuerpo-5 30 mm³ · 0.75 mm"
+    ]
+   },
+   "estudio_de_contacto_antes": {
+    "pinVsNucleo": [
+     "nucleo↔pin-cuerpo-0 1018 mm³ · 2.5 mm",
+     "nucleo↔pin-cuerpo-1 1018 mm³ · 2.5 mm",
+     "nucleo↔pin-cuerpo-2 1018 mm³ · 2.5 mm",
+     "nucleo↔pin-cuerpo-3 1018 mm³ · 2.5 mm",
+     "nucleo↔pin-cuerpo-4 1018 mm³ · 2.5 mm",
+     "nucleo↔pin-cuerpo-5 1018 mm³ · 2.5 mm",
+     "nucleo↔pin-cuerpo-6 1018 mm³ · 2.5 mm",
+     "nucleo↔pin-cuerpo-7 1018 mm³ · 2.5 mm",
+     "nucleo↔pin-punta-0 315 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-1 315 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-2 315 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-3 315 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-4 315 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-5 315 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-6 315 mm³ · 1.82 mm",
+     "nucleo↔pin-punta-7 315 mm³ · 1.82 mm"
+    ],
+    "pinVsPieza": [],
+    "pinVsRetenedora": [],
+    "pinVsAgua": [
+     "agua-B-linea1↔pin-cuerpo-5 30 mm³ · 0.75 mm"
+    ]
+   },
+   "control_del_rayo": {
+    "peor_dif_rayo_vs_paridad_mm": 3.5,
+    "espesor_del_piso_menos_pared_mediana_mm": [
+     0.04,
+     0.04,
+     0.04,
+     0.04,
+     0.04,
+     0.04,
+     0.04,
+     0.04
+    ],
+    "equilibrio_en_node": {
+     "areaX": 0,
+     "areaY": 0,
+     "agarreX": 0.13,
+     "agarreY": 0,
+     "pinesX": -12.25,
+     "pinesY": -9.75,
+     "desvioMm": 15.66,
+     "topeMm": 22,
+     "ok": true,
+     "desvioAntesMm": 41.15,
+     "nSwaps": 1
+    },
+    "filas": [
+     {
+      "pin": 0,
+      "x": 101,
+      "y": 36,
+      "rayoZ": -31.5,
+      "paridadZ": -35,
+      "difMm": 3.5,
+      "espesorPisoMm": 2.5,
+      "nCruces": 2
+     },
+     {
+      "pin": 1,
+      "x": 93,
+      "y": -38,
+      "rayoZ": -31.5,
+      "paridadZ": -31.5,
+      "difMm": 0,
+      "espesorPisoMm": 2.5,
+      "nCruces": 2
+     },
+     {
+      "pin": 2,
+      "x": -93,
+      "y": 38,
+      "rayoZ": -31.5,
+      "paridadZ": -31.5,
+      "difMm": 0,
+      "espesorPisoMm": 2.5,
+      "nCruces": 2
+     },
+     {
+      "pin": 3,
+      "x": 93,
+      "y": 38,
+      "rayoZ": -31.5,
+      "paridadZ": -31.5,
+      "difMm": 0,
+      "espesorPisoMm": 2.5,
+      "nCruces": 2
+     },
+     {
+      "pin": 4,
+      "x": -85,
+      "y": -38,
+      "rayoZ": -31.5,
+      "paridadZ": -31.5,
+      "difMm": 0,
+      "espesorPisoMm": 2.5,
+      "nCruces": 2
+     },
+     {
+      "pin": 5,
+      "x": -77,
+      "y": -38,
+      "rayoZ": -31.5,
+      "paridadZ": -31.5,
+      "difMm": 0,
+      "espesorPisoMm": 2.5,
+      "nCruces": 2
+     },
+     {
+      "pin": 6,
+      "x": -69,
+      "y": -38,
+      "rayoZ": -31.5,
+      "paridadZ": -31.5,
+      "difMm": 0,
+      "espesorPisoMm": 2.5,
+      "nCruces": 2
+     },
+     {
+      "pin": 7,
+      "x": -61,
+      "y": -38,
+      "rayoZ": -31.5,
+      "paridadZ": -31.5,
+      "difMm": 0,
+      "espesorPisoMm": 2.5,
+      "nCruces": 2
+     }
+    ]
+   },
+   "nota": "El control del rayo da 0.000 mm de diferencia contra la paridad en 7 de 8 pines; en el 8o (101, 36) la PARIDAD (+X) da -35 y el rayo -31.5. Gana el rayo: los 8 pines de esa pieza estan sobre el mismo piso plano (espesor 2.5 mm y 2 cruces limpios en los 8) y la app confirma la punta a Delta 0.000 contra la cara del macho. El rayo +X de solidFromMesh es el metodo debil en ese punto (roza la pared)."
+  },
+  "ensamble": {
+   "archivo": "1557BGY.stp",
+   "paredMedianaMm": 3.86,
+   "caraMachoZ": 174.4,
+   "punta_vs_cara_del_macho_mm": {
+    "antes": 1.56,
+    "despues": 0.8,
+    "deltas_despues": [
+     -0.78,
+     -0.8,
+     -0.7,
+     -0.7,
+     -0.78,
+     -0.79,
+     -0.7,
+     -0.7
+    ]
+   },
+   "equilibrio_mm": {
+    "antes": 2.5,
+    "despues": 2.5,
+    "topeMm": 8,
+    "Lmm": 79.98,
+    "ok_despues": true
+   },
+   "posiciones_de_los_pines": {
+    "antes": [
+     [
+      110,
+      148
+     ],
+     [
+      136,
+      148
+     ],
+     [
+      104,
+      140
+     ],
+     [
+      142,
+      140
+     ],
+     [
+      98,
+      110
+     ],
+     [
+      148,
+      110
+     ],
+     [
+      106,
+      104
+     ],
+     [
+      140,
+      104
+     ]
+    ],
+    "despues": [
+     [
+      110,
+      148
+     ],
+     [
+      136,
+      148
+     ],
+     [
+      104,
+      140
+     ],
+     [
+      142,
+      140
+     ],
+     [
+      98,
+      110
+     ],
+     [
+      148,
+      110
+     ],
+     [
+      106,
+      104
+     ],
+     [
+      140,
+      104
+     ]
+    ]
+   },
+   "tira_data_attrs_despues": {
+    "puntasVsCara": "0",
+    "pisoVsPared": "0.86",
+    "pisoFuente": "rayo sobre la malla",
+    "equilibrio": "2.5/8",
+    "pinAgua": "4/64"
+   },
+   "estudio_de_contacto_despues": {
+    "pinVsNucleo": [
+     "nucleo↔pin-punta-2 253 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-3 253 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-6 253 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-7 253 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-4 252 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-5 252 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-0 245 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-1 245 mm³ · 1.12 mm"
+    ],
+    "pinVsPieza": [],
+    "pinVsRetenedora": [],
+    "pinVsAgua": [
+     "agua-B-linea1↔pin-punta-2 23 mm³ · 1.12 mm",
+     "agua-B-linea2↔pin-punta-3 23 mm³ · 1.12 mm"
+    ]
+   },
+   "estudio_de_contacto_antes": {
+    "pinVsNucleo": [
+     "nucleo↔pin-punta-2 249 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-3 249 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-4 249 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-5 249 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-6 249 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-7 249 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-0 243 mm³ · 1.12 mm",
+     "nucleo↔pin-punta-1 243 mm³ · 1.12 mm"
+    ],
+    "pinVsPieza": [],
+    "pinVsRetenedora": [],
+    "pinVsAgua": [
+     "agua-B-linea1↔pin-punta-2 28 mm³ · 1.12 mm",
+     "agua-B-linea2↔pin-punta-3 28 mm³ · 1.12 mm"
+    ]
+   },
+   "control_del_rayo": {
+    "peor_dif_rayo_vs_paridad_mm": 0,
+    "espesor_del_piso_menos_pared_mediana_mm": [
+     -0.765,
+     -0.808,
+     -0.86,
+     -0.86,
+     -0.9,
+     -0.917,
+     -0.901,
+     -0.917
+    ],
+    "equilibrio_en_node": {
+     "areaX": 0,
+     "areaY": 29.4,
+     "agarreX": 0,
+     "agarreY": 29.4,
+     "pinesX": 0.25,
+     "pinesY": 25.15,
+     "desvioMm": 4.26,
+     "topeMm": 8,
+     "ok": true,
+     "desvioAntesMm": 11.5,
+     "nSwaps": 1
+    },
+    "filas": [
+     {
+      "pin": 0,
+      "x": -11,
+      "y": 60.4,
+      "rayoZ": -11.0524,
+      "paridadZ": -11.052,
+      "difMm": 0,
+      "espesorPisoMm": 3.0951,
+      "nCruces": 2
+     },
+     {
+      "pin": 1,
+      "x": 13,
+      "y": 2.4,
+      "rayoZ": -12.115,
+      "paridadZ": -12.115,
+      "difMm": 0,
+      "espesorPisoMm": 3.0522,
+      "nCruces": 2
+     },
+     {
+      "pin": 2,
+      "x": -17,
+      "y": 10.4,
+      "rayoZ": -12.6,
+      "paridadZ": -12.6,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 3,
+      "x": 17,
+      "y": 10.4,
+      "rayoZ": -12.6,
+      "paridadZ": -12.6,
+      "difMm": 0,
+      "espesorPisoMm": 3,
+      "nCruces": 2
+     },
+     {
+      "pin": 4,
+      "x": -27,
+      "y": 16.4,
+      "rayoZ": -12.2072,
+      "paridadZ": -12.207,
+      "difMm": 0,
+      "espesorPisoMm": 2.9599,
+      "nCruces": 2
+     },
+     {
+      "pin": 5,
+      "x": 27,
+      "y": 16.4,
+      "rayoZ": -12.2242,
+      "paridadZ": -12.224,
+      "difMm": 0,
+      "espesorPisoMm": 2.9429,
+      "nCruces": 2
+     },
+     {
+      "pin": 6,
+      "x": -27,
+      "y": 42.4,
+      "rayoZ": -12.2078,
+      "paridadZ": -12.208,
+      "difMm": 0,
+      "espesorPisoMm": 2.9593,
+      "nCruces": 2
+     },
+     {
+      "pin": 7,
+      "x": 27,
+      "y": 42.4,
+      "rayoZ": -12.2236,
+      "paridadZ": -12.224,
+      "difMm": 0,
+      "espesorPisoMm": 2.9435,
+      "nCruces": 2
+     }
+    ]
+   },
+   "nota": "1557BGY es un ENSAMBLE de 19 solidos y su piso NO es plano: el control del rayo mide espesores de piso distintos bajo cada pin (2.94 a 3.10 mm) y la punta de cada pin acaba en SU piso — por eso las 8 puntas quedan a 4 cotas distintas (173.60 / 173.61 / 173.62 / 173.70) en vez de una sola. max[2] de 'nucleo' es el punto MAS ALTO del macho (donde el plastico es mas delgado) y ese punto NO cae bajo ningun pin, asi que el residuo de 0.70-0.80 mm mide esa diferencia de geometria, no un error de colocacion. La prueba per-pin ahi es el control del rayo (rayo +Z vs paridad +X: 0.000 mm de diferencia en los 8) mas 'pin<->pieza = 0 mm3' (ninguna punta entra al plastico). Antes del cambio las 8 puntas estaban a UNA sola cota, 1.56 mm bajo esa cara."
+  }
+ },
+ "laminas_1594C_Lid": {
+  "nLaminas": 17,
+  "retenedora_primeras_filas": [
+   "⌀5.263PASANTEpasaje de expulsor ·",
+   "⌀9.1637.0aloj. CIEGO de cabeza de expulsor (contrataladro) · desde la cara INFERIOR · cabeza",
+   "⌀8.763×6 (Fig 11.15 Det. D)3161.00116.00",
+   "⌀5.263PASANTEpasaje de expulsor ·"
+  ],
+  "expulsora_primeras_filas": [
+   "⌀5.263PASANTEpasaje de expulsor ·",
+   "⌀8.763: la respalda2161.00116.00",
+   "⌀5.263PASANTEpasaje de expulsor ·",
+   "⌀8.763: la respalda385.0080.00"
+  ],
+  "analisis_expulsion": [
+   "Expulsión §11.2.3pin ESCALONADO ×8 (R52: el recto pandea, SF 0.18)punta ⌀2.381 × 50 GUIADA + cuerpo ⌀4.763 · los barrenos de placa van al ⌀ del CUERPO ✓",
+   "Expulsión §11.2.5la punta termina en la CARA DEL MACHO (piso real, no pared mediana)rayo sobre la malla bajo cada pin · la pared mediana erraba hasta 1.06 mm ✓",
+   "Expulsión §11.2.6cabeza del pin ⌀8.763 × 6 — contrataladro CIEGO en la retenedora⌀9.163 × prof 7 desde la cara inferior (MLD-1594CL-05a) ✓Fig 11.15 Det. Dpasaje del cuerpo (holgura de barrenado)⌀5.263 = cuerpo ⌀4.763 + 0.5 · pasante en expulsora y retenedora ✓"
+  ]
+ },
+ "hallazgos_que_NO_son_de_esta_orden": [
+  "pin<->nucleo sigue compartiendo acero (carcasa 286 mm3 / 1.12 mm por punta; tapa 157; ensamble 253; alta hasta 1054 mm3 / 2.45 mm en el cuerpo): el inserto de nucleo todavia NO esta barrenado — es la orden LOS INSERTOS SE BARRENAN. Sube un poco respecto al 'antes' (tapa 148 -> 157) porque la punta ahora llega hasta la cara y comparte mas volumen con el macho macizo.",
+  "agua <-> pin REAL en 2 de las 4 piezas, y venia de antes: 1599HBK 'agua-B-linea1 <-> pin-cuerpo-5 30 mm3 / 0.75 mm' (identico antes y despues) y 1557BGY 'agua-B-linea1 <-> pin-punta-2' + 'agua-B-linea2 <-> pin-punta-3' (28 -> 23 mm3). El juez nuevo ya los NOMBRA (data-pin-agua 1/112 y 4/64). El carril lo mueve la orden del AGUA: aqui solo se reporta.",
+  "la carrera de expulsion no cabe en la carcasa ('la carrera no cabe: 31 < 41.3 mm' en la tira) — es la orden LA CARRERA CABE."
+ ]
+}

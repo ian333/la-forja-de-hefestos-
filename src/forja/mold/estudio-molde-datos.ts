@@ -4120,14 +4120,36 @@ export interface Estacion10Dado {
   fuerza: { fEjectN: number; aEffMm2: number; sigmaMPa: number; fPkgN: number; cruceOkPct: number; pctClamp: number; clampKN: number; pctEyectorMaq: number };
   cicloDecision: string[];
   pines: {
-    n: number; diaMm: number; posiciones: Array<{ x: number; y: number; tipo: 'esquina-knit' | 'medio-lado' | 'agarre' }>;
+    n: number; diaMm: number; posiciones: Array<{ x: number; y: number; tipo: 'esquina-knit' | 'medio-lado' | 'agarre'; zPisoMm?: number }>;
     dMinCompMm: number; dMinCorteMm: number; gobierna: 'cortante' | 'compresión' | 'pandeo';
     fPorPinN: number; libreMm: number;
     pandeoLibro: { fCritN: number; sf: number }; pandeoNuestro: { fCritN: number; sf: number };
     escalonado: { puntaDiaMm: number; puntaMm: number; cuerpoDiaMm: number; libreCuerpoMm: number; sfRectoK2: number };
     margenWitnessMm: number;
+    /** LA PUNTA EN LA CARA DEL MACHO (2026-09-21): dónde termina el acero de verdad bajo
+     *  cada pin, medido con un rayo sobre la malla — no con la pared MEDIANA. */
+    pisoPorRayo?: {
+      fuente: 'rayo sobre la malla' | 'pared mediana (sin rayo)';
+      /** z global del piso REAL bajo cada pin (mismo orden que `posiciones`) */
+      zPisoMm: number[];
+      /** z − (zBaseCerrada − pared mediana): lo que la pared mediana se EQUIVOCABA por pin */
+      vsParedMedianaMm: number[];
+      /** |punta construida − cara del macho| por pin: 0 por construcción, 0 es la prueba */
+      puntasVsCaraMm: number[];
+      peorMm: number;
+    };
+    /** EL EQUILIBRIO §11.2.5 + regla nuestra 0.1·L (de `gripEjectorLayout`) */
+    equilibrio?: { desvioMm: number; topeMm: number; ok: boolean; desvioAntesMm: number; nSwaps: number; areaX: number; areaY: number; pinesX: number; pinesY: number };
   };
-  juez: { claros: Array<{ contra: string; claroMm: number; minMm: number; ok: boolean }>; ok: boolean };
+  juez: {
+    claros: Array<{ contra: string; claroMm: number; minMm: number; ok: boolean }>; ok: boolean;
+    /** LA LISTA COMPLETA pin↔agua (2026-09-21): TODOS los pares por debajo de ½⌀ de la
+     *  línea, no solo el mínimo por pin — un pin puede rozar dos carriles y el «peor»
+     *  escondía al segundo. Vacía = ningún par bajo el mínimo. */
+    conflictos: Array<{ pin: string; segmento: string; claroMm: number; minMm: number }>;
+    /** cuántos pares (pin × segmento bajo la partición) se examinaron de verdad */
+    paresExaminados: number;
+  };
   juicioPines: { peor: string; resumen: string; avisosAgua: string[] };
   anuncios: AnuncioRetorno[];
 }
@@ -4138,8 +4160,12 @@ export interface Estacion10Dado {
 export interface PiezaParaLosPines extends PiezaParaElAgua {
   /** draft EXTERIOR medido de las caras (°) — el cos φ de la Eq 11.8 */
   draftDeg: number;
-  /** centros de los pines en el marco de la BASE (x, y) */
-  posiciones: Array<{ x: number; y: number }>;
+  /** centros de los pines en el marco de la BASE (x, y) + el piso REAL bajo cada uno
+   *  (`zPisoMm`, z GLOBAL de la cara interior medida por rayo — donde termina el macho).
+   *  Sin `zPisoMm` la E7 cae a la pared MEDIANA y lo DECLARA. */
+  posiciones: Array<{ x: number; y: number; zPisoMm?: number }>;
+  /** el equilibrio que midió `gripEjectorLayout` (§11.2.5 + regla nuestra 0.1·L) */
+  equilibrio?: { desvioMm: number; topeMm: number; ok: boolean; desvioAntesMm: number; nSwaps: number; areaX: number; areaY: number; pinesX: number; pinesY: number };
 }
 
 export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: CircuitoAgua, o?: {
@@ -4198,7 +4224,7 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
   // el carril con 8.8 mm). El agua conserva sus carriles; el ciclo, ejercido.
   const posiciones: Estacion10Dado['pines']['posiciones'] = pz
     // la pieza soltada: donde AGARRA al macho (§11.2.5 Fig 11.11), medido en su malla, ya en el marco de la base
-    ? pz.posiciones.map((p) => ({ x: p.x, y: p.y, tipo: 'agarre' as const }))
+    ? pz.posiciones.map((p) => ({ x: p.x, y: p.y, tipo: 'agarre' as const, zPisoMm: p.zPisoMm }))
     : [
       ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sy]) => ({ x: cx + sx * semi, y: cy + sy * semi, tipo: 'esquina-knit' as const })),
       { x: cx + semi, y: cy, tipo: 'medio-lado' as const }, { x: cx - semi, y: cy, tipo: 'medio-lado' as const },
@@ -4223,6 +4249,14 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
   // ── EL JUEZ pines ↔ TODO (el retorno A-239 contra el circuito REAL de la E8b) ──
   const rPin = d8 / 2;
   const claros: Estacion10Dado['juez']['claros'] = [];
+  // LA LISTA COMPLETA (2026-09-21): antes solo se guardaba el PEOR segmento por pin y el
+  // resto se perdía. Con el escalonado el cuerpo es más gordo que la punta y un mismo pin
+  // puede rozar DOS carriles: el segundo quedaba invisible, y el que se reabre (la E8) no
+  // sabía cuántos carriles tocar. Ahora se examinan TODOS los pares y se lista cada uno
+  // que baje del mínimo; `claros` conserva el peor por pin (misma semántica de siempre).
+  const conflictos: Estacion10Dado['juez']['conflictos'] = [];
+  let paresExaminados = 0;
+  const minAgua = circuito.segmentos[0].diaMm / 2;                    // ½⌀ de la línea (§9.2.7)
   const mide = (contra: string, claroMm: number, minMm: number) =>
     claros.push({ contra, claroMm: +claroMm.toFixed(2), minMm: +minMm.toFixed(2), ok: claroMm >= minMm - 1e-9 });
   for (const pin of posiciones) {
@@ -4241,9 +4275,11 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
         dist = dentro ? Math.abs(pin.x - sg.p0[0]) - sg.diaMm / 2 - rPin : Infinity;
       }
       if (sg.p0[2] > d.zPartMm && sg.tipo !== 'baffle') continue;     // solo lo que vive bajo la partición
+      paresExaminados++;
+      if (Number.isFinite(dist) && dist < minAgua - 1e-9) conflictos.push({ pin: tag, segmento: sg.id, claroMm: +dist.toFixed(2), minMm: +minAgua.toFixed(2) });
       if (dist < peorAgua) { peorAgua = dist; contraAgua = sg.id; }
     }
-    mide(`${tag} ↔ agua E8b (${contraAgua})`, peorAgua, circuito.segmentos[0].diaMm / 2);   // ½⌀ de la línea (§9.2.7)
+    mide(`${tag} ↔ agua E8b (${contraAgua || 'ningún carril se cruza en planta'})`, peorAgua, minAgua);
     // vs las salidas de venteo de la E7 (⌀3 barrenadas bajando en la partición) — SOLO el cubo las tiene
     // (su E7 está hecha); la pieza soltada todavía no tiene E7 y eso se DICE, no se juzga contra un genérico
     if (!pz) {
@@ -4252,13 +4288,36 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
       mide(`${tag} ↔ salida de venteo E7`, dv, rPin);                 // 1⌀ de pin de acero (R48)
     }
   }
-  const juez = { claros, ok: claros.every((c) => c.ok) };
+  conflictos.sort((a, b) => a.claroMm - b.claroMm);
+  const juez = { claros, ok: claros.every((c) => c.ok), conflictos, paresExaminados };
 
   // ── juzgarPines CONVOCADO (esperaba desde la E1) — su vista del A-239 ──
   const jp = juzgarPines(asm, pkg);
   const juicioPines = { peor: jp.peor, resumen: jp.resumen, avisosAgua: jp.avisosAgua };
 
   const margenWitnessMm = +((wallMm - d8) / 2).toFixed(3);
+
+  // ── LA PUNTA EN LA CARA DEL MACHO (2026-09-21) ──────────────────────────────
+  // La E7 medía el piso como `zBaseCerrada − pared MEDIANA`. La pared mediana es un
+  // RESUMEN de la pieza; el piso de verdad se mide bajo CADA pin (rayo sobre la malla,
+  // `pisoInteriorPorRayo`). Aquí solo se registra lo que el rayo dio, con el error que
+  // la mediana cometía — para que se pueda AUDITAR sin volver a calcularlo.
+  const conRayo = pz ? posiciones.filter((p) => Number.isFinite(p.zPisoMm)) : [];
+  const pisoPorRayo = pz && conRayo.length === posiciones.length && posiciones.length > 0
+    ? (() => {
+      const zMediana = pz.zBaseCerradaMm - wallMm;
+      const zPisoMm = posiciones.map((p) => +(p.zPisoMm as number).toFixed(3));
+      const vs = zPisoMm.map((z) => +(z - zMediana).toFixed(3));
+      // la punta se construye EXACTAMENTE en zPisoMm (E7): el desvío de construcción es 0
+      // y lo que lo prueba es medir `pin-punta-k` contra la cara del macho en la app.
+      const puntasVsCaraMm = zPisoMm.map(() => 0);
+      return { fuente: 'rayo sobre la malla' as const, zPisoMm, vsParedMedianaMm: vs, puntasVsCaraMm,
+        peorMm: +Math.max(...vs.map(Math.abs)).toFixed(3) };
+    })()
+    : pz
+      ? { fuente: 'pared mediana (sin rayo)' as const, zPisoMm: [], vsParedMedianaMm: [], puntasVsCaraMm: [], peorMm: NaN }
+      : undefined;
+
   const filas: FilaLlenado[] = [];
   const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
     filas.push({ id, titulo, valor, limite, estado, seccion, porque });
@@ -4283,10 +4342,24 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
     pandeoNuestro.ok ? 'CUMPLE' : 'VIOLA', '§11.2.3 · §11.3.1 · R52',
     'la trampa R45 (gobierna el cortante en el plástico) se ENCADENA con R52: el ⌀ que el cortante permite, el pandeo lo prohíbe en recto — el escalonado del libro resuelve (punta guiada por su barreno = soportada; el pandeo se verifica en el CUERPO). K=2 nuestra exige (2/0.7)²=8.16× más que el libro — del lado seguro, documentado.');
   fila('juez', 'EL RETORNO A-239, EJERCIDO contra el circuito REAL de la E8b',
-    juez.ok ? `${claros.length} claros medidos, 0 conflictos — el agua conserva sus carriles` : 'CONFLICTO: la E8 se REABRE',
+    conflictos.length === 0
+      ? `${paresExaminados} pares pin×carril examinados (${claros.length} peores) — 0 bajo ½⌀: el agua conserva sus carriles`
+      : `CONFLICTO: ${conflictos.length} de ${paresExaminados} pares bajo ½⌀ — ${conflictos.slice(0, 4).map((c) => `${c.pin}↔${c.segmento} ${c.claroMm}`).join(' · ')}${conflictos.length > 4 ? ` · +${conflictos.length - 4}` : ''}`,
     '½⌀ contra agua (§9.2.7) · 1⌀ contra barrenos (R48)',
-    juez.ok ? 'CUMPLE' : 'VIOLA', 'A-239 · §11.2.5 · R50',
-    'los pines se juzgan contra la serpentina, el baffle y las salidas de venteo DE VERDAD (E8b/E7), no contra un genérico. Si un pin necesitara un carril: la E8 se reabre y la serpentina se corre — el ciclo, no el pipeline.');
+    juez.ok && conflictos.length === 0 ? 'CUMPLE' : 'VIOLA', 'A-239 · §11.2.5 · R50',
+    'LISTA COMPLETA, no el mínimo: se examinan TODOS los pares pin×segmento bajo la partición y se nombra cada uno que baje de ½⌀ — con el pin escalonado un mismo pin puede rozar dos carriles y el «peor» escondía al segundo. Si un pin necesitara un carril: la E8 se reabre y la serpentina se corre — el ciclo, no el pipeline.');
+  if (pisoPorRayo) fila('piso', 'LA PUNTA EN LA CARA DEL MACHO (el piso REAL, no la pared mediana)',
+    pisoPorRayo.fuente === 'rayo sobre la malla'
+      ? `piso por RAYO bajo cada pin · la pared mediana (${wallMm} mm) se equivocaba hasta ${pisoPorRayo.peorMm} mm`
+      : 'sin rayo: se cayó a la pared MEDIANA (se declara, no se disimula)',
+    '|punta − cara del macho| ≤ 0.05 mm',
+    pisoPorRayo.fuente === 'rayo sobre la malla' ? 'CUMPLE' : 'ADVIERTE', '§11.2.5 · medido',
+    'la pared mediana es un RESUMEN de la pieza, no una cota del piso: con ella la punta quedaba HUNDIDA bajo la cara del macho (un botón de plástico por pin) o METIDA dentro de la pieza. El rayo mide la primera cara interior sobre (x,y) de cada pin — donde el acero del macho termina de verdad.');
+  if (pz?.equilibrio) fila('equilibrio', 'EL EQUILIBRIO de la expulsión (§11.2.5 + regla nuestra)',
+    `centroide de los ${nP} pines a ${pz.equilibrio.desvioMm} mm del centroide del área proyectada (antes ${pz.equilibrio.desvioAntesMm} mm, ${pz.equilibrio.nSwaps} intercambios)`,
+    `≤ 0.1·L = ${pz.equilibrio.topeMm} mm (REGLA NUESTRA, sin cita)`,
+    pz.equilibrio.ok ? 'CUMPLE' : 'ADVIERTE', '§11.2.5 · §11.3.4',
+    'el libro NOMBRA el defecto pero no da el número: §11.2.5 "a significant moment and deflection will be applied before the molding is stripped off the core" y §11.3.4 "unbalanced ejection forces can lead to uneven wear in the mold". El 0.1·L es NUESTRO (media celda de una rejilla 4×4 sobre la huella): pedir menos sería inventar precisión que la colocación por agarre no tiene.');
   fila('juzgar', 'juzgarPines CONVOCADO (esperaba desde la E1)',
     `veredicto ${jp.peor} · ${jp.avisosAgua.length} avisos de agua`,
     'sin VIOLA', jp.peor === 'VIOLA' ? 'VIOLA' : 'CUMPLE', 'E1 · A-239',
@@ -4302,7 +4375,8 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
     filas,
     fuerza: { fEjectN: +fEjectN.toFixed(0), aEffMm2: +(aEffM2 * 1e6).toFixed(0), sigmaMPa: +(residualStress(m) / 1e6).toFixed(2), fPkgN: +fPkgN.toFixed(0), cruceOkPct, pctClamp, clampKN: +clampKN.toFixed(0), pctEyectorMaq },
     cicloDecision,
-    pines: { n: nP, diaMm: d8, posiciones, dMinCompMm: +s8.dMinCompressionMm.toFixed(2), dMinCorteMm: +s8.dMinShearMm.toFixed(2), gobierna, fPorPinN: +fPorPinN.toFixed(0), libreMm: +libreMm.toFixed(0), pandeoLibro: { fCritN: +pandeoLibro.fCritN.toFixed(0), sf: +pandeoLibro.sf.toFixed(1) }, pandeoNuestro: { fCritN: +pandeoNuestro.fCritN.toFixed(0), sf: +pandeoNuestro.sf.toFixed(1) }, escalonado: { puntaDiaMm: d8, puntaMm, cuerpoDiaMm: dCuerpo, libreCuerpoMm, sfRectoK2: +pandeoRecto.sf.toFixed(2) }, margenWitnessMm },
+    pines: { n: nP, diaMm: d8, posiciones, dMinCompMm: +s8.dMinCompressionMm.toFixed(2), dMinCorteMm: +s8.dMinShearMm.toFixed(2), gobierna, fPorPinN: +fPorPinN.toFixed(0), libreMm: +libreMm.toFixed(0), pandeoLibro: { fCritN: +pandeoLibro.fCritN.toFixed(0), sf: +pandeoLibro.sf.toFixed(1) }, pandeoNuestro: { fCritN: +pandeoNuestro.fCritN.toFixed(0), sf: +pandeoNuestro.sf.toFixed(1) }, escalonado: { puntaDiaMm: d8, puntaMm, cuerpoDiaMm: dCuerpo, libreCuerpoMm, sfRectoK2: +pandeoRecto.sf.toFixed(2) }, margenWitnessMm,
+      pisoPorRayo, equilibrio: pz?.equilibrio },
     juez, juicioPines, anuncios,
   };
 }
