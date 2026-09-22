@@ -1699,7 +1699,9 @@ export function estacion3Dado(pkg: MoldPackage, pieza?: PiezaSpec): Estacion3Dad
  * Doctrina de aquí en adelante (la misma de las cotas del CAD): cada dimensión
  * trae DOS cifras — la declarada y la MEDIDA del B-Rep — y si no cuadran, ROJO.
  */
-import { makeBox as occMakeBox, transformShape as occTransform, cut as occCut, loftSections as occLoft, common as occCommon, volume as occVolume, tessellate as occTess } from '../brep/occt';
+import { makeBox as occMakeBox, transformShape as occTransform, cut as occCut, loftSections as occLoft, common as occCommon, volume as occVolume, tessellate as occTess,
+  makeCylinder as occCylinder, makeCone as occCone, makeCompound as occCompound } from '../brep/occt';
+import { ejectorPinFit } from './fits';           // holgura pin↔barreno 0.13 mm LITERAL (Kazmer §8.3.2)
 import { clasificarVisibilidad } from './visibilidad';
 import { splitMold, shapeBBox, draftAnalysis, type SplitMoldResult } from './mold';
 import { surfaceArea as occSurfaceArea } from '../brep/occt';   // EL PUENTE: área del sólido del árbol (occVolume ya viene arriba)
@@ -1836,6 +1838,181 @@ export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false, es
   const rV: SplitMoldResult = { ...r, cavityPlate: volt(r.cavityPlate), macho: volt(r.macho), corePlate: volt(r.corePlate) } as SplitMoldResult;
   const zPart = col.zPartBase;
   return { dadoD, r: rV, zPart, colocacion: col, compra: { ifx: id.ifx, ify: id.ify, Hc: id.Hc, Hk: id.Hk } };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  LOS INSERTOS SE BARRENAN (orden 2026-09-21) — el acero de la E3 deja de ser macizo
+// ════════════════════════════════════════════════════════════════════════════
+//  `construirAceroE3` talla la cavidad y el núcleo ANTES de que existan el bebedero
+//  (E5), el agua (E6) y los pines (E7) — y ahí se quedaban MACIZOS: el estudio de
+//  contacto medía (carcasa 1594C Box, plan de inspección 2026-09-21) 16 tramos de pin
+//  atravesando el núcleo hasta 2.19 mm (= su radio), el bebedero compartiendo 1111 mm³
+//  · 3.88 mm con la cavidad y el anillo de agua A entrando 1.6–2.2 mm en ella. Eso no
+//  es un molde: es un bloque con cosas dibujadas encima.
+//
+//  Aquí se BARRENA, con lo que ya se sabe y en el momento en que se sabe (se llama al
+//  final, desde la E8) — así los valores son los que HAY, no los que había:
+//   · BEBEDERO en la cavidad — el barreno ES la superficie moldeante (§6.3.1: el cono
+//     angosto arriba/ancho abajo se talla en el acero; el plástico lo copia). Cero
+//     holgura por diseño: un bebedero con juego deja rebaba. Se prolonga ±2 mm SOBRE
+//     LA MISMA CONICIDAD para que la booleana no quede con caras coincidentes.
+//   · PINES en el núcleo — punta y hombro, cada uno con la holgura LITERAL de fits.ts
+//     (`ejectorPinFit`: Ø + 0.13 mm reamed, Kazmer §8.3.2, que además es el venteo).
+//     Fig 1.6: la punta va GUIADA en el núcleo, el cuerpo pasa por el respaldo.
+//   · AGUA que cruce un inserto — cap 9: el agua dentro de un inserto es lo normal, se
+//     barrena. El barreno = la línea (el agua toca el acero: es su pared).
+//  Solo se corta lo que de verdad cruza (filtro por caja): cortar aire cuesta segundos.
+export interface BarrenoDeInserto { rol: 'cavidad' | 'nucleo'; que: string; diaMm: number; fuente: string }
+export interface InsertosBarrenados {
+  cav: any; core: any;
+  barrenos: BarrenoDeInserto[];
+  /** acero REMOVIDO por el barrenado [mm³] — la prueba de que la booleana mordió */
+  quitadoCavMm3: number; quitadoCoreMm3: number;
+  msCav: number; msCore: number; notas: string[];
+}
+export function barrenarInsertos(oc: any, o: {
+  cav: any; core: any;
+  /** el bebedero TAL CUAL lo construye `construirColada` (cono r1=rBase en zGate, r2=rTop arriba) */
+  sprue?: { x: number; y: number; zGateMm: number; LsprueMm: number; rBaseMm: number; rTopMm: number };
+  /** los segmentos del circuito de la E6, en coordenadas de la base */
+  agua?: Array<{ id: string; p0: [number, number, number]; p1: [number, number, number]; diaMm: number }>;
+  /** los tapones NPT y los O-rings del circuito: donde caen sobre un inserto, el inserto los RECIBE */
+  aguaHerrajes?: Array<{ id: string; centro: [number, number, number]; dir: [number, number, number]; radioMm: number; largoMm: number }>;
+  /** los pines de la E7: punta guiada en el núcleo + hombro/cuerpo por el respaldo */
+  pines?: { posiciones: Array<{ x: number; y: number }>; puntaDiaMm: number; cuerpoDiaMm: number; puntaMm: number; zPisoMm: number };
+}): InsertosBarrenados {
+  const barrenos: BarrenoDeInserto[] = [], notas: string[] = [];
+  // caja EXACTA (Bnd_Box AddOptimal): `shapeBBox` tesela a 0.5 y aquí eso son segundos
+  // de hilo muerto por inserto — y el teselado REUSA la malla previa (gotcha pagado).
+  const caja = (sh: any) => { try { return arbolBBoxExacta(oc, sh); } catch { return shapeBBox(oc, sh); } };
+  const bbCav = caja(o.cav), bbCore = caja(o.core);
+  const volCav0 = occVolume(oc, o.cav), volCore0 = occVolume(oc, o.core);
+  // ¿la caja del barreno toca la del inserto? SOLO filtro de búsqueda (barato), no la prueba.
+  const cruza = (bb: any, mn: number[], mx: number[]) => {
+    for (let k = 0; k < 3; k++) if (Math.min(bb.max[k], mx[k]) - Math.max(bb.min[k], mn[k]) <= 0) return false;
+    return true;
+  };
+  const cajaCil = (p0: number[], p1: number[], r: number) => ({
+    mn: [Math.min(p0[0], p1[0]) - r, Math.min(p0[1], p1[1]) - r, Math.min(p0[2], p1[2]) - r],
+    mx: [Math.max(p0[0], p1[0]) + r, Math.max(p0[1], p1[1]) + r, Math.max(p0[2], p1[2]) + r],
+  });
+  const herramientasCav: any[] = [], herramientasCore: any[] = [];
+
+  // ── 1) EL BEBEDERO en la cavidad (§6.3.1) ──
+  if (o.sprue) {
+    const s = o.sprue, L = Math.max(1e-3, s.LsprueMm), pend = (s.rTopMm - s.rBaseMm) / L;
+    const EXT = 2;                                   // prolongación axial sobre la MISMA conicidad
+    const rA = s.rBaseMm - pend * EXT, rB = s.rTopMm + pend * EXT;
+    const cono = occCone(oc, Math.max(0.1, rA), Math.max(0.1, rB), L + 2 * EXT,
+      { origin: [s.x, s.y, s.zGateMm - EXT], dir: [0, 0, 1] });
+    if (cruza(bbCav, [s.x - Math.max(rA, rB), s.y - Math.max(rA, rB), s.zGateMm - EXT], [s.x + Math.max(rA, rB), s.y + Math.max(rA, rB), s.zGateMm + L + EXT])) {
+      herramientasCav.push(cono);
+      barrenos.push({ rol: 'cavidad', que: 'bebedero cónico', diaMm: +(2 * s.rBaseMm).toFixed(2), fuente: '§6.3.1 — el barreno ES la superficie moldeante (cero holgura)' });
+    } else notas.push('el bebedero no cruza el inserto de cavidad (no se barrena)');
+  }
+
+  // ── 2) LOS PINES en el núcleo (Fig 1.6 + §8.3.2) ──
+  if (o.pines && o.pines.posiciones.length) {
+    const p = o.pines;
+    const dPunta = ejectorPinFit(p.puntaDiaMm).holeDiaMm, dCuerpo = ejectorPinFit(p.cuerpoDiaMm).holeDiaMm;
+    const zHombro = p.zPisoMm - p.puntaMm;
+    // la punta llega al PISO de la pieza (ahí acaba el acero del macho): +0.2 mm de
+    // prolongación para no dejar caras coincidentes — arriba del piso ya es plástico.
+    const zTope = p.zPisoMm + 0.2;
+    // el cuerpo/hombro baja por el respaldo hasta SALIR del inserto (−2 mm de la caja).
+    const zFondo = bbCore.min[2] - 2;
+    for (let k = 0; k < p.posiciones.length; k++) {
+      const q = p.posiciones[k];
+      if (zTope > zHombro) herramientasCore.push(occCylinder(oc, dPunta / 2, zTope - zHombro, { origin: [q.x, q.y, zHombro], dir: [0, 0, 1] }));
+      if (zHombro > zFondo) herramientasCore.push(occCylinder(oc, dCuerpo / 2, zHombro - zFondo, { origin: [q.x, q.y, zFondo], dir: [0, 0, 1] }));
+    }
+    barrenos.push(
+      { rol: 'nucleo', que: `punta de ${p.posiciones.length} pines`, diaMm: dPunta, fuente: `Ø${p.puntaDiaMm}+0.13 reamed (Kazmer §8.3.2) · punta GUIADA en el núcleo (Fig 1.6)` },
+      { rol: 'nucleo', que: `asiento del hombro de ${p.posiciones.length} pines`, diaMm: dCuerpo, fuente: `Ø${p.cuerpoDiaMm}+0.13 reamed (Kazmer §8.3.2) · el cuerpo pasa por el respaldo` },
+    );
+  }
+
+  // ── 3) EL AGUA que cruza un inserto (cap 9) ──
+  for (const sg of o.agua ?? []) {
+    const dx = sg.p1[0] - sg.p0[0], dy = sg.p1[1] - sg.p0[1], dz = sg.p1[2] - sg.p0[2];
+    const len = Math.hypot(dx, dy, dz);
+    if (len < 1e-6 || !(sg.diaMm > 0)) continue;
+    const c = cajaCil(sg.p0, sg.p1, sg.diaMm / 2);
+    const enCav = cruza(bbCav, c.mn, c.mx), enCore = cruza(bbCore, c.mn, c.mx);
+    if (!enCav && !enCore) continue;
+    const cil = () => occCylinder(oc, sg.diaMm / 2, len, { origin: sg.p0, dir: [dx / len, dy / len, dz / len] });
+    if (enCav) { herramientasCav.push(cil()); barrenos.push({ rol: 'cavidad', que: `agua ${sg.id}`, diaMm: sg.diaMm, fuente: 'cap 9 — el agua dentro del inserto se BARRENA (el barreno es su pared)' }); }
+    if (enCore) { herramientasCore.push(cil()); barrenos.push({ rol: 'nucleo', que: `agua ${sg.id}`, diaMm: sg.diaMm, fuente: 'cap 9 — el agua dentro del inserto se BARRENA (el barreno es su pared)' }); }
+  }
+
+  // ── 3b) TAPONES NPT y O-RINGS que caen sobre un inserto (cap 9) ──
+  //  El tapón se ROSCA en el acero y el O-ring vive en una CAJA rebajada: donde el extremo muerto
+  //  de un barreno o un cruce de interfaz cae dentro del inserto, es el INSERTO el que lleva la
+  //  rosca y la caja — no se «hunden» en acero macizo. (Regla nuestra, sin cita: el libro habla
+  //  del tapón §9.2.6 pero no dice en qué pieza va cuando el barreno muere en un inserto.)
+  for (const h of o.aguaHerrajes ?? []) {
+    const p0: [number, number, number] = [h.centro[0], h.centro[1], h.centro[2]];
+    const p1: [number, number, number] = [p0[0] + h.dir[0] * h.largoMm, p0[1] + h.dir[1] * h.largoMm, p0[2] + h.dir[2] * h.largoMm];
+    const c = cajaCil(p0, p1, h.radioMm);
+    const enCav = cruza(bbCav, c.mn, c.mx), enCore = cruza(bbCore, c.mn, c.mx);
+    if (!enCav && !enCore) continue;
+    const cil = () => occCylinder(oc, h.radioMm, h.largoMm, { origin: p0, dir: h.dir });
+    if (enCav) { herramientasCav.push(cil()); barrenos.push({ rol: 'cavidad', que: h.id, diaMm: +(2 * h.radioMm).toFixed(2), fuente: 'cap 9 — el tapón/O-ring se aloja EN el acero que lo recibe' }); }
+    if (enCore) { herramientasCore.push(cil()); barrenos.push({ rol: 'nucleo', que: h.id, diaMm: +(2 * h.radioMm).toFixed(2), fuente: 'cap 9 — el tapón/O-ring se aloja EN el acero que lo recibe' }); }
+  }
+
+  // ── EL CORTE: HÍBRIDO — un compound con las brocas SUELTAS y corte de una en una donde se CRUZAN ──
+  //  ⚠ GOTCHA MEDIDO (2026-09-21) sobre el inserto REAL de la carcasa 1594C Box, no sobre un ejemplo:
+  //  el inserto de CAVIDAD lleva 8 brocas — el bebedero (al centro), el anillo de agua A (6 tramos que
+  //  se CRUZAN en las esquinas) y el baffle. Acero removido por estrategia:
+  //      cut(compound de las 8)      →  6,851 mm³ ·   176 ms   ← se le escapan 2 tramos del anillo
+  //      cut(fuseAll de las 8)       →  1,539 mm³ ·   529 ms   ← PEOR: se le escapa el anillo entero
+  //      8 cuts SECUENCIALES         →  9,439 mm³ ·   802 ms   ← completo
+  //      HÍBRIDO (comp 2 + sec 6)    →  9,439 mm³ ·   730 ms   ← completo y el más barato
+  //  Y en el NÚCLEO (17 brocas, ninguna se cruza con otra): compound 7,310 mm³ · 1,901 ms vs
+  //  secuencial 7,310 · 19,654 ms — ahí cortar una por una cuesta 10× y no gana nada.
+  //  De ahí la regla: agrupar en RACIMOS conexos (traslape de cajas), mandar todos los racimos de UNA
+  //  broca en un solo compound, y cortar una por una SOLO dentro de los racimos que se cruzan.
+  //  (La misma trampa vive en `cutAll` de mold-plano-set.ts, que corta con compound: visto, no tocado
+  //  — es otro camino y otra orden.)
+  const cajaTool = (sh: any) => { try { return arbolBBoxExacta(oc, sh); } catch { return shapeBBox(oc, sh); } };
+  const racimosDe = (tools: any[]) => {
+    const bx = tools.map(cajaTool);
+    const toca = (i: number, j: number) => { for (let k = 0; k < 3; k++) if (Math.min(bx[i].max[k], bx[j].max[k]) - Math.max(bx[i].min[k], bx[j].min[k]) <= 0) return false; return true; };
+    const padre = tools.map((_, i) => i);
+    const raiz = (i: number): number => (padre[i] === i ? i : (padre[i] = raiz(padre[i])));
+    for (let i = 0; i < tools.length; i++) for (let j = i + 1; j < tools.length; j++) if (toca(i, j)) padre[raiz(i)] = raiz(j);
+    const m = new Map<number, any[]>();
+    tools.forEach((t, i) => { const k = raiz(i); if (!m.has(k)) m.set(k, []); m.get(k)!.push(t); });
+    return [...m.values()];
+  };
+  const corta = (shape: any, tools: any[], rol: string) => {
+    if (!tools.length) return shape;
+    const R = racimosDe(tools);
+    const sueltas = R.filter((g) => g.length === 1).map((g) => g[0]);
+    const cruzadas = R.filter((g) => g.length > 1);
+    let acc = shape;
+    if (sueltas.length) {
+      try { acc = occCut(oc, acc, sueltas.length === 1 ? sueltas[0] : occCompound(oc, sueltas)); }
+      catch (e) { notas.push(`${rol}: el compound de ${sueltas.length} brocas sueltas falló (${String(e).slice(0, 50)})`); }
+    }
+    let fallidas = 0;
+    for (const g of cruzadas) for (const t of g) { try { acc = occCut(oc, acc, t); } catch { fallidas++; } }
+    if (fallidas) notas.push(`${rol}: ${fallidas} brocas cruzadas no entraron`);
+    return acc;
+  };
+  const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const cav = corta(o.cav, herramientasCav, 'cavidad');
+  const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const core = corta(o.core, herramientasCore, 'núcleo');
+  const t2 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  // LA PRUEBA de que la booleana mordió: acero que YA NO ESTÁ (si sale 0 con barrenos
+  // declarados, el corte no entró — se ve en el panel, no se supone).
+  const quitadoCavMm3 = Math.round(volCav0 - occVolume(oc, cav));
+  const quitadoCoreMm3 = Math.round(volCore0 - occVolume(oc, core));
+  if (herramientasCav.length && quitadoCavMm3 <= 0) notas.push('⚠ la cavidad no perdió acero: el barreno no entró');
+  if (herramientasCore.length && quitadoCoreMm3 <= 0) notas.push('⚠ el núcleo no perdió acero: el barreno no entró');
+  return { cav, core, barrenos, quitadoCavMm3, quitadoCoreMm3, msCav: Math.round(t1 - t0), msCore: Math.round(t2 - t1), notas };
 }
 
 export interface MedidaE3 {

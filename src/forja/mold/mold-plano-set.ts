@@ -17,7 +17,7 @@ import type { MoldAssemblySpec } from './mold-assembly';
 import {
   moldDrawingSet, plateDefs, plateDepth, standardHoles, holeLegend, cavityGrid, coolingCircuit,
   cavityFootprint, moldBoltSizing,
-  insertDims,
+  insertDims, returnPinLayout, EXPULSORA_MARGEN_X_MM, EXPULSORA_MARGEN_Y_MM,
   type DrawingPage, type AnalysisRow, type PlateDef } from './mold-drawing-set';
 import { resolveThread, threadSurfaceMesh, plainShaftMesh, type Mesh as ThreadMesh } from './mold-threads';
 import { resolveHead, headMesh, seatSpec, tipChamfer } from './mold-heads';
@@ -77,8 +77,11 @@ export function supportPillarPositions(spec: MoldAssemblySpec, D: number): Array
 // ── EL PORTAMOLDES, UNA SOLA VERDAD (orden 2026-09-18-el-portamoldes-de-tu-pieza) ──
 // Estas cotas vivían como literales sueltos (65/20/130/40 en la expulsora, 50 en el riel, la oreja y el tinte dentro de
 // buildMoldParts). El ciclo de la pieza pinta la PILA en bloques desde E3 y el detalle al final: los dos salen de aquí.
-export const EXPULSORA_MARGEN_X_MM = 65;       // la expulsora vive ENTRE los rieles (Fig 1.4/1.5): 65 por lado en X
-export const EXPULSORA_MARGEN_Y_MM = 20;       // y 20 por lado en Y
+// la expulsora vive ENTRE los rieles (Fig 1.4/1.5): 65 por lado en X, 20 en Y. Ahora viven en
+// mold-drawing-set.ts junto a `insertDims`/`cavityGrid`/`returnPinLayout` — geometría de REFERENCIA,
+// una sola fuente para el componente y para sus barrenos (orden los-insertos-se-barrenan). Se
+// RE-EXPORTAN para que nadie tenga que saber que se mudaron.
+export { EXPULSORA_MARGEN_X_MM, EXPULSORA_MARGEN_Y_MM };
 export const RIEL_ANCHO_MM = 50;
 /** oreja de sujeción (Fig 1.4): lo que SOBRESALEN en ±X las dos placas de sujeción, con su ranura de clamp */
 export const orejaDeSujecionMm = (spec: MoldAssemblySpec) => Math.max(28, Math.round(spec.widthMm * 0.09));
@@ -828,19 +831,30 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
   //     Sin ellos el molde CHOCA al cerrar (expulsores salidos). Los barrenos ya existen en
   //     la expulsora/retenedora (standardHoles 'pin de retorno'); su holgura en soporte+B abajo.
   {
-    const W2 = spec.widthMm, rpx = 65 + 26, rpy = 20 + 26, rpr = 6;   // ⌀12, esquinas del paquete
+    // FUERA DEL INSERTO (orden los-insertos-se-barrenan, punto 2.4 del plan de inspección): el inset
+    // era fijo (65+26 / 20+26) sin mirar el tamaño del inserto de núcleo, y con piezas grandes los 4
+    // pines lo CRUZABAN — 15,000 mm³ · 5.3 mm en la carcasa 1594C Box, 3,328 · 2.71 en la tapa. Ahora
+    // la posición sale de `returnPinLayout` (una sola fuente: el pin y sus barrenos de la expulsora,
+    // la retenedora, el soporte y B leen lo mismo) y, si NO cabe, lo dice en sus features: no se
+    // encima en silencio.
+    const rp = returnPinLayout(spec, D), rpr = rp.rMm;
     const zRetBot = z['ejector-ret'] ?? (z.ejector + Math.max(15, Math.round(spec.plates.ejectorHousing * 0.28)));
     // STRIPPER: las varillas empujan el FONDO del anillo (que flota en el tercio superior
     // de su banda: fondo = z.B + 16), no llegan a la partición.
     const hRet = (spec.ejectors.type === 'stripper' ? zPart - tB + 16 : zPart) - zRetBot;
     const rHeadH = Math.max(4, Math.round(spec.plates.ejectorHousing * 0.2) - 2);
     const rshapes: any[] = [];
-    for (const [x, y] of [[rpx, rpy], [W2 - rpx, rpy], [rpx, D - rpy], [W2 - rpx, D - rpy]] as [number, number][]) {
+    for (const [x, y] of rp.pts) {
       rshapes.push(cyl(rpr, hRet, [x, y, zRetBot], [0, 0, 1]));       // vástago hasta la partición
       rshapes.push(cyl(rpr + 2, rHeadH, [x, y, zRetBot], [0, 0, 1])); // cabeza capturada en la retenedora
     }
-    push('pines-retorno', 'Return pins (4) · ⌀12', '1.2842 templado', rshapes, '#8fa0b8', 1,
-      ['4 return pins en las esquinas del paquete expulsor', 'la cara de A los empuja al CERRAR → resetea', 'sin ellos el molde choca (Fig 1.6)']);
+    if (!rp.libre) console.warn('RETORNOS:', rp.notas.join(' · '));
+    push('pines-retorno', `Return pins (4) · ⌀${rp.diaMm}`, '1.2842 templado', rshapes, '#8fa0b8', 1,
+      [`4 return pins en las esquinas del paquete expulsor (inset ${rp.insetXmm}×${rp.insetYmm} mm)`,
+        rp.libre ? `libres del inserto de núcleo: ${rp.claroAlInsertoMm} mm de acero (se pide ≥ ${rp.diaMm})`
+          : `⚠ SOBRE EL INSERTO: ${rp.claroAlInsertoMm} mm (se pide ≥ ${rp.diaMm} de claro)`,
+        ...rp.notas,
+        'la cara de A los empuja al CERRAR → resetea', 'sin ellos el molde choca (Fig 1.6)']);
   }
 
   // 3) LÍNEAS DE ENFRIAMIENTO — serpentín ⌀ real (§9.2), ruteado en los HUECOS entre
@@ -935,8 +949,9 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       const guides = standardHoles(spec, 'A').filter((h) => /pilar/.test(h.type));
       const eps = standardHoles(spec, 'B').filter((h) => /expulsor/.test(h.type));
       const feed = standardHoles(spec, 'A').filter((h) => /boquilla|bebedero|compuerta/.test(h.type));
-      const W2 = spec.widthMm, rpx = 65 + 26, rpy = 20 + 26;
-      const rets: [number, number][] = [[rpx, rpy], [W2 - rpx, rpy], [rpx, D - rpy], [W2 - rpx, D - rpy]];
+      // MISMA fuente que el componente y que los barrenos de las placas (`returnPinLayout`): este
+      // camino taladraba el núcleo en `65+26` a mano, así que si el pin se movía el barreno no.
+      const rets: [number, number][] = returnPinLayout(spec, D).pts;
       // UN SOLO cut con el COMPOUND de todas las brocas (patrón PROBADO de buildPlateSolid;
       // los cuts secuenciales acumulaban invalidez y "fugaban" la broca fusionándola).
       const cutAll = (s: any, tools: any[]) => { const ok = tools.filter(Boolean); if (!ok.length) return s; try { return K.cut(oc, s, ok.length === 1 ? ok[0] : K.makeCompound(oc, ok)); } catch { return s; } };

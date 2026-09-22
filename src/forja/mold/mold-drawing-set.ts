@@ -135,6 +135,82 @@ export function insertDims(spec: MoldAssemblySpec) {
   return { fx, fy, dep, wall, border, ifx, ify, Hc, Hk, round };
 }
 
+// ── LA PLACA EXPULSORA y LOS RETURN PINS: UNA sola fuente (orden los-insertos-se-barrenan) ──
+//  Estas dos cotas vivían en mold-plano-set.ts; los return pins y sus tres juegos de barrenos
+//  las repetían a mano como `65 + 26` / `20 + 26`. Aquí, junto a `insertDims`/`cavityGrid`, es su
+//  lugar: geometría de REFERENCIA que el componente Y sus barrenos leen del MISMO cálculo
+//  (plano-set las re-exporta, así nadie importa al revés y el ciclo de módulos no aparece).
+export const EXPULSORA_MARGEN_X_MM = 65;       // la expulsora vive ENTRE los rieles (Fig 1.4/1.5): 65 por lado en X
+export const EXPULSORA_MARGEN_Y_MM = 20;       // y 20 por lado en Y
+/** ⌀ del return pin (Fig 1.6) — el mismo para el vástago, la cabeza y todos sus barrenos. */
+export const RETURN_PIN_DIA_MM = 12;
+/** inset NOMINAL desde la esquina de la placa expulsora — el de siempre, cuando el inserto lo deja. */
+export const RETURN_PIN_INSET_MM = 26;
+
+export interface ReturnPinLayout {
+  diaMm: number; rMm: number;
+  /** las 4 posiciones (x,y) en coordenadas de la base */
+  pts: Array<[number, number]>;
+  insetXmm: number; insetYmm: number;
+  /** claro MEDIDO de la superficie del pin al canto del inserto de núcleo (negativo = lo pisa) */
+  claroAlInsertoMm: number;
+  /** ¿quedó fuera del inserto con el claro que pide la regla? */
+  libre: boolean;
+  notas: string[];
+}
+/**
+ * DÓNDE VAN LOS RETURN PINS — mirando el INSERTO, no solo la placa expulsora.
+ * ---------------------------------------------------------------------------
+ * MEDIDO (plan de inspección 2026-09-21, punto 2.4): con el inset fijo de 26 mm los 4 pines
+ * de retorno CRUZABAN el inserto de núcleo — 15,000 mm³ · 5.3 mm en la carcasa 1594C Box y
+ * 3,328 mm³ · 2.71 mm en la tapa. Un return pin atraviesa el paquete expulsor, el soporte y
+ * la placa B para topar en la cara de A (Fig 1.6): jamás puede vivir DENTRO del inserto que
+ * forma la pieza. Reglas (nuestras, declaradas — el libro no da estas dos cotas):
+ *   · ≥ 1·⌀ de la superficie del pin al canto del inserto (12 mm con ⌀12)
+ *   · ≥ 1.5·⌀ del centro del pin al canto de la placa expulsora (18 mm) — queda acero para la cabeza
+ * Se mueve por el eje que cueste menos y SOLO lo necesario; si ningún eje da el claro, se
+ * DECLARA (`libre: false` + `notas`) y quien llame avisa: no se encima en silencio.
+ */
+export function returnPinLayout(s: MoldAssemblySpec, D?: number): ReturnPinLayout {
+  const W = s.widthMm, Dd = D ?? plateDepth(s);
+  const mx = EXPULSORA_MARGEN_X_MM, my = EXPULSORA_MARGEN_Y_MM;
+  const d = RETURN_PIN_DIA_MM, r = d / 2;
+  const claroInserto = d;                     // ≥ 1·⌀ de acero entre el pin y el inserto
+  const minInset = 1.5 * d;                   // ≥ 1.5·⌀ del centro al canto de la expulsora
+  const cEje = r + claroInserto;              // del CENTRO del pin al canto del inserto
+  const id = insertDims(s), cells = cavityGrid(s, Dd);
+  const insX0 = Math.min(...cells.map((c) => c.cx)) - id.ifx / 2, insX1 = Math.max(...cells.map((c) => c.cx)) + id.ifx / 2;
+  const insY0 = Math.min(...cells.map((c) => c.cy)) - id.ify / 2, insY1 = Math.max(...cells.map((c) => c.cy)) + id.ify / 2;
+  // inset MÁXIMO por eje que deja el pin fuera del inserto (los dos lados; manda el peor)
+  const clearX = Math.min(insX0 - cEje - mx, (W - mx) - (insX1 + cEje));
+  const clearY = Math.min(insY0 - cEje - my, (Dd - my) - (insY1 + cEje));
+  const notas: string[] = [];
+  let ix = RETURN_PIN_INSET_MM, iy = RETURN_PIN_INSET_MM;
+  const fueraNominal = RETURN_PIN_INSET_MM <= clearX || RETURN_PIN_INSET_MM <= clearY;
+  let libre = true;
+  if (!fueraNominal) {
+    if (clearX >= minInset) { ix = Math.min(RETURN_PIN_INSET_MM, clearX); notas.push(`retornos movidos en X: inset ${RETURN_PIN_INSET_MM} → ${ix.toFixed(1)} mm (el inserto ${id.ifx}×${id.ify} llegaba hasta x ${insX0.toFixed(0)})`); }
+    else if (clearY >= minInset) { iy = Math.min(RETURN_PIN_INSET_MM, clearY); notas.push(`retornos movidos en Y: inset ${RETURN_PIN_INSET_MM} → ${iy.toFixed(1)} mm (el inserto ${id.ifx}×${id.ify} llegaba hasta y ${insY0.toFixed(0)})`); }
+    else {
+      libre = false;
+      // LA BANDA que de verdad hay: del canto de la expulsora al canto del inserto, por eje. Un pin
+      // ⌀d pide ahí minInset + r + claroInserto = 3·d. Se dice el número y el ⌀ que SÍ cabría, para
+      // que la decisión (crecer la expulsora · achicar la orilla §4.2.2 · bajar el ⌀) sea de quien manda.
+      const bandaX = insX0 - mx, bandaY = insY0 - my;
+      const banda = Math.max(bandaX, bandaY);
+      notas.push(`⚠ NO CABE un return pin ⌀${d} fuera del inserto ${id.ifx}×${id.ify}: la banda libre entre el canto de la expulsora y el canto del inserto mide ${bandaX.toFixed(1)} mm en X y ${bandaY.toFixed(1)} en Y, y un ⌀${d} pide ${(3 * d).toFixed(0)} (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀${Math.max(0, banda / 3).toFixed(1)}. Se quedan en el inset nominal ${RETURN_PIN_INSET_MM} mm y CRUZAN el inserto: crecer la expulsora, achicar la orilla del inserto (§4.2.2) o bajar el ⌀.`);
+    }
+  }
+  const px0 = mx + ix, px1 = W - mx - ix, py0 = my + iy, py1 = Dd - my - iy;
+  const pts: Array<[number, number]> = [[px0, py0], [px1, py0], [px0, py1], [px1, py1]];
+  // claro MEDIDO (no supuesto): distancia del punto al rectángulo del inserto, menos el radio
+  const claro = Math.min(...pts.map(([x, y]) => {
+    const dx = Math.max(insX0 - x, 0, x - insX1), dy = Math.max(insY0 - y, 0, y - insY1);
+    return Math.hypot(dx, dy) - r;
+  }));
+  return { diaMm: d, rMm: r, pts, insetXmm: +ix.toFixed(2), insetYmm: +iy.toFixed(2), claroAlInsertoMm: +claro.toFixed(2), libre: libre && claro >= claroInserto - 0.01, notas };
+}
+
 export function cavityGrid(s: MoldAssemblySpec, D: number): Array<{ cx: number; cy: number }> {
   const n = Math.max(1, s.nCav ?? 1);
   const nx = Math.max(1, Math.round(Math.sqrt(n))), ny = Math.ceil(n / nx);
@@ -598,10 +674,12 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
     if (s.ejectors.type !== 'stripper')
       for (const cell of cells) for (const [x, y] of ejectorCellPositions(s, cell, fx, fy, round, perCav, frame))
         holes.push({ x, y, dia: ejHole, type: `expulsor (${s.ejectors.type})` });
-    // HOLGURA de los RETURN PINS (⌀12): bajan del paquete y CRUZAN soporte+B para topar
-    // en la cara de A. Ajuste deslizante REAL 0.13mm (fits.ts), no 1mm inventado.
-    const rpHole = ejectorPinFit(12).holeDiaMm, rx = 65 + 26, ry = 20 + 26;
-    for (const [x, y] of [[rx, ry], [W - rx, ry], [rx, D - ry], [W - rx, D - ry]])
+    // HOLGURA de los RETURN PINS: bajan del paquete y CRUZAN soporte+B para topar en la
+    // cara de A. Ajuste deslizante REAL 0.13mm (fits.ts), no 1mm inventado. La POSICIÓN sale
+    // de `returnPinLayout` (mira el inserto): antes era `65+26` a mano y los barrenos se
+    // quedaban donde ya no está el pin en cuanto el inserto lo empuja.
+    const rp = returnPinLayout(s, D), rpHole = ejectorPinFit(rp.diaMm).holeDiaMm;
+    for (const [x, y] of rp.pts)
       holes.push({ x, y, dia: rpHole, type: 'holgura pin de retorno (0.13mm)' });
   }
 
@@ -635,10 +713,11 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
         holes.push({ x, y, dia: role === 'ejector' ? s.ejectors.diaMm + 3 : s.ejectors.diaMm + 0.5,
           type: role === 'ejector' ? 'aloj. cabeza de expulsor' : 'pasaje de expulsor' });
     // pines de retorno en las esquinas de la PLACA EXPULSORA real (más angosta que el
-    // molde: vive dentro del housing en U, Fig 1.4) — no en las esquinas del molde.
-    const rx = 65 + 26, ry = 20 + 26;
-    for (const [x, y] of [[rx, ry], [W - rx, ry], [rx, D - ry], [W - rx, D - ry]])
-      holes.push({ x, y, dia: 12, type: 'pin de retorno' });
+    // molde: vive dentro del housing en U, Fig 1.4) — no en las esquinas del molde, y FUERA
+    // del inserto de núcleo (`returnPinLayout`: una sola fuente para pin y barrenos).
+    const rp2 = returnPinLayout(s, D);
+    for (const [x, y] of rp2.pts)
+      holes.push({ x, y, dia: rp2.diaMm, type: 'pin de retorno' });
   }
 
   // BARRENO(S) KO para el vástago expulsor de la máquina. NO puede ir en el eje de

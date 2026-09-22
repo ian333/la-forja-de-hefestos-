@@ -48,7 +48,7 @@ import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, press
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
 import { predicadoDeMalla } from '../mold/flowlen';   // sprint 1: E4/E5 POR PIEZA
-import { estacion1Dado, estacion2Dado, estacion1, estacion2, piezaDesdeArbol, DADO_PIEZA, type PiezaSpec, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, declDePieza, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, EJECTOR_PIN_DIAS_MM, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type PiezaParaElAgua, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion1, estacion2, piezaDesdeArbol, DADO_PIEZA, type PiezaSpec, estacion3Dado, dadoRectoShape, construirAceroE3, barrenarInsertos, verificacionE3, declDePieza, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, EJECTOR_PIN_DIAS_MM, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type PiezaParaElAgua, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { ABS_EJECT, effectiveArea, ejectionForce, ejectorPinSizing } from '../mold/ejection';
 import { gripEjectorLayout } from '../mold/eject-layout';
 import { resolverLlenadoFAN, resolverLlenadoFANAsync } from '../mold/fan';
@@ -118,7 +118,14 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado;
     /** EL PUENTE: la pieza del ÁRBOL y su sólido. Ausentes = el ciclo es del cubo (los demos). */
     pieza?: PiezaSpec; piezaShape?: any;
-    e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3; e3cotas?: CotaSet[]; rayo?: PruebaRayo; interMm3?: number; e4?: Estacion4Dado; e4paint?: { part: any; flow: Float32Array; max: number }; n1?: any; frenteVert?: Float32Array; frenteQ?: Float32Array; voxPos?: Float32Array; cellMm?: number;
+    e2?: Estacion2Dado; e3?: Estacion3Dado;
+    /** LOS INSERTOS SE BARRENAN (2026-09-21): los SÓLIDOS que talló la E3. La E3 corre ANTES de que
+     *  existan el bebedero (E5), el agua (E6) y los pines (E7), así que el barrenado ocurre al final
+     *  (E8) sobre ESTE acero — no se re-talla nada, se le hacen sus agujeros. */
+    e3solidos?: { cav: any; core: any };
+    /** lo que la E8 barrenó en los insertos: barrenos con su cita, acero removido y tiempo */
+    e3barrenado?: { barrenos: Array<{ rol: string; que: string; diaMm: number; fuente: string }>; quitadoCavMm3: number; quitadoCoreMm3: number; msCav: number; msCore: number; notas: string[] };
+    e3v?: VerificacionE3; e3cotas?: CotaSet[]; rayo?: PruebaRayo; interMm3?: number; e4?: Estacion4Dado; e4paint?: { part: any; flow: Float32Array; max: number }; n1?: any; frenteVert?: Float32Array; frenteQ?: Float32Array; voxPos?: Float32Array; cellMm?: number;
     /** el campo de llenado en la REJILLA COMPLETA + su geometría: de aquí sale la
      *  SUPERFICIE del fundido (`frenteSuperficie`). `frenteVert` está compactado a
      *  los vóxeles de cavidad y no sirve para extraer una isosuperficie. */
@@ -961,7 +968,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       const zPart3 = col3.zPartBase;
       const compra = `cavidad ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hc} · núcleo ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hk} (P20) · base ${col3.baseWmm}×${col3.baseLmm} comprada (§4.3.2)`;
       setMoldPkg(pkg);
-      setCiclo((c) => ({ ...(c as NonNullable<typeof c>), estacion: 3, e3 }));
+      // LOS INSERTOS SE BARRENAN: el acero tallado VIAJA (antes se teselaba y se tiraba). La E8 lo
+      // barrena con el bebedero, el agua y los pines que para entonces ya existen — sin re-tallar.
+      setCiclo((c) => ({ ...(c as NonNullable<typeof c>), estacion: 3, e3, e3solidos: { cav: r.cavityPlate, core: r.corePlate } }));
       setDocName(malo && !pieza ? 'EL DADO ROTO · draft INVERTIDO — el molde NO abre' : `${nom3} · estación 3 — ARQUITECTURA (cap 4): nace el primer acero`);
       pPieza = pPieza ?? cursoPart(dadoD, 'pieza', pieza ? `${nom3} — TU sólido, COLOCADO en la base (§4.3.2)` : 'EL DADO v2 — draft 1.5° TALLADO (ya no declarado)', '#7ee0a0', 0.52, 0.06);
       // SE VE YA, UNA PLACA POR CUADRO (medido 2026-09-10: acero 5.4 s + teselado 3.6 s seguidos = 9 s de hilo
@@ -1480,8 +1489,46 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   const cicloPortamoldesPieza = useCallback(async () => {
     if (!oc || !ciclo?.e2 || !ciclo?.e10 || !ciclo?.pieza || ciclo.estacion !== 7) return;
     const T = performance.now(); let t = T; setCursoBusy(true);
-    const N = 3;
-    setProgreso({ estacion: 8, paso: 'el portamoldes: fresando ranuras de clamp, guías, anillo y retornos en el acero de la base (kernel)', i: 0, n: N, t0: T });
+    const N = 4;
+    // ── paso 0/4: LOS INSERTOS SE BARRENAN (orden 2026-09-21) ──────────────────────────────
+    // La E3 talló el acero ANTES de que existieran el bebedero (E5), el agua (E6) y los pines (E7):
+    // los insertos quedaban MACIZOS y el estudio de contacto lo gritaba (carcasa: 16 tramos de pin
+    // dentro del núcleo hasta 2.19 mm, bebedero 1111 mm³ · 3.88 mm dentro de la cavidad, agua A
+    // 1.6–2.2 mm). Aquí se barrenan con lo que HAY en el momento (e5datums · e8.circuito · e10.pines),
+    // no con valores horneados: si otra estación mueve un pin o una línea, el barreno se mueve con él.
+    let barrenado: ReturnType<typeof barrenarInsertos> | null = null;
+    const insertosBarrenados = new Map<string, MoldPart>();
+    if (ciclo.e3solidos) {
+      setProgreso({ estacion: 8, paso: 'barrenando los insertos: el bebedero en la cavidad, la punta y el hombro de cada pin en el núcleo, el agua que los cruza', i: 0, n: N, t0: T });
+      await respiraCuadro(120);
+      try {
+        const dd = ciclo.e5datums;
+        const colB = colocacionEnLaBase(ciclo.e2.pkg, ciclo.pieza.local);
+        const esc = ciclo.e10.pines.escalonado;
+        barrenado = barrenarInsertos(oc, {
+          cav: ciclo.e3solidos.cav, core: ciclo.e3solidos.core,
+          sprue: dd ? { x: dd.ejeX, y: dd.ejeY, zGateMm: dd.zGateMm, LsprueMm: dd.LsprueMm, rBaseMm: dd.rBaseMm, rTopMm: dd.rTopMm } : undefined,
+          agua: (ciclo.e8?.circuito.segmentos ?? []).map((sg) => ({ id: sg.id, p0: sg.p0, p1: sg.p1, diaMm: sg.diaMm })),
+          // los MISMOS cilindros que la E6 pinta como tapón y O-ring (mismo radio, mismo origen):
+          // si el estudio los dibuja ahí, el acero tiene que tener su rosca y su caja ahí.
+          aguaHerrajes: ciclo.e8 ? [
+            ...ciclo.e8.circuito.tapones.map((tp, k) => ({ id: `tapón NPT ${k}`, centro: [tp.x - tp.dir[0] * 3, tp.y - tp.dir[1] * 3, tp.z - tp.dir[2] * 3] as [number, number, number], dir: tp.dir, radioMm: ciclo.e8!.lineas.diaMm / 2 + 1.2, largoMm: 6 })),
+            ...ciclo.e8.circuito.sellos.map((sl, k) => ({ id: `O-ring ${k}`, centro: [sl.x, sl.y, sl.z - 0.8] as [number, number, number], dir: [0, 0, 1] as [number, number, number], radioMm: ciclo.e8!.lineas.diaMm / 2 + 2.2, largoMm: 1.6 })),
+          ] : undefined,
+          pines: { posiciones: ciclo.e10.pines.posiciones, puntaDiaMm: esc.puntaDiaMm, cuerpoDiaMm: esc.cuerpoDiaMm, puntaMm: esc.puntaMm,
+            zPisoMm: colB.zBaseCerradaMm - ciclo.pieza.pieza.wallMm },
+        });
+        t = marca(8, `barrenado de insertos (kernel · ${barrenado.barrenos.length} familias · cav ${barrenado.msCav} ms · core ${barrenado.msCore} ms)`, t);
+        await respira();
+        const nB = (rol: string) => barrenado!.barrenos.filter((b) => b.rol === rol).map((b) => `${b.que} ⌀${b.diaMm}`).join(' · ');
+        insertosBarrenados.set('cavidad', cursoPart(barrenado.cav, 'cavidad', `INSERTO DE CAVIDAD (hembra) · P20 · BARRENADO: ${nB('cavidad') || 'sin barrenos'}`, '#9db4d0', 0.40, 0.03));
+        t = marca(8, 'tessellate cavidad barrenada', t);
+        await respira();
+        insertosBarrenados.set('nucleo', cursoPart(barrenado.core, 'nucleo', `INSERTO DE NÚCLEO + macho · P20 · BARRENADO: ${nB('nucleo') || 'sin barrenos'}`, '#b8c6da', 0.92, 0.07));
+        t = marca(8, 'tessellate núcleo barrenado', t);
+      } catch (e) { console.warn('BARRENADO_ERR', e); barrenado = null; insertosBarrenados.clear(); }
+    } else console.warn('E8: sin ciclo.e3solidos — los insertos se quedan MACIZOS (la E3 no guardó el acero)');
+    setProgreso({ estacion: 8, paso: 'el portamoldes: fresando ranuras de clamp, guías, anillo y retornos en el acero de la base (kernel)', i: 1, n: N, t0: T });
     await respiraCuadro(120);
     try {
       const aspec = packageToAssemblySpec(ciclo.e2.pkg);
@@ -1494,7 +1541,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         positions: e10.pines.posiciones.map((pp) => ({ x: pp.x - d5.ejeX, y: pp.y - d5.ejeY })) };
       const porta = soloPortamoldes(buildMoldParts(OCC, oc, aspec, 'full'));
       t = marca(8, `portamoldes (kernel · ${porta.length} componentes)`, t);
-      setProgreso({ estacion: 8, paso: 'acero de la base en pantalla · ¿cabe la carrera de expulsión en la caja?', i: 1, n: N, t0: T });
+      setProgreso({ estacion: 8, paso: 'acero de la base en pantalla · ¿cabe la carrera de expulsión en la caja?', i: 2, n: N, t0: T });
       await respira();
       // LA CARRERA CONTRA LA CAJA: lo que la retenedora puede subir antes de tocar el soporte vs lo que la pieza pide (H + 8)
       const z = plateStackZ(aspec);
@@ -1504,7 +1551,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       const cabe = carreraLibreMm >= carreraPedidaMm;
       const roles = new Set(porta.map((p) => p.role));
       const tris = porta.reduce((a, p) => a + p.indices.length / 3, 0) | 0;
-      setCiclo({ ...ciclo, estacion: 8, portamoldes: { roles: [...roles], tris, ms: Math.round(performance.now() - T), carreraLibreMm, carreraPedidaMm } });
+      setCiclo({ ...ciclo, estacion: 8, portamoldes: { roles: [...roles], tris, ms: Math.round(performance.now() - T), carreraLibreMm, carreraPedidaMm },
+        ...(barrenado ? { e3barrenado: { barrenos: barrenado.barrenos, quitadoCavMm3: barrenado.quitadoCavMm3, quitadoCoreMm3: barrenado.quitadoCoreMm3, msCav: barrenado.msCav, msCore: barrenado.msCore, notas: barrenado.notas } } : {}) });
       setDocName(`${ciclo.pieza.nombre} · estación 8 — EL PORTAMOLDES: el molde ENTERO (${porta.length} componentes de la base)`);
       setCollapsed((c: any) => ({ ...c, features: false }));
       cursoSet(8, [
@@ -1514,8 +1562,12 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         cabe
           ? `la carrera CABE: la retenedora sube ${carreraLibreMm} mm antes del soporte y tu pieza pide ${carreraPedidaMm} (H + 8)`
           : `⚠ LA CARRERA NO CABE: la retenedora sube ${carreraLibreMm} mm antes de tocar el soporte y tu pieza pide ${carreraPedidaMm} (H + 8) — la caja expulsora debe crecer ${(carreraPedidaMm - carreraLibreMm).toFixed(1)} mm`,
-      ], [...moldParts.filter((p: any) => !roles.has(p.role)), ...porta]);
-      setProgreso({ estacion: 8, paso: 'el molde está entero · arranca el ciclo', i: 2, n: N, t0: T });
+        barrenado
+          ? `LOS INSERTOS TRAEN SUS BARRENOS: cavidad −${barrenado.quitadoCavMm3} mm³ (${barrenado.msCav} ms) · núcleo −${barrenado.quitadoCoreMm3} mm³ (${barrenado.msCore} ms) — ${barrenado.barrenos.map((b) => `${b.que} ⌀${b.diaMm}`).join(' · ')}${barrenado.notas.length ? ` · ${barrenado.notas.join(' · ')}` : ''}`
+          : '⚠ los insertos NO se barrenaron (sin el acero de la E3): macizos, como antes',
+        // los insertos que se pintan son los BARRENADOS (mismo rol, mismo tinte: el resto del estudio no se entera)
+      ], [...moldParts.filter((p: any) => !roles.has(p.role)).map((p: any) => insertosBarrenados.get(p.role) ?? p), ...porta]);
+      setProgreso({ estacion: 8, paso: 'el molde está entero · arranca el ciclo', i: 3, n: N, t0: T });
       await respira();
       // LA ANIMACIÓN: ahora sí el molde está completo; que se vea TRABAJAR (llenar · abrir · expulsar), no posar
       if (cicloRafRef.current == null) cicloPlayToggle();

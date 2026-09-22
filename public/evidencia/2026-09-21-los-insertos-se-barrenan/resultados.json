@@ -1,0 +1,2089 @@
+{
+ "orden": "ordenes/2026-09-21-los-insertos-se-barrenan.md",
+ "cuando": "2026-09-21",
+ "que": "los insertos de cavidad y núcleo dejan de ser macizos: el bebedero, la punta y el hombro de cada pin, el agua que los cruza y las cajas de tapones/O-rings se BARRENAN en la E8 con los datos que hay EN EL MOMENTO (e5datums · e8.circuito · e10.pines); y los return pins miran el inserto (returnPinLayout)",
+ "donde": "iangpu /home/ian/forja-dev6 · vite :5197 · app real (Chrome GPU, no node)",
+ "arnes": "barrenos-vista.cjs — suelta el STEP, arma el molde hasta la E8 y lee moldSolidCollisions() con el MISMO filtro del inspector (penetración ≥ 0.3 mm; roles multi-cuerpo excluidos contra insertos)",
+ "antesDe": "public/evidencia/2026-09-21-el-plan-de-inspeccion/resultados.json (pasada 1 · mismo código base ae41a29)",
+ "gates": {
+  "tsc": "66 errores = la base de /home/ian/la-entrada/tsc-head.txt · 0 nuevos",
+  "cicloDadoTest": "266/266 (sin ACTA R93: ningún literal del cubo cambió)",
+  "inspector17Puntos_carcasa": "antes 5 ok / 8 falla / 2 mirar → después 6 ok / 7 falla / 2 mirar · el punto que cambió es 7.2 («los insertos traen SUS barrenos»): 16 tramos de pin y el bebedero a 3.88 mm → 0 tramos y bebedero libre. otras colisiones reales: 0 en ambas corridas. Telemetría E8 11.0 s → 22.4 s (el barrenado son 5.4–9.2 s; el resto es la varianza del paso portamoldes, que con el mismo código midió 9.2/11.5/12.1/16.3 s con iangpu compartido)"
+ },
+ "estrategiaDeCorte": {
+  "hallazgo": "un cut con COMPOUND pierde las brocas que se CRUZAN entre sí, y fuseAll pierde más. Medido sobre el inserto REAL de la carcasa, 3 corridas coincidentes (prueba-barreno-real.cjs)",
+  "cavidad_8_brocas_mm3": {
+   "compound": 6851,
+   "fuseAll": 1539,
+   "secuencial": 9439,
+   "HIBRIDO": 9439
+  },
+  "cavidad_ms": {
+   "compound": 176,
+   "fuseAll": 529,
+   "secuencial": 802,
+   "HIBRIDO": 730
+  },
+  "nucleo_17_brocas_mm3": {
+   "compound": 7310,
+   "fuseAll": 7310,
+   "secuencial": 7310,
+   "HIBRIDO": 7310
+  },
+  "nucleo_ms": {
+   "compound": 1901,
+   "fuseAll": 2140,
+   "secuencial": 19654,
+   "HIBRIDO": 1992
+  },
+  "elegido": "HÍBRIDO: racimos conexos por traslape de cajas → un solo compound con todos los racimos de UNA broca, y corte de una en una SOLO dentro de los racimos que se cruzan",
+  "visto_no_tocado": "cutAll de mold-plano-set.ts (camino del molde en vivo) tiene la misma trampa — es otra orden"
+ },
+ "residuoDeAgua": {
+  "que_reporta_el_estudio": "carcasa: cavidad↔agua-A-oeste 34 mm³·0.91 mm · ext-in 17·1.0 · sur 14·0.78",
+  "prueba": "intersección EXACTA del kernel common(broca, inserto ya barrenado) para las 8 brocas de la cavidad y las 17 del núcleo: NINGUNA pasa de 0.5 mm³ → el acero salió; lo que ve el estudio es la malla",
+  "causa": "cursoPart tesela el agua con flecha 0.9 mm (heptágono inscrito) contra un barreno mallado a 0.03 mm / 0.2 rad"
+ },
+ "retornos": {
+  "regla": "≥ 1·⌀ de la superficie del pin al canto del inserto y ≥ 1.5·⌀ del centro al canto de la placa expulsora (reglas de la orden; el libro no da estas dos cotas). Una sola fuente: returnPinLayout",
+  "banda_libre_medida": {
+   "carcasa": {
+    "inserto": "132×173",
+    "bandaXmm": -8.0,
+    "bandaYmm": 16.5,
+    "pideMm": 36,
+    "cabriaHasta": "⌀5.5",
+    "veredicto": "NO CABE — declarado"
+   },
+   "tapa": {
+    "inserto": "145.1×104.1",
+    "bandaXmm": -14.5,
+    "bandaYmm": 26.0,
+    "pideMm": 36,
+    "cabriaHasta": "⌀8.7",
+    "veredicto": "NO CABE — declarado"
+   },
+   "ensamble": {
+    "inserto": "142×142",
+    "bandaXmm": -13.0,
+    "bandaYmm": 32.0,
+    "pideMm": 36,
+    "cabriaHasta": "⌀10.7",
+    "veredicto": "NO CABE por la regla, pero el inset nominal ya no toca el inserto (0 mm³)"
+   },
+   "alta": {
+    "inserto": "—",
+    "veredicto": "libra con el inset nominal de 26 mm"
+   }
+  },
+  "causa_fuera_de_esta_orden": "EXPULSORA_MARGEN_X_MM = 65 es literal para cualquier base (en 246 mm la placa expulsora queda de 116 mm en X, más angosta que el inserto de 132) + la orilla del inserto §4.2.2 (cheek = max(3·⌀agua, profundidad) = 33.3 mm/lado en la carcasa)"
+ },
+ "piezas": {
+  "carcasa": {
+   "archivo": "1594C Box.stp",
+   "antes": {
+    "7.2": {
+     "v": "falla",
+     "medido": "16 tramos de pin atraviesan núcleo MACIZO (hasta 2.19 mm = su radio) · bebedero ↔ cavidad 3.88 mm"
+    },
+    "2.4": {
+     "v": "falla",
+     "medido": "15000 mm³ · 5.3 mm"
+    }
+   },
+   "despues": {
+    "7.2 los insertos traen sus barrenos": {
+     "pinesEnNucleo": [],
+     "coladaEnCavidad": [],
+     "ok": true
+    },
+    "2.4 retornos fuera del inserto": {
+     "pares": [
+      {
+       "a": "nucleo",
+       "b": "pines-retorno",
+       "mm3": 15000,
+       "pen": 5.3
+      }
+     ],
+     "ok": false
+    },
+    "agua vs insertos": {
+     "pares": [
+      {
+       "a": "cavidad",
+       "b": "agua-A-oeste",
+       "mm3": 34,
+       "pen": 0.91
+      },
+      {
+       "a": "cavidad",
+       "b": "agua-A-ext-in",
+       "mm3": 17,
+       "pen": 1
+      },
+      {
+       "a": "cavidad",
+       "b": "agua-A-sur",
+       "mm3": 14,
+       "pen": 0.78
+      }
+     ],
+     "ok": false
+    }
+   },
+   "reporteE8": "LOS INSERTOS TRAEN SUS BARRENOS: cavidad −10204 mm³ (1939 ms) · núcleo −7310 mm³ (4007 ms) — bebedero cónico ⌀8.62 · punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua A-norte ⌀4.76 · agua A-sur ⌀4.76 · agua A-este ⌀4.76 · agua A-oeste ⌀4.76 · agua A-ext-in ⌀4.76 · agua A-ext-out ⌀4.76 · agua B-baffle ⌀9.53 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀7.16 · tapón NPT 1 ⌀7.16 · tapón NPT 2 ⌀7.16 · tapón NPT 3 ⌀7.16 · tapón NPT 4 ⌀7.16 · tapón NPT 5 ⌀7.16 · O-ring 0 ⌀9.16 · O-ring 1 ⌀9.16 · O-ring 2 ⌀9.16",
+   "telemetriaE8": [
+    "E8 barrenado de insertos (kernel · 20 familias · cav 1939 ms · core 4007 ms) 10294ms",
+    "E8 tessellate cavidad barrenada 1514ms",
+    "E8 tessellate núcleo barrenado 3073ms",
+    "E8 portamoldes (kernel · 14 componentes) 16234ms",
+    "E8 E8 portamoldes total 33811ms"
+   ],
+   "avisos": [
+    "E8T barrenado de insertos (kernel · 20 familias · cav 1939 ms · core 4007 ms) 10294 ms",
+    "E8T tessellate cavidad barrenada 1514 ms",
+    "E8T tessellate núcleo barrenado 3073 ms",
+    "RETORNOS: ⚠ NO CABE un return pin ⌀12 fuera del inserto 132×173: la banda libre entre el canto de la expulsora y el canto del inserto mide -8.0 mm en X y 16.5 en Y, y un ⌀12 pide 36 (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀5.5. Se quedan en el inset nominal 26 mm y C",
+    "E8T portamoldes (kernel · 14 componentes) 16234 ms",
+    "E8T E8 portamoldes total 33811 ms"
+   ],
+   "geom": [
+    {
+     "role": "cavidad",
+     "name": "INSERTO DE CAVIDAD (hembra) · P20 · BARRENADO: bebedero cónico ⌀8.62 · agua A-norte ⌀4.76 · agua A-sur ⌀4.76 · agua A-este ⌀4.76 · agua A-oeste ⌀4.76 · agua A-ext-in ⌀4.76 · agua A-ext-out ⌀4.76 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀7.16 · tapón NPT 1 ⌀7.16 · tapón NPT 2 ⌀7.16 · tapón NPT 3 ⌀7.16 · tapón NPT 4 ⌀7.16 · tapón NPT 5 ⌀7.16 · O-ring 0 ⌀9.16 · O-ring 1 ⌀9.16",
+     "min": [
+      57,
+      36.5,
+      160
+     ],
+     "max": [
+      189,
+      209.5,
+      215
+     ]
+    },
+    {
+     "role": "nucleo",
+     "name": "INSERTO DE NÚCLEO + macho · P20 · BARRENADO: punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua B-baffle ⌀9.53 · O-ring 2 ⌀9.16",
+     "min": [
+      57,
+      36.5,
+      130
+     ],
+     "max": [
+      189,
+      209.5,
+      189.8
+     ]
+    },
+    {
+     "role": "placa-a-ghost",
+     "name": "placa A 246×246×66 — el acero COMPRADO que aloja la cavidad",
+     "min": [
+      0,
+      0,
+      160
+     ],
+     "max": [
+      246,
+      246,
+      226
+     ]
+    },
+    {
+     "role": "placa-b-ghost",
+     "name": "placa B 246×246×36 — aloja el núcleo",
+     "min": [
+      0,
+      0,
+      124
+     ],
+     "max": [
+      246,
+      246,
+      160
+     ]
+    },
+    {
+     "role": "colada",
+     "name": "COLADA §6.3.1 — bebedero ⌀5.0→⌀8.6 · L 69 (del stack) · runner ⌀0 · compuerta 0",
+     "min": [
+      118.7,
+      118.69,
+      192.8
+     ],
+     "max": [
+      127.31,
+      127.31,
+      262
+     ]
+    },
+    {
+     "role": "support",
+     "name": "Placa de soporte",
+     "min": [
+      0.24,
+      0.24,
+      102
+     ],
+     "max": [
+      245.76,
+      245.76,
+      124
+     ]
+    },
+    {
+     "role": "ejector-ret",
+     "name": "Placa retenedora (cabezas)",
+     "min": [
+      65,
+      20,
+      58
+     ],
+     "max": [
+      181,
+      226,
+      71
+     ]
+    },
+    {
+     "role": "ejector",
+     "name": "Placa expulsora",
+     "min": [
+      65,
+      20,
+      40
+     ],
+     "max": [
+      181,
+      226,
+      58
+     ]
+    },
+    {
+     "role": "pines-retorno",
+     "name": "Return pins (4) · ⌀12",
+     "min": [
+      83.09,
+      38.02,
+      58
+     ],
+     "max": [
+      163,
+      207.98,
+      160
+     ]
+    }
+   ],
+   "colisionesReales": [
+    {
+     "a": "nucleo",
+     "b": "pines-retorno",
+     "mm3": 15000,
+     "pen": 5.3
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "support",
+     "mm3": 472,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "support",
+     "mm3": 465,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "support",
+     "mm3": 457,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-baffle",
+     "b": "agua-baffle-lamina",
+     "mm3": 400,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "pines-retorno",
+     "mm3": 103,
+     "pen": 0.62
+    },
+    {
+     "a": "agua-B-baffle",
+     "b": "agua-oring-B-2",
+     "mm3": 102,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "pines-retorno",
+     "mm3": 101,
+     "pen": 0.64
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-10",
+     "mm3": 91,
+     "pen": 1.15
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-baffle",
+     "mm3": 82,
+     "pen": 1.08
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-tapon-B-11",
+     "mm3": 76,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-cruce-lejos",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-cerca",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-tapon-B-10",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-11",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-A-ext-in",
+     "b": "agua-oring-A-0",
+     "mm3": 66,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-A-ext-out",
+     "b": "agua-oring-A-1",
+     "mm3": 66,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-6",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-tapon-B-7",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-tapon-B-8",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-tapon-B-9",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-cruce-lejos",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-B-cruce-cerca",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-B-cruce-lejos",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-cruce-cerca",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-oeste",
+     "mm3": 34,
+     "pen": 0.91
+    },
+    {
+     "a": "agua-tapon-B-6",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-7",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-8",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-9",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-A-norte",
+     "b": "agua-A-este",
+     "mm3": 23,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-A-norte",
+     "b": "agua-A-oeste",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-sur",
+     "b": "agua-A-este",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-este",
+     "b": "agua-A-ext-out",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-oeste",
+     "b": "agua-A-ext-in",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-sur",
+     "b": "agua-A-oeste",
+     "mm3": 18,
+     "pen": 1.07
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-ext-in",
+     "mm3": 17,
+     "pen": 1
+    },
+    {
+     "a": "cavidad",
+     "b": "agua-A-sur",
+     "mm3": 14,
+     "pen": 0.78
+    }
+   ]
+  },
+  "tapa": {
+   "archivo": "1594C Lid.stp",
+   "antes": {
+    "7.2": {
+     "v": "falla",
+     "medido": "8 tramos de pin atraviesan núcleo MACIZO (hasta 1.12 mm = su radio) · bebedero ↔ cavidad 3.38 mm"
+    },
+    "2.4": {
+     "v": "falla",
+     "medido": "3328 mm³ · 2.71 mm"
+    }
+   },
+   "despues": {
+    "7.2 los insertos traen sus barrenos": {
+     "pinesEnNucleo": [],
+     "coladaEnCavidad": [],
+     "ok": true
+    },
+    "2.4 retornos fuera del inserto": {
+     "pares": [
+      {
+       "a": "nucleo",
+       "b": "pines-retorno",
+       "mm3": 3328,
+       "pen": 2.71
+      }
+     ],
+     "ok": false
+    },
+    "agua vs insertos": {
+     "pares": [],
+     "ok": true
+    }
+   },
+   "reporteE8": "LOS INSERTOS TRAEN SUS BARRENOS: cavidad −9301 mm³ (2494 ms) · núcleo −2464 mm³ (396 ms) — bebedero cónico ⌀8.06 · punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua A-norte ⌀4.76 · agua A-sur ⌀4.76 · agua A-este ⌀4.76 · agua A-oeste ⌀4.76 · agua A-ext-in ⌀4.76 · agua A-ext-out ⌀4.76 · agua B-baffle ⌀9.53 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀7.16 · tapón NPT 1 ⌀7.16 · tapón NPT 2 ⌀7.16 · tapón NPT 3 ⌀7.16 · tapón NPT 4 ⌀7.16 · tapón NPT 5 ⌀7.16 · O-ring 0 ⌀9.16 · O-ring 1 ⌀9.16 · O-ring 2 ⌀9.16",
+   "telemetriaE8": [
+    "E8 barrenado de insertos (kernel · 20 familias · cav 2494 ms · core 396 ms) 4072ms",
+    "E8 tessellate cavidad barrenada 814ms",
+    "E8 tessellate núcleo barrenado 515ms",
+    "E8 portamoldes (kernel · 14 componentes) 9186ms",
+    "E8 E8 portamoldes total 15355ms"
+   ],
+   "avisos": [
+    "E8T barrenado de insertos (kernel · 20 familias · cav 2494 ms · core 396 ms) 4072 ms",
+    "E8T tessellate cavidad barrenada 814 ms",
+    "E8T tessellate núcleo barrenado 515 ms",
+    "RETORNOS: ⚠ NO CABE un return pin ⌀12 fuera del inserto 145.1×104.1: la banda libre entre el canto de la expulsora y el canto del inserto mide -14.5 mm en X y 26.0 en Y, y un ⌀12 pide 36 (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀8.7. Se quedan en el inset nominal 26 m",
+    "E8T portamoldes (kernel · 14 componentes) 9186 ms",
+    "E8T E8 portamoldes total 15355 ms"
+   ],
+   "geom": [
+    {
+     "role": "cavidad",
+     "name": "INSERTO DE CAVIDAD (hembra) · P20 · BARRENADO: bebedero cónico ⌀8.06 · agua A-norte ⌀4.76 · agua A-sur ⌀4.76 · agua A-este ⌀4.76 · agua A-oeste ⌀4.76 · agua A-ext-in ⌀4.76 · agua A-ext-out ⌀4.76 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀7.16 · tapón NPT 1 ⌀7.16 · tapón NPT 2 ⌀7.16 · tapón NPT 3 ⌀7.16 · tapón NPT 4 ⌀7.16 · tapón NPT 5 ⌀7.16 · O-ring 0 ⌀9.16 · O-ring 1 ⌀9.16",
+     "min": [
+      50.45,
+      45.95,
+      146
+     ],
+     "max": [
+      195.55,
+      150.05,
+      176
+     ]
+    },
+    {
+     "role": "nucleo",
+     "name": "INSERTO DE NÚCLEO + macho · P20 · BARRENADO: punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua B-baffle ⌀9.53 · O-ring 2 ⌀9.16",
+     "min": [
+      50.45,
+      45.95,
+      130
+     ],
+     "max": [
+      195.55,
+      150.05,
+      156.8
+     ]
+    },
+    {
+     "role": "placa-a-ghost",
+     "name": "placa A 246×196×36 — el acero COMPRADO que aloja la cavidad",
+     "min": [
+      0,
+      0,
+      146
+     ],
+     "max": [
+      246,
+      196,
+      182
+     ]
+    },
+    {
+     "role": "placa-b-ghost",
+     "name": "placa B 246×196×22 — aloja el núcleo",
+     "min": [
+      0,
+      0,
+      124
+     ],
+     "max": [
+      246,
+      196,
+      146
+     ]
+    },
+    {
+     "role": "colada",
+     "name": "COLADA §6.3.1 — bebedero ⌀5.0→⌀8.1 · L 58 (del stack) · runner ⌀0 · compuerta 0",
+     "min": [
+      118.98,
+      93.97,
+      159.6
+     ],
+     "max": [
+      127.03,
+      102.03,
+      218
+     ]
+    },
+    {
+     "role": "support",
+     "name": "Placa de soporte",
+     "min": [
+      0.24,
+      0.24,
+      102
+     ],
+     "max": [
+      245.76,
+      195.76,
+      124
+     ]
+    },
+    {
+     "role": "ejector-ret",
+     "name": "Placa retenedora (cabezas)",
+     "min": [
+      65,
+      20,
+      58
+     ],
+     "max": [
+      181,
+      176,
+      71
+     ]
+    },
+    {
+     "role": "ejector",
+     "name": "Placa expulsora",
+     "min": [
+      65,
+      20,
+      40
+     ],
+     "max": [
+      181,
+      176,
+      58
+     ]
+    },
+    {
+     "role": "pines-retorno",
+     "name": "Return pins (4) · ⌀12",
+     "min": [
+      83.09,
+      38.02,
+      58
+     ],
+     "max": [
+      163,
+      157.98,
+      146
+     ]
+    }
+   ],
+   "colisionesReales": [
+    {
+     "a": "nucleo",
+     "b": "pines-retorno",
+     "mm3": 3328,
+     "pen": 2.71
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "support",
+     "mm3": 375,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "support",
+     "mm3": 375,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "support",
+     "mm3": 338,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "support",
+     "mm3": 338,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-tapon-B-12",
+     "b": "agua-tapon-B-14",
+     "mm3": 233,
+     "pen": 2.8
+    },
+    {
+     "a": "agua-B-baffle",
+     "b": "agua-baffle-lamina",
+     "mm3": 163,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-tapon-A-3",
+     "b": "bujes",
+     "mm3": 136,
+     "pen": 1.83
+    },
+    {
+     "a": "agua-B-baffle",
+     "b": "agua-oring-B-2",
+     "mm3": 102,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-12",
+     "mm3": 91,
+     "pen": 1.15
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-14",
+     "mm3": 91,
+     "pen": 1.15
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-tapon-B-13",
+     "mm3": 76,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-cruce-lejos-0",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-cerca-1",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-lejos-2",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-tapon-B-12",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-13",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-14",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-A-ext-in",
+     "b": "agua-oring-A-0",
+     "mm3": 66,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-A-ext-out",
+     "b": "agua-oring-A-1",
+     "mm3": 66,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-6",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-tapon-B-7",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-tapon-B-8",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-tapon-B-9",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-tapon-B-10",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-tapon-B-11",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-cruce-lejos-0",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-B-cruce-cerca-1",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-B-cruce-lejos-2",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-B-cruce-lejos-0",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-cruce-cerca-1",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-B-cruce-lejos-2",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-tapon-B-6",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-7",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-8",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-9",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-10",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-11",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-A-norte",
+     "b": "agua-A-este",
+     "mm3": 23,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-oring-A-1",
+     "b": "bujes",
+     "mm3": 21,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-A-norte",
+     "b": "agua-A-oeste",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-sur",
+     "b": "agua-A-este",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-este",
+     "b": "agua-A-ext-out",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-oeste",
+     "b": "agua-A-ext-in",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-sur",
+     "b": "agua-A-oeste",
+     "mm3": 18,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-ext-in",
+     "b": "bujes",
+     "mm3": 16,
+     "pen": 0.35
+    }
+   ]
+  },
+  "alta": {
+   "archivo": "1599HBK.stp",
+   "antes": {
+    "7.2": {
+     "v": "falla",
+     "medido": "16 tramos de pin atraviesan núcleo MACIZO (hasta 2.5 mm = su radio) · bebedero ↔ cavidad 4.46 mm"
+    },
+    "2.4": {
+     "v": "ok",
+     "medido": "sin contacto"
+    }
+   },
+   "despues": {
+    "7.2 los insertos traen sus barrenos": {
+     "pinesEnNucleo": [],
+     "coladaEnCavidad": [],
+     "ok": true
+    },
+    "2.4 retornos fuera del inserto": {
+     "pares": [],
+     "ok": true
+    },
+    "agua vs insertos": {
+     "pares": [],
+     "ok": true
+    }
+   },
+   "reporteE8": "LOS INSERTOS TRAEN SUS BARRENOS: cavidad −16273 mm³ (1503 ms) · núcleo −14778 mm³ (307 ms) — bebedero cónico ⌀9.56 · punta de 8 pines ⌀4.893 · asiento del hombro de 8 pines ⌀6.48 · agua A-norte ⌀4.76 · agua A-sur ⌀4.76 · agua A-este ⌀4.76 · agua A-oeste ⌀4.76 · agua A-ext-in ⌀4.76 · agua A-ext-out ⌀4.76 · agua B-baffle ⌀9.53 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀7.16 · tapón NPT 1 ⌀7.16 · tapón NPT 2 ⌀7.16 · tapón NPT 3 ⌀7.16 · tapón NPT 4 ⌀7.16 · tapón NPT 5 ⌀7.16 · O-ring 0 ⌀9.16 · O-ring 1 ⌀9.16 · O-ring 2 ⌀9.16",
+   "telemetriaE8": [
+    "E8 barrenado de insertos (kernel · 20 familias · cav 1503 ms · core 307 ms) 4092ms",
+    "E8 tessellate cavidad barrenada 1839ms",
+    "E8 tessellate núcleo barrenado 1809ms",
+    "E8 portamoldes (kernel · 14 componentes) 14784ms",
+    "E8 E8 portamoldes total 26209ms"
+   ],
+   "avisos": [
+    "E8T barrenado de insertos (kernel · 20 familias · cav 1503 ms · core 307 ms) 4092 ms",
+    "E8T tessellate cavidad barrenada 1839 ms",
+    "E8T tessellate núcleo barrenado 1809 ms",
+    "E8T portamoldes (kernel · 14 componentes) 14784 ms",
+    "E8T E8 portamoldes total 26209 ms"
+   ],
+   "geom": [
+    {
+     "role": "cavidad",
+     "name": "INSERTO DE CAVIDAD (hembra) · P20 · BARRENADO: bebedero cónico ⌀9.56 · agua A-norte ⌀4.76 · agua A-sur ⌀4.76 · agua A-este ⌀4.76 · agua A-oeste ⌀4.76 · agua A-ext-in ⌀4.76 · agua A-ext-out ⌀4.76 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀7.16 · tapón NPT 1 ⌀7.16 · tapón NPT 2 ⌀7.16 · tapón NPT 3 ⌀7.16 · tapón NPT 4 ⌀7.16 · tapón NPT 5 ⌀7.16 · O-ring 0 ⌀9.16 · O-ring 1 ⌀9.16",
+     "min": [
+      52,
+      57,
+      180
+     ],
+     "max": [
+      344,
+      239,
+      238
+     ]
+    },
+    {
+     "role": "nucleo",
+     "name": "INSERTO DE NÚCLEO + macho · P20 · BARRENADO: punta de 8 pines ⌀4.893 · asiento del hombro de 8 pines ⌀6.48 · agua B-baffle ⌀9.53 · O-ring 2 ⌀9.16",
+     "min": [
+      52,
+      57,
+      130
+     ],
+     "max": [
+      344,
+      239,
+      211.5
+     ]
+    },
+    {
+     "role": "placa-a-ghost",
+     "name": "placa A 396×296×86 — el acero COMPRADO que aloja la cavidad",
+     "min": [
+      0,
+      0,
+      180
+     ],
+     "max": [
+      396,
+      296,
+      266
+     ]
+    },
+    {
+     "role": "placa-b-ghost",
+     "name": "placa B 396×296×56 — aloja el núcleo",
+     "min": [
+      0,
+      0,
+      124
+     ],
+     "max": [
+      396,
+      296,
+      180
+     ]
+    },
+    {
+     "role": "colada",
+     "name": "COLADA §6.3.1 — bebedero ⌀5.0→⌀9.6 · L 87 (del stack) · runner ⌀0 · compuerta 0",
+     "min": [
+      193.23,
+      143.22,
+      215
+     ],
+     "max": [
+      202.78,
+      152.78,
+      302
+     ]
+    },
+    {
+     "role": "support",
+     "name": "Placa de soporte",
+     "min": [
+      0.24,
+      0.24,
+      102
+     ],
+     "max": [
+      395.76,
+      295.76,
+      124
+     ]
+    },
+    {
+     "role": "ejector-ret",
+     "name": "Placa retenedora (cabezas)",
+     "min": [
+      65,
+      20,
+      58
+     ],
+     "max": [
+      331,
+      276,
+      71
+     ]
+    },
+    {
+     "role": "ejector",
+     "name": "Placa expulsora",
+     "min": [
+      65,
+      20,
+      40
+     ],
+     "max": [
+      331,
+      276,
+      58
+     ]
+    },
+    {
+     "role": "pines-retorno",
+     "name": "Return pins (4) · ⌀12",
+     "min": [
+      83.09,
+      31.02,
+      58
+     ],
+     "max": [
+      313,
+      264.98,
+      180
+     ]
+    }
+   ],
+   "colisionesReales": [
+    {
+     "a": "tornillos-core",
+     "b": "rieles",
+     "mm3": 19500,
+     "pen": 0.4
+    },
+    {
+     "a": "bottom",
+     "b": "tornillos-core",
+     "mm3": 7500,
+     "pen": 0.4
+    },
+    {
+     "a": "support",
+     "b": "tornillos-core",
+     "mm3": 6000,
+     "pen": 0.4
+    },
+    {
+     "a": "clamp",
+     "b": "tornillos-cav",
+     "mm3": 5000,
+     "pen": 0.46
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "support",
+     "mm3": 574,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "support",
+     "mm3": 574,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "support",
+     "mm3": 574,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea4",
+     "b": "support",
+     "mm3": 574,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea5",
+     "b": "support",
+     "mm3": 574,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea6",
+     "b": "support",
+     "mm3": 574,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "support",
+     "mm3": 571,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-baffle",
+     "b": "agua-baffle-lamina",
+     "mm3": 563,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-tapon-B-18",
+     "b": "agua-tapon-B-20",
+     "mm3": 233,
+     "pen": 2.8
+    },
+    {
+     "a": "agua-tapon-B-18",
+     "b": "agua-tapon-B-22",
+     "mm3": 233,
+     "pen": 2.8
+    },
+    {
+     "a": "agua-tapon-B-19",
+     "b": "agua-tapon-B-21",
+     "mm3": 233,
+     "pen": 2.8
+    },
+    {
+     "a": "agua-tapon-B-19",
+     "b": "agua-tapon-B-23",
+     "mm3": 233,
+     "pen": 2.8
+    },
+    {
+     "a": "agua-tapon-B-20",
+     "b": "agua-tapon-B-22",
+     "mm3": 233,
+     "pen": 2.8
+    },
+    {
+     "a": "agua-tapon-B-21",
+     "b": "agua-tapon-B-23",
+     "mm3": 233,
+     "pen": 2.8
+    },
+    {
+     "a": "agua-B-baffle",
+     "b": "agua-oring-B-2",
+     "mm3": 102,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-18",
+     "mm3": 91,
+     "pen": 1.15
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-20",
+     "mm3": 91,
+     "pen": 1.15
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-22",
+     "mm3": 91,
+     "pen": 1.15
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-B-baffle",
+     "mm3": 82,
+     "pen": 1.08
+    },
+    {
+     "a": "agua-B-linea6",
+     "b": "agua-tapon-B-19",
+     "mm3": 76,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea6",
+     "b": "agua-tapon-B-21",
+     "mm3": 76,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea6",
+     "b": "agua-tapon-B-23",
+     "mm3": 76,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-cruce-lejos-0",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-cerca-1",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-lejos-2",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-cerca-3",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-lejos-4",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-cerca-5",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-tapon-B-18",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-19",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-20",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-21",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-22",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-23",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-A-ext-in",
+     "b": "agua-oring-A-0",
+     "mm3": 66,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-A-ext-out",
+     "b": "agua-oring-A-1",
+     "mm3": 66,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-6",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-tapon-B-7",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-tapon-B-8",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-tapon-B-9",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-tapon-B-10",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-tapon-B-11",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-tapon-B-12",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea4",
+     "b": "agua-tapon-B-13",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea4",
+     "b": "agua-tapon-B-14",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea5",
+     "b": "agua-tapon-B-15",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea5",
+     "b": "agua-tapon-B-16",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea6",
+     "b": "agua-tapon-B-17",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-cruce-lejos-0",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-B-cruce-cerca-1",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-B-cruce-lejos-2",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea4",
+     "b": "agua-B-cruce-cerca-3",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea5",
+     "b": "agua-B-cruce-lejos-4",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea6",
+     "b": "agua-B-cruce-cerca-5",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-B-cruce-lejos-0",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-cruce-cerca-1",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-B-cruce-lejos-2",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-B-cruce-cerca-3",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea4",
+     "b": "agua-B-cruce-lejos-4",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea5",
+     "b": "agua-B-cruce-cerca-5",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "pines-retorno",
+     "mm3": 33,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea6",
+     "b": "pines-retorno",
+     "mm3": 31,
+     "pen": 0.52
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "pin-cuerpo-5",
+     "mm3": 30,
+     "pen": 0.75
+    },
+    {
+     "a": "agua-tapon-B-6",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-7",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-8",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-9",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-10",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-11",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-12",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-13",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-14",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-15",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-16",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-17",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-A-norte",
+     "b": "agua-A-este",
+     "mm3": 23,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-A-norte",
+     "b": "agua-A-oeste",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-sur",
+     "b": "agua-A-este",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-este",
+     "b": "agua-A-ext-out",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-oeste",
+     "b": "agua-A-ext-in",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-sur",
+     "b": "agua-A-oeste",
+     "mm3": 18,
+     "pen": 1.07
+    }
+   ]
+  },
+  "ensamble": {
+   "archivo": "1557BGY.stp",
+   "antes": {
+    "7.2": {
+     "v": "falla",
+     "medido": "8 tramos de pin atraviesan núcleo MACIZO (hasta 1.12 mm = su radio) · bebedero ↔ cavidad 3.56 mm"
+    },
+    "2.4": {
+     "v": "ok",
+     "medido": "sin contacto"
+    }
+   },
+   "despues": {
+    "7.2 los insertos traen sus barrenos": {
+     "pinesEnNucleo": [],
+     "coladaEnCavidad": [],
+     "ok": true
+    },
+    "2.4 retornos fuera del inserto": {
+     "pares": [],
+     "ok": true
+    },
+    "agua vs insertos": {
+     "pares": [],
+     "ok": true
+    }
+   },
+   "reporteE8": "LOS INSERTOS TRAEN SUS BARRENOS: cavidad −9422 mm³ (9236 ms) · núcleo −4381 mm³ (2169 ms) — bebedero cónico ⌀8.21 · punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua A-norte ⌀4.76 · agua A-sur ⌀4.76 · agua A-este ⌀4.76 · agua A-oeste ⌀4.76 · agua A-ext-in ⌀4.76 · agua A-ext-out ⌀4.76 · agua B-baffle ⌀9.53 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀7.16 · tapón NPT 1 ⌀7.16 · tapón NPT 2 ⌀7.16 · tapón NPT 3 ⌀7.16 · tapón NPT 4 ⌀7.16 · tapón NPT 5 ⌀7.16 · O-ring 0 ⌀9.16 · O-ring 1 ⌀9.16 · O-ring 2 ⌀9.16",
+   "telemetriaE8": [
+    "E8 barrenado de insertos (kernel · 20 familias · cav 9236 ms · core 2169 ms) 18997ms",
+    "E8 tessellate cavidad barrenada 1649ms",
+    "E8 tessellate núcleo barrenado 2037ms",
+    "E8 portamoldes (kernel · 14 componentes) 12256ms",
+    "E8 E8 portamoldes total 36983ms"
+   ],
+   "avisos": [
+    "E8T barrenado de insertos (kernel · 20 familias · cav 9236 ms · core 2169 ms) 18997 ms",
+    "E8T tessellate cavidad barrenada 1649 ms",
+    "E8T tessellate núcleo barrenado 2037 ms",
+    "RETORNOS: ⚠ NO CABE un return pin ⌀12 fuera del inserto 142×142: la banda libre entre el canto de la expulsora y el canto del inserto mide -13.0 mm en X y 32.0 en Y, y un ⌀12 pide 36 (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀10.7. Se quedan en el inset nominal 26 mm y",
+    "E8T portamoldes (kernel · 14 componentes) 12256 ms",
+    "E8T E8 portamoldes total 36983 ms"
+   ],
+   "geom": [
+    {
+     "role": "cavidad",
+     "name": "INSERTO DE CAVIDAD (hembra) · P20 · BARRENADO: bebedero cónico ⌀8.21 · agua A-norte ⌀4.76 · agua A-sur ⌀4.76 · agua A-este ⌀4.76 · agua A-oeste ⌀4.76 · agua A-ext-in ⌀4.76 · agua A-ext-out ⌀4.76 · agua B-baffle ⌀9.53 · tapón NPT 0 ⌀7.16 · tapón NPT 1 ⌀7.16 · tapón NPT 2 ⌀7.16 · tapón NPT 3 ⌀7.16 · tapón NPT 4 ⌀7.16 · tapón NPT 5 ⌀7.16 · O-ring 0 ⌀9.16 · O-ring 1 ⌀9.16",
+     "min": [
+      52,
+      52,
+      146
+     ],
+     "max": [
+      194,
+      194,
+      196
+     ]
+    },
+    {
+     "role": "nucleo",
+     "name": "INSERTO DE NÚCLEO + macho · P20 · BARRENADO: punta de 8 pines ⌀2.511 · asiento del hombro de 8 pines ⌀4.893 · agua B-baffle ⌀9.53 · O-ring 2 ⌀9.16",
+     "min": [
+      52,
+      52,
+      130
+     ],
+     "max": [
+      194,
+      194,
+      174.4
+     ]
+    },
+    {
+     "role": "placa-a-ghost",
+     "name": "placa A 246×246×56 — el acero COMPRADO que aloja la cavidad",
+     "min": [
+      0,
+      0,
+      146
+     ],
+     "max": [
+      246,
+      246,
+      202
+     ]
+    },
+    {
+     "role": "placa-b-ghost",
+     "name": "placa B 246×246×22 — aloja el núcleo",
+     "min": [
+      0,
+      0,
+      124
+     ],
+     "max": [
+      246,
+      246,
+      146
+     ]
+    },
+    {
+     "role": "colada",
+     "name": "COLADA §6.3.1 — bebedero ⌀5.0→⌀8.2 · L 61 (del stack) · runner ⌀0 · compuerta 0",
+     "min": [
+      118.9,
+      118.9,
+      176.7
+     ],
+     "max": [
+      127.11,
+      127.1,
+      238
+     ]
+    },
+    {
+     "role": "support",
+     "name": "Placa de soporte",
+     "min": [
+      0.24,
+      0.24,
+      102
+     ],
+     "max": [
+      245.76,
+      245.76,
+      124
+     ]
+    },
+    {
+     "role": "ejector-ret",
+     "name": "Placa retenedora (cabezas)",
+     "min": [
+      65,
+      20,
+      58
+     ],
+     "max": [
+      181,
+      226,
+      71
+     ]
+    },
+    {
+     "role": "ejector",
+     "name": "Placa expulsora",
+     "min": [
+      65,
+      20,
+      40
+     ],
+     "max": [
+      181,
+      226,
+      58
+     ]
+    },
+    {
+     "role": "pines-retorno",
+     "name": "Return pins (4) · ⌀12",
+     "min": [
+      83.09,
+      38.02,
+      58
+     ],
+     "max": [
+      163,
+      207.98,
+      146
+     ]
+    }
+   ],
+   "colisionesReales": [
+    {
+     "a": "agua-B-linea1",
+     "b": "support",
+     "mm3": 460,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "support",
+     "mm3": 458,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "support",
+     "mm3": 435,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "support",
+     "mm3": 434,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-baffle",
+     "b": "agua-baffle-lamina",
+     "mm3": 282,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-tapon-B-12",
+     "b": "agua-tapon-B-14",
+     "mm3": 233,
+     "pen": 2.8
+    },
+    {
+     "a": "agua-B-baffle",
+     "b": "agua-oring-B-2",
+     "mm3": 102,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-12",
+     "mm3": 91,
+     "pen": 1.15
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-14",
+     "mm3": 91,
+     "pen": 1.15
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-tapon-B-13",
+     "mm3": 76,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-cruce-lejos-0",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-cerca-1",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-cruce-lejos-2",
+     "b": "support",
+     "mm3": 74,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-tapon-B-12",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-13",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-14",
+     "b": "support",
+     "mm3": 68,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-A-ext-in",
+     "b": "agua-oring-A-0",
+     "mm3": 66,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-A-ext-out",
+     "b": "agua-oring-A-1",
+     "mm3": 66,
+     "pen": 0.4
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-tapon-B-6",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-tapon-B-7",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-tapon-B-8",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-tapon-B-9",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-tapon-B-10",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-tapon-B-11",
+     "mm3": 57,
+     "pen": 1.2
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-cruce-lejos-0",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-B-cruce-cerca-1",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea3",
+     "b": "agua-B-cruce-lejos-2",
+     "mm3": 40,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea0",
+     "b": "agua-B-cruce-lejos-0",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "agua-B-cruce-cerca-1",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "agua-B-cruce-lejos-2",
+     "mm3": 36,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-tapon-B-6",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-7",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-8",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-9",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-10",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-tapon-B-11",
+     "b": "support",
+     "mm3": 29,
+     "pen": 1.14
+    },
+    {
+     "a": "agua-B-linea1",
+     "b": "pin-punta-2",
+     "mm3": 28,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-B-linea2",
+     "b": "pin-punta-3",
+     "mm3": 28,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-A-norte",
+     "b": "agua-A-este",
+     "mm3": 23,
+     "pen": 1.12
+    },
+    {
+     "a": "agua-A-norte",
+     "b": "agua-A-oeste",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-sur",
+     "b": "agua-A-este",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-este",
+     "b": "agua-A-ext-out",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-oeste",
+     "b": "agua-A-ext-in",
+     "mm3": 20,
+     "pen": 1.07
+    },
+    {
+     "a": "agua-A-sur",
+     "b": "agua-A-oeste",
+     "mm3": 18,
+     "pen": 1.07
+    }
+   ]
+  }
+ }
+}
