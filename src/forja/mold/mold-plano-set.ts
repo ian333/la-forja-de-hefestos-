@@ -18,7 +18,7 @@ import {
   moldDrawingSet, plateDefs, plateDepth, standardHoles, holeLegend, cavityGrid, coolingCircuit,
   coolingCircuitDesign,
   cavityFootprint, moldBoltSizing,
-  insertDims, returnPinLayout, EXPULSORA_MARGEN_X_MM, EXPULSORA_MARGEN_Y_MM,
+  insertDims, returnPinLayout, expulsoraMargenes, EXPULSORA_MARGEN_X_MM, EXPULSORA_MARGEN_Y_MM,
   type DrawingPage, type AnalysisRow, type PlateDef } from './mold-drawing-set';
 import { PISO_MAQUINABLE_MM } from './cooling-design';   // el piso del taller, UNA definición
 import { resolveThread, threadSurfaceMesh, plainShaftMesh, type Mesh as ThreadMesh } from './mold-threads';
@@ -127,7 +127,10 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
   // La PLACA EXPULSORA vive DENTRO del housing (entre los rieles): más angosta que el
   // molde (Fig 1.4/1.5 — el housing en U deja verla por los costados abiertos).
   if (def.role === 'ejector' || def.role === 'ejector-ret') {
-    solid = K.transformShape(oc, K.makeBox(oc, W - 2 * EXPULSORA_MARGEN_X_MM, D - 2 * EXPULSORA_MARGEN_Y_MM, t), { translate: [EXPULSORA_MARGEN_X_MM, EXPULSORA_MARGEN_Y_MM, 0] });
+    // los márgenes salen de `expulsoraMargenes` (la placa CRECE en Y cuando los retornos ⌀12 no
+    // caben fuera del inserto — ian 2026-09-22): la placa, sus barrenos y los pines leen el MISMO número.
+    const mg = expulsoraMargenes(spec, D);
+    solid = K.transformShape(oc, K.makeBox(oc, W - 2 * mg.mxMm, D - 2 * mg.myMm, t), { translate: [mg.mxMm, mg.myMm, 0] });
     // LIBRAMIENTO de los SUPPORT PILLARS (Fig 1.6): las placas expulsoras SUBEN Y BAJAN
     // por los pilares ⌀40 (en W·0.35 y W·0.65) — sin este barreno el pilar y la placa
     // ocupan el mismo acero (imposible). Holgura REAL de fits.ts (no inventada).
@@ -1427,12 +1430,13 @@ export interface BloqueDelPortamoldes { role: string; name: string; color: strin
 export function portamoldesEnBloques(spec: MoldAssemblySpec): BloqueDelPortamoldes[] {
   const W = spec.widthMm, D = plateDepth(spec), z = plateStackZ(spec), tinte = tinteDePlaca(spec), oreja = orejaDeSujecionMm(spec);
   const out: BloqueDelPortamoldes[] = [];
+  const mg = expulsoraMargenes(spec, D);   // la expulsora con su crecimiento en Y, si lo hubo
   for (const def of plateDefs(spec)) {
     if (def.role === 'A' || def.role === 'B') continue;
     const ext = def.role === 'clamp' || def.role === 'bottom' ? oreja : 0;
     const expulsora = def.role === 'ejector' || def.role === 'ejector-ret';
     out.push({ role: def.role, name: def.name, color: tinte[def.role] ?? ACERO_BASE, cajas: [expulsora
-      ? { x0: EXPULSORA_MARGEN_X_MM, y0: EXPULSORA_MARGEN_Y_MM, z0: z[def.role] ?? 0, w: W - 2 * EXPULSORA_MARGEN_X_MM, l: D - 2 * EXPULSORA_MARGEN_Y_MM, h: def.thick }
+      ? { x0: mg.mxMm, y0: mg.myMm, z0: z[def.role] ?? 0, w: W - 2 * mg.mxMm, l: D - 2 * mg.myMm, h: def.thick }
       : { x0: -ext, y0: 0, z0: z[def.role] ?? 0, w: W + 2 * ext, l: D, h: def.thick }] });
   }
   const bc = spec.plates.bottomClamp, eh = spec.plates.ejectorHousing;
@@ -1650,7 +1654,7 @@ function packageToAssemblySpecCrudo(pkg: MoldPackage): MoldAssemblySpec {
   const espesor = (p: { plateThkMm: number | null; tRequiredMm?: number } | undefined, porDefecto: number) =>
     Math.round(finito(p?.plateThkMm) ? p.plateThkMm : finito(p?.tRequiredMm) ? p.tRequiredMm : porDefecto);
   const support = espesor(d.placas.soporte, 46);
-  // LA CAJA EXPULSORA POR LA CARRERA (§4.3.2): E = profundidad de la pieza (+8 nuestro
+  // LA CAJA EXPULSORA POR LA CARRERA (§4.3.2): E = profundidad de la pieza (+8 regla de Hefestos
   // para que LIBRE el macho) → C de catálogo. `cabe` nunca es false salvo que la carrera
   // exceda la serie comercial entera, y entonces la nota lo dice en vez de callarlo.
   const cajaExpulsora = sizeEjectorHousing({ carreraMm: carreraDeExpulsionMm(s.Hmm) });

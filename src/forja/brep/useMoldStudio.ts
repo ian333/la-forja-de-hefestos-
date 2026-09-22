@@ -317,7 +317,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         // da umbral inferior numérico, así que se advierte sin inventar uno.
         { k: 'ΔP de llenado', v: `${dP.toFixed(1)} MPa`,
           ref: dP < 20
-            ? '§5.1 ¡MUY BAJA! pared engordada → adelgazar + costillas §2.3.2 (umbral 20 declarado NUESTRO, el libro no lo fija)'
+            ? '§5.1 ¡MUY BAJA! pared engordada → adelgazar + costillas §2.3.2 (umbral 20: regla de Hefestos, el libro no lo fija)'
             : 'Eq 5.19 · techo de DISEÑO 100 MPa §5.1 (la máquina da ~200: el margen 2× es a propósito)',
           warn: dP > 100 || dP < 20 },
         { k: 't de llenado', v: `${tFill.toFixed(3)} s`, ref: 'L/v̄ · ~1.4 % del ciclo: por eso NO se ve a tiempo real' },

@@ -29,6 +29,7 @@ import { coordAudit } from './mold-coords';
 import { coolingCircuit, plateDepth } from './mold-drawing-set';
 import { EJECTOR_DIAM_CLEARANCE_MM } from './fits';
 import { BASE_MATERIALS } from './moldbase';
+import { juicioFlecha, venteoDeReferenciaMm, REGLA_DE_HEFESTOS_FLECHA } from './platesizing';
 import type { PlanVenteo } from './venting-locations';
 import type { MoldAssemblySpec } from './mold-assembly';
 const GATE_TABLE_DEGATING = Object.fromEntries(Object.entries(GATE_TABLE).map(([k, v]) => [k, v.degating])) as Record<string, string>;
@@ -600,28 +601,40 @@ export function contratoEstructural(pkg: MoldPackage): ContratoSubsistema {
   const sp = pkg.diseno.placas.soporte;
   const vent = pkg.diseno.venteo;
 
-  // ── 1) ⭐ DEFLEXIÓN vs ESPESOR DEL VENTEO — §12.1.2 ──
+  // ── 1) ⭐ DEFLEXIÓN vs ESPESOR DEL VENTEO — §12.1.2 + REGLA DE HEFESTOS ──
+  // El libro da el LÍMITE (δ ≤ venteo); el margen debajo de él es la regla de Hefestos (ian
+  // 2026-09-22: ≤ 70 % por defecto, tope duro 85 %). Se juzga con `juicioFlecha` — la MISMA
+  // función y las MISMAS constantes con las que `platesizing` dimensionó la placa — y contra
+  // la MISMA referencia de venteo (`venteoDeReferenciaMm`: la más estricta entre la práctica
+  // 0.02 de la partición y el venteo de la E7). Antes aquí se comparaba contra el venteo de la
+  // E7 (0.046–0.063 mm en las 4 piezas del plan) mientras el dimensionador usaba 0.02: dos
+  // verdades que coincidían solo porque ninguna placa caía entre las dos.
   const deflex = sp.deflectionAtPlateMm;
   const hVent = vent.hSpecMm;
-  const ratio = hVent > 0 ? deflex / hVent : NaN;
+  const ref = venteoDeReferenciaMm(hVent);
+  const J = Number.isFinite(deflex) && ref > 0 ? juicioFlecha(deflex, ref) : null;
+  const RH = REGLA_DE_HEFESTOS_FLECHA;
   C.push({
-    id: 'estr-deflexion-vs-venteo', subsistema: S, cita: '§12.1.2 · cap 8',
-    criterio: 'la separación de las mitades bajo carga debe ser MENOR que el espesor del venteo (si no, flash garantizado)',
-    medido: deflex, limite: hVent, unidad: 'mm',
-    estado: !Number.isFinite(ratio) ? 'SIN-MÓDULO' : (deflex > hVent ? 'VIOLA' : 'CUMPLE'),
-    detalle: `deflexión ${num(deflex, 3)} mm vs venteo ${num(hVent, 3)} mm = ${num(ratio, 1)}× — `
-      + (deflex > hVent
-        ? `FLASH GARANTIZADO: "The mold design must be improved" §12.1.2. Y la rebaba DESGASTA el plano de partición hasta pedir resuperficiado §8.1.2`
-        : `las mitades cierran más fino que el venteo ✓`),
+    id: 'estr-deflexion-vs-venteo', subsistema: S, cita: '§12.1.2 · cap 8 · regla de Hefestos',
+    criterio: `la placa soporte se dobla ≤ ${RH.defecto * 100} % del venteo (tope duro ${RH.tope * 100} %, ${RH.rotulo}); si pasa del venteo, flash garantizado (§12.1.2)`,
+    medido: deflex, limite: J ? J.defectoMm : ref, unidad: 'mm',
+    estado: !J ? 'SIN-MÓDULO' : J.estado,
+    detalle: !J ? 'sin deflexión o sin venteo'
+      : `${J.texto} · venteo de la E7 ${num(hVent, 3)} mm, referencia ${num(ref, 3)} mm (la más estricta con la práctica 0.02 de la partición)`
+        + (J.rebaba ? ` — FLASH GARANTIZADO: "The mold design must be improved" §12.1.2. Y la rebaba DESGASTA el plano de partición hasta pedir resuperficiado §8.1.2` : ''),
   });
 
-  // ── 2) El criterio de flash del dimensionador coincide con el contrato ──
+  // ── 2) El veredicto del dimensionador coincide con el contrato (UNA verdad) ──
+  // Coinciden si el dimensionador usó la MISMA referencia de venteo y su juicio de Hefestos da
+  // el mismo estado que el del contrato. Si divergen, uno de los dos miente.
+  const spJ = sp.hefestos;
+  const coincide = !!J && !!spJ && Math.abs(sp.ventGapMm - ref) < 1e-6 && spJ.estado === J.estado && sp.flashOk === (deflex <= ref);
   C.push({
-    id: 'estr-flash-coherente', subsistema: S, cita: '§12.1.2',
-    criterio: 'el veredicto de flash del dimensionador de placas debe coincidir con la comparación deflexión↔venteo',
-    estado: sp.flashOk === (deflex <= hVent) ? 'CUMPLE' : 'VIOLA',
-    detalle: `platesizing dice flashOk=${sp.flashOk} (su propio gap ${num(sp.ventGapMm, 3)} mm) y el contrato mide ${num(deflex, 3)} vs ${num(hVent, 3)} mm`
-      + (sp.flashOk === (deflex <= hVent) ? ' — coinciden ✓' : ' — ⚠ DOS VERDADES: uno de los dos miente (el patrón que ya nos mordió 4 veces)'),
+    id: 'estr-flash-coherente', subsistema: S, cita: '§12.1.2 · regla de Hefestos',
+    criterio: 'el veredicto del dimensionador de placas debe coincidir con el del contrato: misma referencia de venteo, mismo juicio',
+    estado: coincide ? 'CUMPLE' : 'VIOLA',
+    detalle: `platesizing: venteo ${num(sp.ventGapMm, 3)} mm · ${spJ ? `${spJ.usoPct} % → ${spJ.estado}` : 'sin juicio de Hefestos'} · flashOk=${sp.flashOk}; contrato: referencia ${num(ref, 3)} mm · ${J ? `${J.usoPct} % → ${J.estado}` : '—'}`
+      + (coincide ? ' — coinciden ✓' : ' — ⚠ DOS VERDADES: uno de los dos miente (el patrón que ya nos mordió 4 veces)'),
   });
 
   // ── 3) Qué gobierna el espesor de la placa — §12.1.3 / §12.2.2 ──
@@ -739,7 +752,7 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 2) ⭐ La COLA INFERIOR: una ΔP muy baja también reprueba — §5.1 ──
-  // El libro no da umbral numérico; el que usamos va DECLARADO como nuestro.
+  // El libro no da umbral numérico; el que usamos es regla de Hefestos, DECLARADA.
   const PISO_DECLARADO = 20;
   C.push({
     id: 'llenado-cola-baja', subsistema: S, cita: '§5.1',
@@ -748,7 +761,7 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
     estado: fill < PISO_DECLARADO ? 'ADVIERTE' : 'CUMPLE',
     detalle: fill < PISO_DECLARADO
       ? `ΔP ${num(fill)} MPa MUY holgada — "indicative of a poor molded part design": revisar si la pared de ${num(pkg.spec.wallMm, 1)} mm está engordada`
-      : `ΔP ${num(fill)} MPa por encima del piso ${PISO_DECLARADO} MPa (umbral DECLARADO nuestro: el libro no lo fija en número)`,
+      : `ΔP ${num(fill)} MPa por encima del piso ${PISO_DECLARADO} MPa (umbral 20: regla de Hefestos — el libro no lo fija en número)`,
   });
 
   // ── 3) La velocidad recomendada CONVERGIÓ — §5.5.1 ──

@@ -1,0 +1,1398 @@
+{
+ "orden": "ordenes/2026-09-22-las-reglas-de-hefestos.md",
+ "base": "2438d60",
+ "fecha": "2026-09-22",
+ "medido": "node (kernel, mismo camino que verif-pieza hasta E2) para soporte/retornos; la APP real (iangpu forja-dev4 :5195, inspector de 17 puntos) para 2.3/2.4/2.5 y colisiones — ANTES = el código de BASE servido en la misma copia",
+ "reglaDeHefestos": {
+  "flecha": "placa soporte ≤ 70 % del venteo por defecto, tope duro 85 % (ian 2026-09-22, pregunta 3)",
+  "venteoDeReferencia": "min(venteo de la E7, 0.02 de la partición) — lo usan el dimensionador y el contrato"
+ },
+ "soporte": {
+  "carcasa": {
+   "antes": {
+    "base": "246×246",
+    "pilares": 1,
+    "placaMm": 22,
+    "flechaMm": 0.0057,
+    "venteoMm": 0.02,
+    "usoPct": 28.5,
+    "juicio": null,
+    "contrato": [
+     "estr-deflexion-vs-venteo:CUMPLE",
+     "estr-flash-coherente:CUMPLE"
+    ]
+   },
+   "despues": {
+    "base": "246×246",
+    "pilares": 1,
+    "placaMm": 22,
+    "flechaMm": 0.0057,
+    "venteoMm": 0.02,
+    "usoPct": 28.5,
+    "juicio": "CUMPLE",
+    "contrato": [
+     "estr-deflexion-vs-venteo:CUMPLE",
+     "estr-flash-coherente:CUMPLE"
+    ]
+   },
+   "opcionesDespues": [
+    {
+     "n": 0,
+     "t": 36,
+     "tReq": 32.6,
+     "deltaMm": 0.0104,
+     "ventMm": 0.02,
+     "usoPct": 52,
+     "kg": 10.3,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 52,
+      "deltaMm": 0.0104,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0104 mm = 52 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 1,
+     "t": 22,
+     "tReq": 16.3,
+     "deltaMm": 0.0057,
+     "ventMm": 0.02,
+     "usoPct": 28.5,
+     "kg": 6.7,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 28.5,
+      "deltaMm": 0.0057,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0057 mm = 28.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 2,
+     "t": 22,
+     "tReq": 10.9,
+     "deltaMm": 0.0017,
+     "ventMm": 0.02,
+     "usoPct": 8.5,
+     "kg": 7.2,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 8.5,
+      "deltaMm": 0.0017,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0017 mm = 8.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 3,
+     "t": 22,
+     "tReq": 8.1,
+     "deltaMm": 0.0007,
+     "ventMm": 0.02,
+     "usoPct": 3.5,
+     "kg": 7.6,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 3.5,
+      "deltaMm": 0.0007,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0007 mm = 3.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 4,
+     "t": 22,
+     "tReq": 6.5,
+     "deltaMm": 0.0004,
+     "ventMm": 0.02,
+     "usoPct": 2,
+     "kg": 8,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 2,
+      "deltaMm": 0.0004,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0004 mm = 2 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    }
+   ]
+  },
+  "tapa": {
+   "antes": {
+    "base": "246×196",
+    "pilares": 1,
+    "placaMm": 22,
+    "flechaMm": 0.0035,
+    "venteoMm": 0.02,
+    "usoPct": 17.5,
+    "juicio": null,
+    "contrato": [
+     "estr-deflexion-vs-venteo:CUMPLE",
+     "estr-flash-coherente:CUMPLE"
+    ]
+   },
+   "despues": {
+    "base": "246×196",
+    "pilares": 1,
+    "placaMm": 22,
+    "flechaMm": 0.0035,
+    "venteoMm": 0.02,
+    "usoPct": 17.5,
+    "juicio": "CUMPLE",
+    "contrato": [
+     "estr-deflexion-vs-venteo:CUMPLE",
+     "estr-flash-coherente:CUMPLE"
+    ]
+   },
+   "opcionesDespues": [
+    {
+     "n": 0,
+     "t": 36,
+     "tReq": 27.7,
+     "deltaMm": 0.0064,
+     "ventMm": 0.02,
+     "usoPct": 32,
+     "kg": 8.2,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 32,
+      "deltaMm": 0.0064,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0064 mm = 32 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 1,
+     "t": 22,
+     "tReq": 13.8,
+     "deltaMm": 0.0035,
+     "ventMm": 0.02,
+     "usoPct": 17.5,
+     "kg": 5.4,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 17.5,
+      "deltaMm": 0.0035,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0035 mm = 17.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 2,
+     "t": 22,
+     "tReq": 9.2,
+     "deltaMm": 0.001,
+     "ventMm": 0.02,
+     "usoPct": 5,
+     "kg": 5.9,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 5,
+      "deltaMm": 0.001,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0010 mm = 5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 3,
+     "t": 22,
+     "tReq": 6.9,
+     "deltaMm": 0.0004,
+     "ventMm": 0.02,
+     "usoPct": 2,
+     "kg": 6.3,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 2,
+      "deltaMm": 0.0004,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0004 mm = 2 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 4,
+     "t": 22,
+     "tReq": 5.5,
+     "deltaMm": 0.0002,
+     "ventMm": 0.02,
+     "usoPct": 1,
+     "kg": 6.8,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 1,
+      "deltaMm": 0.0002,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0002 mm = 1 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    }
+   ]
+  },
+  "alta": {
+   "antes": {
+    "base": "396×296",
+    "pilares": 3,
+    "placaMm": 22,
+    "flechaMm": 0.0131,
+    "venteoMm": 0.02,
+    "usoPct": 65.5,
+    "juicio": null,
+    "contrato": [
+     "estr-deflexion-vs-venteo:CUMPLE",
+     "estr-flash-coherente:CUMPLE"
+    ]
+   },
+   "despues": {
+    "base": "396×296",
+    "pilares": 3,
+    "placaMm": 22,
+    "flechaMm": 0.0131,
+    "venteoMm": 0.02,
+    "usoPct": 65.5,
+    "juicio": "CUMPLE",
+    "contrato": [
+     "estr-deflexion-vs-venteo:CUMPLE",
+     "estr-flash-coherente:CUMPLE"
+    ]
+   },
+   "opcionesDespues": [
+    {
+     "n": 0,
+     "t": 96,
+     "tReq": 86.2,
+     "deltaMm": 0.0101,
+     "ventMm": 0.02,
+     "usoPct": 50.5,
+     "kg": 53,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 50.5,
+      "deltaMm": 0.0101,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0101 mm = 50.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 1,
+     "t": 46,
+     "tReq": 43.1,
+     "deltaMm": 0.0115,
+     "ventMm": 0.02,
+     "usoPct": 57.5,
+     "kg": 25.8,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 57.5,
+      "deltaMm": 0.0115,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0115 mm = 57.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 2,
+     "t": 36,
+     "tReq": 28.7,
+     "deltaMm": 0.0071,
+     "ventMm": 0.02,
+     "usoPct": 35.5,
+     "kg": 20.8,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 35.5,
+      "deltaMm": 0.0071,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0071 mm = 35.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 3,
+     "t": 22,
+     "tReq": 21.5,
+     "deltaMm": 0.0131,
+     "ventMm": 0.02,
+     "usoPct": 65.5,
+     "kg": 13.5,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 65.5,
+      "deltaMm": 0.0131,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0131 mm = 65.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 4,
+     "t": 22,
+     "tReq": 17.2,
+     "deltaMm": 0.0067,
+     "ventMm": 0.02,
+     "usoPct": 33.5,
+     "kg": 13.9,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 33.5,
+      "deltaMm": 0.0067,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0067 mm = 33.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    }
+   ]
+  },
+  "ensamble": {
+   "antes": {
+    "base": "246×246",
+    "pilares": 1,
+    "placaMm": 22,
+    "flechaMm": 0.0047,
+    "venteoMm": 0.02,
+    "usoPct": 23.5,
+    "juicio": null,
+    "contrato": [
+     "estr-deflexion-vs-venteo:CUMPLE",
+     "estr-flash-coherente:CUMPLE"
+    ]
+   },
+   "despues": {
+    "base": "246×246",
+    "pilares": 1,
+    "placaMm": 22,
+    "flechaMm": 0.0047,
+    "venteoMm": 0.02,
+    "usoPct": 23.5,
+    "juicio": "CUMPLE",
+    "contrato": [
+     "estr-deflexion-vs-venteo:CUMPLE",
+     "estr-flash-coherente:CUMPLE"
+    ]
+   },
+   "opcionesDespues": [
+    {
+     "n": 0,
+     "t": 36,
+     "tReq": 30.6,
+     "deltaMm": 0.0086,
+     "ventMm": 0.02,
+     "usoPct": 43,
+     "kg": 10.3,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 43,
+      "deltaMm": 0.0086,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0086 mm = 43 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 1,
+     "t": 22,
+     "tReq": 15.3,
+     "deltaMm": 0.0047,
+     "ventMm": 0.02,
+     "usoPct": 23.5,
+     "kg": 6.7,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 23.5,
+      "deltaMm": 0.0047,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0047 mm = 23.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 2,
+     "t": 22,
+     "tReq": 10.2,
+     "deltaMm": 0.0014,
+     "ventMm": 0.02,
+     "usoPct": 7,
+     "kg": 7.2,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 7,
+      "deltaMm": 0.0014,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0014 mm = 7 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 3,
+     "t": 22,
+     "tReq": 7.7,
+     "deltaMm": 0.0006,
+     "ventMm": 0.02,
+     "usoPct": 3,
+     "kg": 7.6,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 3,
+      "deltaMm": 0.0006,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0006 mm = 3 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    },
+    {
+     "n": 4,
+     "t": 22,
+     "tReq": 6.1,
+     "deltaMm": 0.0003,
+     "ventMm": 0.02,
+     "usoPct": 1.5,
+     "kg": 8,
+     "flashOk": true,
+     "hefestos": {
+      "usoPct": 1.5,
+      "deltaMm": 0.0003,
+      "venteoMm": 0.02,
+      "defectoMm": 0.014,
+      "topeMm": 0.017,
+      "estado": "CUMPLE",
+      "rebaba": false,
+      "texto": "se dobla 0.0003 mm = 1.5 % del venteo 0.020 mm (regla de Hefestos: ≤ 70 % por defecto, tope 85 %) → con margen ✓"
+     }
+    }
+   ]
+  }
+ },
+ "caso96": {
+  "base": "396×296",
+  "cargaTon": 150.3,
+  "antes": {
+   "pilares": 4,
+   "placaMm": 22,
+   "deltaMm": 0.0191,
+   "usoPct": 95.5,
+   "aceroKg": 13.9,
+   "juicio": "VIOLA"
+  },
+  "despues": {
+   "pilares": 4,
+   "placaMm": 27,
+   "deltaMm": 0.0103,
+   "usoPct": 51.5,
+   "aceroKg": 16.7,
+   "juicio": "CUMPLE",
+   "escalon": "defecto"
+  },
+  "opcionesDespues": [
+   {
+    "pilares": 0,
+    "placaMm": 126,
+    "deltaMm": 0.0127,
+    "usoPct": 63.5,
+    "aceroKg": 69.6,
+    "juicio": "CUMPLE"
+   },
+   {
+    "pilares": 1,
+    "placaMm": 66,
+    "deltaMm": 0.0111,
+    "usoPct": 55.5,
+    "aceroKg": 36.9,
+    "juicio": "CUMPLE"
+   },
+   {
+    "pilares": 2,
+    "placaMm": 46,
+    "deltaMm": 0.0097,
+    "usoPct": 48.5,
+    "aceroKg": 26.3,
+    "juicio": "CUMPLE"
+   },
+   {
+    "pilares": 3,
+    "placaMm": 36,
+    "deltaMm": 0.0085,
+    "usoPct": 42.5,
+    "aceroKg": 21.2,
+    "juicio": "CUMPLE"
+   },
+   {
+    "pilares": 4,
+    "placaMm": 27,
+    "deltaMm": 0.0103,
+    "usoPct": 51.5,
+    "aceroKg": 16.7,
+    "juicio": "CUMPLE"
+   }
+  ]
+ },
+ "retornos": {
+  "carcasa": {
+   "antes": {
+    "inserto": "132×173",
+    "claroAlInsertoMm": -6,
+    "libre": false,
+    "margenExpulsoraMm": {
+     "x": 65,
+     "y": 20
+    },
+    "crecioYmm": 0,
+    "pts": [
+     [
+      91,
+      46
+     ],
+     [
+      155,
+      46
+     ],
+     [
+      91,
+      200
+     ],
+     [
+      155,
+      200
+     ]
+    ],
+    "notas": [
+     "⚠ NO CABE un return pin ⌀12 fuera del inserto 132×173: la banda libre entre el canto de la expulsora y el canto del inserto mide -8.0 mm en X y 16.5 en Y, y un ⌀12 pide 36 (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀5.5. Se quedan en el inset nominal 26 mm y CRUZAN el inserto: crecer la expulsora, achicar la orilla del inserto (§4.2.2) o bajar el ⌀."
+    ]
+   },
+   "despues": {
+    "inserto": "132×173",
+    "claroAlInsertoMm": 12,
+    "libre": true,
+    "margenExpulsoraMm": {
+     "x": 65,
+     "y": 0
+    },
+    "crecioYmm": 40,
+    "pts": [
+     [
+      91,
+      18.5
+     ],
+     [
+      155,
+      18.5
+     ],
+     [
+      91,
+      227.5
+     ],
+     [
+      155,
+      227.5
+     ]
+    ],
+    "notas": [
+     "la placa expulsora CRECE en Y para que los retornos ⌀12 libren el inserto 132×173: margen 20 → 0 mm por lado (placa 116×206 → 116×246 mm) — decisión de ian 2026-09-22",
+     "retornos movidos en Y: inset 26 → 18.5 mm (el inserto 132×173 llegaba hasta y 37)"
+    ]
+   }
+  },
+  "tapa": {
+   "antes": {
+    "inserto": "145.1×104.1",
+    "claroAlInsertoMm": -6,
+    "libre": false,
+    "margenExpulsoraMm": {
+     "x": 65,
+     "y": 20
+    },
+    "crecioYmm": 0,
+    "pts": [
+     [
+      91,
+      46
+     ],
+     [
+      155,
+      46
+     ],
+     [
+      91,
+      150
+     ],
+     [
+      155,
+      150
+     ]
+    ],
+    "notas": [
+     "⚠ NO CABE un return pin ⌀12 fuera del inserto 145.1×104.1: la banda libre entre el canto de la expulsora y el canto del inserto mide -14.5 mm en X y 26.0 en Y, y un ⌀12 pide 36 (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀8.7. Se quedan en el inset nominal 26 mm y CRUZAN el inserto: crecer la expulsora, achicar la orilla del inserto (§4.2.2) o bajar el ⌀."
+    ]
+   },
+   "despues": {
+    "inserto": "145.1×104.1",
+    "claroAlInsertoMm": 12,
+    "libre": true,
+    "margenExpulsoraMm": {
+     "x": 65,
+     "y": 9
+    },
+    "crecioYmm": 22,
+    "pts": [
+     [
+      91,
+      27.94999999999999
+     ],
+     [
+      155,
+      27.94999999999999
+     ],
+     [
+      91,
+      168.05
+     ],
+     [
+      155,
+      168.05
+     ]
+    ],
+    "notas": [
+     "la placa expulsora CRECE en Y para que los retornos ⌀12 libren el inserto 145.1×104.1: margen 20 → 9 mm por lado (placa 116×156 → 116×178 mm) — decisión de ian 2026-09-22",
+     "retornos movidos en Y: inset 26 → 18.9 mm (el inserto 145.1×104.1 llegaba hasta y 46)"
+    ]
+   }
+  },
+  "alta": {
+   "antes": {
+    "inserto": "292×182",
+    "claroAlInsertoMm": 12,
+    "libre": true,
+    "margenExpulsoraMm": {
+     "x": 65,
+     "y": 20
+    },
+    "crecioYmm": 0,
+    "pts": [
+     [
+      91,
+      39
+     ],
+     [
+      305,
+      39
+     ],
+     [
+      91,
+      257
+     ],
+     [
+      305,
+      257
+     ]
+    ],
+    "notas": [
+     "retornos movidos en Y: inset 26 → 19.0 mm (el inserto 292×182 llegaba hasta y 57)"
+    ]
+   },
+   "despues": {
+    "inserto": "292×182",
+    "claroAlInsertoMm": 12,
+    "libre": true,
+    "margenExpulsoraMm": {
+     "x": 65,
+     "y": 20
+    },
+    "crecioYmm": 0,
+    "pts": [
+     [
+      91,
+      39
+     ],
+     [
+      305,
+      39
+     ],
+     [
+      91,
+      257
+     ],
+     [
+      305,
+      257
+     ]
+    ],
+    "notas": [
+     "retornos movidos en Y: inset 26 → 19.0 mm (el inserto 292×182 llegaba hasta y 57)"
+    ]
+   }
+  },
+  "ensamble": {
+   "antes": {
+    "inserto": "142×142",
+    "claroAlInsertoMm": 0,
+    "libre": false,
+    "margenExpulsoraMm": {
+     "x": 65,
+     "y": 20
+    },
+    "crecioYmm": 0,
+    "pts": [
+     [
+      91,
+      46
+     ],
+     [
+      155,
+      46
+     ],
+     [
+      91,
+      200
+     ],
+     [
+      155,
+      200
+     ]
+    ],
+    "notas": [
+     "⚠ NO CABE un return pin ⌀12 fuera del inserto 142×142: la banda libre entre el canto de la expulsora y el canto del inserto mide -13.0 mm en X y 32.0 en Y, y un ⌀12 pide 36 (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀10.7. Se quedan en el inset nominal 26 mm y CRUZAN el inserto: crecer la expulsora, achicar la orilla del inserto (§4.2.2) o bajar el ⌀."
+    ]
+   },
+   "despues": {
+    "inserto": "142×142",
+    "claroAlInsertoMm": 12,
+    "libre": true,
+    "margenExpulsoraMm": {
+     "x": 65,
+     "y": 16
+    },
+    "crecioYmm": 8,
+    "pts": [
+     [
+      91,
+      34
+     ],
+     [
+      155,
+      34
+     ],
+     [
+      91,
+      212
+     ],
+     [
+      155,
+      212
+     ]
+    ],
+    "notas": [
+     "la placa expulsora CRECE en Y para que los retornos ⌀12 libren el inserto 142×142: margen 20 → 16 mm por lado (placa 116×206 → 116×214 mm) — decisión de ian 2026-09-22",
+     "retornos movidos en Y: inset 26 → 18.0 mm (el inserto 142×142 llegaba hasta y 52)"
+    ]
+   }
+  }
+ },
+ "inspector": {
+  "carcasa": {
+   "antes": {
+    "puntos": {
+     "2.3": {
+      "v": "ok",
+      "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea2↔pin-cuerpo-0 4.52 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+     },
+     "2.4": {
+      "v": "falla",
+      "medido": "15000 mm³ · 5.3 mm"
+     },
+     "2.5": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "3.2": {
+      "v": "ok",
+      "medido": "libre 46 mm · la pieza pide 41.3 (H + 8) → la retenedora entra 0 mm en el soporte"
+     }
+    },
+    "colisionesNoAguaAgua": [
+     {
+      "a": "nucleo",
+      "b": "pines-retorno",
+      "mm3": 15000,
+      "pen": 5.3
+     },
+     {
+      "a": "agua-B-linea2",
+      "b": "interlocks",
+      "mm3": 766,
+      "pen": 1.92
+     },
+     {
+      "a": "agua-B-cruce-cerca-1",
+      "b": "interlocks",
+      "mm3": 196,
+      "pen": 2
+     },
+     {
+      "a": "agua-B-cruce-lejos-2",
+      "b": "interlocks",
+      "mm3": 191,
+      "pen": 2
+     }
+    ],
+    "resumen": {
+     "ok": 12,
+     "falla": 2,
+     "mirar": 1
+    }
+   },
+   "despues": {
+    "puntos": {
+     "2.3": {
+      "v": "ok",
+      "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea2↔pin-cuerpo-0 4.52 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+     },
+     "2.4": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "2.5": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "3.2": {
+      "v": "ok",
+      "medido": "libre 46 mm · la pieza pide 41.3 (H + 8) → la retenedora entra 0 mm en el soporte"
+     }
+    },
+    "colisionesNoAguaAgua": [
+     {
+      "a": "agua-B-linea2",
+      "b": "interlocks",
+      "mm3": 766,
+      "pen": 1.92
+     },
+     {
+      "a": "nucleo",
+      "b": "agua-B-cruce-cerca-1",
+      "mm3": 75,
+      "pen": 1.47
+     },
+     {
+      "a": "nucleo",
+      "b": "agua-B-linea2",
+      "mm3": 66,
+      "pen": 1.28
+     }
+    ],
+    "resumen": {
+     "ok": 13,
+     "falla": 1,
+     "mirar": 1
+    }
+   }
+  },
+  "tapa": {
+   "antes": {
+    "puntos": {
+     "2.3": {
+      "v": "falla",
+      "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): agua-B-linea0↔pin-punta-4 0 ; agua-B-linea0↔pin-punta-6 0 ; agua-B-linea2↔pin-punta-5 0.31 ; agua-B-linea2↔pin-punta-7 0.31 · el más cerrado que SÍ pasa: agua-B-linea0↔pin-punta-0 8.31 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+     },
+     "2.4": {
+      "v": "falla",
+      "medido": "3328 mm³ · 2.71 mm"
+     },
+     "2.5": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "3.2": {
+      "v": "ok",
+      "medido": "libre 31 mm · la pieza pide 22.1 (H + 8) → la retenedora entra 0 mm en el soporte"
+     }
+    },
+    "colisionesNoAguaAgua": [
+     {
+      "a": "nucleo",
+      "b": "pines-retorno",
+      "mm3": 3328,
+      "pen": 2.71
+     },
+     {
+      "a": "agua-B-cruce-lejos",
+      "b": "interlocks",
+      "mm3": 492,
+      "pen": 2.34
+     },
+     {
+      "a": "agua-tapon-A-3",
+      "b": "bujes",
+      "mm3": 188,
+      "pen": 2.06
+     },
+     {
+      "a": "agua-A-ext-out",
+      "b": "bujes",
+      "mm3": 53,
+      "pen": 0.61
+     }
+    ],
+    "resumen": {
+     "ok": 12,
+     "falla": 2,
+     "mirar": 1
+    }
+   },
+   "despues": {
+    "puntos": {
+     "2.3": {
+      "v": "falla",
+      "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): agua-B-linea0↔pin-punta-4 0 ; agua-B-linea0↔pin-punta-6 0 ; agua-B-linea2↔pin-punta-5 0.31 ; agua-B-linea2↔pin-punta-7 0.31 · el más cerrado que SÍ pasa: agua-B-linea0↔pin-punta-0 8.31 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+     },
+     "2.4": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "2.5": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "3.2": {
+      "v": "ok",
+      "medido": "libre 31 mm · la pieza pide 22.1 (H + 8) → la retenedora entra 0 mm en el soporte"
+     }
+    },
+    "colisionesNoAguaAgua": [
+     {
+      "a": "agua-B-cruce-lejos",
+      "b": "interlocks",
+      "mm3": 293,
+      "pen": 2.17
+     },
+     {
+      "a": "agua-tapon-A-3",
+      "b": "bujes",
+      "mm3": 188,
+      "pen": 2.06
+     },
+     {
+      "a": "agua-A-ext-out",
+      "b": "bujes",
+      "mm3": 53,
+      "pen": 0.61
+     }
+    ],
+    "resumen": {
+     "ok": 13,
+     "falla": 1,
+     "mirar": 1
+    }
+   }
+  },
+  "alta": {
+   "antes": {
+    "puntos": {
+     "2.3": {
+      "v": "falla",
+      "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): agua-B-linea0↔pin-cuerpo-2 0 ; agua-B-linea1↔pin-cuerpo-6 0 ; agua-B-linea4↔pin-cuerpo-0 0 ; agua-B-linea4↔pin-cuerpo-1 0 ; agua-B-linea4↔pin-cuerpo-3 0 ; agua-B-linea1↔pin-cuerpo-5 1.92 · el más cerrado que SÍ pasa: agua-B-linea1↔pin-cuerpo-7 5.52 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → TOCAN: agua-B-linea0↔pines-retorno 1.5 mm ; agua-B-linea4↔pines-retorno 1.11 mm"
+     },
+     "2.4": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "2.5": {
+      "v": "falla",
+      "medido": "agua-B-linea0↔pines-retorno 1.5 mm ; agua-B-linea4↔pines-retorno 1.11 mm"
+     },
+     "3.2": {
+      "v": "ok",
+      "medido": "libre 46 mm · la pieza pide 43.5 (H + 8) → la retenedora entra 0 mm en el soporte"
+     }
+    },
+    "colisionesNoAguaAgua": [
+     {
+      "a": "agua-B-cruce-lejos-2",
+      "b": "interlocks",
+      "mm3": 562,
+      "pen": 2.88
+     },
+     {
+      "a": "agua-B-linea0",
+      "b": "pines-retorno",
+      "mm3": 276,
+      "pen": 1.5
+     },
+     {
+      "a": "agua-B-linea4",
+      "b": "pines-retorno",
+      "mm3": 251,
+      "pen": 1.11
+     },
+     {
+      "a": "agua-B-linea1",
+      "b": "pin-cuerpo-6",
+      "mm3": 130,
+      "pen": 1.8
+     },
+     {
+      "a": "agua-B-linea0",
+      "b": "pin-cuerpo-2",
+      "mm3": 23,
+      "pen": 0.75
+     }
+    ],
+    "resumen": {
+     "ok": 8,
+     "falla": 6,
+     "mirar": 1
+    }
+   },
+   "despues": {
+    "puntos": {
+     "2.3": {
+      "v": "falla",
+      "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): agua-B-linea0↔pin-cuerpo-2 0 ; agua-B-linea1↔pin-cuerpo-6 0 ; agua-B-linea4↔pin-cuerpo-0 0 ; agua-B-linea4↔pin-cuerpo-1 0 ; agua-B-linea4↔pin-cuerpo-3 0 ; agua-B-linea1↔pin-cuerpo-5 1.92 · el más cerrado que SÍ pasa: agua-B-linea1↔pin-cuerpo-7 5.52 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → TOCAN: agua-B-linea0↔pines-retorno 1.5 mm ; agua-B-linea4↔pines-retorno 1.11 mm"
+     },
+     "2.4": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "2.5": {
+      "v": "falla",
+      "medido": "agua-B-linea0↔pines-retorno 1.5 mm ; agua-B-linea4↔pines-retorno 1.11 mm"
+     },
+     "3.2": {
+      "v": "ok",
+      "medido": "libre 46 mm · la pieza pide 43.5 (H + 8) → la retenedora entra 0 mm en el soporte"
+     }
+    },
+    "colisionesNoAguaAgua": [
+     {
+      "a": "agua-B-cruce-lejos-2",
+      "b": "interlocks",
+      "mm3": 562,
+      "pen": 2.88
+     },
+     {
+      "a": "agua-B-linea0",
+      "b": "pines-retorno",
+      "mm3": 276,
+      "pen": 1.5
+     },
+     {
+      "a": "agua-B-linea4",
+      "b": "pines-retorno",
+      "mm3": 251,
+      "pen": 1.11
+     },
+     {
+      "a": "agua-B-linea1",
+      "b": "pin-cuerpo-6",
+      "mm3": 130,
+      "pen": 1.8
+     },
+     {
+      "a": "agua-B-linea0",
+      "b": "pin-cuerpo-2",
+      "mm3": 23,
+      "pen": 0.75
+     }
+    ],
+    "resumen": {
+     "ok": 8,
+     "falla": 6,
+     "mirar": 1
+    }
+   }
+  },
+  "ensamble": {
+   "antes": {
+    "puntos": {
+     "2.3": {
+      "v": "ok",
+      "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea1↔pin-punta-0 8.71 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+     },
+     "2.4": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "2.5": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "3.2": {
+      "v": "ok",
+      "medido": "libre 46 mm · la pieza pide 39.2 (H + 8) → la retenedora entra 0 mm en el soporte"
+     }
+    },
+    "colisionesNoAguaAgua": [
+     {
+      "a": "agua-B-linea1",
+      "b": "interlocks",
+      "mm3": 1508,
+      "pen": 2.04
+     },
+     {
+      "a": "agua-B-cruce-lejos",
+      "b": "interlocks",
+      "mm3": 310,
+      "pen": 2.5
+     },
+     {
+      "a": "agua-B-cruce-cerca",
+      "b": "interlocks",
+      "mm3": 306,
+      "pen": 2.5
+     },
+     {
+      "a": "cavidad",
+      "b": "agua-A-norte",
+      "mm3": 39,
+      "pen": 1.51
+     },
+     {
+      "a": "cavidad",
+      "b": "agua-A-este",
+      "mm3": 39,
+      "pen": 1.21
+     }
+    ],
+    "resumen": {
+     "ok": 13,
+     "falla": 1,
+     "mirar": 1
+    }
+   },
+   "despues": {
+    "puntos": {
+     "2.3": {
+      "v": "ok",
+      "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea1↔pin-punta-0 8.71 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+     },
+     "2.4": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "2.5": {
+      "v": "ok",
+      "medido": "sin contacto"
+     },
+     "3.2": {
+      "v": "ok",
+      "medido": "libre 46 mm · la pieza pide 39.2 (H + 8) → la retenedora entra 0 mm en el soporte"
+     }
+    },
+    "colisionesNoAguaAgua": [
+     {
+      "a": "agua-B-linea1",
+      "b": "interlocks",
+      "mm3": 1508,
+      "pen": 2.04
+     },
+     {
+      "a": "agua-B-cruce-lejos",
+      "b": "interlocks",
+      "mm3": 310,
+      "pen": 2.5
+     },
+     {
+      "a": "agua-B-cruce-cerca",
+      "b": "interlocks",
+      "mm3": 306,
+      "pen": 2.5
+     },
+     {
+      "a": "cavidad",
+      "b": "agua-A-norte",
+      "mm3": 39,
+      "pen": 1.51
+     },
+     {
+      "a": "cavidad",
+      "b": "agua-A-este",
+      "mm3": 39,
+      "pen": 1.21
+     }
+    ],
+    "resumen": {
+     "ok": 13,
+     "falla": 1,
+     "mirar": 1
+    }
+   }
+  }
+ },
+ "cubo": {
+  "ciclo": {
+   "resultado": {
+    "pass": true,
+    "pasan": 266,
+    "fallan": 0
+   },
+   "e8bDespues": "✔ E8b · EL JUEZ DEL AGUA: mide las 8 categorías (caras · inserto · pines · retornos · KO · tornillos · colada · pieza) y LISTA todos los rojos — 175 pares · placa 5/5 · inserto 3/3 · pin 0/21 · retorno 0/4 · ko 0/0 · tornillo 0/0 · colada 1/1 · pieza 2/2 · caras de placa VERDE (el −1.14 mm murió) · 25 rojos de pin/retorno LISTADOS para A-239 (peor -7.24 mm)",
+   "e8bAntes": "✔ E8b · EL JUEZ DEL AGUA: mide las 8 categorías (caras · inserto · pines · retornos · KO · tornillos · colada · pieza) y LISTA todos los rojos — 175 pares · placa 5/5 · inserto 3/3 · pin 0/21 · retorno 0/4 · ko 0/0 · tornillo 0/0 · colada 1/1 · pieza 2/2 · caras de placa VERDE (el −1.14 mm murió) · 25 rojos de pin/retorno LISTADOS para A-239 (peor -7.24 mm)"
+  }
+ },
+ "aguaExactaCarcasa": {
+  "que": "intersección EXACTA del kernel (common) de cada segmento del agua B con el inserto de núcleo, antes y después de barrenarInsertos — el residuo que ve el estudio de contacto (malla) no es acero",
+  "pieza": "1594C Box",
+  "ms": 9258,
+  "cruces": [
+   {
+    "id": "B-cruce-lejos-0",
+    "y": 226,
+    "x": [
+     13.9,
+     72.2
+    ]
+   },
+   {
+    "id": "B-cruce-cerca-1",
+    "y": 43,
+    "x": [
+     72.2,
+     123
+    ]
+   },
+   {
+    "id": "B-cruce-lejos-2",
+    "y": 203,
+    "x": [
+     123,
+     173.8
+    ]
+   },
+   {
+    "id": "B-cruce-cerca-3",
+    "y": 20,
+    "x": [
+     173.8,
+     232.1
+    ]
+   }
+  ],
+  "recortes": [
+   "lado B: 2 cruce(s) se CORRIERON en Y para librar retornos/pines/KO/tornillos con ½⌀ de acero (§9.2.7): cerca-1 y 20 → 43 · lejos-2 y 226 → 203 mm"
+  ],
+  "comunConNucleo": {
+   "antes": {
+    "B-linea0": 0,
+    "B-linea1": 5478.77,
+    "B-linea2": 5478.77,
+    "B-linea3": 5478.77,
+    "B-linea4": 0,
+    "B-cruce-lejos-0": 0,
+    "B-cruce-cerca-1": 1608.8,
+    "B-cruce-lejos-2": 1608.8,
+    "B-cruce-cerca-3": 0
+   },
+   "despues": {
+    "B-linea0": 0,
+    "B-linea1": 0,
+    "B-linea2": 0,
+    "B-linea3": 0,
+    "B-linea4": 0,
+    "B-cruce-lejos-0": 0,
+    "B-cruce-cerca-1": 0,
+    "B-cruce-lejos-2": 0,
+    "B-cruce-cerca-3": 0
+   }
+  },
+  "quitadoCoreMm3": 22680
+ },
+ "carcasaPrimeraCorrida": {
+  "que": "la 1a corrida DESPUÉS (sin mover el cruce): 2.5 falla — agua-B-cruce ↔ pines-retorno 2.65 mm; de ahí salió que el cruce también se corre",
+  "puntos": {
+   "2.3": {
+    "v": "ok",
+    "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea2↔pin-cuerpo-0 4.52 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+   },
+   "2.4": {
+    "v": "ok",
+    "medido": "sin contacto"
+   },
+   "2.5": {
+    "v": "ok",
+    "medido": "sin contacto"
+   },
+   "3.2": {
+    "v": "ok",
+    "medido": "libre 46 mm · la pieza pide 41.3 (H + 8) → la retenedora entra 0 mm en el soporte"
+   }
+  },
+  "colisionesNoAguaAgua": [
+   {
+    "a": "agua-B-linea2",
+    "b": "interlocks",
+    "mm3": 766,
+    "pen": 1.92
+   }
+  ],
+  "resumen": {
+   "ok": 13,
+   "falla": 1,
+   "mirar": 1
+  }
+ }
+}

@@ -7300,7 +7300,7 @@ export default function ForgeBRepStudio() {
                   // las carreras salen de la ALTURA de la pieza del ciclo, por las MISMAS funciones
                   // que usan el estudio y el selector de máquina: apertura = `carreraDeApertura`
                   // (§6.3.2: 2.5·H de pieza + el bebedero que sale con ella) y expulsión =
-                  // `carreraDeExpulsionMm` (§4.3.2: E = profundidad de la pieza, +8 nuestro para
+                  // `carreraDeExpulsionMm` (§4.3.2: E = profundidad de la pieza, +8 regla de Hefestos para
                   // LIBRAR el macho). Aquí estaban las dos tecleadas a mano — y la apertura sin el
                   // bebedero abría 83 mm cuando la carcasa necesitaba 152 (punto 3.1, 4/4 en rojo).
                   openMm={moldOpenStrokeMm || (ciclo?.e5datums

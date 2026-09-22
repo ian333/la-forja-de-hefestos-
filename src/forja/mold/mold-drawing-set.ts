@@ -169,26 +169,87 @@ export interface ReturnPinLayout {
  * de retorno CRUZABAN el inserto de núcleo — 15,000 mm³ · 5.3 mm en la carcasa 1594C Box y
  * 3,328 mm³ · 2.71 mm en la tapa. Un return pin atraviesa el paquete expulsor, el soporte y
  * la placa B para topar en la cara de A (Fig 1.6): jamás puede vivir DENTRO del inserto que
- * forma la pieza. Reglas (nuestras, declaradas — el libro no da estas dos cotas):
+ * forma la pieza. Reglas de Hefestos (declaradas — el libro no da estas dos cotas):
  *   · ≥ 1·⌀ de la superficie del pin al canto del inserto (12 mm con ⌀12)
  *   · ≥ 1.5·⌀ del centro del pin al canto de la placa expulsora (18 mm) — queda acero para la cabeza
  * Se mueve por el eje que cueste menos y SOLO lo necesario; si ningún eje da el claro, se
  * DECLARA (`libre: false` + `notas`) y quien llame avisa: no se encima en silencio.
  */
+/** El rectángulo que ocupan los insertos de núcleo (todas las cavidades) en la base. */
+function insertoEnLaBase(s: MoldAssemblySpec, Dd: number) {
+  const id = insertDims(s), cells = cavityGrid(s, Dd);
+  return {
+    id,
+    x0: Math.min(...cells.map((c) => c.cx)) - id.ifx / 2, x1: Math.max(...cells.map((c) => c.cx)) + id.ifx / 2,
+    y0: Math.min(...cells.map((c) => c.cy)) - id.ify / 2, y1: Math.max(...cells.map((c) => c.cy)) + id.ify / 2,
+  };
+}
+
+/** Margen MÍNIMO de la placa expulsora al canto de la base en Y: 0 = a paño con la pila (el housing
+ *  en U está ABIERTO por esos dos costados, Fig 1.4 — no hay riel contra el que chocar). Nunca sale
+ *  de la pila. Regla de Hefestos: el libro no da el número; la razón es que la placa no sobresalga. */
+export const EXPULSORA_MARGEN_Y_MIN_MM = 0;
+
+export interface MargenesDeLaExpulsora {
+  /** margen por lado, del canto de la base al canto de la placa expulsora (mm) */
+  mxMm: number; myMm: number;
+  /** cuánto CRECIÓ la placa en Y (total, los dos lados) respecto al nominal */
+  crecioYmm: number;
+  notas: string[];
+}
+/**
+ * LA PLACA EXPULSORA CRECE PARA QUE QUEPAN LOS RETORNOS — decisión de ian (2026-09-22, pregunta 6
+ * del ACTA R93: «sí» a «crece la expulsora»).
+ * -------------------------------------------------------------------------------------------------
+ * MEDIDO (orden LOS INSERTOS SE BARRENAN, punto 2.4 del inspector): en la carcasa 1594C Box y la tapa
+ * 1594C Lid el return pin ⌀12 no cabe entre el canto de la expulsora y el del inserto — banda 16.5 y
+ * 26 mm en Y, un ⌀12 pide 36 (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Se quedaban CRUZANDO el
+ * inserto de núcleo (15,000 mm³ · 5.3 mm y 3,328 mm³ · 2.71 mm).
+ * EN X NO SE PUEDE CRECER: la expulsora corre ENTRE los rieles del housing (Fig 1.4; 65 mm por lado
+ * con rieles de 50) y el inserto ya es más ancho que la placa (banda −8 / −14.5 mm). EN Y SÍ: el
+ * housing en U está abierto por esos costados. Así que el margen en Y baja SOLO lo necesario para
+ * que el retorno libre el inserto con su claro; en la base donde ya cabía (1599HBK) nada cambia.
+ * Si ni a paño con la pila cabe, el margen se queda en el mínimo y `returnPinLayout` lo DICE.
+ */
+export function expulsoraMargenes(s: MoldAssemblySpec, D?: number): MargenesDeLaExpulsora {
+  const Dd = D ?? plateDepth(s);
+  const mx = EXPULSORA_MARGEN_X_MM, my0 = EXPULSORA_MARGEN_Y_MM;
+  const d = RETURN_PIN_DIA_MM, r = d / 2;
+  const pide = 1.5 * d + r + d;               // centro a la expulsora (1.5·⌀) + r + claro al inserto (1·⌀) = 3·⌀
+  const ins = insertoEnLaBase(s, Dd);
+  // ¿ya cabe con los márgenes nominales? (mismo criterio que `returnPinLayout`: por X o por Y)
+  const cEje = r + d, minInset = 1.5 * d;
+  const clearX = Math.min(ins.x0 - cEje - mx, (s.widthMm - mx) - (ins.x1 + cEje));
+  const clearY = Math.min(ins.y0 - cEje - my0, (Dd - my0) - (ins.y1 + cEje));
+  const notas: string[] = [];
+  if (clearX >= minInset || clearY >= minInset) return { mxMm: mx, myMm: my0, crecioYmm: 0, notas };
+  // la banda de los DOS lados en Y manda el peor; margen = banda − lo que pide el pin, a mm entero hacia abajo
+  const bandaY = Math.min(ins.y0, Dd - ins.y1);
+  const myNecesario = Math.floor(bandaY - pide);
+  const my = Math.max(EXPULSORA_MARGEN_Y_MIN_MM, Math.min(my0, myNecesario));
+  if (my < my0)
+    notas.push(`la placa expulsora CRECE en Y para que los retornos ⌀${d} libren el inserto ${ins.id.ifx}×${ins.id.ify}: margen ${my0} → ${my} mm por lado (placa ${s.widthMm - 2 * mx}×${Dd - 2 * my0} → ${s.widthMm - 2 * mx}×${Dd - 2 * my} mm) — decisión de ian 2026-09-22`);
+  if (myNecesario < EXPULSORA_MARGEN_Y_MIN_MM)
+    notas.push(`⚠ ni a paño con la pila cabe: la banda del canto de la base al inserto mide ${bandaY.toFixed(1)} mm en Y y un ⌀${d} pide ${pide} mm`);
+  return { mxMm: mx, myMm: my, crecioYmm: 2 * (my0 - my), notas };
+}
+
 export function returnPinLayout(s: MoldAssemblySpec, D?: number): ReturnPinLayout {
   const W = s.widthMm, Dd = D ?? plateDepth(s);
-  const mx = EXPULSORA_MARGEN_X_MM, my = EXPULSORA_MARGEN_Y_MM;
+  // los márgenes de la expulsora YA crecidos si hacía falta (`expulsoraMargenes`): la placa, sus
+  // barrenos y los retornos leen el MISMO número.
+  const marg = expulsoraMargenes(s, Dd);
+  const mx = marg.mxMm, my = marg.myMm;
   const d = RETURN_PIN_DIA_MM, r = d / 2;
   const claroInserto = d;                     // ≥ 1·⌀ de acero entre el pin y el inserto
   const minInset = 1.5 * d;                   // ≥ 1.5·⌀ del centro al canto de la expulsora
   const cEje = r + claroInserto;              // del CENTRO del pin al canto del inserto
-  const id = insertDims(s), cells = cavityGrid(s, Dd);
-  const insX0 = Math.min(...cells.map((c) => c.cx)) - id.ifx / 2, insX1 = Math.max(...cells.map((c) => c.cx)) + id.ifx / 2;
-  const insY0 = Math.min(...cells.map((c) => c.cy)) - id.ify / 2, insY1 = Math.max(...cells.map((c) => c.cy)) + id.ify / 2;
+  const ins = insertoEnLaBase(s, Dd), id = ins.id;
+  const insX0 = ins.x0, insX1 = ins.x1, insY0 = ins.y0, insY1 = ins.y1;
   // inset MÁXIMO por eje que deja el pin fuera del inserto (los dos lados; manda el peor)
   const clearX = Math.min(insX0 - cEje - mx, (W - mx) - (insX1 + cEje));
   const clearY = Math.min(insY0 - cEje - my, (Dd - my) - (insY1 + cEje));
-  const notas: string[] = [];
+  const notas: string[] = [...marg.notas];
   let ix = RETURN_PIN_INSET_MM, iy = RETURN_PIN_INSET_MM;
   const fueraNominal = RETURN_PIN_INSET_MM <= clearX || RETURN_PIN_INSET_MM <= clearY;
   let libre = true;
@@ -202,7 +263,7 @@ export function returnPinLayout(s: MoldAssemblySpec, D?: number): ReturnPinLayou
       // que la decisión (crecer la expulsora · achicar la orilla §4.2.2 · bajar el ⌀) sea de quien manda.
       const bandaX = insX0 - mx, bandaY = insY0 - my;
       const banda = Math.max(bandaX, bandaY);
-      notas.push(`⚠ NO CABE un return pin ⌀${d} fuera del inserto ${id.ifx}×${id.ify}: la banda libre entre el canto de la expulsora y el canto del inserto mide ${bandaX.toFixed(1)} mm en X y ${bandaY.toFixed(1)} en Y, y un ⌀${d} pide ${(3 * d).toFixed(0)} (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀${Math.max(0, banda / 3).toFixed(1)}. Se quedan en el inset nominal ${RETURN_PIN_INSET_MM} mm y CRUZAN el inserto: crecer la expulsora, achicar la orilla del inserto (§4.2.2) o bajar el ⌀.`);
+      notas.push(`⚠ NO CABE un return pin ⌀${d} fuera del inserto ${id.ifx}×${id.ify}: la banda libre entre el canto de la expulsora y el canto del inserto mide ${bandaX.toFixed(1)} mm en X y ${bandaY.toFixed(1)} en Y, y un ⌀${d} pide ${(3 * d).toFixed(0)} (1.5·⌀ a la expulsora + r + 1·⌀ al inserto). Con esta banda cabría hasta ⌀${Math.max(0, banda / 3).toFixed(1)}. Se quedan en el inset nominal ${RETURN_PIN_INSET_MM} mm y CRUZAN el inserto${marg.crecioYmm > 0 ? ` (aun con la expulsora crecida ${marg.crecioYmm} mm en Y)` : ''}: base más grande, achicar la orilla del inserto (§4.2.2) o bajar el ⌀.`);
     }
   }
   const px0 = mx + ix, px1 = W - mx - ix, py0 = my + iy, py1 = Dd - my - iy;
@@ -837,11 +898,17 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
   if (allRows.length) pages.push({ name: 'Análisis', svg: analysisSheet(s, allRows) });
 
   // 3) PLANO INDIVIDUAL de cada placa (planta + tabla de barrenos a cota)
+  // La EXPULSORA y la RETENEDORA no miden lo que la base: viven entre los rieles, con los márgenes de
+  // `expulsoraMargenes` (que CRECEN en Y cuando los retornos no caben — ian 2026-09-22). Su lámina se
+  // acota a SU tamaño y sus barrenos a SU esquina; antes salían dibujadas a W×D de la base.
+  const mgE = expulsoraMargenes(s, D);
   for (const p of plateDefs(s)) {
+    const exp = p.role === 'ejector' || p.role === 'ejector-ret';
+    const ox = exp ? mgE.mxMm : 0, oy = exp ? mgE.myMm : 0;
     const spec: PlateSpec = {
       code: p.code, name: p.name, material: p.mat,
-      wmm: s.widthMm, dmm: D, thickMm: p.thick,
-      holes: standardHoles(s, p.role, { lamina: true }),
+      wmm: s.widthMm - 2 * ox, dmm: D - 2 * oy, thickMm: p.thick,
+      holes: standardHoles(s, p.role, { lamina: true }).map((h) => (exp ? { ...h, x: h.x - ox, y: h.y - oy } : h)),
       openings: (p.role === 'A' || p.role === 'B') ? cavityOpenings(s, D) : undefined,
       cooling: (p.role === 'A' || p.role === 'B') ? coolingCircuit(s, D) : undefined,
     };

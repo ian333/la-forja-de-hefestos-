@@ -23,12 +23,26 @@
   console.log('placa comercial:', plate, 'mm');
   checks.snap176 = plate === 176;
 
-  // ── el resolvedor SIN pilares: gobierna deflexión, placa 176, ya NO flash ──
-  const s0 = ps.sizeSupportPlate({ clampTons: 200, spanM: 0.2159, widthM: 0.248 });
+  // ── el resolvedor SIN pilares con el LÍMITE PELÓN del libro (factorVenteo 1): gobierna
+  //    deflexión, placa 176, ya NO flash — reproduce el bezel literal ──
+  const s0 = ps.sizeSupportPlate({ clampTons: 200, spanM: 0.2159, widthM: 0.248, factorVenteo: 1 });
   console.log('SIN pilares:', JSON.stringify({ gob: s0.governs, t: s0.tRequiredMm, placa: s0.plateThkMm, δ: s0.deflectionAtPlateMm, flashOk: s0.flashOk, kg: s0.steelMassKg }));
   checks.s0Deflexion = s0.governs === 'deflexión';
   checks.s0Placa176 = s0.plateThkMm === 176;
   checks.s0NoFlash = s0.flashOk === true;
+
+  // ── REGLA DE HEFESTOS (ian 2026-09-22): por defecto la placa se dimensiona a ≤ 70 % del venteo.
+  //    t ∝ δ^(-1/3) → 169·(1/0.7)^⅓ ≈ 190 → placa de catálogo 196, flecha ≤ 0.014 mm ──
+  const sH = ps.sizeSupportPlate({ clampTons: 200, spanM: 0.2159, widthM: 0.248 });
+  console.log('SIN pilares · Hefestos 70 %:', JSON.stringify({ t: sH.tRequiredMm, placa: sH.plateThkMm, δ: sH.deflectionAtPlateMm, uso: sH.hefestos.usoPct, estado: sH.hefestos.estado }));
+  checks.hefestosT190 = near(sH.tRequiredMm, 169 * Math.cbrt(1 / 0.7), 2);
+  checks.hefestosPlaca196 = sH.plateThkMm === 196;
+  checks.hefestosCumple = sH.hefestos.estado === 'CUMPLE' && sH.deflectionAtPlateMm <= 0.7 * 0.02 + 1e-9;
+  // el juicio en sus tres escalones (una sola función para dimensionador, contrato y estación 11)
+  checks.juicioEscalones = ps.juicioFlecha(0.014, 0.02).estado === 'CUMPLE' && ps.juicioFlecha(0.0191, 0.02).estado === 'VIOLA'
+    && ps.juicioFlecha(0.016, 0.02).estado === 'ADVIERTE' && ps.juicioFlecha(0.0171, 0.02).estado === 'VIOLA' && ps.juicioFlecha(0.021, 0.02).rebaba === true;
+  // la referencia de venteo: la más estricta entre la práctica 0.02 y el venteo de la E7
+  checks.venteoReferencia = ps.venteoDeReferenciaMm(0.0503) === 0.02 && ps.venteoDeReferenciaMm(0.015) === 0.015 && ps.venteoDeReferenciaMm(undefined) === 0.02;
 
   // ── UN pilar parte el claro a la mitad → como δ∝claro³, placa MUCHO más fina ──
   const s1 = ps.sizeSupportPlate({ clampTons: 200, spanM: 0.2159, widthM: 0.248, nPillars: 1 });
@@ -43,6 +57,7 @@
   checks.optValido = opt.best.flashOk && opt.best.plateThkMm !== null;
   checks.optMinimo = opt.best.steelMassKg === Math.min(...opt.options.filter((o) => o.flashOk && o.plateThkMm).map((o) => o.steelMassKg));
   checks.optMejorQue0 = opt.best.steelMassKg < s0.steelMassKg;   // el óptimo ahorra material vs placa gruesa
+  checks.optHefestos = opt.escalon === 'defecto' && opt.best.hefestos.estado === 'CUMPLE';
 
   // ── placa de CAVIDAD: pieza PLANA (tapa 5 mm) con línea 6.35 → gobierna el enfriamiento ──
   // t = prof 5 + 3·6.35 = 24.05 → placa comercial 27

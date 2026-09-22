@@ -8,6 +8,7 @@
  *
  *   1. DEFLEXIÓN (§12.1.2): bajo la presión de inyección la placa flexiona; si se
  *      abre más que el venteo (~0.02 mm) hay FLASH → t ≥ (F·L³·12 / (48·E·W·δ_máx))^⅓
+ *      con δ_máx = 70 % del venteo por defecto (REGLA DE HEFESTOS, ver `juicioFlecha`)
  *   2. ALOJAR EL ENFRIAMIENTO (§9.2.5): la línea de agua va a ~2·Ø de la superficie
  *      y necesita ≥1·Ø de acero atrás → t ≥ prof_línea + 1.5·Ø
  *   3. ALOJAR LOS EXPULSORES: carrera del pin + placa retenedora (opcional — y HOY
@@ -18,7 +19,8 @@
  * y como δ ∝ claro³, poner PILARES de soporte (que dividen el claro) adelgaza la
  * placa dramáticamente → menos material. El resolvedor busca la combinación
  * placa-comercial + nº de pilares de MÍNIMO acero. Reproduce el bezel del libro
- * (120 mm → 0.056 mm FLASH; sin pilares exige ~169 mm → placa 176). PURO.
+ * (120 mm → 0.056 mm FLASH; sin pilares exige ~169 mm → placa 176, con `factorVenteo: 1`;
+ * con el 70 % de Hefestos pide ~190 → placa 196). PURO.
  */
 
 import { minPlateThickness, plateBending, E_STEEL, TON_N } from './structural';
@@ -62,7 +64,7 @@ export function snapToCommercialPlate(tMm: number): number | null {
 
 /** Placa EXPULSORA (la que empuja) como fracción de la caja — proporción de catálogo
  *  Meusburger/HASCO heredada del set de planos; NO sale del libro (§4.3.2 dice que la
- *  asigna el proveedor de la base, sin dar la partición interna). Declarada NUESTRA. */
+ *  asigna el proveedor de la base, sin dar la partición interna). Regla de Hefestos. */
 export const EJECTOR_PLATE_FRAC = 0.28;
 export const EJECTOR_PLATE_MIN_MM = 15;
 /** Placa RETENEDORA (la que sujeta las cabezas de los pines) — misma nota. */
@@ -71,10 +73,10 @@ export const EJECTOR_RETAINER_MIN_MM = 12;
 /** DESCANSO entre la sujeción inferior y la expulsora: donde viven los stop pins
  *  (§11, Fig 11.1: "ejector plate, ejector retainer plate, return pins, ejector pins,
  *  STOP PINS … housed between the rear clamp plate, support plate, and rails"). El
- *  libro no da el número: 4 mm es NUESTRO, heredado de `plateStackZ`. */
+ *  libro no da el número: 4 mm es regla de Hefestos, heredado de `plateStackZ`. */
 export const EJECTOR_REST_MM = 4;
 /** HOLGURA al final de la carrera: acero que debe quedar entre la cara de la retenedora
- *  y la de soporte con los expulsores AFUERA. Regla NUESTRA, sin cita — razón: que el
+ *  y la de soporte con los expulsores AFUERA. Regla de Hefestos, sin cita — razón: que el
  *  tope del ciclo sean los stop pins / el vástago de la máquina y NUNCA la placa de
  *  soporte (§11.3.8 advierte del daño cuando la máquina fuerza el paquete más allá de
  *  su recorrido libre). MEDIDO el costo de estos 2 mm: con 1 mm la tapa 1594C caería de
@@ -83,7 +85,7 @@ export const EJECTOR_REST_MM = 4;
  *  caja — el arreglo toca solo los moldes que estaban rotos. Queda para que ian lo decida. */
 export const EJECTOR_CLEARANCE_MM = 2;
 /** MARGEN sobre la profundidad de la pieza para la carrera de expulsión. §4.3.2 pone
- *  E = profundidad de la pieza ("often"); estos 8 mm de más son NUESTROS —razón: que la
+ *  E = profundidad de la pieza ("often"); estos 8 mm de más son regla de Hefestos —razón: que la
  *  pieza no solo se despegue sino que LIBRE el macho y caiga— y ya estaban tecleados en
  *  `ForgeBRepStudio` y en `estacion10Dado`. Aquí quedan en un solo lugar. */
 export const EJECCION_MARGEN_MM = 8;
@@ -100,7 +102,7 @@ export const carreraLibreEnCaja = (housingMm: number): number =>
   +(housingMm - EJECTOR_REST_MM - ejectorPlateMm(housingMm) - ejectorRetainerMm(housingMm)).toFixed(1);
 
 /** CARRERA DE EXPULSIÓN pedida por la pieza (mm) — §4.3.2 ("often … equal to the depth
- *  of the molded part") + `EJECCION_MARGEN_MM` declarado nuestro. */
+ *  of the molded part") + `EJECCION_MARGEN_MM` (regla de Hefestos). */
 export const carreraDeExpulsionMm = (alturaPiezaMm: number): number =>
   +(Math.max(0, alturaPiezaMm || 0) + EJECCION_MARGEN_MM).toFixed(1);
 
@@ -151,12 +153,81 @@ export function sizeEjectorHousing(o: { carreraMm: number; holguraMm?: number })
  *  despejar, y queda el espesor de catálogo (36 = talla Meusburger, ya en la serie). */
 export const CLAMP_PLATE_MM = 36;
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * LA FLECHA DE LA PLACA SOPORTE CONTRA EL VENTEO — REGLA DE HEFESTOS (ian, 2026-09-22)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * Lo que dice el libro (§12.1.2): la placa se juzga contra el ESPESOR DEL VENTEO — si al
+ * inyectar se dobla más que el venteo, las mitades se abren una rendija y sale rebaba.
+ * El libro da el LÍMITE (δ ≤ venteo), pero NO da cuánto margen guardar debajo de él.
+ * Antes el optimizador elegía el acero mínimo con δ ≤ venteo a secas: MEDIDO (orden LA
+ * CARRERA CABE), con una carga de prueba la base 396×296 salía al 96 % del venteo
+ * (0.0191 / 0.020 mm) — pasaba de panzazo, sin margen para el desgaste de la partición
+ * (§8.1.2: la rebaba la va comiendo) ni para una presión de un ciclo malo.
+ *
+ * REGLA DE HEFESTOS (el número no sale de Kazmer — decidido por ian el 2026-09-22,
+ * pregunta 3 del ACTA R93: «default 70 como límite 85, me gusta como regla de Hefestos»):
+ *   · POR DEFECTO la placa se dimensiona para doblarse ≤ 70 % del venteo;
+ *   · TOPE DURO 85 %: entre 70 y 85 el molde ADVIERTE (pasa, pero sin el margen de
+ *     siempre); arriba de 85 VIOLA aunque el libro todavía lo dejaría pasar.
+ * Razón del número: δ ∝ 1/t³, así que el 70 % cuesta solo (1/0.7)^⅓ = 1.126× de espesor
+ * requerido — casi siempre se absorbe en el mismo escalón de catálogo — y deja 30 % de la
+ * rendija para desgaste y sobrepresión. UNA constante, UNA función de juicio
+ * (`juicioFlecha`): la usan el dimensionador, el optimizador, el contrato estructural
+ * (mold-contratos) y la fila de la estación 11. Nadie más teclea 0.70 ni 0.85.
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+export const REGLA_DE_HEFESTOS_FLECHA = {
+  /** fracción del venteo a la que se DIMENSIONA la placa (por defecto) */
+  defecto: 0.70,
+  /** tope duro: arriba de esto el molde VIOLA */
+  tope: 0.85,
+  rotulo: 'regla de Hefestos',
+} as const;
+
+/** VENTEO DE LA PARTICIÓN — práctica del libro (cap 8; `ventDesign`: «0.02 partición»). El
+ *  venteo de la E7 (`ventDesign.hSpecMm`) puede salir MÁS HONDO que esto cuando el aire lo
+ *  pide (piezas grandes: medido 0.046–0.063 mm en las 4 piezas del plan) — pero la
+ *  partición entera no se ventea a esa hondura, solo las ranuras. La placa se juzga contra
+ *  la MÁS ESTRICTA de las dos, y ESA misma cifra la usan el dimensionador y el contrato. */
+export const VENTEO_PARTICION_MM = 0.02;
+/** La referencia de venteo contra la que se juzga la flecha (mm): la más estricta entre la
+ *  práctica de la partición (0.02) y el venteo que especificó la E7. UNA verdad para el
+ *  dimensionador (moldmachine) y para el contrato estructural. */
+export function venteoDeReferenciaMm(hVentE7Mm?: number | null): number {
+  return Number.isFinite(hVentE7Mm) && (hVentE7Mm as number) > 0 ? Math.min(hVentE7Mm as number, VENTEO_PARTICION_MM) : VENTEO_PARTICION_MM;
+}
+
+export interface JuicioFlecha {
+  /** flecha / venteo, en % */
+  usoPct: number;
+  deltaMm: number; venteoMm: number;
+  /** 70 % y 85 % del venteo, en mm */
+  defectoMm: number; topeMm: number;
+  /** CUMPLE ≤ 70 % · ADVIERTE 70–85 % · VIOLA > 85 % */
+  estado: 'CUMPLE' | 'ADVIERTE' | 'VIOLA';
+  /** δ > venteo: la rendija ya es más ancha que el venteo (rebaba segura, §12.1.2) */
+  rebaba: boolean;
+  texto: string;
+}
+/** EL JUICIO de la flecha contra el venteo — regla de Hefestos (ver arriba). Única fuente. */
+export function juicioFlecha(deltaMm: number, venteoMm: number): JuicioFlecha {
+  const R = REGLA_DE_HEFESTOS_FLECHA;
+  const uso = venteoMm > 0 ? deltaMm / venteoMm : Infinity;
+  const estado: JuicioFlecha['estado'] = uso <= R.defecto + 1e-9 ? 'CUMPLE' : uso <= R.tope + 1e-9 ? 'ADVIERTE' : 'VIOLA';
+  const usoPct = +(uso * 100).toFixed(1);
+  const rebaba = deltaMm > venteoMm;
+  const texto = `se dobla ${deltaMm.toFixed(4)} mm = ${usoPct} % del venteo ${venteoMm.toFixed(3)} mm (${R.rotulo}: ≤ ${R.defecto * 100} % por defecto, tope ${R.tope * 100} %) → `
+    + (estado === 'CUMPLE' ? 'con margen ✓'
+      : estado === 'ADVIERTE' ? 'pasa SIN el margen de siempre (entre el defecto y el tope)'
+        : rebaba ? 'REBABA: la rendija es más ancha que el venteo (§12.1.2)' : 'arriba del tope duro: poco margen para desgaste y sobrepresión');
+  return { usoPct, deltaMm, venteoMm, defectoMm: +(R.defecto * venteoMm).toFixed(4), topeMm: +(R.tope * venteoMm).toFixed(4), estado, rebaba, texto };
+}
+
 /** Restricción 1 — espesor mínimo por DEFLEXIÓN (despeja Eq 12.10-12.11). */
 export function thicknessByDeflection(o: {
   clampTons: number; spanM: number; widthM: number; ventGapM?: number; ePa?: number;
 }): number {
   const F = o.clampTons * TON_N;
-  const dMax = o.ventGapM ?? 0.02e-3;               // venteo típico 0.02 mm (§8)
+  const dMax = o.ventGapM ?? VENTEO_PARTICION_MM * 1e-3;   // venteo de la partición 0.02 mm (cap 8)
   return minPlateThickness(F, o.spanM, o.widthM, dMax, o.ePa ?? E_STEEL) * 1000;
 }
 
@@ -195,7 +266,11 @@ export interface PlateSizing {
   tRequiredMm: number; governs: 'deflexión' | 'enfriamiento' | 'expulsión';
   plateThkMm: number | null;                        // placa COMERCIAL elegida
   deflectionAtPlateMm: number;                      // deflexión real con esa placa
-  ventGapMm: number; flashOk: boolean;
+  ventGapMm: number;
+  /** δ ≤ venteo — el LÍMITE del libro (§12.1.2); la rendija no pasa del venteo */
+  flashOk: boolean;
+  /** el juicio con margen — REGLA DE HEFESTOS (≤ 70 % por defecto, tope 85 %) */
+  hefestos: JuicioFlecha;
   nPillars: number;
   plateMassKg: number; pillarMassKg: number; steelMassKg: number;  // placa + pilares = total
   /** §12.1.1: qué método se usó para el esfuerzo admisible (NUNCA los dos a la vez). */
@@ -219,11 +294,17 @@ export function sizeSupportPlate(o: {
   clampTons: number; spanM: number; widthM: number; ventGapM?: number;
   ejectStrokeMm?: number;
   nPillars?: number; pillarDiaMm?: number; pillarHeightMm?: number; ePa?: number;
+  /** fracción del venteo a la que se dimensiona (default: REGLA DE HEFESTOS 0.70; 1 = el límite
+   *  pelón del libro, para reproducir sus ejemplos) */
+  factorVenteo?: number;
 }): PlateSizing {
   const nPillars = o.nPillars ?? 0;
-  const ventGap = o.ventGapM ?? 0.02e-3;
+  const ventGap = o.ventGapM ?? VENTEO_PARTICION_MM * 1e-3;
+  const factor = o.factorVenteo ?? REGLA_DE_HEFESTOS_FLECHA.defecto;
   const spanEff = spanWithPillars(o.spanM, nPillars);
-  const tDefl = thicknessByDeflection({ clampTons: o.clampTons, spanM: spanEff, widthM: o.widthM, ventGapM: ventGap, ePa: o.ePa });
+  // se DESPEJA el espesor para la flecha OBJETIVO (factor·venteo), no para el venteo a secas:
+  // así el acero mínimo que sale ya trae el margen de Hefestos (δ ∝ 1/t³ → ×1.126 de t con 0.70).
+  const tDefl = thicknessByDeflection({ clampTons: o.clampTons, spanM: spanEff, widthM: o.widthM, ventGapM: ventGap * factor, ePa: o.ePa });
   const tEject = o.ejectStrokeMm != null ? thicknessByEjection({ strokeMm: o.ejectStrokeMm }) : 0;
   const tReq = Math.max(tDefl, tEject);
   const governs = tReq === tDefl ? 'deflexión' : 'expulsión';
@@ -235,7 +316,9 @@ export function sizeSupportPlate(o: {
   const H = (plate ?? tReq) / 1000;
   const deflM = plateBending(F, spanEff, o.widthM, H, o.ePa ?? E_STEEL).deflectionM;
   const flashOk = deflM <= ventGap;
+  const hefestos = juicioFlecha(+(deflM * 1000).toFixed(4), +(ventGap * 1000).toFixed(3));
   if (!flashOk) notas.push(`deflexión ${(deflM * 1e3).toFixed(3)} mm > venteo ${(ventGap * 1e3).toFixed(3)} → FLASH: subir placa o pilares`);
+  else if (hefestos.estado !== 'CUMPLE') notas.push(`${hefestos.texto}: subir placa o pilares`);
   const plateMass = (plate ?? tReq) / 1000 * o.spanM * o.widthM * RHO_STEEL;
   const pd = (o.pillarDiaMm ?? 30) / 1000, ph = (o.pillarHeightMm ?? 80) / 1000;
   const pillarMass = nPillars * Math.PI * (pd / 2) ** 2 * ph * RHO_STEEL;
@@ -243,7 +326,7 @@ export function sizeSupportPlate(o: {
   return {
     tDeflectionMm: +tDefl.toFixed(1), tCoolingMm: 0, tEjectionMm: +tEject.toFixed(1),
     tRequiredMm: +tReq.toFixed(1), governs, plateThkMm: plate,
-    deflectionAtPlateMm: +(deflM * 1000).toFixed(4), ventGapMm: +(ventGap * 1000).toFixed(3), flashOk,
+    deflectionAtPlateMm: +(deflM * 1000).toFixed(4), ventGapMm: +(ventGap * 1000).toFixed(3), flashOk, hefestos,
     nPillars, plateMassKg: +plateMass.toFixed(1), pillarMassKg: +pillarMass.toFixed(2),
     steelMassKg: +(plateMass + pillarMass).toFixed(1),
     stressMethod: { metodo: 'deflexión-pura', cita: '§12.1.2 — el criterio es δ ≤ venteo, no σ ≤ σ_limit' },
@@ -305,6 +388,9 @@ export function sizeCorePlate(o: {
 export interface PlateOptimum {
   best: PlateSizing;
   options: PlateSizing[];                            // por nº de pilares
+  /** qué escalón de la regla de Hefestos alcanzó la elegida: 'defecto' (≤ 70 %), 'tope' (≤ 85 %,
+   *  ninguna opción daba el 70) o 'ninguna' (ni el tope: el molde lo DICE en `best.notas`) */
+  escalon: 'defecto' | 'tope' | 'ninguna';
 }
 
 /**
@@ -339,17 +425,29 @@ export function optimizeSupportPlate(o: {
   clampTons: number; spanM: number; widthM: number; ventGapM?: number;
   ejectStrokeMm?: number;
   maxPillars?: number; pillarDiaMm?: number; pillarHeightMm?: number; ePa?: number;
+  factorVenteo?: number;
 }): PlateOptimum {
   const maxP = o.maxPillars ?? 4;
   const options: PlateSizing[] = [];
   for (let n = 0; n <= maxP; n++) options.push(sizeSupportPlate({ ...o, nPillars: n }));
-  // válidas: sin flash y con placa de catálogo
-  const valid = options.filter((s) => s.flashOk && s.plateThkMm != null);
   // §12.1.3 minimizar el TAMAÑO del molde = menos acero total (placa + pilares);
   // a empate, el pilar único central pierde (§12.2.3 antipatrón).
   const antipatron = (s: PlateSizing) => (s.nPillars === 1 ? 1 : 0);
-  const best = (valid.length ? valid : options).sort(
-    (a, b) => a.steelMassKg - b.steelMassKg || antipatron(a) - antipatron(b),
-  )[0];
-  return { best, options };
+  const porAcero = (a: PlateSizing, b: PlateSizing) => a.steelMassKg - b.steelMassKg || antipatron(a) - antipatron(b);
+  // REGLA DE HEFESTOS en escalones: primero el acero mínimo que se dobla ≤ 70 % del venteo; si
+  // ninguna opción de catálogo lo da, el acero mínimo ≤ 85 % (el tope) — y si ni eso, la que MENOS
+  // se dobla, con el aviso escrito. Antes el filtro era `flashOk` (δ ≤ venteo, cero margen).
+  const conCatalogo = options.filter((s) => s.plateThkMm != null);
+  const defecto = conCatalogo.filter((s) => s.hefestos.estado === 'CUMPLE').sort(porAcero);
+  const tope = conCatalogo.filter((s) => s.hefestos.estado !== 'VIOLA').sort(porAcero);
+  let best: PlateSizing, escalon: PlateOptimum['escalon'];
+  if (defecto.length) { best = defecto[0]; escalon = 'defecto'; }
+  else if (tope.length) {
+    best = tope[0]; escalon = 'tope';
+    best.notas.push(`ninguna opción de 0–${maxP} pilares se dobla ≤ ${REGLA_DE_HEFESTOS_FLECHA.defecto * 100} % del venteo con placa de catálogo: se elige la de menos acero dentro del tope ${REGLA_DE_HEFESTOS_FLECHA.tope * 100} % (regla de Hefestos)`);
+  } else {
+    best = [...(conCatalogo.length ? conCatalogo : options)].sort((a, b) => a.deflectionAtPlateMm - b.deflectionAtPlateMm)[0]; escalon = 'ninguna';
+    best.notas.push(`⚠ NINGUNA opción de 0–${maxP} pilares queda dentro del tope ${REGLA_DE_HEFESTOS_FLECHA.tope * 100} % del venteo (regla de Hefestos): la que menos se dobla va al ${best.hefestos.usoPct} % — más pilares, placa a medida o base más rígida`);
+  }
+  return { best, options, escalon };
 }
