@@ -33,7 +33,19 @@ export interface MoldAssemblySpec {
    *  estimador de cascarón `estPartVolumeCc` se pasa ~27 % en la flanera, y de
    *  ese volumen sale la masa del disparo (Eq 9.10) ⇒ la potencia de agua. */
   cavity: { widthMm: number; depthMm: number; shape?: 'round' | 'rect'; lenMm?: number; wallMm?: number; frameMm?: number; ribs?: number; volMm3?: number };
-  cooling: { diaMm: number; plug?: string; insetMm: number };  // líneas de agua
+  /** LÍNEAS DE AGUA. `diaMm`/`plug` NO son una entrada que compita con el motor: son EL ⌀ QUE
+   *  `coolingCircuitDesign` ELIGIÓ (lo escribe `packageToAssemblySpec`) — la fuente única del
+   *  circuito, para que el BOM, el ensamble, la lámina y el 3D digan el MISMO número
+   *  (orden 2026-09-10 EL AGUA DICE DOS COSAS). `tcS`/`runnerVolCc` son lo que el circuito
+   *  necesita saber del DISPARO y que el spec no traía: sin ellos la lámina calculaba su t_c
+   *  con la pared sola (Eq 9.5) mientras el 3D usaba el máximo §9.2.1 con la colada. */
+  cooling: {
+    diaMm: number; plug?: string; insetMm: number;
+    /** t_c que MANDA (§9.2.1: el máximo sobre todas las secciones, colada incluida), s */
+    tcS?: number;
+    /** volumen de la colada fría (cc) — Eq 9.10 la suma al disparo */
+    runnerVolCc?: number;
+  };
   ejectors: {
     type: 'pin' | 'blade' | 'sleeve' | 'stripper'; diaMm: number; count: number;
     /** §11.2.5 Fig 11.11: posiciones POR AGARRE (relativas al centro de la huella,

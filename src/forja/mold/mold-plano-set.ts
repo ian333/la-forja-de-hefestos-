@@ -16,9 +16,11 @@ import type { MoldPackage } from './moldmachine';
 import type { MoldAssemblySpec } from './mold-assembly';
 import {
   moldDrawingSet, plateDefs, plateDepth, standardHoles, holeLegend, cavityGrid, coolingCircuit,
+  coolingCircuitDesign,
   cavityFootprint, moldBoltSizing,
   insertDims,
   type DrawingPage, type AnalysisRow, type PlateDef } from './mold-drawing-set';
+import { PISO_MAQUINABLE_MM } from './cooling-design';   // el piso del taller, UNA definición
 import { resolveThread, threadSurfaceMesh, plainShaftMesh, type Mesh as ThreadMesh } from './mold-threads';
 import { resolveHead, headMesh, seatSpec, tipChamfer } from './mold-heads';
 import { engagementLengthMm, plateYieldMPa, fastenerPlan } from './mold-fasteners';
@@ -1574,6 +1576,22 @@ export function laminasToPrintHTML(pages: DrawingPage[], title = 'Planos del mol
  *  geometría de placas para los planos. Toma cotas RESUELTAS (base comercial,
  *  espesores por deflexión/enfriamiento, plug DME, pines) — no inventa. */
 export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
+  const spec0 = packageToAssemblySpecCrudo(pkg);
+  // ══ EL AGUA DICE UNA COSA (orden 2026-09-10) ═══════════════════════════════
+  // El spec sale con un ⌀ PROVISIONAL (el plug con el que `moldmachine` dimensionó las
+  // PLACAS, §4.2.1: t_placa = prof + 3·⌀). Ése NO es el ⌀ del circuito: el circuito lo
+  // elige el caudal (§9.2.5) con piso maquinable, y lo elige `coolingCircuitDesign` —
+  // la FUENTE ÚNICA. Aquí se corre una vez y el resultado se ESCRIBE en el spec, para
+  // que el BOM (`mold-assembly`), la lámina y el 3D citen el MISMO ⌀ y el mismo plug.
+  // Sin esto el plano decía ⌀9.53/JP-352 y el 3D ⌀4.76/JP-250 del mismo molde.
+  try {
+    const cd = coolingCircuitDesign(spec0, plateDepth(spec0));
+    spec0.cooling = { ...spec0.cooling, diaMm: cd.diaMm, plug: cd.plug };
+  } catch { /* sin diseño de agua el spec conserva el ⌀ provisional (y la lámina lo dirá) */ }
+  return spec0;
+}
+
+function packageToAssemblySpecCrudo(pkg: MoldPackage): MoldAssemblySpec {
   const s = pkg.spec, d = pkg.diseno, base = pkg.base.base;
   // ⚠ EL `??` ESTABA BORRANDO UN VEREDICTO (2026-08-07). `snapToCommercialPlate`
   // devuelve `null` A PROPÓSITO cuando el espesor requerido excede el catálogo
@@ -1628,9 +1646,21 @@ export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
     // LA RESINA VIAJA CON EL MOLDE: sin esto el campo térmico no sabe de qué es la pieza
     // y corría ABS en silencio para todo. No se cae por defecto: se DECLARA (ThermalSim.material).
     plastic: s.plastic,
-    // ⌀ de agua con PISO maquinable (~6.35 mm mínimo real); nunca el ⌀ físico
-    // diminuto de piezas chicas (inmaquinable). Plug DME estándar por defecto.
-    cooling: { diaMm: Math.max(6.35, +(line.plug?.diaMm ?? line.dMinMm).toFixed(2)), plug: line.plug?.dme ?? 'JP-251', insetMm: Math.round((base.wmm || s.Lmm) * 0.15) },
+    // ⌀ PROVISIONAL: el plug con el que `moldmachine` dimensionó las placas (§4.2.1). El ⌀ del
+    // CIRCUITO lo pisa `packageToAssemblySpec` con el de la fuente única (§9.2.5, caudal + piso).
+    // El piso maquinable ya no vive aquí: subió al motor (`PISO_MAQUINABLE_MM`) para que lo
+    // apliquen TODOS igual — la lámina lo tenía y el 3D no, y de ahí salían ⌀9.53 vs ⌀4.76.
+    cooling: {
+      diaMm: Math.max(PISO_MAQUINABLE_MM, +(line.plug?.diaMm ?? line.dMinMm).toFixed(2)),
+      plug: line.plug?.dme ?? 'JP-251',
+      insetMm: Math.round((base.wmm || s.Lmm) * 0.15),
+      // §9.2.1 LITERAL: "the cycle time can be dominated by the cooling of the cold runners".
+      // El t_c del circuito es el MÁXIMO sobre todas las secciones del DISPARO, no el de la
+      // pared sola: la colada también hay que enfriarla y Eq 9.10 ya suma su volumen. Los dos
+      // números salen de `designFeedSystem` (feed.ts) — UNA fuente para las dos vistas.
+      tcS: +Math.max(d.alimentacion.tcPartS, d.alimentacion.tcSprueS).toFixed(2),
+      runnerVolCc: +d.alimentacion.volCc.toFixed(2),
+    },
     // EL CEREBRO DECIDE EL TIPO (§11.2-5, autoEjectionPlan): un vaso PP de pared delgada
     // pide STRIPPER (empuja TODO el perímetro, esfuerzo uniforme — los pines la perforan);
     // una caja pide pines. Antes el pipeline clavaba 'pin' SIEMPRE, ignorando al cerebro.

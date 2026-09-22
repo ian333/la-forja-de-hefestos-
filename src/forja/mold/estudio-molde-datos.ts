@@ -36,7 +36,7 @@ import { moldMachine, Q_ANUAL_ASUMIDA, type MoldPackage, type MachineSpec, type 
 import { CATALOGO_BASES } from './moldbase';   // sprint 3: la base con fuente declarada
 import { packageToAssemblySpec, plateStackZ } from './mold-plano-set';
 import {
-  plateDefs, plateDepth, moldStackHeight, coolingCircuit, standardHoles, moldBoltSizing,
+  plateDefs, plateDepth, moldStackHeight, coolingCircuit, coolingCircuitDesign, standardHoles, moldBoltSizing,
   cavityFootprint, cavityGrid, insertDims,
   type PlateDef,
 } from './mold-drawing-set';
@@ -53,7 +53,7 @@ import type { MeltMaterial } from './filling';
 import { ABS_MG47, ABS_CROSS, eta0CrossWLF, viscosityCrossWLF } from './filling';
 import { resolverLlenadoFAN, tCongelaSlabS, type TermicoFAN, type LlenadoFAN } from './fan';
 import { checkDFM, type DFMPart, type DFMReport } from './dfm';
-import { PLASTICOS_A, tcPlateS, coolingDesign, ACEROS_MOLDE, seleccionCoreTabla93, heatFluxVariation, AGUA, CONTROLADORES, type CoolingDesignOut } from './cooling-design';
+import { PLASTICOS_A, tcPlateS, seleccionCoreTabla93, heatFluxVariation, AGUA, CONTROLADORES, type CoolingDesignOut } from './cooling-design';
 import { coolingTimeRod } from './cooling';
 import { moldMassKg } from './fasteners';
 import { MOLD_METALS } from './moldbase';
@@ -3206,7 +3206,10 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
   const pz = o?.pieza;
   const partVolCc = o?.partVolCc ?? pz?.volCc ?? 14.14;
   const asmDelPkg = packageToAssemblySpec(pkg);
-  const largoLineaMm = +((asmDelPkg.widthMm ?? 196)).toFixed(2);   // de lado a lado de ESTA base (el cubo: 196)
+  // LARGO DE LA LÍNEA — el mismo que usa la fuente única (ancho de la base menos los cantos),
+  // no el ancho completo: con el ancho completo el ΔP salía optimista contra el del plano.
+  const cantoMm = Math.max(16, Math.round((asmDelPkg.widthMm ?? 196) * 0.05));
+  const largoLineaMm = +((asmDelPkg.widthMm ?? 196) - 2 * cantoMm).toFixed(2);
   const matCool = { alpha: A.alphaM2s, tMelt: A.tMeltC, tCoolant: A.tCoolC, tEject: A.tEjectC };
 
   // ── PASO 1 · el t_c de CADA sección (Eq 9.5 placa · Eq 9.6 cilindro) ──
@@ -3217,21 +3220,27 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
   const mandaS = Math.max(tcPiezaS, tcSprueS);
   const manda: 'pieza' | 'bebedero' = tcSprueS > tcPiezaS ? 'bebedero' : 'pieza';
 
-  // ── el DISEÑO del agua, con el ciclo que MANDA (Q̇ = Q/t_c) ──
-  const acero = ACEROS_MOLDE.P20;
-  const cd = coolingDesign({
-    nCav: 1, partVolCc, runnerVolCc: volumenColadaCc(d), thickestMm: pz ? pz.wallMm : 2,
-    rhoRTKgM3: A.rhoRTKgM3, cpJkgC: A.cpJkgC, alphaM2s: A.alphaM2s,
-    tMeltC: A.tMeltC, tEjectC: A.tEjectC, tCoolantC: A.tCoolC,
-    kMoldWmC: acero.kWmC, sigmaEnduranceMPa: acero.sigmaEnduranceMPa,
-    // la huella (el cubo: 40) y el barreno de lado a lado de la base (el cubo: 196 = el ancho de SU base)
-    // la BANDA se mide ATRAVESADA a las líneas: la serpentina del lado B corre a lo largo de Y y se
-    // reparte en X, así que la banda es la huella en X (el cubo: 2×20 = los 40 de siempre).
-    bandMm: pz ? +(2 * pz.semiXmm).toFixed(2) : 40,
-    lineLenMm: largoLineaMm,
-    tcS: mandaS,                                  // el ciclo REAL, no el de la pared
-    hOverD: o?.hOverD, wOverH: o?.wOverH,
-  });
+  // ══ EL AGUA DICE UNA COSA (orden 2026-09-10) ═══════════════════════════════
+  // ANTES: esta estación llamaba a `coolingDesign` con SUS propias entradas (banda = huella en
+  // X, línea = ancho completo de la base, t_c = el ciclo de los datums, ⌀ libre sin piso) y la
+  // lámina llamaba al MISMO motor con OTRAS (banda = huella en Y de la rejilla, línea = ancho
+  // menos cantos, t_c = Eq 9.5 de la pared, ⌀ FORZADO al del porta-molde). Mismo molde, dos
+  // circuitos: carcasa 1594C ⌀4.76·H19·W38.1 aquí contra ⌀9.53·H32·W64 en el plano.
+  // AHORA las dos vistas llaman a `coolingCircuitDesign` — la fuente única. Lo que esta
+  // estación sabe del disparo (la colada) viaja EN EL SPEC (`cooling.tcS`/`runnerVolCc`), que
+  // es lo que la lámina también lee: por eso los números coinciden sin acuerdos de palabra.
+  // el volumen que el llamador MIDIÓ manda sobre el del spec (el cubo pasa 14.14 cc): entra
+  // por donde el motor lo lee, no por una entrada paralela.
+  if (o?.partVolCc != null || pz?.volCc != null)
+    asmDelPkg.cavity = { ...asmDelPkg.cavity, volMm3: partVolCc * 1000 };
+  const cd = coolingCircuitDesign(asmDelPkg, plateDepth(asmDelPkg), { hOverD: o?.hOverD, wOverH: o?.wOverH });
+  // LOS DOS BEBEDEROS: el circuito usa el t_c del spec (feed.ts, §9.2.1 con SU colada) y esta
+  // estación mide el suyo con los DATUMS (colada.ts, el sprue que se va a maquinar). Si no
+  // coinciden es que el molde tiene dos coladas distintas — se DICE, no se promedia.
+  const tcCircuitoS = +cd.tcS.toFixed(2);
+  const dosColadas = Math.abs(tcCircuitoS - mandaS) > 0.1 * Math.max(tcCircuitoS, mandaS)
+    ? `t_c del circuito ${tcCircuitoS} s (feed.ts §9.2.1) ≠ ${mandaS} s medido con los DATUMS (⌀${diaActualMm} de colada.ts): el molde declara DOS coladas — es de la orden del bebedero, aquí se reporta`
+    : null;
 
   // ── EL CRUCE E6↔E8: el bushing MÍNIMO que todavía empaca ──
   const tPackNeededS = o?.tPackNeededS ?? dz.alimentacion.tcPartS;
@@ -3339,6 +3348,7 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
     `pieza ${tcPiezaS} s (Eq 9.5) · bebedero ⌀${diaActualMm} ${tcSprueS} s (Eq 9.6) → manda EL ${manda.toUpperCase()} (${(tcSprueS / tcPiezaS).toFixed(1)}×)`,
     'max sobre TODAS las secciones (§9.2.1)',
     manda === 'pieza' ? 'CUMPLE' : 'ADVIERTE', '§9.2.1 · A-179',
+    (dosColadas ? `⚠ ${dosColadas}. ` : '') +
     'literal del libro: "the cycle time can be dominated by the cooling of the cold runners… minimize the runner diameters not just for material savings but also to maintain a productive molding process". Matiz honesto del libro: el runner NO necesita la rigidez de la pieza, así que el veredicto admite descuento con juicio.');
   fila('bushing', 'EL CRUCE E6↔E8: el bushing mínimo que TODAVÍA empaca',
     diaOptimoMm != null ? `⌀${diaActualMm} → ⌀${diaOptimoMm}: ciclo ${mandaS} → ${cicloOptimoS} s (−${ahorroPct} %)` : 'ninguno más chico empaca: se queda',
@@ -3396,6 +3406,10 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
       seccion: '§6.3.1 · §9.2.1',
     },
   ];
+  if (dosColadas) anuncios.push({
+    estacion: 5, titulo: 'EL MOLDE DECLARA DOS COLADAS (no se promedia: se reporta)',
+    detalle: dosColadas, seccion: '§6.3.1 · §9.2.1',
+  });
   if (core.elegido && core.elegido !== 'cooling insert') anuncios.push({
     estacion: 10, titulo: `el core pide ${core.elegido} — y comparte espacio con los pines`,
     detalle: `${core.porQue.split(':')[0]}; al colocar pines en la E10, checar interferencia contra el ${core.elegido} y contra las líneas (§9.2.7: mínimo ½⌀ de acero)`,
@@ -3433,6 +3447,12 @@ export interface SegmentoAgua {
   diaMm: number;
   tipo: 'linea' | 'cruce' | 'extension' | 'baffle';
 }
+/** UN CLARO MEDIDO por el juez del agua. `categoria` es contra QUÉ se midió: sin ella el
+ *  juez podía dar ✓ habiendo mirado sólo dos cosas de ocho (lo que pasó hasta 2026-09-21). */
+export interface ClaroAgua {
+  contra: string; claroMm: number; minMm: number; ok: boolean;
+  categoria: 'placa' | 'inserto' | 'pin' | 'retorno' | 'ko' | 'tornillo' | 'colada' | 'pieza';
+}
 export interface CircuitoAgua {
   segmentos: SegmentoAgua[];
   tapones: Array<{ x: number; y: number; z: number; dir: [number, number, number] }>;
@@ -3441,8 +3461,17 @@ export interface CircuitoAgua {
   baffle: { x: number; y: number; zBot: number; zTop: number; boreDiaMm: number; claroApiceMm: number };
   ladoA: { zMm: number; hMm: number; hOverD: number; semiMm: number; nBarrenos: number; nTapones: number; nSellos: number };
   ladoB: { zMm: number; hMm: number; hOverD: number; nBarrenos: number; nTapones: number; nSellos: number };
-  /** el JUEZ: claros MEDIDOS contra todo (½⌀ de acero mínimo, §9.2.7) */
-  juez: { claros: Array<{ contra: string; claroMm: number; minMm: number; ok: boolean }>; ok: boolean };
+  /** LA LÍNEA VA DENTRO DEL INSERTO (§4.2.1 Fig 4.13: su respaldo se dimensiona para
+   *  hospedarla). Se DECLARA para que quien construye los insertos corte ese barreno en el
+   *  bloque — antes se resolvía empujando la línea fuera de la placa, en silencio. */
+  cruzaInserto: { cavidad: boolean; nucleo: boolean };
+  /** el JUEZ: claros MEDIDOS contra TODO (½⌀ de acero mínimo, §9.2.7) — caras de la placa,
+   *  asiento del inserto, pines, retornos, KO y tornillería, con la lista completa de los
+   *  pares que FALLAN (los que cumplen se cuentan en `resumen`). */
+  juez: {
+    claros: ClaroAgua[]; ok: boolean; paresEvaluados: number;
+    resumen: Record<ClaroAgua['categoria'], { evaluados: number; fallan: number }>;
+  };
   recortes: string[];
   conexionesPorMitad: number;
 }
@@ -3474,6 +3503,57 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   const pisoInsB = zPart - idm.Hk;                       // piso del bolsillo del inserto B
   const baseW = asm.widthMm, baseL = asm.depthMm ?? asm.widthMm;
   const recortes: string[] = [];
+  // ══ LAS CARAS DE LA PLACA (orden EL AGUA DICE DOS COSAS) ═══════════════════
+  // El plan de inspección midió −1.14 mm en LAS CUATRO piezas: el agua B salía por DEBAJO de
+  // la placa B. La causa no era una coincidencia, era una regla que faltaba — el ruteo del
+  // lado B sólo miraba el PISO DEL BOLSILLO del inserto (`pisoInsB − D`) y nunca la CARA
+  // INFERIOR de su propia placa. Y ese piso deja poquísimo acero: `insertDims` hace el
+  // inserto `placas.B − 6` de alto, o sea 6 mm de suelo, contra los 2D = 9.52 mm que ⌀4.76
+  // pide con ½⌀ por lado (§9.2.7). El barreno NO CABE ahí abajo: nunca cupo.
+  // La salida es la del libro: §4.2.1 (Fig 4.13) dimensiona el RESPALDO del inserto
+  // justamente para hospedar la línea — la línea va DENTRO del inserto y se declara
+  // (`cruzaInserto`) para que quien barrena los insertos la corte. Lo que NO se hace más es
+  // empujarla fuera de la placa en silencio.
+  const zPila = plateStackZ(asm);
+  const caraBInf = zPila.B, caraBSup = zPila.B + asm.plates.B;          // placa B: [inf, sup]
+  const caraAInf = zPila.A, caraASup = zPila.A + asm.plates.A;          // placa A: [inf, sup]
+  // LOS BARRENOS QUE COMPARTEN EL ACERO: pines, retornos, KO y tornillos. `standardHoles` es
+  // su fuente única (la misma que dibuja la lámina). CADA barreno vive en SU placa y sólo
+  // compite con el agua que pasa por ESA franja de z: un tornillo de la mitad núcleo no toca
+  // un anillo que corre en la placa A. Sin este filtro el juez inventaba pares (y en cuanto
+  // un juez inventa, deja de creerse el que sí es).
+  const franja: Record<string, [number, number]> = {
+    clamp: [zPila.clamp, zPila.clamp + asm.plates.topClamp],
+    A: [caraAInf, caraASup], B: [caraBInf, caraBSup],
+    support: [zPila.support, zPila.support + asm.plates.support],
+    bottom: [zPila.bottom, zPila.bottom + asm.plates.bottomClamp],
+  };
+  const barrenos: Array<{ x: number; y: number; r: number; tipo: string; cat: ClaroAgua['categoria']; z0: number; z1: number }> = [];
+  for (const rol of ['clamp', 'A', 'B', 'support', 'bottom'] as const)
+    for (const h of standardHoles(asm, rol)) {
+      const t = h.type ?? 'barreno';
+      const cat: ClaroAgua['categoria'] = /tornillo/i.test(t) ? 'tornillo'
+        : /retorno/i.test(t) ? 'retorno'
+        : /KO/.test(t) ? 'ko'
+        : /expulsor/i.test(t) ? 'pin'
+        : /bebedero|compuerta|boquilla/i.test(t) ? 'colada'
+        : 'placa';
+      if (cat === 'placa') continue;                 // pilares guía y demás: otra orden
+      const [z0, z1] = franja[rol];
+      barrenos.push({ x: h.x, y: h.y, r: h.dia / 2, tipo: `${t} · placa ${rol}`, cat, z0, z1 });
+    }
+  // distancia en PLANTA de un punto al eje de un segmento recto (los barrenos son verticales:
+  // cruzan TODA su placa, así que dentro de su franja de z el claro real es el de planta).
+  const distPlanta = (ax: number, ay: number, bx: number, by: number, x: number, y: number) => {
+    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+    const t = L2 < 1e-9 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2));
+    return Math.hypot(x - (ax + t * dx), y - (ay + t * dy));
+  };
+  const comparte = (sg: SegmentoAgua, b: { z0: number; z1: number }) => {
+    const zl = Math.min(sg.p0[2], sg.p1[2]) - sg.diaMm / 2, zh = Math.max(sg.p0[2], sg.p1[2]) + sg.diaMm / 2;
+    return zh > b.z0 && zl < b.z1;                   // ¿comparten franja de z?
+  };
+
   // EL AGUA DE TU PIEZA (2026-09-17): el texto decía «sigue en 2D..5D» SIEMPRE, aunque el recorte
   // dejara la línea en 7.30D (carcasa, lado B). Un recorte que se rotula a sí mismo como legal no es
   // un aviso: es una mentira. Ahora dice cuál de las dos cosas pasó.
@@ -3485,10 +3565,20 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   // ── LADO A · anillo perimetral (§9.3.1d) EN el inserto de cavidad ──
   // z de diseño (H de la superficie) vs el TECHO del inserto: manda el techo.
   const zAdiseno = zBase + hDis;
-  const zA = Math.min(zAdiseno, techoInsA - D);          // r de barreno + ½⌀ de acero
+  // LA VENTANA LEGAL DEL LADO A, con SUS DOS techos (antes sólo se miraba el del inserto):
+  //   · techo del INSERTO de cavidad: z ≤ techoInsA − r − ½⌀   (§9.2.7)
+  //   · cara SUPERIOR de la placa A:  z ≤ caraASup − r − ½⌀    (una cara también es superficie)
+  //   · piso: la superficie moldeante (el techo de la pieza):  z ≥ zBase + 2D (Eq 9.22)
+  const zAtecho = Math.min(techoInsA - r - medio, caraASup - r - medio);
+  const zApiso = zBase + 2 * D;
+  const zA = Math.min(zAdiseno, zAtecho);
   const hA = zA - zBase;
+  const aFalla = zA < zApiso - 1e-9
+    ? `lado A: no hay ventana para ⌀${D} — el techo legal está en ${zAtecho.toFixed(2)} (inserto ${techoInsA} / placa ${caraASup}) y Eq 9.22 pide z ≥ ${zApiso.toFixed(2)} (2D sobre la impresión). §9.2.4: baffles, o engrosar A / subir el inserto`
+    : null;
+  if (aFalla) recortes.push(aFalla);
   if (zA < zAdiseno) recortes.push(
-    `lado A: H ${hDis.toFixed(2)} pedía z=${zAdiseno.toFixed(2)} pero el TECHO del inserto está en ${techoInsA} ⇒ z=${zA.toFixed(2)} (H ${hA.toFixed(2)} = ${(hA / D).toFixed(2)}D, ${bandaHD(hA)}) — en la E8a esto ROMPÍA el acero (claro −${Math.abs(zAdiseno + r - techoInsA).toFixed(2)} mm)`);
+    `lado A: H ${hDis.toFixed(2)} pedía z=${zAdiseno.toFixed(2)} pero el techo legal está en ${zAtecho.toFixed(2)} (inserto ${techoInsA} / cara superior de la placa A ${caraASup}, §9.2.7 pide r+½⌀ = ${(r + medio).toFixed(2)} mm de acero encima) ⇒ z=${zA.toFixed(2)} (H ${hA.toFixed(2)} = ${(hA / D).toFixed(2)}D, ${bandaHD(hA)}) — en la E8a esto ROMPÍA el acero (claro −${Math.abs(zAdiseno + r - techoInsA).toFixed(2)} mm)`);
   // el anillo RODEA la huella con 10 mm de aire, por eje (el cubo: 20+10 = 30 en los dos ⇒ el mismo anillo de antes)
   const semiX = (pieza ? pieza.semiXmm : 20) + 10, semiY = (pieza ? pieza.semiYmm : 20) + 10;
   const cx = d.ejeX, cy = d.ejeY;
@@ -3503,6 +3593,13 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
     { id: 'A-ext-out', p0: [x1, y1, zA], p1: [baseW, y1, zA], diaMm: D, tipo: 'extension' },
   ];
   const bordeInsX0 = cx - idm.ifx / 2, bordeInsX1 = cx + idm.ifx / 2;
+  const bordeInsY0 = cy - idm.ify / 2, bordeInsY1 = cy + idm.ify / 2;
+  // ¿el anillo A vive DENTRO del inserto de cavidad? El plan de inspección lo cazó (entra
+  // 1.56–2.15 mm) porque el punto 2.2 medía contra la cara de la PLACA y no contra el inserto.
+  // No es un defecto: ahí VA (§4.2.1 Fig 4.13). Lo que faltaba era DECIRLO, para que quien
+  // barrena los insertos corte el anillo en el bloque y no lo descubra el auditor.
+  const cruzaA = zA - r < techoInsA && zA + r > zPart
+    && x0 >= bordeInsX0 - r && x1 <= bordeInsX1 + r && y0 >= bordeInsY0 - r && y1 <= bordeInsY1 + r;
   const tapones: CircuitoAgua['tapones'] = [
     // el anillo se barrena de cara a cara del INSERTO: bocas sobrantes tapadas
     { x: bordeInsX0, y: y1, z: zA, dir: [-1, 0, 0] }, { x: bordeInsX1, y: y0, z: zA, dir: [1, 0, 0] },
@@ -3517,16 +3614,79 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
     { etiqueta: 'A-IN', x: 0, y: y0, z: zA }, { etiqueta: 'A-OUT', x: baseW, y: y1, z: zA },
   ];
 
-  // ── LADO B · serpentina en la placa B + BAFFLE al centro del core ──
+  // ── LADO B · serpentina + BAFFLE al centro del core ──
+  // LA VENTANA LEGAL, medida contra LAS DOS cosas que la acotan (§9.2.7: ½⌀ de acero contra
+  // la superficie de CUALQUIER otro componente, y la cara de la placa es una superficie):
+  //   · techo   = la superficie moldeante (la partición): z ≤ zPart − 2D  (Eq 9.22)
+  //   · piso    = la cara INFERIOR de la placa B:        z ≥ caraBInf + r + ½D
+  // El bolsillo del inserto NO es un tope: la línea puede ir DENTRO del inserto (§4.2.1
+  // Fig 4.13 dimensiona su respaldo para eso) — se declara y la corta quien lo barrena.
   const zBdiseno = zPart - hDis;
-  const zB = Math.min(zBdiseno, pisoInsB - D);
+  const zBtecho = zPart - 2 * D;                          // Eq 9.22: H ≥ 2D bajo la superficie
+  // DOS ALOJAMIENTOS POSIBLES, en el orden del libro:
+  //  (1) DENTRO del inserto de núcleo — §4.2.1 Fig 4.13 dimensiona su respaldo EXACTAMENTE
+  //      para hospedar la línea. Piso: la cara inferior del inserto (pisoInsB) + r + ½⌀.
+  //  (2) en la PLACA, bajo el bolsillo — sólo si ahí cabe con ½⌀ contra las DOS caras:
+  //      la del bolsillo por arriba y la cara inferior de la placa por abajo.
+  // El bug de las 4 piezas era tomar (2) SIN mirar la cara inferior de la placa: `insertDims`
+  // deja `placas.B − 6` de suelo (6 mm) y ⌀4.76 pide 2·(r+½⌀) = 9.52 ⇒ la línea salía −1.14 mm
+  // POR FUERA del molde, y el juez decía ✓ porque medía contra el bolsillo, no contra la cara.
+  const zInsMin = pisoInsB + r + medio;                   // dentro del inserto, con ½⌀ a su piso
+  const zPlacaMin = caraBInf + r + medio;                 // en la placa, con ½⌀ a la cara inferior
+  const zPlacaMax = pisoInsB - r - medio;                 // en la placa, con ½⌀ al bolsillo
+  let zB: number, cruzaB: boolean, bFalla: string | null = null, cruzaCosturaB = false;
+  if (zInsMin <= zBtecho + 1e-9) {                        // (1) cabe DENTRO del inserto
+    zB = Math.max(zInsMin, Math.min(zBdiseno, zBtecho));
+    cruzaB = true;
+    recortes.push(`lado B: la línea va DENTRO del inserto de núcleo (z ${zB.toFixed(2)} ± ${r.toFixed(2)}; bolsillo ${pisoInsB}..${zPart}, alto ${idm.Hk}) — §4.2.1 Fig 4.13: el respaldo del inserto se dimensiona PARA hospedarla. Se declara cruzaInserto.nucleo: el barreno lo lleva EL INSERTO, no la placa`);
+  } else if (zPlacaMin <= Math.min(zPlacaMax, zBtecho) + 1e-9) {   // (2) cabe en la placa
+    zB = Math.max(zPlacaMin, Math.min(zBdiseno, zPlacaMax, zBtecho));
+    cruzaB = false;
+  } else {
+    // (3) NI DENTRO NI DEBAJO: el inserto es muy bajito Y el suelo bajo su bolsillo muy
+    // delgado. La línea CRUZA LA COSTURA inserto↔placa. Eso NO es «poco acero» (hay acero de
+    // los dos lados, es una JUNTA): es un cruce de interfaz, y el libro ya tiene su remedio
+    // — §9.3.2, sello. Es exactamente lo que este mismo circuito hace con las extensiones del
+    // lado A desde siempre. Se coloca el O-RING y se declara; lo que se sigue exigiendo con
+    // ½⌀ son las caras LIBRES (la cara inferior de la placa y la superficie moldeante).
+    zB = Math.max(zPlacaMin, Math.min(zBdiseno, zBtecho));
+    cruzaB = true;
+    cruzaCosturaB = true;
+    bFalla = `lado B: la línea CRUZA LA COSTURA inserto↔placa (z ${zB.toFixed(2)} ± ${r.toFixed(2)}, costura en ${pisoInsB}) — el inserto de ${idm.Hk} mm no da 2D+½⌀ = ${(2 * D + r + medio).toFixed(2)} para alojarla entera, y bajo su bolsillo sólo hay ${(pisoInsB - caraBInf).toFixed(2)} mm de los ${(2 * (r + medio)).toFixed(2)} que pide ½⌀ por lado. Se sella (§9.3.2, O-ring) y se declara cruzaInserto.nucleo; si el cliente no quiere junta en el circuito: engrosar B o baffle/bubbler (§9.3.5.2)`;
+    recortes.push(bFalla);
+  }
+  if (zB < zBdiseno - 1e-9 || zB > zBdiseno + 1e-9) recortes.push(
+    `lado B: H ${hDis.toFixed(2)} pedía z=${zBdiseno.toFixed(2)} ⇒ z=${zB.toFixed(2)} (H ${(zPart - zB).toFixed(2)} = ${((zPart - zB) / D).toFixed(2)}D, ${bandaHD(zPart - zB)}). La cara INFERIOR de la placa B está en ${caraBInf}: §9.2.7 pide r+½⌀ = ${(r + medio).toFixed(2)} mm de acero bajo la línea y ahora los tiene (${(zB - r - caraBInf).toFixed(2)})`);
   const hB = zPart - zB;
-  if (zB < zBdiseno + 1e-9 && Math.abs(zB - zBdiseno) > 1e-9) recortes.push(
-    `lado B: H ${hDis.toFixed(2)} pedía z=${zBdiseno.toFixed(2)} pero el PISO del bolsillo del inserto B está en ${pisoInsB} ⇒ z=${zB.toFixed(2)} (H ${hB.toFixed(2)} = ${(hB / D).toFixed(2)}D, ${bandaHD(hB)}) — en la E8a el claro era ${(pisoInsB - (zBdiseno + r)).toFixed(2)} mm < ${medio.toFixed(2)}`);
   // CUÁNTAS líneas las dice el diseño (§9.2.6: ceil(banda/W)+1), no un 3 clavado. El cubo pide 3 y
   // recibe 3 (las mismas x: cx−W, cx, cx+W); una pieza más ancha recibe las que su banda pida.
-  const nB = Math.max(2, cd.nPerSide);
-  const xs = Array.from({ length: nB }, (_, k) => cx + (k - (nB - 1) / 2) * W);
+  // EL BAFFLE SE ALIMENTA DE UNA LÍNEA (§9.3.5.2): el bore sube desde el eje del macho, así
+  // que TIENE que haber una línea EN ese eje. Con n PAR las líneas quedan a ±W/2 y el baffle
+  // se queda colgando sin agua — pasó en cuanto el ⌀ subió a 6.35 y el cubo cayó de 3 a 2
+  // líneas. Se sube al siguiente IMPAR: una línea de más nunca viola Eq 9.24 (el paso sólo
+  // se cierra), y sin ella el core no se enfría por dentro (Fig 9.11).
+  const nDiseno = Math.max(2, cd.nPerSide);
+  const nB = nDiseno % 2 === 0 ? nDiseno + 1 : nDiseno;
+  if (nB !== nDiseno) recortes.push(
+    `lado B: ${nDiseno} líneas/lado (Eq 9.24) → ${nB}: el BAFFLE exige una línea EN el eje del macho para alimentarse (§9.3.5.2) y con n par ninguna pasa por ahí. El paso baja de ${W.toFixed(2)} a ${W.toFixed(2)} mm nominal con la línea central añadida — más cobertura, nunca menos`);
+  const xsNominal = Array.from({ length: nB }, (_, k) => cx + (k - (nB - 1) / 2) * W);
+  // ── ROJO MUEVE LA LÍNEA (§9.2.7 + Fig 9.9, estrategia B) ────────────────────
+  // El corrimiento de medio pitch del `ruteo` sólo libraba EL BEBEDERO. Los pines, los
+  // retornos, el KO y los tornillos comparten el mismo acero y nadie los esquivaba: el plan
+  // de inspección cazó un pin a 0 mm de una línea en 1599HBK y dos en 1557BGY. Aquí cada
+  // línea B busca el corrimiento MÁS CHICO en X que le deje ½⌀ contra TODOS los barrenos de
+  // su franja de z — y si no existe, no se finge: se queda en su sitio y el juez lo reprueba
+  // (§9.3.5.2: cuando el campo de pines tapiza la banda, la salida es baffle/bubbler).
+  const estorbanB = barrenos.filter((b) => zB + r > b.z0 && zB - r < b.z1);
+  const libreEnX = (x: number) => estorbanB.every((b) =>
+    Math.abs(x - b.x) >= r + b.r + medio || b.y < 0 || b.y > baseL);
+  const corridas: number[] = [];
+  const xs = xsNominal.map((x0v) => {
+    if (libreEnX(x0v)) return x0v;
+    for (let dd = 0.5; dd <= W / 3; dd += 0.5)
+      for (const x of [x0v + dd, x0v - dd]) if (libreEnX(x)) { corridas.push(+dd.toFixed(2)); return +x.toFixed(2); }
+    return x0v;                                   // sin hueco: se REPORTA, no se inventa
+  });
   const yCr0 = 20, yCr1 = baseL - 20;
   for (let k = 0; k < nB; k++) segs.push({ id: `B-linea${k}`, p0: [xs[k], 0, zB], p1: [xs[k], baseL, zB], diaMm: D, tipo: 'linea' });
   // los cruces alternan extremo (serpentín): el par va al fondo, el impar al frente
@@ -3547,6 +3707,8 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
       : { x: xs[nB - 1] + r, y: yCr0, z: zB, dir: [1, 0, 0] });
   }
   inOut.push({ etiqueta: 'B-IN', x: xs[0], y: 0, z: zB }, { etiqueta: 'B-OUT', x: xs[nB - 1], y: baseL, z: zB });
+  if (corridas.length) recortes.push(
+    `lado B: ${corridas.length} de ${nB} líneas se CORRIERON en X (máx ${Math.max(...corridas)} mm) para librar pines/retornos/KO/tornillos con ½⌀ de acero (§9.2.7). Paso real ${nB > 1 ? Math.max(...xs.slice(1).map((x, k) => +(x - xs[k]).toFixed(2))) : 0} mm contra 2H = ${(2 * hB).toFixed(2)} (Eq 9.24)`);
 
   // el BAFFLE (Tabla 9.3): bore que SUBE por el macho desde la línea central
   const boreDiaMm = 9.53;                                // JP-352 (3/8")
@@ -3554,19 +3716,69 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   const zTopBaffle = apiceInteriorZ - 0.55 * boreDiaMm;  // ½⌀bore de acero al ápice, con margen
   segs.push({ id: 'B-baffle', p0: [cx, cy, zB], p1: [cx, cy, zTopBaffle], diaMm: boreDiaMm, tipo: 'baffle' });
   sellos.push({ x: cx, y: cy, z: pisoInsB, nota: 'sello del bore del baffle al cruzar placa B↔inserto del núcleo' });
+  // un O-ring POR LÍNEA que cruza la costura (§9.3.2): cada junta es una fuga futura y se
+  // cuenta, no se esconde — la misma doctrina que ya se aplica a las extensiones del lado A.
+  if (cruzaCosturaB) for (let k = 0; k < nB; k++)
+    sellos.push({ x: xs[k], y: cy, z: pisoInsB, nota: `O-ring: la línea B${k} cruza la costura inserto↔placa B (§9.3.2 — fuga esperada sin sello)` });
   const baffle = { x: cx, y: cy, zBot: zB, zTop: zTopBaffle, boreDiaMm, claroApiceMm: +(apiceInteriorZ - zTopBaffle).toFixed(2) };
 
   // ── EL JUEZ: claros medidos (½⌀ de acero contra TODO, §9.2.7) ──
   const claros: CircuitoAgua['juez']['claros'] = [];
-  const mide = (contra: string, claroMm: number, minMm = medio) =>
-    claros.push({ contra, claroMm: +claroMm.toFixed(2), minMm: +minMm.toFixed(2), ok: claroMm >= minMm - 1e-9 });
-  mide('anillo A ↔ bebedero (radial al eje)', Math.min(semiX, semiY) - d.rBaseMm - r);
-  mide('anillo A ↔ techo del inserto de cavidad', techoInsA - (zA + r));
-  mide('anillo A ↔ techo de la pieza (base cerrada)', zA - r - zBase);
-  mide('serpentina B ↔ piso del bolsillo del inserto B', pisoInsB - (zB + r));
-  mide('baffle ↔ ápice interior del macho', apiceInteriorZ - zTopBaffle, boreDiaMm / 2);
-  mide('extensión A-IN ↔ borde de la base (sale a cara)', y0 - 0 > 0 ? y0 : 0, D);
-  const juez = { claros, ok: claros.every((c) => c.ok) };
+  const mide = (contra: string, claroMm: number, minMm = medio, categoria: ClaroAgua['categoria'] = 'placa') =>
+    claros.push({ contra, claroMm: +claroMm.toFixed(2), minMm: +minMm.toFixed(2), ok: claroMm >= minMm - 1e-9, categoria });
+  mide('anillo A ↔ bebedero (radial al eje)', Math.min(semiX, semiY) - d.rBaseMm - r, medio, 'colada');
+  mide('anillo A ↔ techo del inserto de cavidad', techoInsA - (zA + r), medio, 'inserto');
+  mide('anillo A ↔ techo de la pieza (base cerrada)', zA - r - zBase, medio, 'pieza');
+  mide('baffle ↔ ápice interior del macho', apiceInteriorZ - zTopBaffle, boreDiaMm / 2, 'pieza');
+  mide('extensión A-IN ↔ borde de la base (sale a cara)', y0 - 0 > 0 ? y0 : 0, D, 'placa');
+
+  // ══ EL JUEZ COMPLETO (orden 2026-09-10 EL AGUA DICE DOS COSAS) ═════════════
+  // §9.2.7 LITERAL: "at least half a cooling diameter between the surface of the cooling
+  // line and the surface of ANY OTHER MOLD COMPONENT". «Cualquier otro componente» incluye
+  // lo que este juez no miraba: las CARAS de la placa, el asiento del inserto, los pines
+  // expulsores, los pines de RETORNO, el barreno KO del vástago y la TORNILLERÍA.
+  // Y se listan TODOS los pares, no el mínimo: el plan de inspección demostró que con el
+  // mínimo se pierden los otros (un pin cruzaba una línea en 1599HBK y dos en 1557BGY, y el
+  // juez no se enteraba porque sólo reportaba el peor claro de otra categoría).
+  const enCaras = (nombre: string, zLinea: number, inf: number, sup: number, placa: string) => {
+    mide(`${nombre} ↔ cara INFERIOR de la placa ${placa}`, (zLinea - r) - inf, medio, 'placa');
+    mide(`${nombre} ↔ cara SUPERIOR de la placa ${placa}`, sup - (zLinea + r), medio, 'placa');
+  };
+  enCaras('serpentina B', zB, caraBInf, caraBSup, 'B');
+  enCaras('anillo A', zA, caraAInf, caraASup, 'A');
+  // el asiento del inserto: si la línea va DENTRO, el claro se mide contra sus caras; si va
+  // FUERA, contra el bolsillo. Las dos cosas se dicen con su nombre — nunca ✓ por omisión.
+  if (cruzaCosturaB) mide(`serpentina B ↔ costura inserto↔placa (CRUZA ${(pisoInsB - (zB - r)).toFixed(2)} mm: sellada §9.3.2)`, 0, 0, 'inserto');
+  else if (cruzaB) mide('serpentina B ↔ piso del INSERTO de núcleo (va DENTRO: §4.2.1)', (zB - r) - pisoInsB, medio, 'inserto');
+  else mide('serpentina B ↔ piso del bolsillo del inserto B', pisoInsB - (zB + r), medio, 'inserto');
+  if (cruzaA) mide('anillo A ↔ piso del INSERTO de cavidad (va DENTRO: §4.2.1)', (zA - r) - zPart, medio, 'inserto');
+
+  let pares = 0;
+  for (const sg of segs) {
+    if (sg.tipo === 'baffle') continue;              // vertical: su claro es el del ápice
+    for (const b of barrenos) {
+      if (!comparte(sg, b)) continue;
+      pares++;
+      const claro = distPlanta(sg.p0[0], sg.p0[1], sg.p1[0], sg.p1[1], b.x, b.y) - sg.diaMm / 2 - b.r;
+      // se LISTAN todos los que NO cumplen; los que sí, se cuentan en `resumen`. El plan de
+      // inspección probó que reportar sólo el par MÍNIMO esconde a los demás (un pin cruzaba
+      // una línea en 1599HBK y dos en 1557BGY, y el juez del agua no los detenía).
+      if (claro < medio - 1e-9) mide(`${sg.id} ↔ ${b.tipo}`, claro, medio, b.cat);
+    }
+  }
+  const porCategoria = (cat: ClaroAgua['categoria']) => {
+    const c = claros.filter((x) => x.categoria === cat);
+    return { evaluados: c.length, fallan: c.filter((x) => !x.ok).length };
+  };
+  const juez = {
+    claros, ok: claros.every((c) => c.ok),
+    paresEvaluados: pares,
+    resumen: {
+      placa: porCategoria('placa'), inserto: porCategoria('inserto'), pin: porCategoria('pin'),
+      retorno: porCategoria('retorno'), ko: porCategoria('ko'), tornillo: porCategoria('tornillo'),
+      colada: porCategoria('colada'), pieza: porCategoria('pieza'),
+    },
+  };
 
   return {
     segmentos: segs, tapones, sellos, inOut, baffle,
@@ -3574,6 +3786,7 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
     // CONTADOS, no supuestos: nB líneas + (nB−1) cruces + el baffle; los tapones son los que B empujó
     // después de los 6 del lado A (el cubo: 6 y 6, como estaba escrito a mano).
     ladoB: { zMm: +zB.toFixed(2), hMm: +hB.toFixed(2), hOverD: +(hB / D).toFixed(2), nBarrenos: 2 * nB, nTapones: tapones.length - 6, nSellos: 1 },
+    cruzaInserto: { cavidad: cruzaA, nucleo: cruzaB },
     juez, recortes, conexionesPorMitad: 2,
   };
 }

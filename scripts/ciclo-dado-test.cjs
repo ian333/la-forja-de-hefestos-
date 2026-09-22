@@ -1093,6 +1093,9 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `W=2H: ${cdm.heatFluxVariation(2).toFixed(1)} % · W=3H: ${cdm.heatFluxVariation(3).toFixed(1)} % · W=4H: ${cdm.heatFluxVariation(4).toFixed(1)} %`);
     // ── EL DADO ──
     const e8 = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14 });
+    // CONTROLES NEGATIVOS del motor (se declaran arriba: el check del RUTEO los usa).
+    const e8h = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14, hOverD: 1 });
+    const e8w = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14, wOverH: 4 });
     check('E8 · EL BEBEDERO MANDA EL CICLO (§9.2.1, el retorno que el libro anticipa)',
       e8.ciclo.manda === 'bebedero' && e8.ciclo.factor >= 5,
       `pieza ${e8.ciclo.tcPiezaS} s vs bebedero ⌀${e8.bushing.diaActualMm} ${e8.ciclo.tcSprueS} s = ×${e8.ciclo.factor}`);
@@ -1116,25 +1119,49 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check('E8 · RETORNO A LA E2: con el ciclo REAL el bebedero CALIENTE es más barato que el frío',
       sa && sc && sc.partUSD < sa.partUSD && sa.partUSD > 2 * e8.dinero.partUSDdeclarado * 0.9,
       `Eq 3.23 cotizó ${e8.dinero.cicloEq323S}s → $${e8.dinero.partUSDdeclarado}/pza · real (a) ${sa.cicloS}s → $${sa.partUSD} · (c) caliente ${sc.cicloS}s → $${sc.partUSD}`);
-    check('E8 · RUTEO §9.2.7: la línea del medio IBA por el bebedero (Fig 9.9) y el corrimiento la libra',
-      e8.ruteo.claroSinCorrerMm < e8.ruteo.claroMinMm && e8.ruteo.corrimientoMm > 0 && e8.ruteo.ok,
-      `claro ${e8.ruteo.claroSinCorrerMm} mm (¡el eje!) → corrido ½ pitch ${e8.ruteo.corrimientoMm} mm → ${e8.ruteo.claroFinalMm} mm ≥ ${e8.ruteo.claroMinMm} exigido`);
+    // ACTA R93 (2026-09-21, orden EL AGUA DICE DOS COSAS): con ⌀6.35 el paso W sube a 50.8 y
+    // el cubo pasa de 3 a 2 líneas/lado. Con n PAR ninguna línea se centra en el eje ⇒ la
+    // trampa de la Fig 9.9 NO dispara y el corrimiento vale 0 — exigirlo sería exigir que el
+    // defecto exista. Se juzga lo que el libro pide (ninguna línea atraviesa el bebedero) y
+    // el MECANISMO se sigue ejercitando donde sí aplica: `e8h` (H=1D ⇒ W=25.4 ⇒ n impar).
+    check('E8 · RUTEO §9.2.7: ninguna línea atraviesa el bebedero, y con n IMPAR el corrimiento de la Fig 9.9 dispara',
+      e8.ruteo.ok && e8.ruteo.claroFinalMm >= e8.ruteo.claroMinMm
+        && e8h.ruteo.corrimientoMm > 0 && e8h.ruteo.ok && e8h.ruteo.claroSinCorrerMm < e8h.ruteo.claroMinMm,
+      `diseño (n ${e8.cd.nPerSide}): claro ${e8.ruteo.claroFinalMm} ≥ ${e8.ruteo.claroMinMm} exigido, sin corrimiento (ninguna línea en el eje) · control n impar (H=1D, n ${e8h.cd.nPerSide}): ${e8h.ruteo.claroSinCorrerMm} mm ¡el eje! → corrido ${e8h.ruteo.corrimientoMm} → ${e8h.ruteo.claroFinalMm} ≥ ${e8h.ruteo.claroMinMm}`);
     // ══ E8b — EL CIRCUITO REAL (orden 2026-08-18-e8b-circuito-real) ══
     // ian: "las tuberías están MAL" — y el juez nuevo lo confirma con números.
     const cir = e8.circuito;
     check('E8b · CONEXIONES §9.1.6: exactamente 2 por mitad, etiquetadas, tapones y sellos CONTADOS',
       cir.conexionesPorMitad === 2 && cir.inOut.length === 4
         && new Set(cir.inOut.map((i) => i.etiqueta)).size === 4
-        && cir.tapones.length === 12 && cir.sellos.length === 3,
-      `${cir.inOut.map((i) => i.etiqueta).join(' · ')} · ${cir.tapones.length} tapones NPT · ${cir.sellos.length} sellos (cada O-ring es una fuga futura — se declaran, no se esconden)`);
-    check('E8b · EL JUEZ DE INTERFERENCIA TOTAL: todos los claros ≥ ½⌀ de acero (§9.2.7)',
-      cir.juez.ok && cir.juez.claros.length >= 5,
-      cir.juez.claros.map((c) => `${c.contra.split(' ↔ ')[1] ?? c.contra}: ${c.claroMm}≥${c.minMm}`).join(' · '));
-    check('E8b · LOS RECORTES: la interferencia RECORTA H en ambos lados y AMBOS siguen en 2D..5D',
-      cir.recortes.length === 2
+        && cir.tapones.length === 12 && cir.sellos.length === 6,
+      `${cir.inOut.map((i) => i.etiqueta).join(' · ')} · ${cir.tapones.length} tapones NPT · ${cir.sellos.length} sellos (cada O-ring es una fuga futura — se declaran, no se esconden). ACTA R93: 3 → 6 sellos porque con ⌀6.35 la línea B ya no cabe entera en el inserto de núcleo NI bajo su bolsillo: CRUZA la costura y cada una se sella (§9.3.2), igual que las extensiones del lado A`);
+    // ACTA R93 · EL JUEZ CRECIÓ (orden EL AGUA DICE DOS COSAS). El viejo miraba 5 claros —
+    // bebedero, techo del inserto, techo de la pieza, piso del bolsillo y el ápice del
+    // baffle — y daba ✓. NO miraba las CARAS de las placas (de ahí el −1.14 mm que el plan
+    // de inspección encontró en las 4 piezas), ni los pines, ni los retornos, ni el KO, ni la
+    // tornillería. El nuevo mide CIENTOS de pares en 8 categorías y lista TODOS los rojos.
+    // Lo que esta orden CIERRA va en verde duro; los pines siguen rojos y ése es el punto:
+    // el juez por fin los VE (es el hallazgo 2.3 que se le entrega a A-239 / la orden de los
+    // pines, con número y nombre, en vez de un ✓ que no había mirado).
+    const rj = cir.juez.resumen;
+    const cerradas = ['placa', 'inserto', 'colada', 'pieza'];
+    const rojosPin = cir.juez.claros.filter((c) => c.categoria === 'pin' || c.categoria === 'retorno');
+    check('E8b · EL JUEZ DEL AGUA: mide las 8 categorías (caras · inserto · pines · retornos · KO · tornillos · colada · pieza) y LISTA todos los rojos',
+      cir.juez.paresEvaluados >= 100
+        && Object.keys(rj).length === 8
+        && cerradas.every((k) => rj[k].evaluados > 0 && rj[k].fallan === 0)
+        && rojosPin.every((c) => Number.isFinite(c.claroMm) && c.contra.includes('↔')),
+      `${cir.juez.paresEvaluados} pares · ` + Object.entries(rj).map(([k, v]) => `${k} ${v.evaluados - v.fallan}/${v.evaluados}`).join(' · ')
+        + ` · caras de placa ${rj.placa.fallan === 0 ? 'VERDE (el −1.14 mm murió)' : 'ROJO'} · ${rojosPin.length} rojos de pin/retorno LISTADOS para A-239 (peor ${rojosPin.length ? Math.min(...rojosPin.map((c) => c.claroMm)) : '—'} mm)`);
+    // ACTA R93: eran 2 recortes; ahora cada causa habla por separado (techo del inserto A,
+    // costura del inserto B, línea impar para el baffle). Se juzga que AMBOS lados quedan en
+    // la banda del libro y que NINGÚN recorte es mudo: todos citan su § y su número.
+    check('E8b · LOS RECORTES: AMBOS lados quedan en 2D..5D y cada recorte NOMBRA su causa con §',
+      cir.recortes.length >= 2 && cir.recortes.every((t) => /§/.test(t))
         && cir.ladoA.hOverD >= 2 && cir.ladoA.hOverD <= 5
         && cir.ladoB.hOverD >= 2 && cir.ladoB.hOverD <= 5,
-      `A: H ${cir.ladoA.hMm} (${cir.ladoA.hOverD}D, techo del inserto) · B: H ${cir.ladoB.hMm} (${cir.ladoB.hOverD}D, piso del bolsillo)`);
+      `A: H ${cir.ladoA.hMm} (${cir.ladoA.hOverD}D) · B: H ${cir.ladoB.hMm} (${cir.ladoB.hOverD}D) · ${cir.recortes.filter((t) => /§/.test(t)).length}/${cir.recortes.length} recortes citan §`);
     // CONTROL NEGATIVO — la escena de AYER (E8a): con los z de diseño sin
     // recortar, el juez mide claro NEGATIVO en A (rompía el acero) y <½⌀ en B.
     {
@@ -1142,10 +1169,18 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       const idmN = mds.insertDims(asmN);
       const rN = e8.cd.diaMm / 2;
       const claroAviejo = (dC.zPartMm + idmN.Hc) - ((dC.zPartMm + 39.5 + e8.cd.hLineMm) + rN);
-      const claroBviejo = (dC.zPartMm - idmN.Hk) - ((dC.zPartMm - e8.cd.hLineMm) + rN);
-      check('E8b · CONTROL NEGATIVO: la escena de la E8a REPRUEBA con números (A rompía el acero)',
-        claroAviejo < 0 && claroBviejo < rN,
-        `A: claro ${claroAviejo.toFixed(2)} mm (NEGATIVO = el barreno salía del inserto) · B: ${claroBviejo.toFixed(2)} < ${rN.toFixed(2)} — el ojo de ian tenía razón`);
+      // ACTA R93 · el arma B del control cambia de objetivo: con ⌀6.35 la escena E8a ya no
+      // reprueba contra el BOLSILLO, pero sí contra lo que esta orden vino a arreglar — LA
+      // CARA INFERIOR DE LA PLACA B. La regla vieja (`zB = piso del bolsillo − ⌀`) es la que
+      // produjo el −1.14 mm en las 4 piezas del plan de inspección; aquí se reproduce en el
+      // cubo con sus propios números. Si algún día deja de ser negativo, es que la placa B
+      // creció — y entonces este control hay que rehacerlo, no borrarlo.
+      const zB_reglaVieja = (dC.zPartMm - idmN.Hk) - e8.cd.diaMm;
+      const zPilaN = mps.plateStackZ(asmN);
+      const aceroBajoLaLinea = (zB_reglaVieja - rN) - zPilaN.B;
+      check('E8b · CONTROL NEGATIVO: la escena de la E8a REPRUEBA con números (A rompía el inserto · B salía POR DEBAJO de la placa)',
+        claroAviejo < 0 && aceroBajoLaLinea < 0,
+        `A: claro ${claroAviejo.toFixed(2)} mm (NEGATIVO = el barreno salía del inserto) · B con la regla vieja: z ${zB_reglaVieja.toFixed(2)} deja ${aceroBajoLaLinea.toFixed(2)} mm de acero sobre la cara inferior de B (z ${zPilaN.B}) = EL −1.14 del plan de inspección, en el cubo`);
     }
     check('E8b · ANILLO A: libra el bebedero y la trampa §9.3.1(d) queda declarada con su anuncio',
       cir.juez.claros[0].ok && cir.ladoA.semiMm - dC.rBaseMm - e8.cd.diaMm / 2 >= e8.cd.diaMm / 2,
@@ -1157,8 +1192,6 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `bore ⌀${cir.baffle.boreDiaMm} sube a ${cir.baffle.claroApiceMm} mm del ápice del macho — el core POR FIN se enfría por dentro (Fig 9.11 resuelta)`);
     // CONTROL NEGATIVO: pedirle al motor que viole Eq 9.22 (H=1D) — NO se deja:
     // recorta al rango legal. Y con pitch ancho (W=4H) la variación se dispara.
-    const e8h = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14, hOverD: 1 });
-    const e8w = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14, wOverH: 4 });
     check('E8 · CONTROL NEGATIVO: H=1D se RECORTA al rango legal (Eq 9.22) y W=4H dispara la variación',
       e8h.cd.hLineMm >= 2 * e8h.cd.diaMm - 1e-9 && e8w.lineas.variacionFlujoPct > 50,
       `H pedido 1D → entregado ${(e8h.cd.hLineMm / e8h.cd.diaMm).toFixed(2)}D · W=4H → variación ${e8w.lineas.variacionFlujoPct} % (vs ${e8.lineas.variacionFlujoPct} % del diseño)`);
@@ -1245,9 +1278,13 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       e10.juez.ok && e10.pines.posiciones.filter((q) => Math.abs(q.x - dC.ejeX) < 1 && Math.abs(q.y - dC.ejeY) > 10).length === 0
         && e10.cicloDecision.some((c) => c.includes('CEDEN LOS PINES')),
       `${e10.juez.claros.length} claros medidos · peor ${Math.min(...e10.juez.claros.map((c) => c.claroMm)).toFixed(2)} mm · cero pines sobre x=eje en las paredes Y`);
-    check('E10 · CONTROL NEGATIVO: un pin forzado SOBRE la línea B-0 REPRUEBA (el juez muerde)',
-      !ed.estacion10Dado(e2.pkg, dC, e8x.circuito, { pinExtra: { x: 60, y: 98 } }).juez.ok,
-      'pin en (60, 98) → claro negativo contra la serpentina — esto es lo que REABRIRÍA la E8');
+    // ACTA R93: el (60, 98) era la línea B-0 con ⌀4.76; con ⌀6.35 los carriles se movieron y
+    // un punto fijo deja de ser un control (mide suerte, no el juez). Se toma la línea REAL
+    // del circuito: el control sigue siendo negativo de verdad, y no caduca al mover el ⌀.
+    const sgB0 = e8x.circuito.segmentos.find((g) => g.tipo === 'linea' && g.p0[2] < dC.zPartMm);
+    check('E10 · CONTROL NEGATIVO: un pin forzado SOBRE una línea REAL de la serpentina REPRUEBA (el juez muerde)',
+      !!sgB0 && !ed.estacion10Dado(e2.pkg, dC, e8x.circuito, { pinExtra: { x: sgB0.p0[0], y: (sgB0.p0[1] + sgB0.p1[1]) / 2 } }).juez.ok,
+      `pin justo sobre ${sgB0 ? sgB0.id : '—'} en x=${sgB0 ? sgB0.p0[0].toFixed(1) : '—'} → claro negativo contra la serpentina — esto es lo que REABRIRÍA la E8`);
     check('E10 · juzgarPines CONVOCADO (esperaba desde la E1) sin VIOLA',
       e10.juicioPines.peor !== 'VIOLA', `veredicto ${e10.juicioPines.peor} · ${e10.juicioPines.avisosAgua.length} avisos de agua`);
   }

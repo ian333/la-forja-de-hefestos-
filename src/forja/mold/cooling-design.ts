@@ -60,6 +60,17 @@ export const ACEROS_MOLDE: Record<string, { kWmC: number; sigmaEnduranceMPa: num
   'QC-7': { kWmC: 160, sigmaEnduranceMPa: 166 },     // aluminio (§9.2.5: P_melt cae a 50 MPa a 1D)
 };
 
+/**
+ * PISO MAQUINABLE — **regla nuestra, SIN cita del libro**. Razón: §9.2.5 elige D por el
+ * caudal y DESPUÉS verifica que quepa, pero en piezas chicas la carga térmica es diminuta
+ * y el caudal pide el ⌀ más chico del catálogo (JP-250, 4.76 mm). Un barreno de 4.76 mm a
+ * lo ancho de una placa de 246 mm (L/D = 52) no se taladra derecho en el taller: se va de
+ * línea. El piso ya estaba DECLARADO en `packageToAssemblySpec` («⌀ de agua con PISO
+ * maquinable (~6.35 mm mínimo real)») — aquí sube al motor para que TODOS lo apliquen igual.
+ * ian 2026-09-21 (orden EL AGUA DICE DOS COSAS): «manda el caudal con piso maquinable».
+ */
+export const PISO_MAQUINABLE_MM = 6.35;
+
 /** Tabla 9.2 — plugs de enfriamiento comerciales (DME). El ⌀ final DEBE ser uno de éstos. */
 export const PLUGS_DME: Array<{ plug: string; npt: string; diaMm: number }> = [
   { plug: 'JP-250', npt: '1/16', diaMm: 4.76 },
@@ -148,6 +159,9 @@ export interface CoolingDesignIn {
   coolant?: Coolant;
   /** forzar un ⌀ (mm) en vez de elegir de la Tabla 9.2 */
   forceDiaMm?: number;
+  /** PISO del ⌀ (mm): el catálogo se filtra a los plugs ≥ piso ANTES de elegir. Default 0
+   *  (el libro puro). El circuito real pasa `PISO_MAQUINABLE_MM` — ver su comentario. */
+  pisoDiaMm?: number;
   /** forzar el nº de líneas POR LADO (para auditar un circuito ya trazado) */
   forceLinesPerSide?: number;
 }
@@ -200,6 +214,11 @@ export function coolingDesign(o: CoolingDesignIn): CoolingDesignOut {
   const inSeries = o.linesInSeries ?? 2;
   const wOverHTarget = o.wOverH ?? 2;
   const fallas: string[] = [];
+  // Tabla 9.2 RECORTADA por el piso maquinable (default 0 = el catálogo completo del libro).
+  // Nunca queda vacía: si el piso se pasa del catálogo, sobrevive el más grande.
+  const pisoMm = o.pisoDiaMm ?? 0;
+  const CAT = PLUGS_DME.filter((p) => p.diaMm >= pisoMm - 1e-9);
+  const CATALOGO = CAT.length ? CAT : [PLUGS_DME[PLUGS_DME.length - 1]];
 
   // ── 9.2.1 · Eq 9.5 ──────────────────────────────────────────────────────
   const tcS = o.tcS ?? tcPlateS(o.thickestMm / 1000, o.alphaM2s, o.tMeltC, o.tEjectC, o.tCoolantC);
@@ -221,7 +240,7 @@ export function coolingDesign(o: CoolingDesignIn): CoolingDesignOut {
   };
 
   // ── EL LAZO: n_lines ⇄ W ⇄ H ⇄ D ────────────────────────────────────────
-  let diaMm = o.forceDiaMm ?? PLUGS_DME[2].diaMm;    // arranque: el 3/8" (el más usado)
+  let diaMm = o.forceDiaMm ?? CATALOGO.find((p) => p.diaMm >= PLUGS_DME[2].diaMm)?.diaMm ?? CATALOGO[0].diaMm;   // arranque: el 3/8" (el más usado)
   let nPerSide = 1, nLines = sides, iters = 0;
   let hLineM = pickH(diaMm), wLineMm = wOverHTarget * hLineM * 1000;
   let qLineW = qCoolingW / nLines, vDotLine = qLineW / (c.rhoKgM3 * c.cpJkgC * dT);
@@ -243,9 +262,9 @@ export function coolingDesign(o: CoolingDesignIn): CoolingDesignOut {
     if (!dNew) {
       // Tabla 9.2: el estándar MÁS CHICO que cumpla (menos acero removido,
       // menos concentración de esfuerzo, más velocidad ⇒ más h_c)
-      const ok = PLUGS_DME.filter((p) => p.diaMm / 1000 >= dMinM && p.diaMm / 1000 <= dMaxM);
-      dNew = ok.length ? ok[0].diaMm : (dMinM * 1000 > PLUGS_DME[PLUGS_DME.length - 1].diaMm
-        ? PLUGS_DME[PLUGS_DME.length - 1].diaMm : PLUGS_DME[0].diaMm);
+      const ok = CATALOGO.filter((p) => p.diaMm / 1000 >= dMinM && p.diaMm / 1000 <= dMaxM);
+      dNew = ok.length ? ok[0].diaMm : (dMinM * 1000 > CATALOGO[CATALOGO.length - 1].diaMm
+        ? CATALOGO[CATALOGO.length - 1].diaMm : CATALOGO[0].diaMm);
     }
     const cerrado = nLinesNew === nLines && Math.abs(dNew - diaMm) < 1e-9;
     nPerSide = nNew; nLines = nLinesNew; diaMm = dNew;
@@ -277,7 +296,8 @@ export function coolingDesign(o: CoolingDesignIn): CoolingDesignOut {
 
   if (re <= 4000) fallas.push(`Re = ${re.toFixed(0)} ≤ 4000: flujo LAMINAR, el agua no arranca el calor (Eq 9.14)`);
   if (diaMm < dMinMm) fallas.push(`⌀${diaMm} < D_min ${dMinMm.toFixed(2)} mm: se pasa del ΔP permitido (Eq 9.17)`);
-  if (diaMm > dMaxMm) fallas.push(`⌀${diaMm} > D_max ${dMaxMm.toFixed(2)} mm: pierde turbulencia (Eq 9.15)`);
+  if (diaMm > dMaxMm) fallas.push(`⌀${diaMm} > D_max ${dMaxMm.toFixed(2)} mm: pierde turbulencia (Eq 9.15)`
+    + (pisoMm > 0 && dMaxMm < pisoMm ? ` — lo empuja el PISO MAQUINABLE ${pisoMm} mm: el caudal pedía menos. Se bombea por Re (extensión declarada), no por ΔT` : ''));
   if (hLineMm > hMaxTermicaM * 1000 + 1e-6)
     fallas.push(`H = ${hLineMm.toFixed(1)} mm > k/1000 = ${(hMaxTermicaM * 1000).toFixed(1)} mm: la línea está tan honda que ELLA alarga el ciclo (Eq 9.21)`);
   if (hLineMm < 2 * diaMm - 1e-6)
