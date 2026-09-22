@@ -139,3 +139,11 @@ nuestra · 8 1557BGY con pisos a 4 alturas: igualar pines o keyearlos (§11.2.6)
 
 **Entrega** · `public/evidencia/2026-09-21-el-reparto-de-la-inspeccion/`: `antes-despues.png` (4 piezas × carrera / insertos / pines,
 antes | después) y `resultados.json` (punto × pieza antes → después, gates, hallazgo nuevo). Cada orden trae su propia evidencia.
+
+## FIRMA DE IAN (2026-09-22)
+**ACTA R93 FIRMADA** — se quedan la caja expulsora por la carrera (66 → 106, partición 146 → 186) y el agua ⌀6.35·H25.4·W50.8.
+Respuestas: 2 holgura **2 mm** · 3 flecha del soporte ≤ **70 %** del venteo por defecto, **85 %** tope — *regla de Hefestos* ·
+4 subir el caudal a turbulento · 5 mover pines antes que baffles · 6 crece la expulsora · 7 el 0.1·L se queda como *regla de
+Hefestos* (rotulada, no de Kazmer) · 8 cada pin a SU largo + llave + etiqueta (§11.2.6); cada pieza en GAIA con su identificador ·
+9 el corte que pierde hoyos «lleva apareciendo varias veces»: solución robusta (una sola función de barrenado + juez de material
+quitado), no otro parche · 10 teselar más fino el agua en el estudio de contacto.
