@@ -1,0 +1,195 @@
+{
+ "orden": "2026-09-21-la-carrera-cabe",
+ "que": "la pila del molde se dimensiona por LA PIEZA: la caja expulsora sale de la carrera de expulsión (§4.3.2 Fig 4.22) y la apertura saca la pieza CON su bebedero (§6.3.2, sus DOS términos)",
+ "arnes": "carrera-cabe.cjs sobre la app REAL en iangpu forja-dev3 :5199 — arma hasta la estación 8, lee data-carrera-libre/pedida, y mide la apertura del 3D con inspeccion.estado(1,0)+animZ('clamp') y la expulsión con estado(1,1)+animZ('ejector-ret')",
+ "antesDe": "public/evidencia/2026-09-21-el-plan-de-inspeccion/resultados.json (pasada 1, mismo código base ae41a29)",
+ "reglas": {
+  "apertura": "carreraDeApertura (threeplate.ts) = factor·H + colada. §6.3.2 LITERAL: «two to three times the height of the molded parts» (la PIEZA) y «sufficient to allow for the removal of the feed system» (la COLADA). Con colada 0 se reduce exactamente a la regla vieja.",
+  "cajaExpulsora": "sizeEjectorHousing (platesizing.ts). §4.3.2 LITERAL: «The travel of the ejector plate should be selected to eject the part from the mold… FROM THE EJECTOR TRAVEL, the height of the ejector housing, dimension 'C', is assigned» → manda la carrera, la caja aterriza en la serie comercial.",
+  "carreraDeExpulsion": "carreraDeExpulsionMm = H + 8. §4.3.2 pone E = profundidad de la pieza («often»); los 8 mm son NUESTROS (declarado: que la pieza LIBRE el macho y caiga).",
+  "sujeciones": "36 mm de catálogo (CLAMP_PLATE_MM). §12.1.1: las sujeciones van en compresión pura contra la platina («very little out of plane bending occurs») — no hay criterio de deflexión que despejar.",
+  "soporte": "sizeSupportPlate/optimizeSupportPlate YA lo dimensiona: 22 mm es su respuesta con 4 pilares y deflexión ≤ venteo en LAS DOS bases (246×246 → 0.0176 mm; 396×296 → 0.0191 mm contra 0.02 de venteo). El ×6.7 del revisor sale de comparar los lados de la base e ignorar los pilares: el claro efectivo es 0.6·min(w,l)/(n+1) = 29.6 y 35.6 mm, no 246 y 396."
+ },
+ "piezas": {
+  "carcasa": {
+   "archivo": "1594C Box.stp",
+   "alturaPiezaMm": 33.3,
+   "bebederoMm": 69.2,
+   "cajaExpulsoraMm": {
+    "antes": 66,
+    "despues": 96
+   },
+   "stackMm": {
+    "antes": 262,
+    "despues": 292
+   },
+   "3.1 la apertura saca la pieza CON su bebedero": {
+    "antes": {
+     "v": "falla",
+     "medido": "apertura 2.5·H = 83.3 mm · pieza 33.3 + bebedero 69.2 + 10 = 112.5"
+    },
+    "despues": {
+     "que": "la apertura saca la pieza CON su bebedero",
+     "aperturaRealMm": 152.5,
+     "pideMm": 112.5,
+     "antes25HMm": 83.3,
+     "v": "ok"
+    }
+   },
+   "3.2 la carrera de expulsión CABE en la caja": {
+    "antes": {
+     "v": "falla",
+     "medido": "libre 31 mm · la pieza pide 41.3 (H + 8) → la retenedora entra 10.3 mm en el soporte"
+    },
+    "despues": {
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "libreMm": 46,
+     "pedidaMm": 41.3,
+     "penetracionRetenedoraMm": 0,
+     "v": "ok"
+    }
+   },
+   "animZ": {
+    "clampAbierto": 152.5,
+    "retenedoraExpulsada": 41.3,
+    "expulsoraExpulsada": 41.3,
+    "piezaExpulsada": 41.3
+   }
+  },
+  "tapa": {
+   "archivo": "1594C Lid.stp",
+   "alturaPiezaMm": 14.1,
+   "bebederoMm": 58.4,
+   "cajaExpulsoraMm": {
+    "antes": 66,
+    "despues": 66
+   },
+   "stackMm": {
+    "antes": 218,
+    "despues": 218
+   },
+   "3.1 la apertura saca la pieza CON su bebedero": {
+    "antes": {
+     "v": "falla",
+     "medido": "apertura 2.5·H = 35.2 mm · pieza 14.1 + bebedero 58.4 + 10 = 82.5"
+    },
+    "despues": {
+     "que": "la apertura saca la pieza CON su bebedero",
+     "aperturaRealMm": 93.7,
+     "pideMm": 82.5,
+     "antes25HMm": 35.2,
+     "v": "ok"
+    }
+   },
+   "3.2 la carrera de expulsión CABE en la caja": {
+    "antes": {
+     "v": "ok",
+     "medido": "libre 31 mm · la pieza pide 22.1 (H + 8) → la retenedora entra 0 mm en el soporte"
+    },
+    "despues": {
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "libreMm": 31,
+     "pedidaMm": 22.1,
+     "penetracionRetenedoraMm": 0,
+     "v": "ok"
+    }
+   },
+   "animZ": {
+    "clampAbierto": 93.7,
+    "retenedoraExpulsada": 22.1,
+    "expulsoraExpulsada": 22.1,
+    "piezaExpulsada": 22.1
+   }
+  },
+  "alta": {
+   "archivo": "1599HBK.stp",
+   "alturaPiezaMm": 35.5,
+   "bebederoMm": 87,
+   "cajaExpulsoraMm": {
+    "antes": 66,
+    "despues": 96
+   },
+   "stackMm": {
+    "antes": 302,
+    "despues": 332
+   },
+   "3.1 la apertura saca la pieza CON su bebedero": {
+    "antes": {
+     "v": "falla",
+     "medido": "apertura 2.5·H = 88.8 mm · pieza 35.5 + bebedero 87 + 10 = 132.5"
+    },
+    "despues": {
+     "que": "la apertura saca la pieza CON su bebedero",
+     "aperturaRealMm": 175.8,
+     "pideMm": 132.5,
+     "antes25HMm": 88.8,
+     "v": "ok"
+    }
+   },
+   "3.2 la carrera de expulsión CABE en la caja": {
+    "antes": {
+     "v": "falla",
+     "medido": "libre 31 mm · la pieza pide 43.5 (H + 8) → la retenedora entra 12.5 mm en el soporte"
+    },
+    "despues": {
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "libreMm": 46,
+     "pedidaMm": 43.5,
+     "penetracionRetenedoraMm": 0,
+     "v": "ok"
+    }
+   },
+   "animZ": {
+    "clampAbierto": 175.8,
+    "retenedoraExpulsada": 43.5,
+    "expulsoraExpulsada": 43.5,
+    "piezaExpulsada": 43.5
+   }
+  },
+  "ensamble": {
+   "archivo": "1557BGY.stp",
+   "alturaPiezaMm": 31.2,
+   "bebederoMm": 61.3,
+   "cajaExpulsoraMm": {
+    "antes": 66,
+    "despues": 96
+   },
+   "stackMm": {
+    "antes": 238,
+    "despues": 268
+   },
+   "3.1 la apertura saca la pieza CON su bebedero": {
+    "antes": {
+     "v": "falla",
+     "medido": "apertura 2.5·H = 78 mm · pieza 31.2 + bebedero 61.3 + 10 = 102.5"
+    },
+    "despues": {
+     "que": "la apertura saca la pieza CON su bebedero",
+     "aperturaRealMm": 139.3,
+     "pideMm": 102.5,
+     "antes25HMm": 78,
+     "v": "ok"
+    }
+   },
+   "3.2 la carrera de expulsión CABE en la caja": {
+    "antes": {
+     "v": "falla",
+     "medido": "libre 31 mm · la pieza pide 39.2 (H + 8) → la retenedora entra 8.2 mm en el soporte"
+    },
+    "despues": {
+     "que": "la carrera de expulsión CABE en la caja expulsora",
+     "libreMm": 46,
+     "pedidaMm": 39.2,
+     "penetracionRetenedoraMm": 0,
+     "v": "ok"
+    }
+   },
+   "animZ": {
+    "clampAbierto": 139.3,
+    "retenedoraExpulsada": 39.2,
+    "expulsoraExpulsada": 39.2,
+    "piezaExpulsada": 39.2
+   }
+  }
+ }
+}

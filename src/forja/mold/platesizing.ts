@@ -10,7 +10,10 @@
  *      abre más que el venteo (~0.02 mm) hay FLASH → t ≥ (F·L³·12 / (48·E·W·δ_máx))^⅓
  *   2. ALOJAR EL ENFRIAMIENTO (§9.2.5): la línea de agua va a ~2·Ø de la superficie
  *      y necesita ≥1·Ø de acero atrás → t ≥ prof_línea + 1.5·Ø
- *   3. ALOJAR LOS EXPULSORES: carrera del pin + placa retenedora (opcional)
+ *   3. ALOJAR LOS EXPULSORES: carrera del pin + placa retenedora (opcional — y HOY
+ *      NADIE LA PASA: quien dimensiona por la carrera de expulsión es la CAJA
+ *      (`sizeEjectorHousing`, §4.3.2), que vive DEBAJO de la placa de soporte. El
+ *      reparto es ese: la caja aloja el recorrido, el soporte carga la flexión.)
  *
  * y como δ ∝ claro³, poner PILARES de soporte (que dividen el claro) adelgaza la
  * placa dramáticamente → menos material. El resolvedor busca la combinación
@@ -32,6 +35,121 @@ export const COMMERCIAL_PLATE_THK = [
 export function snapToCommercialPlate(tMm: number): number | null {
   return COMMERCIAL_PLATE_THK.find((t) => t >= tMm) ?? null;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * LA CAJA EXPULSORA — dimensión "C" de la Fig 4.22, §4.3.2 LITERAL
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * *"The travel of the ejector plate should be selected to eject the part from the
+ *  mold. Often, THE EJECTOR TRAVEL IS SET TO BE EQUAL TO THE DEPTH OF THE MOLDED
+ *  PART. From the ejector travel, the height of the ejector housing, dimension
+ *  'C', IS ASSIGNED by the mold base supplier."*  (§4.3.2, Fig 4.22)
+ *
+ * O sea: manda LA CARRERA y la caja se le asigna. El código lo tenía AL REVÉS —
+ * `packageToAssemblySpec` clavaba C = 66 mm para cualquier pieza y la carrera salía
+ * de restarle las placas del paquete expulsor:
+ *      libre = 66 − 4 − max(15, 0.28·66) − max(12, 0.20·66) = 66 − 4 − 18 − 13 = 31 mm
+ * MEDIDO (plan de inspección 2026-09-21, punto 3.2, 4 piezas reales): 3/4 NO cabían
+ * — carcasa pedía 41.3, 1599HBK 43.5, 1557BGY 39.2 contra esos 31 mm. La retenedora
+ * se metía 8 a 12 mm DENTRO de la placa de soporte en cada ciclo (video 35).
+ *
+ * Aquí viven las fracciones del paquete expulsor en UN solo lugar. Antes estaban
+ * TECLEADAS EN SEIS SITIOS: `plateDefs` (0.20 y 0.28), `plateStackZ` (0.28), el
+ * contrataladro de cabezas de `buildPlateSolid` (0.2), `cicloPortamoldesPieza` (0.20)
+ * y DOS veces en `estudio-molde-datos` (0.28, además mal nombradas `retH`). Seis copias
+ * de una proporción = cinco maneras de que el plano y el 3D dejen de ser el mismo molde.
+ * Y aquí también vive el dimensionador que INVIERTE la relación: carrera → caja de catálogo.
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/** Placa EXPULSORA (la que empuja) como fracción de la caja — proporción de catálogo
+ *  Meusburger/HASCO heredada del set de planos; NO sale del libro (§4.3.2 dice que la
+ *  asigna el proveedor de la base, sin dar la partición interna). Declarada NUESTRA. */
+export const EJECTOR_PLATE_FRAC = 0.28;
+export const EJECTOR_PLATE_MIN_MM = 15;
+/** Placa RETENEDORA (la que sujeta las cabezas de los pines) — misma nota. */
+export const EJECTOR_RETAINER_FRAC = 0.20;
+export const EJECTOR_RETAINER_MIN_MM = 12;
+/** DESCANSO entre la sujeción inferior y la expulsora: donde viven los stop pins
+ *  (§11, Fig 11.1: "ejector plate, ejector retainer plate, return pins, ejector pins,
+ *  STOP PINS … housed between the rear clamp plate, support plate, and rails"). El
+ *  libro no da el número: 4 mm es NUESTRO, heredado de `plateStackZ`. */
+export const EJECTOR_REST_MM = 4;
+/** HOLGURA al final de la carrera: acero que debe quedar entre la cara de la retenedora
+ *  y la de soporte con los expulsores AFUERA. Regla NUESTRA, sin cita — razón: que el
+ *  tope del ciclo sean los stop pins / el vástago de la máquina y NUNCA la placa de
+ *  soporte (§11.3.8 advierte del daño cuando la máquina fuerza el paquete más allá de
+ *  su recorrido libre). MEDIDO el costo de estos 2 mm: con 1 mm la tapa 1594C caería de
+ *  caja 66 a 56 y el ensamble 1557BGY de 96 a 86 (menos acero, §12.1.3 "minimize the size
+ *  of the mold"). Se dejan en 2 porque así NINGUNA pieza que hoy pasa el 3.2 cambia de
+ *  caja — el arreglo toca solo los moldes que estaban rotos. Queda para que ian lo decida. */
+export const EJECTOR_CLEARANCE_MM = 2;
+/** MARGEN sobre la profundidad de la pieza para la carrera de expulsión. §4.3.2 pone
+ *  E = profundidad de la pieza ("often"); estos 8 mm de más son NUESTROS —razón: que la
+ *  pieza no solo se despegue sino que LIBRE el macho y caiga— y ya estaban tecleados en
+ *  `ForgeBRepStudio` y en `estacion10Dado`. Aquí quedan en un solo lugar. */
+export const EJECCION_MARGEN_MM = 8;
+
+/** Espesor de la placa EXPULSORA para una caja de altura `housingMm`. */
+export const ejectorPlateMm = (housingMm: number): number =>
+  Math.max(EJECTOR_PLATE_MIN_MM, Math.round(housingMm * EJECTOR_PLATE_FRAC));
+/** Espesor de la placa RETENEDORA para una caja de altura `housingMm`. */
+export const ejectorRetainerMm = (housingMm: number): number =>
+  Math.max(EJECTOR_RETAINER_MIN_MM, Math.round(housingMm * EJECTOR_RETAINER_FRAC));
+/** CARRERA LIBRE que queda dentro de una caja de altura `housingMm`: lo que la
+ *  retenedora puede subir antes de tocar la placa de soporte. */
+export const carreraLibreEnCaja = (housingMm: number): number =>
+  +(housingMm - EJECTOR_REST_MM - ejectorPlateMm(housingMm) - ejectorRetainerMm(housingMm)).toFixed(1);
+
+/** CARRERA DE EXPULSIÓN pedida por la pieza (mm) — §4.3.2 ("often … equal to the depth
+ *  of the molded part") + `EJECCION_MARGEN_MM` declarado nuestro. */
+export const carreraDeExpulsionMm = (alturaPiezaMm: number): number =>
+  +(Math.max(0, alturaPiezaMm || 0) + EJECCION_MARGEN_MM).toFixed(1);
+
+export interface EjectorHousingSizing {
+  carreraMm: number; holguraMm: number;
+  /** altura cerrada mínima que exige la carrera, ANTES de aterrizar en catálogo */
+  tRequiredMm: number;
+  /** la caja de CATÁLOGO elegida (null = excede la serie comercial) */
+  housingMm: number | null;
+  ejectorMm: number; retainerMm: number; restMm: number;
+  /** carrera que de verdad queda libre con esa caja (≥ carrera + holgura) */
+  carreraLibreMm: number;
+  cabe: boolean; notas: string[];
+}
+
+/**
+ * DIMENSIONA LA CAJA EXPULSORA POR LA CARRERA (§4.3.2, Fig 4.22).
+ * Forma cerrada: como las dos placas son fracciones de la caja,
+ *      C ≥ (carrera + holgura + descanso) / (1 − 0.28 − 0.20)
+ * pero los PISOS (15 y 12 mm) rompen la proporción en cajas chicas, así que el
+ * resultado se VERIFICA recorriendo la serie comercial con las fórmulas reales y se
+ * devuelve la primera caja donde `carreraLibreEnCaja` alcanza de verdad. Medir en vez
+ * de confiar en el despeje es la diferencia entre un número y un molde que abre.
+ */
+export function sizeEjectorHousing(o: { carreraMm: number; holguraMm?: number }): EjectorHousingSizing {
+  const holgura = o.holguraMm ?? EJECTOR_CLEARANCE_MM;
+  const carrera = Math.max(0, o.carreraMm || 0);
+  const pide = carrera + holgura + EJECTOR_REST_MM;
+  const tRequired = +(pide / (1 - EJECTOR_PLATE_FRAC - EJECTOR_RETAINER_FRAC)).toFixed(1);
+  const housing = COMMERCIAL_PLATE_THK.find((c) => carreraLibreEnCaja(c) >= carrera + holgura) ?? null;
+  const notas: string[] = [];
+  if (!housing) notas.push(`la carrera ${carrera.toFixed(1)} mm pide una caja > ${COMMERCIAL_PLATE_THK[COMMERCIAL_PLATE_THK.length - 1]} mm: paquete expulsor a medida o expulsión en dos etapas (§11.3.9)`);
+  const c = housing ?? tRequired;
+  const libre = carreraLibreEnCaja(c);
+  return {
+    carreraMm: +carrera.toFixed(1), holguraMm: holgura, tRequiredMm: tRequired,
+    housingMm: housing, ejectorMm: ejectorPlateMm(c), retainerMm: ejectorRetainerMm(c), restMm: EJECTOR_REST_MM,
+    carreraLibreMm: libre, cabe: libre >= carrera, notas,
+  };
+}
+
+/** PLACAS DE SUJECIÓN (superior e inferior), mm. Literal de catálogo, y el libro dice
+ *  por qué NO hay ecuación que las dimensione: §12.1.1 — *"For most molds, the cavity
+ *  inserts are directly supported by the top clamp plate and the stationary platen. As
+ *  such, the cavity inserts are generally in a state of PURE COMPRESSION so very little
+ *  out of plane bending occurs."* La flexión la cargan el núcleo y la placa de SOPORTE
+ *  (`sizeSupportPlate`), no las sujeciones: sin criterio de deflexión no hay nada que
+ *  despejar, y queda el espesor de catálogo (36 = talla Meusburger, ya en la serie). */
+export const CLAMP_PLATE_MM = 36;
 
 /** Restricción 1 — espesor mínimo por DEFLEXIÓN (despeja Eq 12.10-12.11). */
 export function thicknessByDeflection(o: {

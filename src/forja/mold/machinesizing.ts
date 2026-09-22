@@ -168,7 +168,12 @@ function juzgarMaquina(
  */
 export function selectInjectionMachine(
   req: MachineRequirements,
-  /** `openStrokeMm` = carrera de apertura (§6.3.2, `moldOpeningStrokeMm(altura)`).
+  /** `openStrokeMm` = carrera de apertura — **la manda `carreraDeApertura` (threeplate.ts)**,
+   *  la MISMA función que mueve el 3D y dibuja la lámina L5: 2.5 × altura de pieza (§6.3.2)
+   *  MÁS el bebedero que sale con ella (el mismo § pide que la carrera alcance para *"the
+   *  removal of the feed system"*). Con `moldOpeningStrokeMm` pelado el daylight se juzgaba
+   *  con una carrera que no saca la colada — en las 4 piezas del plan de inspección el
+   *  bebedero medía 58-87 mm, más que la pieza entera.
    *  OBLIGATORIO: sin él el daylight se juzgaba con el molde CERRADO y aprobaba
    *  máquinas que no lo pueden abrir (barrido: 25 casos, hasta 92 mm de faltante). */
   mold: { wmm: number; lmm: number; stackMm: number; openStrokeMm: number },

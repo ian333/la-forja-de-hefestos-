@@ -26,6 +26,9 @@ import { pillarClearanceFit, guideGeom } from './fits';   // tolerancias LITERAL
 import { autoEjectionPlan, maxPinDiaForSteelMm, STANDARD_EJECTOR_PIN_MM } from './mold-ejection-auto';  // el CEREBRO §11: pin/blade/sleeve/STRIPPER desde la figura
 // UNA fuente de verdad para el tamaño del inserto (§4.2.2): la misma que dimensiona la base
 import { sizeInserts } from './moldbase';
+// LA PILA SE DIMENSIONA POR LA PIEZA (§4.3.2): la caja expulsora sale de la carrera y las
+// fracciones del paquete expulsor viven en UN solo lugar (antes: tres copias tecleadas).
+import { sizeEjectorHousing, carreraDeExpulsionMm, ejectorPlateMm, ejectorRetainerMm, EJECTOR_REST_MM, CLAMP_PLATE_MM } from './platesizing';
 import { planInterlocks } from './mold-interlocks';
 import { generateDrawing } from '../brep/drawing';
 import { partSheet4View, type IsoStyle } from '../brep/isoview';
@@ -268,7 +271,7 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
   // SECUENCIAL, mismas dims que el componente. +0.4 locacional (recibe la cabeza).
   if (def.role === 'ejector-ret') {
     const headH = Math.max(4, Math.min(6, t - 2));                              // = headH del componente (t = tRet)
-    const rHeadH = Math.max(4, Math.round(spec.plates.ejectorHousing * 0.2) - 2);
+    const rHeadH = Math.max(4, ejectorRetainerMm(spec.plates.ejectorHousing) - 2);   // = espesor REAL de la retenedora − 2
     for (const h of standardHoles(spec, 'ejector-ret')) {
       const isRet = /retorno/.test(h.type);
       const cbDia = isRet ? 16 + 0.4 : spec.ejectors.diaMm + 4 + 0.4;
@@ -314,8 +317,10 @@ export function plateStackZ(spec: MoldAssemblySpec): Record<string, number> {
   const p = spec.plates;
   return {
     bottom: 0,
-    ejector: p.bottomClamp + 4,
-    'ejector-ret': p.bottomClamp + 4 + Math.max(15, Math.round(p.ejectorHousing * 0.28)),
+    ejector: p.bottomClamp + EJECTOR_REST_MM,
+    // el descanso (4) y el espesor de la expulsora son de `platesizing`: tres copias de la
+    // misma fracción era la forma de que una de ellas mintiera el día que cambiara.
+    'ejector-ret': p.bottomClamp + EJECTOR_REST_MM + ejectorPlateMm(p.ejectorHousing),
     support: p.bottomClamp + p.ejectorHousing,
     B: p.bottomClamp + p.ejectorHousing + p.support,
     A: p.bottomClamp + p.ejectorHousing + p.support + p.B,
@@ -342,6 +347,24 @@ export interface MoldPart {
   /** EL CÁLCULO NARRADO del componente (fórmula + sustitución + resultado por
    *  paso) — la pantalla de fórmulas: el árbol lo muestra al expandir. */
   calc?: import('./cooling-design').CalcPaso[];
+}
+
+/** LARGO DE COLADA QUE SALE SOBRE LA PIEZA (mm) — el sumando del feed system de
+ *  `carreraDeApertura` (§6.3.2: la carrera también tiene que permitir *"the removal of
+ *  the feed system"*). Se MIDE del sólido que se dibujó, no se estima: z_max de la
+ *  colada menos z_max de la pieza. 0 si no hay colada fría (runner caliente) o si el
+ *  bebedero no sobresale. Misma definición que usa el punto 3.1 del plan de inspección. */
+export function coladaSobrePiezaMm(parts: Array<{ role: string; positions: Float32Array }>): number {
+  const zMax = (role: string) => {
+    const pt = parts.find((x) => x.role === role);
+    if (!pt) return null;
+    let z = -Infinity;
+    for (let i = 2; i < pt.positions.length; i += 3) if (pt.positions[i] > z) z = pt.positions[i];
+    return Number.isFinite(z) ? z : null;
+  };
+  const zPieza = zMax('pieza'), zColada = zMax('colada');
+  if (zPieza == null || zColada == null) return 0;
+  return +Math.max(0, zColada - zPieza).toFixed(1);
 }
 
 type CarvedMesh = { positions: Float32Array; normals: Float32Array; indices: Uint32Array };
@@ -1594,6 +1617,10 @@ export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
   const espesor = (p: { plateThkMm: number | null; tRequiredMm?: number } | undefined, porDefecto: number) =>
     Math.round(finito(p?.plateThkMm) ? p.plateThkMm : finito(p?.tRequiredMm) ? p.tRequiredMm : porDefecto);
   const support = espesor(d.placas.soporte, 46);
+  // LA CAJA EXPULSORA POR LA CARRERA (§4.3.2): E = profundidad de la pieza (+8 nuestro
+  // para que LIBRE el macho) → C de catálogo. `cabe` nunca es false salvo que la carrera
+  // exceda la serie comercial entera, y entonces la nota lo dice en vez de callarlo.
+  const cajaExpulsora = sizeEjectorHousing({ carreraMm: carreraDeExpulsionMm(s.Hmm) });
   const cavPlate = espesor(d.placas.cavidad, 56);   // placa A = inserto de CAVIDAD (§4.2.1)
   const corePlate = espesor(d.placas.nucleo, cavPlate);   // placa B = inserto de NÚCLEO (§4.2.1), NO copiada de A
   const line = d.enfriamiento.lineas;
@@ -1610,9 +1637,22 @@ export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
     // el libro ya había elegido 396 para ese lado. Cazado con las COTAS 3D.
     widthMm: Math.round(base.lmm || base.wmm) || Math.round(s.Lmm * 1.6),
     depthMm: Math.round(base.wmm || base.lmm) || Math.round(s.Wmm * 1.6),
+    // ── LA PILA SALE DE LA PIEZA (§4.3.2 · Fig 4.22) ──────────────────────────
+    // `bottomClamp: 36, ejectorHousing: 66, topClamp: 36` estaba CLAVADO para cualquier
+    // pieza. El libro dice el orden contrario para la caja: *"The travel of the ejector
+    // plate should be selected to eject the part from the mold… FROM THE EJECTOR TRAVEL,
+    // the height of the ejector housing, dimension 'C', is assigned"*. Con C = 66 la
+    // carrera libre era 31 mm FIJOS y, medido sobre 4 piezas reales (plan de inspección
+    // 2026-09-21, punto 3.2), 3 de 4 pedían más: 41.3 · 43.5 · 39.2 mm → la retenedora
+    // se enterraba 8-12 mm en la placa de soporte cada ciclo. Ahora la caja la manda la
+    // carrera y aterriza en la serie comercial.
+    // Las SUJECIONES sí se quedan en 36: §12.1.1 dice que van en compresión pura contra
+    // la platina ("very little out of plane bending occurs"), así que no hay criterio de
+    // deflexión que despejar — es talla de catálogo, y ahora DECLARADA (`CLAMP_PLATE_MM`).
     plates: {
-      bottomClamp: 36, ejectorHousing: 66,
-      support, B: corePlate, A: cavPlate, topClamp: 36,
+      bottomClamp: CLAMP_PLATE_MM,
+      ejectorHousing: cajaExpulsora.housingMm ?? Math.round(cajaExpulsora.tRequiredMm),
+      support, B: corePlate, A: cavPlate, topClamp: CLAMP_PLATE_MM,
     },
     supportPillars: d.placas.soporte.nPillars,
     // LA FORMA LA MANDA LA PIEZA, no el default. Estaba `shape: 'rect'` HARDCODEADO: el

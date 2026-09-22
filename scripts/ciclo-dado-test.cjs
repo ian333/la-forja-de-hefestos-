@@ -549,7 +549,14 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       }
       ocuJ[id] = hits / 9;
     }
-    const radios = (surf) => [200, 215, 230].map((zc) => {
+    // ACTA R93 (2026-09-21, orden la-carrera-cabe): estas tres alturas eran ABSOLUTAS
+    // (200/215/230 mm) y solo funcionaban con la caja expulsora clavada en 66 mm. Al
+    // dimensionar la caja por la carrera de la pieza (§4.3.2) el cubo subió 40 mm y las
+    // sondas caían en la pieza, no en el cono del bebedero (27.23 → 26.52 → 4.14). Ahora
+    // cuelgan del DATUM que les toca —`dC.zGateMm`, donde el bebedero entra al plástico—
+    // a las MISMAS distancias de antes (+14.5, +29.5, +44.5: tramos de 15 mm): la sonda
+    // sigue el molde en vez de suponerlo.
+    const radios = (surf) => [14.5, 29.5, 44.5].map((dz) => dC.zGateMm + dz).map((zc) => {
       let r = 0;
       for (let v = 0; v < surf.positions.length; v += 3) {
         if (Math.abs(surf.positions[v + 2] - zc) > 1) continue;

@@ -63,7 +63,7 @@ import {
 import { insertDims, cavityFootprint, cavityGrid, plateDepth, plateDefs, moldStackHeight } from './mold-drawing-set';
 import { plateStackZ } from './mold-plano-set';
 import { planSideAction, planFromSpec, type SideActionPlan } from './mold-sideaction-gen';
-import { moldOpeningStrokeMm, OPEN_FACTOR, daylightNeededMm } from './threeplate';
+import { OPEN_FACTOR, daylightNeededMm, carreraDeApertura } from './threeplate';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COTAS DEL LIBRO — literales, con su § y su cita. NADA de esto se inventó.
@@ -805,7 +805,14 @@ export function solidosApertura(o: OpcionesApertura): { solidos: SolidoSeccion[]
     }
   }
   const aperturaGeom = +(vTopMovil - zPart).toFixed(6);
-  const aperturaLibro = moldOpeningStrokeMm(id.dep);             // §6.3.2: 2-3 × altura de pieza
+  // §6.3.2 con SUS DOS términos, por la función única (`carreraDeApertura`): 2.5 × la
+  // altura de la pieza + el largo de colada que sale sobre ella. Antes aquí se comparaba
+  // la geométrica contra 2.5·H PELADO, y para una pieza con bebedero largo la geométrica
+  // ganaba SIN dejar hueco para que cayera — la lámina aprobaba una carrera que solo
+  // despegaba el moldeo. La geométrica se conserva como piso medido.
+  const aperturaLibro = carreraDeApertura({
+    alturaPiezaMm: id.dep, coladaMm: Math.max(0, aperturaGeom - id.dep),
+  }).mm;
   const aperturaTotal = Math.max(aperturaGeom, aperturaLibro);
   const expulsion = machoH;                                      // libra el macho (mínimo geométrico)
   const dispon = z.support - (z['ejector-ret'] + grosor('ejector-ret'));
@@ -877,7 +884,7 @@ export function posesDelCiclo(meta: MetaApertura): Pose[] {
   return [
     { id: 'cerrado', nombre: 'CERRADO', porque: 'inyección: aquí se juzgan huecos y contactos (V11.8, V11.17, V11.18)', cita: '§11.1 Fig 11.4', aperturaMm: 0, expulsionMm: 0, tMm: 0 },
     { id: 'parcial', nombre: 'PARCIALMENTE ABIERTO', porque: hito.que, cita: '§11.1 Fig 11.1 · §7.2.7 Fig 7.13', aperturaMm: hito.d, expulsionMm: 0, tMm: hito.d },
-    { id: 'abierto', nombre: 'TOTALMENTE ABIERTO', porque: `carrera ${meta.aperturaTotalMm.toFixed(1)} mm = max(geométrica ${meta.aperturaGeomMm.toFixed(1)}, §6.3.2 ${meta.aperturaLibroMm.toFixed(1)})`, cita: '§6.3 Tabla 6.1', aperturaMm: dTot, expulsionMm: 0, tMm: dTot },
+    { id: 'abierto', nombre: 'TOTALMENTE ABIERTO', porque: `carrera ${meta.aperturaTotalMm.toFixed(1)} mm = max(geométrica ${meta.aperturaGeomMm.toFixed(1)}, §6.3.2 pieza+colada ${meta.aperturaLibroMm.toFixed(1)})`, cita: '§6.3 Tabla 6.1', aperturaMm: dTot, expulsionMm: 0, tMm: dTot },
     { id: 'expulsado', nombre: 'EXPULSORES ACTUADOS', porque: `carrera ${e.toFixed(1)} mm = alto del macho`, cita: '§11.1 Fig 11.2', aperturaMm: dTot, expulsionMm: e, tMm: dTot + e },
   ];
 }
@@ -1261,7 +1268,7 @@ export function medirApertura(meta: MetaApertura, piezas: PiezaPlana[], pares: P
   V.push({
     id: 'V6.1', titulo: 'Carrera de apertura en la pose "fully open" vs. daylight', cita: '§6.3 · Tabla 6.1 · §4.3.3 Fig 4.24',
     estado: maq ? (cabe ? 'CUMPLE' : 'VIOLA') : 'SIN CABLEAR',
-    medido: `carrera ${meta.aperturaTotalMm.toFixed(1)} mm (geométrica ${meta.aperturaGeomMm.toFixed(1)} = H_pieza + colada; §6.3.2 pide ${OPEN_FACTOR}×H = ${meta.aperturaLibroMm.toFixed(1)}) · stack ${meta.stackMm} → daylight necesario ${need} mm`
+    medido: `carrera ${meta.aperturaTotalMm.toFixed(1)} mm (geométrica ${meta.aperturaGeomMm.toFixed(1)} = H_pieza + colada; §6.3.2 pide ${OPEN_FACTOR}×H + colada = ${meta.aperturaLibroMm.toFixed(1)}) · stack ${meta.stackMm} → daylight necesario ${need} mm`
       + (maq ? ` · ${maq.nombre} [${maq.minDaylightMm}, ${maq.maxDaylightMm}]` : ''),
     limite: maq ? `${maq.minDaylightMm} ≤ stack y stack+carrera ≤ ${maq.maxDaylightMm} mm` : 'sin máquina no hay banda contra la cual medir',
     porque: `Tabla 6.1: "the three-plate mold has a mold opening distance of ${TABLA_6_1.tresPlacasMm} mm, much greater than the mold opening distance of ${TABLA_6_1.dosPlacasMm} mm for the two-plate mold. This larger mold opening distance is undesirable since it adds to the mold opening and closing time". `
