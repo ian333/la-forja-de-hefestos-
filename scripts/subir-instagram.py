@@ -23,7 +23,10 @@ import os, sys, json, time, urllib.parse, requests
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pub_comun import manifiesto, copy_de, gate_autorizado, gate_calidad, registrar, CONF
 V = 'v25.0'; APP = os.path.join(CONF, 'instagram-app.json'); TOK = os.path.join(CONF, 'instagram-token.json')
-SCOPES = 'instagram_business_basic,instagram_business_content_publish,instagram_business_manage_insights,instagram_business_manage_comments'
+# instagram_business_manage_messages (2026-09-21): para leer y contestar DMs — el embudo por palabra clave.
+# Sonda: sin ese scope, y con «Permitir acceso a mensajes» apagado en la app, la API contesta
+# «The account owner has disabled access to Instagram Direct Messaging» (code 200).
+SCOPES = 'instagram_business_basic,instagram_business_content_publish,instagram_business_manage_insights,instagram_business_manage_comments,instagram_business_manage_messages'
 
 def app(): return json.load(open(APP))
 def token():
