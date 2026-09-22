@@ -27,7 +27,7 @@
 import {
   OC, Shape, SketchPlane3D, PLANE_XY,
   makeBox, transformShape, cut, fuse, volume, massProperties,
-  scaleShape, keepSolid, uniqueSubShapes, enumerateFaces, tessellate,
+  scaleShape, keepSolid, solidsOf, uniqueSubShapes, enumerateFaces, tessellate,
 } from '../brep/occt';
 
 export interface ShutOffBox { w: number; d: number; h: number; x: number; y: number; z: number; }
@@ -160,10 +160,43 @@ export function splitMold(oc: OC, pieza: Shape, opts: SplitMoldOptions = {}): Sp
   const bodies = countBodies(oc, molde);
   report.push(`molde ${vMolde.toFixed(3)} mm³ · cuerpos: ${bodies}`);
   if (bodies < 2) report.push('⚠ PUENTE: cavity y macho siguen conectados — faltan shut-offs (ventanas pasantes / pared inclinada no cubierta)');
-  const cavityPlate = keepSolid(oc, molde, 'largest');
-  const macho = keepSolid(oc, molde, 'smallest');
-  // placa portacore (Fig 6-34): descansa en la partición, ancho del bloque
+  // UN solo desarme en cuerpos: la cavidad es el MAYOR (como siempre) y el resto se mira uno por uno.
+  const todos = solidsOf(oc, molde);
+  const volsT = todos.map((c) => Math.abs(volume(oc, c)));
+  const iCav = volsT.reduce((bi, v, i) => (v > volsT[bi] ? i : bi), 0);
+  const cavityPlate = todos[iCav];
+  // ── EL MACHO = TODO lo que no es la cavidad y sube a la partición (EL MACHO DE LA CAJA GRANDE, 2026-09-22) ──
+  // Antes: `keepSolid(molde, 'smallest')`. Con DOS cuerpos (el cubo, la carcasa, la tapa, el ensamble) el menor
+  // ES el macho. Pero una pieza con TORRES que llegan a la partición (la 1599HBK: 4 torres de tornillo al ras de
+  // la boca) parte el bloque en MÁS cuerpos: el acero dentro de cada torre queda aislado del macho por la propia
+  // torre. MEDIDO en la 1599HBK: 6 cuerpos; 'smallest' = un poste de 4×4×31.5 mm (395.8 mm³) → el núcleo salía
+  // PLANO en la partición con 4 postes de pie, y la pieza hueca encima (rejilla 10×5: 1/50 puntos con el macho
+  // tocando el piso; el inspector: −56.9 mm en el centro).
+  // En el molde real esos postes son parte del lado B: descansan en el mismo respaldo que el macho (Fig 6-34, la
+  // placa portacore) — por eso se unen TODOS a la placa. Un cuerpo que NO llega a la cara de la partición no puede
+  // colgar de la placa (quedaría encerrado en la pieza): no se une y se REPORTA (no pasó en las 4 piezas).
+  // La cara del bloque donde se apoya la placa: arriba ('above', el default de TODOS los callers hoy) o abajo.
   const side = opts.coreSide ?? 'above';
+  const caraPlaca = side === 'above' ? block.z + block.h / 2 : block.z - block.h / 2;
+  const llegaALaPlaca = (sh: Shape): boolean => {
+    const b = new oc.Bnd_Box_1(); oc.BRepBndLib.AddOptimal(sh, b, false, false);
+    const mn = b.CornerMin(), mx = b.CornerMax();
+    const z = side === 'above' ? mx.Z() : mn.Z();
+    b.delete?.(); mn.delete?.(); mx.delete?.();
+    return Math.abs(z - caraPlaca) <= 0.05;                          // regla de Hefestos: 0.05 mm = ruido de la caja óptima
+  };
+  const cuerpos = todos.filter((_, i) => i !== iCav);
+  const alMacho: Shape[] = [], sueltos: number[] = [];
+  for (const c of cuerpos) {
+    if (llegaALaPlaca(c)) alMacho.push(c);                           // su cara ES la de la partición
+    else sueltos.push(Math.abs(volume(oc, c)));
+  }
+  // sin cuerpos que suban (el bloque NO se partió: puente) → como antes (el reporte ya dice ⚠ PUENTE)
+  let macho = alMacho.length ? alMacho[0] : keepSolid(oc, molde, 'smallest');
+  for (let k = 1; k < alMacho.length; k++) macho = fuse(oc, macho, alMacho[k]);
+  if (alMacho.length > 1) report.push(`macho = ${alMacho.length} cuerpos que suben a la partición (${cuerpos.filter((c) => alMacho.includes(c)).map((c) => Math.abs(volume(oc, c)).toFixed(1)).join(' + ')} mm³), unidos a la placa`);
+  if (sueltos.length) report.push(`⚠ ${sueltos.length} cuerpo(s) de acero que NO llegan a la partición (${sueltos.map((v) => v.toFixed(1)).join(', ')} mm³): encerrados en la pieza, no se unen al macho`);
+  // placa portacore (Fig 6-34): descansa en la partición, ancho del bloque
   const plateZ = side === 'above' ? zPart + plateT / 2 : zPart - plateT / 2;
   const plate = mkBoxAt(oc, { w: block.w, d: block.d, h: plateT, x: block.x, y: block.y, z: plateZ });
   const corePlate = fuse(oc, macho, plate);
