@@ -51,6 +51,12 @@ export interface MoldAssemblySpec {
     /** §11.2.5 Fig 11.11: posiciones POR AGARRE (relativas al centro de la huella,
      *  mm) — de gripEjectorLayout. Sin ellas, el colocador cae a la rejilla. */
     positions?: Array<{ x: number; y: number }>;
+    /** LA TABLA DE EYECTORES (orden LOS BOTADORES CON NOMBRE, 2026-09-22 · §11.2.6 · R37): un renglón
+     *  por pin, en el MISMO orden que `positions` — su id de GAIA y SU largo (asiento de la cabeza →
+     *  su piso real). La BOM, la lámina de la retenedora y el 3D leen ESTA lista, no un «8× ⌀4.763». */
+    tabla?: Array<{ id: string; largoMm: number; puntaDiaMm?: number; puntaMm?: number }>;
+    /** keyed (§11.2.6) cuando los largos difieren: plano en la cabeza a `planoAlEjeMm` del eje */
+    llave?: { planoAlEjeMm: number };
   };
   core: { diaMm?: number; widthMm?: number; material: string };   // ⌀ (cup) o ancho de bloque (marco/bezel)
   cavityMetal: string; baseSteel?: string;
@@ -174,8 +180,24 @@ export function moldAssemblyDrawing(s: MoldAssemblySpec): AssemblyDrawing {
     `Núcleo ${s.core.widthMm ? `${s.core.widthMm}mm (marco)` : `⌀${s.core.diaMm}`} ${s.core.material} (hoop/deflexión §12.3) · agua ${s.cooling.plug ?? ''} ⌀${s.cooling.diaMm} (§9.2)`,
     `Expulsión ${s.ejectors.count}× ${s.ejectors.type} ⌀${s.ejectors.diaMm} (§11.3)`,
   ];
+  // LOS BOTADORES CON NOMBRE (2026-09-22): con la tabla de eyectores la BOM deja de decir «8× ⌀4.763»
+  // (ocho pines «iguales» que NO lo son) y lista CADA pin con su id de GAIA y su largo — el renglón que el
+  // taller corta y graba. §11.2.6: "key and label each ejector pin"; R37: la tabla de eyectores es entregable.
+  const tabla = s.ejectors.tabla;
+  const extraBom: string[][] = [];
+  if (tabla?.length) {
+    const ex = comps.find((c) => /^Expulsor/.test(c.name));
+    const base = ex ? ex.id : 0;
+    tabla.forEach((f, k) => extraBom.push([`${base}.${k + 1}`, `${f.id} · L ${f.largoMm}`, '1',
+      `${f.puntaDiaMm != null ? `⌀${f.puntaDiaMm}/` : '⌀'}${s.ejectors.diaMm}${s.ejectors.llave ? ' · LLAVE' : ''}`]));
+    const ls = tabla.map((f) => f.largoMm);
+    // dos renglones cortos: la nota se corta en el borde de la hoja A3 (medido en la 1557BGY)
+    notes.push(`Tabla de eyectores §11.2.6: ${tabla.length} pines con id · largo ${Math.min(...ls)}–${Math.max(...ls)} mm`);
+    notes.push(s.ejectors.llave ? `LLAVE: plano a ${s.ejectors.llave.planoAlEjeMm} mm del eje (regla de Hefestos) · id en cabeza y retenedora` : 'id grabado en la cabeza y junto a su barreno en la retenedora');
+  }
   return renderAssemblySection(comps, {
     code: s.code ?? 'MLD-001', name: s.name, extra: 'ENSAMBLE · MOLDE DE INYECCIÓN',
     notes, partings, sectionLabel: 'SECCIÓN A-A (plano medio)',
+    extraBom: extraBom.length ? extraBom : undefined,
   });
 }

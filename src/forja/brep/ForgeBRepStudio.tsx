@@ -3607,10 +3607,10 @@ function feaLegendGradient(): string {
  *  AUDITORÍA («receta = sólido») y aquí no hay receta: hay UNA distancia medida entre dos puntos, y con 2
  *  decimales — los pares que importan (agua↔pin, punta↔piso) viven entre 0.4 y 1.6 mm y a 1 decimal se
  *  pierden. Divs HUD fuera del Canvas (drei <Text> es el gotcha de la casa); `CotaDriver` los mueve. */
-function CotaInspLabels({ sets, refs }: { sets: CotaSet[]; refs: React.MutableRefObject<Array<HTMLDivElement | null>> }) {
+function CotaInspLabels({ sets, refs, testId = 'cota-inspeccion' }: { sets: CotaSet[]; refs: React.MutableRefObject<Array<HTMLDivElement | null>>; testId?: string }) {
   const flat = sets.flatMap((s) => s.dims);
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 7 }} data-testid="cota-inspeccion">
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 7 }} data-testid={testId}>
       {flat.map((d, i) => {
         const c = d.ok === false ? '#ff6b6b' : d.ok === true ? '#7ee0a0' : '#ffcc33';
         return (
@@ -4018,7 +4018,10 @@ export default function ForgeBRepStudio() {
           // acero pasa el CUERPO (4.763) — «el escalonado no llega a los barrenos», causa 3 de LAS 20 PIEZAS.
           // `cicloPortamoldesPieza` ya le pasa `cuerpoDiaMm` al sólido; la lámina va con el MISMO número.
           aspec.ejectors = { ...aspec.ejectors, type: 'pin', count: e10.pines.n, diaMm: e10.pines.escalonado.cuerpoDiaMm,
-            positions: e10.pines.posiciones.map((pp) => ({ x: pp.x - d5.ejeX, y: pp.y - d5.ejeY })) };
+            positions: e10.pines.posiciones.map((pp) => ({ x: pp.x - d5.ejeX, y: pp.y - d5.ejeY })),
+            // LOS BOTADORES CON NOMBRE (2026-09-22): la tabla de eyectores baja a la BOM y a la retenedora (§11.2.6)
+            tabla: e10.pines.tabla?.filas.map((f) => ({ id: f.id, largoMm: f.largoMm, puntaDiaMm: e10.pines.escalonado.puntaDiaMm, puntaMm: f.puntaMm })),
+            llave: e10.pines.tabla?.llave.requerida ? { planoAlEjeMm: e10.pines.tabla.llave.planoAlEjeMm } : undefined };
         }
         const r = pkg.recomendacion;
         // UNA SOLA VERDAD: la hoja dice lo MISMO que el dictamen (mismo pkg) y lo comprueba a la vista;
@@ -4044,7 +4047,8 @@ export default function ForgeBRepStudio() {
           rows.push(
             { grupo: 'Expulsión §11.2.3', param: `pin ESCALONADO ×${e10.pines.n} (R52: el recto pandea, SF ${es.sfRectoK2})`, valor: `punta ⌀${es.puntaDiaMm} × ${es.puntaMm} GUIADA + cuerpo ⌀${es.cuerpoDiaMm} · los barrenos de placa van al ⌀ del CUERPO`, ref: '§11.2.3 · R52', ok: true },
             { grupo: 'Expulsión §11.2.5', param: 'la punta termina en la CARA DEL MACHO (piso real, no pared mediana)', valor: pr?.fuente === 'rayo sobre la malla' ? `rayo sobre la malla bajo cada pin · la pared mediana erraba hasta ${pr.peorMm} mm` : 'sin rayo: pared MEDIANA (declarado)', ref: '§11.2.5 · medido', ok: pr?.fuente === 'rayo sobre la malla' },
-            ...(eq ? [{ grupo: 'Expulsión §11.2.5', param: 'equilibrio del reparto (centroide pines ↔ centroide del área)', valor: `${eq.desvioMm} mm de ${eq.topeMm} mm permitidos (0.1·L, REGLA NUESTRA) · antes ${eq.desvioAntesMm} mm`, ref: '§11.2.5 · §11.3.4', ok: eq.ok }] : []),
+            ...(eq ? [{ grupo: 'Expulsión §11.2.5', param: 'equilibrio del reparto (centroide pines ↔ centroide del área)', valor: `${eq.desvioMm} mm de ${eq.topeMm} mm permitidos (0.1·L, regla de Hefestos) · antes ${eq.desvioAntesMm} mm`, ref: '§11.2.5 · §11.3.4', ok: eq.ok }] : []),
+            ...(e10.pines.agua ? [{ grupo: 'Expulsión §11.2.5', param: 'primero se mueve el PIN (baffle/bubbler solo si no queda lugar)', valor: `${e10.pines.agua.camino} · pares bajo ½⌀ ${e10.pines.agua.paresAntes?.length ?? '—'} → ${e10.juez.conflictos.length} · ${e10.pines.agua.movidos} pin(es) movido(s)${e10.pines.agua.bafflesDeclarados.length ? ` · ${e10.pines.agua.bafflesDeclarados.length} tramo(s) para baffle/bubbler` : ''}`, ref: '§9.2.7 · §9.3.5.2', ok: e10.juez.conflictos.length === 0 }] : []),
             { grupo: 'Expulsión §11.2.5', param: 'juez pines ↔ agua (LISTA completa, no el mínimo)', valor: e10.juez.conflictos.length === 0 ? `${e10.juez.paresExaminados} pares examinados · 0 bajo ½⌀` : `${e10.juez.conflictos.length} de ${e10.juez.paresExaminados} pares bajo ½⌀: ${e10.juez.conflictos.slice(0, 3).map((c) => `${c.pin}↔${c.segmento} ${c.claroMm}`).join(' · ')}`, ref: 'A-239 · §9.2.7', ok: e10.juez.conflictos.length === 0 },
           );
         }
@@ -5319,6 +5323,21 @@ export default function ForgeBRepStudio() {
   // cotas del molde (líneas dentro del Canvas + etiqueta DOM proyectada por CotaDriver).
   const [cotaInsp, setCotaInsp] = useState<CotaSet[]>([]);
   const cotaInspRefs = useRef<Array<HTMLDivElement | null>>([]);
+  // EL RÓTULO 3D DE CADA PIN (orden LOS BOTADORES CON NOMBRE, 2026-09-22): «cada pieza dentro de GAIA tendrá su
+  // identificador» — y se ve donde está el pin, no solo en la lámina. Con COTAS encendidas, cada punta lleva una
+  // guía corta (10 mm, girada 45° por pin para que los letreros no se encimen) con su id y SU largo (retenedora →
+  // su piso). Misma maquinaria que la cota del inspector (línea en el Canvas + div HUD proyectado).
+  const cotaPines = useMemo<CotaSet[]>(() => {
+    const tb = cotasOn ? mold.ciclo?.e10?.pines.tabla : undefined;
+    if (!tb?.filas.length) return [];
+    return [{ role: 'pines-id', dims: tb.filas.map((f) => {
+      const ang = (f.k * Math.PI) / 4, L = 10;
+      return { id: `ep${f.k}`, label: f.id, kind: 'lineal' as const, value: f.largoMm, ok: undefined,
+        a: [f.x, f.y, f.zPisoMm] as [number, number, number],
+        b: [f.x + L * Math.cos(ang), f.y + L * Math.sin(ang), f.zPisoMm + 6] as [number, number, number] };
+    }) }];
+  }, [cotasOn, mold.ciclo]);
+  const cotaPinesRefs = useRef<Array<HTMLDivElement | null>>([]);
   // CRUZ en cada extremo de la cota: la línea sola no dice cuál es el punto exacto (y en un acercamiento
   // 10× la línea puede caer sobre una arista y confundirse con ella). Tamaño ligado a la distancia, con
   // piso de 1.5 mm para que un claro de 0.4 mm siga teniendo extremos visibles.
@@ -7187,6 +7206,13 @@ export default function ForgeBRepStudio() {
                     <CotaDriver sets={cotaInsp} refs={cotaInspRefs} />
                   </>
                 )}
+                {/* EL RÓTULO 3D DE CADA PIN (LOS BOTADORES CON NOMBRE): id + largo junto a su punta */}
+                {cotaPines.length > 0 && (
+                  <>
+                    <CotaLines sets={cotaPines} />
+                    <CotaDriver sets={cotaPines} refs={cotaPinesRefs} />
+                  </>
+                )}
                 {moldParts.map((pt) => {
                   // con 💧 encendido la colada la dibuja FeedFill (el revelado del
                   // frente) — el mesh estático encima lo tapaba por completo
@@ -7438,6 +7464,7 @@ export default function ForgeBRepStudio() {
             CotaDriver (dentro del Canvas) les mueve el transform por frame. */}
         {cotasOn && liveCotas.length > 0 && <CotaLabels sets={liveCotas} refs={cotaRefs} />}
         {cotaInsp.length > 0 && <CotaInspLabels sets={cotaInsp} refs={cotaInspRefs} />}
+        {cotaPines.length > 0 && <CotaInspLabels sets={cotaPines} refs={cotaPinesRefs} testId="rotulo-pines" />}
         {/* Las etiquetas van AL PAR de sus líneas 3D: con una lente prendida el
             sólido ya está pintado y las cotas encima serían ruido sobre ruido.
             (Cazado A OJO en el drive de U10: la lente de enfriamiento salía con
@@ -7554,7 +7581,12 @@ export default function ForgeBRepStudio() {
                        fabrica en el z que dio el rayo) — el número que MUERDE es `piso-vs-pared`: cuánto
                        se equivocaba la pared MEDIANA. La prueba de verdad la hace el arnés midiendo
                        `pin-punta-k` contra el techo del núcleo (otra ruta: la booleana de la E3). */
-                    {...{ 'data-puntas-vs-cara': c?.e10?.pines.pisoPorRayo ? Math.max(0, ...c.e10.pines.pisoPorRayo.puntasVsCaraMm.map(Math.abs)) : '', 'data-piso-vs-pared': c?.e10?.pines.pisoPorRayo?.peorMm ?? '', 'data-piso-fuente': c?.e10?.pines.pisoPorRayo?.fuente ?? '', 'data-equilibrio': c?.e10?.pines.equilibrio ? `${c.e10.pines.equilibrio.desvioMm}/${c.e10.pines.equilibrio.topeMm}` : '', 'data-pin-agua': c?.e10 ? `${c.e10.juez.conflictos.length}/${c.e10.juez.paresExaminados}` : '' }}
+                    {...{ 'data-puntas-vs-cara': c?.e10?.pines.pisoPorRayo ? Math.max(0, ...c.e10.pines.pisoPorRayo.puntasVsCaraMm.map(Math.abs)) : '', 'data-piso-vs-pared': c?.e10?.pines.pisoPorRayo?.peorMm ?? '', 'data-piso-fuente': c?.e10?.pines.pisoPorRayo?.fuente ?? '', 'data-equilibrio': c?.e10?.pines.equilibrio ? `${c.e10.pines.equilibrio.desvioMm}/${c.e10.pines.equilibrio.topeMm}` : '', 'data-pin-agua': c?.e10 ? `${c.e10.juez.conflictos.length}/${c.e10.juez.paresExaminados}` : '',
+                      // LOS BOTADORES CON NOMBRE: el id y el largo de cada pin, la llave y lo que pasó con el agua (para el inspector)
+                      'data-pines-ids': c?.e10?.pines.tabla ? c.e10.pines.tabla.filas.map((f) => `${f.id}:${f.largoMm}`).join(' ') : '',
+                      'data-pines-llave': c?.e10?.pines.tabla ? (c.e10.pines.tabla.llave.requerida ? `${c.e10.pines.tabla.llave.planoAlEjeMm}` : 'no') : '',
+                      'data-pin-agua-antes': c?.e10?.pines.agua?.paresAntes ? `${c.e10.pines.agua.paresAntes.length}` : '',
+                      'data-pin-agua-camino': c?.e10?.pines.agua?.camino ?? '' }}
                     data-partes={mold.moldParts.length} data-tris={mold.moldParts.reduce((n, p) => n + (p.indices ? p.indices.length / 3 : 0), 0)} data-bbox={moldeBBoxRef.current} data-enc={moldeEncRef.current}
                     style={{ display: 'flex', alignItems: 'center', gap: 7, marginLeft: 6, fontSize: 9.5, color: '#9fb0c4' }}>
                     <span style={{ width: 16, height: 3, borderRadius: 2, background: '#ffcc33' }} />

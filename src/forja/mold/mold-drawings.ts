@@ -18,6 +18,8 @@ export interface PlateHole {
   dia: number; depth?: number;          // sin depth = PASANTE
   type: string;                         // 'eyector' | 'pilar' | 'tornillo M10' | 'sprue' | …
   note?: string;
+  /** rótulo JUNTO al barreno en la planta (p. ej. el id del pin en la retenedora, §11.2.6) */
+  tag?: string;
 }
 export interface SideHole {
   face: 'izq' | 'der' | 'frente' | 'atras';
@@ -177,13 +179,21 @@ export function renderPlateDrawing(p: PlateSpec): PlateDrawing {
 
   // barrenos: cruz de centro + círculo + número
   const rows: string[][] = [];
+  const rotulados = new Set<string>();     // un rótulo por UBICACIÓN (pasaje y contrataladro comparten eje)
   p.holes.forEach((h, i) => {
     const n = i + 1, cx = X(h.x), cy = Y(h.y), r = (h.dia / 2) * s;
     parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#111" stroke-width="0.45" data-hole="${n}"/>`);
     const e = r + 1.8;
     parts.push(`<path d="M ${cx - e} ${cy} L ${cx + e} ${cy} M ${cx} ${cy - e} L ${cx} ${cy + e}" stroke="#1a5fb4" stroke-width="0.22" stroke-dasharray="2 0.7 0.45 0.7"/>`);
     parts.push(`<text x="${cx + e + 0.8}" y="${cy - 0.8}" font-size="2.9" fill="#b8860b" font-weight="bold" data-holeid="${n}">${n}</text>`);
-    rows.push([String(n), h.x.toFixed(2), h.y.toFixed(2), `⌀${h.dia}`, h.depth ? h.depth.toFixed(1) : 'PASANTE', h.type + (h.note ? ` · ${h.note}` : '')]);
+    // el rótulo de la UBICACIÓN (§11.2.6: "label each ejector pin and matching location on the ejector retainer plate")
+    const ubic = `${h.x.toFixed(2)},${h.y.toFixed(2)}`;
+    if (h.tag && !rotulados.has(ubic)) {
+      rotulados.add(ubic);
+      parts.push(`<text x="${cx + e + 0.8}" y="${cy + 2.6}" font-size="2.2" fill="#8a2be2" data-holetag="${esc(h.tag)}">${esc(h.tag)}</text>`);
+    }
+    // el id VA PRIMERO en la tabla: la columna TIPO se corta al borde de la hoja y el id es lo que el ajustador busca
+    rows.push([String(n), h.x.toFixed(2), h.y.toFixed(2), `⌀${h.dia}`, h.depth ? h.depth.toFixed(1) : 'PASANTE', (h.tag ? `${h.tag} · ` : '') + h.type + (h.note ? ` · ${h.note}` : '')]);
   });
 
   // cotas generales de la planta

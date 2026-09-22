@@ -42,6 +42,7 @@ import {
   type PlateDef,
 } from './mold-drawing-set';
 import { pinBuckling, ejectionForce, effectiveArea, ejectorPinSizing, residualStress, ABS_EJECT } from './ejection';
+import { claroPinAgua, tablaDeEyectores, ejectorHeadGeom, type TablaEyectores, type GripLayout } from './eject-layout';   // LOS BOTADORES CON NOMBRE: una fuente con la E7
 import { kBarrenoLibro, limiteMaterial } from './lamina-vonmises';
 import { hoopStress, maxInnerDiameter } from './cores';
 // ESTACIÓN 5 (cap 6): NO se escribe ninguna fórmula nueva — el motor ya existe.
@@ -4170,8 +4171,19 @@ export interface Estacion10Dado {
       puntasVsCaraMm: number[];
       peorMm: number;
     };
-    /** EL EQUILIBRIO §11.2.5 + regla nuestra 0.1·L (de `gripEjectorLayout`) */
+    /** EL EQUILIBRIO §11.2.5 + regla de Hefestos 0.1·L (de `gripEjectorLayout`) */
     equilibrio?: { desvioMm: number; topeMm: number; ok: boolean; desvioAntesMm: number; nSwaps: number; areaX: number; areaY: number; pinesX: number; pinesY: number };
+    /** LOS BOTADORES CON NOMBRE (2026-09-22): la tabla de eyectores — id, largo a SU piso, llave. */
+    tabla?: TablaEyectores;
+    /** PRIMERO SE MUEVE EL PIN (ian 2026-09-22, pregunta 5): qué hizo la E7 con el agua y qué quedó.
+     *  `camino` dice cuál de las dos cosas pasó: se movieron pines, o no quedó lugar y va baffle/bubbler. */
+    agua?: {
+      camino: 'nada que mover' | 'se movieron pines' | 'baffle/bubbler declarado';
+      enAguaAntes: number; movidos: number; forzados: Array<{ x: number; y: number }>; vetados: number;
+      /** pares pin↔agua bajo ½⌀ con el reparto de SIEMPRE (juzgado aquí, con la misma regla) */
+      paresAntes?: Array<{ pin: string; segmento: string; claroMm: number; minMm: number }>;
+      bafflesDeclarados: string[];
+    };
   };
   juez: {
     claros: Array<{ contra: string; claroMm: number; minMm: number; ok: boolean }>; ok: boolean;
@@ -4196,8 +4208,16 @@ export interface PiezaParaLosPines extends PiezaParaElAgua {
    *  (`zPisoMm`, z GLOBAL de la cara interior medida por rayo — donde termina el macho).
    *  Sin `zPisoMm` la E7 cae a la pared MEDIANA y lo DECLARA. */
   posiciones: Array<{ x: number; y: number; zPisoMm?: number }>;
-  /** el equilibrio que midió `gripEjectorLayout` (§11.2.5 + regla nuestra 0.1·L) */
+  /** el equilibrio que midió `gripEjectorLayout` (§11.2.5 + regla de Hefestos 0.1·L) */
   equilibrio?: { desvioMm: number; topeMm: number; ok: boolean; desvioAntesMm: number; nSwaps: number; areaX: number; areaY: number; pinesX: number; pinesY: number };
+  /** el NOMBRE de la pieza en GAIA: de él sale el id de cada pin (`<pieza>-EP-01`). Sin él: «PIEZA». */
+  nombre?: string;
+  /** lo que la E7 hizo con el agua (`gripEjectorLayout(..., { evitar })`), con las posiciones de
+   *  SIEMPRE ya volteadas al marco de la base (`antes`) para juzgarlas aquí con la misma regla. */
+  agua?: Omit<NonNullable<GripLayout['agua']>, 'antes' | 'forzados'> & {
+    antes: Array<{ x: number; y: number; zPisoMm?: number }>;
+    forzados: Array<{ x: number; y: number }>;
+  };
 }
 
 export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: CircuitoAgua, o?: {
@@ -4291,7 +4311,37 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
   const minAgua = circuito.segmentos[0].diaMm / 2;                    // ½⌀ de la línea (§9.2.7)
   const mide = (contra: string, claroMm: number, minMm: number) =>
     claros.push({ contra, claroMm: +claroMm.toFixed(2), minMm: +minMm.toFixed(2), ok: claroMm >= minMm - 1e-9 });
-  for (const pin of posiciones) {
+  // LA PIEZA SOLTADA (orden LOS BOTADORES CON NOMBRE, 2026-09-22): el juez usa `claroPinAgua`, la
+  // MISMA regla con la que la E7 colocó los pines — sección por sección (punta o cuerpo, la que
+  // cruza la franja de z de la línea) y contra la pared de SU barreno. El cubo conserva su juez de
+  // siempre (radio de la punta, sin franja de z): sus números son literales firmados del ciclo.
+  const zRetE10 = plateStackZ(asm)['ejector-ret'];
+  const pinEnZ = { puntaDiaMm: d8, puntaMm, cuerpoDiaMm: dCuerpo, zRetenedoraMm: zRetE10 };
+  const zPisoMedianaE10 = pz ? pz.zBaseCerradaMm - wallMm : 0;
+  const juzgaPieza = (lista: Array<{ x: number; y: number; zPisoMm?: number }>) => {
+    const conf: Estacion10Dado['juez']['conflictos'] = [];
+    let n = 0;
+    const peores: Array<{ tag: string; peor: number; contra: string }> = [];
+    for (const pin of lista) {
+      const tag = `pin(${pin.x.toFixed(0)},${pin.y.toFixed(0)})`;
+      const pares = claroPinAgua({ x: pin.x, y: pin.y, zPisoMm: pin.zPisoMm ?? zPisoMedianaE10 }, pinEnZ, circuito.segmentos, d.zPartMm);
+      n += pares.length;
+      let peor = Infinity, contra = '';
+      for (const p of pares) {
+        if (p.claroMm < p.minMm - 1e-9) conf.push({ pin: `${tag}·${p.seccion}`, segmento: p.segmento, claroMm: p.claroMm, minMm: p.minMm });
+        if (p.claroMm < peor) { peor = p.claroMm; contra = `${p.segmento} (${p.seccion})`; }
+      }
+      peores.push({ tag, peor, contra });
+    }
+    conf.sort((a, b) => a.claroMm - b.claroMm);
+    return { conf, n, peores };
+  };
+  if (pz) {
+    const j = juzgaPieza(posiciones);
+    conflictos.push(...j.conf); paresExaminados = j.n;
+    for (const p of j.peores) mide(`${p.tag} ↔ agua E8b (${p.contra || 'ningún carril comparte su franja de z'})`, p.peor, minAgua);
+  }
+  for (const pin of pz ? [] : posiciones) {
     const tag = `pin(${pin.x.toFixed(0)},${pin.y.toFixed(0)})`;
     // vs los segmentos de agua del lado B (líneas/cruces a zB, baffle vertical)
     let peorAgua = Infinity, contraAgua = '';
@@ -4350,6 +4400,31 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
       ? { fuente: 'pared mediana (sin rayo)' as const, zPisoMm: [], vsParedMedianaMm: [], puntasVsCaraMm: [], peorMm: NaN }
       : undefined;
 
+  // ── LOS BOTADORES CON NOMBRE (2026-09-22) ──────────────────────────────────
+  // (a) la tabla de eyectores: cada pin con su id de GAIA, a SU largo (retenedora → su piso
+  //     real), y la llave cuando los largos difieren (§11.2.6). Solo la pieza soltada: el cubo
+  //     tiene un piso plano y su tabla es la de R37 que ya anuncia a la E12.
+  const espRetE10 = Math.max(12, Math.round(asm.plates.ejectorHousing * 0.2));        // = plateDefs('ejector-ret')
+  const tabla = pz
+    ? tablaDeEyectores(pz.nombre ?? 'PIEZA', posiciones.filter((p) => p.tipo === 'agarre'),
+      { ...pinEnZ, cabezaDiaMm: ejectorHeadGeom(dCuerpo, espRetE10).diaMm, zPisoRespaldoMm: zPisoMedianaE10 })
+    : undefined;
+  // (b) PRIMERO SE MUEVE EL PIN: el «antes» (el reparto de siempre) se juzga AQUÍ con la misma
+  //     regla, para que la tabla antes → después no dependa de lo que la E7 dijo de sí misma.
+  const aguaPines: Estacion10Dado['pines']['agua'] = pz?.agua
+    ? (() => {
+      const a = pz.agua!;
+      const paresAntes = juzgaPieza(a.antes).conf;
+      const bafflesDeclarados = conflictos.map((c) =>
+        `${c.pin} ↔ ${c.segmento}: ${c.claroMm} mm < ½⌀ ${c.minMm} — no quedó candidato libre del agarre; en ese tramo la línea recta se sustituye por baffle/bubbler (§9.3.5.2–9.3.5.3, Tabla 9.3 — paráfrasis: el enfriamiento puntual del libro para donde la línea recta no cabe). DECLARADO, no construido`);
+      return {
+        camino: conflictos.length > 0 ? 'baffle/bubbler declarado' as const : a.enAguaAntes > 0 || paresAntes.length > 0 ? 'se movieron pines' as const : 'nada que mover' as const,
+        enAguaAntes: a.enAguaAntes, movidos: a.movidos, forzados: a.forzados, vetados: a.vetados,
+        paresAntes, bafflesDeclarados,
+      };
+    })()
+    : undefined;
+
   const filas: FilaLlenado[] = [];
   const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
     filas.push({ id, titulo, valor, limite, estado, seccion, porque });
@@ -4387,11 +4462,23 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
     '|punta − cara del macho| ≤ 0.05 mm',
     pisoPorRayo.fuente === 'rayo sobre la malla' ? 'CUMPLE' : 'ADVIERTE', '§11.2.5 · medido',
     'la pared mediana es un RESUMEN de la pieza, no una cota del piso: con ella la punta quedaba HUNDIDA bajo la cara del macho (un botón de plástico por pin) o METIDA dentro de la pieza. El rayo mide la primera cara interior sobre (x,y) de cada pin — donde el acero del macho termina de verdad.');
-  if (pz?.equilibrio) fila('equilibrio', 'EL EQUILIBRIO de la expulsión (§11.2.5 + regla nuestra)',
+  if (pz?.equilibrio) fila('equilibrio', 'EL EQUILIBRIO de la expulsión (§11.2.5 + regla de Hefestos)',
     `centroide de los ${nP} pines a ${pz.equilibrio.desvioMm} mm del centroide del área proyectada (antes ${pz.equilibrio.desvioAntesMm} mm, ${pz.equilibrio.nSwaps} intercambios)`,
-    `≤ 0.1·L = ${pz.equilibrio.topeMm} mm (REGLA NUESTRA, sin cita)`,
+    `≤ 0.1·L = ${pz.equilibrio.topeMm} mm (regla de Hefestos, sin cita del libro)`,
     pz.equilibrio.ok ? 'CUMPLE' : 'ADVIERTE', '§11.2.5 · §11.3.4',
-    'el libro NOMBRA el defecto pero no da el número: §11.2.5 "a significant moment and deflection will be applied before the molding is stripped off the core" y §11.3.4 "unbalanced ejection forces can lead to uneven wear in the mold". El 0.1·L es NUESTRO (media celda de una rejilla 4×4 sobre la huella): pedir menos sería inventar precisión que la colocación por agarre no tiene.');
+    'el libro NOMBRA el defecto pero no da el número: §11.2.5 "a significant moment and deflection will be applied before the molding is stripped off the core" y §11.3.4 "unbalanced ejection forces can lead to uneven wear in the mold". El 0.1·L es REGLA DE HEFESTOS (media celda de una rejilla 4×4 sobre la huella): pedir menos sería inventar precisión que la colocación por agarre no tiene.');
+  if (aguaPines) fila('agua-mueve', 'PRIMERO SE MUEVE EL PIN (el agua conserva sus carriles)',
+    aguaPines.camino === 'nada que mover'
+      ? `ningún pin del reparto caía sobre el agua (${aguaPines.vetados} candidatos vetados, ninguno usado) · pares bajo ½⌀: 0 → ${conflictos.length}`
+      : `pares pin↔agua bajo ½⌀: ${aguaPines.paresAntes?.length ?? '—'} → ${conflictos.length} · ${aguaPines.movidos} pin(es) movido(s) a otro candidato del agarre${aguaPines.forzados.length ? ` · ${aguaPines.forzados.length} sin lugar → baffle/bubbler DECLARADO` : ''}`,
+    '½⌀ de acero contra la pared del barreno (§9.2.7) · baffle/bubbler solo si no queda lugar',
+    conflictos.length === 0 ? 'CUMPLE' : 'VIOLA', '§9.2.7 · §11.2.5 · §9.3.5.2',
+    'ian 2026-09-22 (pregunta 5): «sí» a mover pines antes que baffles. El candidato que cae sobre una línea queda vetado y el reparto se rehace con los candidatos LIBRES del agarre — todos en la banda [keepOut, keepOut+6] de su pared, así que el pin movido sigue empujando donde la pieza abraza al macho (§11.2.5). Solo si no queda ninguno se usa uno sobre el agua y ese tramo se declara para baffle/bubbler. El juez mide sección por sección (punta o cuerpo, la que cruza la franja de z de la línea) contra la pared de SU barreno.');
+  if (tabla) fila('tabla', 'LA TABLA DE EYECTORES (cada pin a SU largo, con su nombre)',
+    `${tabla.filas.length} pines ${tabla.filas[0]?.id ?? ''}…${tabla.filas[tabla.filas.length - 1]?.id ?? ''} · ${tabla.largosDistintos === 1 ? `un solo largo ${tabla.minMm} mm` : `${tabla.largosDistintos} largos distintos ${tabla.minMm}…${tabla.maxMm} mm`} · ${tabla.llave.requerida ? `LLAVE en la cabeza (plano a ${tabla.llave.planoAlEjeMm} mm del eje)` : 'sin llave: largos iguales'}`,
+    '§11.2.6: mismo largo cuando se pueda; si no, keyed + etiquetado (pin Y su lugar en la retenedora)',
+    'CUMPLE', '§11.2.6 · §11.1.7 · R37',
+    `§11.2.6 LITERAL: "always avoid designing ejector pins that vary only slightly in their design, since similar pins may accidentally be considered interchangeable by the molder" … "key and label each ejector pin and matching location on the ejector retainer plate". ian 2026-09-22: «cada uno a su largo y etiqueta, cada pieza dentro de GAIA tendrá su identificador» — no se rebajan al piso más bajo (dejaría botón de plástico en los demás). ${tabla.llave.regla}.`);
   fila('juzgar', 'juzgarPines CONVOCADO (esperaba desde la E1)',
     `veredicto ${jp.peor} · ${jp.avisosAgua.length} avisos de agua`,
     'sin VIOLA', jp.peor === 'VIOLA' ? 'VIOLA' : 'CUMPLE', 'E1 · A-239',
@@ -4408,7 +4495,7 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
     fuerza: { fEjectN: +fEjectN.toFixed(0), aEffMm2: +(aEffM2 * 1e6).toFixed(0), sigmaMPa: +(residualStress(m) / 1e6).toFixed(2), fPkgN: +fPkgN.toFixed(0), cruceOkPct, pctClamp, clampKN: +clampKN.toFixed(0), pctEyectorMaq },
     cicloDecision,
     pines: { n: nP, diaMm: d8, posiciones, dMinCompMm: +s8.dMinCompressionMm.toFixed(2), dMinCorteMm: +s8.dMinShearMm.toFixed(2), gobierna, fPorPinN: +fPorPinN.toFixed(0), libreMm: +libreMm.toFixed(0), pandeoLibro: { fCritN: +pandeoLibro.fCritN.toFixed(0), sf: +pandeoLibro.sf.toFixed(1) }, pandeoNuestro: { fCritN: +pandeoNuestro.fCritN.toFixed(0), sf: +pandeoNuestro.sf.toFixed(1) }, escalonado: { puntaDiaMm: d8, puntaMm, cuerpoDiaMm: dCuerpo, libreCuerpoMm, sfRectoK2: +pandeoRecto.sf.toFixed(2) }, margenWitnessMm,
-      pisoPorRayo, equilibrio: pz?.equilibrio },
+      pisoPorRayo, equilibrio: pz?.equilibrio, tabla, agua: aguaPines },
     juez, juicioPines, anuncios,
   };
 }

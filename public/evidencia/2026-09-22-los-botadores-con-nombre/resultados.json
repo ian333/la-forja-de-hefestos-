@@ -1,0 +1,674 @@
+{
+ "orden": "ordenes/2026-09-22-los-botadores-con-nombre.md",
+ "fecha": "2026-09-22",
+ "base": "2438d60",
+ "como": "app real en iangpu forja-dev5 :5196 (GPU), arnés /home/ian/el-plan-dev5/mide-botadores.cjs + inspector scripts/inspecciona-molde.cjs (antes)",
+ "piezas": {
+  "carcasa": {
+   "step": "1594C Box.stp",
+   "antes_inspector_2_3": {
+    "v": "ok",
+    "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea2↔pin-cuerpo-0 4.52 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+   },
+   "antes_inspector_6_2": {
+    "v": "ok",
+    "medido": "8 pines · centroide de los pines a 3.85 mm del centro de la pieza · retenedora z 67..86"
+   },
+   "despues_tira": {
+    "pinesIds": "1594C-BOX-EP-01:152.8 1594C-BOX-EP-02:152.8 1594C-BOX-EP-03:152.8 1594C-BOX-EP-04:152.8 1594C-BOX-EP-05:152.8 1594C-BOX-EP-06:152.8 1594C-BOX-EP-07:152.8 1594C-BOX-EP-08:152.8",
+    "pinesLlave": "no",
+    "pinAgua": "0/80",
+    "pinAguaAntes": "0",
+    "pinAguaCamino": "nada que mover",
+    "equilibrio": "3.84/10.65",
+    "puntasVsCara": "0"
+   },
+   "despues_inspector_2_3_por_caja": {
+    "cruces": [],
+    "nPares": 72,
+    "medioD": 3.1
+   },
+   "despues_2_3_con_radio_del_cuerpo": {
+    "corregidos": [],
+    "crucesReales": 0
+   },
+   "tabla_ids": [
+    {
+     "id": "1594C-BOX-EP-01",
+     "largoMm": 152.8
+    },
+    {
+     "id": "1594C-BOX-EP-02",
+     "largoMm": 152.8
+    },
+    {
+     "id": "1594C-BOX-EP-03",
+     "largoMm": 152.8
+    },
+    {
+     "id": "1594C-BOX-EP-04",
+     "largoMm": 152.8
+    },
+    {
+     "id": "1594C-BOX-EP-05",
+     "largoMm": 152.8
+    },
+    {
+     "id": "1594C-BOX-EP-06",
+     "largoMm": 152.8
+    },
+    {
+     "id": "1594C-BOX-EP-07",
+     "largoMm": 152.8
+    },
+    {
+     "id": "1594C-BOX-EP-08",
+     "largoMm": 152.8
+    }
+   ],
+   "rotulos3D": [
+    "1594C-BOX-EP-01 · 152.80 mm",
+    "1594C-BOX-EP-02 · 152.80 mm",
+    "1594C-BOX-EP-03 · 152.80 mm",
+    "1594C-BOX-EP-04 · 152.80 mm",
+    "1594C-BOX-EP-05 · 152.80 mm",
+    "1594C-BOX-EP-06 · 152.80 mm",
+    "1594C-BOX-EP-07 · 152.80 mm",
+    "1594C-BOX-EP-08 · 152.80 mm"
+   ],
+   "pines3D": [
+    {
+     "k": 0,
+     "x": 111,
+     "y": 78.8,
+     "largo3D": 152.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 1,
+     "x": 141,
+     "y": 161.2,
+     "largo3D": 152.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 2,
+     "x": 105,
+     "y": 84.8,
+     "largo3D": 152.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 3,
+     "x": 141,
+     "y": 84.8,
+     "largo3D": 152.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 4,
+     "x": 99,
+     "y": 155.2,
+     "largo3D": 152.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 5,
+     "x": 147,
+     "y": 155.2,
+     "largo3D": 152.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 6,
+     "x": 99,
+     "y": 147.1,
+     "largo3D": 152.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 7,
+     "x": 147,
+     "y": 147.1,
+     "largo3D": 152.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    }
+   ],
+   "largo3D_menos_tabla": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "laminas_con_ids": {
+    "Ensamble": true,
+    "Análisis": true,
+    "Placa retenedora (cabezas)": true
+   },
+   "errores_pagina": []
+  },
+  "tapa": {
+   "step": "1594C Lid.stp",
+   "antes_inspector_2_3": {
+    "v": "falla",
+    "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): agua-B-linea0↔pin-punta-4 0 ; agua-B-linea0↔pin-punta-6 0 ; agua-B-linea2↔pin-punta-5 0.31 ; agua-B-linea2↔pin-punta-7 0.31 · el más cerrado que SÍ pasa: agua-B-linea0↔pin-punta-0 8.31 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+   },
+   "antes_inspector_6_2": {
+    "v": "ok",
+    "medido": "8 pines · centroide de los pines a 0.5 mm del centro de la pieza · retenedora z 58..71"
+   },
+   "despues_tira": {
+    "pinesIds": "1594C-LID-EP-01:98.8 1594C-LID-EP-02:98.8 1594C-LID-EP-03:98.8 1594C-LID-EP-04:98.8 1594C-LID-EP-05:98.8 1594C-LID-EP-06:98.8 1594C-LID-EP-07:98.8 1594C-LID-EP-08:98.8",
+    "pinesLlave": "no",
+    "pinAgua": "0/48",
+    "pinAguaAntes": "4",
+    "pinAguaCamino": "se movieron pines",
+    "equilibrio": "0.5/10.65",
+    "puntasVsCara": "0"
+   },
+   "despues_inspector_2_3_por_caja": {
+    "cruces": [],
+    "nPares": 40,
+    "medioD": 3.1
+   },
+   "despues_2_3_con_radio_del_cuerpo": {
+    "corregidos": [],
+    "crucesReales": 0
+   },
+   "tabla_ids": [
+    {
+     "id": "1594C-LID-EP-01",
+     "largoMm": 98.8
+    },
+    {
+     "id": "1594C-LID-EP-02",
+     "largoMm": 98.8
+    },
+    {
+     "id": "1594C-LID-EP-03",
+     "largoMm": 98.8
+    },
+    {
+     "id": "1594C-LID-EP-04",
+     "largoMm": 98.8
+    },
+    {
+     "id": "1594C-LID-EP-05",
+     "largoMm": 98.8
+    },
+    {
+     "id": "1594C-LID-EP-06",
+     "largoMm": 98.8
+    },
+    {
+     "id": "1594C-LID-EP-07",
+     "largoMm": 98.8
+    },
+    {
+     "id": "1594C-LID-EP-08",
+     "largoMm": 98.8
+    }
+   ],
+   "rotulos3D": [
+    "1594C-LID-EP-01 · 98.80 mm",
+    "1594C-LID-EP-02 · 98.80 mm",
+    "1594C-LID-EP-03 · 98.80 mm",
+    "1594C-LID-EP-04 · 98.80 mm",
+    "1594C-LID-EP-05 · 98.80 mm",
+    "1594C-LID-EP-06 · 98.80 mm",
+    "1594C-LID-EP-07 · 98.80 mm",
+    "1594C-LID-EP-08 · 98.80 mm"
+   ],
+   "pines3D": [
+    {
+     "k": 0,
+     "x": 84.8,
+     "y": 116,
+     "largo3D": 98.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 1,
+     "x": 161.2,
+     "y": 116,
+     "largo3D": 98.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 2,
+     "x": 84.8,
+     "y": 80,
+     "largo3D": 98.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 3,
+     "x": 161.2,
+     "y": 80,
+     "largo3D": 98.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 4,
+     "x": 86.8,
+     "y": 126,
+     "largo3D": 98.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 5,
+     "x": 159.2,
+     "y": 126,
+     "largo3D": 98.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 6,
+     "x": 86.8,
+     "y": 72,
+     "largo3D": 98.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    },
+    {
+     "k": 7,
+     "x": 159.2,
+     "y": 72,
+     "largo3D": 98.8,
+     "cabezaMasX": 4.38,
+     "cabezaMenosX": 4.38
+    }
+   ],
+   "largo3D_menos_tabla": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "laminas_con_ids": {
+    "Ensamble": true,
+    "Análisis": true,
+    "Placa retenedora (cabezas)": true
+   },
+   "errores_pagina": []
+  },
+  "alta": {
+   "step": "1599HBK.stp",
+   "antes_inspector_2_3": {
+    "v": "falla",
+    "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): agua-B-linea0↔pin-cuerpo-2 0 ; agua-B-linea1↔pin-cuerpo-6 0 ; agua-B-linea4↔pin-cuerpo-0 0 ; agua-B-linea4↔pin-cuerpo-1 0 ; agua-B-linea4↔pin-cuerpo-3 0 ; agua-B-linea1↔pin-cuerpo-5 1.92 · el más cerrado que SÍ pasa: agua-B-linea1↔pin-cuerpo-7 5.52 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → TOCAN: agua-B-linea0↔pines-retorno 1.5 mm ; agua-B-linea4↔pines-retorno 1.11 mm"
+   },
+   "antes_inspector_6_2": {
+    "v": "falla",
+    "medido": "8 pines · centroide de los pines a 13.26 mm del centro de la pieza · retenedora z 67..86"
+   },
+   "despues_tira": {
+    "pinesIds": "1599HBK-EP-01:174.5 1599HBK-EP-02:174.5 1599HBK-EP-03:174.5 1599HBK-EP-04:174.5 1599HBK-EP-05:174.5 1599HBK-EP-06:174.5 1599HBK-EP-07:174.5 1599HBK-EP-08:174.5",
+    "pinesLlave": "no",
+    "pinAgua": "0/80",
+    "pinAguaAntes": "5",
+    "pinAguaCamino": "se movieron pines",
+    "equilibrio": "16/22",
+    "puntasVsCara": "0"
+   },
+   "despues_inspector_2_3_por_caja": {
+    "cruces": [
+     {
+      "a": "agua-B-linea1",
+      "b": "pin-cuerpo-2",
+      "mm": 1.52
+     },
+     {
+      "a": "agua-B-linea4",
+      "b": "pin-cuerpo-0",
+      "mm": 2.33
+     },
+     {
+      "a": "agua-B-linea2",
+      "b": "pin-cuerpo-6",
+      "mm": 2.72
+     }
+    ],
+    "nPares": 72,
+    "medioD": 3.1
+   },
+   "despues_2_3_con_radio_del_cuerpo": {
+    "corregidos": [
+     {
+      "a": "agua-B-linea1",
+      "b": "pin-cuerpo-2",
+      "mm": 1.52,
+      "rCuerpo": 3.05,
+      "ejeAEjeMm": 9.8,
+      "corregidoMm": 3.65
+     },
+     {
+      "a": "agua-B-linea4",
+      "b": "pin-cuerpo-0",
+      "mm": 2.33,
+      "rCuerpo": 3.05,
+      "ejeAEjeMm": 10.6,
+      "corregidoMm": 4.45
+     },
+     {
+      "a": "agua-B-linea2",
+      "b": "pin-cuerpo-6",
+      "mm": 2.72,
+      "rCuerpo": 3.05,
+      "ejeAEjeMm": 11,
+      "corregidoMm": 4.85
+     }
+    ],
+    "crucesReales": 0
+   },
+   "tabla_ids": [
+    {
+     "id": "1599HBK-EP-01",
+     "largoMm": 174.5
+    },
+    {
+     "id": "1599HBK-EP-02",
+     "largoMm": 174.5
+    },
+    {
+     "id": "1599HBK-EP-03",
+     "largoMm": 174.5
+    },
+    {
+     "id": "1599HBK-EP-04",
+     "largoMm": 174.5
+    },
+    {
+     "id": "1599HBK-EP-05",
+     "largoMm": 174.5
+    },
+    {
+     "id": "1599HBK-EP-06",
+     "largoMm": 174.5
+    },
+    {
+     "id": "1599HBK-EP-07",
+     "largoMm": 174.5
+    },
+    {
+     "id": "1599HBK-EP-08",
+     "largoMm": 174.5
+    }
+   ],
+   "rotulos3D": [
+    "1599HBK-EP-01 · 174.50 mm",
+    "1599HBK-EP-02 · 174.50 mm",
+    "1599HBK-EP-03 · 174.50 mm",
+    "1599HBK-EP-04 · 174.50 mm",
+    "1599HBK-EP-05 · 174.50 mm",
+    "1599HBK-EP-06 · 174.50 mm",
+    "1599HBK-EP-07 · 174.50 mm",
+    "1599HBK-EP-08 · 174.50 mm"
+   ],
+   "pines3D": [
+    {
+     "k": 0,
+     "x": 289,
+     "y": 116,
+     "largo3D": 174.5,
+     "cabezaMasX": 5.17,
+     "cabezaMenosX": 5.17
+    },
+    {
+     "k": 1,
+     "x": 213,
+     "y": 116,
+     "largo3D": 174.5,
+     "cabezaMasX": 5.18,
+     "cabezaMenosX": 5.18
+    },
+    {
+     "k": 2,
+     "x": 145,
+     "y": 180,
+     "largo3D": 174.5,
+     "cabezaMasX": 5.18,
+     "cabezaMenosX": 5.18
+    },
+    {
+     "k": 3,
+     "x": 157,
+     "y": 180,
+     "largo3D": 174.5,
+     "cabezaMasX": 5.18,
+     "cabezaMenosX": 5.18
+    },
+    {
+     "k": 4,
+     "x": 169,
+     "y": 180,
+     "largo3D": 174.5,
+     "cabezaMasX": 5.18,
+     "cabezaMenosX": 5.18
+    },
+    {
+     "k": 5,
+     "x": 181,
+     "y": 180,
+     "largo3D": 174.5,
+     "cabezaMasX": 5.18,
+     "cabezaMenosX": 5.18
+    },
+    {
+     "k": 6,
+     "x": 209,
+     "y": 180,
+     "largo3D": 174.5,
+     "cabezaMasX": 5.18,
+     "cabezaMenosX": 5.18
+    },
+    {
+     "k": 7,
+     "x": 221,
+     "y": 180,
+     "largo3D": 174.5,
+     "cabezaMasX": 5.18,
+     "cabezaMenosX": 5.18
+    }
+   ],
+   "largo3D_menos_tabla": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "laminas_con_ids": {
+    "Ensamble": true,
+    "Análisis": true,
+    "Placa retenedora (cabezas)": true
+   },
+   "errores_pagina": []
+  },
+  "ensamble": {
+   "step": "1557BGY.stp",
+   "antes_inspector_2_3": {
+    "v": "ok",
+    "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea1↔pin-punta-0 8.71 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto"
+   },
+   "antes_inspector_6_2": {
+    "v": "ok",
+    "medido": "8 pines · centroide de los pines a 2.5 mm del centro de la pieza · retenedora z 67..86"
+   },
+   "despues_tira": {
+    "pinesIds": "1557BGY-EP-01:136.62 1557BGY-EP-02:136.6 1557BGY-EP-03:136.7 1557BGY-EP-04:136.7 1557BGY-EP-05:136.62 1557BGY-EP-06:136.61 1557BGY-EP-07:136.7 1557BGY-EP-08:136.7",
+    "pinesLlave": "3.38",
+    "pinAgua": "0/48",
+    "pinAguaAntes": "0",
+    "pinAguaCamino": "nada que mover",
+    "equilibrio": "2.5/8",
+    "puntasVsCara": "0"
+   },
+   "despues_inspector_2_3_por_caja": {
+    "cruces": [],
+    "nPares": 40,
+    "medioD": 3.1
+   },
+   "despues_2_3_con_radio_del_cuerpo": {
+    "corregidos": [],
+    "crucesReales": 0
+   },
+   "tabla_ids": [
+    {
+     "id": "1557BGY-EP-01",
+     "largoMm": 136.62
+    },
+    {
+     "id": "1557BGY-EP-02",
+     "largoMm": 136.6
+    },
+    {
+     "id": "1557BGY-EP-03",
+     "largoMm": 136.7
+    },
+    {
+     "id": "1557BGY-EP-04",
+     "largoMm": 136.7
+    },
+    {
+     "id": "1557BGY-EP-05",
+     "largoMm": 136.62
+    },
+    {
+     "id": "1557BGY-EP-06",
+     "largoMm": 136.61
+    },
+    {
+     "id": "1557BGY-EP-07",
+     "largoMm": 136.7
+    },
+    {
+     "id": "1557BGY-EP-08",
+     "largoMm": 136.7
+    }
+   ],
+   "rotulos3D": [
+    "1557BGY-EP-01 · 136.62 mm",
+    "1557BGY-EP-02 · 136.60 mm",
+    "1557BGY-EP-03 · 136.70 mm",
+    "1557BGY-EP-04 · 136.70 mm",
+    "1557BGY-EP-05 · 136.62 mm",
+    "1557BGY-EP-06 · 136.61 mm",
+    "1557BGY-EP-07 · 136.70 mm",
+    "1557BGY-EP-08 · 136.70 mm"
+   ],
+   "pines3D": [
+    {
+     "k": 0,
+     "x": 110,
+     "y": 148,
+     "largo3D": 136.62,
+     "cabezaMasX": 3.38,
+     "cabezaMenosX": 4.27
+    },
+    {
+     "k": 1,
+     "x": 136,
+     "y": 148,
+     "largo3D": 136.6,
+     "cabezaMasX": 3.38,
+     "cabezaMenosX": 4.27
+    },
+    {
+     "k": 2,
+     "x": 104,
+     "y": 140,
+     "largo3D": 136.7,
+     "cabezaMasX": 3.38,
+     "cabezaMenosX": 4.27
+    },
+    {
+     "k": 3,
+     "x": 142,
+     "y": 140,
+     "largo3D": 136.7,
+     "cabezaMasX": 3.38,
+     "cabezaMenosX": 4.27
+    },
+    {
+     "k": 4,
+     "x": 98,
+     "y": 110,
+     "largo3D": 136.62,
+     "cabezaMasX": 3.38,
+     "cabezaMenosX": 4.27
+    },
+    {
+     "k": 5,
+     "x": 148,
+     "y": 110,
+     "largo3D": 136.61,
+     "cabezaMasX": 3.38,
+     "cabezaMenosX": 4.27
+    },
+    {
+     "k": 6,
+     "x": 106,
+     "y": 104,
+     "largo3D": 136.7,
+     "cabezaMasX": 3.38,
+     "cabezaMenosX": 4.27
+    },
+    {
+     "k": 7,
+     "x": 140,
+     "y": 104,
+     "largo3D": 136.7,
+     "cabezaMasX": 3.38,
+     "cabezaMenosX": 4.27
+    }
+   ],
+   "largo3D_menos_tabla": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "laminas_con_ids": {
+    "Ensamble": true,
+    "Análisis": true,
+    "Placa retenedora (cabezas)": true
+   },
+   "errores_pagina": []
+  }
+ },
+ "gates": {
+  "tsc": "67 errores = 66 de la base + src/comando/Logos.tsx (TS2503, viene de main: LA CARA DE GAIA) · 0 de esta orden",
+  "ciclo_dado_test": "266/266 (sin ACTA R94: el cubo no toca ningún camino nuevo)",
+  "prueba_pura": "/home/ian/el-plan-dev5/prueba-veto.mts 10/10 (veto nulo = bit-igual · una línea mueve 2 pines · todo vetado = 8 forzados → baffle/bubbler · sección punta/cuerpo · ids · llave)"
+ }
+}

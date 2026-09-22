@@ -611,6 +611,20 @@ export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
       { grupo: 'Expulsión §11.2.6', param: 'la cabeza queda CAPTURADA',
         valor: `cabeza ⌀${hd.diaMm} > pasaje ⌀${hd.pasajeDiaMm} de la expulsora — la respalda al empujar y el contrataladro la jala al retroceder`, ref: 'Fig 1.6 · Fig 11.15', ok: hd.diaMm > hd.pasajeDiaMm },
     );
+    // LA TABLA DE EYECTORES (orden LOS BOTADORES CON NOMBRE): cada pin con su id y su largo; la llave si difieren
+    const tb = s.ejectors.tabla;
+    if (tb?.length) {
+      const ls = tb.map((f) => f.largoMm), distintos = new Set(ls.map((l) => l.toFixed(2))).size;
+      rows.push(
+        { grupo: 'Expulsión §11.2.6', param: `tabla de eyectores: ${tb.length} pines con NOMBRE (R37)`,
+          valor: tb.map((f) => `${f.id} L${f.largoMm}`).join(' · '), ref: '§11.2.6 · §11.1.7', ok: true },
+        { grupo: 'Expulsión §11.2.6', param: distintos > 1 ? `${distintos} largos distintos → KEYED + etiquetados` : 'un solo largo (el libro lo prefiere)',
+          valor: distintos > 1
+            ? `LLAVE: plano en la cabeza a ${s.ejectors.llave?.planoAlEjeMm ?? '—'} mm del eje (regla de Hefestos) · id grabado en la cabeza Y junto a su barreno en la retenedora`
+            : 'sin llave · id grabado en la cabeza y junto a su barreno en la retenedora',
+          ref: '§11.2.6', ok: distintos === 1 || !!s.ejectors.llave },
+      );
+    }
   }
   // VENTEO §8 — el aire tiene que salir o quema/short-shot. Máx antes de rebaba
   //   por la LEY del land (geometría real, defaults del libro); práctica en partición.
@@ -839,15 +853,28 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole, o?: { lamina
     const frame = s.cavity.frameMm ? { frameMm: s.cavity.frameMm, ribs: s.cavity.ribs ?? 0 } : undefined;
     const tRet = plateDefs(s).find((p) => p.role === 'ejector-ret')?.thick ?? 12;
     const hd = ejectorHeadGeom(s.ejectors.diaMm, tRet);
+    // LOS BOTADORES CON NOMBRE (2026-09-22): §11.2.6 "key and label each ejector pin AND MATCHING
+    // LOCATION ON THE EJECTOR RETAINER PLATE" — cada barreno de la retenedora lleva el id de SU pin y su
+    // largo (el renglón k de la tabla = la posición k del agarre). Con varias cavidades se añade «·Cn».
+    const tabla = s.ejectors.tabla, llave = s.ejectors.llave;
     if (s.ejectors.type !== 'stripper')   // stripper: sin pines → sin alojamientos de cabeza
-      for (const cell of cells) for (const [x, y] of ejectorCellPositions(s, cell, fx, fy, round, perCav, frame)) {
-        holes.push({ x, y, dia: hd.pasajeDiaMm,
-          type: `pasaje de expulsor · ⌀ CUERPO +0.5 (§11.2.6)`,
-          note: role === 'ejector' ? `más angosto que la cabeza ⌀${hd.diaMm}: la respalda` : undefined });
-        if (role === 'ejector-ret' && o?.lamina)
-          holes.push({ x, y, dia: hd.boreDiaMm, depth: hd.boreDepthMm,
-            type: 'aloj. CIEGO de cabeza de expulsor (contrataladro)',
-            note: `desde la cara INFERIOR · cabeza ⌀${hd.diaMm}×${hd.thickMm} (Fig 11.15 Det. D)` });
+      for (let ci = 0; ci < cells.length; ci++) {
+        const cell = cells[ci];
+        ejectorCellPositions(s, cell, fx, fy, round, perCav, frame).forEach(([x, y], k) => {
+          const f = tabla?.[k];
+          const tag = f ? `${f.id}${cells.length > 1 ? `·C${ci + 1}` : ''}` : undefined;
+          holes.push({ x, y, dia: hd.pasajeDiaMm,
+            type: `pasaje de expulsor · ⌀ CUERPO +0.5 (§11.2.6)`,
+            note: role === 'ejector' ? `más angosto que la cabeza ⌀${hd.diaMm}: la respalda`
+              : f && o?.lamina ? `L ${f.largoMm}` : undefined,
+            tag: role === 'ejector-ret' && o?.lamina ? tag : undefined });
+          if (role === 'ejector-ret' && o?.lamina)
+            holes.push({ x, y, dia: hd.boreDiaMm, depth: hd.boreDepthMm,
+              type: 'aloj. CIEGO de cabeza de expulsor (contrataladro)',
+              note: (llave ? `LLAVE: plano a ${llave.planoAlEjeMm} del eje (§11.2.6) · ` : '')
+                + `desde la cara INFERIOR · cabeza ⌀${hd.diaMm}×${hd.thickMm} (Fig 11.15 Det. D)`,
+              tag });
+        });
       }
     // pines de retorno en las esquinas de la PLACA EXPULSORA real (más angosta que el
     // molde: vive dentro del housing en U, Fig 1.4) — no en las esquinas del molde, y FUERA
