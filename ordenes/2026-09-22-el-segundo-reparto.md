@@ -1,9 +1,9 @@
 # ORDEN: EL SEGUNDO REPARTO — cuatro órdenes en paralelo tras la firma del ACTA R93
 
-ESTADO: hoy
+ESTADO: hecho
 PRIORIDAD: 1
 
-BASE: 2b3ed99
+BASE: 554d7e6
 
 OBJETIVO: trabajar en paralelo, con un agente Opus por orden (worktree propio + copia forja-devN en iangpu), lo que ian decidió el
 2026-09-22, y fusionar en main UNA vez con tsc + cubo + inspección de las 4 piezas + camino de la carcasa; desplegar una vez.
@@ -28,6 +28,7 @@ OBJETIVO: trabajar en paralelo, con un agente Opus por orden (worktree propio + 
 - ordenes/2026-09-21-el-reparto-de-la-inspeccion.md
 
 ## CREA
+- public/evidencia/2026-09-22-el-segundo-reparto/inspeccion-fusion.json
 - ordenes/2026-09-22-las-reglas-de-hefestos.md
 - ordenes/2026-09-22-los-botadores-con-nombre.md
 - ordenes/2026-09-22-el-corte-unico.md
@@ -37,6 +38,17 @@ OBJETIVO: trabajar en paralelo, con un agente Opus por orden (worktree propio + 
 - (nada)
 
 ## PREEXISTENTE
+- videos/econ-anotar.json
+- videos/econ-credito.json
+- videos/econ-descuento.json
+- videos/econ-enfrente.json
+- videos/econ-hora.json
+- videos/econ-lata.json
+- videos/econ-lluvia.json
+- videos/econ-merma.json
+- videos/econ-naranja.json
+- videos/econ-precio.json
+- videos/econ-yunus.json
 - docs/CANON-VIDEO.md
 - public/comando/comentarios.json
 - public/comando/respuestas-comentarios.json
@@ -75,3 +87,18 @@ OBJETIVO: trabajar en paralelo, con un agente Opus por orden (worktree propio + 
 ## EVIDENCIA (se declara ANTES de trabajar)
 - orden-gate VERDE en cada rama y en la fusión; tsc sin nuevos; ciclo-dado-test verde o ACTA R94 firmada por ian.
 - inspección de las 4 piezas sobre la fusión: fallas 2/2/6/1 → menos; temis-deploy.json y bundle servido con el commit.
+
+## CIERRE (2026-09-22 · MEDIDO sobre la fusión)
+Cuatro ramas fusionadas en main sin conflictos (1beeb98 macho · 923d421 reglas · cc0c37d botadores · 554d7e6 corte). BASE movida a
+554d7e6 (la fusión) para juzgar solo este cierre; cada rama pasó su orden-gate VERDE en su worktree.
+- tsc: 67 = 66 de la base + `src/comando/Logos.tsx` (de LA CARA DE GAIA, no del molde). Cero nuevos del molde.
+- ciclo-dado-test: **266/266** sobre la fusión. Sin ACTA R94 (ningún literal cambió).
+- Inspección de las 4 piezas (una por una; en paralelo se agotan los contextos WebGL y la 3.1 sale «sin animZ» — artefacto):
+  fallas **2/2/6/1 → 1/0/4/0** (carcasa/tapa/caja grande/ensamble). Detalle: `public/evidencia/2026-09-22-el-segundo-reparto/inspeccion-fusion.json`.
+  - carcasa: 5.1 (los postes gruesos mandan el ciclo, 6.2×) — es la PIEZA del cliente.
+  - caja grande: 1.1 −56.9 → 0 mm ✓. Quedan 2.3 (el inspector mide el pin con el radio de la cabeza en toda su altura: +2.2 mm
+    parejo; el juez de la E10 da 0/80, según LOS BOTADORES), 2.5 (agua B a 1.16/1.55 mm de los retornos: ya estaba en la base, sin
+    orden), 5.1 (pieza del cliente) y 6.2 (dos reglas de equilibrio — pregunta a ian).
+- Preguntas abiertas para ian (juntas): macho 1 ceja del ensamble · 2 postes de las torres; botadores 1 una sola regla de
+  equilibrio · 2 plano o pasador · 3 id de pieza; corte 1 núcleo de la flanera suelto · 2 broca que pasa la esquina · 3 check 267
+  (pesar las placas: el cubo tenía la placa B vacía y nadie lo veía); reglas 1 expulsora al ras · 2 venteo 0.02 · 3 agua bajo la pieza.

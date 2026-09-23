@@ -1,0 +1,394 @@
+{
+ "carcasa": [
+  {
+   "id": "0",
+   "v": "info",
+   "medido": "75 componentes · base 246×246 · altura 292 mm · armado: E2 2.2s · E3 16.0s · E4 0.8s · E5 59.6s · E6 2.6s · E7 2.9s · E8 13.6s",
+   "pide": ""
+  },
+  {
+   "id": "1.1",
+   "v": "ok",
+   "medido": "rayo en (123.4, 123.3): techo del macho (cara real) z 219.8 · piso interior de la pieza z 219.8 (pared ahí 3 mm) → 0 mm · [la fórmula «techo − pared mediana» habría dicho z 219.6]",
+   "pide": "|Δ| ≤ 0.5 mm"
+  },
+  {
+   "id": "1.2",
+   "v": "mirar",
+   "medido": "partición z 190 · anillo y bebedero sobre el eje (123, 123) · altura total 292 mm",
+   "pide": "todo alineado al eje"
+  },
+  {
+   "id": "2.1",
+   "v": "ok",
+   "medido": "9.18 mm de acero bajo la línea (⌀ 6.35)",
+   "pide": "≥ ½ D = 3.17 mm"
+  },
+  {
+   "id": "2.2",
+   "v": "ok",
+   "medido": "sin contacto agua A ↔ inserto de cavidad · acero sobre la línea hasta la cara de placa A: 14.18 mm",
+   "pide": "0 mm dentro del inserto (y ≥ ½ D de acero a la cara)"
+  },
+  {
+   "id": "2.3",
+   "v": "ok",
+   "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea2↔pin-cuerpo-0 4.45 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto",
+   "pide": "todo par ≥ ½ D = 3.17 mm · 0 mm de penetración con retornos/KO"
+  },
+  {
+   "id": "2.4",
+   "v": "ok",
+   "medido": "sin contacto",
+   "pide": "0 mm³ compartidos"
+  },
+  {
+   "id": "2.5",
+   "v": "ok",
+   "medido": "sin contacto",
+   "pide": "0 mm de penetración"
+  },
+  {
+   "id": "3.1",
+   "v": "ok",
+   "medido": "apertura REAL (animZ clamp) = 152.5 mm · pieza 33.3 + bebedero 69.2 + 10 = 112.5",
+   "pide": "apertura ≥ pieza + bebedero + 10"
+  },
+  {
+   "id": "3.2",
+   "v": "ok",
+   "medido": "libre 46 mm · la pieza pide 41.3 (H + 8) → la retenedora entra 0 mm en el soporte",
+   "pide": "libre ≥ pedida"
+  },
+  {
+   "id": "3.3",
+   "v": "ok",
+   "medido": "guía sobre la partición 57.8 mm · macho 29.8 mm",
+   "pide": "guía > macho"
+  },
+  {
+   "id": "5.1",
+   "v": "falla",
+   "medido": "el ciclo lo manda lo más lento: 134 s; el resto está listo en 21.5 s → 6.2× (la pared llega a 8 mm; la medida es 3.2)",
+   "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)"
+  },
+  {
+   "id": "6.1",
+   "v": "ok",
+   "medido": "la tira dice puntas↔cara 0 mm · medido por rayo: la peor punta pin-punta-0 está 0 mm HUNDIDA en el acero (cara real z 219.8) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+   "pide": "punta ↔ cara real ≤ 0.5 mm · cuerpo ↔ retenedora ≤ 0.5 mm"
+  },
+  {
+   "id": "6.2",
+   "v": "ok",
+   "medido": "8 pines · centroide de los pines a 3.85 mm del centro de la pieza · retenedora z 67..86",
+   "pide": "centroide ≤ 5 % de la diagonal de la pieza (regla de Hefestos, sin cita: el libro no da un número)"
+  },
+  {
+   "id": "7.1",
+   "v": "ok",
+   "medido": "15 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 38.7 (agua-B-linea0)",
+   "pide": "0 ciegas · largo/⌀ ≤ 50 — REGLA DE HEFESTOS, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)"
+  },
+  {
+   "id": "7.2",
+   "v": "ok",
+   "medido": "0 tramos de pin atraviesan núcleo MACIZO (hasta 0 mm = su radio) · bebedero ↔ cavidad libre",
+   "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)"
+  }
+ ],
+ "tapa": [
+  {
+   "id": "0",
+   "v": "info",
+   "medido": "68 componentes · base 246×196 · altura 218 mm · armado: E2 0.6s · E3 7.1s · E4 0.4s · E5 13.8s · E6 0.9s · E7 1.0s · E8 8.0s",
+   "pide": ""
+  },
+  {
+   "id": "1.1",
+   "v": "ok",
+   "medido": "rayo en (123.4, 98.3): techo del macho (cara real) z 156.8 · piso interior de la pieza z 156.8 (pared ahí 2.8 mm) → 0 mm · [la fórmula «techo − pared mediana» habría dicho z 155.74]",
+   "pide": "|Δ| ≤ 0.5 mm"
+  },
+  {
+   "id": "1.2",
+   "v": "mirar",
+   "medido": "partición z 146 · anillo y bebedero sobre el eje (123, 98) · altura total 218 mm",
+   "pide": "todo alineado al eje"
+  },
+  {
+   "id": "2.1",
+   "v": "ok",
+   "medido": "3.18 mm de acero bajo la línea (⌀ 6.35)",
+   "pide": "≥ ½ D = 3.17 mm"
+  },
+  {
+   "id": "2.2",
+   "v": "ok",
+   "medido": "sin contacto agua A ↔ inserto de cavidad · acero sobre la línea hasta la cara de placa A: 9.18 mm",
+   "pide": "0 mm dentro del inserto (y ≥ ½ D de acero a la cara)"
+  },
+  {
+   "id": "2.3",
+   "v": "ok",
+   "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea0↔pin-punta-0 8.24 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto",
+   "pide": "todo par ≥ ½ D = 3.17 mm · 0 mm de penetración con retornos/KO"
+  },
+  {
+   "id": "2.4",
+   "v": "ok",
+   "medido": "sin contacto",
+   "pide": "0 mm³ compartidos"
+  },
+  {
+   "id": "2.5",
+   "v": "ok",
+   "medido": "sin contacto",
+   "pide": "0 mm de penetración"
+  },
+  {
+   "id": "3.1",
+   "v": "ok",
+   "medido": "apertura REAL (animZ clamp) = 93.7 mm · pieza 14.1 + bebedero 58.4 + 10 = 82.5",
+   "pide": "apertura ≥ pieza + bebedero + 10"
+  },
+  {
+   "id": "3.2",
+   "v": "ok",
+   "medido": "libre 31 mm · la pieza pide 22.1 (H + 8) → la retenedora entra 0 mm en el soporte",
+   "pide": "libre ≥ pedida"
+  },
+  {
+   "id": "3.3",
+   "v": "ok",
+   "medido": "guía sobre la partición 31.4 mm · macho 10.8 mm",
+   "pide": "guía > macho"
+  },
+  {
+   "id": "5.1",
+   "v": "ok",
+   "medido": "el ciclo lo manda lo más lento: 62.7 s; el resto está listo en 31.3 s → 2× (la pared llega a 5.5 mm; la medida es 3.86)",
+   "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)"
+  },
+  {
+   "id": "6.1",
+   "v": "ok",
+   "medido": "la tira dice puntas↔cara 0 mm · medido por rayo: la peor punta pin-punta-0 está 0 mm HUNDIDA en el acero (cara real z 156.8) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+   "pide": "punta ↔ cara real ≤ 0.5 mm · cuerpo ↔ retenedora ≤ 0.5 mm"
+  },
+  {
+   "id": "6.2",
+   "v": "ok",
+   "medido": "8 pines · centroide de los pines a 0.5 mm del centro de la pieza · retenedora z 58..71",
+   "pide": "centroide ≤ 5 % de la diagonal de la pieza (regla de Hefestos, sin cita: el libro no da un número)"
+  },
+  {
+   "id": "7.1",
+   "v": "ok",
+   "medido": "11 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 30.9 (agua-B-linea0)",
+   "pide": "0 ciegas · largo/⌀ ≤ 50 — REGLA DE HEFESTOS, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)"
+  },
+  {
+   "id": "7.2",
+   "v": "ok",
+   "medido": "0 tramos de pin atraviesan núcleo MACIZO (hasta 0 mm = su radio) · bebedero ↔ cavidad libre",
+   "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)"
+  }
+ ],
+ "alta": [
+  {
+   "id": "0",
+   "v": "info",
+   "medido": "75 componentes · base 396×296 · altura 332 mm · armado: E2 4.7s · E3 36.4s · E4 1.5s · E5 17.0s · E6 4.1s · E7 5.4s · E8 20.1s",
+   "pide": ""
+  },
+  {
+   "id": "1.1",
+   "v": "ok",
+   "medido": "rayo en (198.4, 148.3): techo del macho (cara real) z 241.5 · piso interior de la pieza z 241.5 (pared ahí 2.5 mm) → 0 mm · [la fórmula «techo − pared mediana» habría dicho z 242.54]",
+   "pide": "|Δ| ≤ 0.5 mm"
+  },
+  {
+   "id": "1.2",
+   "v": "mirar",
+   "medido": "partición z 210 · anillo y bebedero sobre el eje (198, 148) · altura total 332 mm",
+   "pide": "todo alineado al eje"
+  },
+  {
+   "id": "2.1",
+   "v": "ok",
+   "medido": "27.43 mm de acero bajo la línea (⌀ 6.35)",
+   "pide": "≥ ½ D = 3.17 mm"
+  },
+  {
+   "id": "2.2",
+   "v": "ok",
+   "medido": "sin contacto agua A ↔ inserto de cavidad · acero sobre la línea hasta la cara de placa A: 31.17 mm",
+   "pide": "0 mm dentro del inserto (y ≥ ½ D de acero a la cara)"
+  },
+  {
+   "id": "2.3",
+   "v": "falla",
+   "medido": "72 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): agua-B-linea1↔pin-cuerpo-2 1.45 ; agua-B-linea4↔pin-cuerpo-0 2.26 ; agua-B-linea2↔pin-cuerpo-6 2.65 · el más cerrado que SÍ pasa: agua-B-linea2↔pin-cuerpo-1 6.65 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → TOCAN: agua-B-linea4↔pines-retorno 1.16 mm ; agua-B-linea0↔pines-retorno 1.55 mm",
+   "pide": "todo par ≥ ½ D = 3.17 mm · 0 mm de penetración con retornos/KO"
+  },
+  {
+   "id": "2.4",
+   "v": "ok",
+   "medido": "sin contacto",
+   "pide": "0 mm³ compartidos"
+  },
+  {
+   "id": "2.5",
+   "v": "falla",
+   "medido": "agua-B-linea4↔pines-retorno 1.16 mm ; agua-B-linea0↔pines-retorno 1.55 mm",
+   "pide": "0 mm de penetración"
+  },
+  {
+   "id": "3.1",
+   "v": "ok",
+   "medido": "apertura REAL (animZ clamp) = 175.8 mm · pieza 35.5 + bebedero 87 + 10 = 132.5",
+   "pide": "apertura ≥ pieza + bebedero + 10"
+  },
+  {
+   "id": "3.2",
+   "v": "ok",
+   "medido": "libre 46 mm · la pieza pide 43.5 (H + 8) → la retenedora entra 0 mm en el soporte",
+   "pide": "libre ≥ pedida"
+  },
+  {
+   "id": "3.3",
+   "v": "ok",
+   "medido": "guía sobre la partición 74.6 mm · macho 31.5 mm",
+   "pide": "guía > macho"
+  },
+  {
+   "id": "5.1",
+   "v": "falla",
+   "medido": "el ciclo lo manda lo más lento: 51.0 s; el resto está listo en 12.7 s → 4× (la pared llega a 4.9 mm; la medida es 2.46)",
+   "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)"
+  },
+  {
+   "id": "6.1",
+   "v": "ok",
+   "medido": "la tira dice puntas↔cara 0 mm · medido por rayo: la peor punta pin-punta-0 está 0 mm HUNDIDA en el acero (cara real z 241.5) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+   "pide": "punta ↔ cara real ≤ 0.5 mm · cuerpo ↔ retenedora ≤ 0.5 mm"
+  },
+  {
+   "id": "6.2",
+   "v": "falla",
+   "medido": "8 pines · centroide de los pines a 16 mm del centro de la pieza · retenedora z 67..86",
+   "pide": "centroide ≤ 5 % de la diagonal de la pieza (regla de Hefestos, sin cita: el libro no da un número)"
+  },
+  {
+   "id": "7.1",
+   "v": "ok",
+   "medido": "15 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 46.6 (agua-B-linea0)",
+   "pide": "0 ciegas · largo/⌀ ≤ 50 — REGLA DE HEFESTOS, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)"
+  },
+  {
+   "id": "7.2",
+   "v": "ok",
+   "medido": "0 tramos de pin atraviesan núcleo MACIZO (hasta 0 mm = su radio) · bebedero ↔ cavidad libre",
+   "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)"
+  }
+ ],
+ "ensamble": [
+  {
+   "id": "0",
+   "v": "info",
+   "medido": "68 componentes · base 246×246 · altura 268 mm · armado: E2 3.5s · E3 30.6s · E4 1.7s · E5 56.2s · E6 2.4s · E7 3.3s · E8 17.8s",
+   "pide": ""
+  },
+  {
+   "id": "1.1",
+   "v": "ok",
+   "medido": "rayo en (123.4, 123.3): techo del macho (cara real) z 203.7 · piso interior de la pieza z 203.7 (pared ahí 3 mm) → 0 mm · [la fórmula «techo − pared mediana» habría dicho z 202.84]",
+   "pide": "|Δ| ≤ 0.5 mm"
+  },
+  {
+   "id": "1.2",
+   "v": "mirar",
+   "medido": "partición z 176 · anillo y bebedero sobre el eje (123, 123) · altura total 268 mm",
+   "pide": "todo alineado al eje"
+  },
+  {
+   "id": "2.1",
+   "v": "ok",
+   "medido": "3.18 mm de acero bajo la línea (⌀ 6.35)",
+   "pide": "≥ ½ D = 3.17 mm"
+  },
+  {
+   "id": "2.2",
+   "v": "ok",
+   "medido": "sin contacto agua A ↔ inserto de cavidad · acero sobre la línea hasta la cara de placa A: 9.18 mm",
+   "pide": "0 mm dentro del inserto (y ≥ ½ D de acero a la cara)"
+  },
+  {
+   "id": "2.3",
+   "v": "ok",
+   "medido": "40 pares agua↔pin se cruzan en z · bajo ½D (3.17 mm): ninguno · el más cerrado que SÍ pasa: agua-B-linea1↔pin-punta-0 8.64 mm · RETORNOS/KO (pines-retorno) son roles de VARIOS CUERPOS: su caja abarca la placa, se juzgan por MALLA → sin contacto",
+   "pide": "todo par ≥ ½ D = 3.17 mm · 0 mm de penetración con retornos/KO"
+  },
+  {
+   "id": "2.4",
+   "v": "ok",
+   "medido": "sin contacto",
+   "pide": "0 mm³ compartidos"
+  },
+  {
+   "id": "2.5",
+   "v": "ok",
+   "medido": "sin contacto",
+   "pide": "0 mm de penetración"
+  },
+  {
+   "id": "3.1",
+   "v": "ok",
+   "medido": "apertura REAL (animZ clamp) = 139.3 mm · pieza 31.2 + bebedero 61.3 + 10 = 102.5",
+   "pide": "apertura ≥ pieza + bebedero + 10"
+  },
+  {
+   "id": "3.2",
+   "v": "ok",
+   "medido": "libre 46 mm · la pieza pide 39.2 (H + 8) → la retenedora entra 0 mm en el soporte",
+   "pide": "libre ≥ pedida"
+  },
+  {
+   "id": "3.3",
+   "v": "ok",
+   "medido": "guía sobre la partición 49.8 mm · macho 28.4 mm",
+   "pide": "guía > macho"
+  },
+  {
+   "id": "5.1",
+   "v": "ok",
+   "medido": "el ciclo lo manda lo más lento: 48.4 s; el resto está listo en 31.3 s → 1.5× (la pared llega a 4.8 mm; la medida es 3.86)",
+   "pide": "lo más lento ≤ 2× la mitad de la pieza (pared pareja, Eq 9.5: t ∝ h²)"
+  },
+  {
+   "id": "6.1",
+   "v": "ok",
+   "medido": "la tira dice puntas↔cara 0 mm · medido por rayo: la peor punta pin-punta-5 está -0.09 mm HUNDIDA en el acero (cara real z 203.7) · cuerpo ↔ cara de la retenedora 0 mm · 8 pines",
+   "pide": "punta ↔ cara real ≤ 0.5 mm · cuerpo ↔ retenedora ≤ 0.5 mm"
+  },
+  {
+   "id": "6.2",
+   "v": "ok",
+   "medido": "8 pines · centroide de los pines a 2.5 mm del centro de la pieza · retenedora z 67..86",
+   "pide": "centroide ≤ 5 % de la diagonal de la pieza (regla de Hefestos, sin cita: el libro no da un número)"
+  },
+  {
+   "id": "7.1",
+   "v": "ok",
+   "medido": "11 líneas · ciegas (no tocan un canto): ninguna · largo/⌀ máx 38.7 (agua-B-linea0)",
+   "pide": "0 ciegas · largo/⌀ ≤ 50 — REGLA DE HEFESTOS, SIN CITA (Kazmer no da el número; razón: taladro profundo con gun-drill y deriva)"
+  },
+  {
+   "id": "7.2",
+   "v": "ok",
+   "medido": "0 tramos de pin atraviesan núcleo MACIZO (hasta 0 mm = su radio) · bebedero ↔ cavidad libre",
+   "pide": "0 mm³ compartidos (cada pin y el bebedero con su barreno)"
+  }
+ ]
+}
