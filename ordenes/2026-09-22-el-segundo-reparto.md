@@ -102,3 +102,12 @@ Cuatro ramas fusionadas en main sin conflictos (1beeb98 macho · 923d421 reglas 
 - Preguntas abiertas para ian (juntas): macho 1 ceja del ensamble · 2 postes de las torres; botadores 1 una sola regla de
   equilibrio · 2 plano o pasador · 3 id de pieza; corte 1 núcleo de la flanera suelto · 2 broca que pasa la esquina · 3 check 267
   (pesar las placas: el cubo tenía la placa B vacía y nadie lo veía); reglas 1 expulsora al ras · 2 venteo 0.02 · 3 agua bajo la pieza.
+
+## FIRMA DE IAN (2026-09-23): «DALE» = sí a todo
+macho 1 partición escalonada en la ceja del ensamble · 2 postes de las torres INSERTADOS (orden aparte, cita Kazmer primero) ·
+botadores 1 UNA sola regla de equilibrio: el 0.1·L de Hefestos (el 6.2 del inspector la adopta) · 2 llave = plano en la cabeza ·
+3 id del pin = nombre del archivo hasta que exista el catálogo de GAIA · corte 1 orden para que guías/agua no dejen acero suelto
+en el núcleo de la flanera · 2 la broca pasa la esquina (regla de Hefestos) · 3 check 267 «cada placa pesa su bloque menos sus
+barrenos» (ACTA R94) · reglas 1 expulsora al ras aceptada · 2 la flecha se sigue midiendo contra 0.02 mm · 3 los tubitos del agua
+pueden entrar al bloque de la pieza.
+ian además: «confío plenamente en los agentes de supervisión siempre y cuando VEAN» → pidió VIDEO de lo que revisan.
