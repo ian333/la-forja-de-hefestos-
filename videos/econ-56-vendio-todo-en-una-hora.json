@@ -1,0 +1,58 @@
+{
+ "id": "econ-56-vendio-todo-en-una-hora",
+ "titulo": "Un rumor no crea clientes: adelanta los de mañana — Don Chuy, La economía de tu negocio (56-vendio-todo-en-una-hora)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/56-vendio-todo-en-una-hora. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-56-vendio-todo-en-una-hora-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-56-vendio-todo-en-una-hora-4k.mp4",
+  "h264": "econ-56-vendio-todo-en-una-hora-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-56-vendio-todo-en-una-hora.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? Vendió todo en una hora, y su mejor día lo dejó en ceros · Don Chuy",
+   "descripcion": "¿Qué pasó, mi Don Chuy? Vendió todo en una hora, y su mejor día lo dejó en ceros. 🍊\n\nMira la mesa: se vació en una hora, y juntó mil pesos. Pagó al proveedor y le quedó la mitad. Fíjate al otro día: la camioneta dejó cien más, nadie compró nada, y todas acabaron en el bote.\n\nNo le sobraron clientes: le faltaron el martes. Un rumor no trae clientes, los adelanta.\n\n💬 Y tú, ¿venderías todo hoy aunque mañana no quede nada? Sí o no, escríbelo aquí abajo.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "Un rumor no crea clientes, solo los adelanta: el día que vendes de más le robaste las ventas al día siguiente."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nEl lunes: 100 × $10 = $1,000, que es el «mil pesos» de la voz y el «$1,000» de la lata. El proveedor cobra $500 y se van cinco billetes: $1,000 − $500 = $500. Por eso «le quedó la mitad» es exacto —la mitad de los mil que se acaban de decir— y la lata cierra el lunes en «$500».\n\nEl martes: la camioneta deja otras 100 y cobra sus $500. Los $500 del lunes salen de la lata y la lata queda en $0, que es el «en ceros» del gancho. Vendió cero, así que las 100 se echan a perder y el bote marca «−$500»: lo que costaron esas 100 (100 × $5 = $500).\n\nY tú, ¿venderías todo hoy aunque mañana no quede nada? Sí o no, escríbelo aquí abajo.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "A",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "Un rumor no crea clientes, solo los adelanta: el día que vendes de más le robaste las ventas al día siguiente.",
+  "fuente": "Nobel de Economía 2013, Robert Shiller, por el análisis empírico de los precios de los activos y el contagio de las historias. Dolor real: el pico de ventas que se comió el inventario de la semana.",
+  "programar": "2026-10-05T18:45:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}

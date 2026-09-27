@@ -1,0 +1,58 @@
+{
+ "id": "econ-14-mil-en-la-mesa",
+ "titulo": "Liquidez: tener y no tenerlo hoy — Don Chuy, La economía de tu negocio (14-mil-en-la-mesa)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/14-mil-en-la-mesa. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-14-mil-en-la-mesa-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-14-mil-en-la-mesa-4k.mp4",
+  "h264": "econ-14-mil-en-la-mesa-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-14-mil-en-la-mesa.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? Tenía el doble de lo que debía, y no pudo pagar · La economía de tu negocio",
+   "descripcion": "¿Qué pasó, mi Don Chuy? Tenía el doble de lo que debía, y no pudo pagar. 🍊\n\nMira la mesa: hay mil pesos ahí, convertidos en naranjas, y en la lata no hay un solo billete. Y la camioneta cobra sus quinientos, antes de que llegue el primer cliente: tiene con qué, pero no en la mano.\n\nNo le faltó dinero: le faltó tenerlo a la hora en que se lo pidieron.\n\n💬 Y tú, ¿un negocio que no puede pagar hoy está quebrado? Escríbelo aquí abajo, sí o no.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "Deber menos de lo que tienes no te salva si te lo cobran a la hora en que no lo tienes."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nLas cifras de siempre en la serie: 100 naranjas (las 15 dibujadas), el proveedor cobra $5 cada una, o sea $500 por las 100, y Don Chuy vende a $10. La mesa llena son 100 × $10 = $1,000. «El doble de lo que debía» es exactamente eso: $1,000 contra $500, o sea dos veces. Una sola cuenta.\n\nEn la voz solo se dicen dos cifras, «mil» y «quinientos»; el $1,000 de la mesa, el $0 de la lata, el «Cobra $500» de la camioneta, el «$10 c/u» del letrero y las horas van en pantalla. La hora es una pastilla al centro («7 de la mañana», y después «Cobran a las 7 · vende a las 9») porque en ElPuesto no hay reloj que dibujar.\n\nY tú, ¿un negocio que no puede pagar hoy está quebrado? Escríbelo aquí abajo, sí o no.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "A (fuera del sorteo)",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "Deber menos de lo que tienes no te salva si te lo cobran a la hora en que no lo tienes.",
+  "fuente": "Nobel de Economía 2022, Ben Bernanke, Douglas Diamond y Philip Dybvig, por la investigación sobre bancos y crisis financieras: la diferencia entre no tener y no tener hoy. Dolor real: el negocio con inventario lleno que cerró por no juntar el pago del lunes. Fusiona N13, que llega al mismo cuadro pero culpando a Don Chuy de haber surtido de más.",
+  "programar": "2026-10-09T15:30:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}

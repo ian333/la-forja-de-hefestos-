@@ -1,0 +1,58 @@
+{
+ "id": "econ-32-pago-por-adelantado",
+ "titulo": "Pagar por adelantado: cuando tu dinero ya está adentro, el que pone el precio es el otro — Don Chuy, La economía de tu negocio (32-pago-por-adelantado)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/32-pago-por-adelantado. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-32-pago-por-adelantado-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-32-pago-por-adelantado-4k.mp4",
+  "h264": "econ-32-pago-por-adelantado-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-32-pago-por-adelantado.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? Pagó por adelantado para apartar sus naranjas, y pagó cien pesos más · Don Chuy",
+   "descripcion": "¿Qué pasó, mi Don Chuy? Pagó por adelantado para apartar sus naranjas, y pagó cien pesos más. 🍊\n\nMira la lata: esos billetes se fueron desde ayer, y hoy la camioneta llegó con otro precio. Fíjate en la camioneta: bajaron las mismas cien naranjas de siempre, ni una más. Don Chuy ya no podía irse a otro lado, porque su dinero estaba adentro.\n\nNo le faltó ojo: le faltó poder irse a otro lado.\n\n💬 Y tú, ¿pagarías por adelantado para que te aparten? Sí o no, escríbelo aquí abajo.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "Cuando tu dinero ya está adentro dejas de poder levantarte de la mesa, y el que se puede levantar es el que pone el precio."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nLa cuenta del capítulo es una sola y cuadra: adelantó $500 (5 billetes de $100) por las 100 naranjas, el día de la entrega el proveedor cobra $600, así que pone $100 más (1 billete). $500 + $100 = $600 por exactamente las mismas 100 naranjas que siempre le costaron $500. El sobreprecio es $100, y eso es lo único que se dice en voz.\n\nEl «$100» que la lata trae en el cuadro 0 es lo que le quedó después de adelantar los $500, y es justo lo que alcanza para el ajuste: por eso la lata termina en «$0». No es que se haya quedado sin negocio, es que se quedó sin margen para negarse, que es distinto y es la idea del capítulo.\n\nY tú, ¿pagarías por adelantado para que te aparten? Sí o no, escríbelo aquí abajo.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "A (fuera del sorteo)",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "Cuando tu dinero ya está adentro dejas de poder levantarte de la mesa, y el que se puede levantar es el que pone el precio.",
+  "fuente": "Nobel de Economía 2009, Oliver Williamson, por el problema del atraco (hold-up) cuando ya invertiste en esa relación. Dolor real: el anticipo que se volvió rehén.",
+  "programar": "2026-10-19T18:45:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}

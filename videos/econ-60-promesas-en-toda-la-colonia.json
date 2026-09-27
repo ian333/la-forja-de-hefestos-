@@ -1,0 +1,58 @@
+{
+ "id": "econ-60-promesas-en-toda-la-colonia",
+ "titulo": "Cuando toda la colonia fía, hay ventas por todos lados y no hay dinero en ninguno — Don Chuy, La economía de tu negocio (60-promesas-en-toda-la-colonia)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/60-promesas-en-toda-la-colonia. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-60-promesas-en-toda-la-colonia-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-60-promesas-en-toda-la-colonia-4k.mp4",
+  "h264": "econ-60-promesas-en-toda-la-colonia-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-60-promesas-en-toda-la-colonia.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? Toda la colonia vendió, y nadie tiene un peso · La economía de tu negocio",
+   "descripcion": "¿Qué pasó, mi Don Chuy? Toda la colonia vendió, y nadie tiene un peso. 🍊\n\nMira la lata: en la mañana el proveedor le dejó todo sin cobrarle, y en la tarde los vecinos se llevaron todo sin pagarle. Fíjate en la cadena: él le debe al proveedor, a él le deben los vecinos, y son mil quinientos en promesas.\n\nNo le faltó venta, le faltó que alguien pagara. Una promesa no le paga al proveedor.\n\n💬 Y tú, ¿en tu colonia todos fían? Sí o no, escríbelo aquí abajo.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "Cuando toda la colonia fía, el dinero deja de existir aunque todos estén vendiendo."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nPrimera promesa: el proveedor le dejó las 100 naranjas y se fue sin cobrar, así que Don Chuy debe 100 × $5 = $500. En pantalla, «El viernes» sobre la camioneta desde el cuadro 0 y «Debe $500» al centro cuando la camioneta se va.\n\nSegunda promesa: los vecinos se llevaron las 100 naranjas fiadas al precio de siempre, así que a Don Chuy le deben 100 × $10 = $1,000. En pantalla, «Le deben $1,000» al centro. No se fía ni la mitad ni una parte: hoy se fue todo fiado, y por eso la mesa queda vacía y la lata no se mueve.\n\nY tú, ¿en tu colonia todos fían? Sí o no, escríbelo aquí abajo.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "A",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "Cuando toda la colonia fía, el dinero deja de existir aunque todos estén vendiendo.",
+  "fuente": "docs/ramas/economia.md §4, contexto C10 («la colonia entera: un negocio le paga a otro; el dinero circula») y §6, error 1.",
+  "programar": "2026-10-09T12:00:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}

@@ -47,6 +47,25 @@
     "programar": "2026-09-22T18:45:00-06:00",
     "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX). Sin publicar.autorizado NADA sube.",
     "primer_comentario": "Te lo explico fácil 👇\n\nDe cada naranja de $10, $5 son del proveedor y $5 son de Don Chuy.\n\n✅ A $10: le quedan $5 por naranja. 100 naranjas = $500.\n❌ A $8: le quedan $3 por naranja. 100 naranjas = $300.\n\nLa rebaja de $2 no sale de los $10: sale de sus $5. De cada $5 que ganaba, se le fueron $2.\n\nHacerle descuento al compadre no está mal. Solo hay que saber de dónde sale. ¿Tú sabes cuánto te queda de cada cosa que vendes?",
-    "nota_palabra_clave": "Cuando el respondedor (scripts/dm-libreta.py) esté encendido, se agrega al final del primer comentario y de la descripción: «Comenta LIBRETA y te la mando por DM 🍊». Antes no: nadie contestaría."
+    "nota_palabra_clave": "Cuando el respondedor (scripts/dm-libreta.py) esté encendido, se agrega al final del primer comentario y de la descripción: «Comenta LIBRETA y te la mando por DM 🍊». Antes no: nadie contestaría.",
+    "subidas": {
+      "yt": {
+        "id": "7Lo9gAMWzzM",
+        "url": "https://youtu.be/7Lo9gAMWzzM",
+        "privacidad": "private",
+        "publishAt": "2026-09-22T18:45:00-06:00",
+        "captions": "AUieDabWRjGa1u6x9ehfIeRPzdVIF9W1x_S1q88wQvzFal8WsniZdtGYPA",
+        "fecha": "2026-09-22T15:05"
+      },
+      "yt16x9": {
+        "id": "Vqv_ZoCosw4",
+        "url": "https://youtu.be/Vqv_ZoCosw4",
+        "privacidad": "private",
+        "publishAt": "2026-09-22T18:45:00-06:00",
+        "captions": "AUieDaYKDgLGAq-mnhQOdtarjPOIT9NN6d4y6VguzqbnGlikuj6Ldg8bIg",
+        "fecha": "2026-09-22T15:06"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-descuento.mp4?v=41a99d4292"
   }
 }

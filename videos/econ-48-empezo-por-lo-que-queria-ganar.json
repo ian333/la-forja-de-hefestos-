@@ -1,0 +1,58 @@
+{
+ "id": "econ-48-empezo-por-lo-que-queria-ganar",
+ "titulo": "El precio al revés: despejarlo de la ganancia que necesitas — Don Chuy, La economía de tu negocio (48-empezo-por-lo-que-queria-ganar)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/48-empezo-por-lo-que-queria-ganar. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-48-empezo-por-lo-que-queria-ganar-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-48-empezo-por-lo-que-queria-ganar-4k.mp4",
+  "h264": "econ-48-empezo-por-lo-que-queria-ganar-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-48-empezo-por-lo-que-queria-ganar.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? No le puso precio a sus naranjas: el precio le salió solo · Don Chuy",
+   "descripcion": "¿Qué pasó, mi Don Chuy? No le puso precio a sus naranjas: el precio le salió solo. 🍊\n\nMira la lata: primero apuntó lo que quería que le quedara, setecientos pesos, y encima lo que cobra el proveedor. Eso es lo que tiene que juntar con la pila de la mesa, y repartido entre todas, sale a doce pesos cada una.\n\nNo adivinó su precio: lo despejó de lo que necesitaba.\n\n💬 Y tú, ¿pondrías tu precio empezando por lo que quieres ganar? Mándaselo al que pone el precio adivinando.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "El precio no se adivina: se despeja de lo que necesitas que te quede."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nLa única cuenta, paso por paso: lo que quiere que le quede, $700, más lo que le cobra el proveedor, $500, son $1,200 que tiene que juntar; $1,200 ÷ 100 naranjas = $12 cada una. Comprobado al revés: 100 × $12 = $1,200, menos los $500 del proveedor, quedan $700. Exacto.\n\nEn álgebra es el despeje de una sola x (algebra/libro.md §4.1, §4.2 y §4.6): 100p − 500 = 700 → 100p = 1,200 → p = 12. El video no dice «ecuación» ni «despejar» en voz: lo hace en pantalla con tres pastillas, y la palabra «despejó» aparece una sola vez, en el remate.\n\nY tú, ¿pondrías tu precio empezando por lo que quieres ganar? Mándaselo al que pone el precio adivinando.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "B",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "El precio no se adivina: se despeja de lo que necesitas que te quede.",
+  "fuente": "algebra/libro.md §4.1 «La ecuación como balanza», §4.2 «Despejar = desvestir a la x» y §4.6 (el método de 4 pasos).",
+  "programar": "2026-10-05T15:30:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}

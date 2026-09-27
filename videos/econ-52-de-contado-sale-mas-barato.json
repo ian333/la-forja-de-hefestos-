@@ -1,0 +1,58 @@
+{
+ "id": "econ-52-de-contado-sale-mas-barato",
+ "titulo": "El crédito del proveedor no cobra intereses con ese nombre: los cobra en el precio — Don Chuy, La economía de tu negocio (52-de-contado-sale-mas-barato)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/52-de-contado-sale-mas-barato. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-52-de-contado-sale-mas-barato-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-52-de-contado-sale-mas-barato-4k.mp4",
+  "h264": "econ-52-de-contado-sale-mas-barato-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-52-de-contado-sale-mas-barato.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? El proveedor no le cobra intereses, y le cuesta cien pesos diarios · Don Chuy",
+   "descripcion": "¿Qué pasó, mi Don Chuy? El proveedor no le cobra intereses, y le cuesta cien pesos diarios. 🍊\n\nMira la camioneta: hoy el proveedor le hizo precio si pagaba en el momento, y Don Chuy se lo llevó fiado. Fíjate en la lata: de contado esas naranjas le salen en cuatrocientos, y fiadas le van a costar cien pesos más, cada día.\n\nNo le subieron el precio: le cobraron por pagar después.\n\n💬 Y tú, ¿pagarías de contado aunque te quedes sin efectivo? Mándaselo al que siempre compra a crédito.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "El crédito del proveedor no te cobra intereses con ese nombre: te los cobra en el precio, y se llevan un billete cada vez que te surtes."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nLos $400 son una OFERTA DE HOY por pagar en el momento, no el precio de siempre ni una corrección de los capítulos anteriores: $400 ÷ 100 naranjas = $4 cada una, un descuento de $1 por naranja sobre los $5 de la serie. Por eso el beat 1 dice «hoy el proveedor le hizo precio»: antes de hoy ese precio no estaba en la mesa, y ningún capítulo del 00 al 51 queda mal contado.\n\nLa cuenta del capítulo es una resta y cierra sin partir billetes: $500 − $400 = $100, que es exactamente un billete de $100. En pantalla salen cuatro billetes de la lata a la camioneta (los $400 del contado) y después uno solo más, el quinto (los $500 del fiado). Ese quinto billete es el costo del plazo, y es la pastilla «−$100» de la lata y el «$100 cada día» del centro.\n\nY tú, ¿pagarías de contado aunque te quedes sin efectivo? Mándaselo al que siempre compra a crédito.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "B",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "El crédito del proveedor no te cobra intereses con ese nombre: te los cobra en el precio, y se llevan un billete cada vez que te surtes.",
+  "fuente": "Dolor real: el «precio de contado» y el «precio a crédito» del mismo proveedor. Hermana del capítulo 11, que dice que lo fiado se debe; este dice cuánto cuesta.",
+  "programar": "2026-10-07T12:00:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}

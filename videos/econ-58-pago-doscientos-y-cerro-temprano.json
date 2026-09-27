@@ -1,0 +1,58 @@
+{
+ "id": "econ-58-pago-doscientos-y-cerro-temprano",
+ "titulo": "Pagarle a alguien no se mide en la lata, se mide en lo que te queda por hora — Don Chuy, La economía de tu negocio (58-pago-doscientos-y-cerro-temprano)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/58-pago-doscientos-y-cerro-temprano. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-58-pago-doscientos-y-cerro-temprano-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-58-pago-doscientos-y-cerro-temprano-4k.mp4",
+  "h264": "econ-58-pago-doscientos-y-cerro-temprano-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-58-pago-doscientos-y-cerro-temprano.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? Se llevó doscientos pesos menos a su casa, y su hora subió · Don Chuy",
+   "descripcion": "¿Qué pasó, mi Don Chuy? Se llevó doscientos pesos menos a su casa, y su hora subió. 🍊\n\nMira la lata: hoy le pagó al vecino, y entre los dos vendieron todo antes de la tarde. Fíjate: le quedó menos dinero, pero repartido en la mitad de las horas, y su hora le salió en sesenta pesos.\n\nNo le faltó aguante, le sobraban horas mal pagadas. Pagar no es perder dinero, es comprar horas.\n\n💬 Y tú, ¿pagarías para trabajar la mitad del día? Sí o no, escríbelo aquí abajo.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "Pagarle a alguien no se mide en lo que te quitan de la lata, sino en lo que te queda por hora."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nEl día de ayer es el del capítulo 09, tal cual: $500 entre 10 horas de puesto abierto = $50 la hora. Va como pastilla desde el cuadro 0 («Su hora: $50» sobre la lata, «Ayer: $500 en 10 horas» al centro) y NO se vuelve a explicar en voz: este capítulo la da por sabida.\n\nUNA cuenta, la de hoy: vende lo mismo ($1,000), le paga los mismos $500 al proveedor y además $200 al vecino que le ayuda, así que se lleva $1,000 − $500 − $200 = $300. Con la ayuda vende las 100 en 5 horas en vez de 10, y $300 ÷ 5 horas = $60 la hora. En pantalla se muestra solo el tramo que importa: «Le paga $200», «Le quedan: $300», «$300 en 5 horas», «Su hora: $60».\n\nY tú, ¿pagarías para trabajar la mitad del día? Sí o no, escríbelo aquí abajo.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "A",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "Pagarle a alguien no se mide en lo que te quitan de la lata, sino en lo que te queda por hora.",
+  "fuente": "Dolor real: el dueño que no puede soltar el puesto. Continúa la cuenta del capítulo 09 sin repetirla.",
+  "programar": "2026-10-07T15:30:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}

@@ -47,6 +47,25 @@
     "programar": "2026-09-23T18:45:00-06:00",
     "nota_programar": "Un capítulo diario a la hora canon (18:45 CDMX). Sin publicar.autorizado NADA sube.",
     "primer_comentario": "Te lo explico fácil 👇\n\nEn la lata hay $1,000, pero no todo es de Don Chuy:\n• $500 son del proveedor (lo que costaron las naranjas).\n• $500 son suyos.\n\n✅ Si para la casa saca solo sus $500: en la mañana paga y vuelve a surtir.\n❌ Sacó $700 (gas $300 + luz $400): quedan $300 y el proveedor pide $500.\n\nNo gastó en tonterías. Solo que $200 no eran suyos.\n\nUn truco sencillo: dos latas, una para el proveedor y otra para la casa. ¿Tú cómo le haces?",
-    "nota_palabra_clave": "Cuando el respondedor (scripts/dm-libreta.py) esté encendido, se agrega al final del primer comentario y de la descripción: «Comenta LIBRETA y te la mando por DM 🍊». Antes no: nadie contestaría."
+    "nota_palabra_clave": "Cuando el respondedor (scripts/dm-libreta.py) esté encendido, se agrega al final del primer comentario y de la descripción: «Comenta LIBRETA y te la mando por DM 🍊». Antes no: nadie contestaría.",
+    "subidas": {
+      "yt": {
+        "id": "B1Pv9hOEDko",
+        "url": "https://youtu.be/B1Pv9hOEDko",
+        "privacidad": "private",
+        "publishAt": "2026-09-23T18:45:00-06:00",
+        "captions": "AUieDaZ0aUCq0ORm6FxzmmfT-JnA5q-4DoUc3ZoFTP-NYHCM5otvwf2f_Q",
+        "fecha": "2026-09-22T15:07"
+      },
+      "yt16x9": {
+        "id": "fr4943NNvaQ",
+        "url": "https://youtu.be/fr4943NNvaQ",
+        "privacidad": "private",
+        "publishAt": "2026-09-23T18:45:00-06:00",
+        "captions": "AUieDaZ6cp-rhLRXggG1pYqD3q3XiCDslRyQjttqHRrsFTWugiXvLxSpnQ",
+        "fecha": "2026-09-22T15:07"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-lata.mp4?v=95a7a22c28"
   }
 }

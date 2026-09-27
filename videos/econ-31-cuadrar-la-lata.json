@@ -1,0 +1,58 @@
+{
+ "id": "econ-31-cuadrar-la-lata",
+ "titulo": "El corte de caja: comparar lo que salió de la mesa contra lo que entró a la lata — Don Chuy, La economía de tu negocio (31-cuadrar-la-lata)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/31-cuadrar-la-lata. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-31-cuadrar-la-lata-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-31-cuadrar-la-lata-4k.mp4",
+  "h264": "econ-31-cuadrar-la-lata-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-31-cuadrar-la-lata.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? Vendió hasta la última naranja, y la lata trae cien pesos de menos · Don Chuy",
+   "descripcion": "¿Qué pasó, mi Don Chuy? Vendió hasta la última naranja, y la lata trae cien pesos de menos. 🍊\n\nMira la lata: la mesa quedó vacía, así que ahí deberían estar mil pesos. Los contó billete por billete, y no llegaron. Lo que salió de la mesa y lo que entró a la lata tienen que cuadrar.\n\nNo le faltaron ventas: le faltó contarlas otra vez. El corte de caja no acusa, nada más mide.\n\n💬 Y tú, ¿cuentas tu caja todas las noches? Sí o no, escríbelo aquí abajo.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "La única forma de ver un agujero es contar dos veces: lo que salió de la mesa y lo que entró a la lata tienen que dar lo mismo."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nLas cifras redondas de siempre en la serie: Don Chuy vende la naranja a $10 y la mesa tiene 100 naranjas (15 dibujadas). Si salieron las 100, la venta del día es 100 × $10 = $1,000, que es la pastilla «Debería haber: $1,000». Contando lo que hay en la lata salen $900, así que el hueco es $1,000 − $900 = $100. Todo sale exacto y no hay redondeo escondido.\n\nLos nueve billetes que Don Chuy saca para contar son $900 (1 billete = $100), la misma cifra de la pastilla «Hay: $900». El conteo de billetes nunca se dice en voz, igual que en 27-cincuenta-cada-manana: la pastilla lleva la cifra y el dibujo lleva el gesto.\n\nY tú, ¿cuentas tu caja todas las noches? Sí o no, escríbelo aquí abajo.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "A (fuera del sorteo)",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "La única forma de ver un agujero es contar dos veces: lo que salió de la mesa y lo que entró a la lata tienen que dar lo mismo.",
+  "fuente": "Dolor real: el corte de caja. Es la herramienta que encuentra lo que se cuenta en el 15 y en el capítulo 06.",
+  "programar": "2026-10-19T15:30:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}

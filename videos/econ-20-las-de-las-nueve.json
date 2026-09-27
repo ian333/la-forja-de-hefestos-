@@ -1,0 +1,58 @@
+{
+ "id": "econ-20-las-de-las-nueve",
+ "titulo": "El costo hundido: lo que ya pagaste no entra en la decisión de hoy — Don Chuy, La economía de tu negocio (20-las-de-las-nueve)",
+ "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/20-las-de-las-nueve. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": null,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-20-las-de-las-nueve-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-20-las-de-las-nueve-4k.mp4",
+  "h264": "econ-20-las-de-las-nueve-4k.mp4",
+  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-20-las-de-las-nueve.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? Remató a menos de lo que le costó, y salió ganando · Don Chuy",
+   "descripcion": "¿Qué pasó, mi Don Chuy? Remató a menos de lo que le costó, y salió ganando. 🍊\n\nMira la mesa: las últimas no se movían con nadie enfrente. Les bajó el precio a tres pesos, y volaron. Fíjate en el bote: tiradas no le dejaban nada, y rematadas le dejaron sesenta pesos.\n\nEse dinero ya se había ido, vendiera o tirara. Lo que ya pagaste no está en juego.\n\n💬 Y tú, ¿venderías más barato de lo que te costó por no tirarlo? Contéstame sí o no aquí abajo.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "Lo que ya pagaste ya no está en juego: a las nueve de la noche la decisión no es entre tres pesos y cinco, es entre tres pesos y cero."
+  },
+  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+  "primer_comentario": "Te lo explico fácil 👇\n\nLas 20 que quedan costaron 20 × $5 = $100, y esos $100 ya están pagados desde la mañana: por eso «Ya pagadas: $100» está en pantalla desde el cuadro 0 y no lo dice la voz.\n\nRematadas a $3: 20 × $3 = $60 en la lata. Tiradas al bote: $0. La diferencia entre los dos caminos es exactamente $60 − $0 = $60, y esa es toda la cuenta del capítulo.\n\nY tú, ¿venderías más barato de lo que te costó por no tirarlo? Contéstame sí o no aquí abajo.",
+  "experimento": {
+   "variable": "cta_envio",
+   "grupo": "A (fuera del sorteo)",
+   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  },
+  "una_idea": "Lo que ya pagaste ya no está en juego: a las nueve de la noche la decisión no es entre tres pesos y cinco, es entre tres pesos y cero.",
+  "fuente": "Nobel de Economía 2017, Richard Thaler, por la falacia del costo hundido. Dolor real: la mercancía que se quedó en la bodega por orgullo. Fusiona N12 (remataba AL costo, que no da pleito) y S14 (el mismo capítulo con otro título).",
+  "programar": "2026-10-15T15:30:00-06:00",
+  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
+ }
+}
