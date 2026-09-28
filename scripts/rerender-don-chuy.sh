@@ -10,7 +10,7 @@ LOG=$FORJA/dist-video/rerender-don-chuy.log; ENT=/mnt/c/Users/sebas/Downloads/Do
 log(){ echo "$(date '+%m-%d %H:%M') $*" >> $LOG; }
 SOLO=""; [ "${1:-}" = "--solo" ] && SOLO=",$2,"
 # Espera a que el salón termine (no pelear la GPU) — los capítulos que el salón rinda después de .v4-desde ya son v4.
-until grep -q "^FIN" $LIA/projects/economia/_salon/salon.log 2>/dev/null; do sleep 120; done
+until grep -q "FIN del salón" $LIA/projects/economia/_salon/salon.log 2>/dev/null; do sleep 120; done
 log "arranca la pasada v4 (salón terminado)"
 PEND=""
 for par in $(python3 -c "import json;print(' '.join(x['id']+':'+x['slug']+':'+x['cuando'] for x in json.load(open('videos/_calendario-don-chuy.json'))))"); do
