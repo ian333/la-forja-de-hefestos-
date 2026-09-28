@@ -18,7 +18,7 @@ HORAS = float(sys.argv[sys.argv.index('--horas') + 1] if '--horas' in sys.argv e
 MET = 'views,reach,likes,comments,shares,saved,ig_reels_avg_watch_time,reels_skip_rate'
 
 def hechos():
-    r = subprocess.run(['ssh', '-o', 'ConnectTimeout=8', PRIME, 'cd ~/forja-cola/hecho && for f in econ-*.json; do cat "$f"; echo; done'],
+    r = subprocess.run(['ssh', '-o', 'ConnectTimeout=8', PRIME, 'cd ~/forja-cola/hecho && python3 -c "import json,glob; [print(json.dumps(json.load(open(f)))) for f in glob.glob(\'econ-*.json\')]"'],
                        capture_output=True, text=True)
     out = {}
     for l in r.stdout.splitlines():
