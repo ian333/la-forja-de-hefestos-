@@ -1,58 +1,68 @@
 {
- "id": "econ-67-el-descuento-del-proveedor",
- "titulo": "El descuento por volumen: comprar más barato solo es más barato si lo vendes — Don Chuy, La economía de tu negocio (67-el-descuento-del-proveedor)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/67-el-descuento-del-proveedor. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-67-el-descuento-del-proveedor-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-67-el-descuento-del-proveedor-4k.mp4",
-  "h264": "econ-67-el-descuento-del-proveedor-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-67-el-descuento-del-proveedor.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Compró más barato que nunca y se llevó trescientos pesos menos · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Compró más barato que nunca y se llevó trescientos pesos menos. 🍊\n\nMira la mesa: se vendió lo de siempre, y la lata quedó llena. Fíjate en la pila: las que sobraron se pusieron cafés y acabaron en el bote. El proveedor cobró lo suyo, y le quedaron doscientos pesos.\n\nNo le fallaron las ventas: vendió lo de siempre. Lo barato solo es barato si lo vendes.\n\n💬 Y tú, ¿compras de más cuando te lo dejan más barato? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Comprar más barato solo es más barato si lo vendes: lo que se queda en la mesa se come el descuento y más."
+  "id": "econ-67-el-descuento-del-proveedor",
+  "titulo": "El descuento por volumen: comprar más barato solo es más barato si lo vendes — Don Chuy, La economía de tu negocio (67-el-descuento-del-proveedor)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/67-el-descuento-del-proveedor. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 32.4,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nEl descuento: por llevarse 200 se las dejan a $4 en vez de $5, o sea un peso menos por naranja. 200 × $4 = $800, que es lo que le cobra la camioneta. El descuento es real y el video no lo pone en duda: 200 naranjas al precio de siempre habrían costado 200 × $5 = $1,000, así que se ahorró $200 en la compra.\n\nLa única cuenta del capítulo es una resta, sin promedios ni divisiones: vendió sus 100 de siempre a $10 = $1,000, le pagó $800 al proveedor y le quedaron $1,000 − $800 = $200. En pantalla se hace con billetes, que es como se sigue sin sonido: entran 10 a la lata («$1,000»), se van 8 a la camioneta («Cobra $800») y quedan 2, «$200».\n\nY tú, ¿compras de más cuando te lo dejan más barato? Sí o no, escríbelo aquí abajo.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-67-el-descuento-del-proveedor-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Comprar más barato solo es más barato si lo vendes: lo que se queda en la mesa se come el descuento y más.",
-  "fuente": "Dolor real: la oferta por volumen del proveedor.",
-  "programar": "2026-10-12T12:00:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-67-el-descuento-del-proveedor-4k.mp4",
+    "h264": "econ-67-el-descuento-del-proveedor-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-67-el-descuento-del-proveedor.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Compró más barato que nunca y se llevó trescientos pesos menos · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Compró más barato que nunca y se llevó trescientos pesos menos. 🍊\n\nMira la mesa: se vendió lo de siempre, y la lata quedó llena. Fíjate en la pila: las que sobraron se pusieron cafés y acabaron en el bote. El proveedor cobró lo suyo, y le quedaron doscientos pesos.\n\nNo le fallaron las ventas: vendió lo de siempre. Lo barato solo es barato si lo vendes.\n\n💬 Y tú, ¿compras de más cuando te lo dejan más barato? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Comprar más barato solo es más barato si lo vendes: lo que se queda en la mesa se come el descuento y más."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nEl descuento: por llevarse 200 se las dejan a $4 en vez de $5, o sea un peso menos por naranja. 200 × $4 = $800, que es lo que le cobra la camioneta. El descuento es real y el video no lo pone en duda: 200 naranjas al precio de siempre habrían costado 200 × $5 = $1,000, así que se ahorró $200 en la compra.\n\nLa única cuenta del capítulo es una resta, sin promedios ni divisiones: vendió sus 100 de siempre a $10 = $1,000, le pagó $800 al proveedor y le quedaron $1,000 − $800 = $200. En pantalla se hace con billetes, que es como se sigue sin sonido: entran 10 a la lata («$1,000»), se van 8 a la camioneta («Cobra $800») y quedan 2, «$200».\n\nY tú, ¿compras de más cuando te lo dejan más barato? Sí o no, escríbelo aquí abajo.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Comprar más barato solo es más barato si lo vendes: lo que se queda en la mesa se come el descuento y más.",
+    "fuente": "Dolor real: la oferta por volumen del proveedor.",
+    "programar": "2026-11-04T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-67-el-descuento-del-proveedor.mp4?v=5cdd22cd8b",
+    "subidas": {
+      "yt": {
+        "id": "lunuFj8npgY",
+        "url": "https://youtu.be/lunuFj8npgY",
+        "privacidad": "private",
+        "publishAt": "2026-11-04T18:45:00-06:00",
+        "fecha": "2026-09-27T21:33"
+      }
+    }
+  }
 }

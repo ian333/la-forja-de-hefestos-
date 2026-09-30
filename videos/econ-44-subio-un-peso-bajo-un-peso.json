@@ -1,58 +1,82 @@
 {
- "id": "econ-44-subio-un-peso-bajo-un-peso",
- "titulo": "La asimetría del precio: subirlo cuesta más de lo que devuelve bajarlo — Don Chuy, La economía de tu negocio (44-subio-un-peso-bajo-un-peso)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/44-subio-un-peso-bajo-un-peso. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-44-subio-un-peso-bajo-un-peso-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-44-subio-un-peso-bajo-un-peso-4k.mp4",
-  "h264": "econ-44-subio-un-peso-bajo-un-peso-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-44-subio-un-peso-bajo-un-peso.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Volvió a poner el precio de antes, y no volvieron todos sus clientes · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Volvió a poner el precio de antes, y no volvieron todos sus clientes. 🍊\n\nMira la mesa: el día que subió su precio, se le quedaron veinte naranjas sin vender. Fíjate cuando lo bajó al precio de antes: nada más regresaron diez, y las demás siguieron en la mesa.\n\nLos vecinos no miden tu precio, miden el cambio: el precio regresó y el cliente no.\n\n💬 Y tú, ¿te atreverías a subirle el precio esta semana? Mándaselo al que lleva años sin subirle.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Subir el precio duele más de lo que alegra bajarlo: el cliente no mide tu precio, mide el cambio contra lo que estaba pagando."
+  "id": "econ-44-subio-un-peso-bajo-un-peso",
+  "titulo": "La asimetría del precio: subirlo cuesta más de lo que devuelve bajarlo — Don Chuy, La economía de tu negocio (44-subio-un-peso-bajo-un-peso)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/44-subio-un-peso-bajo-un-peso. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 31.0,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nEl peso que sube y el peso que baja viven en el letrero y nunca en la voz: «$10 c/u» → «$11 c/u» → «$10 c/u», con el precio anterior tachado cada vez. Un peso sobre diez es 10 de cada 100 más caro, y ese porcentaje no se dice ni se pinta: lo que se ve es lo que dejó de salir de la mesa.\n\nLas 20 que se quedaron sin vender son 3 naranjas dibujadas exactas (15 × 20/100 = 3): salen 12 a los vecinos —las 80 que sí vendió— y quedan 3 arriba. La pastilla dice «20 sin vender» y al centro «Vendió 80 de 100»; las dos cifras son la misma cuenta, 80 + 20 = 100.\n\nY tú, ¿te atreverías a subirle el precio esta semana? Mándaselo al que lleva años sin subirle.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "B",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-44-subio-un-peso-bajo-un-peso-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Subir el precio duele más de lo que alegra bajarlo: el cliente no mide tu precio, mide el cambio contra lo que estaba pagando.",
-  "fuente": "Nobel de Economía 2002, Daniel Kahneman, teoría de las perspectivas: las pérdidas pesan más que las ganancias del mismo tamaño. Dolor real: el aumento que costó clientes que ya no volvieron.",
-  "programar": "2026-10-03T18:45:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-44-subio-un-peso-bajo-un-peso-4k.mp4",
+    "h264": "econ-44-subio-un-peso-bajo-un-peso-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-44-subio-un-peso-bajo-un-peso.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Volvió a poner el precio de antes, y no volvieron todos sus clientes · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Volvió a poner el precio de antes, y no volvieron todos sus clientes. 🍊\n\nMira la mesa: el día que subió su precio, se le quedaron veinte naranjas sin vender. Fíjate cuando lo bajó al precio de antes: nada más regresaron diez, y las demás siguieron en la mesa.\n\nLos vecinos no miden tu precio, miden el cambio: el precio regresó y el cliente no.\n\n💬 Y tú, ¿te atreverías a subirle el precio esta semana? Mándaselo al que lleva años sin subirle.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Subir el precio duele más de lo que alegra bajarlo: el cliente no mide tu precio, mide el cambio contra lo que estaba pagando."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nEl peso que sube y el peso que baja viven en el letrero y nunca en la voz: «$10 c/u» → «$11 c/u» → «$10 c/u», con el precio anterior tachado cada vez. Un peso sobre diez es 10 de cada 100 más caro, y ese porcentaje no se dice ni se pinta: lo que se ve es lo que dejó de salir de la mesa.\n\nLas 20 que se quedaron sin vender son 3 naranjas dibujadas exactas (15 × 20/100 = 3): salen 12 a los vecinos —las 80 que sí vendió— y quedan 3 arriba. La pastilla dice «20 sin vender» y al centro «Vendió 80 de 100»; las dos cifras son la misma cuenta, 80 + 20 = 100.\n\nY tú, ¿te atreverías a subirle el precio esta semana? Mándaselo al que lleva años sin subirle.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "B",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Subir el precio duele más de lo que alegra bajarlo: el cliente no mide tu precio, mide el cambio contra lo que estaba pagando.",
+    "fuente": "Nobel de Economía 2002, Daniel Kahneman, teoría de las perspectivas: las pérdidas pesan más que las ganancias del mismo tamaño. Dolor real: el aumento que costó clientes que ya no volvieron.",
+    "programar": "2026-10-10T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "00NKDLKZP98",
+        "url": "https://youtu.be/00NKDLKZP98",
+        "privacidad": "private",
+        "publishAt": "2026-10-10T18:45:00-06:00",
+        "captions": "AUieDaa0Qu81dltwinyiOK09gHSb9ghKyEPV3gdDVd8ZlTvySUKRu9JYbA",
+        "fecha": "2026-09-28T22:23"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-44-subio-un-peso-bajo-un-peso.mp4?v=c7fa5173e8",
+    "reemplazos": [
+      {
+        "id": "-xSet_KBvck",
+        "url": "https://youtu.be/-xSet_KBvck",
+        "privacidad": "private",
+        "publishAt": "2026-10-03T18:45:00-06:00",
+        "captions": "AUieDabvK5u5KtxV6B726S0F-mUY0hZUl09sgVh9-d4cjdJjL1PDa9VAXA",
+        "fecha": "2026-09-27T16:46",
+        "borrado": "2026-09-28T22:22",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

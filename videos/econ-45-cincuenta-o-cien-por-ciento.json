@@ -1,58 +1,82 @@
 {
- "id": "econ-45-cincuenta-o-cien-por-ciento",
- "titulo": "Un por ciento no dice nada sin el «¿de qué?» — Don Chuy, La economía de tu negocio (45-cincuenta-o-cien-por-ciento)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/45-cincuenta-o-cien-por-ciento. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-45-cincuenta-o-cien-por-ciento-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-45-cincuenta-o-cien-por-ciento-4k.mp4",
-  "h264": "econ-45-cincuenta-o-cien-por-ciento-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-45-cincuenta-o-cien-por-ciento.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Ganó el cincuenta por ciento y el cien por ciento el mismo día · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Ganó el cincuenta por ciento y el cien por ciento el mismo día. 🍊\n\nMira la lata: entró el dinero de toda la mesa, la mitad se fue en la camioneta, y lo que quedó es lo que ganó. Contra lo que le costó, se ganó otro tanto igual; contra lo que vendió, se ganó la mitad.\n\nNinguno de los dos mintió, y ninguno dijo de qué.\n\n💬 Y tú, ¿cuando te dicen un porcentaje preguntas de qué? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Un por ciento no dice nada sin el «¿de qué?»: lo mismo que ganó es la mitad de lo que vendió y otro tanto igual de lo que le costó."
+  "id": "econ-45-cincuenta-o-cien-por-ciento",
+  "titulo": "Un por ciento no dice nada sin el «¿de qué?» — Don Chuy, La economía de tu negocio (45-cincuenta-o-cien-por-ciento)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/45-cincuenta-o-cien-por-ciento. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 30.7,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nLo que vendió: 100 × $10 = $1,000, que son los 10 billetes de $100 que entran a la lata. Lo que le costó: 100 × $5 = $500, los 5 billetes que se van a la camioneta. Lo que le quedó: $1,000 − $500 = $500. Ninguna cuenta parte un billete.\n\n«De lo que costó: 100 de cada 100»: $500 de ganancia ÷ $500 de costo = 1, o sea 100 de cada 100. Es el margen sobre costo. En palabras de la voz, «se ganó otro tanto igual»: por cada peso que puso, recuperó ese peso y ganó otro.\n\nY tú, ¿cuando te dicen un porcentaje preguntas de qué? Sí o no, escríbelo aquí abajo.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-45-cincuenta-o-cien-por-ciento-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Un por ciento no dice nada sin el «¿de qué?»: lo mismo que ganó es la mitad de lo que vendió y otro tanto igual de lo que le costó.",
-  "fuente": "aritmetica/libro.md §6.3 «Qué porcentaje es un número de otro» y §6.1 «Por ciento es de cada cien».",
-  "programar": "2026-10-01T15:30:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-45-cincuenta-o-cien-por-ciento-4k.mp4",
+    "h264": "econ-45-cincuenta-o-cien-por-ciento-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-45-cincuenta-o-cien-por-ciento.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Ganó el cincuenta por ciento y el cien por ciento el mismo día · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Ganó el cincuenta por ciento y el cien por ciento el mismo día. 🍊\n\nMira la lata: entró el dinero de toda la mesa, la mitad se fue en la camioneta, y lo que quedó es lo que ganó. Contra lo que le costó, se ganó otro tanto igual; contra lo que vendió, se ganó la mitad.\n\nNinguno de los dos mintió, y ninguno dijo de qué.\n\n💬 Y tú, ¿cuando te dicen un porcentaje preguntas de qué? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Un por ciento no dice nada sin el «¿de qué?»: lo mismo que ganó es la mitad de lo que vendió y otro tanto igual de lo que le costó."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nLo que vendió: 100 × $10 = $1,000, que son los 10 billetes de $100 que entran a la lata. Lo que le costó: 100 × $5 = $500, los 5 billetes que se van a la camioneta. Lo que le quedó: $1,000 − $500 = $500. Ninguna cuenta parte un billete.\n\n«De lo que costó: 100 de cada 100»: $500 de ganancia ÷ $500 de costo = 1, o sea 100 de cada 100. Es el margen sobre costo. En palabras de la voz, «se ganó otro tanto igual»: por cada peso que puso, recuperó ese peso y ganó otro.\n\nY tú, ¿cuando te dicen un porcentaje preguntas de qué? Sí o no, escríbelo aquí abajo.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Un por ciento no dice nada sin el «¿de qué?»: lo mismo que ganó es la mitad de lo que vendió y otro tanto igual de lo que le costó.",
+    "fuente": "aritmetica/libro.md §6.3 «Qué porcentaje es un número de otro» y §6.1 «Por ciento es de cada cien».",
+    "programar": "2026-10-03T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "nsEsuetBobI",
+        "url": "https://youtu.be/nsEsuetBobI",
+        "privacidad": "private",
+        "publishAt": "2026-10-03T18:45:00-06:00",
+        "captions": "AUieDabRw20k7oCwC88jst9O1cyVB4vuSeN0YcM57vKjcwgt6lfW0w-pbw",
+        "fecha": "2026-09-28T16:31"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-45-cincuenta-o-cien-por-ciento.mp4?v=24d60e3716",
+    "reemplazos": [
+      {
+        "id": "8rHr8g6Fn18",
+        "url": "https://youtu.be/8rHr8g6Fn18",
+        "privacidad": "private",
+        "publishAt": "2026-10-01T15:30:00-06:00",
+        "captions": "AUieDaa08oYHAjDlMkRjcn5_Z_dAJkvjYVrKqTYav5cy05P7B89Y-nDqmQ",
+        "fecha": "2026-09-27T16:23",
+        "borrado": "2026-09-28T16:29",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

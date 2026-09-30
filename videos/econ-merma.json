@@ -1,58 +1,82 @@
 {
- "id": "econ-merma",
- "titulo": "La merma también se paga — Don Chuy, La economía de tu negocio (03-las-naranjas-que-tiras)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/03-las-naranjas-que-tiras. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-merma-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-merma-4k.mp4",
-  "h264": "econ-merma-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-merma.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Vendió todo lo bueno y le faltó dinero · La economía de tu negocio",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Vendió todo lo bueno y le faltó dinero. 🍊\n\nMira el bote: ahí fueron a dar las podridas, una tras otra. Vendió todas las demás y juntó sus billetes. En la tarde llegó el proveedor y le cobró las cien. A Don Chuy le quedaron cuatrocientos. Lo que le falta no se lo robó nadie: está en el bote.\n\nEl proveedor no le cobró las que vendió, le cobró todas. Lo que tiras, también lo pagaste.\n\n💬 Y tú, ¿sabes cuánto tiras a la semana? Contesta sí o no aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "El proveedor te cobra todo lo que te deja, no solo lo que vendes: lo que tiras también lo pagaste."
+  "id": "econ-merma",
+  "titulo": "La merma también se paga — Don Chuy, La economía de tu negocio (03-las-naranjas-que-tiras)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/03-las-naranjas-que-tiras. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 35.0,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nEl proveedor cobra las naranjas que te deja, no las que vendes.\n\n✅ Vende las 100: $1,000 − $500 = le quedan $500.\n❌ Tira 10 y vende 90: $900 − $500 = le quedan $400.\n\n¿Por qué $100 menos si solo tiró 10? Porque esas 10 ya las había pagado ($50) y además ya no las pudo vender (otros $50).\n\nA todos se nos echa a perder algo. Lo que ayuda es contarlo: si sabes cuánto tiras, puedes pedir menos. ¿Tú lo llevas anotado?",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-merma-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "El proveedor te cobra todo lo que te deja, no solo lo que vendes: lo que tiras también lo pagaste.",
-  "fuente": "",
-  "programar": "2026-09-29T12:00:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-merma-4k.mp4",
+    "h264": "econ-merma-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-merma.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Vendió todo lo bueno y le faltó dinero · La economía de tu negocio",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Vendió todo lo bueno y le faltó dinero. 🍊\n\nMira el bote: ahí fueron a dar las podridas, una tras otra. Vendió todas las demás y juntó sus billetes. En la tarde llegó el proveedor y le cobró las cien. A Don Chuy le quedaron cuatrocientos. Lo que le falta no se lo robó nadie: está en el bote.\n\nEl proveedor no le cobró las que vendió, le cobró todas. Lo que tiras, también lo pagaste.\n\n💬 Y tú, ¿sabes cuánto tiras a la semana? Contesta sí o no aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "El proveedor te cobra todo lo que te deja, no solo lo que vendes: lo que tiras también lo pagaste."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nEl proveedor cobra las naranjas que te deja, no las que vendes.\n\n✅ Vende las 100: $1,000 − $500 = le quedan $500.\n❌ Tira 10 y vende 90: $900 − $500 = le quedan $400.\n\n¿Por qué $100 menos si solo tiró 10? Porque esas 10 ya las había pagado ($50) y además ya no las pudo vender (otros $50).\n\nA todos se nos echa a perder algo. Lo que ayuda es contarlo: si sabes cuánto tiras, puedes pedir menos. ¿Tú lo llevas anotado?",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "El proveedor te cobra todo lo que te deja, no solo lo que vendes: lo que tiras también lo pagaste.",
+    "fuente": "",
+    "programar": "2026-09-29T12:00:00-06:00",
+    "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día.",
+    "subidas": {
+      "yt": {
+        "id": "MjdAek2tJuM",
+        "url": "https://youtu.be/MjdAek2tJuM",
+        "privacidad": "private",
+        "publishAt": "2026-09-29T12:00:00-06:00",
+        "captions": "AUieDaYpMzo1H1d8IveZy9mNp9aQKjfshLg0Mkbu8bJT0GomtzppBCt_0g",
+        "fecha": "2026-09-28T15:38"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-merma.mp4?v=3c6b8813e6",
+    "reemplazos": [
+      {
+        "id": "Bo3rgRXAxXc",
+        "url": "https://youtu.be/Bo3rgRXAxXc",
+        "privacidad": "private",
+        "publishAt": "2026-09-29T12:00:00-06:00",
+        "captions": "AUieDaYDy5KYDdLEGBknmCj5MhZXyqyebVI93AdHu4htxP44iKQR1EGIzw",
+        "fecha": "2026-09-27T15:28",
+        "borrado": "2026-09-28T15:36",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

@@ -1,58 +1,81 @@
 {
- "id": "econ-credito",
- "titulo": "El crédito del proveedor también es deuda — Don Chuy, La economía de tu negocio (11-lo-que-te-fian)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/11-lo-que-te-fian. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-credito-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-credito-4k.mp4",
-  "h264": "econ-credito-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-credito.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Nunca ha pedido prestado, y ya debe dos mil quinientos · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Nunca ha pedido prestado, y ya debe dos mil quinientos. 🍊\n\nMira la camioneta: el lunes le deja naranjas y no le cobra. El martes, otra vez, y así toda la semana: nadie le cobra, y se siente con dinero. Pero el viernes llega la cuenta: dos mil quinientos pesos.\n\nNo fue al banco ni firmó ningún papel. El crédito del proveedor ayuda, si lo cuentas como deuda. Lo que te fían, también lo debes.\n\n💬 Y tú, ¿aceptas crédito del proveedor? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Lo que el proveedor te fía también es deuda, aunque no firmes nada: ayuda si la cuentas como deuda."
+  "id": "econ-credito",
+  "titulo": "El crédito del proveedor también es deuda — Don Chuy, La economía de tu negocio (11-lo-que-te-fian)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/11-lo-que-te-fian. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 35.6,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nCuando el proveedor te deja la mercancía y te cobra después, te está prestando.\n\n✅ Lo anotas como deuda y apartas cada día lo del proveedor → el viernes pagas tranquilo.\n❌ Lo sientes como dinero tuyo porque hoy nadie te lo cobra → el viernes no te alcanza.\n\nEl crédito del proveedor es bueno: muchas veces no cobra intereses y te deja vender antes de pagar. Solo hay que contarlo como lo que es: deuda.\n\n¿Tú sabes cuánto le debes hoy a tus proveedores?",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-credito-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Lo que el proveedor te fía también es deuda, aunque no firmes nada: ayuda si la cuentas como deuda.",
-  "fuente": "",
-  "programar": "2026-10-07T18:45:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-credito-4k.mp4",
+    "h264": "econ-credito-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-credito.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Nunca ha pedido prestado, y ya debe dos mil quinientos · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Nunca ha pedido prestado, y ya debe dos mil quinientos. 🍊\n\nMira la camioneta: el lunes le deja naranjas y no le cobra. El martes, otra vez, y así toda la semana: nadie le cobra, y se siente con dinero. Pero el viernes llega la cuenta: dos mil quinientos pesos.\n\nNo fue al banco ni firmó ningún papel. El crédito del proveedor ayuda, si lo cuentas como deuda. Lo que te fían, también lo debes.\n\n💬 Y tú, ¿aceptas crédito del proveedor? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Lo que el proveedor te fía también es deuda, aunque no firmes nada: ayuda si la cuentas como deuda."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nCuando el proveedor te deja la mercancía y te cobra después, te está prestando.\n\n✅ Lo anotas como deuda y apartas cada día lo del proveedor → el viernes pagas tranquilo.\n❌ Lo sientes como dinero tuyo porque hoy nadie te lo cobra → el viernes no te alcanza.\n\nEl crédito del proveedor es bueno: muchas veces no cobra intereses y te deja vender antes de pagar. Solo hay que contarlo como lo que es: deuda.\n\n¿Tú sabes cuánto le debes hoy a tus proveedores?",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Lo que el proveedor te fía también es deuda, aunque no firmes nada: ayuda si la cuentas como deuda.",
+    "fuente": "",
+    "programar": "2026-10-22T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "yM2FgUT_I0o",
+        "url": "https://youtu.be/yM2FgUT_I0o",
+        "privacidad": "private",
+        "publishAt": "2026-10-22T18:45:00-06:00",
+        "captions": "AUieDab3AUh-PbmsxmUy4GbymL7cjPzn1cfK4L_C1irlU34-C6myN8_oog",
+        "fecha": "2026-09-29T18:17"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-credito.mp4?v=45afa6979a",
+    "reemplazos": [
+      {
+        "id": "4n5xzP7pj5M",
+        "url": "https://youtu.be/4n5xzP7pj5M",
+        "privacidad": "private",
+        "publishAt": "2026-10-07T18:45:00-06:00",
+        "fecha": "2026-09-27T19:54",
+        "borrado": "2026-09-29T18:16",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

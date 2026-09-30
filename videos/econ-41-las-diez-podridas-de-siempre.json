@@ -1,58 +1,82 @@
 {
- "id": "econ-41-las-diez-podridas-de-siempre",
- "titulo": "El trato de todo el año: al cliente que vuelve mañana no le conviene fallarte — Don Chuy, La economía de tu negocio (41-las-diez-podridas-de-siempre)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/41-las-diez-podridas-de-siempre. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-41-las-diez-podridas-de-siempre-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-41-las-diez-podridas-de-siempre-4k.mp4",
-  "h264": "econ-41-las-diez-podridas-de-siempre-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-41-las-diez-podridas-de-siempre.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? No reclamó, no gritó, y se acabaron las podridas · La economía de tu negocio",
-   "descripcion": "¿Qué pasó, mi Don Chuy? No reclamó, no gritó, y se acabaron las podridas. 🍊\n\nMira el bote: ahí acababan las mismas de siempre, cincuenta pesos ya pagados. Al mes eran mil quinientos tirados. En vez de reclamarle, le ofreció todas sus mañanas del año. Al día siguiente no bajó ninguna podrida.\n\nAl cliente de un día le mandan lo de abajo; al de todo el año lo cuidan.\n\n💬 Y tú, ¿le dirías a tu proveedor que le compras todo el año? Mándaselo al que aguanta las podridas callado.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Al que te compra una sola vez le puedes mandar lo de abajo; al que vuelve todos los días del año no te conviene fallarle."
+  "id": "econ-41-las-diez-podridas-de-siempre",
+  "titulo": "El trato de todo el año: al cliente que vuelve mañana no le conviene fallarte — Don Chuy, La economía de tu negocio (41-las-diez-podridas-de-siempre)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/41-las-diez-podridas-de-siempre. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 33.5,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nLa cuenta del capítulo es una sola y es del lado del costo: de cada 100 que bajan vienen 10 podridas, y cada una le costó $5, así que 10 × $5 = $50 que van al bote todos los días. Esos son los «cincuenta pesos ya pagados»: pagados a la camioneta antes de que Don Chuy supiera cuáles servían.\n\nAl mes: $50 × 30 días = $1,500. El mes es de 30 días redondos y el puesto abre diario, que es el supuesto de toda la serie (27-cincuenta-cada-manana usa el mismo calendario). No es un dato de mercado: es la misma cuenta del día repetida treinta veces, y por eso en pantalla el «Al mes: $1,500» sale del «−$50 al día» y no de un número nuevo.\n\nY tú, ¿le dirías a tu proveedor que le compras todo el año? Mándaselo al que aguanta las podridas callado.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "B",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-41-las-diez-podridas-de-siempre-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Al que te compra una sola vez le puedes mandar lo de abajo; al que vuelve todos los días del año no te conviene fallarle.",
-  "fuente": "Nobel de Economía 2005, Robert Aumann, juegos repetidos: la cooperación nace de que el juego se vuelve a jugar. Dolor real: el proveedor que te manda lo peor porque eres cliente de una sola vez.",
-  "programar": "2026-10-01T12:00:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-41-las-diez-podridas-de-siempre-4k.mp4",
+    "h264": "econ-41-las-diez-podridas-de-siempre-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-41-las-diez-podridas-de-siempre.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? No reclamó, no gritó, y se acabaron las podridas · La economía de tu negocio",
+      "descripcion": "¿Qué pasó, mi Don Chuy? No reclamó, no gritó, y se acabaron las podridas. 🍊\n\nMira el bote: ahí acababan las mismas de siempre, cincuenta pesos ya pagados. Al mes eran mil quinientos tirados. En vez de reclamarle, le ofreció todas sus mañanas del año. Al día siguiente no bajó ninguna podrida.\n\nAl cliente de un día le mandan lo de abajo; al de todo el año lo cuidan.\n\n💬 Y tú, ¿le dirías a tu proveedor que le compras todo el año? Mándaselo al que aguanta las podridas callado.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Al que te compra una sola vez le puedes mandar lo de abajo; al que vuelve todos los días del año no te conviene fallarle."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nLa cuenta del capítulo es una sola y es del lado del costo: de cada 100 que bajan vienen 10 podridas, y cada una le costó $5, así que 10 × $5 = $50 que van al bote todos los días. Esos son los «cincuenta pesos ya pagados»: pagados a la camioneta antes de que Don Chuy supiera cuáles servían.\n\nAl mes: $50 × 30 días = $1,500. El mes es de 30 días redondos y el puesto abre diario, que es el supuesto de toda la serie (27-cincuenta-cada-manana usa el mismo calendario). No es un dato de mercado: es la misma cuenta del día repetida treinta veces, y por eso en pantalla el «Al mes: $1,500» sale del «−$50 al día» y no de un número nuevo.\n\nY tú, ¿le dirías a tu proveedor que le compras todo el año? Mándaselo al que aguanta las podridas callado.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "B",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Al que te compra una sola vez le puedes mandar lo de abajo; al que vuelve todos los días del año no te conviene fallarle.",
+    "fuente": "Nobel de Economía 2005, Robert Aumann, juegos repetidos: la cooperación nace de que el juego se vuelve a jugar. Dolor real: el proveedor que te manda lo peor porque eres cliente de una sola vez.",
+    "programar": "2026-10-02T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "TLm3zY4dob8",
+        "url": "https://youtu.be/TLm3zY4dob8",
+        "privacidad": "private",
+        "publishAt": "2026-10-02T18:45:00-06:00",
+        "captions": "AUieDaZtrSjw5wwIjg1TRo-vdXgeOyy1SAVk_TSQ2gPoFNJ8YsDlcdxPWw",
+        "fecha": "2026-09-28T16:20"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-41-las-diez-podridas-de-siempre.mp4?v=d6fb7efa87",
+    "reemplazos": [
+      {
+        "id": "e0kGSjzJ-QE",
+        "url": "https://youtu.be/e0kGSjzJ-QE",
+        "privacidad": "private",
+        "publishAt": "2026-10-01T12:00:00-06:00",
+        "captions": "AUieDaY1yuI9PGBf1H3117jDBAn1jzbmz5zuimy9QFkkioZE1aIvpnk3rA",
+        "fecha": "2026-09-27T16:07",
+        "borrado": "2026-09-28T16:18",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

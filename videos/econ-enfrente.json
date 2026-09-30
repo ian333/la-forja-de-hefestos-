@@ -1,58 +1,81 @@
 {
- "id": "econ-enfrente",
- "titulo": "La guerra de precios con el de enfrente — Don Chuy, La economía de tu negocio (10-el-de-enfrente)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/10-el-de-enfrente. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-enfrente-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-enfrente-4k.mp4",
-  "h264": "econ-enfrente-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-enfrente.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Le bajó el precio para ganarle al de enfrente, y terminó trabajando gratis · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Le bajó el precio para ganarle al de enfrente, y terminó trabajando gratis. 🍊\n\nMira el letrero: enfrente le bajan y él le baja, otra vez y otra vez. Así hasta que llegan a cinco, lo mismo que le cuesta. Vende sus mismas naranjas, cobra quinientos, y se los lleva completitos el proveedor.\n\nLos dos puestos trabajan gratis: en esa pelea solo ganan los que compran. Acuérdate bien: bajarle no es ganarle.\n\n💬 Y tú, ¿le bajas cuando el de enfrente le baja? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Si le bajas cuando el de enfrente baja y él te sigue, llegan los dos a lo que les cuesta: venden igual y trabajan gratis."
+  "id": "econ-enfrente",
+  "titulo": "La guerra de precios con el de enfrente — Don Chuy, La economía de tu negocio (10-el-de-enfrente)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/10-el-de-enfrente. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 35.9,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nDe cada naranja, $5 son del proveedor. Lo que gana Don Chuy es lo que cobra ENCIMA de esos $5.\n\n✅ A $10: le quedan $5 por naranja → $500 al día.\n❌ A $5: le queda $0 por naranja → $0 al día.\n\nCada peso que le baja para ganarle al de enfrente sale de su bolsa, no de la del proveedor. Y el de enfrente también le baja.\n\nA veces conviene bajar. Pero antes pregúntate: ¿cuánto me queda a mí?",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-enfrente-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Si le bajas cuando el de enfrente baja y él te sigue, llegan los dos a lo que les cuesta: venden igual y trabajan gratis.",
-  "fuente": "",
-  "programar": "2026-10-06T15:30:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-enfrente-4k.mp4",
+    "h264": "econ-enfrente-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-enfrente.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Le bajó el precio para ganarle al de enfrente, y terminó trabajando gratis · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Le bajó el precio para ganarle al de enfrente, y terminó trabajando gratis. 🍊\n\nMira el letrero: enfrente le bajan y él le baja, otra vez y otra vez. Así hasta que llegan a cinco, lo mismo que le cuesta. Vende sus mismas naranjas, cobra quinientos, y se los lleva completitos el proveedor.\n\nLos dos puestos trabajan gratis: en esa pelea solo ganan los que compran. Acuérdate bien: bajarle no es ganarle.\n\n💬 Y tú, ¿le bajas cuando el de enfrente le baja? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Si le bajas cuando el de enfrente baja y él te sigue, llegan los dos a lo que les cuesta: venden igual y trabajan gratis."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nDe cada naranja, $5 son del proveedor. Lo que gana Don Chuy es lo que cobra ENCIMA de esos $5.\n\n✅ A $10: le quedan $5 por naranja → $500 al día.\n❌ A $5: le queda $0 por naranja → $0 al día.\n\nCada peso que le baja para ganarle al de enfrente sale de su bolsa, no de la del proveedor. Y el de enfrente también le baja.\n\nA veces conviene bajar. Pero antes pregúntate: ¿cuánto me queda a mí?",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Si le bajas cuando el de enfrente baja y él te sigue, llegan los dos a lo que les cuesta: venden igual y trabajan gratis.",
+    "fuente": "",
+    "programar": "2026-10-18T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "B59QgPBbcP4",
+        "url": "https://youtu.be/B59QgPBbcP4",
+        "privacidad": "private",
+        "publishAt": "2026-10-18T18:45:00-06:00",
+        "captions": "AUieDaaw9CDGX0sqcmxQizg6Q3hJsYdRwfi12ktDvsTo3pfdM-m440fU-w",
+        "fecha": "2026-09-29T17:54"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-enfrente.mp4?v=f22a0ab137",
+    "reemplazos": [
+      {
+        "id": "7VWy2t5O11U",
+        "url": "https://youtu.be/7VWy2t5O11U",
+        "privacidad": "private",
+        "publishAt": "2026-10-06T15:30:00-06:00",
+        "fecha": "2026-09-27T19:42",
+        "borrado": "2026-09-29T17:54",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

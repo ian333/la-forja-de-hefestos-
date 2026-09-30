@@ -1,58 +1,82 @@
 {
- "id": "econ-naranja",
- "titulo": "Dejar ver lo de adentro (y el Nobel de George Akerlof) — Don Chuy, La economía de tu negocio (08-parte-una-naranja)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/08-parte-una-naranja. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-naranja-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-naranja-4k.mp4",
-  "h264": "econ-naranja-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-naranja.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Hoy regaló una naranja y vendió treinta más · La economía de tu negocio",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Hoy regaló una naranja y vendió treinta más. 🍊\n\nMira la naranja: por fuera no se sabe si es dulce. Ayer los vecinos dudaron y compraron poquitas. Hoy partió una a la mitad para que la probaran. Estaba dulce, y ya nadie dudó: cuenta los billetes.\n\nCuando no ves lo de adentro, desconfías y compras menos. Por explicar eso, George Akerlof ganó el Nobel de Economía. Don Chuy no bajó el precio: dejó ver lo de adentro.\n\n💬 Y tú, ¿das a probar lo que vendes? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Cuando el cliente no puede ver lo de adentro, desconfía y compra menos; dejarlo probar vende más que bajar el precio."
+  "id": "econ-naranja",
+  "titulo": "Dejar ver lo de adentro (y el Nobel de George Akerlof) — Don Chuy, La economía de tu negocio (08-parte-una-naranja)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/08-parte-una-naranja. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 39.3,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nPor fuera, una naranja dulce y una agria se ven igual. Si no sabes cuál te toca, compras menos.\n\n❌ Sin dar a probar: vendió 60 → $600.\n✅ Dando a probar una: vendió 90 → $900.\n\nLa naranja que regaló ya la había pagado ($5) y le trajo $300 más.\n\nGeorge Akerlof ganó el Nobel de Economía en 2001 (junto con otros dos) por explicar esto: cuando el que compra no puede ver la calidad, desconfía y se vende menos.\n\n¿Tú dejas probar?",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-naranja-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Cuando el cliente no puede ver lo de adentro, desconfía y compra menos; dejarlo probar vende más que bajar el precio.",
-  "fuente": "",
-  "programar": "2026-10-04T18:45:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-naranja-4k.mp4",
+    "h264": "econ-naranja-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-naranja.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Hoy regaló una naranja y vendió treinta más · La economía de tu negocio",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Hoy regaló una naranja y vendió treinta más. 🍊\n\nMira la naranja: por fuera no se sabe si es dulce. Ayer los vecinos dudaron y compraron poquitas. Hoy partió una a la mitad para que la probaran. Estaba dulce, y ya nadie dudó: cuenta los billetes.\n\nCuando no ves lo de adentro, desconfías y compras menos. Por explicar eso, George Akerlof ganó el Nobel de Economía. Don Chuy no bajó el precio: dejó ver lo de adentro.\n\n💬 Y tú, ¿das a probar lo que vendes? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Cuando el cliente no puede ver lo de adentro, desconfía y compra menos; dejarlo probar vende más que bajar el precio."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nPor fuera, una naranja dulce y una agria se ven igual. Si no sabes cuál te toca, compras menos.\n\n❌ Sin dar a probar: vendió 60 → $600.\n✅ Dando a probar una: vendió 90 → $900.\n\nLa naranja que regaló ya la había pagado ($5) y le trajo $300 más.\n\nGeorge Akerlof ganó el Nobel de Economía en 2001 (junto con otros dos) por explicar esto: cuando el que compra no puede ver la calidad, desconfía y se vende menos.\n\n¿Tú dejas probar?",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Cuando el cliente no puede ver lo de adentro, desconfía y compra menos; dejarlo probar vende más que bajar el precio.",
+    "fuente": "",
+    "programar": "2026-10-13T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "vORAVuNXjzw",
+        "url": "https://youtu.be/vORAVuNXjzw",
+        "privacidad": "private",
+        "publishAt": "2026-10-13T18:45:00-06:00",
+        "captions": "AUieDaZM3ls1AI22B1wOiDqcB8q1cVUxUB1Qep3iPAaaAJ8Q5c7bxzIBvw",
+        "fecha": "2026-09-29T17:07"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-naranja.mp4?v=1967bf0ad3",
+    "reemplazos": [
+      {
+        "id": "SadTwEH7tx8",
+        "url": "https://youtu.be/SadTwEH7tx8",
+        "privacidad": "private",
+        "publishAt": "2026-10-04T18:45:00-06:00",
+        "captions": "AUieDabjBLC3Vnl1zOembxEwEw1kHhlN4BlDGyyb0j74jcFWjLW5H-TUdQ",
+        "fecha": "2026-09-27T17:23",
+        "borrado": "2026-09-29T17:06",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

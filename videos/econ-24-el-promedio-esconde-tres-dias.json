@@ -1,58 +1,81 @@
 {
- "id": "econ-24-el-promedio-esconde-tres-dias",
- "titulo": "El promedio: un total repartido entre los días, que esconde el peor — Don Chuy, La economía de tu negocio (24-el-promedio-esconde-tres-dias)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/24-el-promedio-esconde-tres-dias. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-24-el-promedio-esconde-tres-dias-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-24-el-promedio-esconde-tres-dias-4k.mp4",
-  "h264": "econ-24-el-promedio-esconde-tres-dias-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-24-el-promedio-esconde-tres-dias.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Su promedio alcanzaba para llenar la mesa, y tres días no le alcanzó · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Su promedio alcanzaba para llenar la mesa, y tres días no le alcanzó. 🍊\n\nMira la lata: dos días vendió casi todo y juntó ochocientos, y los otros tres cerró con trescientos. Fíjate en el proveedor: cobra lo mismo todos los días, y en los flojos no le alcanzaba ni para llenar la mesa.\n\nNo le faltaron ventas: el promedio le escondía su peor día.\n\n💬 Y tú, ¿tu peor día te da para surtir el siguiente? Contéstame sí o no aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "El promedio es el total repartido entre los días y no dice cuál fue el peor: con el peor día se planea, no con el promedio."
+  "id": "econ-24-el-promedio-esconde-tres-dias",
+  "titulo": "El promedio: un total repartido entre los días, que esconde el peor — Don Chuy, La economía de tu negocio (24-el-promedio-esconde-tres-dias)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/24-el-promedio-esconde-tres-dias. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 31.4,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nLa semana, completa: 2 días de $800 y 3 días de $300. 2 × $800 = $1,600, 3 × $300 = $900, y $1,600 + $900 = $2,500. El promedio es ese total repartido entre los días: $2,500 / 5 = $500 exactos, la pastilla de la lata del cuadro 0.\n\nLas dos cifras de $500 de la pantalla son la misma cifra a propósito: el promedio del día ($500) es exactamente lo que cobra el proveedor por volver a llenar la mesa ($500 = 100 × $5). Por eso «en promedio alcanzaba»: alcanzaba justo, y de eso se trata el capítulo.\n\nY tú, ¿tu peor día te da para surtir el siguiente? Contéstame sí o no aquí abajo.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-24-el-promedio-esconde-tres-dias-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "El promedio es el total repartido entre los días y no dice cuál fue el peor: con el peor día se planea, no con el promedio.",
-  "fuente": "aritmetica/libro.md §5.2 (el promedio simple: total entre cuántos) y algebra/libro.md §11.6 «La fórmula del promedio, releída».",
-  "programar": "2026-10-17T12:00:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-24-el-promedio-esconde-tres-dias-4k.mp4",
+    "h264": "econ-24-el-promedio-esconde-tres-dias-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-24-el-promedio-esconde-tres-dias.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Su promedio alcanzaba para llenar la mesa, y tres días no le alcanzó · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Su promedio alcanzaba para llenar la mesa, y tres días no le alcanzó. 🍊\n\nMira la lata: dos días vendió casi todo y juntó ochocientos, y los otros tres cerró con trescientos. Fíjate en el proveedor: cobra lo mismo todos los días, y en los flojos no le alcanzaba ni para llenar la mesa.\n\nNo le faltaron ventas: el promedio le escondía su peor día.\n\n💬 Y tú, ¿tu peor día te da para surtir el siguiente? Contéstame sí o no aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "El promedio es el total repartido entre los días y no dice cuál fue el peor: con el peor día se planea, no con el promedio."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nLa semana, completa: 2 días de $800 y 3 días de $300. 2 × $800 = $1,600, 3 × $300 = $900, y $1,600 + $900 = $2,500. El promedio es ese total repartido entre los días: $2,500 / 5 = $500 exactos, la pastilla de la lata del cuadro 0.\n\nLas dos cifras de $500 de la pantalla son la misma cifra a propósito: el promedio del día ($500) es exactamente lo que cobra el proveedor por volver a llenar la mesa ($500 = 100 × $5). Por eso «en promedio alcanzaba»: alcanzaba justo, y de eso se trata el capítulo.\n\nY tú, ¿tu peor día te da para surtir el siguiente? Contéstame sí o no aquí abajo.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "El promedio es el total repartido entre los días y no dice cuál fue el peor: con el peor día se planea, no con el promedio.",
+    "fuente": "aritmetica/libro.md §5.2 (el promedio simple: total entre cuántos) y algebra/libro.md §11.6 «La fórmula del promedio, releída».",
+    "programar": "2026-11-19T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "KebdVYD_qUw",
+        "url": "https://youtu.be/KebdVYD_qUw",
+        "privacidad": "private",
+        "publishAt": "2026-11-19T18:45:00-06:00",
+        "captions": "AUieDaZMjaNgCQEJEbYEfIS7rHso02mp4U2oPzPThTdmAiFsRuxmea7Szg",
+        "fecha": "2026-09-29T20:34"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-24-el-promedio-esconde-tres-dias.mp4?v=003e1ca417",
+    "reemplazos": [
+      {
+        "id": "B9U5ZQPNSQ4",
+        "url": "https://youtu.be/B9U5ZQPNSQ4",
+        "privacidad": "private",
+        "publishAt": "2026-10-17T12:00:00-06:00",
+        "fecha": "2026-09-27T22:25",
+        "borrado": "2026-09-29T20:33",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

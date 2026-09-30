@@ -1,58 +1,82 @@
 {
- "id": "econ-precio",
- "titulo": "Subir el precio y vender menos — Don Chuy, La economía de tu negocio (04-vendio-menos-y-gano-mas)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/04-vendio-menos-y-gano-mas. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-precio-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-precio-4k.mp4",
-  "h264": "econ-precio-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-precio.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Subió su precio, vendió menos naranjas y ganó más · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Subió su precio, vendió menos naranjas y ganó más. 🍊\n\nMira la lata: pidió menos naranjas y el proveedor le cobró menos. Se le fueron clientes, pero cada naranja le dejaba más. Vendió todas las que pidió y le pagó al proveedor. En la lata le quedaron quinientos sesenta. Con el precio de antes, le quedaban quinientos.\n\nMenos clientes, más dinero en la lata: lo que cuenta no es cuánto vendes, es cuánto te queda.\n\n💬 Y tú, ¿subirías tu precio aunque se te vayan clientes? Contesta sí o no aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Lo que importa no es cuántas vendes sino cuánto te queda: a doce vendió veinte menos y le quedaron sesenta más."
+  "id": "econ-precio",
+  "titulo": "Subir el precio y vender menos — Don Chuy, La economía de tu negocio (04-vendio-menos-y-gano-mas)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/04-vendio-menos-y-gano-mas. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 38.0,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nA $10, de cada naranja le quedan $5. A $12, le quedan $7.\n\n✅ A $10 vende 100: 100 × $5 = $500.\n✅ A $12 vende 80: 80 × $7 = $560.\n❌ Pero si a $12 solo le compran 70: 70 × $7 = $490. Le va peor.\n\nSubir el precio sirve solo si no se te van demasiados clientes. No es una regla: es una cuenta que puedes hacer con tus propios números.\n\n¿Cuántos clientes aguantarías perder antes de que te vaya peor?",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-precio-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Lo que importa no es cuántas vendes sino cuánto te queda: a doce vendió veinte menos y le quedaron sesenta más.",
-  "fuente": "",
-  "programar": "2026-09-30T15:30:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-precio-4k.mp4",
+    "h264": "econ-precio-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-precio.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Subió su precio, vendió menos naranjas y ganó más · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Subió su precio, vendió menos naranjas y ganó más. 🍊\n\nMira la lata: pidió menos naranjas y el proveedor le cobró menos. Se le fueron clientes, pero cada naranja le dejaba más. Vendió todas las que pidió y le pagó al proveedor. En la lata le quedaron quinientos sesenta. Con el precio de antes, le quedaban quinientos.\n\nMenos clientes, más dinero en la lata: lo que cuenta no es cuánto vendes, es cuánto te queda.\n\n💬 Y tú, ¿subirías tu precio aunque se te vayan clientes? Contesta sí o no aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Lo que importa no es cuántas vendes sino cuánto te queda: a doce vendió veinte menos y le quedaron sesenta más."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nA $10, de cada naranja le quedan $5. A $12, le quedan $7.\n\n✅ A $10 vende 100: 100 × $5 = $500.\n✅ A $12 vende 80: 80 × $7 = $560.\n❌ Pero si a $12 solo le compran 70: 70 × $7 = $490. Le va peor.\n\nSubir el precio sirve solo si no se te van demasiados clientes. No es una regla: es una cuenta que puedes hacer con tus propios números.\n\n¿Cuántos clientes aguantarías perder antes de que te vaya peor?",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Lo que importa no es cuántas vendes sino cuánto te queda: a doce vendió veinte menos y le quedaron sesenta más.",
+    "fuente": "",
+    "programar": "2026-09-30T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "eixfaWWxStY",
+        "url": "https://youtu.be/eixfaWWxStY",
+        "privacidad": "private",
+        "publishAt": "2026-09-30T18:45:00-06:00",
+        "captions": "AUieDaZlUaH1hsQGFxQzj8tViN6R1D3rm0spQUJH54RfuRB4uZ3GZSr11Q",
+        "fecha": "2026-09-28T16:14"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-precio.mp4?v=dd6e3c5ce8",
+    "reemplazos": [
+      {
+        "id": "blatjUHUyuE",
+        "url": "https://youtu.be/blatjUHUyuE",
+        "privacidad": "private",
+        "publishAt": "2026-09-30T15:30:00-06:00",
+        "captions": "AUieDaZG5KaeRXBs5aoyU-I5xjxltunJN_l8NUFEl_eMAlO5JHG8zsG25g",
+        "fecha": "2026-09-27T16:06",
+        "borrado": "2026-09-28T16:12",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

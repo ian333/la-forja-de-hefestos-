@@ -38,7 +38,7 @@
  {
   "id": "econ-40-el-domingo-lo-cobro-el-jueves",
   "slug": "40-el-domingo-lo-cobro-el-jueves",
-  "cuando": "2026-09-30T18:45:00-06:00",
+  "cuando": "2026-10-01T18:45:00-06:00",
   "grupo": "B"
  },
  {
@@ -50,373 +50,373 @@
  {
   "id": "econ-precio",
   "slug": "04-vendio-menos-y-gano-mas",
-  "cuando": "2026-09-30T15:30:00-06:00",
+  "cuando": "2026-09-30T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-41-las-diez-podridas-de-siempre",
   "slug": "41-las-diez-podridas-de-siempre",
-  "cuando": "2026-10-01T12:00:00-06:00",
+  "cuando": "2026-10-02T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-45-cincuenta-o-cien-por-ciento",
   "slug": "45-cincuenta-o-cien-por-ciento",
-  "cuando": "2026-10-01T15:30:00-06:00",
+  "cuando": "2026-10-03T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-yunus",
   "slug": "05-a-cambio-de-que",
-  "cuando": "2026-10-01T18:45:00-06:00",
+  "cuando": "2026-10-04T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-42-el-fiado-tambien-cuesta",
   "slug": "42-el-fiado-tambien-cuesta",
-  "cuando": "2026-10-02T15:30:00-06:00",
+  "cuando": "2026-10-06T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-47-la-mesa-llena-y-la-lata-vacia",
   "slug": "47-la-mesa-llena-y-la-lata-vacia",
-  "cuando": "2026-10-02T18:45:00-06:00",
+  "cuando": "2026-10-07T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-anotar",
   "slug": "06-anotar-es-ver",
-  "cuando": "2026-10-02T12:00:00-06:00",
+  "cuando": "2026-10-05T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-44-subio-un-peso-bajo-un-peso",
   "slug": "44-subio-un-peso-bajo-un-peso",
-  "cuando": "2026-10-03T18:45:00-06:00",
+  "cuando": "2026-10-10T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-50-todos-mis-clientes-contentos",
   "slug": "50-todos-mis-clientes-contentos",
-  "cuando": "2026-10-03T12:00:00-06:00",
+  "cuando": "2026-10-08T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-lluvia",
   "slug": "07-el-dia-que-llovio",
-  "cuando": "2026-10-03T15:30:00-06:00",
+  "cuando": "2026-10-09T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-46-el-dia-que-no-llego-la-camioneta",
   "slug": "46-el-dia-que-no-llego-la-camioneta",
-  "cuando": "2026-10-04T12:00:00-06:00",
+  "cuando": "2026-10-11T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-51-pidio-el-doble-y-falto-doble",
   "slug": "51-pidio-el-doble-y-falto-doble",
-  "cuando": "2026-10-04T15:30:00-06:00",
+  "cuando": "2026-10-12T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-naranja",
   "slug": "08-parte-una-naranja",
-  "cuando": "2026-10-04T18:45:00-06:00",
+  "cuando": "2026-10-13T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-48-empezo-por-lo-que-queria-ganar",
   "slug": "48-empezo-por-lo-que-queria-ganar",
-  "cuando": "2026-10-05T15:30:00-06:00",
+  "cuando": "2026-10-15T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-56-vendio-todo-en-una-hora",
   "slug": "56-vendio-todo-en-una-hora",
-  "cuando": "2026-10-05T18:45:00-06:00",
+  "cuando": "2026-10-16T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-hora",
   "slug": "09-cincuenta-la-hora",
-  "cuando": "2026-10-05T12:00:00-06:00",
+  "cuando": "2026-10-14T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-49-dos-latas",
   "slug": "49-dos-latas",
-  "cuando": "2026-10-06T18:45:00-06:00",
+  "cuando": "2026-10-19T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-57-desde-cuantas-conviene-llevarlas",
   "slug": "57-desde-cuantas-conviene-llevarlas",
-  "cuando": "2026-10-06T12:00:00-06:00",
+  "cuando": "2026-10-17T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-enfrente",
   "slug": "10-el-de-enfrente",
-  "cuando": "2026-10-06T15:30:00-06:00",
+  "cuando": "2026-10-18T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-52-de-contado-sale-mas-barato",
   "slug": "52-de-contado-sale-mas-barato",
-  "cuando": "2026-10-07T12:00:00-06:00",
+  "cuando": "2026-10-20T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-58-pago-doscientos-y-cerro-temprano",
   "slug": "58-pago-doscientos-y-cerro-temprano",
-  "cuando": "2026-10-07T15:30:00-06:00",
+  "cuando": "2026-10-21T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-credito",
   "slug": "11-lo-que-te-fian",
-  "cuando": "2026-10-07T18:45:00-06:00",
+  "cuando": "2026-10-22T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-53-todos-saben-que-remata",
   "slug": "53-todos-saben-que-remata",
-  "cuando": "2026-10-08T15:30:00-06:00",
+  "cuando": "2026-10-24T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-59-no-subio-la-naranja",
   "slug": "59-no-subio-la-naranja",
-  "cuando": "2026-10-08T18:45:00-06:00",
+  "cuando": "2026-10-25T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-13-le-subieron-y-el-no",
   "slug": "13-le-subieron-y-el-no",
-  "cuando": "2026-10-08T12:00:00-06:00",
+  "cuando": "2026-10-23T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-54-la-tanda-no-da-intereses",
   "slug": "54-la-tanda-no-da-intereses",
-  "cuando": "2026-10-09T18:45:00-06:00",
+  "cuando": "2026-10-28T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-60-promesas-en-toda-la-colonia",
   "slug": "60-promesas-en-toda-la-colonia",
-  "cuando": "2026-10-09T12:00:00-06:00",
+  "cuando": "2026-10-26T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-14-mil-en-la-mesa",
   "slug": "14-mil-en-la-mesa",
-  "cuando": "2026-10-09T15:30:00-06:00",
+  "cuando": "2026-10-27T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-55-el-letrero-que-no-tenia",
   "slug": "55-el-letrero-que-no-tenia",
-  "cuando": "2026-10-10T12:00:00-06:00",
+  "cuando": "2026-10-29T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-62-nadie-sabia-que-estaba-ahi",
   "slug": "62-nadie-sabia-que-estaba-ahi",
-  "cuando": "2026-10-10T15:30:00-06:00",
+  "cuando": "2026-10-30T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-15-las-diez-de-su-casa",
   "slug": "15-las-diez-de-su-casa",
-  "cuando": "2026-10-10T18:45:00-06:00",
+  "cuando": "2026-10-31T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-61-tres-dias-de-gripa",
   "slug": "61-tres-dias-de-gripa",
-  "cuando": "2026-10-11T15:30:00-06:00",
+  "cuando": "2026-11-02T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-63-el-bulto-grande-sale-caro",
   "slug": "63-el-bulto-grande-sale-caro",
-  "cuando": "2026-10-11T18:45:00-06:00",
+  "cuando": "2026-11-03T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-16-se-le-acabaron-a-mediodia",
   "slug": "16-se-le-acabaron-a-mediodia",
-  "cuando": "2026-10-11T12:00:00-06:00",
+  "cuando": "2026-11-01T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-64-las-primeras-dos-horas",
   "slug": "64-las-primeras-dos-horas",
-  "cuando": "2026-10-12T18:45:00-06:00",
+  "cuando": "2026-11-06T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-67-el-descuento-del-proveedor",
   "slug": "67-el-descuento-del-proveedor",
-  "cuando": "2026-10-12T12:00:00-06:00",
+  "cuando": "2026-11-04T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-17-las-dos-horas-de-la-casita",
   "slug": "17-las-dos-horas-de-la-casita",
-  "cuando": "2026-10-12T15:30:00-06:00",
+  "cuando": "2026-11-05T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-65-yo-parto-tu-escoges",
   "slug": "65-yo-parto-tu-escoges",
-  "cuando": "2026-10-13T12:00:00-06:00",
+  "cuando": "2026-11-07T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-68-el-fiado-caro",
   "slug": "68-el-fiado-caro",
-  "cuando": "2026-10-13T15:30:00-06:00",
+  "cuando": "2026-11-08T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-18-la-nota-dice-cien",
   "slug": "18-la-nota-dice-cien",
-  "cuando": "2026-10-13T18:45:00-06:00",
+  "cuando": "2026-11-09T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-66-le-bajo-dos-y-subio-dos",
   "slug": "66-le-bajo-dos-y-subio-dos",
-  "cuando": "2026-10-14T15:30:00-06:00",
+  "cuando": "2026-11-11T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-69-dos-precios-en-el-mantel",
   "slug": "69-dos-precios-en-el-mantel",
-  "cuando": "2026-10-14T18:45:00-06:00",
+  "cuando": "2026-11-12T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-19-ya-lo-pago-y-debe",
   "slug": "19-ya-lo-pago-y-debe",
-  "cuando": "2026-10-14T12:00:00-06:00",
+  "cuando": "2026-11-10T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-70-el-pedido-mas-grande",
   "slug": "70-el-pedido-mas-grande",
-  "cuando": "2026-10-15T18:45:00-06:00",
+  "cuando": "2026-11-15T18:45:00-06:00",
   "grupo": "B"
  },
  {
   "id": "econ-71-subio-el-precio-y-llegaron",
   "slug": "71-subio-el-precio-y-llegaron",
-  "cuando": "2026-10-15T12:00:00-06:00",
+  "cuando": "2026-11-13T18:45:00-06:00",
   "grupo": "A"
  },
  {
   "id": "econ-20-las-de-las-nueve",
   "slug": "20-las-de-las-nueve",
-  "cuando": "2026-10-15T15:30:00-06:00",
+  "cuando": "2026-11-14T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-21-la-lata-llena-sin-cambio",
   "slug": "21-la-lata-llena-sin-cambio",
-  "cuando": "2026-10-16T12:00:00-06:00",
+  "cuando": "2026-11-16T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-22-la-cuota-corre-igual",
   "slug": "22-la-cuota-corre-igual",
-  "cuando": "2026-10-16T15:30:00-06:00",
+  "cuando": "2026-11-17T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-23-el-letrero-clavado",
   "slug": "23-el-letrero-clavado",
-  "cuando": "2026-10-16T18:45:00-06:00",
+  "cuando": "2026-11-18T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-24-el-promedio-esconde-tres-dias",
   "slug": "24-el-promedio-esconde-tres-dias",
-  "cuando": "2026-10-17T12:00:00-06:00",
+  "cuando": "2026-11-19T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-25-el-pleito-de-diez-pesos",
   "slug": "25-el-pleito-de-diez-pesos",
-  "cuando": "2026-10-17T15:30:00-06:00",
+  "cuando": "2026-11-20T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-26-el-billete-de-hace-un-ano",
   "slug": "26-el-billete-de-hace-un-ano",
-  "cuando": "2026-10-17T18:45:00-06:00",
+  "cuando": "2026-11-21T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-27-cincuenta-cada-manana",
   "slug": "27-cincuenta-cada-manana",
-  "cuando": "2026-10-18T12:00:00-06:00",
+  "cuando": "2026-11-22T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-28-la-naranja-mas-barata",
   "slug": "28-la-naranja-mas-barata",
-  "cuando": "2026-10-18T15:30:00-06:00",
+  "cuando": "2026-11-23T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-29-dijeron-que-si",
   "slug": "29-dijeron-que-si",
-  "cuando": "2026-10-18T18:45:00-06:00",
+  "cuando": "2026-11-24T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-30-el-domingo-que-no-se-repitio",
   "slug": "30-el-domingo-que-no-se-repitio",
-  "cuando": "2026-10-19T12:00:00-06:00",
+  "cuando": "2026-11-25T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-31-cuadrar-la-lata",
   "slug": "31-cuadrar-la-lata",
-  "cuando": "2026-10-19T15:30:00-06:00",
+  "cuando": "2026-11-26T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-32-pago-por-adelantado",
   "slug": "32-pago-por-adelantado",
-  "cuando": "2026-10-19T18:45:00-06:00",
+  "cuando": "2026-11-27T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-33-un-peso-por-no-dar-cambio",
   "slug": "33-un-peso-por-no-dar-cambio",
-  "cuando": "2026-10-20T12:00:00-06:00",
+  "cuando": "2026-11-28T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-34-si-paga-pero-al-mes",
   "slug": "34-si-paga-pero-al-mes",
-  "cuando": "2026-10-20T15:30:00-06:00",
+  "cuando": "2026-11-29T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-35-el-vecino-que-compraba-ochenta",
   "slug": "35-el-vecino-que-compraba-ochenta",
-  "cuando": "2026-10-20T18:45:00-06:00",
+  "cuando": "2026-11-30T18:45:00-06:00",
   "grupo": "A (fuera del sorteo)"
  },
  {
   "id": "econ-72-el-fiado-que-si-vendio",
   "slug": "72-el-fiado-que-si-vendio",
-  "cuando": "2026-10-21T12:00:00-06:00",
+  "cuando": "2026-12-01T18:45:00-06:00",
   "grupo": "A"
  }
 ]

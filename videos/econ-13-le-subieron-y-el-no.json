@@ -1,58 +1,81 @@
 {
- "id": "econ-13-le-subieron-y-el-no",
- "titulo": "El costo que sube y el precio que no se mueve — Don Chuy, La economía de tu negocio (13-le-subieron-y-el-no)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/13-le-subieron-y-el-no. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-13-le-subieron-y-el-no-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-13-le-subieron-y-el-no-4k.mp4",
-  "h264": "econ-13-le-subieron-y-el-no-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-13-le-subieron-y-el-no.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Vendió lo mismo que ayer, a los mismos vecinos, y le faltan cien pesos · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Vendió lo mismo que ayer, a los mismos vecinos, y le faltan cien pesos. 🍊\n\nMira la camioneta: hoy le cobró más por las mismas naranjas, y el letrero de la mesa no se movió. Vendió todas, una por una, y entraron los billetes de siempre. Le pagó al proveedor, y en la lata quedaron cuatrocientos pesos.\n\nNo vendió menos: le faltó mover su precio.\n\n💬 Y tú, ¿subes tu precio el día que te sube el proveedor? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Cuando sube tu costo y tú no mueves tu precio, la subida la pagas tú completa."
+  "id": "econ-13-le-subieron-y-el-no",
+  "titulo": "El costo que sube y el precio que no se mueve — Don Chuy, La economía de tu negocio (13-le-subieron-y-el-no)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/13-le-subieron-y-el-no. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 32.6,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nLo que le cobra la camioneta: 100 × $6 = $600, cuando ayer eran 100 × $5 = $500. Los $600 son 6 billetes de $100 y los $500 eran 5: la cuenta no parte ningún billete.\n\nLo que cobra él: vendió las 100 a $10, o sea 100 × $10 = $1,000, exactamente lo mismo que ayer, porque el letrero nunca se movió. Son los 10 billetes de $100 que entran a la lata.\n\nY tú, ¿subes tu precio el día que te sube el proveedor? Sí o no, escríbelo aquí abajo.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-13-le-subieron-y-el-no-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Cuando sube tu costo y tú no mueves tu precio, la subida la pagas tú completa.",
-  "fuente": "Dolor real: la lista de precios nueva del proveedor, cada dos o tres meses. Fusiona S22 (el porcentaje «un peso de cinco son veinte de cada cien» entra como pastilla, no como voz) y B17 (el porqué —una sola camioneta— entra en el debate, no en la cuenta).",
-  "programar": "2026-10-08T12:00:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-13-le-subieron-y-el-no-4k.mp4",
+    "h264": "econ-13-le-subieron-y-el-no-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-13-le-subieron-y-el-no.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Vendió lo mismo que ayer, a los mismos vecinos, y le faltan cien pesos · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Vendió lo mismo que ayer, a los mismos vecinos, y le faltan cien pesos. 🍊\n\nMira la camioneta: hoy le cobró más por las mismas naranjas, y el letrero de la mesa no se movió. Vendió todas, una por una, y entraron los billetes de siempre. Le pagó al proveedor, y en la lata quedaron cuatrocientos pesos.\n\nNo vendió menos: le faltó mover su precio.\n\n💬 Y tú, ¿subes tu precio el día que te sube el proveedor? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Cuando sube tu costo y tú no mueves tu precio, la subida la pagas tú completa."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nLo que le cobra la camioneta: 100 × $6 = $600, cuando ayer eran 100 × $5 = $500. Los $600 son 6 billetes de $100 y los $500 eran 5: la cuenta no parte ningún billete.\n\nLo que cobra él: vendió las 100 a $10, o sea 100 × $10 = $1,000, exactamente lo mismo que ayer, porque el letrero nunca se movió. Son los 10 billetes de $100 que entran a la lata.\n\nY tú, ¿subes tu precio el día que te sube el proveedor? Sí o no, escríbelo aquí abajo.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Cuando sube tu costo y tú no mueves tu precio, la subida la pagas tú completa.",
+    "fuente": "Dolor real: la lista de precios nueva del proveedor, cada dos o tres meses. Fusiona S22 (el porcentaje «un peso de cinco son veinte de cada cien» entra como pastilla, no como voz) y B17 (el porqué —una sola camioneta— entra en el debate, no en la cuenta).",
+    "programar": "2026-10-23T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "GpII6xRr1Ws",
+        "url": "https://youtu.be/GpII6xRr1Ws",
+        "privacidad": "private",
+        "publishAt": "2026-10-23T18:45:00-06:00",
+        "captions": "AUieDabGOinIAxTNFDhrTmgdVRKZNQj2hnQzIb3t3_Cz7-buD0S04hObKw",
+        "fecha": "2026-09-29T18:24"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-13-le-subieron-y-el-no.mp4?v=ab806ae753",
+    "reemplazos": [
+      {
+        "id": "Ucmp1G8Ep60",
+        "url": "https://youtu.be/Ucmp1G8Ep60",
+        "privacidad": "private",
+        "publishAt": "2026-10-08T12:00:00-06:00",
+        "fecha": "2026-09-27T20:05",
+        "borrado": "2026-09-29T18:23",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

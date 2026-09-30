@@ -1,58 +1,81 @@
 {
- "id": "econ-28-la-naranja-mas-barata",
- "titulo": "El proveedor más barato: lo que te cuesta no es el precio, es lo que alcanzas a vender — Don Chuy, La economía de tu negocio (28-la-naranja-mas-barata)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/28-la-naranja-mas-barata. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-28-la-naranja-mas-barata-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-28-la-naranja-mas-barata-4k.mp4",
-  "h264": "econ-28-la-naranja-mas-barata-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-28-la-naranja-mas-barata.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Pagó las naranjas más baratas de la central y le quedó menos dinero · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Pagó las naranjas más baratas de la central y le quedó menos dinero. 🍊\n\nMira la pila: esas no se le pudrieron, así llegaron picadas de la camioneta. Vendió todas las buenas y juntó sus billetes. Fíjate en la camioneta: el proveedor barato le cobró las picadas igual. Le quedaron trescientos pesos, en lugar de los quinientos de siempre.\n\nNo le faltó ojo: le faltaron naranjas buenas que vender.\n\n💬 Y tú, ¿le comprarías al más barato? Contéstame sí o no aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "El precio del proveedor no es lo que te cuesta: lo que te cuesta es lo que alcanzas a vender de lo que te dejó."
+  "id": "econ-28-la-naranja-mas-barata",
+  "titulo": "El proveedor más barato: lo que te cuesta no es el precio, es lo que alcanzas a vender — Don Chuy, La economía de tu negocio (28-la-naranja-mas-barata)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/28-la-naranja-mas-barata. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 34.0,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nEl día del proveedor nuevo: 100 naranjas a $4 cada una = $400, la pastilla verde «$4 c/u» del cuadro 0. Es $100 menos de lo que paga siempre, y ese ahorro es el gancho.\n\nDe esas 100 llegaron 30 picadas, así que vendibles quedan 100 − 30 = 70. A $10 cada una, 70 × $10 = $700: los 7 billetes que entran a la lata. Le quedan $700 − $400 = $300, la pastilla de la lata.\n\nY tú, ¿le comprarías al más barato? Contéstame sí o no aquí abajo.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-28-la-naranja-mas-barata-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "El precio del proveedor no es lo que te cuesta: lo que te cuesta es lo que alcanzas a vender de lo que te dejó.",
-  "fuente": "Dolor real: la mercancía barata que no se vende.",
-  "programar": "2026-10-18T15:30:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-28-la-naranja-mas-barata-4k.mp4",
+    "h264": "econ-28-la-naranja-mas-barata-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-28-la-naranja-mas-barata.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Pagó las naranjas más baratas de la central y le quedó menos dinero · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Pagó las naranjas más baratas de la central y le quedó menos dinero. 🍊\n\nMira la pila: esas no se le pudrieron, así llegaron picadas de la camioneta. Vendió todas las buenas y juntó sus billetes. Fíjate en la camioneta: el proveedor barato le cobró las picadas igual. Le quedaron trescientos pesos, en lugar de los quinientos de siempre.\n\nNo le faltó ojo: le faltaron naranjas buenas que vender.\n\n💬 Y tú, ¿le comprarías al más barato? Contéstame sí o no aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "El precio del proveedor no es lo que te cuesta: lo que te cuesta es lo que alcanzas a vender de lo que te dejó."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nEl día del proveedor nuevo: 100 naranjas a $4 cada una = $400, la pastilla verde «$4 c/u» del cuadro 0. Es $100 menos de lo que paga siempre, y ese ahorro es el gancho.\n\nDe esas 100 llegaron 30 picadas, así que vendibles quedan 100 − 30 = 70. A $10 cada una, 70 × $10 = $700: los 7 billetes que entran a la lata. Le quedan $700 − $400 = $300, la pastilla de la lata.\n\nY tú, ¿le comprarías al más barato? Contéstame sí o no aquí abajo.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "El precio del proveedor no es lo que te cuesta: lo que te cuesta es lo que alcanzas a vender de lo que te dejó.",
+    "fuente": "Dolor real: la mercancía barata que no se vende.",
+    "programar": "2026-11-23T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "n3rZwdm3n8U",
+        "url": "https://youtu.be/n3rZwdm3n8U",
+        "privacidad": "private",
+        "publishAt": "2026-11-23T18:45:00-06:00",
+        "captions": "AUieDaZjNRyTLv4lsTfMzJcR6J-FKFCNkUXgERwguRXNR6qocwbI9Q7pvw",
+        "fecha": "2026-09-30T12:04"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-28-la-naranja-mas-barata.mp4?v=dde07fa6d9",
+    "reemplazos": [
+      {
+        "id": "SM6UF0kPuXo",
+        "url": "https://youtu.be/SM6UF0kPuXo",
+        "privacidad": "private",
+        "publishAt": "2026-10-18T15:30:00-06:00",
+        "fecha": "2026-09-27T22:31",
+        "borrado": "2026-09-30T12:03",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

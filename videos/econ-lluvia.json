@@ -1,58 +1,82 @@
 {
- "id": "econ-lluvia",
- "titulo": "El colchón: el día de lluvia — Don Chuy, La economía de tu negocio (07-el-dia-que-llovio)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/07-el-dia-que-llovio. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-lluvia-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-lluvia-4k.mp4",
-  "h264": "econ-lluvia-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-lluvia.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? No hizo nada mal, y no le alcanza para pagar · La economía de tu negocio",
-   "descripcion": "¿Qué pasó, mi Don Chuy? No hizo nada mal, y no le alcanza para pagar. 🍊\n\nMira la calle: llovió todo el día y nadie salió a comprar. Las naranjas se quedaron en la mesa, esperando, y vendió poquitas. El proveedor cobra quinientos, y en la lata solo hay doscientos: se lleva lo que hay, y todavía le falta.\n\nEl día de lluvia no se paga con el día de lluvia: se paga con lo que guardaste los días de sol.\n\n💬 Y tú, ¿guardas algo cada día, aunque sea poquito? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "El proveedor cobra igual aunque llueva: el día malo se paga con lo que guardaste los días buenos."
+  "id": "econ-lluvia",
+  "titulo": "El colchón: el día de lluvia — Don Chuy, La economía de tu negocio (07-el-dia-que-llovio)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/07-el-dia-que-llovio. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 33.5,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nEl proveedor cobra lo mismo llueva o no.\n\n✅ Día de sol: vende 100, junta $1,000, paga $500 y le quedan $500.\n❌ Día de lluvia: vende 20, junta $200, paga… y le faltan $300.\n\nLas 80 que no vendió siguen ahí, pero hoy no sirven para pagar.\n\nSi cada día de sol aparta $50, en 6 días ya tiene esos $300 y la lluvia no lo tumba.\n\nLa lluvia le llega a todos. ¿Tú apartas algo cada día?",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-lluvia-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "El proveedor cobra igual aunque llueva: el día malo se paga con lo que guardaste los días buenos.",
-  "fuente": "",
-  "programar": "2026-10-03T15:30:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-lluvia-4k.mp4",
+    "h264": "econ-lluvia-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-lluvia.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? No hizo nada mal, y no le alcanza para pagar · La economía de tu negocio",
+      "descripcion": "¿Qué pasó, mi Don Chuy? No hizo nada mal, y no le alcanza para pagar. 🍊\n\nMira la calle: llovió todo el día y nadie salió a comprar. Las naranjas se quedaron en la mesa, esperando, y vendió poquitas. El proveedor cobra quinientos, y en la lata solo hay doscientos: se lleva lo que hay, y todavía le falta.\n\nEl día de lluvia no se paga con el día de lluvia: se paga con lo que guardaste los días de sol.\n\n💬 Y tú, ¿guardas algo cada día, aunque sea poquito? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "El proveedor cobra igual aunque llueva: el día malo se paga con lo que guardaste los días buenos."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nEl proveedor cobra lo mismo llueva o no.\n\n✅ Día de sol: vende 100, junta $1,000, paga $500 y le quedan $500.\n❌ Día de lluvia: vende 20, junta $200, paga… y le faltan $300.\n\nLas 80 que no vendió siguen ahí, pero hoy no sirven para pagar.\n\nSi cada día de sol aparta $50, en 6 días ya tiene esos $300 y la lluvia no lo tumba.\n\nLa lluvia le llega a todos. ¿Tú apartas algo cada día?",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "El proveedor cobra igual aunque llueva: el día malo se paga con lo que guardaste los días buenos.",
+    "fuente": "",
+    "programar": "2026-10-09T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "RdzSIDmDo5c",
+        "url": "https://youtu.be/RdzSIDmDo5c",
+        "privacidad": "private",
+        "publishAt": "2026-10-09T18:45:00-06:00",
+        "captions": "AUieDaYQ4tpLegt2o8COLJPDmQ-YMe4YUFvVzZDOgTW6nM09Zm00rz0XZA",
+        "fecha": "2026-09-30T12:08"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-lluvia.mp4?v=5020d6630d",
+    "reemplazos": [
+      {
+        "id": "VA30FgmpRUE",
+        "url": "https://youtu.be/VA30FgmpRUE",
+        "privacidad": "private",
+        "publishAt": "2026-10-03T15:30:00-06:00",
+        "captions": "AUieDaYGbzbKlIZUaBjT2kebmaLedqiH8wAAiJvsCBAcdijUQPE7jHoR_g",
+        "fecha": "2026-09-27T17:12",
+        "borrado": "2026-09-30T12:08",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

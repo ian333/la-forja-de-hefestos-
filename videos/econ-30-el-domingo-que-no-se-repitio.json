@@ -1,58 +1,81 @@
 {
- "id": "econ-30-el-domingo-que-no-se-repitio",
- "titulo": "Un buen día no es una regla: multiplicar el mejor día no es un pronóstico — Don Chuy, La economía de tu negocio (30-el-domingo-que-no-se-repitio)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/30-el-domingo-que-no-se-repitio. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-30-el-domingo-que-no-se-repitio-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-30-el-domingo-que-no-se-repitio-4k.mp4",
-  "h264": "econ-30-el-domingo-que-no-se-repitio-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-30-el-domingo-que-no-se-repitio.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Pidió el triple para el lunes y vendió exactamente lo mismo · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Pidió el triple para el lunes y vendió exactamente lo mismo. 🍊\n\nMira la mesa: le bajaron trescientas naranjas y pagó mil quinientos pesos. Los vecinos le compraron lo mismo de siempre. Fíjate cómo las demás se fueron poniendo cafés, una por una, hasta el bote. Ese domingo bueno nunca se repitió.\n\nNo le faltó trabajo: le sobró mercancía, porque un buen día no es una regla.\n\n💬 Y tú, ¿pedirías el triple después de un domingo bueno? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Un buen día no es una regla: multiplicarlo no es un pronóstico, es un deseo, y lo que sobra ya está pagado."
+  "id": "econ-30-el-domingo-que-no-se-repitio",
+  "titulo": "Un buen día no es una regla: multiplicar el mejor día no es un pronóstico — Don Chuy, La economía de tu negocio (30-el-domingo-que-no-se-repitio)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/30-el-domingo-que-no-se-repitio. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 33.8,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nLA ESCALA DE LA PILA CAMBIA EN ESTE CAPÍTULO Y SOLO EN ESTE: las 15 naranjas dibujadas son las 300 del lunes, o sea 20 cada una, y no las 100 de siempre. Sale así porque el evento `pila` de ElPuesto no pasa de 15 y 300 no se pueden dibujar de otra forma. La pastilla «300 naranjas» está sobre la pila desde el cuadro 0 justo para que se lea la escala nueva antes de que se mueva nada. Con esa escala las cifras del dibujo son exactas, sin redondeo: las 100 que vendió son 5 dibujadas (5 × 20 = 100) y las 200 que se pudrieron son las otras 10 (10 × 20 = 200). No hay ninguna naranja de más ni de menos.\n\nEl domingo bueno sí fue bueno y la cuenta también cuadra: 100 × $10 = $1,000 menos los $500 del proveedor le dejaron $500. El lunes le quitó $500. Es un espejo exacto —un buen día borrado por un mal pedido— y precisamente por eso no se dice en voz: son dos cuentas y serían dos capítulos. En pantalla solo vive la parte del domingo que hace falta para entender el pedido, «Ayer, domingo: vendió 100».\n\nY tú, ¿pedirías el triple después de un domingo bueno? Sí o no, escríbelo aquí abajo.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-30-el-domingo-que-no-se-repitio-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Un buen día no es una regla: multiplicarlo no es un pronóstico, es un deseo, y lo que sobra ya está pagado.",
-  "fuente": "aritmetica/libro.md §5.4 «Cuándo NO es proporcional» + Van Dooren et al. 2004, «illusion of linearity», en aritmetica/fuentes.md.",
-  "programar": "2026-10-19T12:00:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-30-el-domingo-que-no-se-repitio-4k.mp4",
+    "h264": "econ-30-el-domingo-que-no-se-repitio-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-30-el-domingo-que-no-se-repitio.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Pidió el triple para el lunes y vendió exactamente lo mismo · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Pidió el triple para el lunes y vendió exactamente lo mismo. 🍊\n\nMira la mesa: le bajaron trescientas naranjas y pagó mil quinientos pesos. Los vecinos le compraron lo mismo de siempre. Fíjate cómo las demás se fueron poniendo cafés, una por una, hasta el bote. Ese domingo bueno nunca se repitió.\n\nNo le faltó trabajo: le sobró mercancía, porque un buen día no es una regla.\n\n💬 Y tú, ¿pedirías el triple después de un domingo bueno? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Un buen día no es una regla: multiplicarlo no es un pronóstico, es un deseo, y lo que sobra ya está pagado."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nLA ESCALA DE LA PILA CAMBIA EN ESTE CAPÍTULO Y SOLO EN ESTE: las 15 naranjas dibujadas son las 300 del lunes, o sea 20 cada una, y no las 100 de siempre. Sale así porque el evento `pila` de ElPuesto no pasa de 15 y 300 no se pueden dibujar de otra forma. La pastilla «300 naranjas» está sobre la pila desde el cuadro 0 justo para que se lea la escala nueva antes de que se mueva nada. Con esa escala las cifras del dibujo son exactas, sin redondeo: las 100 que vendió son 5 dibujadas (5 × 20 = 100) y las 200 que se pudrieron son las otras 10 (10 × 20 = 200). No hay ninguna naranja de más ni de menos.\n\nEl domingo bueno sí fue bueno y la cuenta también cuadra: 100 × $10 = $1,000 menos los $500 del proveedor le dejaron $500. El lunes le quitó $500. Es un espejo exacto —un buen día borrado por un mal pedido— y precisamente por eso no se dice en voz: son dos cuentas y serían dos capítulos. En pantalla solo vive la parte del domingo que hace falta para entender el pedido, «Ayer, domingo: vendió 100».\n\nY tú, ¿pedirías el triple después de un domingo bueno? Sí o no, escríbelo aquí abajo.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Un buen día no es una regla: multiplicarlo no es un pronóstico, es un deseo, y lo que sobra ya está pagado.",
+    "fuente": "aritmetica/libro.md §5.4 «Cuándo NO es proporcional» + Van Dooren et al. 2004, «illusion of linearity», en aritmetica/fuentes.md.",
+    "programar": "2026-11-25T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "bbUnwjxhW0E",
+        "url": "https://youtu.be/bbUnwjxhW0E",
+        "privacidad": "private",
+        "publishAt": "2026-11-25T18:45:00-06:00",
+        "captions": "AUieDaa0Cb2-d3YnaC57yIcw9u6V7wKr35lfiVQR2L3lls_vFDtdS-M5ZA",
+        "fecha": "2026-09-30T12:25"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-30-el-domingo-que-no-se-repitio.mp4?v=8684afbc22",
+    "reemplazos": [
+      {
+        "id": "kDWarPy6BKk",
+        "url": "https://youtu.be/kDWarPy6BKk",
+        "privacidad": "private",
+        "publishAt": "2026-10-19T12:00:00-06:00",
+        "fecha": "2026-09-27T22:34",
+        "borrado": "2026-09-30T12:24",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }

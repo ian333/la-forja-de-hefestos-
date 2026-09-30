@@ -1,58 +1,81 @@
 {
- "id": "econ-16-se-le-acabaron-a-mediodia",
- "titulo": "La venta que no hiciste también cuesta — Don Chuy, La economía de tu negocio (16-se-le-acabaron-a-mediodia)",
- "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/16-se-le-acabaron-a-mediodia. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
- "formato": {
-  "w": 2160,
-  "h": 3840,
-  "fps": 30,
-  "dur": null,
-  "nota_dur": "la del master (out/short.mp4 del motor)"
- },
- "audio": {
-  "dir": "dist-video/econ-16-se-le-acabaron-a-mediodia-narracion",
-  "segs": "segs.json",
-  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
- },
- "salida": {
-  "dir": "dist-video/masters",
-  "master": "econ-16-se-le-acabaron-a-mediodia-4k.mp4",
-  "h264": "econ-16-se-le-acabaron-a-mediodia-4k.mp4",
-  "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
- },
- "publicar": {
-  "biblioteca": "economia/reels/econ-16-se-le-acabaron-a-mediodia.mp4",
-  "pieza": "clase-reel",
-  "nueva": true,
-  "copy": {
-   "titulo": "¿Qué pasó, mi Don Chuy? Vendió hasta la última naranja, y ahí estuvo el problema · Don Chuy",
-   "descripcion": "¿Qué pasó, mi Don Chuy? Vendió hasta la última naranja, y ahí estuvo el problema. 🍊\n\nMira la mesa: a mediodía ya no quedaba ni una naranja, y los vecinos seguían llegando. Se fueron con las manos vacías, uno tras otro. Con cincuenta naranjas más se las vendía a ellos, y su lata cerraba con doscientos cincuenta pesos más.\n\nNo le faltaron clientes, le faltó mercancía. Lo que no vendiste también cuesta.\n\n💬 Y tú, ¿pedirías más aunque se te pueda echar a perder? Sí o no, escríbelo aquí abajo.",
-   "hashtags": [
-    "#negocios",
-    "#emprendedores",
-    "#pymes",
-    "#méxico",
-    "#tiendita",
-    "#finanzas",
-    "#economía",
-    "#donchuy",
-    "#gaia",
-    "#aprendeaverloinvisible"
-   ],
-   "marco": "revelacion",
-   "activacion": "alta",
-   "valor_propio": "Quedarte corto también cuesta, pero no se ve: la venta que no hiciste no deja hueco en la mesa ni en el bote."
+  "id": "econ-16-se-le-acabaron-a-mediodia",
+  "titulo": "La venta que no hiciste también cuesta — Don Chuy, La economía de tu negocio (16-se-le-acabaron-a-mediodia)",
+  "nota": "Motor de Sinué (lia-video-engine, rama gaia/formatos-y-economia): projects/economia/negocio/16-se-le-acabaron-a-mediodia. Canon: docs/CANON-RETENCION.md. Voz Matilda XTTS, ElPuesto, 9:16. Generado por scripts/manifiestos-don-chuy.py.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 33.7,
+    "nota_dur": "la del master (out/short.mp4 del motor)"
   },
-  "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
-  "primer_comentario": "Te lo explico fácil 👇\n\nCon 50 naranjas más: 150 × $10 = $1,500 de venta, menos 150 × $5 = $750 de proveedor, quedan $750. $750 − $500 = $250, y son exactamente las 50 naranjas × $5 que le deja cada una. Una sola cuenta, y la venta perdida se valúa en los $5 que deja, no en los $10 que cobra: valuarla a $10 sería contarle como ganancia lo que también le habría costado.\n\nEn voz solo se dicen dos cifras, cincuenta y doscientos cincuenta. Las demás (el $10 c/u, el $500 de la lata, «Le pedían 50 más», «Con 50 más: $750», «$250 que no ganó») viven en pantalla.\n\nY tú, ¿pedirías más aunque se te pueda echar a perder? Sí o no, escríbelo aquí abajo.",
-  "experimento": {
-   "variable": "cta_envio",
-   "grupo": "A (fuera del sorteo)",
-   "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+  "audio": {
+    "dir": "dist-video/econ-16-se-le-acabaron-a-mediodia-narracion",
+    "segs": "segs.json",
+    "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
   },
-  "una_idea": "Quedarte corto también cuesta, pero no se ve: la venta que no hiciste no deja hueco en la mesa ni en el bote.",
-  "fuente": "Dolor real: la venta perdida, el costo que no aparece en ninguna libreta. Fusiona S02, que le pegaba encima una clase de redondeo.",
-  "programar": "2026-10-11T12:00:00-06:00",
-  "nota_programar": "3 al día (ian 2026-09-27); el grupo rota de horario cada día."
- }
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "econ-16-se-le-acabaron-a-mediodia-4k.mp4",
+    "h264": "econ-16-se-le-acabaron-a-mediodia-4k.mp4",
+    "nota": "Re-encodado de out/short.mp4 del motor a H.264 CBR 24 Mbps (ley de subida ≥15 Mbps)."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-16-se-le-acabaron-a-mediodia.mp4",
+    "pieza": "clase-reel",
+    "nueva": true,
+    "copy": {
+      "titulo": "¿Qué pasó, mi Don Chuy? Vendió hasta la última naranja, y ahí estuvo el problema · Don Chuy",
+      "descripcion": "¿Qué pasó, mi Don Chuy? Vendió hasta la última naranja, y ahí estuvo el problema. 🍊\n\nMira la mesa: a mediodía ya no quedaba ni una naranja, y los vecinos seguían llegando. Se fueron con las manos vacías, uno tras otro. Con cincuenta naranjas más se las vendía a ellos, y su lata cerraba con doscientos cincuenta pesos más.\n\nNo le faltaron clientes, le faltó mercancía. Lo que no vendiste también cuesta.\n\n💬 Y tú, ¿pedirías más aunque se te pueda echar a perder? Sí o no, escríbelo aquí abajo.",
+      "hashtags": [
+        "#negocios",
+        "#emprendedores",
+        "#pymes",
+        "#méxico",
+        "#tiendita",
+        "#finanzas",
+        "#economía",
+        "#donchuy",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "Quedarte corto también cuesta, pero no se ve: la venta que no hiciste no deja hueco en la mesa ni en el bote."
+    },
+    "autorizado": "2026-09-27 yt,ig — dicho por ian en sesión: «necesitamos aumentar el ritmo de los experimentos» y, a las tres decisiones (v1 fuera, 3 al día, CTA de envío en la mitad al azar): \"si a las 3 ya entendi toodoooo\"",
+    "primer_comentario": "Te lo explico fácil 👇\n\nCon 50 naranjas más: 150 × $10 = $1,500 de venta, menos 150 × $5 = $750 de proveedor, quedan $750. $750 − $500 = $250, y son exactamente las 50 naranjas × $5 que le deja cada una. Una sola cuenta, y la venta perdida se valúa en los $5 que deja, no en los $10 que cobra: valuarla a $10 sería contarle como ganancia lo que también le habría costado.\n\nEn voz solo se dicen dos cifras, cincuenta y doscientos cincuenta. Las demás (el $10 c/u, el $500 de la lata, «Le pedían 50 más», «Con 50 más: $750», «$250 que no ganó») viven en pantalla.\n\nY tú, ¿pedirías más aunque se te pueda echar a perder? Sí o no, escríbelo aquí abajo.",
+    "experimento": {
+      "variable": "cta_envio",
+      "grupo": "A (fuera del sorteo)",
+      "sorteo": "projects/economia/_salon/experimento-cta.json (semilla cta-envio-2026-09-27)"
+    },
+    "una_idea": "Quedarte corto también cuesta, pero no se ve: la venta que no hiciste no deja hueco en la mesa ni en el bote.",
+    "fuente": "Dolor real: la venta perdida, el costo que no aparece en ninguna libreta. Fusiona S02, que le pegaba encima una clase de redondeo.",
+    "programar": "2026-11-01T18:45:00-06:00",
+    "nota_programar": "1 al día a las 18:45 (ian 2026-09-30: «bájalo a 1 al día, creo que nos puede ensuciar»); la ciencia va a las 21:00.",
+    "subidas": {
+      "yt": {
+        "id": "a6j4TZQNHac",
+        "url": "https://youtu.be/a6j4TZQNHac",
+        "privacidad": "private",
+        "publishAt": "2026-11-01T18:45:00-06:00",
+        "captions": "AUieDaZy_9auCp17uC6bI5G-fWYQes0B4PDwnaAVdx6qyo97YQ-qzIMrBg",
+        "fecha": "2026-09-29T19:00"
+      }
+    },
+    "diseno": "v4 libreta",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-16-se-le-acabaron-a-mediodia.mp4?v=b828204173",
+    "reemplazos": [
+      {
+        "id": "Xm9H5CaRxNM",
+        "url": "https://youtu.be/Xm9H5CaRxNM",
+        "privacidad": "private",
+        "publishAt": "2026-10-11T12:00:00-06:00",
+        "fecha": "2026-09-27T20:50",
+        "borrado": "2026-09-29T18:59",
+        "motivo": "receta corregida (expect)"
+      }
+    ]
+  }
 }
