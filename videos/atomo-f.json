@@ -1,0 +1,139 @@
+{
+ "id": "atomo-f",
+ "titulo": "El átomo más hambriento del universo vive en tu pasta de dientes",
+ "subtitulo": "Flúor · F · Z=9",
+ "nota": "Nueve electrones y un solo hueco en 2p: el átomo con más hambre de electrones que existe (electronegatividad máxima). Un desapareado ⇒ campo magnético. Con calcio, es el esmalte de tus dientes.",
+ "proposito": {
+  "wtf": "Las capas del neón TOMAN TURNO: cada subcapa se enciende sola mientras las demás se opacan, y la cámara viaja a la escala de la que toca.",
+  "hayQueMostrar": [
+   "que la nube NO es una bola: son bandas, y cada una tiene su tamaño y su forma",
+   "que la forma sale del cálculo — no se dibuja ningún orbital a mano",
+   "el campo eléctrico del núcleo y, si el átomo lo tiene, el magnético"
+  ],
+  "noHacer": [
+   "decir que los electrones son bolitas en órbita — son densidad de probabilidad",
+   "prometer lóbulos donde la subcapa está llena o a medio llenar: ahí es ESFÉRICA por teorema"
+  ]
+ },
+ "fisica": {
+  "metodo": "SCF real (RHF, base def2-tzvp), densidad de CADA ORBITAL (n,l,m) muestreada en malla 3D esférica (170 anillos × 900 direcciones, 110000 puntos). Sin promedio esférico: es lo que conserva los lóbulos.",
+  "configuracion": "1s2 2s2 2p5",
+  "verificacion_config": "Estado base experimental (NIST ASD): 1s2 2s2 2p5. Verificar contra public/precomputed/atoms/manifest.json al rendir.",
+  "energia_fiable": true,
+  "bandas": [
+   {
+    "banda": "1s2",
+    "ventana": [
+     15.2,
+     18.4
+    ]
+   },
+   {
+    "banda": "2s2",
+    "ventana": [
+     18.4,
+     21.6
+    ]
+   },
+   {
+    "banda": "2p6",
+    "ventana": [
+     21.6,
+     24.8
+    ]
+   }
+  ],
+  "campoB": "dipolo ∝ electrones desapareados (regla de Hund); si son cero NO se dibuja nada.",
+  "limitacion_declarada": "El átomo aislado es degenerado: el SCF elige UNA orientación del multiplete. Se declara y no se afirma más que eso."
+ },
+ "escena": {
+  "html": "cinematic-atom.html",
+  "query": "z=9",
+  "hook": "__cinematicAtom",
+  "wiring": "bandaMask/bandaRadio/camDirOrbital/rotNube en CinematicAtom.tsx. Un canal por ORBITAL (.bin ATM3). La cámara se pone DE PERFIL a cada orbital y la nube deja de girar en el barrido: mirada a lo largo de su eje, una mancuerna es un círculo.",
+  "gancho": "CUADRO 0 = el orbital de mayor l (orbGancho), lleno de pantalla."
+ },
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": 29.6,
+  "nota_dur": "la que dé durationForShells en CinematicAtom.tsx para Z=9 (~29.6 s)"
+ },
+ "render": {
+  "shards": 4,
+  "batch": 40,
+  "frames": "dist-video/.atfframes",
+  "nota_shards": "4 shards + captura cdp-jpeg (2026-08-17): el 97% del cuadro era el PNG, no la GPU. Medido en o2 1080: 1191s→261s (4.6×), calidad dif 1.34 < piso de encode 2.8, cero vacíos. El crash histórico de 5 shards fue con PNG (I/O 5× mayor); con jpeg el I/O baja a 1/5. SHARDS= lo overridea.",
+  "captura": "cdp-jpeg"
+ },
+ "guion": {
+  "archivo": "scripts/guiones/atomo-f.txt"
+ },
+ "audio": {
+  "dir": "dist-video/atomo-f-narracion",
+  "narracion": "atomo-f-narracion.mp3",
+  "segs": "segs.json",
+  "ass": "atomo-f.ass",
+  "voz": "XTTS Matilda, VEL=1.10. ⚠ pasar scripts/voz-check.py ANTES de rendir.",
+  "musica": null,
+  "marginv": 1450,
+  "nota_marginv": "El canon vertical ancla el subtítulo a MarginV 1120, pero esta escena ya tiene texto abajo: nombre + símbolo/Z + la fila de bandas ocupan hasta ~1020 desde el borde inferior. Medido en un recorte 1:1 del cuadro 4K de atomo-c (t=23.2s): el subtítulo caía a ~1160 y \"Carbono\" arrancaba en ~970 — 100 px de separación, que se lee encimado. 1450 deja ~430 px de aire. Las moléculas NO se tocan: sin este campo, video-subs.py usa el canon.",
+  "vel": 1.1
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "atomo-f-4k-master.mp4",
+  "h264": "atomo-f-4k.mp4",
+  "nota": "ext4 (2026-08-17): E: fuera del camino crítico — un drvfs muerto rompía el ensamble. El paso `entrega` copia a E:/Downloads si viven, o encola en dist-video/entregas/."
+ },
+ "capsula": {
+  "bins": [
+   "atoms/z009-v2.bin"
+  ],
+  "guion": "atomo-f.txt",
+  "scripts": [
+   "precompute-atom-orbitals.py",
+   "render-clip.cjs",
+   "video.sh",
+   "video-subs.py"
+  ],
+  "escenaSrc": [
+   "CinematicAtom.tsx"
+  ]
+ },
+ "publicar": {
+  "biblioteca": "atomos/atom-009-F.mp4",
+  "pieza": "atomo-009",
+  "nueva": true,
+  "copy": {
+   "titulo": "El átomo más hambriento del universo vive en tu pasta de dientes (Flúor)",
+   "descripcion": "Ningún átomo tiene más hambre de electrones que el flúor. 🦷 Lo que ves es su densidad electrónica calculada con física cuántica real (SCF, def2-tzvp): nueve electrones y un solo hueco en la última capa. Ese hueco lo llena con lo que sea; puro, ataca hasta el vidrio. Pero en tu pasta de dientes se agarra del calcio del esmalte y lo vuelve más duro.",
+   "hashtags": [
+    "#átomo",
+    "#química",
+    "#física",
+    "#cuántica",
+    "#ciencia",
+    "#4k",
+    "#gaia",
+    "#aprendeaverloinvisible",
+    "#f"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "porque lo más agresivo de la tabla periódica te cuida los dientes"
+  },
+  "nota": "SIN autorizado: ian debe VER el video antes (2026-09-30)."
+ },
+ "ritmo": {
+  "brazo": "A",
+  "cortes_por_min": 12.16,
+  "nota_brazo": "la escena de átomos no usa CAMERA_SHOTS: el \"corte\" es el cambio de cámara por orbital (6 orbitales en 29.6s). Se DECLARA a mano como exige ritmo-pieza.py. VEL 1.10 se conserva del cromo: el VEREDICTO A/B midió el ritmo en piezas narrativas de 55-75 s, no en este formato.",
+  "silabas_por_seg": 3.86,
+  "silabas_por_seg_del_video": 3.53,
+  "fuente_habla": "estimado (clonado de atomo-na; el gate exige DECLARAR el tratamiento, no el valor)",
+  "nota": "MEDIDO por scripts/ritmo-pieza.py, no tecleado. Referencias externas en §EL RITMO."
+ },
+ "_nota_version": "Clonado de atomo-ne.json (2026-09-30) para la fábrica de átomos; solo cambian Z, configuración, nombres y guion."
+}
