@@ -1,0 +1,76 @@
+{
+ "id": "econ-fiado-dirigido",
+ "titulo": "El fiado DIRIGIDO — Don Chuy v5 (ElPuestoVivo, cámara + colonia viva + música)",
+ "nota": "Don Chuy v5 (2026-09-30): misma voz/cifras/escaleta que 12-el-fiado-b, filmado con ElPuestoVivo (cámara continua, colonia viva, banda sintetizada, firma en el CTA). Motor: gaia/formatos-y-economia 8f02799, proyecto 80-el-fiado-dirigido. Experimento: impacto visual contra econ-fiado (A, 2,359) y econ-fiado-b (v4).",
+ "formato": {
+  "w": 2160,
+  "h": 3840,
+  "fps": 30,
+  "dur": 35.8,
+  "nota_dur": "la del master (out/short.mp4 del motor)"
+ },
+ "audio": {
+  "dir": "dist-video/econ-fiado-dirigido-narracion",
+  "segs": "segs.json",
+  "voz": "XTTS Matilda por el motor (./lia tts); segs.json desde words.json"
+ },
+ "salida": {
+  "dir": "dist-video/masters",
+  "master": "econ-fiado-dirigido-4k.mp4",
+  "h264": "econ-fiado-dirigido-4k.mp4",
+  "nota": "out/short.mp4 del motor (8-bit) re-encodado a 24 Mbps en la laptop."
+ },
+ "publicar": {
+  "biblioteca": "economia/reels/econ-fiado-dirigido.mp4",
+  "pieza": "clase-reel",
+  "nueva": true,
+  "copy": {
+   "titulo": "¿Qué pasó, mi Don Chuy? Vendió todas sus naranjas y se fue a su casa sin un peso · Don Chuy",
+   "descripcion": "¿Qué pasó, mi Don Chuy? Vendió todas sus naranjas y se fue a su casa sin un peso. 🍊\n\nMira la lata: la mitad de sus naranjas se fue fiada. Cobró quinientos pesos, y en la tarde llegó el proveedor por sus quinientos. Se los llevó todos, hasta el último billete. Si le pagaban todas, le quedaban quinientos. Vendió exactamente lo mismo, y lo que le falta está en la calle, fiado.\n\nNo le faltaron ventas: le faltó cobrar.\n\n💬 Y tú, ¿cuánto tienes fiado ahorita? Escríbelo aquí abajo, en los comentarios.",
+   "hashtags": [
+    "#negocios",
+    "#emprendedores",
+    "#pymes",
+    "#méxico",
+    "#tiendita",
+    "#finanzas",
+    "#economía",
+    "#donchuy",
+    "#gaia",
+    "#aprendeaverloinvisible"
+   ],
+   "marco": "revelacion",
+   "activacion": "alta",
+   "valor_propio": "Vender no es cobrar: si fías la mitad, lo que cobras se lo lleva el proveedor y trabajaste gratis."
+  },
+  "autorizado": "2026-10-01 ig — dicho por ian en sesión al verlo: «no mameeees qué chingón… SUBE ESA VERSIÓN, me mamó»",
+  "primer_comentario": "Te lo explico fácil 👇\n\nDon Chuy recibe 100 naranjas y le debe $500 al proveedor. Las vende a $10 cada una.\n\n✅ Si todos le pagan: entran $1,000. Paga $500. Le quedan $500 para su casa.\n❌ Si fía la mitad: entran $500. Paga $500. Le quedan $0.\n\nLas dos veces vendió las MISMAS naranjas. Lo único que cambió es cuánto cobró.\n\nFiar no está mal. Lo que duele es fiar sin anotar y sin fecha. ¿Tú llevas tu libreta del fiado?",
+  "experimento": {
+   "variable": "direccion_visual",
+   "contra": [
+    "econ-fiado",
+    "econ-fiado-b"
+   ],
+   "grupo": "v5",
+   "nota": "una sola diferencia contra el fiado B: el filmado (cámara, mundo, música)"
+  },
+  "una_idea": "Vender no es cobrar: si fías la mitad, lo que cobras se lo lleva el proveedor y trabajaste gratis.",
+  "fuente": "",
+  "programar": "2026-10-02T18:45:00-06:00",
+  "nota_programar": "Mañana 18:45 (misma hora que el fiado A); el 41 se recorre al 12-02.",
+  "diseno": "v4 libreta",
+  "reemplazos": [
+   {
+    "id": "OpSIJeX9yy8",
+    "url": "https://youtu.be/OpSIJeX9yy8",
+    "privacidad": "private",
+    "publishAt": "2026-09-28T18:45:00-06:00",
+    "captions": "AUieDaZrVdWhsHehFtq4-dVYjjWmV8d6Y_GNEREEuHf07eyaCd3rn2J7SQ",
+    "fecha": "2026-09-27T15:17",
+    "borrado": "2026-09-28T14:56",
+    "motivo": "receta corregida (expect)"
+   }
+  ],
+  "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-fiado-dirigido.mp4?v=dd2296f668"
+ }
+}

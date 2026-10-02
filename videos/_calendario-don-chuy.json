@@ -56,7 +56,7 @@
  {
   "id": "econ-41-las-diez-podridas-de-siempre",
   "slug": "41-las-diez-podridas-de-siempre",
-  "cuando": "2026-10-02T18:45:00-06:00",
+  "cuando": "2026-12-02T18:45:00-06:00",
   "grupo": "B"
  },
  {
@@ -418,5 +418,11 @@
   "slug": "72-el-fiado-que-si-vendio",
   "cuando": "2026-12-01T18:45:00-06:00",
   "grupo": "A"
+ },
+ {
+  "id": "econ-fiado-dirigido",
+  "slug": "80-el-fiado-dirigido",
+  "cuando": "2026-10-02T18:45:00-06:00",
+  "grupo": "v5"
  }
 ]
