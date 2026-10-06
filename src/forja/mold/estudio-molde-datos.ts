@@ -1866,6 +1866,45 @@ export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false, es
 //   · AGUA que cruce un inserto — cap 9: el agua dentro de un inserto es lo normal, se
 //     barrena. El barreno = la línea (el agua toca el acero: es su pared).
 //  Solo se corta lo que de verdad cruza (filtro por caja): cortar aire cuesta segundos.
+/** EL PISO DE UN PIN — UNA sola fuente para la punta (E7 la construye ahí) y para su broca (E8 barrena hasta ahí).
+ *  El piso por rayo bajo ESE pin; si el rayo no cruzó dos caras, el respaldo (pared mediana), y quien lo usa lo dice.
+ *  Antes cada lado tenía su fórmula (la punta el rayo, la broca la mediana) y entre las dos quedaba acero. */
+export function pisoDelPin(q: { zPisoMm?: number }, respaldoMm: number): number {
+  return Number.isFinite(q.zPisoMm) ? (q.zPisoMm as number) : respaldoMm;
+}
+export interface PinEnAcero {
+  k: number; x: number; y: number; zPuntaMm: number;
+  /** acero del núcleo DENTRO del sólido de la punta [mm³] (B-Rep, `common`) — NaN si el kernel no pudo medir */
+  aceroMm3: number;
+  /** ese volumen como largo equivalente sobre el eje [mm] = mm³ / (π r²): cuánto de la punta está metido en acero */
+  aceroMm: number;
+}
+export interface JuezPinesAcero { ok: boolean; pines: PinEnAcero[]; nMetidos: number; peorMm: number; tolMm: number; ms: number }
+/** EL JUEZ PIN ↔ ACERO (orden LA BROCA HASTA EL PISO REAL, 2026-10-06). El estudio de contacto es de vóxel
+ *  (bajo 0.6 mm es ruido) y no vio las 8 puntas de la tapa metidas 0.86 mm en el núcleo: el inspector decía
+ *  CUMPLE. Éste es exacto: la punta TAL CUAL la construye la E7 (cilindro ⌀punta × largo punta que termina en
+ *  `pisoDelPin`) ∩ el núcleo YA barrenado = el acero que la punta tendría que atravesar. Con la holgura del
+ *  barreno (⌀ + 0.13, §8.3.2) la punta no toca las paredes: lo único que puede quedar es acero SOBRE ella
+ *  (la broca corta) o cruzado en su camino. Toma los pines de la E7, NO los de la broca: si la broca se va por
+ *  su lado, el juez lo ve. Tolerancia 0.01 mm de largo equivalente (regla de Hefestos: la centésima de la cota). */
+export function juezPinesEnAcero(oc: any, core: any, pines: { posiciones: Array<{ x: number; y: number; zPisoMm?: number }>; puntaDiaMm: number; puntaMm: number; zPisoRespaldoMm: number }): JuezPinesAcero {
+  const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const r = pines.puntaDiaMm / 2, area = Math.PI * r * r, tolMm = 0.01;
+  const out: PinEnAcero[] = pines.posiciones.map((q, k) => {
+    const zPunta = pisoDelPin(q, pines.zPisoRespaldoMm);
+    let mm3 = NaN;
+    try {
+      const punta = occCylinder(oc, r, pines.puntaMm, { origin: [q.x, q.y, zPunta - pines.puntaMm], dir: [0, 0, 1] });
+      mm3 = Math.max(0, occVolume(oc, occCommon(oc, core, punta)));
+    } catch { /* NaN: no se pudo medir — el juez no aprueba lo que no midió */ }
+    return { k, x: q.x, y: q.y, zPuntaMm: +zPunta.toFixed(3), aceroMm3: +mm3.toFixed(3), aceroMm: +(mm3 / area).toFixed(3) };
+  });
+  const malos = out.filter((p) => !(p.aceroMm <= tolMm));
+  const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  return { ok: malos.length === 0, pines: out, nMetidos: malos.length,
+    peorMm: out.reduce((m, p) => Math.max(m, Number.isFinite(p.aceroMm) ? p.aceroMm : Infinity), 0), tolMm, ms: Math.round(t1 - t0) };
+}
+
 export interface BarrenoDeInserto { rol: 'cavidad' | 'nucleo'; que: string; diaMm: number; fuente: string }
 export interface InsertosBarrenados {
   cav: any; core: any;
@@ -1884,8 +1923,10 @@ export function barrenarInsertos(oc: any, o: {
   agua?: Array<{ id: string; p0: [number, number, number]; p1: [number, number, number]; diaMm: number }>;
   /** los tapones NPT y los O-rings del circuito: donde caen sobre un inserto, el inserto los RECIBE */
   aguaHerrajes?: Array<{ id: string; centro: [number, number, number]; dir: [number, number, number]; radioMm: number; largoMm: number }>;
-  /** los pines de la E7: punta guiada en el núcleo + hombro/cuerpo por el respaldo */
-  pines?: { posiciones: Array<{ x: number; y: number }>; puntaDiaMm: number; cuerpoDiaMm: number; puntaMm: number; zPisoMm: number };
+  /** los pines de la E7: punta guiada en el núcleo + hombro/cuerpo por el respaldo. El piso de CADA pin
+   *  es el suyo (`zPisoMm`, rayo sobre la malla — el MISMO con que la E7 construye su punta, vía
+   *  `pisoDelPin`); `zPisoRespaldoMm` (pared mediana) solo para el pin cuyo rayo no cruzó. */
+  pines?: { posiciones: Array<{ x: number; y: number; zPisoMm?: number }>; puntaDiaMm: number; cuerpoDiaMm: number; puntaMm: number; zPisoRespaldoMm: number };
 }): InsertosBarrenados {
   const barrenos: BarrenoDeInserto[] = [], notas: string[] = [];
   // caja EXACTA (Bnd_Box AddOptimal): `shapeBBox` tesela a 0.5 y aquí eso son segundos
@@ -1922,14 +1963,18 @@ export function barrenarInsertos(oc: any, o: {
   if (o.pines && o.pines.posiciones.length) {
     const p = o.pines;
     const dPunta = ejectorPinFit(p.puntaDiaMm).holeDiaMm, dCuerpo = ejectorPinFit(p.cuerpoDiaMm).holeDiaMm;
-    const zHombro = p.zPisoMm - p.puntaMm;
-    // la punta llega al PISO de la pieza (ahí acaba el acero del macho): +0.2 mm de
-    // prolongación para no dejar caras coincidentes — arriba del piso ya es plástico.
-    const zTope = p.zPisoMm + 0.2;
     // el cuerpo/hombro baja por el respaldo hasta SALIR del inserto (−2 mm de la caja).
     const zFondo = bbCore.min[2] - 2;
     for (let k = 0; k < p.posiciones.length; k++) {
       const q = p.posiciones[k];
+      // LA BROCA HASTA EL PISO REAL (orden 2026-10-06): antes TODAS las brocas iban a `base − pared MEDIANA`
+      // mientras cada punta iba a SU piso por rayo → piel de acero sobre la punta MEDIDA en la app (rayo en el
+      // eje): tapa 0.86 mm en los 8 pines, ensamble 0.57–0.66. Ahora broca y punta salen del MISMO piso.
+      const zPiso = pisoDelPin(q, p.zPisoRespaldoMm);
+      const zHombro = zPiso - p.puntaMm;
+      // la punta llega al PISO de la pieza (ahí acaba el acero del macho): +0.2 mm de
+      // prolongación para no dejar caras coincidentes — arriba del piso ya es plástico.
+      const zTope = zPiso + 0.2;
       if (zTope > zHombro) { herramientasCore.push(occCylinder(oc, dPunta / 2, zTope - zHombro, { origin: [q.x, q.y, zHombro], dir: [0, 0, 1] })); etCore.push(`pin ${k + 1} punta`); }
       if (zHombro > zFondo) { herramientasCore.push(occCylinder(oc, dCuerpo / 2, zHombro - zFondo, { origin: [q.x, q.y, zFondo], dir: [0, 0, 1] })); etCore.push(`pin ${k + 1} hombro`); }
     }
