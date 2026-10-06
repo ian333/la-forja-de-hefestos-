@@ -1705,7 +1705,8 @@ export function estacion3Dado(pkg: MoldPackage, pieza?: PiezaSpec): Estacion3Dad
  */
 import { makeBox as occMakeBox, transformShape as occTransform, cut as occCut, loftSections as occLoft, common as occCommon, volume as occVolume, tessellate as occTess,
   makeCylinder as occCylinder, makeCone as occCone, cortarHerramientas, type ReporteCorte } from '../brep/occt';
-import { ejectorPinFit } from './fits';           // holgura pin↔barreno 0.13 mm LITERAL (Kazmer §8.3.2)
+import { ejectorPinFit, guideGeom } from './fits';           // holgura pin↔barreno 0.13 mm LITERAL (Kazmer §8.3.2) · la geometría de las guías
+import { planInterlocks } from './mold-interlocks';   // EL AGUA NO CRUZA: la fuente única de los interlocks (macho y hembra)
 import { clasificarVisibilidad } from './visibilidad';
 import { splitMold, shapeBBox, draftAnalysis, type SplitMoldResult } from './mold';
 import { surfaceArea as occSurfaceArea } from '../brep/occt';   // EL PUENTE: área del sólido del árbol (occVolume ya viene arriba)
@@ -3673,7 +3674,7 @@ export interface SegmentoAgua {
  *  juez podía dar ✓ habiendo mirado sólo dos cosas de ocho (lo que pasó hasta 2026-09-21). */
 export interface ClaroAgua {
   contra: string; claroMm: number; minMm: number; ok: boolean;
-  categoria: 'placa' | 'inserto' | 'pin' | 'retorno' | 'ko' | 'tornillo' | 'colada' | 'pieza';
+  categoria: 'placa' | 'inserto' | 'pin' | 'retorno' | 'ko' | 'tornillo' | 'colada' | 'pieza' | 'interlock' | 'guia';
 }
 export interface CircuitoAgua {
   segmentos: SegmentoAgua[];
@@ -3760,10 +3761,41 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
         : /expulsor/i.test(t) ? 'pin'
         : /bebedero|compuerta|boquilla/i.test(t) ? 'colada'
         : 'placa';
-      if (cat === 'placa') continue;                 // pilares guía y demás: otra orden
+      if (cat === 'placa') continue;                 // los pilares guía entran abajo, con su buje y su hombro
       const [z0, z1] = franja[rol];
       barrenos.push({ x: h.x, y: h.y, r: h.dia / 2, tipo: `${t} · placa ${rol}`, cat, z0, z1 });
     }
+  // ══ TODO BARRENO QUE LLEVA ALGO ADENTRO (enmienda 2026-10-06, el Foco del molde del coordinador) ══
+  // MEDIDO por cuerpo, eje↔eje: en la caja grande el cruce B-lejos-2 atravesaba el INTERLOCK 3 (8.50 mm
+  // de eje a eje ⇒ se metían 7.37) y en la tapa el agua atravesaba 2 interlocks y dejaba 2.68 mm junto a
+  // 2 GUÍAS. El agua no los veía: los interlocks no viven en `standardHoles` (su fuente única es
+  // `planInterlocks`, la misma que corta macho y hembra) y los pilares guía se saltaban como «placa».
+  // Se modelan con LO QUE SE BARRENA para ellos (la misma geometría que el portamoldes):
+  //  · GUÍA (Fig 1.5, `guideGeom`): poste ⌀nom en B + contrataladro del hombro (nom+6.4) los 6 mm de
+  //    abajo de B; en A el poste entra al buje: ⌀nom el primer ¼ de A, asiento del buje (nom+8.4) el
+  //    resto y contrataladro de la brida (nom+12.4) los 5 mm de arriba.
+  //  · INTERLOCK (§12.2.5, `planInterlocks`): macho PASANTE en B (⌀d) y hembra CIEGA en A (⌀d+0.4,
+  //    hondo min(tA−4, max(8, 0.75·d)) desde la partición).
+  for (const h of standardHoles(asm, 'B')) if (/pilar guía/.test(h.type)) {
+    const G = guideGeom(h.dia);
+    const tA = asm.plates.A;
+    const g = (r: number, z0: number, z1: number, que: string) =>
+      barrenos.push({ x: h.x, y: h.y, r, tipo: `guía ${que} ⌀${(2 * r).toFixed(1)} (${h.x},${h.y})`, cat: 'guia', z0, z1 });
+    g(h.dia / 2, caraBInf, caraBSup, 'poste · placa B');
+    g(G.cboreB_shoulderMm / 2, caraBInf, caraBInf + G.shoulderHMm, 'hombro · placa B');
+    g(h.dia / 2, caraAInf, caraAInf + tA * 0.25, 'poste · placa A');
+    g(G.boreA_bushingMm / 2, caraAInf + tA * 0.25, caraASup, 'buje · placa A');
+    g(G.cboreA_flangeMm / 2, caraASup - G.flangeHMm, caraASup, 'brida del buje · placa A');
+  }
+  try {
+    const il = planInterlocks(asm);
+    const dI = il.diaMm ?? 19.05;
+    const hondoHembra = Math.min(asm.plates.A - 4, Math.max(8, Math.round(dI * 0.75)));
+    il.positions.forEach((q, k) => {
+      barrenos.push({ x: q.x, y: q.y, r: dI / 2, tipo: `interlock ${k} macho ⌀${dI} · placa B (${q.x},${q.y})`, cat: 'interlock', z0: caraBInf, z1: caraBSup });
+      barrenos.push({ x: q.x, y: q.y, r: (dI + 0.4) / 2, tipo: `interlock ${k} hembra ⌀${(dI + 0.4).toFixed(2)} · placa A (${q.x},${q.y})`, cat: 'interlock', z0: caraAInf, z1: caraAInf + hondoHembra });
+    });
+  } catch { /* sin datos de cavidad no hay interlock (el portamoldes tampoco lo pone) */ }
   // distancia en PLANTA de un punto al eje de un segmento recto (los barrenos son verticales:
   // cruzan TODA su placa, así que dentro de su franja de z el claro real es el de planta).
   const distPlanta = (ax: number, ay: number, bx: number, by: number, x: number, y: number) => {
@@ -3802,20 +3834,65 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   if (zA < zAdiseno) recortes.push(
     `lado A: H ${hDis.toFixed(2)} pedía z=${zAdiseno.toFixed(2)} pero el techo legal está en ${zAtecho.toFixed(2)} (inserto ${techoInsA} / cara superior de la placa A ${caraASup}, §9.2.7 pide r+½⌀ = ${(r + medio).toFixed(2)} mm de acero encima) ⇒ z=${zA.toFixed(2)} (H ${hA.toFixed(2)} = ${(hA / D).toFixed(2)}D, ${bandaHD(hA)}) — en la E8a esto ROMPÍA el acero (claro −${Math.abs(zAdiseno + r - techoInsA).toFixed(2)} mm)`);
   // el anillo RODEA la huella con 10 mm de aire, por eje (el cubo: 20+10 = 30 en los dos ⇒ el mismo anillo de antes)
-  const semiX = (pieza ? pieza.semiXmm : 20) + 10, semiY = (pieza ? pieza.semiYmm : 20) + 10;
   const cx = d.ejeX, cy = d.ejeY;
+  // EL ANILLO TAMBIÉN DEJA ½⌀ (enmienda 2026-10-06): en la tapa 1594C Lid la esquina noreste del anillo
+  // quedaba a 2.18 mm del asiento del buje guía desplazado (⌀33.4 en (199,159)) contra ½⌀ = 3.17. El anillo
+  // va ARRIBA de la base cerrada (z ≥ zBase + 2D, Eq 9.22): cerrarlo unos décimos hacia la pieza no la
+  // toca, sólo le quita aire. Se cierra lo MÍNIMO (de 0.25 en 0.25, hasta los 10 mm de aire) que deja ½⌀
+  // contra todo lo que vive en su franja de z; si ni así, se queda en su sitio y el juez lo reprueba.
+  const estorbanA = barrenos.filter((b) => b.cat !== 'pin' && zA + r > b.z0 && zA - r < b.z1);
+  const bordeInsX0 = cx - idm.ifx / 2, bordeInsX1 = cx + idm.ifx / 2;
+  const bordeInsY0 = cy - idm.ify / 2, bordeInsY1 = cy + idm.ify / 2;
+  // LO QUE DE VERDAD SE BARRENA del anillo: cada costado se taladra desde la cara del INSERTO (ahí van sus
+  // tapones), no de esquina a esquina. MEDIDO en la app (tapa): el tapón A-3 en la cara del inserto se metía
+  // 1.94 mm en el asiento del buje guía aunque el tramo esquina-a-esquina libraba. Se juzga el barreno entero.
+  const barrenosDelAnillo = (sx: number, sy: number): Array<[string, number, number, number, number]> => [
+    ['A-norte (barreno desde la cara del inserto)', bordeInsX0, cy + sy, cx + sx, cy + sy],
+    ['A-sur (barreno desde la cara del inserto)', cx - sx, cy - sy, bordeInsX1, cy - sy],
+    ['A-oeste (barreno de cara a cara del inserto)', cx - sx, bordeInsY0, cx - sx, bordeInsY1],
+    ['A-este (barreno de cara a cara del inserto)', cx + sx, bordeInsY0, cx + sx, bordeInsY1],
+  ];
+  const anilloLibre = (sx: number, sy: number) => barrenosDelAnillo(sx, sy)
+    .every(([, ax, ay, bx, by]) => estorbanA.every((b) => distPlanta(ax, ay, bx, by, b.x, b.y) - r - b.r >= medio - 1e-9));
+  const semiX0 = (pieza ? pieza.semiXmm : 20) + 10, semiY0 = (pieza ? pieza.semiYmm : 20) + 10;
+  let cierre = 0;
+  if (!anilloLibre(semiX0, semiY0)) {
+    for (let c = 0.25; c <= 10; c += 0.25) if (anilloLibre(semiX0 - c, semiY0 - c)) { cierre = c; break; }
+    if (cierre) recortes.push(`lado A: el anillo se cierra ${cierre} mm por lado (aire ${(10 - cierre).toFixed(2)} en vez de 10) para dejar ½⌀ de acero contra bujes/guías/interlocks/tornillos de la placa A (§9.2.7) — va sobre la base cerrada (Eq 9.22), no toca la pieza`);
+    else recortes.push(`⚠ lado A: el anillo NO libra los barrenos de la placa A con ½⌀ ni cerrándolo 10 mm (§9.2.7): el juez lo reprueba`);
+  }
+  const semiX = semiX0 - cierre, semiY = semiY0 - cierre;
   const x0 = cx - semiX, x1 = cx + semiX, y0 = cy - semiY, y1 = cy + semiY;
+  // LAS EXTENSIONES DEL ANILLO A TAMBIÉN ESQUIVAN (enmienda 2026-10-06 de EL AGUA NO CRUZA): salían
+  // clavadas en las esquinas del anillo (y0 / y1) y corrían hasta la cara de la placa pasando junto a los
+  // BUJES guía — MEDIDO en la tapa 1594C Lid: se metían 1.88 mm en el asiento del buje (⌀nom+8.4); en la
+  // carcasa quedaban 2.88 < ½⌀. La extensión puede salir de CUALQUIER punto de su costado del anillo
+  // (sigue siendo un barreno recto de la cara al anillo): se busca el más cercano a la esquina que deja
+  // ½⌀ de acero contra todo lo que comparte la franja de z del anillo (§9.2.7). Sin hueco, se queda y
+  // el juez lo reprueba.
+  const extLibre = (xa: number, xb: number, y: number) => estorbanA.every((b) =>
+    distPlanta(xa, y, xb, y, b.x, b.y) - r - b.r >= medio - 1e-9);
+  const buscaExt = (xa: number, xb: number, yIni: number, haciaArriba: boolean) => {
+    for (let dd = 0; dd <= y1 - y0; dd += 0.5) {
+      const y = haciaArriba ? yIni + dd : yIni - dd;
+      if (extLibre(xa, xb, y)) return dd === 0 ? yIni : +y.toFixed(2);   // sin corrimiento: la esquina EXACTA (no su redondeo)
+    }
+    return yIni;
+  };
+  const yIn = buscaExt(0, x0, y0, true), yOut = buscaExt(x1, baseW, y1, false);
+  if (yIn !== y0 || yOut !== y1) recortes.push(
+    `lado A: las extensiones IN/OUT salen del anillo en y ${yIn} / ${yOut} (no en sus esquinas ${y0.toFixed(1)} / ${y1.toFixed(1)}) para dejar ½⌀ de acero contra bujes/guías/interlocks/tornillos de la placa A (§9.2.7)`);
+  if (!extLibre(0, x0, yIn) || !extLibre(x1, baseW, yOut)) recortes.push(
+    `⚠ lado A: SIN HUECO para una extensión del anillo — ninguna salida de su costado deja ½⌀ contra los barrenos de la placa A (§9.2.7): el juez la reprueba`);
   const segs: SegmentoAgua[] = [
     { id: 'A-norte', p0: [x0, y1, zA], p1: [x1, y1, zA], diaMm: D, tipo: 'linea' },
     { id: 'A-sur', p0: [x0, y0, zA], p1: [x1, y0, zA], diaMm: D, tipo: 'linea' },
     { id: 'A-este', p0: [x1, y0, zA], p1: [x1, y1, zA], diaMm: D, tipo: 'linea' },
     { id: 'A-oeste', p0: [x0, y0, zA], p1: [x0, y1, zA], diaMm: D, tipo: 'linea' },
     // extensiones por la placa A hasta la cara exterior (cruzan placa↔inserto: O-RING)
-    { id: 'A-ext-in', p0: [0, y0, zA], p1: [x0, y0, zA], diaMm: D, tipo: 'extension' },
-    { id: 'A-ext-out', p0: [x1, y1, zA], p1: [baseW, y1, zA], diaMm: D, tipo: 'extension' },
+    { id: 'A-ext-in', p0: [0, yIn, zA], p1: [x0, yIn, zA], diaMm: D, tipo: 'extension' },
+    { id: 'A-ext-out', p0: [x1, yOut, zA], p1: [baseW, yOut, zA], diaMm: D, tipo: 'extension' },
   ];
-  const bordeInsX0 = cx - idm.ifx / 2, bordeInsX1 = cx + idm.ifx / 2;
-  const bordeInsY0 = cy - idm.ify / 2, bordeInsY1 = cy + idm.ify / 2;
   // ¿el anillo A vive DENTRO del inserto de cavidad? El plan de inspección lo cazó (entra
   // 1.56–2.15 mm) porque el punto 2.2 medía contra la cara de la PLACA y no contra el inserto.
   // No es un defecto: ahí VA (§4.2.1 Fig 4.13). Lo que faltaba era DECIRLO, para que quien
@@ -3829,11 +3906,11 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
     { x: x0, y: cy - idm.ify / 2, z: zA, dir: [0, -1, 0] }, { x: x0, y: cy + idm.ify / 2, z: zA, dir: [0, 1, 0] },
   ];
   const sellos: CircuitoAgua['sellos'] = [
-    { x: bordeInsX0, y: y0, z: zA, nota: 'O-ring: extensión IN cruza placa A↔inserto (§9.3.2 — fuga esperada sin sello)' },
-    { x: bordeInsX1, y: y1, z: zA, nota: 'O-ring: extensión OUT cruza placa A↔inserto' },
+    { x: bordeInsX0, y: yIn, z: zA, nota: 'O-ring: extensión IN cruza placa A↔inserto (§9.3.2 — fuga esperada sin sello)' },
+    { x: bordeInsX1, y: yOut, z: zA, nota: 'O-ring: extensión OUT cruza placa A↔inserto' },
   ];
   const inOut: CircuitoAgua['inOut'] = [
-    { etiqueta: 'A-IN', x: 0, y: y0, z: zA }, { etiqueta: 'A-OUT', x: baseW, y: y1, z: zA },
+    { etiqueta: 'A-IN', x: 0, y: yIn, z: zA }, { etiqueta: 'A-OUT', x: baseW, y: yOut, z: zA },
   ];
 
   // ── LADO B · serpentina + BAFFLE al centro del core ──
@@ -3891,7 +3968,6 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   const nB = nDiseno % 2 === 0 ? nDiseno + 1 : nDiseno;
   if (nB !== nDiseno) recortes.push(
     `lado B: ${nDiseno} líneas/lado (Eq 9.24) → ${nB}: el BAFFLE exige una línea EN el eje del macho para alimentarse (§9.3.5.2) y con n par ninguna pasa por ahí. El paso baja de ${W.toFixed(2)} a ${W.toFixed(2)} mm nominal con la línea central añadida — más cobertura, nunca menos`);
-  const xsNominal = Array.from({ length: nB }, (_, k) => cx + (k - (nB - 1) / 2) * W);
   // ── ROJO MUEVE LA LÍNEA (§9.2.7 + Fig 9.9, estrategia B) ────────────────────
   // El corrimiento de medio pitch del `ruteo` sólo libraba EL BEBEDERO. Los pines, los
   // retornos, el KO y los tornillos comparten el mismo acero y nadie los esquivaba: el plan
@@ -3899,70 +3975,158 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   // línea B busca el corrimiento MÁS CHICO en X que le deje ½⌀ contra TODOS los barrenos de
   // su franja de z — y si no existe, no se finge: se queda en su sitio y el juez lo reprueba
   // (§9.3.5.2: cuando el campo de pines tapiza la banda, la salida es baffle/bubbler).
-  const estorbanB = barrenos.filter((b) => zB + r > b.z0 && zB - r < b.z1);
-  const libreEnX = (x: number) => estorbanB.every((b) =>
-    Math.abs(x - b.x) >= r + b.r + medio || b.y < 0 || b.y > baseL);
-  const corridas: number[] = [];
-  const xs = xsNominal.map((x0v) => {
-    if (libreEnX(x0v)) return x0v;
-    for (let dd = 0.5; dd <= W / 3; dd += 0.5)
-      for (const x of [x0v + dd, x0v - dd]) if (libreEnX(x)) { corridas.push(+dd.toFixed(2)); return +x.toFixed(2); }
-    return x0v;                                   // sin hueco: se REPORTA, no se inventa
-  });
-  const yCr0 = 20, yCr1 = baseL - 20;
-  for (let k = 0; k < nB; k++) segs.push({ id: `B-linea${k}`, p0: [xs[k], 0, zB], p1: [xs[k], baseL, zB], diaMm: D, tipo: 'linea' });
-  // ── EL CRUCE TAMBIÉN SE MUEVE (§9.2.7, la misma estrategia B de las líneas) ──────────────
-  // Los cruces vivían en y = 20 / L−20 clavados y nadie los esquivaba: las líneas se corrían en X
-  // para librar pines/retornos/KO/tornillos, pero el cruce que las une pasaba por encima de lo que
-  // hubiera en esa franja. MEDIDO (orden LAS REGLAS DE HEFESTOS): cuando la placa expulsora crece
-  // en Y para sacar los retornos ⌀12 del inserto, el retorno cae en y ≈ 18.5 — encima del cruce
-  // (carcasa 1594C Box: agua-B-cruce ↔ pines-retorno 2.65 mm en la app; el cubo ya tenía 4 rojos de
-  // retorno en el juez con los retornos DENTRO del inserto). Aquí cada cruce busca el corrimiento
-  // MÁS CHICO en Y que le deje ½⌀ contra TODOS los barrenos de su franja de z, sin salirse de la
-  // placa (½⌀ a la cara); si no existe, se queda y el juez lo reprueba — no se finge.
-  // …y ½⌀ contra las paredes del BOLSILLO del inserto de núcleo (§9.2.7 «any other mold component»)
-  // cuando el cruce corre a la altura del inserto y su tramo pasa por encima de él: correrse hasta
-  // quedar a 2 mm de la pared (lo primero que salió en la carcasa, y = 31 contra la pared en 36.5)
-  // cambiaba un rojo por otro que el juez no ve. Cruzar la pared DE LLENO, como las líneas, sí vale.
-  const paredesInsB = zB + r > pisoInsB ? [bordeInsY0, bordeInsY1] : [];
-  const segLibre = (x0: number, x1: number, y: number) => estorbanB.every((b) =>
-    distPlanta(x0, y, x1, y, b.x, b.y) - r - b.r >= medio - 1e-9)
-    && (Math.max(x0, x1) < bordeInsX0 || Math.min(x0, x1) > bordeInsX1 || paredesInsB.every((yw) => Math.abs(y - yw) - r >= medio - 1e-9));
-  const yCrMin = r + medio, yCrMax = baseL - r - medio;
-  const yCruce: number[] = [];
-  const cruceCorrido: string[] = [];
-  for (let k = 0; k < nB - 1; k++) {
-    const lejos = k % 2 === 0, y0c = lejos ? yCr1 : yCr0;
-    let y = y0c;
-    if (!segLibre(xs[k], xs[k + 1], y0c)) {
-      busca: for (let dd = 0.5; dd <= baseL / 4; dd += 0.5)
-        for (const yy of [y0c - dd, y0c + dd]) if (yy >= yCrMin && yy <= yCrMax && segLibre(xs[k], xs[k + 1], yy)) { y = +yy.toFixed(2); break busca; }
-      cruceCorrido.push(`${lejos ? 'lejos' : 'cerca'}-${k} y ${y0c} → ${y}`);
+  // ══ EL AGUA NO CRUZA LOS RETORNOS (orden 2026-10-06) ═══════════════════════════════════
+  // MEDIDO (revisión cruzada en la app real; y analítico eje↔eje en node, `el-plan-dev4/agua`):
+  //  · caja grande 1599HBK: las líneas B-0 y B-4 pasaban a 5.40 mm del eje de los 4 retornos ⌀12
+  //    (radios 3.17 + 6.07 del barreno = 9.24 ⇒ se metían 3.77 mm: CUATRO cruces).
+  //  · el CUBO: la línea del baffle (x = 98) pasaba a 7.00 mm de los 4 retornos (91 y 105, a 14 mm
+  //    uno del otro): otros CUATRO cruces, que el juez ya listaba en rojo y nadie movía. Girada, choca
+  //    con las guías (y = 162, hombro ⌀26.4) y los interlocks: en su base de 196 NO HAY LUGAR — se dice.
+  // El trazado SÍ veía los retornos; lo que lo cegaba era el flujo de datos de los PINES y el
+  // «si no hay hueco, quédate donde estabas»:
+  //  1) con la PIEZA SOLTADA, `standardHoles` trae el campo de pines del PAQUETE (36 pines ⌀12 en
+  //     rejilla en 1599HBK). Esos pines NO EXISTEN en el molde de la pieza: los reales los pone la E7
+  //     (agarre §11.2.5) DESPUÉS del agua y se mueven ELLOS fuera de ella (`claroPinAgua`; decisión
+  //     de ian 2026-09-22: «primero se mueve el pin»); la E10 los juzga con esa misma regla. El
+  //     fantasma de x = 114 cerraba la única ventana a la derecha del retorno (x ≥ 103.4 contra
+  //     x ≤ 101.6) y la de la izquierda quedaba a 17.8 mm, fuera de la búsqueda de W/3 = 16.9…
+  //  2) …y sin hueco la línea se quedaba en su x NOMINAL — encima del retorno — en silencio.
+  // AHORA: con la pieza soltada el agua no esquiva ni juzga pines fantasma; los barrenos que NO se
+  // mueven (retornos, KO, tornillos, colada — el RETORNO va en las esquinas de la expulsora y guía
+  // el paquete: aquí se mueve LA LÍNEA, ian 2026-09-22) mandan sobre los pines: si ningún
+  // corrimiento ≤ W/3 libra a todos, se busca hasta W/2 el que libra a los INAMOVIBLES (el pin que
+  // quede encima lo mueve su estación, como ya hace). La línea del BAFFLE no se corre nunca (el bore
+  // sube desde el eje del macho, §9.3.5.2): si un inamovible la tapa, esa orientación NO SIRVE y
+  // se PARTE el circuito de la otra forma posible — la serpentina girada 90° (líneas en Y→X), la
+  // misma figura del libro en el otro eje. Si ninguna de las dos libra todo, se toma la de menos
+  // cruces y se dice con su nombre (regla de Hefestos: girar sólo si hace falta; sin cita).
+  const barrenosAgua = pieza ? barrenos.filter((b) => b.cat !== 'pin') : barrenos;
+  const estorbanB = barrenosAgua.filter((b) => zB + r > b.z0 && zB - r < b.z1);
+  const kBaffle = (nB - 1) / 2;                           // nB es impar: la línea del medio alimenta el baffle
+  // el trazo en un marco (u, v): u = A TRAVÉS de las líneas, v = A LO LARGO. Sin girar, u = x y v = y
+  // (el trazo de siempre, número por número); girada, u = y y v = x.
+  const trazaB = (rot: boolean) => {
+    const U = (x: number, y: number) => (rot ? y : x), V = (x: number, y: number) => (rot ? x : y);
+    const P = (u: number, v: number): [number, number, number] => (rot ? [v, u, zB] : [u, v, zB]);
+    const Dir = (du: number, dv: number): [number, number, number] => (rot ? [dv, du, 0] : [du, dv, 0]);
+    const vLen = rot ? baseW : baseL;
+    const cu = U(cx, cy), cv = V(cx, cy);
+    const insU0 = rot ? bordeInsY0 : bordeInsX0, insU1 = rot ? bordeInsY1 : bordeInsX1;
+    const insV0 = rot ? bordeInsX0 : bordeInsY0, insV1 = rot ? bordeInsX1 : bordeInsY1;
+    const ejeA = rot ? 'Y' : 'X', ejeL = rot ? 'X' : 'Y';
+    const ob = estorbanB.map((b) => ({ ...b, u: U(b.x, b.y), v: V(b.x, b.y) }));
+    const inm = ob.filter((b) => b.cat !== 'pin');
+    const rec: string[] = [];
+    const libreDe = (lista: typeof ob) => (u: number) => lista.every((b) =>
+      Math.abs(u - b.u) >= r + b.r + medio || b.v < 0 || b.v > vLen);
+    const libreTodo = libreDe(ob), libreInm = libreDe(inm);
+    const usNominal = Array.from({ length: nB }, (_, k) => cu + (k - (nB - 1) / 2) * W);
+    const corridas: number[] = [], soloInm: string[] = [], sinHueco: string[] = [];
+    const us = usNominal.map((u0, k) => {
+      if (libreTodo(u0)) return u0;
+      if (k === kBaffle) {                        // el pin que la tape CEDE (A-239 al revés); el inamovible no
+        if (!libreInm(u0)) sinHueco.push(`B-linea${k} (la del BAFFLE, ${ejeA.toLowerCase()} ${u0.toFixed(1)})`);
+        return u0;
+      }
+      for (let dd = 0.5; dd <= W / 3; dd += 0.5)
+        for (const u of [u0 + dd, u0 - dd]) if (libreTodo(u)) { corridas.push(+dd.toFixed(2)); return +u.toFixed(2); }
+      for (let dd = 0; dd <= W / 2; dd += 0.5)
+        for (const u of [u0 + dd, u0 - dd]) if (libreInm(u)) {
+          corridas.push(+dd.toFixed(2));
+          soloInm.push(`B-linea${k} ${ejeA.toLowerCase()} ${u0.toFixed(1)} → ${u.toFixed(1)}`);
+          return +u.toFixed(2);
+        }
+      sinHueco.push(`B-linea${k} (${ejeA.toLowerCase()} ${u0.toFixed(1)})`);
+      return u0;                                  // sin hueco: se REPORTA, no se inventa
+    });
+    if (soloInm.length) rec.push(
+      `lado B: ${soloInm.length} línea(s) se corrieron para librar los barrenos que NO se mueven (retornos/KO/tornillos/colada) con ½⌀ de acero (§9.2.7); el pin que quede encima lo mueve su estación (E7/E10): ${soloInm.join(' · ')} mm`);
+    if (sinHueco.length) rec.push(
+      `⚠ lado B: SIN HUECO para ${sinHueco.join(', ')} — ni corriéndola W/2 = ${(W / 2).toFixed(1)} mm libra los retornos/KO/tornillos con ½⌀ (§9.2.7)`);
+    // ── EL CRUCE TAMBIÉN SE MUEVE (§9.2.7, la misma estrategia B de las líneas) ──────────────
+    // Los cruces vivían en y = 20 / L−20 clavados y nadie los esquivaba: las líneas se corrían en X
+    // para librar pines/retornos/KO/tornillos, pero el cruce que las une pasaba por encima de lo que
+    // hubiera en esa franja. MEDIDO (orden LAS REGLAS DE HEFESTOS): cuando la placa expulsora crece
+    // en Y para sacar los retornos ⌀12 del inserto, el retorno cae en y ≈ 18.5 — encima del cruce
+    // (carcasa 1594C Box: agua-B-cruce ↔ pines-retorno 2.65 mm en la app; el cubo ya tenía 4 rojos de
+    // retorno en el juez con los retornos DENTRO del inserto). Aquí cada cruce busca el corrimiento
+    // MÁS CHICO en Y que le deje ½⌀ contra TODOS los barrenos de su franja de z, sin salirse de la
+    // placa (½⌀ a la cara); si no existe, contra los INAMOVIBLES (la misma prioridad que las líneas);
+    // si ni así, se queda y el juez lo reprueba — no se finge.
+    // …y ½⌀ contra las paredes del BOLSILLO del inserto de núcleo (§9.2.7 «any other mold component»)
+    // cuando el cruce corre a la altura del inserto y su tramo pasa por encima de él: correrse hasta
+    // quedar a 2 mm de la pared (lo primero que salió en la carcasa, y = 31 contra la pared en 36.5)
+    // cambiaba un rojo por otro que el juez no ve. Cruzar la pared DE LLENO, como las líneas, sí vale.
+    const vCr0 = 20, vCr1 = vLen - 20;
+    const paredes = zB + r > pisoInsB ? [insV0, insV1] : [];
+    const segLibre = (u0: number, u1: number, v: number, lista = ob) => lista.every((b) =>
+      distPlanta(u0, v, u1, v, b.u, b.v) - r - b.r >= medio - 1e-9)
+      && (Math.max(u0, u1) < insU0 || Math.min(u0, u1) > insU1 || paredes.every((w) => Math.abs(v - w) - r >= medio - 1e-9));
+    const vMin = r + medio, vMax = vLen - r - medio;
+    const vCruce: number[] = [];
+    const cruceCorrido: string[] = [];
+    for (let k = 0; k < nB - 1; k++) {
+      const lejos = k % 2 === 0, v0c = lejos ? vCr1 : vCr0;
+      let v = v0c;
+      if (!segLibre(us[k], us[k + 1], v0c)) {
+        let hallado = false;
+        for (const lista of [ob, inm]) {
+          busca: for (let dd = 0.5; dd <= vLen / 4; dd += 0.5)
+            for (const vv of [v0c - dd, v0c + dd]) if (vv >= vMin && vv <= vMax && segLibre(us[k], us[k + 1], vv, lista)) { v = +vv.toFixed(2); hallado = true; break busca; }
+          if (hallado) break;
+        }
+        cruceCorrido.push(`${lejos ? 'lejos' : 'cerca'}-${k} ${ejeL.toLowerCase()} ${v0c} → ${hallado ? v : `${v} ⚠ SIN HUECO`}`);
+      }
+      vCruce.push(v);
     }
-    yCruce.push(y);
+    const sg: SegmentoAgua[] = [];
+    for (let k = 0; k < nB; k++) sg.push({ id: `B-linea${k}`, p0: P(us[k], 0), p1: P(us[k], vLen), diaMm: D, tipo: 'linea' });
+    // los cruces alternan extremo (serpentín): el par va al fondo, el impar al frente
+    for (let k = 0; k < nB - 1; k++) {
+      const lejos = k % 2 === 0, vCr = vCruce[k];
+      sg.push({ id: `B-cruce-${lejos ? 'lejos' : 'cerca'}${nB > 3 ? `-${k}` : ''}`, p0: P(us[k], vCr), p1: P(us[k + 1], vCr), diaMm: D, tipo: 'cruce' });
+    }
+    if (cruceCorrido.length) rec.push(
+      `lado B: ${cruceCorrido.length} cruce(s) se CORRIERON en ${ejeL} para librar retornos/pines/KO/tornillos con ½⌀ de acero (§9.2.7): ${cruceCorrido.join(' · ')} mm`);
+    // el agua ENTRA por la línea 0 (v=0) y SALE por la última (v=vLen): esos dos extremos quedan
+    // abiertos; todos los demás se tapan. (El cubo: 4 tapones de línea + 2 bocas de cruce = 6.)
+    const tp: CircuitoAgua['tapones'] = [];
+    const tap = (u: number, v: number, du: number, dv: number) => { const q = P(u, v); tp.push({ x: q[0], y: q[1], z: zB, dir: Dir(du, dv) }); };
+    for (let k = 0; k < nB; k++) {
+      if (k > 0) tap(us[k], 0, 0, -1);
+      if (k < nB - 1) tap(us[k], vLen, 0, 1);
+    }
+    for (let k = 0; k < nB - 1; k++) {                   // bocas de los cruces (se barrenan desde la cara en u)
+      if (k % 2 === 0) tap(us[0] - r, vCruce[k], -1, 0);
+      else tap(us[nB - 1] + r, vCruce[k], 1, 0);
+    }
+    const qIn = P(us[0], 0), qOut = P(us[nB - 1], vLen);
+    const io: CircuitoAgua['inOut'] = [{ etiqueta: 'B-IN', x: qIn[0], y: qIn[1], z: zB }, { etiqueta: 'B-OUT', x: qOut[0], y: qOut[1], z: zB }];
+    if (corridas.length) rec.push(
+      `lado B: ${corridas.length} de ${nB} líneas se CORRIERON en ${ejeA} (máx ${Math.max(...corridas)} mm) para librar pines/retornos/KO/tornillos con ½⌀ de acero (§9.2.7). Paso real ${nB > 1 ? Math.max(...us.slice(1).map((u, k) => +(u - us[k]).toFixed(2))) : 0} mm contra 2H = ${(2 * hB).toFixed(2)} (Eq 9.24)`);
+    // dónde cruza cada línea la costura (el O-ring de §9.3.2): en el eje del macho, a lo largo de la línea
+    const costuras = us.map((u) => { const q = P(u, cv); return { x: q[0], y: q[1] }; });
+    // los CRUCES que quedan contra lo que no se mueve: lo que decide la orientación
+    const duros = sg.reduce((n, s) => n + inm.filter((b) =>
+      distPlanta(U(s.p0[0], s.p0[1]), V(s.p0[0], s.p0[1]), U(s.p1[0], s.p1[1]), V(s.p1[0], s.p1[1]), b.u, b.v) - r - b.r < medio - 1e-9).length, 0);
+    // y el PEOR acero que queda (negativo = el barreno de agua se mete en el otro): desempata
+    const peor = Math.min(Infinity, ...sg.flatMap((s) => inm.map((b) =>
+      distPlanta(U(s.p0[0], s.p0[1]), V(s.p0[0], s.p0[1]), U(s.p1[0], s.p1[1]), V(s.p1[0], s.p1[1]), b.u, b.v) - r - b.r)));
+    return { segs: sg, tapones: tp, inOut: io, recortes: rec, costuras, duros, peor, rot };
+  };
+  const trazoRecto = trazaB(false);
+  let trazo = trazoRecto;
+  if (trazoRecto.duros > 0) {
+    const girado = trazaB(true);
+    if (girado.duros < trazoRecto.duros || (girado.duros === trazoRecto.duros && girado.peor > trazoRecto.peor + 1e-9)) {
+      trazo = girado;
+      recortes.push(`lado B: la serpentina se GIRÓ 90° (líneas a lo largo de X): a lo largo de Y quedaban ${trazoRecto.duros} par(es) línea↔retorno/guía/interlock/KO/tornillo con menos de ½⌀ de acero (§9.2.7) que ningún corrimiento libra — la línea del baffle no se puede correr (§9.3.5.2) — y girada quedan ${girado.duros}. Mismo ⌀, H, paso W y n del diseño (§9.2.6); regla de Hefestos: se gira sólo si hace falta`);
+    } else recortes.push(`⚠ lado B: ni a lo largo de Y (${trazoRecto.duros} pares, peor ${trazoRecto.peor.toFixed(2)} mm) ni girada 90° (${girado.duros}, peor ${girado.peor.toFixed(2)} mm) la serpentina libra retornos/guías/interlocks/KO/tornillos con ½⌀ (§9.2.7): NO HAY LUGAR en esta base — se queda la de menos daño y el juez la reprueba. Salidas: base más grande, mover guías/interlocks o partir el circuito en dos`);
   }
-  // los cruces alternan extremo (serpentín): el par va al fondo, el impar al frente
-  for (let k = 0; k < nB - 1; k++) {
-    const lejos = k % 2 === 0, yCr = yCruce[k];
-    segs.push({ id: `B-cruce-${lejos ? 'lejos' : 'cerca'}${nB > 3 ? `-${k}` : ''}`, p0: [xs[k], yCr, zB], p1: [xs[k + 1], yCr, zB], diaMm: D, tipo: 'cruce' });
-  }
-  if (cruceCorrido.length) recortes.push(
-    `lado B: ${cruceCorrido.length} cruce(s) se CORRIERON en Y para librar retornos/pines/KO/tornillos con ½⌀ de acero (§9.2.7): ${cruceCorrido.join(' · ')} mm`);
-  // el agua ENTRA por la línea 0 (y=0) y SALE por la última (y=baseL): esos dos extremos quedan
-  // abiertos; todos los demás se tapan. (El cubo: 4 tapones de línea + 2 bocas de cruce = 6.)
-  for (let k = 0; k < nB; k++) {
-    if (k > 0) tapones.push({ x: xs[k], y: 0, z: zB, dir: [0, -1, 0] });
-    if (k < nB - 1) tapones.push({ x: xs[k], y: baseL, z: zB, dir: [0, 1, 0] });
-  }
-  for (let k = 0; k < nB - 1; k++) {                     // bocas de los cruces (se barrenan desde x)
-    const lejos = k % 2 === 0;
-    tapones.push(lejos
-      ? { x: xs[0] - r, y: yCruce[k], z: zB, dir: [-1, 0, 0] }
-      : { x: xs[nB - 1] + r, y: yCruce[k], z: zB, dir: [1, 0, 0] });
-  }
-  inOut.push({ etiqueta: 'B-IN', x: xs[0], y: 0, z: zB }, { etiqueta: 'B-OUT', x: xs[nB - 1], y: baseL, z: zB });
-  if (corridas.length) recortes.push(
-    `lado B: ${corridas.length} de ${nB} líneas se CORRIERON en X (máx ${Math.max(...corridas)} mm) para librar pines/retornos/KO/tornillos con ½⌀ de acero (§9.2.7). Paso real ${nB > 1 ? Math.max(...xs.slice(1).map((x, k) => +(x - xs[k]).toFixed(2))) : 0} mm contra 2H = ${(2 * hB).toFixed(2)} (Eq 9.24)`);
+  recortes.push(...trazo.recortes);
+  segs.push(...trazo.segs);
+  tapones.push(...trazo.tapones);
+  inOut.push(...trazo.inOut);
 
   // el BAFFLE (Tabla 9.3): bore que SUBE por el macho desde la línea central
   const boreDiaMm = 9.53;                                // JP-352 (3/8")
@@ -3973,7 +4137,7 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   // un O-ring POR LÍNEA que cruza la costura (§9.3.2): cada junta es una fuga futura y se
   // cuenta, no se esconde — la misma doctrina que ya se aplica a las extensiones del lado A.
   if (cruzaCosturaB) for (let k = 0; k < nB; k++)
-    sellos.push({ x: xs[k], y: cy, z: pisoInsB, nota: `O-ring: la línea B${k} cruza la costura inserto↔placa B (§9.3.2 — fuga esperada sin sello)` });
+    sellos.push({ ...trazo.costuras[k], z: pisoInsB, nota: `O-ring: la línea B${k} cruza la costura inserto↔placa B (§9.3.2 — fuga esperada sin sello)` });
   const baffle = { x: cx, y: cy, zBot: zB, zTop: zTopBaffle, boreDiaMm, claroApiceMm: +(apiceInteriorZ - zTopBaffle).toFixed(2) };
 
   // ── EL JUEZ: claros medidos (½⌀ de acero contra TODO, §9.2.7) ──
@@ -3984,7 +4148,7 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   mide('anillo A ↔ techo del inserto de cavidad', techoInsA - (zA + r), medio, 'inserto');
   mide('anillo A ↔ techo de la pieza (base cerrada)', zA - r - zBase, medio, 'pieza');
   mide('baffle ↔ ápice interior del macho', apiceInteriorZ - zTopBaffle, boreDiaMm / 2, 'pieza');
-  mide('extensión A-IN ↔ borde de la base (sale a cara)', y0 - 0 > 0 ? y0 : 0, D, 'placa');
+  mide('extensión A-IN ↔ borde de la base (sale a cara)', yIn - 0 > 0 ? yIn : 0, D, 'placa');
 
   // ══ EL JUEZ COMPLETO (orden 2026-09-10 EL AGUA DICE DOS COSAS) ═════════════
   // §9.2.7 LITERAL: "at least half a cooling diameter between the surface of the cooling
@@ -4008,9 +4172,18 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
   if (cruzaA) mide('anillo A ↔ piso del INSERTO de cavidad (va DENTRO: §4.2.1)', (zA - r) - zPart, medio, 'inserto');
 
   let pares = 0;
+  // el anillo A se juzga por su BARRENO completo (de la cara del inserto), no sólo de esquina a esquina
+  for (const [id, ax, ay, bx, by] of barrenosDelAnillo(semiX, semiY))
+    for (const b of estorbanA) {
+      pares++;
+      const claro = distPlanta(ax, ay, bx, by, b.x, b.y) - r - b.r;
+      if (claro < medio - 1e-9) mide(`${id} ↔ ${b.tipo}`, claro, medio, b.cat);
+    }
   for (const sg of segs) {
     if (sg.tipo === 'baffle') continue;              // vertical: su claro es el del ápice
-    for (const b of barrenos) {
+    // con la pieza soltada los pines del paquete son fantasma: el par pin↔agua lo juzga la E10
+    // con los pines REALES (`claroPinAgua`); aquí sólo daban rojos que no existen (carcasa 10 × −2.24)
+    for (const b of barrenosAgua) {
       if (!comparte(sg, b)) continue;
       pares++;
       const claro = distPlanta(sg.p0[0], sg.p0[1], sg.p1[0], sg.p1[1], b.x, b.y) - sg.diaMm / 2 - b.r;
@@ -4031,6 +4204,7 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
       placa: porCategoria('placa'), inserto: porCategoria('inserto'), pin: porCategoria('pin'),
       retorno: porCategoria('retorno'), ko: porCategoria('ko'), tornillo: porCategoria('tornillo'),
       colada: porCategoria('colada'), pieza: porCategoria('pieza'),
+      interlock: porCategoria('interlock'), guia: porCategoria('guia'),
     },
   };
 
@@ -4304,7 +4478,7 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
     `SALIDA DEL LIBRO (R52): pin ESCALONADO — punta ⌀${d8} × 50 GUIADA en su barreno + cuerpo al hombro (+1 → catálogo) cruzando el claro libre`,
     pz
       ? `A-239 EJERCIDO: los ${pz.posiciones.length} pines van donde la pieza AGARRA al macho (§11.2.5, medido en su malla) y se juzgan contra la serpentina y el baffle REALES de su E6 — ver el juez`
-      : `⚠ A-239 (¡al revés!): los pines de medio-lado en x=eje caían SOBRE el carril central del agua — y ese carril alimenta el BAFFLE: no se mueve. CEDEN LOS PINES: ±12 mm (claro 8.8) — el ciclo ejercido`,
+      : `⚠ A-239 (¡al revés!): los pines de medio-lado sobre el eje caían SOBRE el carril central del agua — y ese carril alimenta el BAFFLE: no se mueve. CEDEN LOS PINES: ±12 mm (claro 8.8) — el ciclo ejercido`,
   ];
 
   // ── los 8 pines en el ANILLO de la boca (4 esquinas = knit E7 + 4 medios) ──
@@ -4315,13 +4489,21 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
   // moverse porque alimenta el BAFFLE. R50 da el menú; aquí CEDEN LOS PINES:
   // los de las paredes Y se corren ±12 mm del eje (quedan en su land, libran
   // el carril con 8.8 mm). El agua conserva sus carriles; el ciclo, ejercido.
+  // EL CARRIL LO DICE EL CIRCUITO, no un eje clavado (orden EL AGUA NO CRUZA LOS RETORNOS, 2026-10-06):
+  // la serpentina puede GIRARSE 90° para librar retornos/guías/interlocks (estacion8Circuito) y entonces
+  // su carril central corre a lo largo de X, en y = eje. Los pines que ceden son los que caen sobre ESE
+  // carril: el mismo patrón, transpuesto (x↔y alrededor del eje). Sin giro, el patrón de siempre.
+  const lineaBaffle = circuito.segmentos.find((g) => g.tipo === 'linea' && g.p0[2] < d.zPartMm
+    && Math.abs((g.p1[0] - g.p0[0]) * (cy - g.p0[1]) - (g.p1[1] - g.p0[1]) * (cx - g.p0[0])) < 1e-6 * Math.hypot(g.p1[0] - g.p0[0], g.p1[1] - g.p0[1]));
+  const carrilEnX = !!lineaBaffle && Math.abs(lineaBaffle.p1[0] - lineaBaffle.p0[0]) > Math.abs(lineaBaffle.p1[1] - lineaBaffle.p0[1]);
+  const T = (x: number, y: number) => (carrilEnX ? { x: cx + (y - cy), y: cy + (x - cx) } : { x, y });
   const posiciones: Estacion10Dado['pines']['posiciones'] = pz
     // la pieza soltada: donde AGARRA al macho (§11.2.5 Fig 11.11), medido en su malla, ya en el marco de la base
     ? pz.posiciones.map((p) => ({ x: p.x, y: p.y, tipo: 'agarre' as const, zPisoMm: p.zPisoMm }))
     : [
       ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sy]) => ({ x: cx + sx * semi, y: cy + sy * semi, tipo: 'esquina-knit' as const })),
-      { x: cx + semi, y: cy, tipo: 'medio-lado' as const }, { x: cx - semi, y: cy, tipo: 'medio-lado' as const },
-      { x: cx - 12, y: cy + semi, tipo: 'medio-lado' as const }, { x: cx + 12, y: cy - semi, tipo: 'medio-lado' as const },
+      { ...T(cx + semi, cy), tipo: 'medio-lado' as const }, { ...T(cx - semi, cy), tipo: 'medio-lado' as const },
+      { ...T(cx - 12, cy + semi), tipo: 'medio-lado' as const }, { ...T(cx + 12, cy - semi), tipo: 'medio-lado' as const },
     ];
   if (o?.pinExtra) posiciones.push({ x: o.pinExtra.x, y: o.pinExtra.y, tipo: 'medio-lado' });
   const nP = posiciones.length;
