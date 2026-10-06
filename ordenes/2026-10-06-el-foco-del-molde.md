@@ -44,6 +44,11 @@ reales de la revisión cruzada los encontraron agentes leyendo números, no el o
 - src/forja/mold/foco-molde.ts
 - src/forja/brep/FocoMolde3D.tsx
 
+- public/evidencia/2026-10-06-el-foco-del-molde/antes-molde-1599HBK.png
+- public/evidencia/2026-10-06-el-foco-del-molde/foco-escaneado-1599HBK.png
+- public/evidencia/2026-10-06-el-foco-del-molde/foco-interlock-1599HBK.png
+- public/evidencia/2026-10-06-el-foco-del-molde/foco-escaneado-tapa.png
+
 ## BORRA
 - (nada)
 
@@ -95,3 +100,12 @@ reales de la revisión cruzada los encontraron agentes leyendo números, no el o
 
 ## EVIDENCIA (se declara ANTES de trabajar)
 - lista de hallazgos por pieza (JSON) antes/después de la fusión; capturas 4K del escaneo y de cada punto débil; censo de Canvas = igual.
+
+## AVANCE 1 (2026-10-06 · medido en la app real, dev3, 1536×864 @2.5)
+- Motor `escanearMolde`: 1599HBK 82 barrenos, 1005 pares eje a eje, 37 ms → el agua atraviesa 4 retornos (−3.78/−3.71) e INTERLOCK 3
+  (−7.37, NUEVO), panzazo junto a EP-03 (3.49 vs 3.17). Tapa 68 barrenos, 627 pares, 20 ms → 8 pines con 0.86 mm de acero (= revisión
+  cruzada), el agua atraviesa 2 interlocks (−5.20/−1.20, NUEVO), 1.03 junto al interlock 2, 2.68 junto a 2 guías, 3.30 junto a 2 retornos.
+  Los dos defectos conocidos salen idénticos a lo medido por los agentes; los interlocks se pasaron a la orden del agua (enmienda).
+- Visual: pulso + rombos pulsantes en cada lugar + fichas que no se enciman + holograma cian + paneles fuera + cámara que vuela al
+  error con sus dos cuerpos en cian/rojo. Grupos: un problema en N lugares = 1 ficha (tapa 16 → 5).
+- Pendiente: el inspector LEE focoMolde (una verdad); video 60 fps del escaneo; antes/después tras fusionar las otras dos órdenes.

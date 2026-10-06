@@ -57,6 +57,8 @@ import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, PALETA_FOCO, type CotaSet } from './MoldCotas3D';
 import { medidasDeLaPieza } from '../mold/foco-medidas';   // U3 · EL FOCO: el plano, encima de la pieza
 import { lentesDelFoco, type LentesFoco, type LenteId, type CampoGPU } from '../mold/foco-lentes';   // U10 · EL FOCO: el ANÁLISIS, encima de la pieza
+import { escanearMolde, type ResultadoFoco } from '../mold/foco-molde';
+import { FocoMoldeEscena, FocoMoldeHUD } from './FocoMolde3D';   // EL FOCO DEL MOLDE: el pulso, los puntos débiles y las fichas   // EL FOCO DEL MOLDE: los hallazgos por CUERPO, con lugar 3D (orden 2026-10-06)
 import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
@@ -3632,6 +3634,14 @@ function CotaInspLabels({ sets, refs, testId = 'cota-inspeccion' }: { sets: Cota
 // ──────────────────────────────────────────────────────────────────
 // Componente principal
 // ──────────────────────────────────────────────────────────────────
+/** EL FOCO DEL MOLDE · el tinte: bajo el Foco el acero se enfría a holograma (cian frío), el agua brilla, la pieza
+ *  se apaga. Es la regla de Horizon de foco-lentes.ts: lo que el aparato TRAZA es cian. */
+function focoMoldeTinte(parts: Array<{ role: string }>): Record<string, string> {
+  const c: Record<string, string> = {};
+  for (const p of parts) c[p.role] = p.role.startsWith('agua') ? '#38c8ff' : p.role === 'pieza' ? '#2a4a5c' : p.role.startsWith('pin') ? '#9fe6ff' : '#7fb8d4';
+  return c;
+}
+
 export default function ForgeBRepStudio() {
   const [oc, setOc] = useState<OC | null>(null);
   const [bootErr, setBootErr] = useState<string | null>(null);
@@ -5327,6 +5337,58 @@ export default function ForgeBRepStudio() {
   // identificador» — y se ve donde está el pin, no solo en la lámina. Con COTAS encendidas, cada punta lleva una
   // guía corta (10 mm, girada 45° por pin para que los letreros no se encimen) con su id y SU largo (retenedora →
   // su piso). Misma maquinaria que la cota del inspector (línea en el Canvas + div HUD proyectado).
+  // ── EL FOCO DEL MOLDE (orden 2026-10-06) ─────────────────────────────────────────────────────────
+  // ian: «como Horizon Zero Dawn… TENEMOS EL FOCO, MEJÓRALO PARA QUE TE AYUDE A IDENTIFICAR ERRORES». Con el molde
+  // en pantalla, Q ESCANEA: el pulso barre el acero, cada error se enciende en su LUGAR y la lista lleva la cámara
+  // ahí. Al escanear el acero pasa a rayos X y las cotas de auditoría se apartan; al cerrar, todo vuelve como estaba.
+  const [focoMolde, setFocoMolde] = useState<ResultadoFoco | null>(null);
+  const [focoMoldeT0, setFocoMoldeT0] = useState(0);
+  const [focoMoldeSel, setFocoMoldeSel] = useState<number | null>(null);
+  const focoMoldeFichas = useRef<Array<HTMLDivElement | null>>([]);
+  const focoMoldeGuias = useRef<SVGSVGElement | null>(null);
+  const focoMoldeAntes = useRef<{ xray: boolean; cotas: boolean; opac: Record<string, number>; colores: Record<string, string> } | null>(null);
+  const focoMoldeCaja = useMemo(() => {
+    const mn = [1e18, 1e18, 1e18], mx = [-1e18, -1e18, -1e18];
+    for (const pt of moldParts) { if (pt.role.startsWith('platina')) continue; const P = pt.positions; for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { if (P[i + k] < mn[k]) mn[k] = P[i + k]; if (P[i + k] > mx[k]) mx[k] = P[i + k]; } }
+    const c: [number, number, number] = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
+    return { c, r: Math.max(1, Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) / 2) };
+  }, [moldParts]);
+  const cerrarFocoMolde = useCallback(() => {
+    const a = focoMoldeAntes.current;
+    if (a) { setMoldXray(a.xray); setCotasOn(a.cotas); setMoldOpacity(a.opac); setMoldColors(a.colores); }
+    focoMoldeAntes.current = null; setFocoMolde(null); setFocoMoldeSel(null);
+  }, [setMoldXray, setCotasOn, setMoldOpacity, setMoldColors]);
+  const escanearElMolde = useCallback(() => {
+    if (!moldParts.length) return null;
+    const r = escanearMolde(moldParts);
+    if (!focoMoldeAntes.current) focoMoldeAntes.current = { xray: moldXray, cotas: cotasOn, opac: { ...(moldOpacity as Record<string, number>) }, colores: { ...(moldColors as Record<string, string>) } };
+    // EL MUNDO SE ENFRÍA (Horizon): bajo el Foco el acero es holograma cian; el agua, cian vivo; la pieza, apagada
+    setMoldXray(true); setCotasOn(false); setMoldColors(focoMoldeTinte(moldParts));
+    focoMoldeFichas.current = []; setFocoMoldeSel(null);
+    setFocoMolde(r); setFocoMoldeT0(performance.now());
+    return r;
+  }, [moldParts, moldXray, cotasOn, moldOpacity, moldColors, setMoldXray, setCotasOn, setMoldColors]);
+  /** elegir un hallazgo: la cámara vuela a su lugar y solo sus dos cuerpos quedan sólidos */
+  const elegirHallazgo = useCallback((i: number | null) => {
+    setFocoMoldeSel(i);
+    const base = focoMoldeAntes.current?.opac ?? {};
+    if (i == null || !focoMolde) { setMoldOpacity(base); setMoldColors(focoMoldeTinte(moldParts)); return; }
+    const h = focoMolde.hallazgos[i]; if (!h) return;
+    // solo los cuerpos del hallazgo quedan sólidos: el agua (o el pin) en cian, lo que atraviesa en el color del error
+    const op: Record<string, number> = {}, col = focoMoldeTinte(moldParts);
+    for (const pt of moldParts) op[pt.role] = 0.04;
+    const rojo = h.sev === 'falla' ? '#ff4d6d' : '#ffb347';
+    for (const l of h.lugares) { op[l.roles[0]] = 0.9; op[l.roles[1]] = 0.75; col[l.roles[0]] = '#4fd8ff'; col[l.roles[1]] = rojo; }
+    op['pieza'] = 0.1;
+    setMoldOpacity(op); setMoldColors(col);
+    const L = h.lugares[0].lugar;
+    orbitTo(38, 30, h.lugares.length > 1 ? 260 : 150, L[0], L[1], L[2] + 8, 900);   // +8: el grupo del molde se levanta 8 mm
+  }, [focoMolde, moldParts, setMoldOpacity, setMoldColors, orbitTo]);
+  const focoMoldeApi = useRef({ partes: moldParts, abrir: escanearElMolde, sel: elegirHallazgo, cerrar: cerrarFocoMolde });
+  focoMoldeApi.current = { partes: moldParts, abrir: escanearElMolde, sel: elegirHallazgo, cerrar: cerrarFocoMolde };
+  // si el molde se rearma, el escaneo viejo ya no describe este acero
+  useEffect(() => { if (focoMolde) cerrarFocoMolde(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [moldParts]);
+
   const cotaPines = useMemo<CotaSet[]>(() => {
     const tb = cotasOn ? mold.ciclo?.e10?.pines.tabla : undefined;
     if (!tb?.filas.length) return [];
@@ -6091,11 +6153,11 @@ export default function ForgeBRepStudio() {
     // en Horizon Zero Dawn»). Es Q y no F porque F ya era Fillet desde antes; Q está
     // libre y cae bajo el meñique. Entra al KEYMAP a propósito: así aparece en el
     // overlay de atajos (S) y se DESCUBRE, en vez de esconderse en un panel.
-    { key: 'q', icon: '◉', label: 'EL FOCO · medidas', action: () => setFocoOn((v) => !v) },
+    { key: 'q', icon: '◉', label: 'EL FOCO · escanear (molde) / medidas (pieza)', action: () => { if (moldParts.length) { if (focoMolde) cerrarFocoMolde(); else escanearElMolde(); } else setFocoOn((v) => !v); } },
     // X5 · el dictamen dejó de vivir en una columna: se LLAMA. Tecla propia porque un
     // botón que hay que buscar es un botón que no existe (lección del cargador).
     { key: 'd', icon: '§', label: 'EL DICTAMEN · los contratos sobre tu pieza', action: () => setLaminaOn((v) => !v) },
-  ], [setSketch, addOp, startHole, applyGear, enableFacePick, enableEdgePick]);
+  ], [setSketch, addOp, startHole, applyGear, enableFacePick, enableEdgePick, moldParts.length, focoMolde, cerrarFocoMolde, escanearElMolde]);
   useEffect(() => {
     const onMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
     const onKey = (e: KeyboardEvent) => {
@@ -6745,6 +6807,14 @@ export default function ForgeBRepStudio() {
         pressfits.sort((x, y) => y.volMm3 - x.volMm3);
         return { fitMm, volFitMm3, nCollisions: collisions.length, collisions, nPressfit: pressfits.length, pressfits };
       },
+      // EL FOCO DEL MOLDE (2026-10-06): los hallazgos por CUERPO con geometría exacta (cilindros eje↔eje, rayo en cada
+      // punta). UNA verdad: la escena los dibuja y el inspector los lee.
+      // (por REF: este objeto no se recrea cuando cambia el molde — leer `moldParts` directo daría el acero viejo)
+      focoMolde: () => escanearMolde(focoMoldeApi.current.partes),
+      /** abre el Foco del molde EN PANTALLA (el pulso, las fichas) y devuelve los hallazgos; sel(i) vuela a uno */
+      focoMoldeAbrir: () => focoMoldeApi.current.abrir(),
+      focoMoldeSel: (i: number | null) => focoMoldeApi.current.sel(i),
+      focoMoldeCerrar: () => focoMoldeApi.current.cerrar(),
       // AISLAR una parte del molde (para auto-revisión: ver SÓLO la cavidad y confirmar
       // que es el vaso real, no un tubo). moldShowAll() vuelve a mostrar todo.
       moldIsolate: (role: string) => { isolateMoldPlate(role); },
@@ -7206,8 +7276,13 @@ export default function ForgeBRepStudio() {
                     <CotaDriver sets={cotaInsp} refs={cotaInspRefs} />
                   </>
                 )}
+                {/* EL FOCO DEL MOLDE: el pulso, los puntos débiles y la proyección de sus fichas (cuelga del grupo del molde) */}
+                {focoMolde && (
+                  <FocoMoldeEscena foco={focoMolde} t0={focoMoldeT0} sel={focoMoldeSel} centro={focoMoldeCaja.c} radio={focoMoldeCaja.r}
+                    refs={{ fichas: focoMoldeFichas, guias: focoMoldeGuias }} />
+                )}
                 {/* EL RÓTULO 3D DE CADA PIN (LOS BOTADORES CON NOMBRE): id + largo junto a su punta */}
-                {cotaPines.length > 0 && (
+                {!focoMolde && cotaPines.length > 0 && (
                   <>
                     <CotaLines sets={cotaPines} />
                     <CotaDriver sets={cotaPines} refs={cotaPinesRefs} />
@@ -7464,7 +7539,12 @@ export default function ForgeBRepStudio() {
             CotaDriver (dentro del Canvas) les mueve el transform por frame. */}
         {cotasOn && liveCotas.length > 0 && <CotaLabels sets={liveCotas} refs={cotaRefs} />}
         {cotaInsp.length > 0 && <CotaInspLabels sets={cotaInsp} refs={cotaInspRefs} />}
-        {cotaPines.length > 0 && <CotaInspLabels sets={cotaPines} refs={cotaPinesRefs} testId="rotulo-pines" />}
+        {!focoMolde && cotaPines.length > 0 && <CotaInspLabels sets={cotaPines} refs={cotaPinesRefs} testId="rotulo-pines" />}
+        {/* EL FOCO DEL MOLDE · el HUD (fuera del Canvas: texto en DOM) */}
+        {focoMolde && (
+          <FocoMoldeHUD foco={focoMolde} pieza={docName.split(' · ')[0]} sel={focoMoldeSel} onSel={elegirHallazgo} onCerrar={cerrarFocoMolde}
+            refs={{ fichas: focoMoldeFichas, guias: focoMoldeGuias }} />
+        )}
         {/* Las etiquetas van AL PAR de sus líneas 3D: con una lente prendida el
             sólido ya está pintado y las cotas encima serían ruido sobre ruido.
             (Cazado A OJO en el drive de U10: la lente de enfriamiento salía con
