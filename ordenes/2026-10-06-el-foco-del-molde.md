@@ -3,7 +3,7 @@
 ESTADO: hoy
 PRIORIDAD: 1
 
-BASE: abcadec
+BASE: 8c217d5
 
 OBJETIVO: ian (2026-10-06): «el uso de la Forja debería sentirse como estar en una película futurista, como Horizon Zero Dawn /
 Forbidden West. TENEMOS EL FOCO, MEJÓRALO PARA QUE TE AYUDE A IDENTIFICAR ERRORES… juzga todo visualmente». Hoy, en el molde
@@ -35,6 +35,8 @@ reales de la revisión cruzada los encontraron agentes leyendo números, no el o
 - [ ] tsc sin nuevos, cubo verde, orden-gate VERDE; video del inspector al cerrar.
 
 ## TOCA
+- src/forja/mold/foco-molde.ts
+- src/forja/brep/FocoMolde3D.tsx
 - src/forja/brep/ForgeBRepStudio.tsx
 - src/forja/brep/MoldCotas3D.tsx
 - src/forja/brep/useMoldStudio.ts
@@ -109,3 +111,14 @@ reales de la revisión cruzada los encontraron agentes leyendo números, no el o
 - Visual: pulso + rombos pulsantes en cada lugar + fichas que no se enciman + holograma cian + paneles fuera + cámara que vuela al
   error con sus dos cuerpos en cian/rojo. Grupos: un problema en N lugares = 1 ficha (tapa 16 → 5).
 - Pendiente: el inspector LEE focoMolde (una verdad); video 60 fps del escaneo; antes/después tras fusionar las otras dos órdenes.
+
+## AVANCE 2 (2026-10-06 · sobre la fusión 8c217d5: broca + agua) — el Foco como JUEZ de las otras dos órdenes
+- Broca fusionada (c7f463f): el Foco (rayo, juez independiente del de la orden, que mide por volumen) da 0 pines en acero en tapa y ensamble.
+- Agua fusionada (8c217d5): tsc sin nuevos (solo Logos.tsx de main), cubo 267/267 (ACTA R94 de la orden del agua), Foco en las 4 piezas:
+  **0 puntos débiles** · avisos de panzazo: carcasa 3.49 (2 interlocks) · tapa 3.30 (retorno 2, interlock 2) · caja grande 3.49 (EP-03),
+  3.63 (interlock 3) · ensamble 3.63 (interlock 2).
+- Bujes agregados al Foco (tapa: 68 → 72 barrenos). Pendiente: el agente del agua reporta 3.18 mm junto a un buje de la tapa; el Foco
+  (buje como un solo cilindro) no lo ve bajo el margen de aviso — medir el buje por su hombro/brida antes de dar por buena una cifra.
+- Visto y pendiente: con el Foco del molde abierto siguen visibles las cotas de la PIEZA (ancho/alto/largo); video sin voz.
+- BASE movida d0e0136 → 8c217d5 (la fusión de broca + agua): sus archivos (estudio-molde-datos.ts, mold-interlocks.ts,
+  ciclo-dado-test.cjs, useMoldStudio.ts) son de SUS órdenes, cada una con su orden-gate VERDE; desde aquí este gate juzga solo lo de EL FOCO.

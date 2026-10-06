@@ -198,6 +198,7 @@ const VECINOS_DEL_AGUA: Array<{ re: RegExp; nombre: (k: number, p: PiezaMolde) =
   { re: /^pin-cuerpo-\d+$/, nombre: (_k, p) => `el cuerpo de ${idPin(p)}` },
   { re: /^pines-retorno$/, nombre: (k) => `el retorno ${k + 1}` },
   { re: /^guias$/, nombre: (k) => `la guía ${k + 1}` },
+  { re: /^bujes$/, nombre: (k) => `el buje ${k + 1}` },
   { re: /^interlocks$/, nombre: (k) => `el interlock ${k + 1}` },
   { re: /^tornillos-(cav|core)$/, nombre: (k) => `el tornillo ${k + 1}` },
   { re: /^pilares-soporte$/, nombre: (k) => `el pilar ${k + 1}` },
@@ -312,7 +313,7 @@ const es = (s: string) => s.replace(/\b([Aa]) el\b/g, '$1l').replace(/\b([Dd])e 
 
 /** cómo se llama un grupo de vecinos del agua (el rol sin su número) */
 const PLURAL: Array<[RegExp, string, string]> = [
-  [/^pines-retorno$/, 'retorno', 'retornos'], [/^interlocks$/, 'interlock', 'interlocks'], [/^guias$/, 'guía', 'guías'],
+  [/^pines-retorno$/, 'retorno', 'retornos'], [/^interlocks$/, 'interlock', 'interlocks'], [/^guias$/, 'guía', 'guías'], [/^bujes$/, 'buje', 'bujes'],
   [/^tornillos-(cav|core)$/, 'tornillo', 'tornillos'], [/^pilares-soporte$/, 'pilar', 'pilares'],
   [/^pin-cuerpo-\d+$/, 'cuerpo de botador', 'cuerpos de botador'], [/^pin-punta-\d+$/, 'punta de botador', 'puntas de botador'],
 ];
