@@ -51,7 +51,7 @@ import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, press
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
 import { predicadoDeMalla } from '../mold/flowlen';   // sprint 1: E4/E5 POR PIEZA
-import { estacion1Dado, estacion2Dado, estacion1, estacion2, piezaDesdeArbol, DADO_PIEZA, type PiezaSpec, estacion3Dado, dadoRectoShape, construirAceroE3, barrenarInsertos, verificacionE3, declDePieza, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, EJECTOR_PIN_DIAS_MM, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type PiezaParaElAgua, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion1, estacion2, piezaDesdeArbol, DADO_PIEZA, type PiezaSpec, estacion3Dado, dadoRectoShape, construirAceroE3, barrenarInsertos, juezPinesEnAcero, pisoDelPin, type JuezPinesAcero, verificacionE3, declDePieza, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, EJECTOR_PIN_DIAS_MM, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type PiezaParaElAgua, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { ABS_EJECT, effectiveArea, ejectionForce, ejectorPinSizing } from '../mold/ejection';
 import { gripEjectorLayout, pisoInteriorPorRayo, ejectorHeadGeom, claroPinAgua } from '../mold/eject-layout';
 import { resolverLlenadoFAN, resolverLlenadoFANAsync } from '../mold/fan';
@@ -135,7 +135,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
      *  (E8) sobre ESTE acero — no se re-talla nada, se le hacen sus agujeros. */
     e3solidos?: { cav: any; core: any };
     /** lo que la E8 barrenó en los insertos: barrenos con su cita, acero removido y tiempo */
-    e3barrenado?: { barrenos: Array<{ rol: string; que: string; diaMm: number; fuente: string }>; quitadoCavMm3: number; quitadoCoreMm3: number; msCav: number; msCore: number; notas: string[] };
+    e3barrenado?: { barrenos: Array<{ rol: string; que: string; diaMm: number; fuente: string }>; quitadoCavMm3: number; quitadoCoreMm3: number; msCav: number; msCore: number; notas: string[];
+      /** el juez pin ↔ acero (B-Rep): las puntas de la E7 contra el núcleo barrenado */
+      juezPinesAcero?: JuezPinesAcero };
     e3v?: VerificacionE3; e3cotas?: CotaSet[]; rayo?: PruebaRayo; interMm3?: number; e4?: Estacion4Dado; e4paint?: { part: any; flow: Float32Array; max: number }; n1?: any; frenteVert?: Float32Array; frenteQ?: Float32Array; voxPos?: Float32Array; cellMm?: number;
     /** el campo de llenado en la REJILLA COMPLETA + su geometría: de aquí sale la
      *  SUPERFICIE del fundido (`frenteSuperficie`). `frenteVert` está compactado a
@@ -1513,7 +1515,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         const pin = e10.pines.posiciones[k];
         const fila = tabla?.filas[k];
         const nombrePin = fila ? `${fila.id} · L ${fila.largoMm}` : `PIN ${k}`;
-        const zPiso = pin.zPisoMm ?? zPisoMediana;
+        const zPiso = pisoDelPin(pin, zPisoMediana);   // la MISMA fuente que su broca en la E8 (LA BROCA HASTA EL PISO REAL)
         const zHombro = zPiso - punta.puntaMm;
         const tip = OCC.makeCylinder(oc, punta.puntaDiaMm / 2, punta.puntaMm, { origin: [pin.x, pin.y, zHombro], dir: [0, 0, 1] });
         // EL CUERPO LLEGA A LA RETENEDORA (orden el-portamoldes-de-tu-pieza): `libreCuerpoMm` se midió de la retenedora a la
@@ -1580,6 +1582,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
     // 1.6–2.2 mm). Aquí se barrenan con lo que HAY en el momento (e5datums · e8.circuito · e10.pines),
     // no con valores horneados: si otra estación mueve un pin o una línea, el barreno se mueve con él.
     let barrenado: ReturnType<typeof barrenarInsertos> | null = null;
+    let juezPines: JuezPinesAcero | null = null;
     const insertosBarrenados = new Map<string, MoldPart>();
     if (ciclo.e3solidos) {
       setProgreso({ estacion: 8, paso: 'barrenando los insertos: el bebedero en la cavidad, la punta y el hombro de cada pin en el núcleo, el agua que los cruza', i: 0, n: N, t0: T });
@@ -1598,9 +1601,19 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
             ...ciclo.e8.circuito.tapones.map((tp, k) => ({ id: `tapón NPT ${k}`, centro: [tp.x - tp.dir[0] * 3, tp.y - tp.dir[1] * 3, tp.z - tp.dir[2] * 3] as [number, number, number], dir: tp.dir, radioMm: ciclo.e8!.lineas.diaMm / 2 + 1.2, largoMm: 6 })),
             ...ciclo.e8.circuito.sellos.map((sl, k) => ({ id: `O-ring ${k}`, centro: [sl.x, sl.y, sl.z - 0.8] as [number, number, number], dir: [0, 0, 1] as [number, number, number], radioMm: ciclo.e8!.lineas.diaMm / 2 + 2.2, largoMm: 1.6 })),
           ] : undefined,
+          // cada broca a SU piso (el de la punta, `pisoDelPin`): antes iban todas a la pared MEDIANA y dejaban
+          // 0.86 mm de acero sobre las 8 puntas de la tapa (0.57–0.66 en el ensamble) — orden 2026-10-06
           pines: { posiciones: ciclo.e10.pines.posiciones, puntaDiaMm: esc.puntaDiaMm, cuerpoDiaMm: esc.cuerpoDiaMm, puntaMm: esc.puntaMm,
-            zPisoMm: colB.zBaseCerradaMm - ciclo.pieza.pieza.wallMm },
+            zPisoRespaldoMm: colB.zBaseCerradaMm - ciclo.pieza.pieza.wallMm },
         });
+        // EL JUEZ PIN ↔ ACERO: las puntas de la E7 (no las brocas) contra el núcleo YA barrenado, en B-Rep exacto.
+        // El estudio de contacto de vóxel no ve bajo 0.6 mm; éste ve la centésima. Si la broca se queda corta, aquí truena.
+        try {
+          juezPines = juezPinesEnAcero(oc, barrenado.core, { posiciones: ciclo.e10.pines.posiciones, puntaDiaMm: esc.puntaDiaMm,
+            puntaMm: esc.puntaMm, zPisoRespaldoMm: colB.zBaseCerradaMm - ciclo.pieza.pieza.wallMm });
+          console.log('JUEZ_PINES_ACERO', JSON.stringify(juezPines));
+          if (!juezPines.ok) barrenado.notas.push(`⚠ ${juezPines.nMetidos} de ${juezPines.pines.length} puntas METIDAS en el acero del núcleo (peor ${juezPines.peorMm} mm): la broca no llegó a su piso`);
+        } catch (e) { console.warn('JUEZ_PINES_ERR', e); }
         t = marca(8, `barrenado de insertos (kernel · ${barrenado.barrenos.length} familias · cav ${barrenado.msCav} ms · core ${barrenado.msCore} ms)`, t);
         await respira();
         const nB = (rol: string) => barrenado!.barrenos.filter((b) => b.rol === rol).map((b) => `${b.que} ⌀${b.diaMm}`).join(' · ');
@@ -1637,7 +1650,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       const roles = new Set(porta.map((p) => p.role));
       const tris = porta.reduce((a, p) => a + p.indices.length / 3, 0) | 0;
       setCiclo({ ...ciclo, estacion: 8, portamoldes: { roles: [...roles], tris, ms: Math.round(performance.now() - T), carreraLibreMm, carreraPedidaMm },
-        ...(barrenado ? { e3barrenado: { barrenos: barrenado.barrenos, quitadoCavMm3: barrenado.quitadoCavMm3, quitadoCoreMm3: barrenado.quitadoCoreMm3, msCav: barrenado.msCav, msCore: barrenado.msCore, notas: barrenado.notas } } : {}) });
+        ...(barrenado ? { e3barrenado: { barrenos: barrenado.barrenos, quitadoCavMm3: barrenado.quitadoCavMm3, quitadoCoreMm3: barrenado.quitadoCoreMm3, msCav: barrenado.msCav, msCore: barrenado.msCore, notas: barrenado.notas, juezPinesAcero: juezPines ?? undefined } } : {}) });
       setDocName(`${ciclo.pieza.nombre} · estación 8 — EL PORTAMOLDES: el molde ENTERO (${porta.length} componentes de la base)`);
       setCollapsed((c: any) => ({ ...c, features: false }));
       cursoSet(8, [
@@ -1650,6 +1663,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         barrenado
           ? `LOS INSERTOS TRAEN SUS BARRENOS: cavidad −${barrenado.quitadoCavMm3} mm³ (${barrenado.msCav} ms) · núcleo −${barrenado.quitadoCoreMm3} mm³ (${barrenado.msCore} ms) — ${barrenado.barrenos.map((b) => `${b.que} ⌀${b.diaMm}`).join(' · ')}${barrenado.notas.length ? ` · ${barrenado.notas.join(' · ')}` : ''}`
           : '⚠ los insertos NO se barrenaron (sin el acero de la E3): macizos, como antes',
+        ...(juezPines ? [juezPines.ok
+          ? `LAS PUNTAS LIBRES: ${juezPines.pines.length} de ${juezPines.pines.length} puntas sin acero encima (juez B-Rep punta ∩ núcleo, peor ${juezPines.peorMm} mm ≤ ${juezPines.tolMm}) — cada broca llega al piso de SU pin`
+          : `⚠ PUNTAS EN EL ACERO: ${juezPines.nMetidos} de ${juezPines.pines.length} puntas atraviesan acero del núcleo (${juezPines.pines.map((p) => p.aceroMm).join(' / ')} mm) — la broca no llegó a su piso`] : []),
         // los insertos que se pintan son los BARRENADOS (mismo rol, mismo tinte: el resto del estudio no se entera)
       ], [...moldParts.filter((p: any) => !roles.has(p.role)).map((p: any) => insertosBarrenados.get(p.role) ?? p), ...porta]);
       setProgreso({ estacion: 8, paso: 'el molde está entero · arranca el ciclo', i: 3, n: N, t0: T });
