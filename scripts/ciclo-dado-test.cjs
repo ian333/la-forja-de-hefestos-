@@ -1154,13 +1154,36 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     const rj = cir.juez.resumen;
     const cerradas = ['placa', 'inserto', 'colada', 'pieza'];
     const rojosPin = cir.juez.claros.filter((c) => c.categoria === 'pin' || c.categoria === 'retorno');
-    check('E8b · EL JUEZ DEL AGUA: mide las 8 categorías (caras · inserto · pines · retornos · KO · tornillos · colada · pieza) y LISTA todos los rojos',
+    check('E8b · EL JUEZ DEL AGUA: mide las 10 categorías (caras · inserto · pines · retornos · KO · tornillos · colada · pieza · interlocks · guías) y LISTA todos los rojos',
       cir.juez.paresEvaluados >= 100
-        && Object.keys(rj).length === 8
+        && Object.keys(rj).length === 10   // ACTA R94: + interlocks y guías (enmienda del Foco del molde, 2026-10-06)
         && cerradas.every((k) => rj[k].evaluados > 0 && rj[k].fallan === 0)
         && rojosPin.every((c) => Number.isFinite(c.claroMm) && c.contra.includes('↔')),
       `${cir.juez.paresEvaluados} pares · ` + Object.entries(rj).map(([k, v]) => `${k} ${v.evaluados - v.fallan}/${v.evaluados}`).join(' · ')
         + ` · caras de placa ${rj.placa.fallan === 0 ? 'VERDE (el −1.14 mm murió)' : 'ROJO'} · ${rojosPin.length} rojos de pin/retorno LISTADOS para A-239 (peor ${rojosPin.length ? Math.min(...rojosPin.map((c) => c.claroMm)) : '—'} mm)`);
+    // ACTA R94 · EL AGUA NO CRUZA LOS RETORNOS (orden 2026-10-06): medida ANALÍTICA eje↔eje de cada
+    // línea/cruce B contra cada retorno POR CUERPO (no por rol, no por malla). El cubo: la línea del
+    // baffle (x = 98) pasa a 7.00 mm de los 4 ejes (91/105) ⇒ −2.24 mm de acero. Girada 90° choca con las
+    // guías (hombro ⌀26.4 en y = 162: −3.17) y los interlocks: en la base de 196 NO HAY LUGAR. Lo que se
+    // exige es lo que ian pidió para ese caso: «si no queda lugar, el molde lo DICE (no lo esconde)» —
+    // o libra todo, o el circuito lo declara con ⚠ y el juez lista CADA par en rojo con su número.
+    {
+      const asmR = mps.packageToAssemblySpec(e2.pkg);
+      const rpR = mds.returnPinLayout(asmR, mds.plateDepth(asmR));
+      const fitsR = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'fits.ts'));
+      const rH = fitsR.ejectorPinFit(rpR.diaMm).holeDiaMm / 2;
+      const dSeg = (g, x, y) => { const dx = g.p1[0] - g.p0[0], dy = g.p1[1] - g.p0[1], L2 = dx * dx + dy * dy;
+        const t = L2 < 1e-9 ? 0 : Math.max(0, Math.min(1, ((x - g.p0[0]) * dx + (y - g.p0[1]) * dy) / L2));
+        return Math.hypot(x - (g.p0[0] + t * dx), y - (g.p0[1] + t * dy)); };
+      const paresR = cir.segmentos.filter((g) => g.id.startsWith('B-') && g.tipo !== 'baffle')
+        .flatMap((g) => rpR.pts.map(([x, y]) => dSeg(g, x, y) - g.diaMm / 2 - rH));
+      const minR = Math.min(...paresR), nMalR = paresR.filter((a) => a < e8.cd.diaMm / 2 - 1e-6).length;
+      const libra = minR >= e8.cd.diaMm / 2 - 1e-6 && rj.retorno.fallan === 0;
+      const loDice = cir.recortes.some((t) => /NO HAY LUGAR/.test(t)) && rj.retorno.fallan === nMalR && !cir.juez.ok;
+      check('E8b · EL AGUA NO CRUZA LOS RETORNOS: o libra cada retorno con ½⌀ (por cuerpo), o el molde DICE que no hay lugar (ACTA R94)',
+        paresR.length > 0 && (libra || loDice),
+        `${paresR.length} pares línea↔retorno · peor ${minR.toFixed(2)} mm de acero (½⌀ = ${(e8.cd.diaMm / 2).toFixed(2)}) · ${libra ? 'LIBRA' : `${nMalR} en rojo, el juez los lista (${rj.retorno.fallan}) y el circuito declara «NO HAY LUGAR»`}`);
+    }
     // ACTA R93: eran 2 recortes; ahora cada causa habla por separado (techo del inserto A,
     // costura del inserto B, línea impar para el baffle). Se juzga que AMBOS lados quedan en
     // la banda del libro y que NINGÚN recorte es mudo: todos citan su § y su número.
@@ -1281,10 +1304,20 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check('E10 · cortante GOBIERNA sobre compresión (la trampa R45)',
       e10.pines.gobierna === 'cortante' && e10.pines.dMinCorteMm > e10.pines.dMinCompMm,
       `compresión ⌀${e10.pines.dMinCompMm} < cortante ⌀${e10.pines.dMinCorteMm} — gobierna el plástico, no el acero`);
+    // ACTA R94 (orden EL AGUA NO CRUZA LOS RETORNOS): la línea del baffle corría en x = eje y les
+    // pasaba a 7.00 mm del eje a los 4 retornos (91/105): la serpentina se GIRÓ 90° y el carril central
+    // es ahora y = eje. El check mide el carril que el CIRCUITO dice, no un eje clavado.
+    const carrilB = e8x.circuito.segmentos.find((g) => g.tipo === 'linea' && g.p0[2] < dC.zPartMm
+      && Math.abs(g.p0[0] - dC.ejeX) < 1e-6 && Math.abs(g.p1[0] - dC.ejeX) < 1e-6
+      || g.tipo === 'linea' && g.p0[2] < dC.zPartMm && Math.abs(g.p0[1] - dC.ejeY) < 1e-6 && Math.abs(g.p1[1] - dC.ejeY) < 1e-6);
+    const carrilEnX = !!carrilB && Math.abs(carrilB.p1[0] - carrilB.p0[0]) > Math.abs(carrilB.p1[1] - carrilB.p0[1]);
+    const sobreElCarril = (q) => carrilEnX
+      ? Math.abs(q.y - dC.ejeY) < 1 && Math.abs(q.x - dC.ejeX) > 10
+      : Math.abs(q.x - dC.ejeX) < 1 && Math.abs(q.y - dC.ejeY) > 10;
     check('E10 · A-239 EJERCIDO AL REVÉS: los pines CEDEN el carril central (el baffle no se mueve) y el juez queda VERDE',
-      e10.juez.ok && e10.pines.posiciones.filter((q) => Math.abs(q.x - dC.ejeX) < 1 && Math.abs(q.y - dC.ejeY) > 10).length === 0
+      !!carrilB && e10.juez.ok && e10.pines.posiciones.filter(sobreElCarril).length === 0
         && e10.cicloDecision.some((c) => c.includes('CEDEN LOS PINES')),
-      `${e10.juez.claros.length} claros medidos · peor ${Math.min(...e10.juez.claros.map((c) => c.claroMm)).toFixed(2)} mm · cero pines sobre x=eje en las paredes Y`);
+      `${e10.juez.claros.length} claros medidos · peor ${Math.min(...e10.juez.claros.map((c) => c.claroMm)).toFixed(2)} mm · cero pines sobre el carril del baffle (${carrilEnX ? 'y' : 'x'}=eje, ACTA R94)`);
     // ACTA R93: el (60, 98) era la línea B-0 con ⌀4.76; con ⌀6.35 los carriles se movieron y
     // un punto fijo deja de ser un control (mide suerte, no el juez). Se toma la línea REAL
     // del circuito: el control sigue siendo negativo de verdad, y no caduca al mover el ⌀.

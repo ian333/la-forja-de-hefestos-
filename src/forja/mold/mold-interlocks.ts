@@ -121,10 +121,22 @@ export function planInterlocks(spec: MoldAssemblySpec, o?: { pMeltMPa?: number }
   const zPart = 0;   // el llamador lo sitúa; aquí es relativo al plano de partición
   const offX = ins.ifx / 2 + rimX / 2, offY = ins.ify / 2 + rimY / 2;
   const screws = obstacles ?? [];
+  // EL CARRIL DEL BAFFLE (orden EL AGUA NO CRUZA LOS RETORNOS, enmienda 2026-10-06): la línea de agua B
+  // que alimenta el baffle sube por el EJE del macho (§9.3.5.2) y por eso NO se puede correr; corre a lo
+  // largo de X o de Y por el centro de la placa (la serpentina se gira si un retorno se lo pide). A media
+  // pared, los 4 interlocks caían EXACTAMENTE sobre esos dos ejes: MEDIDO eje↔eje 0.00 mm con la línea
+  // central en la carcasa 1594C Box y en el ensamble 1557BGY (se metían 11.1 y 15.9 mm). El interlock
+  // se corre por su costado — como ya hace con los tornillos — hasta dejar ½⌀ de acero contra ese
+  // carril (§9.2.7): |eje| ≥ r_interlock + r_agua + ½⌀_agua. Las demás líneas sí se mueven: las corre
+  // el circuito de agua (estudio-molde-datos · estacion8Circuito), que ya ve los interlocks.
+  const dAgua = spec.cooling?.diaMm ?? 6.35;
+  const enCarril = (q: { x: number; y: number }) =>
+    Math.abs(q.x - W / 2) < pick.d / 2 + dAgua || Math.abs(q.y - D / 2) < pick.d / 2 + dAgua;
   /** corre el punto a lo largo del costado (eje `along`) hasta librar los obstáculos. */
   const clear = (p: { x: number; y: number }, along: 'x' | 'y', span: number) => {
     const need = (o: { x: number; y: number; dia: number }) => pick.d / 2 + o.dia / 2 + 3;
-    const hits = (q: { x: number; y: number }) => screws.some((o) => Math.hypot(q.x - o.x, q.y - o.y) < need(o));
+    const hits = (q: { x: number; y: number }) => screws.some((o) => Math.hypot(q.x - o.x, q.y - o.y) < need(o))
+      || enCarril(q);
     if (!hits(p)) return p;
     for (let step = 8; step <= span / 2; step += 6) {
       for (const s of [step, -step]) {
