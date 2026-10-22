@@ -69,6 +69,24 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
   });
   const recT0 = Date.now();            // marca de inicio de grabación (para recortar el lead-in muerto)
   const page = await context.newPage();
+  // RECHD=<dir> (2026-10-22, EL HAPPY PATH COMERCIAL): video de QA en TIEMPO REAL (las esperas se ven como son) a partir
+  // del screencast de CDP, cuadro jpeg por archivo + cuadros.txt (ffconcat con la duración de cada uno). MEDIDO: con
+  // deviceScaleFactor 2.5 el screencast TAMBIÉN entrega píxeles CSS (1536×864, no 3840×2160) — igual que recordVideo.
+  // Lo que sí gana: el viewport a escala de laptop real (ian: «la interfaz parece al 70 %» venía de 1600×1000 a 1×) y
+  // tiempos reales cuadro a cuadro. El 4K nativo solo sale con captureScreenshot+clip.scale (reloj virtual, no tiempo real).
+  const RECHD = process.env.RECHD || '';
+  let hd = null;
+  if (RECHD) {
+    fs.mkdirSync(path.join(RECHD, 'cuadros'), { recursive: true });
+    hd = { cdp: await context.newCDPSession(page), n: 0, ts: [] };
+    hd.cdp.on('Page.screencastFrame', async (f) => {
+      const k = hd.n++;
+      fs.writeFileSync(path.join(RECHD, 'cuadros', String(k).padStart(6, '0') + '.jpg'), Buffer.from(f.data, 'base64'));
+      hd.ts.push(f.metadata.timestamp);
+      try { await hd.cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }); } catch (e) {}
+    });
+    await hd.cdp.send('Page.startScreencast', { format: 'jpeg', quality: 88, maxWidth: Math.round(W * DPR), maxHeight: Math.round(H * DPR), everyNthFrame: 1 });
+  }
   // NO_PERF_MEASURE=1: en vite DEV, React perfila cada render con performance.measure(detail=props)
   // y con props gigantes (moldParts: Float32Arrays de millones) el clon estructurado tira
   // «DataCloneError: out of memory» y React muere («Should not already be working»). Es un
@@ -403,6 +421,18 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
     fs.writeFileSync(`${OUT}/meta.json`, JSON.stringify({ fatal: String((e && e.stack) || e).slice(0, 600), steps: log, checks, errors: errors.slice(0, 14) }, null, 2));
     console.log('DRIVE_FAIL ' + String(e).slice(0, 200));
   } finally {
+    if (hd) {
+      try { await hd.cdp.send('Page.stopScreencast'); } catch (e) {}
+      // ffconcat: cada cuadro dura hasta el siguiente (tiempo real); el último, 1 s
+      const L = ['ffconcat version 1.0'];
+      for (let k = 0; k < hd.n; k++) {
+        const d = k + 1 < hd.ts.length ? Math.max(0.001, hd.ts[k + 1] - hd.ts[k]) : 1;
+        L.push(`file 'cuadros/${String(k).padStart(6, '0')}.jpg'`, `duration ${d.toFixed(4)}`);
+      }
+      if (hd.n) L.push(`file 'cuadros/${String(hd.n - 1).padStart(6, '0')}.jpg'`);
+      fs.writeFileSync(path.join(RECHD, 'cuadros.txt'), L.join('\n') + '\n');
+      console.log(`RECHD ${hd.n} cuadros · ${(hd.ts.length > 1 ? hd.ts[hd.ts.length - 1] - hd.ts[0] : 0).toFixed(1)} s`);
+    }
     // Cerrar la página y el CONTEXTO vacía (flush) el archivo de video al disco.
     try { const v = page.video(); await page.close(); await context.close();
       if (v) { const vp = await v.path(); fs.writeFileSync(`${OUT}/video-path.txt`, vp); console.log('VIDEO ' + vp); } }

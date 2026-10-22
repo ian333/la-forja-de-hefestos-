@@ -89,3 +89,13 @@ real a resolución real (la grabación del arnés sale en píxeles CSS 1600×100
 
 ## EVIDENCIA (se declara ANTES de trabajar)
 - salida del runner (N/9 pasos, checks) escrita en ## MEDIDO del camino; video del paseo revisado por cuadros; orden-gate VERDE.
+
+## CIERRE (2026-10-22 · medido)
+- Camino al día: 9 pasos (7 = Q → EL FOCO; 9 = expediente con Descargar/Imprimir). Paseo en dev3 (main 281846f): **8/9, 46/47**; único rojo
+  `p3-2` (campo de enfriamiento > 2.5 s). Lead de carga 36.4 s; E2→E8 104 s.
+- forja-drive RECHD: screencast CDP en tiempo real. MEDIDO: también entrega píxeles CSS (1536×864), no 3840×2160 — se declara en el código;
+  el video se entrega como preview 1080p (no se finge 4K).
+- Entregado: Downloads/happy-path/ (video 9:22 + HAPPY-PATH-QA.md) en las dos PCs, revisado por hojas de cuadros (18 + 12 cuadros).
+- Defectos de QA (del video, no del runner): P0 dos veredictos (Foco 0 débiles vs dictamen 70/100 «6 violan»), P0 36 s de carga,
+  P1 molde 1:45, P1 rótulos de pines encimados + 5 ✗ en la vista normal, P1 nota interna y jerga en la tarjeta del expediente,
+  P2 planos 15 s sin progreso.
