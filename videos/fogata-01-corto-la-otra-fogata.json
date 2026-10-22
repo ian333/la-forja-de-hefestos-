@@ -1,0 +1,39 @@
+{
+  "id": "fogata-01-corto-la-otra-fogata",
+  "titulo": "Casi seguro, tu ADN tiene pedacitos de otra clase de humano | La Fogata",
+  "familia": "fogata",
+  "nota": "La Fogata (serie de GAIA hecha con el motor lia): el short vertical del capítulo 1. El master, el texto y las revisiones -autor, auditores, privacidad, ley de calidad- salen de lia, projects/historia/la-fogata/01-corto-la-otra-fogata (out/short.mp4 y publicar.json); `./lia encolar 01-corto-la-otra-fogata` las corre antes de armar.",
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 85.9
+  },
+  "salida": {
+    "dir": "/home/suecr/projects/lia-video-engine/projects/historia/la-fogata/01-corto-la-otra-fogata/out",
+    "master": "short.mp4",
+    "h264": "short.mp4"
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "Casi seguro, tu ADN tiene pedacitos de otra clase de humano | La Fogata",
+      "descripcion": "Hace cien mil años había por lo menos cinco o seis clases de humanos. Hoy queda una sola, y los otros siguen en tu ADN. Episodio completo: La otra fogata, capítulo 1 de La Fogata.",
+      "hashtags": [
+        "#lafogata",
+        "#historia",
+        "#prehistoria",
+        "#evoluciónhumana",
+        "#neandertales",
+        "#denisovanos",
+        "#adn",
+        "#ciencia",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ]
+    },
+    "autorizado": "2026-10-21 yt,ig — Sinué, con la delegación de Ian para La Fogata: «Quiero ver el EP1 de LA FOGATA short y el video largo publicados hoy 21/10/26 a las 20 hrs CDMX»",
+    "programar": "2026-10-21T20:00:00-06:00",
+    "nota_programar": "20:00 CDMX, la hora que pidió el dueño para el estreno del EP1.",
+    "primer_comentario": "Fuentes 👇\n· Los últimos erectus de Java: Rizal et al., Nature 2020. doi:10.1038/s41586-019-1863-2\n· Homo floresiensis: Sutikna et al., Nature 2016. doi:10.1038/nature17179\n· Los denisovanos: Reich et al., Nature 2010. doi:10.1038/nature09710\n· El cráneo de Harbin es denisovano: Fu et al., Science 2025. doi:10.1126/science.adu9677\n· Madre neandertal, padre denisovano: Slon et al., Nature 2018. doi:10.1038/s41586-018-0455-x\n· ADN neandertal en todas las poblaciones: Chen et al., Cell 2020. doi:10.1016/j.cell.2020.01.012\n· El gen MUC19 en América: Villanea et al., Science 2025. doi:10.1126/science.adl0882"
+  }
+}
