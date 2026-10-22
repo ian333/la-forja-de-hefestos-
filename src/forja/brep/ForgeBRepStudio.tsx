@@ -58,9 +58,11 @@ import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, PAL
 import { medidasDeLaPieza } from '../mold/foco-medidas';   // U3 · EL FOCO: el plano, encima de la pieza
 import { lentesDelFoco, type LentesFoco, type LenteId, type CampoGPU } from '../mold/foco-lentes';   // U10 · EL FOCO: el ANÁLISIS, encima de la pieza
 import { escanearMolde, type ResultadoFoco } from '../mold/foco-molde';
-import { FocoMoldeEscena, FocoMoldeHUD } from './FocoMolde3D';   // EL FOCO DEL MOLDE: el pulso, los puntos débiles y las fichas   // EL FOCO DEL MOLDE: los hallazgos por CUERPO, con lugar 3D (orden 2026-10-06)
+import { FocoMoldeEscena, FocoMoldeHUD, RecorridoEscena, RecorridoHUD } from './FocoMolde3D';
+import { rejillaDelMacho, equilibrioDeBotadores, aguaMasJusta, abreSaleEmpuja, type PuntoRecorrido } from '../mold/inspeccion-recorrido';   // LA INSPECCIÓN: paso 7 del pipeline
+import { TransicionPaso, PASOS_DEL_CAMINO, DURACION_TRANSICION_S, type PasoDelCamino } from './TransicionPaso';   // «de esta parte, ahora pasamos a esto» (2026-10-22)   // EL FOCO DEL MOLDE: el pulso, los puntos débiles y las fichas   // EL FOCO DEL MOLDE: los hallazgos por CUERPO, con lugar 3D (orden 2026-10-06)
 import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
-import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm } from './MoldScene';
+import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm , FillVivo } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
@@ -5384,8 +5386,103 @@ export default function ForgeBRepStudio() {
     const L = h.lugares[0].lugar;
     orbitTo(38, 30, h.lugares.length > 1 ? 260 : 150, L[0], L[1], L[2] + 8, 900);   // +8: el grupo del molde se levanta 8 mm
   }, [focoMolde, moldParts, setMoldOpacity, setMoldColors, orbitTo]);
-  const focoMoldeApi = useRef({ partes: moldParts, abrir: escanearElMolde, sel: elegirHallazgo, cerrar: cerrarFocoMolde });
-  focoMoldeApi.current = { partes: moldParts, abrir: escanearElMolde, sel: elegirHallazgo, cerrar: cerrarFocoMolde };
+  // ── LA INSPECCIÓN · paso 7 del pipeline (orden 2026-10-22-la-pelicula-sale-de-la-forja) ─────────────────────────
+  // ian: «el análisis del video del inspector no es algo aparte: es parte del pipeline». La secuencia: la cortina anuncia
+  // el paso → el pulso del Foco escanea el molde → el RECORRIDO: cada punto crítico con su aislado, su corte, su cámara,
+  // sus marcas y su cota (= el número del veredicto). Avanza solo; ◀ ▶ lo manejan. Usa la MISMA API del inspector
+  // (`__forgeBrep.inspeccion`): una sola implementación de aislar/corte/cota/pose para la app, el inspector y la película.
+  const [inspeccionOn, setInspeccionOn] = useState(false);
+  const [recorrido, setRecorrido] = useState<PuntoRecorrido[] | null>(null);
+  const [recIdx, setRecIdx] = useState(0);
+  const [recAuto, setRecAuto] = useState(true);
+  const [recT0, setRecT0] = useState(0);
+  const apiInsp = () => (window as unknown as { __forgeBrep?: { inspeccion: { aislar: (r: string[] | null, o?: unknown) => unknown; corte: (e: 'x' | 'y' | 'z' | null, mm?: number, v?: boolean) => unknown; cotas: (l: unknown[]) => unknown; estado: (a: number | null, e?: number) => unknown }; animZ: (r: string) => number | null } }).__forgeBrep;
+  const cotasAntesInsp = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!inspeccionOn) return;
+    // EL MOLDE SE DETIENE: su ciclo animado (el llenado recalcula la superficie por cuadro) bajaba la página a 5–8 fps,
+    // medido 2026-10-22 — la cortina del paso y el pulso se veían a saltos. Las cotas de auditoría se apartan como en el Foco.
+    apiInsp()?.inspeccion.estado(0, 0);
+    if (cotasAntesInsp.current == null) { cotasAntesInsp.current = cotasOn; setCotasOn(false); }
+    let vivo = true; const timers: number[] = [];
+    const espera = (ms: number) => new Promise<void>((r) => { timers.push(window.setTimeout(r, ms)); });
+    (async () => {
+      await espera(DURACION_TRANSICION_S * 1000);           // la cortina anuncia el paso 7
+      if (!vivo) return;
+      const foco = escanearElMolde();                         // el pulso del Foco: hallazgos + el par más justo
+      await espera(4200);
+      if (!vivo) return;
+      const api = apiInsp();
+      // LA APERTURA REAL se LEE del molde abierto (la misma medición del inspector, no la fórmula 2.5·H)
+      api?.inspeccion.estado(1, 0); await espera(450);
+      const ab = api?.animZ('clamp') ?? null; api?.inspeccion.estado(0, 0);
+      if (!vivo) return;
+      cerrarFocoMolde();
+      const pm = mold.ciclo?.portamoldes as { carreraLibreMm?: number; carreraPedidaMm?: number } | undefined;
+      const P = [rejillaDelMacho(moldParts), equilibrioDeBotadores(moldParts), aguaMasJusta(foco),
+        abreSaleEmpuja(moldParts, { aperturaReal: Number.isFinite(ab as number) ? (ab as number) : null, carreraLibre: pm?.carreraLibreMm ?? null, carreraPedida: pm?.carreraPedidaMm ?? null })]
+        .filter((x): x is PuntoRecorrido => !!x);
+      setRecorrido(P); setRecIdx(0); setRecAuto(true);
+    })();
+    return () => { vivo = false; timers.forEach((t) => clearTimeout(t)); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspeccionOn]);
+  // aplicar la VISTA del punto (y la pose animada de abre-sale-empuja)
+  useEffect(() => {
+    const p = recorrido?.[recIdx]; const api = apiInsp(); if (!p || !api) return;
+    const I = api.inspeccion;
+    if (p.vista.roles.includes('*')) I.aislar(null); else I.aislar(p.vista.roles, { tenues: p.vista.tenues, opacs: p.vista.opacs });
+    I.corte(p.vista.corte ? p.vista.corte.eje : null, p.vista.corte?.mm ?? 0, p.vista.corte?.voltea ?? false);
+    I.cotas(p.cotas);
+    I.estado(0, 0);
+    const c = p.vista.camara; orbitTo(c.az, c.el, c.r, c.objetivo[0], c.objetivo[1], c.objetivo[2] + 8, 1100);   // +8: el grupo del molde
+    setRecT0(performance.now());
+    let raf = 0;
+    if (p.vista.anima === 'abre-expulsa') {
+      const t0 = performance.now(), e = (x: number) => { const k = Math.max(0, Math.min(1, x)); return k * k * (3 - 2 * k); };
+      const lazo = () => { const t = (performance.now() - t0) / 1000; I.estado(e((t - 1.2) / 2.2), e((t - 3.8) / 1.8)); if (t < 7.5) raf = requestAnimationFrame(lazo); };
+      raf = requestAnimationFrame(lazo);
+    }
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recorrido, recIdx]);
+  // avanza solo: 7.5 s por punto (8.5 el que anima)
+  useEffect(() => {
+    if (!recorrido || !recAuto || recIdx >= recorrido.length - 1) return;
+    const id = window.setTimeout(() => setRecIdx((i) => i + 1), recorrido[recIdx]?.vista.anima ? 8500 : 7500);
+    return () => clearTimeout(id);
+  }, [recorrido, recIdx, recAuto]);
+  // al cerrar la inspección (o al pasar a planos/expediente) todo vuelve a su reposo
+  useEffect(() => {
+    if (inspeccionOn && !planosOn && !expedienteOn) return;
+    if (inspeccionOn) setInspeccionOn(false);
+    if (cotasAntesInsp.current != null) { setCotasOn(cotasAntesInsp.current); cotasAntesInsp.current = null; }
+    if (!recorrido) return;
+    setRecorrido(null);
+    const api = apiInsp(); if (api) { api.inspeccion.cotas([]); api.inspeccion.corte(null); api.inspeccion.estado(null); api.inspeccion.aislar(null); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspeccionOn, planosOn, expedienteOn]);
+
+  // ── LA TRANSICIÓN ENTRE PASOS (orden 2026-10-22-la-pelicula-sale-de-la-forja) ───────────────────────────────
+  // ian: «es un pipeline, pero nunca siento cuando pasamos al otro lado». El paso en el que estás se DEDUCE de lo que
+  // está abierto (no hay otra verdad); al llegar por PRIMERA vez a un paso con esta pieza, la cortina anuncia el paso.
+  // Volver a un paso ya visto no la repite (el que trabaja no quiere 2 s de ceremonia cada vez que cambia de lente).
+  const pasoActual = expedienteOn ? 9 : planosOn ? 8 : (inspeccionOn || focoMolde) ? 7 : moldeOn ? 6 : particionOn ? 5 : laminaOn ? 4
+    : (lenteId === 'enfriamiento' ? 3 : piezaMalla ? 2 : 1);
+  const [transicion, setTransicion] = useState<{ paso: PasoDelCamino; t0: number } | null>(null);
+  const pasoMaxRef = useRef(1);
+  const anunciarPaso = useCallback((n: number) => {
+    const paso = PASOS_DEL_CAMINO[n - 1]; if (!paso) return null;
+    setTransicion({ paso, t0: performance.now() }); return paso;
+  }, []);
+  useEffect(() => { pasoMaxRef.current = piezaMalla ? 2 : 1; }, [piezaMalla]);   // pieza nueva = camino nuevo
+  useEffect(() => {
+    if (pasoActual > pasoMaxRef.current) { pasoMaxRef.current = pasoActual; if (pasoActual >= 3) anunciarPaso(pasoActual); }
+  }, [pasoActual, anunciarPaso]);
+  const focoMoldeApi = useRef({ partes: moldParts, abrir: escanearElMolde, sel: elegirHallazgo, cerrar: cerrarFocoMolde, transicion: anunciarPaso,
+    inspeccion: (on: boolean) => setInspeccionOn(on), punto: (i: number) => { setRecAuto(false); setRecIdx(i); }, recorrido: () => recorrido });
+  focoMoldeApi.current = { partes: moldParts, abrir: escanearElMolde, sel: elegirHallazgo, cerrar: cerrarFocoMolde, transicion: anunciarPaso,
+    inspeccion: (on: boolean) => setInspeccionOn(on), punto: (i: number) => { setRecAuto(false); setRecIdx(i); }, recorrido: () => recorrido };
   // si el molde se rearma, el escaneo viejo ya no describe este acero
   useEffect(() => { if (focoMolde) cerrarFocoMolde(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [moldParts]);
 
@@ -6815,6 +6912,12 @@ export default function ForgeBRepStudio() {
       focoMoldeAbrir: () => focoMoldeApi.current.abrir(),
       focoMoldeSel: (i: number | null) => focoMoldeApi.current.sel(i),
       focoMoldeCerrar: () => focoMoldeApi.current.cerrar(),
+      /** anuncia el paso n del camino (la cortina de 2.3 s); la filmadora la llama para el paso 1 y 2, que no la disparan solos */
+      transicion: (n: number) => focoMoldeApi.current.transicion(n),
+      /** LA INSPECCIÓN (paso 7): abre / cierra; `inspeccionPunto(i)` salta a un punto; `recorrido()` devuelve los puntos */
+      inspeccionAbrir: (on = true) => focoMoldeApi.current.inspeccion(on),
+      inspeccionPunto: (i: number) => focoMoldeApi.current.punto(i),
+      recorrido: () => focoMoldeApi.current.recorrido(),
       // AISLAR una parte del molde (para auto-revisión: ver SÓLO la cavidad y confirmar
       // que es el vaso real, no un tubo). moldShowAll() vuelve a mostrar todo.
       moldIsolate: (role: string) => { isolateMoldPlate(role); },
@@ -7276,13 +7379,15 @@ export default function ForgeBRepStudio() {
                     <CotaDriver sets={cotaInsp} refs={cotaInspRefs} />
                   </>
                 )}
+                {/* LA INSPECCIÓN: las marcas del punto del recorrido (rejilla, centros, círculo del tope) */}
+                {recorrido && recorrido[recIdx] && <RecorridoEscena punto={recorrido[recIdx]} t0={recT0} />}
                 {/* EL FOCO DEL MOLDE: el pulso, los puntos débiles y la proyección de sus fichas (cuelga del grupo del molde) */}
                 {focoMolde && (
                   <FocoMoldeEscena foco={focoMolde} t0={focoMoldeT0} sel={focoMoldeSel} centro={focoMoldeCaja.c} radio={focoMoldeCaja.r}
                     refs={{ fichas: focoMoldeFichas, guias: focoMoldeGuias }} />
                 )}
                 {/* EL RÓTULO 3D DE CADA PIN (LOS BOTADORES CON NOMBRE): id + largo junto a su punta */}
-                {!focoMolde && cotaPines.length > 0 && (
+                {!focoMolde && !inspeccionOn && cotaPines.length > 0 && (
                   <>
                     <CotaLines sets={cotaPines} />
                     <CotaDriver sets={cotaPines} refs={cotaPinesRefs} />
@@ -7384,7 +7489,8 @@ export default function ForgeBRepStudio() {
                 })()}
                 {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && !(ciclo?.estacion === 6 && ciclo?.e6) && piezaPintable && (
                   <group ref={piezaEjectRef}>
-                    <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} clip={sectionPlanes} />
+                    {/* el ciclo escribe tFillRef: FillVivo re-dibuja SOLO el frente, no el estudio (7 → 60 fps, 2026-10-22) */}
+                    <FillVivo tRef={tFillRef}>{(t) => <FrenteSuperficie frente={ciclo.frenteGrid!} grid={ciclo.grid!} t={t} ocupacion={ciclo.ocupacion} clip={sectionPlanes} />}</FillVivo>
                   </group>
                 )}
                 {/* E5: el fundido en la colada YA NO es FeedFill (reloj de pared en
@@ -7539,7 +7645,13 @@ export default function ForgeBRepStudio() {
             CotaDriver (dentro del Canvas) les mueve el transform por frame. */}
         {cotasOn && liveCotas.length > 0 && <CotaLabels sets={liveCotas} refs={cotaRefs} />}
         {cotaInsp.length > 0 && <CotaInspLabels sets={cotaInsp} refs={cotaInspRefs} />}
-        {!focoMolde && cotaPines.length > 0 && <CotaInspLabels sets={cotaPines} refs={cotaPinesRefs} testId="rotulo-pines" />}
+        {!focoMolde && !inspeccionOn && cotaPines.length > 0 && <CotaInspLabels sets={cotaPines} refs={cotaPinesRefs} testId="rotulo-pines" />}
+        {/* LA INSPECCIÓN · la tarjeta del punto del recorrido */}
+        {recorrido && recorrido.length > 0 && (
+          <RecorridoHUD puntos={recorrido} idx={recIdx} onIdx={(i) => { setRecAuto(false); setRecIdx(i); }} auto={recAuto} onAuto={setRecAuto} onCerrar={() => setInspeccionOn(false)} />
+        )}
+        {/* LA TRANSICIÓN ENTRE PASOS: encima de todo el visor, se apaga sola */}
+        {transicion && <TransicionPaso paso={transicion.paso} t0={transicion.t0} onFin={() => setTransicion(null)} />}
         {/* EL FOCO DEL MOLDE · el HUD (fuera del Canvas: texto en DOM) */}
         {focoMolde && (
           <FocoMoldeHUD foco={focoMolde} pieza={docName.split(' · ')[0]} sel={focoMoldeSel} onSel={elegirHallazgo} onCerrar={cerrarFocoMolde}
@@ -7597,6 +7709,14 @@ export default function ForgeBRepStudio() {
                   font: `${moldeOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
                   color: moldeOn ? '#ffcc33' : '#6f8095', borderBottom: `2px solid ${moldeOn ? '#ffcc33' : 'transparent'}`,
                 }}>MOLDE</button>
+              {/* PASO 7 · LA INSPECCIÓN — el Foco escanea y la máquina recorre los puntos críticos, sección por sección */}
+              <button data-testid="parte-lente-inspeccion" disabled={!mold.ciclo?.portamoldes}
+                onClick={() => { setFocoOn(true); setPlanosOn(false); setExpedienteOn(false); setInspeccionOn((v) => !v); }}
+                style={{
+                  cursor: mold.ciclo?.portamoldes ? 'pointer' : 'default', background: 'transparent', border: 0, padding: '3px 2px',
+                  font: `${inspeccionOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
+                  color: inspeccionOn ? '#4fd8ff' : mold.ciclo?.portamoldes ? '#8fb3c4' : '#3f4a57', borderBottom: `2px solid ${inspeccionOn ? '#4fd8ff' : 'transparent'}`,
+                }}>INSPECCIÓN</button>
               {/* PASO 7 · PLANOS — el juego de láminas del molde de esta pieza */}
               <button data-testid="parte-lente-planos"
                 onClick={() => { setFocoOn(true); if (planosMolde) { setPlanosOn((v) => !v); return; } if (mold.ciclo?.e2?.pkg) generarPlanosMolde(); else { setMoldeOn(true); setPlanosPend(true); } }}

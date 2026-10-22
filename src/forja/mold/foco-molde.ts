@@ -218,8 +218,15 @@ export interface OpcionesFoco {
   pielMinMm?: number;
 }
 
+export interface ParJusto {
+  acero: number; limite: number; rA: number; rB: number;
+  c1: [number, number, number]; c2: [number, number, number]; lugar: [number, number, number];
+  roleA: string; roleB: string; nombreA: string; nombreB: string; ejeAgua: 0 | 1 | 2;
+}
 export interface ResultadoFoco {
   hallazgos: Hallazgo[];
+  /** el par agua↔barreno con MENOS acero de todo el molde, aunque cumpla (el punto 3 de la inspección) */
+  masJusto: ParJusto | null;
   /** lo que el escaneo identificó (para las etiquetas de máquina y para auditar la cobertura) */
   cilindros: Cilindro[];
   pares: number;
@@ -246,12 +253,16 @@ export function escanearMolde(piezas: PiezaMolde[], o: OpcionesFoco = {}): Resul
       cilindros.push(C); (esAgua ? agua : vecinos).push(C);
     });
   }
-  let pares = 0;
+  let pares = 0; let masJusto: ParJusto | null = null;
   for (const w of agua) for (const m of vecinos) {
     pares++;
     const s = segSeg(w.p0, w.p1, m.p0, m.p1);
     const acero = s.d - w.r - m.r;
     const lim = frac * 2 * w.r;
+    if (!masJusto || acero - lim < masJusto.acero - masJusto.limite) masJusto = {
+      acero: +acero.toFixed(2), limite: +lim.toFixed(2), rA: w.r, rB: m.r, c1: s.c1, c2: s.c2,
+      lugar: [(s.c1[0] + s.c2[0]) / 2, (s.c1[1] + s.c2[1]) / 2, (s.c1[2] + s.c2[2]) / 2],
+      roleA: w.role, roleB: m.role, nombreA: w.nombre, nombreB: m.nombre, ejeAgua: w.eje };
     if (acero >= lim + aviso) continue;
     const lugar: V3 = [(s.c1[0] + s.c2[0]) / 2, (s.c1[1] + s.c2[1]) / 2, (s.c1[2] + s.c2[2]) / 2];
     const f = (x: number) => x.toFixed(2);
@@ -304,7 +315,7 @@ export function escanearMolde(piezas: PiezaMolde[], o: OpcionesFoco = {}): Resul
   const peso = (h: Hallazgo) => (h.sev === 'falla' ? 0 : 1) * 1e6 + (h.tipo === 'agua-atraviesa' || h.tipo === 'piel-sobre-punta' ? 0 : 1e3) + h.medido;
   finales.sort((a, b) => peso(a) - peso(b));
   const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  return { hallazgos: finales, cilindros, pares, ms: Math.round(t1 - t0) };
+  return { hallazgos: finales, masJusto, cilindros, pares, ms: Math.round(t1 - t0) };
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

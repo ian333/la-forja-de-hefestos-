@@ -856,3 +856,13 @@ export function EspiralMeltExacta({ d, t }: {
     </mesh>
   );
 }
+
+/** EL LLENADO A 60 fps (2026-10-22): el ciclo del molde ya no re-dibuja el estudio por cuadro; escribe `tRef`. Este
+ *  envoltorio lo lee EN SU cuadro y re-dibuja SOLO a sus hijos (el frente de llenado) cuando cambia. Medido antes:
+ *  7 fps con el ciclo corriendo, por dos setState por cuadro sobre el estudio entero. */
+export function FillVivo({ tRef, children }: { tRef: React.MutableRefObject<number>; children: (t: number) => React.ReactNode }) {
+  const [t, setT] = useState(tRef.current);
+  useFrame(() => { const v = tRef.current; if (Math.abs(v - t) > 1e-4) setT(v); });
+  return <>{children(t)}</>;
+}
+

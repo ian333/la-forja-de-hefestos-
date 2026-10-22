@@ -5,7 +5,7 @@
  * de ARMANDO MOLDE. Reciben la BOLSA de useMoldStudio como prop — cero estado
  * propio, puro render. El grupo del ribbon se queda en el Studio (usa <Ic>).
  */
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
@@ -537,7 +537,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, intake, setIntake, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle } = mold;
+  const { ciclo, intake, setIntake, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, cicloPlaying, cicloProg, cicloProgRef, cicloActo, cicloPlayToggle } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -665,12 +665,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
           </button>
           {cicloPlaying && (
             <div data-testid="ciclo-play-prog" style={{ marginTop: 4 }}>
-              <div style={{ height: 4, background: '#1b2432', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${(cicloProg * 100).toFixed(1)}%`, background: GOLD }} />
-              </div>
-              <div style={{ fontSize: 10, color: GOLD, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                {cicloActo} · {(cicloProg * 100).toFixed(0)} %
-              </div>
+              <BarraCiclo uRef={cicloProgRef} acto={cicloActo} />
             </div>
           )}
         </div>
@@ -1527,3 +1522,30 @@ function CicloE12({ acta }: { acta: import('../mold/estudio-molde-datos').ActaDa
     </>
   );
 }
+
+/** la barrita del ciclo: lee `cicloProgRef` en SU cuadro (el ciclo ya no hace setState por cuadro: 7 → 60 fps, 2026-10-22) */
+function BarraCiclo({ uRef, acto }: { uRef: MutableRefObject<number>; acto: string }) {
+  const barra = useRef<HTMLDivElement>(null), txt = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    let raf = 0;
+    const cuadro = () => {
+      const u = uRef.current;
+      if (barra.current) barra.current.style.width = `${(u * 100).toFixed(1)}%`;
+      if (txt.current) txt.current.textContent = `${(u * 100).toFixed(0)} %`;
+      raf = requestAnimationFrame(cuadro);
+    };
+    raf = requestAnimationFrame(cuadro);
+    return () => cancelAnimationFrame(raf);
+  }, [uRef]);
+  return (
+    <>
+      <div style={{ height: 4, background: '#1b2432', borderRadius: 2, overflow: 'hidden' }}>
+        <div ref={barra} style={{ height: '100%', width: '0%', background: GOLD }} />
+      </div>
+      <div style={{ fontSize: 10, color: GOLD, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+        {acto} · <span ref={txt}>0 %</span>
+      </div>
+    </>
+  );
+}
+

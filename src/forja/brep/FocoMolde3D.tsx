@@ -24,6 +24,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Hallazgo, ResultadoFoco } from '../mold/foco-molde';
+import type { PuntoRecorrido, MarcaRecorrido } from '../mold/inspeccion-recorrido';
 
 export const FOCO = {
   cian: '#4fd8ff',
@@ -302,6 +303,105 @@ export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ═════════════════════ LA INSPECCIÓN · EL RECORRIDO (paso 7, 2026-10-22) ═════════════════════
+ * ian: «el análisis del video del inspector no es algo aparte: es parte del pipeline». Cada punto crítico se presenta con
+ * su vista (aislar + corte + cámara, los pone el estudio), sus MARCAS en la escena (que aparecen una a una, como si el
+ * escáner las fuera encontrando) y su tarjeta: la pregunta, el número de hoy, el límite, el veredicto, la frase física. */
+
+const COLOR_MARCA: Record<MarcaRecorrido['color'], string> = { ok: FOCO.cian, falla: FOCO.falla, aviso: FOCO.aviso, neutro: '#5b6b78', pin: '#ffcc66' };
+const COLOR_VEREDICTO = { ok: FOCO.cian, falla: FOCO.falla, aviso: FOCO.aviso } as const;
+const TEXTO_VEREDICTO = { ok: '✓ CUMPLE', falla: '✗ NO CUMPLE', aviso: '◇ DE PANZAZO' } as const;
+
+export function RecorridoEscena({ punto, t0 }: { punto: PuntoRecorrido; t0: number }) {
+  const grupos = useRef<Array<THREE.Object3D | null>>([]);
+  const M = punto.marcas;
+  // el círculo del tope: un THREE.Line (en JSX `<line>` es la línea de SVG)
+  const circulos = useMemo(() => M.map((m) => {
+    if (m.tipo !== 'circulo') return null;
+    const pts: number[] = []; const r = m.r ?? 5;
+    for (let k = 0; k <= 96; k++) { const a = (k / 96) * Math.PI * 2; pts.push(m.p[0] + r * Math.cos(a), m.p[1] + r * Math.sin(a), m.p[2]); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color: COLOR_MARCA[m.color], depthTest: false, transparent: true, opacity: 0.9 }));
+    l.renderOrder = 1002; l.visible = false; return l;
+  }), [M]);
+  const geoCruz = useMemo(() => M.map((m) => {
+    if (m.tipo !== 'cruz') return null; const s = 7;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute([m.p[0] - s, m.p[1], m.p[2], m.p[0] + s, m.p[1], m.p[2], m.p[0], m.p[1] - s, m.p[2], m.p[0], m.p[1] + s, m.p[2]], 3));
+    return g;
+  }), [M]);
+  useFrame(() => {
+    const t = (performance.now() - t0) / 1000;
+    // aparecen una a una en 1.4 s (el escáner las va encontrando); el círculo del tope se DIBUJA de 0 a 360°
+    M.forEach((m, i) => {
+      const o = grupos.current[i]; if (!o) return;
+      const ti = 0.3 + (i / Math.max(1, M.length)) * 1.4;
+      const k = Math.max(0, Math.min(1, (t - ti) / 0.25));
+      o.visible = k > 0;
+      if (m.tipo === 'punto') o.scale.setScalar(k * (1 + 0.25 * Math.max(0, 1 - (t - ti) / 0.5)));
+      if (m.tipo === 'circulo') { const l = circulos[i]; if (l) l.geometry.setDrawRange(0, Math.floor(97 * k)); }
+    });
+  });
+  return (
+    <group>
+      {M.map((m, i) => (
+        m.tipo === 'punto' ? (
+          <mesh key={i} ref={(o) => { grupos.current[i] = o; }} position={m.p} renderOrder={1002} visible={false}>
+            <sphereGeometry args={[m.r ?? (m.color === 'pin' ? 2.2 : 1.7), 16, 12]} />
+            <meshBasicMaterial color={COLOR_MARCA[m.color]} depthTest={false} transparent opacity={0.95} />
+          </mesh>
+        ) : m.tipo === 'cruz' ? (
+          <lineSegments key={i} ref={(o) => { grupos.current[i] = o; }} geometry={geoCruz[i]!} renderOrder={1002} visible={false}>
+            <lineBasicMaterial color="#ffffff" depthTest={false} transparent opacity={0.95} />
+          </lineSegments>
+        ) : (
+          <primitive key={i} object={circulos[i]!} ref={(o: THREE.Object3D | null) => { grupos.current[i] = o; }} />
+        )
+      ))}
+    </group>
+  );
+}
+
+export function RecorridoHUD({ puntos, idx, onIdx, auto, onAuto, onCerrar }: {
+  puntos: PuntoRecorrido[]; idx: number; onIdx: (i: number) => void; auto: boolean; onAuto: (v: boolean) => void; onCerrar: () => void;
+}) {
+  const p = puntos[idx]; if (!p) return null;
+  const c = COLOR_VEREDICTO[p.veredicto];
+  return (
+    <div data-testid="inspeccion-recorrido" data-idx={idx} data-veredicto={p.veredicto} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9 }}>
+      <style>{['feature-tree', 'op-panel', 'analysis-panel', 'face-list', 'sim-panel', 'curso-report', 'params-panel', 'escala-enfriamiento', 'ficha-en-el-mundo', 'mold-cotas-overlay']
+        .map((t) => `[data-testid="${t}"]{opacity:0 !important;pointer-events:none !important}`).join('\n')}</style>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 48%, rgba(0,0,0,0) 58%, rgba(0,14,24,0.5) 100%)' }} />
+      <div style={{ position: 'absolute', left: 22, bottom: 92, width: 'min(560px, 44vw)', padding: '16px 20px 17px', background: 'rgba(3,12,20,0.93)',
+        clipPath: corte(12), borderLeft: `3px solid ${c}`, color: FOCO.tinta, pointerEvents: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ ...etiqueta, color: FOCO.cian }}>◈ Inspección · punto {idx + 1} de {puntos.length}</div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => onIdx(Math.max(0, idx - 1))} style={{ ...etiqueta, background: 'none', border: `1px solid ${FOCO.cianTenue}`, color: FOCO.gris, padding: '2px 7px', cursor: 'pointer' }}>◀</button>
+            <button onClick={() => onAuto(!auto)} style={{ ...etiqueta, background: 'none', border: `1px solid ${FOCO.cianTenue}`, color: auto ? FOCO.cian : FOCO.gris, padding: '2px 7px', cursor: 'pointer' }}>{auto ? '❚❚' : '▶'}</button>
+            <button onClick={() => onIdx(Math.min(puntos.length - 1, idx + 1))} style={{ ...etiqueta, background: 'none', border: `1px solid ${FOCO.cianTenue}`, color: FOCO.gris, padding: '2px 7px', cursor: 'pointer' }}>▶▶</button>
+            <button onClick={onCerrar} style={{ ...etiqueta, background: 'none', border: `1px solid ${FOCO.cianTenue}`, color: FOCO.gris, padding: '2px 7px', cursor: 'pointer' }}>✕</button>
+          </div>
+        </div>
+        <div style={{ font: '600 24px/1.2 Inter,system-ui,sans-serif', marginTop: 8 }}>{p.pregunta}</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
+          <div style={{ font: '700 30px Inter,system-ui,sans-serif', color: c, textShadow: `0 0 16px ${c}55` }}>{p.numero}</div>
+          <div style={{ font: mono, color: FOCO.gris }}>{p.limite}</div>
+          <div style={{ ...etiqueta, color: c, marginLeft: 'auto' }}>{TEXTO_VEREDICTO[p.veredicto]}</div>
+        </div>
+        <div style={{ font: '400 14px/1.5 Inter,system-ui,sans-serif', marginTop: 10, color: '#c3dce8' }}>{p.frase}</div>
+        <div style={{ font: '400 11px/1.4 ui-monospace,Menlo,monospace', marginTop: 8, color: '#6f8fa3' }}>{p.regla}</div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+          {puntos.map((q, i) => (
+            <div key={q.id} onClick={() => onIdx(i)} style={{ flex: 1, height: 4, cursor: 'pointer',
+              background: i < idx ? COLOR_VEREDICTO[q.veredicto] : i === idx ? c : 'rgba(79,216,255,0.15)', opacity: i <= idx ? 1 : 0.8 }} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
