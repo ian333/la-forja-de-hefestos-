@@ -25,15 +25,17 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Hallazgo, ResultadoFoco } from '../mold/foco-molde';
 import type { PuntoRecorrido, MarcaRecorrido } from '../mold/inspeccion-recorrido';
+import { PIEL } from './piel-futuro';
 
+/** la paleta del Foco SALE de la piel (cyberpunk + holograma, 2026-10-22): cian = medido, rojo neón = falla, naranja = de panzazo */
 export const FOCO = {
-  cian: '#4fd8ff',
-  cianTenue: 'rgba(79,216,255,0.35)',
-  falla: '#ff4d6d',
-  aviso: '#ffb347',
-  fondo: 'rgba(3,12,20,0.80)',
-  tinta: '#dff6ff',
-  gris: '#8fb3c4',
+  cian: PIEL.medido,
+  cianTenue: 'rgba(34,225,255,0.32)',
+  falla: PIEL.falla,
+  aviso: PIEL.aviso,
+  fondo: PIEL.fondo.vidrio,
+  tinta: PIEL.texto.primario,
+  gris: PIEL.texto.secundario,
 };
 const colorSev = (h: Hallazgo) => (h.sev === 'falla' ? FOCO.falla : FOCO.aviso);
 
@@ -126,6 +128,9 @@ export function FocoMoldeEscena({ foco, t0, sel, refs, centro, radio }: {
         // con uno ELEGIDO, los demás se encogen: el ojo va a uno solo
         r.scale.setScalar((sel == null ? 1 : sel === i ? 1.5 : 0.45) * late);
         r.rotation.z = t * 0.9;
+        // LO ÚNICO QUE TIEMBLA ES UNA FALLA (cyberpunk): un salto breve y determinista (puro en t: el reloj virtual lo filma igual)
+        const salto = h.sev === 'falla' && ((t * 1.7 + m * 0.31) % 1) < 0.06;
+        r.position.set(salto ? 0.9 * Math.sin(t * 91 + m) : 0, salto ? 0.6 * Math.cos(t * 73 + m) : 0, 0);
       }
       const a = anillos.current[m];
       if (a) {
@@ -213,9 +218,26 @@ export function FocoMoldeEscena({ foco, t0, sel, refs, centro, radio }: {
 
 /* ───────────────────── fuera del Canvas ───────────────────── */
 
+/** LA REGLITA (la pidieron las tres investigaciones de color): dónde cae el número de hoy contra su límite. El 0 = se tocan;
+ *  la marca blanca = el mínimo; el relleno va del 0 al número (hacia la izquierda si se meten uno en otro). */
+function Reglita({ h }: { h: Hallazgo }) {
+  const lo = Math.min(h.medido, 0) - 0.6, hi = Math.max(h.limite * 1.6, h.medido + 0.6, 1);
+  const x = (v: number) => `${((v - lo) / (hi - lo)) * 100}%`;
+  const c = colorSev(h);
+  const a = Math.min(0, h.medido), b = Math.max(0, h.medido);
+  return (
+    <div style={{ position: 'relative', height: 10, marginTop: 6 }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 4, height: 2, background: 'rgba(159,196,214,0.18)' }} />
+      <div style={{ position: 'absolute', left: x(a), width: `calc(${x(b)} - ${x(a)})`, top: 3, height: 4, background: c, boxShadow: `0 0 8px ${c}88` }} />
+      <div title="0 · se tocan" style={{ position: 'absolute', left: x(0), top: 0, width: 1, height: 10, background: PIEL.texto.tenue }} />
+      {h.limite > 0 && <div title={`mínimo ${h.limite}`} style={{ position: 'absolute', left: x(h.limite), top: -1, width: 2, height: 12, background: PIEL.cumple }} />}
+    </div>
+  );
+}
+
 const corte = (px: number) => `polygon(${px}px 0, 100% 0, 100% calc(100% - ${px}px), calc(100% - ${px}px) 100%, 0 100%, 0 ${px}px)`;
-const mono = '600 12px ui-monospace,SFMono-Regular,Menlo,monospace';
-const etiqueta: React.CSSProperties = { font: '600 10px Inter,system-ui,sans-serif', letterSpacing: '0.18em', textTransform: 'uppercase' };
+const mono = `600 12px ${PIEL.fuente.mono}`;
+const etiqueta: React.CSSProperties = { font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.18em', textTransform: 'uppercase' };
 
 export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
   foco: ResultadoFoco;
@@ -253,12 +275,13 @@ export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
             boxShadow: `0 0 18px ${colorSev(h)}22`, transition: 'opacity 220ms',
           }}>
           <div style={{ ...etiqueta, color: colorSev(h) }}>{h.sev === 'falla' ? '◆ punto débil' : '◇ de panzazo'}</div>
-          <div style={{ font: '600 13px/1.25 Inter,system-ui,sans-serif', marginTop: 2 }}>{h.titulo}</div>
+          <div style={{ font: '600 13px/1.25 Barlow,system-ui,sans-serif', marginTop: 2 }}>{h.titulo}</div>
           <div style={{ font: mono, marginTop: 3, color: colorSev(h) }}>
             {h.tipo === 'agua-atraviesa' ? `se meten ${(-h.medido).toFixed(2)} mm` : h.tipo === 'piel-sobre-punta' ? `${h.medido.toFixed(2)} mm de acero` : `${h.medido.toFixed(2)} mm de acero`}
             <span style={{ color: FOCO.gris }}>{h.tipo === 'piel-sobre-punta' ? ' · debe ser 0' : ` · mín ${h.limite.toFixed(2)}`}</span>
           </div>
-          {sel === i && <div style={{ font: '400 12px/1.45 Inter,system-ui,sans-serif', marginTop: 6, color: '#bcd7e4' }}>{h.frase}</div>}
+          <Reglita h={h} />
+          {sel === i && <div style={{ font: '400 12px/1.45 Barlow,system-ui,sans-serif', marginTop: 6, color: '#bcd7e4' }}>{h.frase}</div>}
         </div>
       ))}
 
@@ -269,21 +292,21 @@ export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
           <div style={{ ...etiqueta, color: FOCO.cian }}>◈ Foco · escaneo del molde</div>
           <button onClick={onCerrar} title="cerrar el Foco (Q)" style={{ ...etiqueta, background: 'none', border: `1px solid ${FOCO.cianTenue}`, color: FOCO.gris, padding: '2px 6px', cursor: 'pointer' }}>Q</button>
         </div>
-        <div style={{ font: '600 17px Inter,system-ui,sans-serif', marginTop: 6 }}>{pieza}</div>
-        <div style={{ font: '400 12px/1.4 Inter,system-ui,sans-serif', color: FOCO.gris, marginTop: 2 }}>
+        <div style={{ font: `700 19px ${PIEL.fuente.titulo}`, letterSpacing: '0.04em', marginTop: 6 }}>{pieza}</div>
+        <div style={{ font: '400 12px/1.4 Barlow,system-ui,sans-serif', color: FOCO.gris, marginTop: 2 }}>
           {barrenos} barrenos identificados · {foco.pares} pares medidos eje a eje · {foco.ms} ms
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
           <div style={{ flex: 1, padding: '6px 8px', border: `1px solid ${nF ? FOCO.falla : FOCO.cianTenue}`, clipPath: corte(5) }}>
-            <div style={{ font: '700 22px Inter,system-ui,sans-serif', color: nF ? FOCO.falla : FOCO.cian, textShadow: nF ? `0 0 12px ${FOCO.falla}88` : 'none' }}>{nF}</div>
+            <div style={{ font: '700 22px Barlow,system-ui,sans-serif', color: nF ? FOCO.falla : FOCO.cian, textShadow: nF ? `0 0 12px ${FOCO.falla}88` : 'none' }}>{nF}</div>
             <div style={{ ...etiqueta, color: FOCO.gris }}>{nF === 1 ? 'punto débil' : 'puntos débiles'}</div>
           </div>
           <div style={{ flex: 1, padding: '6px 8px', border: `1px solid ${nA ? FOCO.aviso : FOCO.cianTenue}`, clipPath: corte(5) }}>
-            <div style={{ font: '700 22px Inter,system-ui,sans-serif', color: nA ? FOCO.aviso : FOCO.cian }}>{nA}</div>
+            <div style={{ font: '700 22px Barlow,system-ui,sans-serif', color: nA ? FOCO.aviso : FOCO.cian }}>{nA}</div>
             <div style={{ ...etiqueta, color: FOCO.gris }}>de panzazo</div>
           </div>
         </div>
-        {H.length === 0 && <div style={{ font: '500 13px Inter,system-ui,sans-serif', color: FOCO.cian, marginTop: 10 }}>Nada que reportar: ningún barreno se mete en otro y cada pin entra hasta su punta.</div>}
+        {H.length === 0 && <div style={{ font: '500 13px Barlow,system-ui,sans-serif', color: FOCO.cian, marginTop: 10 }}>Nada que reportar: ningún barreno se mete en otro y cada pin entra hasta su punta.</div>}
       </div>
 
       {/* la lista: cada hallazgo, un clic → la cámara vuela ahí */}
@@ -296,9 +319,10 @@ export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
               border: 'none', borderLeft: `2px solid ${colorSev(h)}`, clipPath: corte(6), cursor: 'pointer',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ font: '600 12px/1.3 Inter,system-ui,sans-serif' }}>{h.titulo}</span>
+                <span style={{ font: '600 12px/1.3 Barlow,system-ui,sans-serif' }}>{h.titulo}</span>
                 <span style={{ font: mono, color: colorSev(h), whiteSpace: 'nowrap' }}>{h.tipo === 'agua-atraviesa' ? `−${(-h.medido).toFixed(2)}` : h.medido.toFixed(2)} mm</span>
               </div>
+              <Reglita h={h} />
             </button>
           ))}
         </div>
@@ -312,8 +336,8 @@ export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
  * su vista (aislar + corte + cámara, los pone el estudio), sus MARCAS en la escena (que aparecen una a una, como si el
  * escáner las fuera encontrando) y su tarjeta: la pregunta, el número de hoy, el límite, el veredicto, la frase física. */
 
-const COLOR_MARCA: Record<MarcaRecorrido['color'], string> = { ok: FOCO.cian, falla: FOCO.falla, aviso: FOCO.aviso, neutro: '#5b6b78', pin: '#ffcc66' };
-const COLOR_VEREDICTO = { ok: FOCO.cian, falla: FOCO.falla, aviso: FOCO.aviso } as const;
+const COLOR_MARCA: Record<MarcaRecorrido['color'], string> = { ok: PIEL.medido, falla: FOCO.falla, aviso: FOCO.aviso, neutro: '#4a5a66', pin: PIEL.mundo.botadores };
+const COLOR_VEREDICTO = { ok: PIEL.cumple, falla: FOCO.falla, aviso: FOCO.aviso } as const;
 const TEXTO_VEREDICTO = { ok: '✓ CUMPLE', falla: '✗ NO CUMPLE', aviso: '◇ DE PANZAZO' } as const;
 
 export function RecorridoEscena({ punto, t0 }: { punto: PuntoRecorrido; t0: number }) {
@@ -387,14 +411,14 @@ export function RecorridoHUD({ puntos, idx, onIdx, auto, onAuto, onCerrar }: {
             <button onClick={onCerrar} style={{ ...etiqueta, background: 'none', border: `1px solid ${FOCO.cianTenue}`, color: FOCO.gris, padding: '2px 7px', cursor: 'pointer' }}>✕</button>
           </div>
         </div>
-        <div style={{ font: '600 24px/1.2 Inter,system-ui,sans-serif', marginTop: 8 }}>{p.pregunta}</div>
+        <div style={{ font: `600 25px/1.2 ${PIEL.fuente.titulo}`, marginTop: 8 }}>{p.pregunta}</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
-          <div style={{ font: '700 30px Inter,system-ui,sans-serif', color: c, textShadow: `0 0 16px ${c}55` }}>{p.numero}</div>
+          <div style={{ font: `700 30px ${PIEL.fuente.mono}`, color: c, textShadow: `0 0 16px ${c}55` }}>{p.numero}</div>
           <div style={{ font: mono, color: FOCO.gris }}>{p.limite}</div>
           <div style={{ ...etiqueta, color: c, marginLeft: 'auto' }}>{TEXTO_VEREDICTO[p.veredicto]}</div>
         </div>
-        <div style={{ font: '400 14px/1.5 Inter,system-ui,sans-serif', marginTop: 10, color: '#c3dce8' }}>{p.frase}</div>
-        <div style={{ font: '400 11px/1.4 ui-monospace,Menlo,monospace', marginTop: 8, color: '#6f8fa3' }}>{p.regla}</div>
+        <div style={{ font: '400 14px/1.5 Barlow,system-ui,sans-serif', marginTop: 10, color: '#c3dce8' }}>{p.frase}</div>
+        <div style={{ font: `400 11px/1.4 ${PIEL.fuente.mono}`, marginTop: 8, color: '#6f8fa3' }}>{p.regla}</div>
         <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
           {puntos.map((q, i) => (
             <div key={q.id} onClick={() => onIdx(i)} style={{ flex: 1, height: 4, cursor: 'pointer',

@@ -57,12 +57,13 @@ import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, PALETA_FOCO, type CotaSet } from './MoldCotas3D';
 import { medidasDeLaPieza } from '../mold/foco-medidas';   // U3 · EL FOCO: el plano, encima de la pieza
 import { lentesDelFoco, type LentesFoco, type LenteId, type CampoGPU } from '../mold/foco-lentes';   // U10 · EL FOCO: el ANÁLISIS, encima de la pieza
-import { escanearMolde, type ResultadoFoco } from '../mold/foco-molde';
-import { FocoMoldeEscena, FocoMoldeHUD, RecorridoEscena, RecorridoHUD } from './FocoMolde3D';
+import { escanearMolde, type ResultadoFoco } from '../mold/foco-molde';   // EL FOCO DEL MOLDE: los hallazgos por CUERPO, con lugar 3D (orden 2026-10-06)
+import { FocoMoldeEscena, FocoMoldeHUD, RecorridoEscena, RecorridoHUD } from './FocoMolde3D';   // EL FOCO DEL MOLDE: el pulso, los puntos débiles y las fichas
 import { rejillaDelMacho, equilibrioDeBotadores, aguaMasJusta, abreSaleEmpuja, type PuntoRecorrido } from '../mold/inspeccion-recorrido';   // LA INSPECCIÓN: paso 7 del pipeline
-import { TransicionPaso, PASOS_DEL_CAMINO, DURACION_TRANSICION_S, type PasoDelCamino } from './TransicionPaso';   // «de esta parte, ahora pasamos a esto» (2026-10-22)   // EL FOCO DEL MOLDE: el pulso, los puntos débiles y las fichas   // EL FOCO DEL MOLDE: los hallazgos por CUERPO, con lugar 3D (orden 2026-10-06)
+import { TransicionPaso, RielDePasos, PASOS_DEL_CAMINO, DURACION_TRANSICION_S, type PasoDelCamino } from './TransicionPaso';   // «de esta parte, ahora pasamos a esto» (2026-10-22)
+import { PIEL, PIEL_CSS } from './piel-futuro';   // LA PIEL DEL FUTURO: cyberpunk + holograma de cine (ian, 2026-10-22)
 import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
-import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm , FillVivo } from './MoldScene';
+import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm, FillVivo } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
@@ -3639,8 +3640,10 @@ function CotaInspLabels({ sets, refs, testId = 'cota-inspeccion' }: { sets: Cota
 /** EL FOCO DEL MOLDE · el tinte: bajo el Foco el acero se enfría a holograma (cian frío), el agua brilla, la pieza
  *  se apaga. Es la regla de Horizon de foco-lentes.ts: lo que el aparato TRAZA es cian. */
 function focoMoldeTinte(parts: Array<{ role: string }>): Record<string, string> {
+  // LA PIEL (2026-10-22): el acero hielo de holograma, el agua azul eléctrico, la colada neón magenta, los botadores cromo, la pieza marfil apagada
   const c: Record<string, string> = {};
-  for (const p of parts) c[p.role] = p.role.startsWith('agua') ? '#38c8ff' : p.role === 'pieza' ? '#2a4a5c' : p.role.startsWith('pin') ? '#9fe6ff' : '#7fb8d4';
+  for (const p of parts) c[p.role] = p.role.startsWith('agua') ? PIEL.mundo.agua : p.role === 'colada' ? PIEL.mundo.colada : p.role === 'pieza' ? '#4a4538'
+    : p.role.startsWith('pin') || p.role === 'pines-retorno' ? PIEL.mundo.botadores : PIEL.mundo.aceroHolo;
   return c;
 }
 
@@ -5379,8 +5382,8 @@ export default function ForgeBRepStudio() {
     // solo los cuerpos del hallazgo quedan sólidos: el agua (o el pin) en cian, lo que atraviesa en el color del error
     const op: Record<string, number> = {}, col = focoMoldeTinte(moldParts);
     for (const pt of moldParts) op[pt.role] = 0.04;
-    const rojo = h.sev === 'falla' ? '#ff4d6d' : '#ffb347';
-    for (const l of h.lugares) { op[l.roles[0]] = 0.9; op[l.roles[1]] = 0.75; col[l.roles[0]] = '#4fd8ff'; col[l.roles[1]] = rojo; }
+    const rojo = h.sev === 'falla' ? PIEL.falla : PIEL.aviso;
+    for (const l of h.lugares) { op[l.roles[0]] = 0.9; op[l.roles[1]] = 0.75; col[l.roles[0]] = PIEL.medido; col[l.roles[1]] = rojo; }
     op['pieza'] = 0.1;
     setMoldOpacity(op); setMoldColors(col);
     const L = h.lugares[0].lugar;
@@ -7171,6 +7174,7 @@ export default function ForgeBRepStudio() {
         </div>
       )}
       <style>{CSS}</style>
+      <style>{PIEL_CSS}</style>
 
       {/* ── CARGANDO (boot del kernel): el .wasm pesa 65 MB — sin esta pantalla el
             usuario ve la página muerta 30-60 s y cierra (telemetría lo confirmó). ── */}
@@ -7650,6 +7654,8 @@ export default function ForgeBRepStudio() {
         {recorrido && recorrido.length > 0 && (
           <RecorridoHUD puntos={recorrido} idx={recIdx} onIdx={(i) => { setRecAuto(false); setRecIdx(i); }} auto={recAuto} onAuto={setRecAuto} onCerrar={() => setInspeccionOn(false)} />
         )}
+        {/* EL RIEL DE LOS 9 PASOS: siempre visible con la pieza en pantalla */}
+        {piezaMalla && <RielDePasos actual={pasoActual} maximo={Math.max(pasoMaxRef.current, pasoActual)} ancho={focoMolde || recorrido ? 'completo' : 'centro'} />}
         {/* LA TRANSICIÓN ENTRE PASOS: encima de todo el visor, se apaga sola */}
         {transicion && <TransicionPaso paso={transicion.paso} t0={transicion.t0} onFin={() => setTransicion(null)} />}
         {/* EL FOCO DEL MOLDE · el HUD (fuera del Canvas: texto en DOM) */}

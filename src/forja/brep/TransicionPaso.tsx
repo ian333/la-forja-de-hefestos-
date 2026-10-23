@@ -14,6 +14,7 @@
  * se verían a saltos o terminadas (gotcha medido el 2026-09-21).
  */
 import { useEffect, useRef } from 'react';
+import { PIEL } from './piel-futuro';
 
 export interface PasoDelCamino { n: number; titulo: string; promesa: string }
 
@@ -30,8 +31,9 @@ export const PASOS_DEL_CAMINO: PasoDelCamino[] = [
   { n: 9, titulo: 'EL EXPEDIENTE', promesa: 'lo que te llevas: dictamen, cotización y planos' },
 ];
 
-/** colores provisionales (los del Foco) — la investigación de color de 2026-10-22 decide la piel definitiva */
-const C = { cortina: 'rgba(3,9,16,0.90)', linea: '#4fd8ff', tinta: '#e6f7ff', tenue: '#7fa6ba', acento: '#4fd8ff', apagado: 'rgba(79,216,255,0.16)' };
+/** la piel (cyberpunk + holograma, 2026-10-22): cortina de vacío azul marino con barrido cian; el número del paso en AMARILLO
+ *  del operador («tú estás aquí»); los pasos hechos en cian (medido), los que faltan en hilo tenue */
+const C = { cortina: 'rgba(3,7,11,0.93)', linea: PIEL.medido, tinta: PIEL.texto.primario, tenue: PIEL.texto.secundario, acento: PIEL.operador, hecho: PIEL.medido, apagado: 'rgba(159,196,214,0.16)' };
 export const DURACION_TRANSICION_S = 2.3;
 
 const ease = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
@@ -86,7 +88,8 @@ export function TransicionPaso({ paso, t0, total = 9, onFin }: {
         if (!s) return;
         const k = i + 1;
         const lleno = k < paso.n ? 1 : k === paso.n ? tramo(t, 0.45, 1.25) : 0;
-        s.style.background = `linear-gradient(90deg, ${C.acento} ${lleno * 100}%, ${C.apagado} ${lleno * 100}%)`;
+        const col = k < paso.n ? C.hecho : C.acento;
+        s.style.background = `linear-gradient(90deg, ${col} ${lleno * 100}%, ${C.apagado} ${lleno * 100}%)`;
         s.style.boxShadow = k === paso.n && lleno > 0 ? `0 0 12px ${C.acento}` : 'none';
       });
       if (raiz.current) raiz.current.style.display = t >= D ? 'none' : 'block';
@@ -100,15 +103,15 @@ export function TransicionPaso({ paso, t0, total = 9, onFin }: {
   return (
     <div ref={raiz} data-testid="transicion-paso" data-paso={paso.n} style={{ position: 'absolute', inset: 0, zIndex: 30, pointerEvents: 'none', overflow: 'hidden' }}>
       <div ref={cortina} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 0, background: C.cortina,
-        backgroundImage: 'repeating-linear-gradient(0deg, rgba(79,216,255,0.035) 0 1px, transparent 1px 4px)' }} />
+        backgroundImage: 'repeating-linear-gradient(0deg, rgba(34,225,255,0.04) 0 1px, transparent 1px 3px)' }} />
       <div ref={linea} style={{ position: 'absolute', left: 0, right: 0, height: 2, background: C.linea, boxShadow: `0 0 18px 3px ${C.linea}`, top: 0 }} />
       <div ref={bloque} style={{ position: 'absolute', left: '9%', top: '34%', width: '62%', opacity: 0, color: C.tinta }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.4vmin' }}>
-          <div ref={num} style={{ font: '700 13vmin/0.9 Inter,system-ui,sans-serif', letterSpacing: '-0.02em', color: C.acento, textShadow: `0 0 28px ${C.acento}55` }}>00</div>
-          <div style={{ font: '600 2.4vmin Inter,system-ui,sans-serif', letterSpacing: '0.2em', color: C.tenue }}>/ {String(total).padStart(2, '0')}</div>
+          <div ref={num} style={{ font: `700 13vmin/0.9 ${PIEL.fuente.titulo}`, letterSpacing: '-0.01em', color: C.acento, textShadow: `0 0 28px ${C.acento}55` }}>00</div>
+          <div style={{ font: `600 2.6vmin ${PIEL.fuente.titulo}`, letterSpacing: '0.2em', color: C.tenue }}>// {String(total).padStart(2, '0')}</div>
         </div>
-        <div ref={tit} style={{ font: '700 6.2vmin/1.05 Inter,system-ui,sans-serif', letterSpacing: '0.08em', marginTop: '1.2vmin' }}>{paso.titulo}</div>
-        <div ref={pro} style={{ font: '400 2.6vmin/1.35 Inter,system-ui,sans-serif', color: C.tenue, marginTop: '1.4vmin', opacity: 0 }}>{paso.promesa}</div>
+        <div ref={tit} style={{ font: `700 6.4vmin/1.05 ${PIEL.fuente.titulo}`, letterSpacing: '0.1em', marginTop: '1.2vmin' }}>{paso.titulo}</div>
+        <div ref={pro} style={{ font: `500 2.7vmin/1.35 ${PIEL.fuente.cuerpo}`, color: C.tenue, marginTop: '1.4vmin', opacity: 0 }}>{paso.promesa}</div>
         <div style={{ display: 'flex', gap: '0.8vmin', marginTop: '4vmin', width: '70%' }}>
           {Array.from({ length: total }, (_, i) => (
             <div key={i} ref={(e) => { segs.current[i] = e; }} style={{ flex: 1, height: '0.55vmin', minHeight: 3, background: C.apagado }} />
@@ -118,3 +121,30 @@ export function TransicionPaso({ paso, t0, total = 9, onFin }: {
     </div>
   );
 }
+
+/** EL RIEL DE LOS 9 PASOS — siempre visible arriba del visor (las tres investigaciones de color lo pidieron sin hablarse: es la
+ *  respuesta permanente a «nunca siento cuando pasamos al otro lado»). Hechos en cian con ✓, el actual en AMARILLO del operador,
+ *  los que faltan en hilo tenue. Es DOM puro, sin estado propio: lo dibuja el paso que el estudio ya deduce. */
+export function RielDePasos({ actual, maximo, ancho = 'completo' }: { actual: number; maximo: number; ancho?: 'completo' | 'centro' }) {
+  // con los paneles del CAD a la vista, el riel vive ENTRE ellos (no se les encima); en el Foco y la inspección los paneles se
+  // apartan y el riel ocupa todo el ancho
+  const lados = ancho === 'centro' ? { left: 258, right: 326 } : { left: 18, right: 18 };
+  return (
+    <div data-testid="riel-de-pasos" data-actual={actual} style={{ position: 'absolute', ...lados, top: 4, zIndex: 7, pointerEvents: 'none',
+      display: 'flex', gap: 3, font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+      {PASOS_DEL_CAMINO.map((p) => {
+        const es = p.n === actual, hecho = p.n <= maximo && !es;
+        const color = es ? PIEL.texto.sobreAcento : hecho ? PIEL.medido : PIEL.texto.tenue;
+        return (
+          <div key={p.n} style={{ flex: 1, minWidth: 0, padding: '4px 8px 5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            color, background: es ? PIEL.operador : 'rgba(3,7,11,0.72)',
+            borderTop: `2px solid ${es ? PIEL.operador : hecho ? PIEL.medido : 'rgba(159,196,214,0.16)'}`,
+            clipPath: es ? 'polygon(0 0,100% 0,100% 70%,94% 100%,0 100%)' : undefined }}>
+            {String(p.n).padStart(2, '0')} {hecho ? '✓ ' : ''}{p.titulo.replace(/^(EL|LA|LOS|TU) /, '')}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
