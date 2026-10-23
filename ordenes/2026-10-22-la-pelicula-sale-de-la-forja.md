@@ -3,7 +3,7 @@
 ESTADO: hoy
 PRIORIDAD: 1
 
-BASE: 1d960df
+BASE: e14ec2a
 
 OBJETIVO: ian (2026-10-22), sobre el tutorial del happy path: «es un pipeline, pero nunca siento cuando pasamos al otro lado… entre un paso
 y el otro debería haber una animación» · «el video de producción debe salir de La Forja» · «el análisis del video del inspector no es algo
@@ -19,6 +19,7 @@ Colores: provisionales (los del Foco) hasta que ian elija entre las 3 investigac
 
 ## TOCA
 - src/forja/brep/ForgeBRepStudio.tsx
+- scripts/filma-camino.cjs
 - src/forja/brep/useMoldStudio.ts
 - src/forja/brep/MoldScene.tsx
 - src/forja/brep/MoldPanels.tsx
@@ -114,3 +115,30 @@ MoldPanels.tsx (la barrita lee la referencia), foco-molde.ts (el par más justo 
 - Pendiente: la filmadora (paso 3 de la orden).
 
 - BASE movida a 1d960df: el avance 1 de esta orden quedó en 2608b5b y la piel en su propia orden (1d960df); desde aquí el juez mide la filmadora.
+
+## ENMIENDA 2026-10-23 · LA VOZ SE QUEDABA ATRÁS, y las estaciones que no salieron
+Revisada por cuadros la primera película montada (94.8 s, 4K60, 0 cuadros negros): **la voz se iba quedando atrás de la pantalla en la
+inspección** — a los 65 s decía «el tope es 10.65» con el punto 3 (agua) ya en pantalla; a los 79 s «Abre 152.5» caía sobre los planos;
+«Los planos: 17 láminas» sobre el expediente. Causa medida: la app avanzaba cada punto a los **7.5 s** y cada punto narra dos frases
+(≈10 s). Un humano tampoco lee la tarjeta (pregunta, número, tope, explicación, regla) en 7.5 s. Arreglo DE PRODUCTO, no de edición:
+**11 s por punto, 12.5 el que anima, el Foco 5.5 s** (ForgeBRepStudio.tsx) — la toma 7 pasa de 38.2 a 54.0 s.
+Y en la toma 6 solo salió la estación 8: el armado corría en tiempo real y las estaciones 4–7 pasaron mientras se filmaba la 3.
+Arreglo en la filmadora: el armado corre con el reloj virtual encendido y sus temporizadores **congelados** mientras se filma
+(`__vt.congela`); entre plano y plano se sueltan 0.5 s virtuales y la siguiente estación se calcula fuera de cámara. Cada estación
+nueva = 1.8 s limpios; el ciclo entero (14.5 s). `HASTA=6/7` para refilmar por lotes (<5,100 capturas por navegador).
+TOCA sin cambios (ForgeBRepStudio.tsx ya estaba; filma-camino.cjs es CREA de esta orden).
+
+## AVANCE 2 (2026-10-23 · LA PELÍCULA, segunda pasada · entregada)
+- `Downloads/la-pelicula/la-forja-camino-4k60.mp4` (3840×2160, 60/1, 119.8 s, H.264 + voz + subtítulos) y `-master-10bit.mp4` (HEVC
+  10-bit, sin subtítulos) en los DOS PCs, md5 iguales; `la-forja-camino-HOJA-de-cuadros.jpg` = los 32 cuadros revisados.
+- Tomas: 1–5 de la primera filmación · 6 refilmada con temporizadores congelados (nace 3.2 s + estaciones 4·5·6·7·8 a 1.8 s + el ciclo
+  entero 14.5 s) · 7 refilmada a 54.0 s (3,240 cuadros) · 8–9 de la refilmación limpia del 22. 7,188 cuadros, 0 negros (el único tramo
+  que marca blackdetect, 114.15–114.30, es la cortina del paso 9 sobre el expediente).
+- Revisado por cuadros en el punto medio de las 20 frases: cada frase cae sobre lo que nombra (el tope 10.65 con el punto 2, el agua
+  3.49 con el punto 3, «Abre 152.5» con el punto 4, los planos con los planos).
+- Medido: el armado con el reloj virtual congelado tardó 249 s reales (vs 150 en real) — el precio de soltar el reloj de 0.5 en 0.5 s.
+- Pendiente (se ve en la película, no la detiene): el paso 6 sucio (rótulos de pines apilados, cotas ✗ de auditoría, panel MOLD TOOLS,
+  la escala de enfriamiento que no se va); el dictamen deja ver borroso el mapa térmico; la cortina del paso 9 queda DEBAJO del modal del
+  expediente; los dos veredictos (Foco 0 débiles vs dictamen 70/100) siguen siendo el P0 del QA comercial.
+- BASE movida 1d960df → e14ec2a (2026-10-23): en medio entró la cabecera de la piel (e14ec2a, orden de la piel); desde aquí el juez mide
+  la enmienda de hoy. filma-camino.cjs pasa a TOCA (ya existe en la BASE movida).

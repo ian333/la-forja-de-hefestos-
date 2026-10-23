@@ -11,7 +11,10 @@
  *     real: ahí se hacen los cálculos pesados (cargar el STEP, armar el molde, generar láminas) — NO se filman.
  *   · ENCENDIDO, cada cuadro avanza 1000/60 ms exactos y se captura por CDP con clip.scale = DPR → 4K REAL (3840×2160).
  *   · el molde se arma en ~1:44 reales: se filma un plano corto CADA VEZ que aparece una estación nueva (el armado se ve,
- *     la espera no). En pantalla queda dicho cuánto tarda de verdad.
+ *     la espera no). En pantalla queda dicho cuánto tarda de verdad. Para que cada estación salga LIMPIA, el armado corre con
+ *     el reloj virtual encendido y sus temporizadores CONGELADOS mientras se filma (`__vt.congela`): entre plano y plano se
+ *     descongelan 0.5 s virtuales y la siguiente estación se calcula fuera de cámara. (La primera película, 2026-10-22, dejó
+ *     el armado en tiempo real y las estaciones 4–7 pasaron mientras se filmaba la 3.)
  * uso: URL=http://localhost:4199/forja-brep.html node scripts/filma-camino.cjs <pieza.stp> <outDir>   (iangpu, receta GPU)
  */
 const { chromium } = require('playwright');
@@ -19,13 +22,20 @@ const fs = require('fs'); const path = require('path');
 const URL = process.env.URL || 'http://localhost:4199/forja-brep.html';
 const STEP = process.argv[2], OUT = process.argv[3];
 const FPS = 60, W = 1536, H = 864, DPR = 2.5;
+/** HASTA=n: filma solo hasta el paso n (prueba corta antes de la corrida larga) */
+const HASTA = +(process.env.HASTA || 9);
+/** DESDE=n: rehace los cálculos SIN filmar y filma desde el paso n, en un navegador fresco. Medido 2026-10-22: tras ~5,100
+ *  capturas 4K en UNA sesión el compositor se agota y los cuadros salen NEGROS (la toma 9 entera) — la misma fuga que obliga a
+ *  «un contexto fresco por lote» en el render de cine. Se refilma el final aparte y se pega. */
+const DESDE = +(process.env.DESDE || 1);
+let pasoActual = 0;
 fs.mkdirSync(path.join(OUT, 'cuadros'), { recursive: true });
 const T0 = Date.now(); const ts = () => ((Date.now() - T0) / 1000).toFixed(1).padStart(6) + ' s';
 
 const RELOJ_VIRTUAL = () => {
   const R = { now: performance.now.bind(performance), date: Date.now.bind(Date), raf: window.requestAnimationFrame.bind(window), caf: window.cancelAnimationFrame.bind(window),
     st: window.setTimeout.bind(window), ct: window.clearTimeout.bind(window), si: window.setInterval.bind(window), ci: window.clearInterval.bind(window) };
-  const V = { on: false, t: 0, d0: 0, rafs: new Map(), timers: new Map(), id: 1e9 };
+  const V = { on: false, t: 0, d0: 0, rafs: new Map(), timers: new Map(), id: 1e9, congelado: false };
   performance.now = () => (V.on ? V.t : R.now());
   Date.now = () => (V.on ? Math.round(V.d0 + V.t) : R.date());
   window.requestAnimationFrame = (cb) => { if (!V.on) return R.raf(cb); const id = ++V.id; V.rafs.set(id, cb); return id; };
@@ -36,14 +46,17 @@ const RELOJ_VIRTUAL = () => {
   window.clearInterval = (id) => { if (!V.timers.delete(id)) R.ci(id); };
   const respiroReal = () => new Promise((r) => R.st(r, 0));
   window.__vt = {
-    estado: () => ({ on: V.on, t: V.t }),
+    estado: () => ({ on: V.on, t: V.t, congelado: V.congelado, timers: V.timers.size }),
+    // congelado: el tiempo y los rAF avanzan (la cámara, la cortina, el ciclo) pero NINGÚN setTimeout dispara — el armado del
+    // molde (una estación por temporizador de 400 ms) espera a que la filmadora lo suelte
+    congela(si) { V.congelado = !!si; },
     // el reloj virtual arranca donde va el real: nadie ve un salto
     enciende() { if (V.on) return V.t; V.t = R.now(); V.d0 = R.date() - V.t; V.on = true; return V.t; },
     // al apagar, lo pendiente vuelve al reloj real (los cálculos siguen su curso fuera de cámara)
     apaga() { if (!V.on) return; V.on = false; for (const cb of V.rafs.values()) R.raf(cb); V.rafs.clear(); for (const tm of V.timers.values()) R.st(() => tm.cb(...tm.a), Math.max(0, tm.at - V.t)); V.timers.clear(); },
     async avanza(ms) {
       const meta = V.t + ms;
-      for (let g = 0; g < 5000; g++) {
+      for (let g = 0; g < 5000 && !V.congelado; g++) {
         let sig = null, sigId = 0;
         for (const [id, tm] of V.timers) if (tm.at <= meta && (!sig || tm.at < sig.at)) { sig = tm; sigId = id; }
         if (!sig) break;
@@ -72,7 +85,9 @@ const RELOJ_VIRTUAL = () => {
   const cdp = await ctx.newCDPSession(page);
   let n = 0; const tomas = [];
   /** filma `seg` segundos; `cada(k)` corre ANTES de cada cuadro (cámara por fórmula, gestos en un cuadro exacto) */
-  const filma = async (nombre, seg, cada) => {
+  const filma = async (nombre, seg, cada, sigue = false) => {
+    pasoActual = +nombre.slice(0, 2);
+    if (pasoActual < DESDE) { if (!sigue) await page.evaluate(() => window.__vt.apaga()); console.log(ts(), `(sin filmar: «${nombre}»)`); return; }
     await page.evaluate(() => window.__vt.enciende());
     const k0 = n, N = Math.round(seg * FPS);
     for (let k = 0; k < N; k++) {
@@ -81,7 +96,7 @@ const RELOJ_VIRTUAL = () => {
       const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 92, optimizeForSpeed: true, clip: { x: 0, y: 0, width: W, height: H, scale: DPR } });
       fs.writeFileSync(path.join(OUT, 'cuadros', String(n).padStart(6, '0') + '.jpg'), Buffer.from(data, 'base64')); n++;
     }
-    await page.evaluate(() => window.__vt.apaga());
+    if (!sigue) await page.evaluate(() => window.__vt.apaga());   // `sigue`: el reloj se queda encendido (y congelado) para la siguiente estación
     tomas.push({ nombre, desde: k0 / FPS, hasta: n / FPS });
     console.log(ts(), `toma «${nombre}» ${seg}s → ${n} cuadros (${(n / FPS).toFixed(1)} s de película)`);
   };
@@ -113,6 +128,7 @@ const RELOJ_VIRTUAL = () => {
   await ev(() => window.__forgeBrep.transicion(2));
   await filma('02 tu pieza', 5.5);
 
+  if (HASTA <= 2) { fs.writeFileSync(path.join(OUT, 'tomas.json'), JSON.stringify({ fps: FPS, tomas }, null, 1)); console.log(ts(), 'FIN (HASTA=2)', n); await browser.close(); return; }
   // 3 · EL ENFRIAMIENTO — el campo se calcula en real; la cortina y el reloj de la pieza enfriándose, en virtual
   await clic('parte-lente-enfriamiento');
   await espera(`!!document.querySelector('[data-testid="escala-enfriamiento"]')`, 180000);
@@ -131,33 +147,52 @@ const RELOJ_VIRTUAL = () => {
   await ev(() => window.__forgeBrep.transicion(5));
   await filma('05 la particion', 4.5);
 
-  // 6 · EL MOLDE — se arma en real; cada estación NUEVA se filma 1.6 s (el armado se ve, la espera no)
+  // 6 · EL MOLDE — el armado avanza una estación por temporizador (400 ms). Con el reloj virtual ENCENDIDO desde antes del clic
+  // todos esos temporizadores nacen virtuales: la filmadora los suelta de 0.5 s en 0.5 s (el cálculo pesado corre ahí, fuera de
+  // cámara) y los CONGELA mientras filma — cada estación nueva sale limpia 1.8 s, ninguna pasa a escondidas.
+  // (Si se refilma desde el 7 en adelante, el molde se arma en real como siempre: no hay nada que filmar.)
   const tArmado = Date.now();
+  const armadoVirtual = DESDE <= 6;
+  const estacion = () => ev(() => { const m = document.querySelector('[data-testid="molde-de-la-pieza"]'); return m ? { est: +m.dataset.estacion, pm: m.dataset.portamoldes === '1' } : null; });
+  /** deja correr el armado `ms` virtuales (temporizadores vivos) y lo vuelve a congelar; en real, solo espera */
+  const sueltaArmado = async (ms) => {
+    if (!armadoVirtual) { await page.waitForTimeout(ms); return; }
+    await ev((ms) => { window.__vt.congela(false); return window.__vt.avanza(ms); }, ms);
+    await ev(() => window.__vt.congela(true));
+    await page.waitForTimeout(60);   // aire real: lo que el armado haya mandado a un worker o a una promesa
+  };
+  if (armadoVirtual) await ev(() => { window.__vt.enciende(); window.__vt.congela(true); });
   await clic('parte-lente-molde');
-  await espera(`(() => { const m = document.querySelector('[data-testid="molde-de-la-pieza"]'); return m && +m.dataset.estacion >= 3; })()`, 300000);
+  for (let g = 0; g < 2400; g++) { const e = await estacion(); if (e && e.est >= 3) break; await sueltaArmado(500); }
   await ev(() => window.__forgeBrep.transicion(6));
-  await filma('06 el molde · nace el acero', 3.2);
+  await filma('06 el molde · nace el acero', 3.2, null, true);
   let ultima = 3;
-  for (;;) {
-    const e = await ev(() => { const m = document.querySelector('[data-testid="molde-de-la-pieza"]'); return m ? { est: +m.dataset.estacion, pm: m.dataset.portamoldes === '1' } : null; });
-    if (e && e.est > ultima) { ultima = e.est; await filma(`06 el molde · estación ${e.est}`, 1.6); }
+  for (let g = 0; g < 2400; g++) {
+    const e = await estacion();
+    if (e && e.est > ultima) { ultima = e.est; await filma(`06 el molde · estación ${e.est}`, 1.8, null, true); }
     if (e && e.pm) break;
-    await page.waitForTimeout(400);
+    await sueltaArmado(500);
   }
   console.log(ts(), `el molde se armó en ${((Date.now() - tArmado) / 1000).toFixed(0)} s reales`);
+  if (armadoVirtual) { await ev(() => window.__vt.congela(false)); await sueltaArmado(300); }   // el ciclo arranca con sus temporizadores vivos
   await page.waitForTimeout(1500);
   // el molde TRABAJA (su ciclo de 14 s: llena, abre, expulsa) con la cámara girando despacio
   const M = await ev(() => { const G = window.__forgeBrep.moldGeom().filter((g) => !g.role.startsWith('platina')); const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
     for (const g of G) for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], g.min[k]); mx[k] = Math.max(mx[k], g.max[k]); } return { c: [0, 1, 2].map((k) => (mn[k] + mx[k]) / 2), d: Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) }; });
   const C = [M.c[0], M.c[1], M.c[2] + 8];
-  await filma('06 el molde trabaja', 9, (k) => (k % 3 === 0 ? orbita(28 + k * 0.03, 22, M.d * 1.3, C) : null));
+  // el ciclo entero (≈14 s: cierra, se llena, abre, expulsa) con la cámara girando despacio
+  await filma('06 el molde trabaja', 14.5, (k) => (k % 3 === 0 ? orbita(28 + k * 0.03, 22, M.d * 1.3, C) : null));
+  if (HASTA <= 6) { fs.writeFileSync(path.join(OUT, 'tomas.json'), JSON.stringify({ fps: FPS, px: `${W * DPR}×${H * DPR}`, tomas }, null, 1)); console.log(ts(), 'FIN (HASTA=6)', n); await browser.close(); return; }
 
   // 7 · LA INSPECCIÓN — todo su recorrido corre con setTimeout y rAF: se filma ENTERO en virtual (cortina → pulso → 4 puntos)
-  // el reloj virtual se enciende ANTES del clic: así los setTimeout de la secuencia (cortina 2.3 s, pulso 4.2 s, 7.5 s por punto)
-  // nacen en tiempo virtual y la película los filma exactos
+  // el reloj virtual se enciende ANTES del clic: así los setTimeout de la secuencia (cortina 2.3 s, pulso 5.5 s, 11 s por punto,
+  // 12.5 el que anima) nacen en tiempo virtual y la película los filma exactos
+  if (DESDE <= 7) {
   await ev(() => window.__vt.enciende());
   await clic('parte-lente-inspeccion');
-  await filma('07 la inspeccion', 2.3 + 4.2 + 0.6 + 7.5 + 7.5 + 7.5 + 8.6);
+  await filma('07 la inspeccion', 2.3 + 5.5 + 0.6 + 11 + 11 + 11 + 12.6);
+  }
+  if (HASTA <= 7) { fs.writeFileSync(path.join(OUT, 'tomas.json'), JSON.stringify({ fps: FPS, px: `${W * DPR}×${H * DPR}`, tomas }, null, 1)); console.log(ts(), 'FIN (HASTA=7)', n); await browser.close(); return; }
 
   // 8 · LOS PLANOS — se generan en real; se filma la hoja de análisis (la inyectora del taller juzgada)
   await clic('parte-lente-planos');

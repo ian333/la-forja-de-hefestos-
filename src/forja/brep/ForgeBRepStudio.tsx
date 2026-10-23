@@ -5413,7 +5413,7 @@ export default function ForgeBRepStudio() {
       await espera(DURACION_TRANSICION_S * 1000);           // la cortina anuncia el paso 7
       if (!vivo) return;
       const foco = escanearElMolde();                         // el pulso del Foco: hallazgos + el par más justo
-      await espera(4200);
+      await espera(5500);                                     // 5.5 s: el pulso (2.4 s) + leer el veredicto; cabe la frase que lo narra
       if (!vivo) return;
       const api = apiInsp();
       // LA APERTURA REAL se LEE del molde abierto (la misma medición del inspector, no la fórmula 2.5·H)
@@ -5449,10 +5449,12 @@ export default function ForgeBRepStudio() {
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recorrido, recIdx]);
-  // avanza solo: 7.5 s por punto (8.5 el que anima)
+  // avanza solo: 11 s por punto (12.5 el que anima) — lo que tarda LEER la tarjeta (pregunta, número, tope, explicación y
+  // regla). Medido 2026-10-23 con la voz de la película: a 7.5 s la narración (dos frases por punto, ≈10 s) acababa 8 s atrás
+  // de la pantalla — «Abre 152.5» caía sobre los planos. El ritmo lo marca la lectura, no la máquina.
   useEffect(() => {
     if (!recorrido || !recAuto || recIdx >= recorrido.length - 1) return;
-    const id = window.setTimeout(() => setRecIdx((i) => i + 1), recorrido[recIdx]?.vista.anima ? 8500 : 7500);
+    const id = window.setTimeout(() => setRecIdx((i) => i + 1), recorrido[recIdx]?.vista.anima ? 12500 : 11000);
     return () => clearTimeout(id);
   }, [recorrido, recIdx, recAuto]);
   // al cerrar la inspección (o al pasar a planos/expediente) todo vuelve a su reposo
