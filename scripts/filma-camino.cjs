@@ -91,7 +91,8 @@ const RELOJ_VIRTUAL = () => {
   const orbita = (az, el, r, c) => ev(({ az, el, r, c }) => window.__forgeBrep.orbitTo(az, el, r, c[0], c[1], c[2]), { az, el, r, c });
 
   await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForFunction('window.__forgeBrep && window.__forgeBrep.ready', { timeout: 120000 });
+  // (arg = null: las opciones van en el TERCER parámetro — en el segundo, Playwright las toma como argumento y usa 30 s)
+  await page.waitForFunction('window.__forgeBrep && window.__forgeBrep.ready', null, { timeout: 180000 });
   console.log(ts(), 'GPU:', await ev(() => { const g = document.createElement('canvas').getContext('webgl2'); const e = g && g.getExtension('WEBGL_debug_renderer_info'); return e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : '?'; }));
   await page.waitForTimeout(1500);
 
