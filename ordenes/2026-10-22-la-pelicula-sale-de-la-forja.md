@@ -3,7 +3,7 @@
 ESTADO: hoy
 PRIORIDAD: 1
 
-BASE: 1fbde9d
+BASE: 1d960df
 
 OBJETIVO: ian (2026-10-22), sobre el tutorial del happy path: «es un pipeline, pero nunca siento cuando pasamos al otro lado… entre un paso
 y el otro debería haber una animación» · «el video de producción debe salir de La Forja» · «el análisis del video del inspector no es algo
@@ -112,3 +112,5 @@ MoldPanels.tsx (la barrita lee la referencia), foco-molde.ts (el par más justo 
   en CADA cuadro del llenado → 5.5 fps durante LLENANDO. Arreglo de raíz: superficie una vez + recorte por tiempo en la GPU.
 - Color: 3 direcciones en Downloads/el-futuro/ (cyberpunk · holograma de cine · futuro real) — elige ian. Colores actuales provisionales.
 - Pendiente: la filmadora (paso 3 de la orden).
+
+- BASE movida a 1d960df: el avance 1 de esta orden quedó en 2608b5b y la piel en su propia orden (1d960df); desde aquí el juez mide la filmadora.
