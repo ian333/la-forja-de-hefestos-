@@ -1,0 +1,65 @@
+{
+  "id": "conos-caseta-noche",
+  "titulo": "La caseta de noche — conos JA-VAZ #7 (polinización, sin voz)",
+  "nota": "ian 2026-10-15: «son más importantes los videos de los conos… va dale». Beats de polinización (conos/escenas/07-caseta-noche.json) adaptados a LA CIUDAD DE NOCHE: calles reales de Juriquilla (OSM), la pluma real 8636180821, autos como chispas, la torre de color SÓLO donde la toca la lámpara (no reflejante, confirmado por ian), vitrina con las medidas del plano TORR-1340PX3, abanico de 13 colores medidos, rejilla de 100 (conteo real; colores ilustrativos). SIN VOZ: texto en pantalla + música; pista de VO opcional en el JSON de polinización. Ver scripts/precompute-caseta.py y conos-caseta.json.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=ecaseta&titulo=-",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (ecaseta); ?titulo=- apaga el rótulo de la serie (el texto va en los subtítulos)."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 60
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.casetaframes"
+  },
+  "audio": {
+    "dir": "dist-video/conos-caseta-noche",
+    "narracion": "silencio-60s.wav",
+    "musica": "caseta-musica.wav",
+    "musicaFuente": "pendiente: cama tenue (sin voz sintética: regla de polinización)",
+    "musicaVol": 0.5,
+    "musicaFadeIn": 1.5,
+    "musicaFadeOutAt": 56,
+    "segs": "segs.json",
+    "ass": "conos-caseta-noche.ass",
+    "voz": "NINGUNA (regla: sin voz sintética comercial)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "conos-caseta-noche-4k-master.mp4",
+    "h264": "conos-caseta-noche-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "conos-caseta.bin",
+      "conos-caseta-efield.bin",
+      "conos-caseta.json",
+      "osm-juriquilla-calles.json",
+      "conos-paleta-torres.json"
+    ],
+    "scripts": [
+      "precompute-caseta.py",
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "derivados": {
+    "cuenta": "1080×1920 H.264 yuv420p ≤8 MB +faststart, subtítulos quemados, póster JPG (reproductor de /cuenta, polinización)"
+  },
+  "publicar": {
+    "nota": "NADA se publica sin ian. Destino: /cuenta de clientes (polinización), no redes."
+  }
+}

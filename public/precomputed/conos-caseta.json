@@ -1,0 +1,194 @@
+{
+ "lectura": "LA CASETA DE NOCHE (conos JA-VAZ #7): calles reales de Juriquilla (OSM), la pluma real 8636180821, autos como chispas, la torre de color sólo donde la toca la lámpara (no reflejante); vitrina con las medidas del plano TORR-1340PX3",
+ "K": 207,
+ "NT": 52572,
+ "tramos": {
+  "A": [
+   1,
+   147
+  ],
+  "T": [
+   150,
+   151
+  ],
+  "B": [
+   154,
+   168
+  ],
+  "F": [
+   171,
+   172
+  ],
+  "G": [
+   175,
+   201
+  ],
+  "Z": [
+   204,
+   205
+  ]
+ },
+ "reloj": [
+  [
+   0,
+   1.0
+  ],
+  [
+   4,
+   65.0
+  ],
+  [
+   10,
+   113.0
+  ],
+  [
+   27,
+   147.0
+  ],
+  [
+   27.001,
+   150.0
+  ],
+  [
+   33,
+   151.0
+  ],
+  [
+   33.001,
+   154.0
+  ],
+  [
+   42,
+   168.0
+  ],
+  [
+   42.001,
+   171.0
+  ],
+  [
+   50,
+   172.0
+  ],
+  [
+   50.001,
+   175.0
+  ],
+  [
+   54,
+   201.0
+  ],
+  [
+   56,
+   201.0
+  ],
+  [
+   56.001,
+   204.0
+  ],
+  [
+   60,
+   205.0
+  ]
+ ],
+ "m_por_unidad": 400.0,
+ "dt_bin_s": 0.5,
+ "origen": {
+  "nodo_osm": 8636180821,
+  "lat": 20.6969826,
+  "lon": -100.4402306
+ },
+ "caseta_m": [
+  2.858346821676808,
+  -3.4756083563903006
+ ],
+ "caseta_nota": "ubicación ILUSTRATIVA junto a la pluma real",
+ "lampara": {
+  "h_m": 5.0,
+  "ley": "E ∝ (h−z)/(d²+(h−z)²)^1.5"
+ },
+ "torre_m": {
+  "alto": 0.118,
+  "base_cuerpo": 0.15,
+  "tapa": 0.035,
+  "pestana": 0.214,
+  "dudoso": "16.00 cm del plano"
+ },
+ "heroes": [
+  {
+   "sku": "TORR-NA",
+   "llega_s": 57.0,
+   "sube_s": 62.5
+  },
+  {
+   "sku": "TORR-AZ",
+   "llega_s": 65.0,
+   "sube_s": 67.5
+  },
+  {
+   "sku": "TORR-VE",
+   "llega_s": 69.5,
+   "sube_s": 73.2
+  },
+  {
+   "sku": null,
+   "llega_s": 76.0,
+   "sube_s": 1000000000.0
+  }
+ ],
+ "fondo": {
+  "autos": 140,
+  "nota": "ilustrativo: no hay aforo de Juriquilla a las 11 pm"
+ },
+ "rejilla": "100 = conteo real de condominios (ANALISIS-CONOS §3); colores de la rejilla ILUSTRATIVOS",
+ "grupos": [
+  [
+   "fondo-faros",
+   2240
+  ],
+  [
+   "fondo-mancha",
+   4200
+  ],
+  [
+   "fondo-calaveras",
+   1120
+  ],
+  [
+   "fondo-estela1",
+   2240
+  ],
+  [
+   "fondo-estela2",
+   2240
+  ],
+  [
+   "fondo-estela3",
+   2240
+  ],
+  [
+   "h0-faros",
+   80
+  ],
+  [
+   "h0-mancha",
+   220
+  ],
+  [
+   "h0-calaveras",
+   28
+  ],
+  [
+   "h0-carroceria",
+   260
+  ],
+  [
+   "h0-torre",
+   260
+  ],
+  [
+   "h1-faros",
+   80
+  ]
+ ],
+ "fuente_calles": "OpenStreetMap contributors (ODbL) vía Overpass API, 2026-10-15"
+}

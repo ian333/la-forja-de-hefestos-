@@ -226,6 +226,40 @@ const ECOLONIA_CAPAS: CapasSpec = {
   ceros:    { base: 0, mods: [] },
   apertura: { base: 1, mods: ECOLONIA_PASOS.map(([t, a]) => ({ wins: [[t, ECOLONIA_DURATION]] as [number, number][], a, label: `reloj ${t.toFixed(1)} s` })) },
 };
+// ── LA CASETA DE NOCHE (conos JA-VAZ #7, 2026-10-15) — sobre el lenguaje de LA CIUDAD DE NOCHE.
+// scripts/precompute-caseta.py: calles reales de Juriquilla (OSM), la pluma real (nodo 8636180821) en el
+// origen, autos como chispas, la torre de color SÓLO donde la toca la lámpara (no reflejante), y la
+// vitrina con las medidas del plano TORR-1340PX3. El bin lleva 6 tramos (ciudad A · torre · ciudad B ·
+// abanico · rejilla · torre) con un cuadro duplicado en cada borde; este RELOJ sale de conos-caseta.json.
+const ECASETA_DURATION = 60;
+const ECASETA_RELOJ: [number, number][] = [   // (segundo, cuadro del bin)
+  [0, 1], [4, 65], [10, 113], [26.999, 147], [27, 150], [32.999, 151], [33, 154], [41.999, 168],
+  [42, 171], [49.999, 172], [50, 175], [54, 200], [55.999, 200], [56, 203], [60, 204],
+];
+const ECASETA_K = 206;
+// UN ESCALÓN POR CUADRO (1/30 s), puesto ENTRE cuadros y con borde de 2 ms (capasEdge): en cada cuadro el
+// reloj vale EXACTO f(t), y un salto de tramo ocurre entre dos cuadros. Con los escalones de 0.2 s y el borde
+// de 0.6 s de siempre, la rampa del salto cruzaba el intervalo ciudad↔vitrina y el motor ocultaba las dos
+// (el centinela de cualquiera de los dos cuadros esconde el punto): 33 cuadros NEGROS en el preview v2.
+const ECASETA_PASOS: [number, number][] = (() => {
+  const out: [number, number][] = []; const FPS = 30; const KM = ECASETA_K - 1;
+  const f = (t: number) => { for (let i = 1; i < ECASETA_RELOJ.length; i++) { const [t0, f0] = ECASETA_RELOJ[i - 1], [t1, f1] = ECASETA_RELOJ[i]; if (t <= t1) return f0 + (f1 - f0) * (t - t0) / Math.max(t1 - t0, 1e-6); } return ECASETA_RELOJ[ECASETA_RELOJ.length - 1][1]; };
+  out.push([-1, -f(0) / KM]);
+  for (let k = 0; k < ECASETA_DURATION * FPS; k++) { const d = (f((k + 1) / FPS) - f(k / FPS)) / KM; if (Math.abs(d) > 1e-9) out.push([(k + 0.5) / FPS, -d]); }
+  return out;
+})();
+const ECASETA_CAPAS: CapasSpec = {
+  campo:    { base: 2.1, mods: [] },
+  respiro:  { base: 0, mods: [] },
+  nubes:    { base: 1, mods: [] },
+  parpadeo: { base: 0.04, mods: [] },
+  spin:     { base: 1, mods: [] },
+  acc:      { base: 1.1, mods: [] },
+  enlaces:  { base: 0, mods: [] },
+  dipolo:   { base: 0, mods: [] },
+  ceros:    { base: 0, mods: [] },
+  apertura: { base: 1, mods: ECASETA_PASOS.map(([t, a]) => ({ wins: [[t, ECASETA_DURATION]] as [number, number][], a, label: `reloj ${t.toFixed(1)} s` })) },
+};
 const EGRUPOS_DURATION = 55;
 // ECONOMÍA — no hay campo eléctrico que dibujar (el .bin de campo va con NL=0), ni enlaces, ni
 // dipolos: son agentes, no átomos. Solo nubes, con el parpadeo bajo para que se lea la ESTRUCTURA.
@@ -1288,6 +1322,42 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: loomPush({ rFrom: 0.42, rTo: 0.070, elev: 0.0, azim: 1.5708, fov: 30 }), dur: 3.87, label: 'l12 ¿para cuántos meses te alcanza? (de regreso a su calle)' },
     { shot: eyeLevelLock({ rMul: 0.062, azim: 1.5708, fov: 15 }), dur: 7.47, label: 'l13 el sello: Don Beto solo en su calle' },
   ],
+  ecaseta: [
+    // LA CASETA DE NOCHE (conos #7). 1 unidad = 400 m en la ciudad; en la vitrina 1 unidad = la torre (11.8 cm).
+    // Plano general rMul 0.42 (≈1.3 km de alto, banda medida de la ciudad); la pluma con TELEOBJETIVO
+    // (rMul 0.06, fov 2.6-3.4 ≈ 12-16 m de alto: el auto llena el cuadro y la torre se lee; el origen es la línea de alto).
+    { shot: eyeLevelLock({ rMul: 0.42, azim: 1.5708, fov: 40 }), dur: 4.0, label: '11:00 pm — Juriquilla de noche, chispas hacia la caseta' },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.08, elev: 0.0, azim: 1.5708, fov: 30 }), dur: 6.0, label: 'bajamos a la pluma: el guardia sólo ve faros' },
+    { shot: eyeLevelLock({ rMul: 0.06, azim: 1.5708, fov: 2.6 }), dur: 6.0, label: '…y un color: la lámpara prende la torre naranja (≈12 m de cuadro)', corte: true },
+    { shot: eyeLevelLock({ rMul: 0.06, azim: 1.5708, fov: 3.4 }), dur: 11.0, label: 'la fila: naranja, azul, verde (EJEMPLO), una por una bajo la luz' },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.36, elev: 0.0, azim: 1.5708, fov: 30 }), dur: 6.0, label: 'la torre de cerca, con sus medidas: el número dice a qué casa va (ejemplo)', corte: true },
+    { shot: eyeLevelLock({ rMul: 0.06, azim: 1.5708, fov: 3.4 }), dur: 9.0, label: 'con color se reconoce; sin color, se pregunta', corte: true },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.38, elev: 0.12, azim: 1.5708, fov: 40 }), dur: 8.0, label: 'los colores medidos de las fotos', corte: true },
+    { shot: eyeLevelLock({ rMul: 0.40, azim: 1.5708, fov: 40 }), dur: 6.0, label: '100 condominios (conteo real; colores ilustrativos)', corte: true },
+    { shot: loomPush({ rFrom: 0.40, rTo: 0.37, elev: 0.0, azim: 1.5708, fov: 30 }), dur: 4.0, label: 'si lo necesitas, está en tu página', corte: true },
+  ],
+  // UNA NOCHE EN CHIMALHUACÁN EN 16:9 (?cam=w, 2026-09-19): MISMAS tomas y MISMAS duraciones. La FOV de
+  // three.js es VERTICAL: en 16:9 el cuadro pierde altura y la pareja quedaba chiquita (stills w1.0: 1-3 % de
+  // luz). ?zoom=0.6 NO sirve aquí: acerca la cámara y los sprites se diluyen a negro (stills w0.6: 0 %).
+  // Cura: los acercamientos cierran MÁS el lente (fov ×0.57); los planos de la colonia se quedan igual.
+  'ecolonia-w': [
+    // v2 — un corte por arranque de línea; la cámara apunta a la pareja (origen de la escena).
+    // Colonia: rMul 0.42 · fov 40 (banda medida 0.19-0.45). Pareja: rMul ≥ 0.06 con TELEOBJETIVO fov 13-15
+    // (acercar la cámara a 0.02-0.03 agranda cada sprite hasta diluirlo: cuadro NEGRO, stills k3).
+    { shot: eyeLevelLock({ rMul: 0.42, azim: 1.5708, fov: 40 }), dur: 3.67, label: 'l01 Esta es Chimalhuacán, de noche (EL GANCHO: la colonia entera)' },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.17, elev: 0.0, azim: 1.5708, fov: 40 }), dur: 6.01, label: 'l02 cada luz un negocio, cada chispa dinero: bajamos hacia su calle' },
+    { shot: eyeLevelLock({ rMul: 0.062, azim: 1.5708, fov: 8.5 }), dur: 6.79, label: 'l03 CORTE a su calle: la dorada es Doña Lupe, la blanca Don Beto' },
+    { shot: eyeLevelLock({ rMul: 0.060, azim: 1.5708, fov: 8 }), dur: 3.92, label: 'l04 venden lo mismo, la misma suerte' },
+    { shot: loomPush({ rFrom: 0.064, rTo: 0.056, elev: 0.0, azim: 1.5708, fov: 7.4 }), dur: 7.46, label: 'l05 un mes contra tres: su luz es más grande' },
+    { shot: pullOut({ azim0: 1.5708, span: 0.0, rFromMul: 0.060, rTdMul: 0.42, fovFrom: 8, fovTo: 40 }), dur: 2.68, label: 'l06 cada tic es un mes: se abre a la colonia' },
+    { shot: eyeLevelLock({ rMul: 0.42, azim: 1.5708, fov: 40 }), dur: 4.33, label: 'l07 un mes malo: la sequía entra por el sur' },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.075, elev: 0.0, azim: 1.5708, fov: 20 }), dur: 4.77, label: 'l08 la sombra avanza y llega a su calle' },
+    { shot: eyeLevelLock({ rMul: 0.060, azim: 1.5708, fov: 8 }), dur: 3.87, label: 'l09 CORTE a la pareja: Don Beto paga y aguanta' },
+    { shot: eyeLevelLock({ rMul: 0.058, azim: 1.5708, fov: 7.4 }), dur: 2.95, label: 'l10 la luz de Doña Lupe se apaga (44.1 s)' },
+    { shot: pullOut({ azim0: 1.5708, span: 0.0, rFromMul: 0.060, rTdMul: 0.42, fovFrom: 8, fovTo: 40 }), dur: 8.21, label: 'l11 la colonia al final del año: se apagaron las de oro' },
+    { shot: loomPush({ rFrom: 0.42, rTo: 0.070, elev: 0.0, azim: 1.5708, fov: 20 }), dur: 3.87, label: 'l12 ¿para cuántos meses te alcanza? (de regreso a su calle)' },
+    { shot: eyeLevelLock({ rMul: 0.062, azim: 1.5708, fov: 8.5 }), dur: 7.47, label: 'l13 el sello: Don Beto solo en su calle' },
+  ],
   egrupos: [
     // EL MOTOR DE ECONOMÍA (2026-09-07). Primera pieza que NO es química: los puntos son 12,000
     // agentes y su posición sale de dos modelos publicados (Bouchaud-Mézard 2000 + Schelling
@@ -1792,6 +1862,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   wsillab: { name: 'Dos sillas vacías', formula: 'H₂O···H₂O', fact: 'Dos sillas y dos hidrógenos = cuatro lugares por molécula: el tetraedro del hielo.' },
   epresa: { name: 'La presa', formula: 'el dinero es agua', fact: 'El nivel no es adorno: es la caja real del negocio, mes con mes.' },
   eciudad: { name: 'La colonia', formula: 'Chimalhuacán, de noche', fact: 'Cada calle existe; cada luz es un negocio; cada chispa, un pago que viaja.' },
+  ecaseta: { name: 'La caseta de noche', formula: 'conos JA-VAZ', fact: 'Calles reales de Juriquilla; la torre sólo se ve donde la toca la luz.' },
   ecolonia: { name: 'Una noche en Chimalhuacán', formula: 'la economía de tu negocio', fact: 'Cada calle existe; cada luz es un negocio; cada chispa, un pago que viaja.' },
   eguarda: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Los dos venden lo mismo y les toca la misma suerte: cierra el que tenía guardado un mes, no el que vendía menos.' },
   ecolchon: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
@@ -3399,6 +3470,7 @@ type WaterEntry = {
   campoAncho?: number;                 // grosor de las líneas de campo en px del master 4K (la ciudad: calles)
   campoCol?: [number, number, number]; // color de las líneas (por defecto cian-violeta)
   campoFlujo?: number;                 // pulsos de luz corriendo por las líneas (0 = quieto)
+  capasEdge?: number;                  // borde (s) de las ventanas de capas; sin declararlo = 0.6 de siempre (la caseta: 0.002)
 };
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
@@ -3446,6 +3518,9 @@ const WATER_BINS: Record<string, WaterEntry> = {
   ecolonia: { bin: 'economia-ciudad', ef: 'economia-ciudad-efield', ex: 11,
               capas: ECOLONIA_CAPAS, dur: ECOLONIA_DURATION, sizeMul: 1.35, binColors: true, sinRaleo: true,
               campoAncho: 8.0, campoCol: [0.34, 0.70, 1.75], campoFlujo: 1 },
+  ecaseta: { bin: 'conos-caseta', ef: 'conos-caseta-efield', ex: 11,
+             capas: ECASETA_CAPAS, dur: ECASETA_DURATION, sizeMul: 1.35, binColors: true, sinRaleo: true,
+             campoAncho: 8.0, campoCol: [0.34, 0.70, 1.75], campoFlujo: 1, capasEdge: 0.002 },
   egrupos: { bin: 'economia-grupos', ef: 'economia-grupos-efield', ex: 11,
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
@@ -3688,7 +3763,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // declarada 34 líneas más abajo y el scene moría en TDZ: `page.waitForFunction`
   // timeout, la escena nunca llegaba a ready. Es el mismo gotcha del replace ciego
   // que ya mordió en los canales del molde.
-  const C = evalCapas(W.capas ?? WPAIR_CAPAS, T);
+  const C = evalCapas(W.capas ?? WPAIR_CAPAS, T, W.capasEdge ?? 0.6);
   // LA APERTURA ES UNA CAPA (2026-07-28). Antes esta fórmula estaba QUEMADA aquí con los
   // segundos de EL PUENTE (`T−49`, `/13`) y el anillo la heredó. Medido sobre la curva vieja:
   // en t≈21 la voz dice "el anillo y quién le presta hidrógeno" con el anillo 65% ABIERTO;
@@ -4576,6 +4651,8 @@ function MoleculeTitle({ mkey, time, vertical }: { mkey: string; time: number; v
   const qs = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
   const base = META[mkey] ?? META.h2o;
   const m = { ...base, name: qs?.get('titulo') || base.name, formula: qs?.get('formula') || base.formula };
+  // `?titulo=-` = SIN rótulo (la caseta de conos, 2026-10-15: su texto va en los subtítulos del manifiesto).
+  if (qs?.get('titulo') === '-') return null;
   const opacity = Math.min(1, Math.max(0, (time - 2.4) / 0.9)) * Math.min(1, Math.max(0, (21.3 - time) / 0.7));
   if (opacity < 0.01) return null;
   return (

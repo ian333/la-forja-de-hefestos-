@@ -66,7 +66,10 @@ export interface ShotCtx {
 export type Shot = (u: number, ctx: ShotCtx) => Pose;
 
 /** Entrada de la lista de tomas de una pieza. */
-export interface ShotEntry { shot: Shot; dur: number; label?: string; }
+/** `corte: true` = CORTE SECO al entrar a esta toma: sin la mezcla de BLEND en esa costura (la caseta de
+ *  conos, 2026-10-15: de la ciudad a la vitrina de la torre cambia la ESCALA del mundo; mezclar 0.6 s la
+ *  cámara entre r=0.66 y r=3.3 abría la ciudad a 800 m justo antes del corte). Sin declararlo = igual que siempre. */
+export interface ShotEntry { shot: Shot; dur: number; label?: string; corte?: boolean; }
 
 const ROLL = Math.PI / 2;                 // convención vertical (el rig de 16:9 lo resuelve)
 const SAFE = 0.86;   // margen de seguridad en el eje CORTO: nada del sujeto toca el borde
@@ -340,13 +343,13 @@ export function playShots(list: ShotEntry[], t: number, ctx: ShotCtx): Pose {
   let pose = list[i].shot(u, ctx);
 
   // blend con la SIGUIENTE en la ventana final
-  if (i < list.length - 1 && dur - local < BLEND) {
+  if (i < list.length - 1 && !list[i + 1].corte && dur - local < BLEND) {
     const w = smooth((BLEND - (dur - local)) / (2 * BLEND));     // 0→0.5 en la ventana
     const nx = list[i + 1].shot(0, ctx);
     pose = blendPose(pose, nx, w);
   }
   // blend con la ANTERIOR en la ventana inicial
-  if (i > 0 && local < BLEND) {
+  if (i > 0 && !list[i].corte && local < BLEND) {
     const w = smooth((BLEND - local) / (2 * BLEND));             // 0→0.5
     const pv = list[i - 1].shot(1, ctx);
     pose = blendPose(pose, pv, w);

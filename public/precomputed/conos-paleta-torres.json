@@ -1,0 +1,353 @@
+{
+ "TORR-AM": {
+  "hex_cara_iluminada": "#F2C801",
+  "parche_cara_iluminada": [
+   190,
+   272
+  ],
+  "hex": "#E6BA01",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/_sku_fixed/torr-am.jpg",
+  "tam_foto": [
+   400,
+   400
+  ],
+  "pixel": [
+   224,
+   196
+  ],
+  "pixel_hex": "#E7BB00",
+  "zona_bbox_xyxy": [
+   48,
+   16,
+   354,
+   384
+  ],
+  "pixeles_en_bin": 15924,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-VE": {
+  "hex_cara_iluminada": "#3C8144",
+  "parche_cara_iluminada": [
+   594,
+   460
+  ],
+  "hex": "#25652C",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-VE-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   672,
+   1122
+  ],
+  "pixel_hex": "#26652C",
+  "zona_bbox_xyxy": [
+   154,
+   326,
+   1240,
+   1504
+  ],
+  "pixeles_en_bin": 86252,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-AZ": {
+  "hex_cara_iluminada": "#2A51C6",
+  "parche_cara_iluminada": [
+   400,
+   874
+  ],
+  "hex": "#0139A7",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-AZ-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   740,
+   1038
+  ],
+  "pixel_hex": "#0038A7",
+  "zona_bbox_xyxy": [
+   84,
+   436,
+   1278,
+   1502
+  ],
+  "pixeles_en_bin": 180504,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-RO": {
+  "hex_cara_iluminada": "#A0323D",
+  "parche_cara_iluminada": [
+   718,
+   446
+  ],
+  "hex": "#7A0016",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/_sku_fixed/torr-ro.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   888,
+   1190
+  ],
+  "pixel_hex": "#7A0015",
+  "zona_bbox_xyxy": [
+   352,
+   368,
+   1182,
+   1380
+  ],
+  "pixeles_en_bin": 104032,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-NA": {
+  "hex_cara_iluminada": "#DC602C",
+  "parche_cara_iluminada": [
+   672,
+   442
+  ],
+  "hex": "#D65826",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-NA-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   650,
+   602
+  ],
+  "pixel_hex": "#D55828",
+  "zona_bbox_xyxy": [
+   62,
+   300,
+   1308,
+   1510
+  ],
+  "pixeles_en_bin": 136712,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-BL": {
+  "hex_cara_iluminada": "#F0F0F0",
+  "parche_cara_iluminada": [
+   954,
+   466
+  ],
+  "hex": "#ECECEB",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/_sku_fixed/torr-bl.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   802,
+   980
+  ],
+  "pixel_hex": "#ECECEC",
+  "zona_bbox_xyxy": [
+   20,
+   272,
+   1320,
+   1512
+  ],
+  "pixeles_en_bin": 388692,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-NE": {
+  "hex_cara_iluminada": "#434245",
+  "parche_cara_iluminada": [
+   1090,
+   1094
+  ],
+  "hex": "#110E13",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-NE-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   590,
+   996
+  ],
+  "pixel_hex": "#110F12",
+  "zona_bbox_xyxy": [
+   186,
+   378,
+   1164,
+   1352
+  ],
+  "pixeles_en_bin": 147440,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-VL": {
+  "hex_cara_iluminada": "#6CEB53",
+  "parche_cara_iluminada": [
+   1118,
+   1072
+  ],
+  "hex": "#6BEA53",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-VL-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   704,
+   1146
+  ],
+  "pixel_hex": "#6BE753",
+  "zona_bbox_xyxy": [
+   56,
+   282,
+   1300,
+   1398
+  ],
+  "pixeles_en_bin": 100524,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-AC": {
+  "hex_cara_iluminada": "#80C7F5",
+  "parche_cara_iluminada": [
+   950,
+   562
+  ],
+  "hex": "#67B7EB",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-AC-1340px1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   752,
+   1006
+  ],
+  "pixel_hex": "#67B7EA",
+  "zona_bbox_xyxy": [
+   34,
+   312,
+   1278,
+   1486
+  ],
+  "pixeles_en_bin": 193440,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-RS": {
+  "hex_cara_iluminada": "#EA01AC",
+  "parche_cara_iluminada": [
+   362,
+   628
+  ],
+  "hex": "#E901A5",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-RS-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   650,
+   710
+  ],
+  "pixel_hex": "#E901A3",
+  "zona_bbox_xyxy": [
+   74,
+   308,
+   1298,
+   1498
+  ],
+  "pixeles_en_bin": 236732,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-MO": {
+  "hex_cara_iluminada": "#220083",
+  "parche_cara_iluminada": [
+   426,
+   732
+  ],
+  "hex": "#16006C",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-MO-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   580,
+   1104
+  ],
+  "pixel_hex": "#16006C",
+  "zona_bbox_xyxy": [
+   198,
+   388,
+   1164,
+   1354
+  ],
+  "pixeles_en_bin": 236652,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-CA": {
+  "hex_cara_iluminada": "#4A372F",
+  "parche_cara_iluminada": [
+   644,
+   908
+  ],
+  "hex": "#46332C",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-CA-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   734,
+   1042
+  ],
+  "pixel_hex": "#46332C",
+  "zona_bbox_xyxy": [
+   60,
+   306,
+   1284,
+   1494
+  ],
+  "pixeles_en_bin": 138028,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ },
+ "TORR-GR": {
+  "hex_cara_iluminada": "#656975",
+  "parche_cara_iluminada": [
+   756,
+   472
+  ],
+  "hex": "#464A56",
+  "foto_atlas": "/mnt/hdd/assets/javaz/product_images/COCINA/ECOMMERCE/SheIn/TORRES DE SEÑALIZACION/TORR-GR-1340PX1.jpg",
+  "tam_foto": [
+   1340,
+   1785
+  ],
+  "pixel": [
+   534,
+   1010
+  ],
+  "pixel_hex": "#464A56",
+  "zona_bbox_xyxy": [
+   148,
+   374,
+   1246,
+   1436
+  ],
+  "pixeles_en_bin": 192192,
+  "metodo_luz": "mismo tono, brillo p60-p80 de la cara; hex = mediana de un parche 15x15 uniforme (centro = parche_cara_iluminada)",
+  "metodo": "hex = bin dominante (16 niveles/canal) tras quitar fondo y números; hex = mediana del bin"
+ }
+}
