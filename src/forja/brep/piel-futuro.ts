@@ -11,6 +11,13 @@
  * La regla de ian de foco-lentes.ts se queda: CIAN = lo MEDIDO, VIOLETA = lo SIMULADO (más trama, por daltonismo).
  * Falla / aviso / cumple NO se distinguen solo por color: forma (◆ ◇ ✓), signo y palabra («NO CUMPLE»).
  *
+ * EL REPARTO (ian, 2026-10-23, viendo la película: «lo primero es CYBERPUNK para ANÁLISIS; el cine para lo demás»):
+ *   · ANÁLISIS = cyberpunk: el Foco, la inspección, el dictamen, las lentes y toda tarjeta con número-contra-límite — neón con
+ *     significado, el amarillo del operador, la falla que tiembla, el mono de JetBrains para el número.
+ *   · LO DEMÁS = holograma de cine: el mundo 3D (la pieza de marfil, el acero de hielo, el agua, los botadores de cromo), las
+ *     transiciones entre pasos, el lobby y los paneles del CAD — vacío azul marino, vidrio, hilos finos, nada que grite.
+ *   Cuando algo nuevo pida color: ¿es un dato que se juzga? → cyberpunk. ¿Es el mundo o el camino? → cine.
+ *
  * UNA sola fuente: el CSS del estudio (variables --ds-*), el Foco, la inspección, la transición y los colores del molde leen de aquí.
  */
 export const PIEL = {

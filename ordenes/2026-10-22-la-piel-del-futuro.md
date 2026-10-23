@@ -3,7 +3,7 @@
 ESTADO: hoy
 PRIORIDAD: 1
 
-BASE: 2608b5b
+BASE: bab5ea9
 
 OBJETIVO: ian (2026-10-22): «la idea es crear una interfaz que se sienta como el futuro en verdad» → tres agentes investigaron
 (Downloads/el-futuro/) → ian: «definitivamente cyberpunk combinado con holograma de cine». La mezcla:
@@ -17,6 +17,7 @@ estudio (variables --ds-*), el Foco, la inspección, la transición y los colore
 
 ## TOCA
 - src/forja/brep/ForgeBRepStudio.tsx
+- src/forja/brep/piel-futuro.ts
 - src/forja/brep/FocoMolde3D.tsx
 - src/forja/brep/TransicionPaso.tsx
 
@@ -101,3 +102,11 @@ estudio (variables --ds-*), el Foco, la inspección, la transición y los colore
 - Las REGLITAS número-contra-límite en cada hallazgo; «lo único que tiembla es una falla» (salto determinista, puro en t).
 - Capturas 4K del build de producción (dev3): el Foco con la piel, el enfriamiento, la inspección. Visto y corregido: el riel se
   encimaba con DOCUMENTO/PARÁMETROS (→ va entre ellos).
+
+## AVANCE 2 (2026-10-23 · el reparto, de ian)
+ian, viendo la película: **«lo primero es CYBERPUNK para ANÁLISIS; el cine para lo demás»**. Queda escrito en la cabecera de
+`piel-futuro.ts` como la regla para todo color nuevo: ¿es un dato que se juzga (Foco, inspección, dictamen, lentes, tarjetas
+número-contra-límite)? → cyberpunk. ¿Es el mundo 3D, la transición, el lobby o un panel del CAD? → holograma de cine. Solo cabecera: ni un
+token cambia.
+- BASE movida 2608b5b → bab5ea9 (2026-10-23): la piel ya está en 1d960df y después entró la filmadora (f5e0e0b…bab5ea9, de la orden
+  de la película); desde aquí el juez mide solo la cabecera.
