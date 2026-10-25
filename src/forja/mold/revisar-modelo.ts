@@ -25,6 +25,7 @@ import { clasificarVisibilidad, juzgarMarcas, proyectarParaLamina, type MarcaPro
 import { alabeoPorEspesor, alabeoPorArea } from './warpage';
 import { ABS_TAIT } from './shrinkage';
 import { moldMachine, Q_ANUAL_ASUMIDA, type MachineSpec, type MoldPackage } from './moldmachine';
+import { venteoDeReferenciaMm } from './platesizing';
 import { contratos, medirEnsamble, type ContratoReporte, type EnsambleMedido } from './mold-contratos';
 import { coordAudit, type CoordFinding } from './mold-coords';
 import { packageToAssemblySpec } from './mold-plano-set';
@@ -277,16 +278,23 @@ export function laminasDeRevision(r: RevisionModelo, mesh?: MeshLike): Lamina[] 
   // §12.1.2 — deflexión contra el espesor del venteo (siempre disponible)
   const sp = r.pkg.diseno.placas.soporte;
   out.push(laminaDeflexion({
-    nombre: r.nombre, deflexionMm: sp.deflectionAtPlateMm, venteoMm: r.pkg.diseno.venteo.hSpecMm,
+    // la MISMA referencia de venteo con la que se dimensionó la placa y la juzga el contrato estructural
+    // (`venteoDeReferenciaMm`: la más estricta entre 0.02 de la partición y el de la E7). Antes la lámina
+    // comparaba contra el venteo de la E7 (0.050 mm en la 1594C Box) y el contrato contra 0.020: con el piso de
+    // empaque la lámina diría «margen 6.1×» (0.050/0.0082) de la misma flecha que el contrato juzga al 41 % de 0.020.
+    nombre: r.nombre, deflexionMm: sp.deflectionAtPlateMm, venteoMm: venteoDeReferenciaMm(r.pkg.diseno.venteo.hSpecMm),
     spanMm: 0.6 * Math.min(r.pkg.base.base.wmm, r.pkg.base.base.lmm),
     placaMm: sp.plateThkMm ?? 0, nPilares: sp.nPillars, gobierna: sp.governs,
   }));
   // §10.3.1 — las dos formas del alabeo, con la topología REAL de la pieza
   try {
     const half = Math.min(spec.Lmm, spec.Wmm) / 2;
-    const esp = alabeoPorEspesor(ABS_TAIT, { wallMm: spec.wallMm, halfWidthMm: half, tCavityC: 132, tCoreC: 134, pPackPa: 66e6 });
+    // p_pack DECLARADO (orden 2026-10-24-b): antes 66 MPa tecleados aquí, que no salían de ningún lado de
+    // esta pieza; ahora la MISMA presión de empaque que cierra el molde y fija el nominal de contracción.
+    const pPackPa = (r.pkg.diseno.packMPa ?? 50) * 1e6;
+    const esp = alabeoPorEspesor(ABS_TAIT, { wallMm: spec.wallMm, halfWidthMm: half, tCavityC: 132, tCoreC: 134, pPackPa });
     const are = alabeoPorArea(ABS_TAIT, {
-      wallMm: spec.wallMm, halfWidthMm: half, tC: 132, pCenterPa: 66e6, pEdgePa: 0,
+      wallMm: spec.wallMm, halfWidthMm: half, tC: 132, pCenterPa: pPackPa, pEdgePa: 0,
       topologia: spec.warpageTopology?.tipo,
     });
     out.push(laminaAlabeo({ nombre: r.nombre, halfWidthMm: half, wallMm: spec.wallMm, espesor: esp, area: are, dtC: 2 }));

@@ -3986,7 +3986,7 @@ export default function ForgeBRepStudio() {
   const specPieza = useMemo(() => {
     const shape = arbolRef.current?.shape; const p = lentes?.lentes.find((l) => l.id === 'pared')?.p50;
     if (!oc || !shape || !piezaMalla || !(p && p > 0)) return undefined;
-    try { return piezaDesdeArbol(oc, shape, { nombre: piezaMalla.nombre, wallMm: +p.toFixed(2), material: mold.intake.material ?? 'ABS', annualVolume: mold.intake.annualVolume }).spec; }
+    try { return piezaDesdeArbol(oc, shape, { nombre: piezaMalla.nombre, wallMm: +p.toFixed(2), material: mold.intake.material ?? 'ABS', annualVolume: mold.intake.annualVolume, packMPa: mold.intake.packMPa }).spec; }
     catch (e) { console.warn('SPEC_PIEZA_ERR', e); return undefined; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oc, arbolRev, piezaMalla, lentes, mold.intake]);
