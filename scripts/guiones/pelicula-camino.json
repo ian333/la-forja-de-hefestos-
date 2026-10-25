@@ -44,8 +44,8 @@
  {
   "toma": "06 el molde · estación",
   "en": 0.3,
-  "voz": "En tiempo real, el molde completo se arma en menos de dos minutos.",
-  "sub": "En tiempo real, el molde completo se arma en menos de 2 minutos."
+  "voz": "En tiempo real, el molde completo se arma en un par de minutos.",
+  "sub": "En tiempo real, el molde completo se arma en un par de minutos."
  },
  {
   "toma": "06 el molde trabaja",
@@ -62,8 +62,8 @@
  {
   "toma": "07 la inspeccion",
   "en": 8.9,
-  "voz": "Cincuenta puntos del macho tocan tu pieza. El hueco no sale macizo.",
-  "sub": "50 puntos del macho tocan tu pieza: el hueco no sale macizo."
+  "voz": "Cincuenta rayos tocan la pieza. Los postes chicos se revisan aparte.",
+  "sub": "50 rayos tocan la pieza; los postes chicos se revisan aparte."
  },
  {
   "toma": "07 la inspeccion",
