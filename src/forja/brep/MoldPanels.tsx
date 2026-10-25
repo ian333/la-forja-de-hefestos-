@@ -17,6 +17,7 @@ import type { CalcPaso } from '../mold/cooling-design';
 import { construirMolde, CICLO_KAZMER, cotizacionPieza, cotizacionSvg, DADO_PIEZA, type PiezaSpec } from '../mold/estudio-molde-datos';
 import { mallaCaja } from '../mold/lamina-seccion';
 import { mark } from '../telemetry-forja';
+import { PIEL } from './piel-futuro';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
 
@@ -1549,3 +1550,20 @@ function BarraCiclo({ uRef, acto }: { uRef: MutableRefObject<number>; acto: stri
   );
 }
 
+
+/** LA TARJETA DE ESTACIÓN (modo camino, orden 2026-10-23): dos líneas abajo a la izquierda en el paso 6, en lugar del panel del
+ *  curso, el árbol de placas y la fila de leyenda que la crítica contó como 25 bloques. Lee el título que el ciclo YA escribe en el
+ *  documento («1594C Box · estación 6 — EL AGUA: 16 líneas ø6.35 (JP-251) · manda el bebedero (75.7 s)»): ni un dato nuevo. */
+export function TarjetaEstacion({ titulo }: { titulo: string }) {
+  const m = titulo.match(/estación (\d+) — ([^:]+?)(?::\s*(.*))?$/);
+  if (!m) return null;
+  const [, n, nombre, detalle] = m;
+  return (
+    <div data-testid="tarjeta-estacion" data-estacion={n} style={{ position: 'absolute', left: 22, bottom: 232, width: 'min(480px, 40vw)', zIndex: 7, pointerEvents: 'none',
+      padding: '12px 16px 13px', background: PIEL.fondo.vidrio, borderLeft: `3px solid ${PIEL.operador}`, color: PIEL.texto.primario }}>
+      <div style={{ font: `600 11px ${PIEL.fuente.titulo}`, letterSpacing: '0.16em', color: PIEL.operador }}>ESTACIÓN {n} DE 8</div>
+      <div style={{ font: `700 22px/1.1 ${PIEL.fuente.titulo}`, marginTop: 4 }}>{nombre.trim()}</div>
+      {detalle && <div style={{ font: `400 14px/1.4 ${PIEL.fuente.cuerpo}`, color: PIEL.texto.secundario, marginTop: 6 }}>{detalle.trim()}</div>}
+    </div>
+  );
+}

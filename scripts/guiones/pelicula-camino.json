@@ -1,0 +1,116 @@
+[
+ {
+  "toma": "01 abres la forja",
+  "en": 0.6,
+  "voz": "La Forja. Del archivo de tu pieza, a tu molde.",
+  "sub": "La Forja: del archivo de tu pieza a tu molde."
+ },
+ {
+  "toma": "02 tu pieza",
+  "en": 0.8,
+  "voz": "Sueltas tu pieza, y la Forja la mide sola.",
+  "sub": "Sueltas tu pieza y La Forja la mide sola."
+ },
+ {
+  "toma": "03 el enfriamiento",
+  "en": 0.6,
+  "voz": "El enfriamiento. Rojo es lo que tarda en ponerse firme.",
+  "sub": "El enfriamiento: rojo es lo que tarda en ponerse firme."
+ },
+ {
+  "toma": "03 el enfriamiento",
+  "en": 4.4,
+  "voz": "Esos cuatro postes deciden tu ciclo.",
+  "sub": "Esos 4 postes deciden tu ciclo."
+ },
+ {
+  "toma": "04 el dictamen",
+  "en": 0.6,
+  "voz": "El dictamen. Qué reglas cumple tu pieza, y qué cambiar.",
+  "sub": "El dictamen: qué reglas cumple tu pieza y qué cambiar."
+ },
+ {
+  "toma": "05 la particion",
+  "en": 0.5,
+  "voz": "La partición. Donde el molde se abre en dos.",
+  "sub": "La partición: donde el molde se abre en dos."
+ },
+ {
+  "toma": "06 el molde · nace el acero",
+  "en": 0.4,
+  "voz": "El molde. La Forja lo diseña sola, estación por estación.",
+  "sub": "El molde: La Forja lo diseña sola, estación por estación."
+ },
+ {
+  "toma": "06 el molde · estación",
+  "en": 0.3,
+  "voz": "En tiempo real, el molde completo se arma en menos de dos minutos.",
+  "sub": "En tiempo real, el molde completo se arma en menos de 2 minutos."
+ },
+ {
+  "toma": "06 el molde trabaja",
+  "en": 0.6,
+  "voz": "Y lo pone a trabajar. Cierra, se llena, abre y expulsa.",
+  "sub": "Y lo pone a trabajar: cierra, se llena, abre y expulsa."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 2.8,
+  "voz": "El Foco recorre el molde y mide cada barreno contra todos los demás.",
+  "sub": "El Foco recorre el molde y mide cada barreno contra todos los demás."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 8.9,
+  "voz": "Cincuenta puntos del macho tocan tu pieza. El hueco no sale macizo.",
+  "sub": "50 puntos del macho tocan tu pieza: el hueco no sale macizo."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 19.9,
+  "voz": "Los ocho botadores empujan a cuatro milímetros del centro de tu pieza.",
+  "sub": "Los 8 botadores empujan a 3.85 mm del centro de tu pieza."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 26.4,
+  "voz": "El tope es diez. Sale derecha.",
+  "sub": "El tope es 10.65: sale derecha."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 30.9,
+  "voz": "Junto a dos interlocks, el agua deja tres y medio milímetros de acero.",
+  "sub": "Junto a 2 interlocks, el agua deja 3.49 mm de acero."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 36.6,
+  "voz": "El mínimo es tres punto dos. Cumple, de panzazo.",
+  "sub": "El mínimo es 3.17: cumple, de panzazo."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 41.9,
+  "voz": "El molde abre ciento cincuenta y dos milímetros. Tu pieza con su bebedero pide ciento doce.",
+  "sub": "El molde abre 152.5 mm; tu pieza con su bebedero pide 112.5."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 47.8,
+  "voz": "Le sobran cuarenta. Y la placa expulsora cabe en su caja.",
+  "sub": "Le sobran 40, y la placa expulsora cabe en su caja."
+ },
+ {
+  "toma": "08 los planos",
+  "en": 0.6,
+  "voz": "Los planos. Diecisiete láminas para el taller.",
+  "sub": "Los planos: 17 láminas para el taller."
+ },
+ {
+  "toma": "09 el expediente",
+  "en": 0.6,
+  "voz": "Y el expediente. Lo que te llevas.",
+  "sub": "Y el expediente: lo que te llevas."
+ }
+]

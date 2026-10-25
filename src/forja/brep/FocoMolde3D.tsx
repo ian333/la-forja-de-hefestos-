@@ -294,12 +294,12 @@ export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
         </div>
         <div style={{ font: `700 19px ${PIEL.fuente.titulo}`, letterSpacing: '0.04em', marginTop: 6 }}>{pieza}</div>
         <div style={{ font: '400 12px/1.4 Barlow,system-ui,sans-serif', color: FOCO.gris, marginTop: 2 }}>
-          {barrenos} barrenos identificados · {foco.pares} pares medidos eje a eje · {foco.ms} ms
+          {barrenos} barrenos identificados · {foco.pares} pares medidos eje a eje
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
           <div style={{ flex: 1, padding: '6px 8px', border: `1px solid ${nF ? FOCO.falla : FOCO.cianTenue}`, clipPath: corte(5) }}>
             <div style={{ font: '700 22px Barlow,system-ui,sans-serif', color: nF ? FOCO.falla : FOCO.cian, textShadow: nF ? `0 0 12px ${FOCO.falla}88` : 'none' }}>{nF}</div>
-            <div style={{ ...etiqueta, color: FOCO.gris }}>{nF === 1 ? 'punto débil' : 'puntos débiles'}</div>
+            <div style={{ ...etiqueta, color: FOCO.gris }}>{nF === 1 ? 'punto débil en el molde' : 'puntos débiles en el molde'}</div>
           </div>
           <div style={{ flex: 1, padding: '6px 8px', border: `1px solid ${nA ? FOCO.aviso : FOCO.cianTenue}`, clipPath: corte(5) }}>
             <div style={{ font: '700 22px Barlow,system-ui,sans-serif', color: nA ? FOCO.aviso : FOCO.cian }}>{nA}</div>
@@ -390,6 +390,20 @@ export function RecorridoEscena({ punto, t0 }: { punto: PuntoRecorrido; t0: numb
   );
 }
 
+/** LA CIFRA EN MONO, LAS PALABRAS EN CUERPO (crítica 2026-10-23: «la mono escribe frases» — «50 de 50 puntos tocan» en mono ocupaba
+ *  680 px y parecía terminal). Parte «3.49 mm de acero» en ['', '3.49 mm', 'de acero'] y «abre 152.5 mm» en ['abre', '152.5 mm', '']. */
+export function partirCifra(s: string): [string, string, string] {
+  const t = s.split(' '); const esNum = (x: string) => /^[−-]?[\d.,]+$/.test(x); const esUnidad = (x: string) => /^(mm|s|%|°C|mm²|mm³)$/.test(x);
+  const i = t.findIndex(esNum); if (i < 0) return [s, '', ''];
+  let j = i + 1;
+  for (;;) {
+    if (j < t.length && (esNum(t[j]) || esUnidad(t[j]))) { j++; continue; }
+    if (j + 1 < t.length && t[j] === 'de' && esNum(t[j + 1])) { j += 2; continue; }
+    break;
+  }
+  return [t.slice(0, i).join(' '), t.slice(i, j).join(' '), t.slice(j).join(' ')];
+}
+
 export function RecorridoHUD({ puntos, idx, onIdx, auto, onAuto, onCerrar }: {
   puntos: PuntoRecorrido[]; idx: number; onIdx: (i: number) => void; auto: boolean; onAuto: (v: boolean) => void; onCerrar: () => void;
 }) {
@@ -400,7 +414,8 @@ export function RecorridoHUD({ puntos, idx, onIdx, auto, onAuto, onCerrar }: {
       <style>{['feature-tree', 'op-panel', 'analysis-panel', 'face-list', 'sim-panel', 'curso-report', 'params-panel', 'escala-enfriamiento', 'ficha-en-el-mundo', 'mold-cotas-overlay']
         .map((t) => `[data-testid="${t}"]{opacity:0 !important;pointer-events:none !important}`).join('\n')}</style>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 48%, rgba(0,0,0,0) 58%, rgba(0,14,24,0.5) 100%)' }} />
-      <div style={{ position: 'absolute', left: 22, bottom: 92, width: 'min(560px, 44vw)', padding: '16px 20px 17px', background: 'rgba(3,12,20,0.93)',
+      {/* la tarjeta termina arriba del carril del subtítulo (y ≤ 1600 a 4K) y no pasa del 31 % del ancho: el corte es del 3D */}
+      <div style={{ position: 'absolute', left: 22, bottom: 232, width: 'min(480px, 40vw)', padding: '16px 20px 17px', background: 'rgba(3,12,20,0.93)',
         clipPath: corte(12), borderLeft: `3px solid ${c}`, color: FOCO.tinta, pointerEvents: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ ...etiqueta, color: FOCO.cian }}>◈ Inspección · punto {idx + 1} de {puntos.length}</div>
@@ -413,12 +428,17 @@ export function RecorridoHUD({ puntos, idx, onIdx, auto, onAuto, onCerrar }: {
         </div>
         <div style={{ font: `600 25px/1.2 ${PIEL.fuente.titulo}`, marginTop: 8 }}>{p.pregunta}</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
-          <div style={{ font: `700 30px ${PIEL.fuente.mono}`, color: c, textShadow: `0 0 16px ${c}55` }}>{p.numero}</div>
-          <div style={{ font: mono, color: FOCO.gris }}>{p.limite}</div>
+          {(() => { const [a, n, z] = partirCifra(p.numero); return (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+              {a && <span style={{ font: `500 18px ${PIEL.fuente.cuerpo}`, color: c }}>{a}</span>}
+              <span style={{ font: `700 34px ${PIEL.fuente.mono}`, color: c, textShadow: `0 0 16px ${c}55` }}>{n || p.numero}</span>
+              {z && <span style={{ font: `500 18px ${PIEL.fuente.cuerpo}`, color: c }}>{z}</span>}
+            </div>); })()}
+          <div style={{ font: `500 13px ${PIEL.fuente.cuerpo}`, color: FOCO.gris }}>{p.limite}</div>
           <div style={{ ...etiqueta, color: c, marginLeft: 'auto' }}>{TEXTO_VEREDICTO[p.veredicto]}</div>
         </div>
-        <div style={{ font: '400 14px/1.5 Barlow,system-ui,sans-serif', marginTop: 10, color: '#c3dce8' }}>{p.frase}</div>
-        <div style={{ font: `400 11px/1.4 ${PIEL.fuente.mono}`, marginTop: 8, color: '#6f8fa3' }}>{p.regla}</div>
+        <div style={{ font: `400 15px/1.45 ${PIEL.fuente.cuerpo}`, marginTop: 10, color: '#c3dce8' }}>{p.frase}</div>
+        <div style={{ font: `400 12.5px/1.4 ${PIEL.fuente.cuerpo}`, marginTop: 8, color: '#7f9fb3' }}>{p.regla}</div>
         <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
           {puntos.map((q, i) => (
             <div key={q.id} onClick={() => onIdx(i)} style={{ flex: 1, height: 4, cursor: 'pointer',

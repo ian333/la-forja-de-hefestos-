@@ -35,15 +35,16 @@ const T0 = Date.now(); const ts = () => ((Date.now() - T0) / 1000).toFixed(1).pa
 const RELOJ_VIRTUAL = () => {
   const R = { now: performance.now.bind(performance), date: Date.now.bind(Date), raf: window.requestAnimationFrame.bind(window), caf: window.cancelAnimationFrame.bind(window),
     st: window.setTimeout.bind(window), ct: window.clearTimeout.bind(window), si: window.setInterval.bind(window), ci: window.clearInterval.bind(window) };
-  const V = { on: false, t: 0, d0: 0, rafs: new Map(), timers: new Map(), id: 1e9, congelado: false };
+  const V = { on: false, t: 0, d0: 0, rafs: new Map(), timers: new Map(), id: 1e9, congelado: false, movidos: new Map() };
   performance.now = () => (V.on ? V.t : R.now());
   Date.now = () => (V.on ? Math.round(V.d0 + V.t) : R.date());
   window.requestAnimationFrame = (cb) => { if (!V.on) return R.raf(cb); const id = ++V.id; V.rafs.set(id, cb); return id; };
   window.cancelAnimationFrame = (id) => { if (!V.rafs.delete(id)) R.caf(id); };
   window.setTimeout = (cb, ms, ...a) => { if (!V.on || typeof cb !== 'function') return R.st(cb, ms, ...a); const id = ++V.id; V.timers.set(id, { at: V.t + (+ms || 0), cb, a }); return id; };
-  window.clearTimeout = (id) => { if (!V.timers.delete(id)) R.ct(id); };
+  // un temporizador nacido virtual que `apaga()` pasó al reloj real conserva su id: clearTimeout(idVirtual) cancela el real (antes quedaba vivo con un cierre viejo)
+  window.clearTimeout = (id) => { if (V.timers.delete(id)) return; const rid = V.movidos.get(id); if (rid != null) { V.movidos.delete(id); R.ct(rid); return; } R.ct(id); };
   window.setInterval = (cb, ms, ...a) => { if (!V.on || typeof cb !== 'function') return R.si(cb, ms, ...a); const id = ++V.id; V.timers.set(id, { at: V.t + (+ms || 0), cb, a, cada: Math.max(1, +ms || 0) }); return id; };
-  window.clearInterval = (id) => { if (!V.timers.delete(id)) R.ci(id); };
+  window.clearInterval = (id) => { if (V.timers.delete(id)) return; const rid = V.movidos.get(id); if (rid != null) { V.movidos.delete(id); R.ci(rid); return; } R.ci(id); };
   const respiroReal = () => new Promise((r) => R.st(r, 0));
   window.__vt = {
     estado: () => ({ on: V.on, t: V.t, congelado: V.congelado, timers: V.timers.size }),
@@ -53,7 +54,9 @@ const RELOJ_VIRTUAL = () => {
     // el reloj virtual arranca donde va el real: nadie ve un salto
     enciende() { if (V.on) return V.t; V.t = R.now(); V.d0 = R.date() - V.t; V.on = true; return V.t; },
     // al apagar, lo pendiente vuelve al reloj real (los cálculos siguen su curso fuera de cámara)
-    apaga() { if (!V.on) return; V.on = false; for (const cb of V.rafs.values()) R.raf(cb); V.rafs.clear(); for (const tm of V.timers.values()) R.st(() => tm.cb(...tm.a), Math.max(0, tm.at - V.t)); V.timers.clear(); },
+    apaga() { if (!V.on) return; V.on = false; for (const cb of V.rafs.values()) R.raf(cb); V.rafs.clear();
+      for (const [id, tm] of V.timers) V.movidos.set(id, tm.cada ? R.si(() => tm.cb(...tm.a), tm.cada) : R.st(() => tm.cb(...tm.a), Math.max(0, tm.at - V.t)));
+      V.timers.clear(); },
     async avanza(ms) {
       const meta = V.t + ms;
       for (let g = 0; g < 5000 && !V.congelado; g++) {
@@ -81,6 +84,7 @@ const RELOJ_VIRTUAL = () => {
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: DPR });
   const page = await ctx.newPage();
   await page.addInitScript(RELOJ_VIRTUAL);
+  if (process.env.SIN_LENTE || process.env.SIN_COTAS) await page.addInitScript(({ l, c }) => { if (l) window.__sinLenteMuerta = true; if (c) window.__sinCotasOff = true; }, { l: !!process.env.SIN_LENTE, c: !!process.env.SIN_COTAS });   // arnés
   page.on('pageerror', (e) => console.log(ts(), 'PAGEERR', String(e).slice(0, 200)));
   const cdp = await ctx.newCDPSession(page);
   let n = 0; const tomas = [];
@@ -125,6 +129,7 @@ const RELOJ_VIRTUAL = () => {
   await espera(`!!document.querySelector('[data-testid="el-parte-foco"]')`, 240000);
   await page.waitForTimeout(2500);
   await clic('aviso-entrada-ok');
+  if (process.env.DISENO) { await clic('tab-diseno'); await page.waitForTimeout(400); }   // arnés: el CAD entero, sin modo camino
   await ev(() => window.__forgeBrep.transicion(2));
   await filma('02 tu pieza', 5.5);
 
@@ -157,23 +162,38 @@ const RELOJ_VIRTUAL = () => {
   /** deja correr el armado `ms` virtuales (temporizadores vivos) y lo vuelve a congelar; en real, solo espera */
   const sueltaArmado = async (ms) => {
     if (!armadoVirtual) { await page.waitForTimeout(ms); return; }
+    await page.waitForTimeout(40);   // que React asiente sus commits (reales) antes de disparar temporizadores virtuales
     await ev((ms) => { window.__vt.congela(false); return window.__vt.avanza(ms); }, ms);
     await ev(() => window.__vt.congela(true));
     await page.waitForTimeout(60);   // aire real: lo que el armado haya mandado a un worker o a una promesa
   };
-  if (armadoVirtual) await ev(() => { window.__vt.enciende(); window.__vt.congela(true); });
+  // EL ARRANQUE VA EN TIEMPO REAL (medido 2026-10-23): al tocar MOLDE la máquina mide la pared (intake) y EL PUENTE re-siembra la
+  // E1 con esa pared en el commit siguiente; el temporizador de la E2 nace en el commit anterior, atado a la pieza MACIZA, y el
+  // efecto lo cancela cuando llega la re-siembra. Con el reloj virtual congelado desde antes del clic, `avanza` disparaba ese
+  // temporizador ANTES de que React re-dibujara: la E2 corría con la pieza maciza y el molde salía de OTRA pieza (agua «manda la
+  // pieza 2350 s», 0 pines por agarre, F 40 kN). Por eso el reloj se enciende hasta que la E3 ya existe (la pared ya entró).
   await clic('parte-lente-molde');
-  for (let g = 0; g < 2400; g++) { const e = await estacion(); if (e && e.est >= 3) break; await sueltaArmado(500); }
+  await espera(`(() => { const m = document.querySelector('[data-testid="molde-de-la-pieza"]'); return m && +m.dataset.estacion >= 3 && m.dataset.pared; })()`, 300000);
+  if (armadoVirtual) await ev(() => { window.__vt.enciende(); window.__vt.congela(true); });
   await ev(() => window.__forgeBrep.transicion(6));
   await filma('06 el molde · nace el acero', 3.2, null, true);
   let ultima = 3;
   for (let g = 0; g < 2400; g++) {
     const e = await estacion();
-    if (e && e.est > ultima) { ultima = e.est; await filma(`06 el molde · estación ${e.est}`, 1.8, null, true); }
+    if (e && e.est > ultima) {
+      ultima = e.est;
+      // lo que la máquina DICE de cada estación queda en el log (la tarjeta y la pared que entró): es la evidencia de que el molde es de ESTA pieza
+      console.log(ts(), `  estación ${e.est} · pared=${await ev(() => document.querySelector('[data-testid="molde-de-la-pieza"]')?.dataset.pared)} · ${await ev(() => document.querySelector('[data-testid="tarjeta-estacion"]')?.textContent?.slice(0, 120))}`);
+      await filma(`06 el molde · estación ${e.est}`, 1.8, null, true);
+    }
     if (e && e.pm) break;
     await sueltaArmado(500);
   }
   console.log(ts(), `el molde se armó en ${((Date.now() - tArmado) / 1000).toFixed(0)} s reales`);
+  // EL SEGURO: un molde de ESTA pieza trae sus pines por agarre (E7). Si no los trae, la carrera del arranque ganó (ver arriba):
+  // se dice y se sale con rc=3 para que el lote se repita, en vez de entregar una película de otra pieza.
+  { const pines = await ev(() => document.querySelector('[data-testid="molde-de-la-pieza"]')?.dataset.pinesIds || '');
+    if (!pines) { console.error(ts(), 'MOLDE_SOSPECHOSO: la E7 no trae pines por agarre — el molde no es de esta pieza; se repite el lote'); await browser.close().catch(() => {}); process.exit(3); } }
   if (armadoVirtual) { await ev(() => window.__vt.congela(false)); await sueltaArmado(300); }   // el ciclo arranca con sus temporizadores vivos
   await page.waitForTimeout(1500);
   // el molde TRABAJA (su ciclo de 14 s: llena, abre, expulsa) con la cámara girando despacio
@@ -198,7 +218,7 @@ const RELOJ_VIRTUAL = () => {
   await clic('parte-lente-planos');
   await espera(`!!document.querySelector('[data-testid="planos-del-molde"]')`, 180000);
   await page.waitForTimeout(1500);
-  await clic('planos-del-molde-pagina-1'); await page.waitForTimeout(2500);
+  await clic('planos-del-molde-pagina-0'); await page.waitForTimeout(2500);   // la lámina del ENSAMBLE, no la hoja de análisis (crítica 2026-10-23: una tabla no es un plano)
   await ev(() => window.__forgeBrep.transicion(8));
   await filma('08 los planos', 6);
   await clic('btn-planos-molde-close'); await page.waitForTimeout(800);

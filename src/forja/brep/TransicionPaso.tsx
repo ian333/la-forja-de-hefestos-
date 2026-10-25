@@ -16,11 +16,11 @@
 import { useEffect, useRef } from 'react';
 import { PIEL } from './piel-futuro';
 
-export interface PasoDelCamino { n: number; titulo: string; promesa: string }
+export interface PasoDelCamino { n: number; titulo: string; promesa: string; /** el nombre en el riel, cuando el título no cabe */ corto?: string }
 
 /** Los 9 pasos del camino comercial (caminos/la-carcasa-de-mitsubishi.md). */
 export const PASOS_DEL_CAMINO: PasoDelCamino[] = [
-  { n: 1, titulo: 'ABRES LA FORJA', promesa: 'suelta tu pieza: lo demás lo hace la máquina' },
+  { n: 1, titulo: 'ABRES LA FORJA', corto: 'LA FORJA', promesa: 'suelta tu pieza: lo demás lo hace la máquina' },
   { n: 2, titulo: 'TU PIEZA', promesa: 'la Forja la mide y la entiende' },
   { n: 3, titulo: 'EL ENFRIAMIENTO', promesa: 'dónde tarda tu pieza en ponerse firme' },
   { n: 4, titulo: 'EL DICTAMEN', promesa: 'qué reglas cumple tu pieza y qué cambiar' },
@@ -125,22 +125,30 @@ export function TransicionPaso({ paso, t0, total = 9, onFin }: {
 /** EL RIEL DE LOS 9 PASOS — siempre visible arriba del visor (las tres investigaciones de color lo pidieron sin hablarse: es la
  *  respuesta permanente a «nunca siento cuando pasamos al otro lado»). Hechos en cian con ✓, el actual en AMARILLO del operador,
  *  los que faltan en hilo tenue. Es DOM puro, sin estado propio: lo dibuja el paso que el estudio ya deduce. */
-export function RielDePasos({ actual, maximo, ancho = 'completo' }: { actual: number; maximo: number; ancho?: 'completo' | 'centro' }) {
-  // con los paneles del CAD a la vista, el riel vive ENTRE ellos (no se les encima); en el Foco y la inspección los paneles se
-  // apartan y el riel ocupa todo el ancho
+export function RielDePasos({ actual, maximo, ancho = 'completo', arriba = false, onElegir }: {
+  actual: number; maximo: number; ancho?: 'completo' | 'centro';
+  /** modo camino: pegado al borde superior del visor (la banda del ribbon ya no existe) */
+  arriba?: boolean;
+  /** modo camino: el riel ES la navegación — se puede tocar hasta el paso siguiente al más lejano alcanzado */
+  onElegir?: (n: number) => void;
+}) {
+  // con los paneles del CAD a la vista, el riel vive ENTRE ellos (no se les encima); en el Foco, la inspección y el modo camino
+  // los paneles se apartan y el riel ocupa todo el ancho
   const lados = ancho === 'centro' ? { left: 258, right: 326 } : { left: 18, right: 18 };
   return (
-    <div data-testid="riel-de-pasos" data-actual={actual} style={{ position: 'absolute', ...lados, top: 4, zIndex: 7, pointerEvents: 'none',
-      display: 'flex', gap: 3, font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+    <div data-testid="riel-de-pasos" data-actual={actual} style={{ position: 'absolute', ...lados, top: arriba ? 0 : 4, zIndex: 7, pointerEvents: onElegir ? 'auto' : 'none',
+      display: 'flex', gap: 3, font: `600 ${arriba ? 11.5 : 10.5}px ${PIEL.fuente.titulo}`, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
       {PASOS_DEL_CAMINO.map((p) => {
         const es = p.n === actual, hecho = p.n <= maximo && !es;
         const color = es ? PIEL.texto.sobreAcento : hecho ? PIEL.medido : PIEL.texto.tenue;
+        const tocable = !!onElegir && !es && p.n >= 2 && p.n <= maximo + 1;
         return (
-          <div key={p.n} style={{ flex: 1, minWidth: 0, padding: '4px 8px 5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          <div key={p.n} data-testid={`riel-paso-${p.n}`} onClick={tocable ? () => onElegir!(p.n) : undefined}
+            style={{ flex: 1, minWidth: 0, padding: arriba ? '6px 8px 6px' : '4px 8px 5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: tocable ? 'pointer' : 'default',
             color, background: es ? PIEL.operador : 'rgba(3,7,11,0.72)',
             borderTop: `2px solid ${es ? PIEL.operador : hecho ? PIEL.medido : 'rgba(159,196,214,0.16)'}`,
             clipPath: es ? 'polygon(0 0,100% 0,100% 70%,94% 100%,0 100%)' : undefined }}>
-            {String(p.n).padStart(2, '0')} {hecho ? '✓ ' : ''}{p.titulo.replace(/^(EL|LA|LOS|TU) /, '')}
+            {String(p.n).padStart(2, '0')} {hecho ? '✓ ' : ''}{p.corto ?? p.titulo.replace(/^(EL|LA|LOS|TU) /, '')}
           </div>
         );
       })}

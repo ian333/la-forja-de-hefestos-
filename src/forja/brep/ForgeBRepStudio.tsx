@@ -61,11 +61,13 @@ import { escanearMolde, type ResultadoFoco } from '../mold/foco-molde';   // EL 
 import { FocoMoldeEscena, FocoMoldeHUD, RecorridoEscena, RecorridoHUD } from './FocoMolde3D';   // EL FOCO DEL MOLDE: el pulso, los puntos débiles y las fichas
 import { rejillaDelMacho, equilibrioDeBotadores, aguaMasJusta, abreSaleEmpuja, type PuntoRecorrido } from '../mold/inspeccion-recorrido';   // LA INSPECCIÓN: paso 7 del pipeline
 import { TransicionPaso, RielDePasos, PASOS_DEL_CAMINO, DURACION_TRANSICION_S, type PasoDelCamino } from './TransicionPaso';   // «de esta parte, ahora pasamos a esto» (2026-10-22)
+/** el encabezado del modo camino: «1594C Box · Inspección» en vez de «estación 8 — EL PORTAMOLDES: el molde ENTERO (14 componentes…)» */
+const tituloDelPaso = (n: number) => { const t = (PASOS_DEL_CAMINO[n - 1]?.titulo ?? '').replace(/^(EL|LA|LOS|TU) /, '').toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); };
 import { PIEL, PIEL_CSS } from './piel-futuro';   // LA PIEL DEL FUTURO: cyberpunk + holograma de cine (ian, 2026-10-22)
 import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm, FillVivo } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
-import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
+import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel, TarjetaEstacion } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
 import { isoSurface } from '../../lib/viz/isosurface';
@@ -3173,8 +3175,10 @@ function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name
 }
 
 function CadViewport({
-  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, sketchCam, showGround = true, encuadreSink, children,
+  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, sketchCam, showGround = true, encuadreSink, cubo = true, children,
 }: {
+  /** modo camino: el cubo de vistas solo mientras el ratón se mueve */
+  cubo?: boolean;
   cameraDistance: number;
   autoRotate: boolean;
   minDistance?: number;
@@ -3279,7 +3283,7 @@ function CadViewport({
             (como el ViewCube de Fusion, pegado al panel de propiedades). */}
         {/* El viewport ya empieza DEBAJO del ribbon (fb-viewport top:120) → el cubo
             solo esquiva el riel derecho (282px + su propio radio) y respira arriba. */}
-        <GizmoHelper alignment="top-right" margin={[356, 70]}>
+        {cubo && <GizmoHelper alignment="top-right" margin={[356, 70]}>
           <GizmoViewcube
             color="#aab4c2"
             textColor="#10151c"
@@ -3287,7 +3291,7 @@ function CadViewport({
             hoverColor={GOLD}
             faces={['DER', 'IZQ', 'ARRIBA', 'ABAJO', 'FRENTE', 'ATRAS']}
           />
-        </GizmoHelper>
+        </GizmoHelper>}
 
         {children}
 
@@ -3752,6 +3756,16 @@ export default function ForgeBRepStudio() {
   // U3 · EL FOCO — arranca APAGADO a propósito (la regla que salió de Detroit: el HUD
   // está limpio y la información aparece solo cuando hace falta). Lo prende el operador.
   const [focoOn, setFocoOn] = useState(false);
+  // EL MODO CAMINO (orden 2026-10-23): hay pieza y no estás en DISEÑO → cada paso muestra solo lo suyo (piel-futuro.ts, .fb-camino).
+  // Es el producto, no un modo de filmación. El cubo e ISO/SUP/FRE solo mientras el ratón se mueve (2 s): en la película nadie lo mueve.
+  const modoCamino = !!piezaMalla && workspace !== 'diseno';
+  const [ratonVivo, setRatonVivo] = useState(false);
+  const ratonTimer = useRef(0);
+  const despiertaRaton = useCallback(() => {
+    setRatonVivo((v) => v || true);
+    window.clearTimeout(ratonTimer.current);
+    ratonTimer.current = window.setTimeout(() => setRatonVivo(false), 2000);
+  }, []);
   /** las cotas del Foco: la envolvente + la pared, medidas de LA pieza que está en el visor. */
   const focoCotas = useMemo<CotaSet[]>(() => {
     if (!piezaMalla) return [];
@@ -5474,6 +5488,30 @@ export default function ForgeBRepStudio() {
   // Volver a un paso ya visto no la repite (el que trabaja no quiere 2 s de ceremonia cada vez que cambia de lente).
   const pasoActual = expedienteOn ? 9 : planosOn ? 8 : (inspeccionOn || focoMolde) ? 7 : moldeOn ? 6 : particionOn ? 5 : laminaOn ? 4
     : (lenteId === 'enfriamiento' ? 3 : piezaMalla ? 2 : 1);
+  // CADA LENTE MUERE CON SU PASO (crítica 2026-10-23): la escala térmica seguía viva en el molde y las cotas de auditoría (con sus
+  // líneas) cruzaban la inspección. Del paso 5 en adelante, el camino apaga la lente del campo y las cotas de auditoría.
+  useEffect(() => {
+    if (!modoCamino || pasoActual < 5) return;
+    const dbg = window as unknown as { __sinLenteMuerta?: boolean; __sinCotasOff?: boolean };   // arnés: aislar cada mitad del efecto
+    if (lenteId !== 'medidas' && !dbg.__sinLenteMuerta) setLenteId('medidas');
+    if (cotasOn && !inspeccionOn && !dbg.__sinCotasOff) setCotasOn(false);
+    if (pasoActual >= 6 && particionOn) setParticion(false);   // la línea de partición es del paso 5: sobre el molde era una raya roja suelta
+    // `cotasOn` va en las dependencias porque las estaciones del molde (E3, E7, E8) las vuelven a encender al nacer; en el camino
+    // se apagan otra vez: los 8 rótulos «1594C-BOX-EP-0n · 152.80 mm» apilados eran el ruido n.º 1 de la crítica.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modoCamino, pasoActual, cotasOn]);
+  // EL RIEL ES LA NAVEGACIÓN del camino: tocar un paso hace lo mismo que su botón de la tira (que en el camino ya no se ve)
+  const irAlPaso = useCallback((n: number) => {
+    setFocoOn(true);
+    if (n === 3) { setLenteId('enfriamiento'); calcularLentes(); }
+    else if (n === 4) setLaminaOn(true);
+    else if (n === 5) setParticion(true);
+    else if (n === 6) setMoldeOn(true);
+    else if (n === 7) { if (mold.ciclo?.portamoldes) { setPlanosOn(false); setExpedienteOn(false); setInspeccionOn(true); } }
+    else if (n === 8) { if (planosMolde) setPlanosOn(true); else if (mold.ciclo?.e2?.pkg) generarPlanosMolde(); }
+    else if (n === 9) setExpedienteOn(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mold.ciclo, planosMolde, generarPlanosMolde, calcularLentes]);
   const [transicion, setTransicion] = useState<{ paso: PasoDelCamino; t0: number } | null>(null);
   const pasoMaxRef = useRef(1);
   const anunciarPaso = useCallback((n: number) => {
@@ -7149,7 +7187,8 @@ export default function ForgeBRepStudio() {
   }, [sketchOpen, sketchPlaneK, ribbonMin, sketchZoom]);
 
   return (
-    <div className={`fb-root${hideChrome ? ' fb-chrome-off' : ''}${ribbonMin ? ' fb-ribbon-min' : ''}`}
+    <div className={`fb-root${hideChrome ? ' fb-chrome-off' : ''}${ribbonMin ? ' fb-ribbon-min' : ''}${modoCamino ? ` fb-camino fb-paso-${pasoActual}` : ''}${ratonVivo ? ' fb-raton' : ''}`}
+      onMouseMove={modoCamino ? despiertaRaton : undefined}
       /* X4 · EL HAPPY PATH. Sueltas el STL EN CUALQUIER PARTE y ya estás viendo. Antes
          eran seis pasos hasta la primera información: tarjeta → lobby → ＋Abrir archivo
          → diálogo → cargar → Q. Ahora es UNO. Va en la raíz y no en el viewport porque
@@ -7246,10 +7285,10 @@ export default function ForgeBRepStudio() {
              Ahora no hay tarjeta: hay una invitación. */
           <div data-testid="lienzo-vacio" style={{
             position: 'absolute', left: '50%', top: '47%', transform: 'translate(-50%,-50%)', zIndex: 4,
-            pointerEvents: 'none', textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif',
+            pointerEvents: 'none', textAlign: 'center', fontFamily: PIEL.fuente.cuerpo,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
           }}>
-            <div style={{ font: '700 15px ui-monospace,Menlo,monospace', letterSpacing: 3.5, color: '#bfeeff', opacity: 0.9 }}>
+            <div style={{ font: `600 16px ${PIEL.fuente.titulo}`, letterSpacing: 2.4, color: '#bfeeff', opacity: 0.9 }}>
               SUELTA TU PIEZA AQUÍ
             </div>
             <div style={{ fontSize: 12, color: '#7E90A9', letterSpacing: 0.2 }}>
@@ -7270,6 +7309,7 @@ export default function ForgeBRepStudio() {
           </div>
         )}
         <CadViewport
+          cubo={!modoCamino || ratonVivo}
           encuadreSink={encuadreRef}
           cameraDistance={cameraDist}
           autoRotate={false}
@@ -7350,7 +7390,7 @@ export default function ForgeBRepStudio() {
                     coordenadas, así que la cota cae donde está la arista. Las cotas
                     solo salen en la lente MEDIDAS: encima de un campo de color serían
                     ruido sobre ruido. */}
-                {focoOn && !lenteActiva && focoCotas.length > 0 && (
+                {focoOn && !lenteActiva && focoCotas.length > 0 && !(modoCamino && pasoActual >= 5) && (
                   <>
                     <CotaLines sets={focoCotas} paleta={PALETA_FOCO} />
                     <CotaDriver sets={focoCotas} refs={focoRefs} />
@@ -7657,7 +7697,10 @@ export default function ForgeBRepStudio() {
           <RecorridoHUD puntos={recorrido} idx={recIdx} onIdx={(i) => { setRecAuto(false); setRecIdx(i); }} auto={recAuto} onAuto={setRecAuto} onCerrar={() => setInspeccionOn(false)} />
         )}
         {/* EL RIEL DE LOS 9 PASOS: siempre visible con la pieza en pantalla */}
-        {piezaMalla && <RielDePasos actual={pasoActual} maximo={Math.max(pasoMaxRef.current, pasoActual)} ancho={focoMolde || recorrido ? 'completo' : 'centro'} />}
+        {piezaMalla && <RielDePasos actual={pasoActual} maximo={Math.max(pasoMaxRef.current, pasoActual)} ancho={modoCamino || focoMolde || recorrido ? 'completo' : 'centro'}
+          arriba={modoCamino} onElegir={modoCamino ? irAlPaso : undefined} />}
+        {/* LA TARJETA DE ESTACIÓN (modo camino): lo único que el paso 6 dice en DOM, en dos líneas */}
+        {modoCamino && pasoActual === 6 && !focoMolde && !recorrido && <TarjetaEstacion titulo={docName} />}
         {/* LA TRANSICIÓN ENTRE PASOS: encima de todo el visor, se apaga sola */}
         {transicion && <TransicionPaso paso={transicion.paso} t0={transicion.t0} onFin={() => setTransicion(null)} />}
         {/* EL FOCO DEL MOLDE · el HUD (fuera del Canvas: texto en DOM) */}
@@ -7827,7 +7870,7 @@ export default function ForgeBRepStudio() {
               })()}
               {lentesBusy && <span style={{ fontSize: 10, color: '#bfeeff', opacity: 0.85 }}>⏳ midiendo el campo…</span>}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 10.5, color: '#93a4ba', pointerEvents: 'auto' }}>
+            <div data-testid="parte-telemetria" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 10.5, color: '#93a4ba', pointerEvents: 'auto' }}>
               <b data-testid="parte-pieza" style={{ color: '#dfe7f2', fontSize: 11 }}>{piezaMalla.nombre}</b>
               <span>{piezaMalla.visor.triangleCount.toLocaleString('es-MX')} triángulos</span>
               {lentes && <span style={{ opacity: 0.72 }}>celda {lentes.campo.celdaMm.toFixed(1)} mm · {lentes.campo.huecos.toLocaleString('es-MX')} vóxeles · {(lentes.ms.total / 1000).toFixed(1)} s</span>}
@@ -7861,7 +7904,7 @@ export default function ForgeBRepStudio() {
             {(() => {
               const tinte = !dictamen ? '#6db3f2' : dictamen.viola > 0 ? '#ff5c5c' : dictamen.advierte > 0 ? '#ffb347' : '#59d98c';
               const ritmo = !dictamen ? 20 : dictamen.viola >= 4 ? 9 : dictamen.viola > 0 ? 14 : dictamen.advierte > 0 ? 20 : 28;
-              const chip = !dictamen ? 'MIDIENDO' : dictamen.viola > 0 ? `${dictamen.viola} VIOLAN` : dictamen.advierte > 0 ? `${dictamen.advierte} ADVIERTEN` : 'LIMPIA';
+              const chip = !dictamen ? 'MIDIENDO' : dictamen.viola > 0 ? `◆ ${dictamen.viola} NO CUMPLEN` : dictamen.advierte > 0 ? `◇ ${dictamen.advierte} DE PANZAZO` : '✓ LIMPIA';
               return (
             <div data-testid="lamina-dictamen" data-tinte={tinte}
               onClickCapture={(e) => {
@@ -7890,16 +7933,17 @@ export default function ForgeBRepStudio() {
               border: `1px solid ${rgbaDe(tinte, 0.30)}`, borderLeftWidth: 3, borderLeftColor: tinte,
               /* CRISTAL: se ve la pieza y sus marcas detrás. La base es pizarra fría, el
                  tinte de arriba es el estado. */
-              background: `linear-gradient(160deg, ${rgbaDe(tinte, 0.16)} 0%, rgba(26,36,52,0.38) 55%, rgba(18,26,40,0.42) 100%)`,
-              backdropFilter: 'blur(7px) saturate(1.25)', WebkitBackdropFilter: 'blur(7px) saturate(1.25)',
+              /* VIDRIO CON CUERPO (crítica 2026-10-23): el blur dejaba ver el mapa térmico y el dictamen se volvía un atardecer rojo
+                 con ✗ rojas encima. Ahora es el vidrio de la piel, teñido apenas por el estado. */
+              background: `linear-gradient(160deg, ${rgbaDe(tinte, 0.10)} 0%, rgba(6,16,22,0.94) 42%, rgba(6,16,22,0.96) 100%)`,
               boxShadow: `0 24px 70px rgba(0,0,0,0.45), inset 0 0 0 1px ${rgbaDe(tinte, 0.08)}`,
               isolation: 'isolate',
             }}>
               {/* EL FONDO QUE RESPIRA: tres manchas difusas, el ritmo es la severidad */}
               <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-                <div className="fb-lamina-mancha" style={{ background: rgbaDe(tinte, 0.55), left: '-10%', top: '-20%', animationDuration: `${ritmo}s` }} />
-                <div className="fb-lamina-mancha m2" style={{ background: 'rgba(109,179,242,0.40)', right: '-15%', top: '20%', animationDuration: `${ritmo * 1.35}s` }} />
-                <div className="fb-lamina-mancha m3" style={{ background: rgbaDe(tinte, 0.35), left: '30%', bottom: '-30%', animationDuration: `${ritmo * 1.7}s` }} />
+                <div className="fb-lamina-mancha" style={{ background: rgbaDe(tinte, 0.14), left: '-10%', top: '-20%', animationDuration: `${ritmo}s` }} />
+                <div className="fb-lamina-mancha m2" style={{ background: 'rgba(109,179,242,0.12)', right: '-15%', top: '20%', animationDuration: `${ritmo * 1.35}s` }} />
+                <div className="fb-lamina-mancha m3" style={{ background: rgbaDe(tinte, 0.08), left: '30%', bottom: '-30%', animationDuration: `${ritmo * 1.7}s` }} />
                 <div className="fb-lamina-barrido" style={{ animationDuration: `${Math.max(7, ritmo * 0.8)}s` }} />
                 {olas.map((o) => (
                   <div key={o.id} className="fb-lamina-ola" onAnimationEnd={() => setOlas((s) => s.filter((k) => k.id !== o.id))}
@@ -7914,6 +7958,12 @@ export default function ForgeBRepStudio() {
                 <span style={{ flex: 1 }} />
                 <button data-testid="lamina-cerrar" onClick={() => setLaminaOn(false)}
                   style={{ cursor: 'pointer', background: 'transparent', border: 0, color: '#7f8fa6', fontSize: 12 }}>✕ Esc</button>
+              </div>
+              {/* EL ALCANCE (crítica 2026-10-23: dos veredictos): el dictamen juzga el diseño numérico ANTES de armar el molde; lo que
+                  se mide en el acero (el claro del agua, los pines) lo dice la inspección del paso 7 — por eso aquí puede haber un ◆
+                  que allá cumple de panzazo. */}
+              <div data-testid="lamina-alcance" style={{ position: 'relative', zIndex: 1, font: `500 11.5px/1.4 ${PIEL.fuente.cuerpo}`, color: '#9DB3BF', marginBottom: 10 }}>
+                Juzga tu pieza y su diseño numérico, antes de armar el molde. Lo que se mide en el acero lo dice la inspección (paso 7).
               </div>
               <div style={{ position: 'relative', zIndex: 1 }}>
               <Suspense fallback={<div style={{ fontSize: 11, opacity: 0.6 }}>cargando la revisión…</div>}>
@@ -7973,7 +8023,7 @@ export default function ForgeBRepStudio() {
           <EscalaEnElMundo lente={lenteActiva} gpu={lenteActiva.gpu} refEl={escalaRef} atenuada={laminaOn || particionOn || moldeOn}
             modo={modoEnf} onModo={(m) => { relojEnf.current.fase = 0; setModoEnf(m); }} pausa={pausaEnf} onPausa={() => setPausaEnf((v) => !v)} relojEls={relojEls} />
         )}
-        {focoOn && !lenteActiva && focoCotas.length > 0 && (
+        {focoOn && !lenteActiva && focoCotas.length > 0 && !(modoCamino && pasoActual >= 5) && (
           <CotaLabels sets={focoCotas} refs={focoRefs} paleta={PALETA_FOCO} testid="foco-cotas-overlay" modo="medida" />
         )}
         {cotasOn && liveMoldSpec && moldOpenStrokeMm > 0 && (
@@ -8216,7 +8266,7 @@ export default function ForgeBRepStudio() {
             <button className={`fb-titles fb-doc-trigger ${switcherOpen ? 'on' : ''}`} data-testid="doc-switcher"
               onClick={() => { refreshLib(); setSwitcherOpen((v) => !v); }}
               title="Cambiar de proyecto — tus moldes, robots y mecanismos">
-              <h1 data-testid="doc-title">{docName} <span className="fb-doc-studio">· {moldParts.length ? 'Ensamble de molde' : 'Estudio de pieza'}</span>
+              <h1 data-testid="doc-title">{modoCamino ? docName.split(' · ')[0] : docName} <span className="fb-doc-studio">· {modoCamino ? tituloDelPaso(pasoActual) : moldParts.length ? 'Ensamble de molde' : 'Estudio de pieza'}</span>
                 {importedStep && <span className="fb-imported-tag" data-testid="imported-tag">STEP importado</span>}</h1>
               <span className="fb-doc-chev">▾</span>
             </button>
@@ -9995,10 +10045,10 @@ export default function ForgeBRepStudio() {
                 <button data-testid="btn-expediente-close" onClick={() => setExpedienteOn(false)}>✕ Cerrar</button>
               </div>
             </div>
-            <div style={{ padding: '14px 18px', color: '#dfe7f2', fontFamily: 'Inter, system-ui, sans-serif', fontSize: 13, lineHeight: 1.5 }}>
+            <div style={{ padding: '14px 18px', color: '#dfe7f2', fontFamily: PIEL.fuente.cuerpo, fontSize: 13, lineHeight: 1.5 }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
                 {[
-                  ['DICTAMEN', expediente.tieneDictamen ? `${revision!.fila.score}/100 · ${revision!.fila.viola} violan · ${revision!.fila.advierte} advierten` : 'abre EL DICTAMEN (D) para incluirlo', expediente.tieneDictamen],
+                  ['DICTAMEN · antes del molde', expediente.tieneDictamen ? `${revision!.fila.score}/100 · ◆ ${revision!.fila.viola} no cumplen · ◇ ${revision!.fila.advierte} de panzazo` : 'abre EL DICTAMEN (D) para incluirlo', expediente.tieneDictamen && revision!.fila.viola === 0],
                   ['DECISIONES §13.10', expediente.tieneDictamen ? `${expediente.nDecisiones} · ${expediente.pendientes} pendientes de firma` : 'salen del dictamen', expediente.tieneDictamen],
                   ['COTIZACIÓN', expediente.tieneCotizacion ? 'hoja de la pieza incluida' : 'necesita MOLDE (E1)', expediente.tieneCotizacion],
                   ['PLANOS', expediente.nPlanos ? `${expediente.nPlanos} láminas incluidas` : 'genera LOS PLANOS (paso 7) para incluirlos', expediente.nPlanos > 0],
@@ -10010,7 +10060,7 @@ export default function ForgeBRepStudio() {
                 ))}
               </div>
               <div style={{ fontSize: 11.5, color: '#9fb0c4' }}>
-                El archivo lleva las cuatro secciones en ese orden y termina con el plan de tryout del libro. El video del enfriamiento va después (decisión de ian, 2026-09-04). Nada de lo que falta se inventa: se dice.
+                Tu expediente: el dictamen, las decisiones por firmar, la cotización y los planos, y al final la primera prueba en máquina. Lo que falta viene marcado como pendiente, no inventado.
               </div>
             </div>
           </div>
@@ -10308,8 +10358,8 @@ function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false, modo, onModo, pa
   ];
   const tcMax = gpu.tc.max;
   const vel = Math.max(1, Math.round(tcMax / RELOJ_PLAY_S));
-  const boton: React.CSSProperties = { pointerEvents: 'auto', cursor: 'pointer', font: '600 10.5px system-ui,sans-serif', color: '#dfe9f5', background: 'rgba(12,20,32,0.85)', border: '1px solid rgba(160,190,220,0.35)', borderRadius: 3, padding: '3px 8px' };
-  const etiqueta: React.CSSProperties = { font: '700 12px system-ui,sans-serif', fontVariantNumeric: 'tabular-nums', color: '#eaf2fb', textShadow: '0 1px 3px #000', whiteSpace: 'nowrap' };
+  const boton: React.CSSProperties = { pointerEvents: 'auto', cursor: 'pointer', font: `600 11px ${PIEL.fuente.cuerpo}`, color: '#dfe9f5', background: 'rgba(12,20,32,0.85)', border: '1px solid rgba(160,190,220,0.35)', borderRadius: 3, padding: '3px 8px' };
+  const etiqueta: React.CSSProperties = { font: `600 12.5px ${PIEL.fuente.cuerpo}`, fontVariantNumeric: 'tabular-nums', color: '#eaf2fb', textShadow: '0 1px 3px #000', whiteSpace: 'nowrap' };
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 6, opacity: atenuada ? 0.12 : 1, transition: 'opacity .35s ease' }}>
       <div ref={refEl} data-testid="escala-enfriamiento" data-modo={modo} data-lo={lo.toFixed(1)} data-hi={hi.toFixed(1)} data-marcas={marcas.length}

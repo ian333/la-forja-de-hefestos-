@@ -89,4 +89,25 @@ export const PIEL_CSS = `
 .fb-viewport::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;
   background:repeating-linear-gradient(0deg,rgba(34,225,255,0.028) 0 1px,transparent 1px 3px),
              radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 60%,rgba(1,8,14,0.55) 100%);}
+/* ══ EL MODO CAMINO (orden 2026-10-23-el-modo-camino; crítica de 3 críticos + debate → ian «dale, me gusta el plan») ══
+   Hay pieza y no estás en DISEÑO → cada paso muestra SOLO lo suyo. Es el PRODUCTO, no un modo de filmación: la película lo
+   hereda tal cual. Lo que se aparta sigue en el DOM (opacidad 0): el arnés y la filmadora leen sus data-* igual. Para volver
+   al CAD entero: la pestaña DISEÑO. El riel de 9 pasos es la única navegación (y se puede tocar). */
+.fb-root.fb-camino .fb-toolbar{display:none !important;}
+.fb-root.fb-camino:not(.fb-chrome-off) .fb-viewport{top:46px !important;}
+.fb-root.fb-camino .fb-hud-view{top:44px !important;}
+.fb-root.fb-camino .fb-ws-tabs button.on{color:var(--ds-dim) !important;border-bottom-color:transparent !important;}
+.fb-root.fb-camino .fb-undo,.fb-root.fb-camino .fb-imported-tag{display:none !important;}
+.fb-root.fb-camino [data-testid="feature-tree"],.fb-root.fb-camino [data-testid="op-panel"],.fb-root.fb-camino [data-testid="analysis-panel"],
+.fb-root.fb-camino [data-testid="face-list"],.fb-root.fb-camino [data-testid="sim-panel"],.fb-root.fb-camino [data-testid="curso-report"],
+.fb-root.fb-camino [data-testid="params-panel"],.fb-root.fb-camino [data-testid="ficha-en-el-mundo"],.fb-root.fb-camino [data-testid="mold-cotas-overlay"],
+.fb-root.fb-camino [data-testid="shortcut-hint"],.fb-root.fb-camino [data-testid="btn-lamina"],.fb-root.fb-camino [data-testid="parte-leyenda"],
+.fb-root.fb-camino [data-testid="linea-particion"],.fb-root.fb-camino [data-testid="molde-de-la-pieza"],.fb-root.fb-camino [data-testid="parte-telemetria"],
+.fb-root.fb-camino [data-testid^="parte-lente-"]{opacity:0 !important;pointer-events:none !important;}
+.fb-root.fb-camino [data-testid="el-parte-foco"]{background:none !important;pointer-events:none !important;}
+.fb-root.fb-camino:not(.fb-paso-3) [data-testid="escala-enfriamiento"]{opacity:0 !important;pointer-events:none !important;}
+.fb-root.fb-camino:not(.fb-paso-2) [data-testid="invariants"]{opacity:0 !important;}   /* «Sólido 55822 mm³ · 472 caras» es del paso 2 */
+/* el cubo (dentro del Canvas) lo apaga el estudio; la barra ISO·SUP·FRE solo mientras el ratón se mueve (2 s) */
+.fb-root.fb-camino [data-testid="hud-view"]{transition:opacity .25s;}
+.fb-root.fb-camino:not(.fb-raton) [data-testid="hud-view"]{opacity:0 !important;pointer-events:none !important;}
 `;
