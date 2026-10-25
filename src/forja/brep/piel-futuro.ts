@@ -37,6 +37,9 @@ export const PIEL = {
   falla: '#FF2D55', fallaTexto: '#FF8FA3',
   aviso: '#FF8A1F', avisoTexto: '#FFB877',
   cumple: '#E6F1F6',
+  /** LA PUERTA del paso 2 (orden C, 2026-10-24: «tarjeta verde/ámbar/rojo»): el ÚNICO verde de la piel, y solo para «pasa la
+   *  puerta». Un semáforo a la entrada es el idioma universal de una puerta; dentro del análisis, cumplir sigue siendo blanco ✓. */
+  pasa: '#3BF0A0',
   mundo: {
     aceroHolo: '#9FC4D6',      // el acero vuelto holograma bajo el Foco (hielo)
     aceroSolido: '#5B6B78',

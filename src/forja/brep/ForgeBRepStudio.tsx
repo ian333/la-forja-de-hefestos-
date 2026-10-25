@@ -49,7 +49,7 @@ import { flanera } from '../mold/flanera';   // el VASO de la flanera (producto 
 import { splitMold, shapeBBox, scaleForShrinkage } from '../mold/mold';    // core/cavidad genérico (probado en el banco: cup/lid/…)
 import { analyzeAssembly, meshesInterfere, meshPenetration, meshContact } from '../mold/collision';   // solver de colisiones (fits + térmico + sólidos)
 import ProjectSwitcher, { inferType, type ProjItem } from './ProjectSwitcher';   // el LOBBY integrado
-import { mallaDesdeArchivo, mallaParaElVisor, bboxDeMalla, type MallaVisor } from '../mold/stl';
+import { mallaDesdeArchivo, mallaParaElVisor, bboxDeMalla, armarPuerta, confirmarSolido, type MallaVisor, type OpcionesCarga, type PuertaDeLaPieza, type RegionDeLaPuerta } from '../mold/stl';   // + LA PUERTA (orden C)
 import type { MeshLike } from '../mold/flowlen-mesh';
 import { fastenerPlan } from '../mold/mold-fasteners';
 import { moldRecipe } from '../mold/mold-recipe';
@@ -67,7 +67,7 @@ import { PIEL, PIEL_CSS } from './piel-futuro';   // LA PIEL DEL FUTURO: cyberpu
 import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm, FillVivo } from './MoldScene';
 import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
-import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel, TarjetaEstacion } from './MoldPanels';
+import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel, TarjetaEstacion, TarjetaPuerta } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
 import { isoSurface } from '../../lib/viz/isosurface';
@@ -3012,6 +3012,56 @@ function PartingLine3D({ loops }: { loops: PartingLoop[] }) {
   );
 }
 
+/**
+ * LA PUERTA · LAS CONTRASALIDAS PINTADAS SOBRE LA PIEZA (orden C, 2026-10-24): «si hay regiones que no salen en línea recta, se
+ * PINTAN en la pieza». Dos capas, las dos en coordenadas de la pieza (hermanas de su malla, como la línea de partición):
+ *  · las caras que caen DENTRO de cada región (`triangulosEnContrasalidas`), en el rojo de la falla, encima de la malla;
+ *  · una caja por región (+1.5 mm por lado: en la tapa son de 0.8 × 2.5 mm, invisibles a la escala de la pieza sin aire) con su
+ *    arista siempre visible — a través del holograma se cuentan desde cualquier ángulo. Late despacio (la falla «tiembla»).
+ */
+function ContrasalidasEnLaPieza({ mesh, tris, regiones }: { mesh: MeshLike; tris: Uint32Array; regiones: RegionDeLaPuerta[] }) {
+  const caras = useMemo(() => {
+    const P = mesh.positions, I = mesh.indices, nT = Math.floor(I.length / 3);
+    const pos: number[] = [];
+    for (const t of tris) {
+      if (t >= nT) continue;   // otra malla (no debería pasar: puerta y malla nacen juntas)
+      for (let v = 0; v < 3; v++) { const a = I[t * 3 + v] * 3; pos.push(P[a], P[a + 1], P[a + 2]); }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    return g;
+  }, [mesh, tris]);
+  const cajas = useMemo(() => regiones.map((r) => {
+    const s: [number, number, number] = [r.max[0] - r.min[0] + 3, r.max[1] - r.min[1] + 3, r.max[2] - r.min[2] + 3];
+    const box = new THREE.BoxGeometry(s[0], s[1], s[2]);
+    return { c: r.centro, box, edges: new THREE.EdgesGeometry(box) };
+  }), [regiones]);
+  useEffect(() => () => { caras.dispose(); for (const c of cajas) { c.box.dispose(); c.edges.dispose(); } }, [caras, cajas]);
+  // tres materiales COMPARTIDOS (uno por capa): el latido los mueve a todos juntos
+  const mats = useMemo(() => ({
+    cara: new THREE.MeshBasicMaterial({ color: PIEL.falla, toneMapped: false, transparent: true, opacity: 0.95, side: THREE.DoubleSide,
+      polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, depthWrite: false }),
+    caja: new THREE.MeshBasicMaterial({ color: PIEL.falla, toneMapped: false, transparent: true, opacity: 0.16, depthWrite: false, depthTest: false }),
+    arista: new THREE.LineBasicMaterial({ color: PIEL.falla, toneMapped: false, transparent: true, opacity: 0.9, depthTest: false }),
+  }), []);
+  useEffect(() => () => { mats.cara.dispose(); mats.caja.dispose(); mats.arista.dispose(); }, [mats]);
+  useFrame(({ clock }) => {
+    const k = 0.5 + 0.5 * Math.sin(clock.getElapsedTime() * 2.2);
+    mats.cara.opacity = 0.78 + 0.2 * k; mats.caja.opacity = 0.10 + 0.12 * k; mats.arista.opacity = 0.55 + 0.4 * k;
+  });
+  return (
+    <group name="contrasalidas" userData={{ encuadre: false }}>
+      <mesh geometry={caras} material={mats.cara} renderOrder={9} userData={{ encuadre: false }} />
+      {cajas.map((c, i) => (
+        <group key={i} position={c.c}>
+          <mesh geometry={c.box} material={mats.caja} renderOrder={10} userData={{ encuadre: false }} />
+          <lineSegments geometry={c.edges} material={mats.arista} renderOrder={11} userData={{ encuadre: false }} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
 function ProfileGhost({ pts }: { pts: Pt2[] }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -3753,12 +3803,21 @@ export default function ForgeBRepStudio() {
   // que el operador soltó, para que su pieza esté EN el CAD y no en una estampa.
   const [piezaMalla, setPiezaMalla] = useState<{ visor: MallaVisor; mesh: MeshLike; nombre: string; notas: string[] } | null>(null);
   const [errPieza, setErrPieza] = useState<string>('');
+  // LA PUERTA QUE DICE NO (orden C, 2026-10-24): lo que el paso 2 midió al soltar. Si cierra, el camino se cierra DESDE un paso
+  // (3 mientras espera una respuesta; 6 cuando el molde y el precio no van) — y nada más allá se abre, por ningún botón.
+  const [puerta, setPuerta] = useState<PuertaDeLaPieza | null>(null);
+  const [puertaAbierta, setPuertaAbierta] = useState(false);          // la tarjeta completa fuera del paso 2 (al tocar un candado)
+  const [puertaMidiendo, setPuertaMidiendo] = useState<string | null>(null);   // «abriendo…»: la espera se dice
+  const archivoRef = useRef<File | null>(null);                        // para volver a cargar con la respuesta (qué sólido, qué unidades)
   // U3 · EL FOCO — arranca APAGADO a propósito (la regla que salió de Detroit: el HUD
   // está limpio y la información aparece solo cuando hace falta). Lo prende el operador.
   const [focoOn, setFocoOn] = useState(false);
   // EL MODO CAMINO (orden 2026-10-23): hay pieza y no estás en DISEÑO → cada paso muestra solo lo suyo (piel-futuro.ts, .fb-camino).
   // Es el producto, no un modo de filmación. El cubo e ISO/SUP/FRE solo mientras el ratón se mueve (2 s): en la película nadie lo mueve.
   const modoCamino = !!piezaMalla && workspace !== 'diseno';
+  /** LA PUERTA: desde qué paso está cerrado el camino de ESTA pieza (null = abierto) */
+  const cierraDesde = piezaMalla ? (puerta?.cierraDesde ?? null) : null;
+  const cerrado = (n: number) => cierraDesde != null && n >= cierraDesde;
   const [ratonVivo, setRatonVivo] = useState(false);
   const ratonTimer = useRef(0);
   const despiertaRaton = useCallback(() => {
@@ -3998,6 +4057,7 @@ export default function ForgeBRepStudio() {
   // `ciclo` recién escrito, por eso va en un efecto y no en un handler.
   useEffect(() => {
     if (!moldeOn || !piezaMalla) return;
+    if (cierraDesde != null && cierraDesde <= 6) return;   // LA PUERTA (orden C): el molde no arranca sobre una pieza que no sale
     const c = mold.ciclo;
     if (!c?.pieza) return;                       // el sólido aún no llegó al kernel (Construyendo…)
     if (mold.intake.wallMm == null) {
@@ -4028,7 +4088,7 @@ export default function ForgeBRepStudio() {
     // PINTARSE antes de que E4 y luego E5 bloquearan el hilo ~60 s — el cliente veía negro un minuto.
     const t = setTimeout(() => paso(), c.estacion >= 3 ? 400 : 80);
     return () => clearTimeout(t);
-  }, [moldeOn, piezaMalla, mold.ciclo, mold.intake, mold.cursoBusy, lentes, lentesBusy, calcularLentes, mold]);
+  }, [moldeOn, piezaMalla, mold.ciclo, mold.intake, mold.cursoBusy, lentes, lentesBusy, calcularLentes, mold, cierraDesde]);
   // PASO 7 · el juego de planos del molde de ESTA pieza: mismo motor que el PDF de la Máquina
   // (`buildMoldLaminas`), con el paquete E2 de la pieza y su sólido del kernel (4 vistas de la
   // pieza moldeada). Corre en un tick aparte para que se pinte «generando…» antes de bloquear.
@@ -5217,17 +5277,27 @@ export default function ForgeBRepStudio() {
    * soltar habría sido copiarla — y copiar un flujo es tener dos verdades.
    */
   const [arrastrando, setArrastrando] = useState(false);
-  const abrirArchivo = useCallback(async (f: File) => {
+  // LA PUERTA (orden C, 2026-10-24): `o` es la RESPUESTA del operador a la puerta (qué sólido, qué unidades) — se vuelve a
+  // cargar el mismo archivo con ella. La puerta llega con la malla (el cargador la mide ANTES del kernel del molde).
+  const abrirArchivo = useCallback(async (f: File, o: OpcionesCarga = {}) => {
+    archivoRef.current = f;
+    setPuertaMidiendo(o.solido != null ? `midiendo el sólido n.º ${o.solido + 1}…` : o.unidades ? 'escalando a milímetros…' : `abriendo «${f.name}»…`);
     try {
       const buf = await f.arrayBuffer();
-      const { mesh, notas, entrada: ent } = await mallaDesdeArchivo(f.name, buf);
+      const { mesh, notas, entrada: ent, puerta: pu } = await mallaDesdeArchivo(f.name, buf, o);
       const nombre = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 28);
       setErrPieza('');
+      setPuerta(pu ?? null); setPuertaAbierta(false);
+      if (pu) console.log('PUERTA', pu.estado, pu.cierraDesde, `${pu.medida.ms} ms`, pu.titulo);
       // LA ENTRADA: la decisión (qué sólido, qué giro) ya la midió el cargador sobre ESTE archivo — la reconstrucción
       // del B-Rep la REUSA (misma llave: el texto del STEP) en vez de medir otra vez. El Foco y el molde ven LA MISMA pieza.
+      let mismoTexto = false;
       if (ent && /\.(stp|step)$/i.test(f.name)) {
-        entradaRef.current = { src: new TextDecoder().decode(buf), d: ent };
-        setEntrada(ent.solidos > 1 || ent.giro ? ent : null);
+        const src = new TextDecoder().decode(buf);
+        mismoTexto = src === importedStep;
+        entradaRef.current = { src, d: ent };
+        // el ensamble ya lo dice la puerta (con su lista): el aviso solo cuenta el GIRO
+        setEntrada(ent.giro ? ent : null);
         setEntradaVista(false);
       }
       setPiezaMalla({ visor: mallaParaElVisor(mesh), mesh, nombre, notas });
@@ -5237,7 +5307,9 @@ export default function ForgeBRepStudio() {
       // el mismo texto entra también como pieza principal del documento (la puerta de DISEÑO ya
       // hacía esto): el Foco sigue sobre la MALLA (rápido, sirve para STL) y el B-Rep vive en el
       // kernel para lo que necesita caras. Memoria del navegador, no servidores (decisión de ian).
-      if (/\.(stp|step)$/i.test(f.name)) importStepText(new TextDecoder().decode(buf), f.name);
+      // otro sólido del MISMO archivo: el texto no cambió y el estudio no se reconstruiría solo — se le pide (la entrada nueva ya
+      // está en `entradaRef`, la reconstrucción la aplica)
+      if (/\.(stp|step)$/i.test(f.name)) { if (mismoTexto) rebuild(); else importStepText(new TextDecoder().decode(buf), f.name); }
       else clearImportedStep();   // un STL no trae sólido: que no quede el de la pieza anterior
       // las lentes son de LA pieza anterior — se tiran, no se heredan
       setLentes(null); lentesDe.current = null; setLenteId('medidas'); setLentesErr('');
@@ -5256,10 +5328,21 @@ export default function ForgeBRepStudio() {
       //  mismo fill 0.247; lo que manda es `cameraDist`/`viewTarget` del visor. El tamaño se ajusta ahí.)
       orbitTo(40, 30, Math.max(bb.diagonal * 1.35, 40), bb.centro[0], bb.centro[1], bb.centro[2]);
     } catch (err) {
-      setPiezaMalla(null);
+      setPiezaMalla(null); setPuerta(null);
       setErrPieza(`no se pudo abrir ${f.name}: ${String(err instanceof Error ? err.message : err).slice(0, 110)}`);
-    }
-  }, [orbitTo, importStepText, clearImportedStep]);
+    } finally { setPuertaMidiendo(null); }
+  }, [orbitTo, importStepText, clearImportedStep, importedStep, rebuild]);
+  // LA PUERTA · las respuestas del operador. Elegir el sólido que YA está en pantalla no vuelve a medir: solo deja de esperar.
+  const elegirSolido = useCallback((i: number) => {
+    const f = archivoRef.current; if (!puerta || !f) return;
+    if (i === puerta.medida.cuerpos.elegido) { setPuerta(confirmarSolido(puerta)); return; }
+    void abrirArchivo(f, { solido: i });
+  }, [puerta, abrirArchivo]);
+  const responderUnidades = useCallback((u: 'mm' | 'pulgadas') => {
+    const f = archivoRef.current; if (!puerta || !f) return;
+    if (u === 'mm') { setPuerta(armarPuerta({ ...puerta.medida, unidades: { ...puerta.medida.unidades, respuesta: 'mm' } })); return; }
+    void abrirArchivo(f, { unidades: 'pulgadas' });
+  }, [puerta, abrirArchivo]);
   const [gbParts, setGbParts] = useState<GearboxMotionData | null>(null);
   // Construye las piezas separadas (centradas) cuando se enciende el movimiento o
   // cambian los parámetros de la caja. Teselación una vez; la animación solo mueve grupos.
@@ -5486,8 +5569,24 @@ export default function ForgeBRepStudio() {
   // ian: «es un pipeline, pero nunca siento cuando pasamos al otro lado». El paso en el que estás se DEDUCE de lo que
   // está abierto (no hay otra verdad); al llegar por PRIMERA vez a un paso con esta pieza, la cortina anuncia el paso.
   // Volver a un paso ya visto no la repite (el que trabaja no quiere 2 s de ceremonia cada vez que cambia de lente).
-  const pasoActual = expedienteOn ? 9 : planosOn ? 8 : (inspeccionOn || focoMolde) ? 7 : moldeOn ? 6 : particionOn ? 5 : laminaOn ? 4
-    : (lenteId === 'enfriamiento' ? 3 : piezaMalla ? 2 : 1);
+  // LA PUERTA (orden C): lo que la puerta cerró no cuenta como «el paso en el que estás» — el estado se apaga en el efecto de
+  // abajo, pero antes de eso la cortina ya habría anunciado un paso cerrado.
+  const ab = (n: number) => !cerrado(n);
+  const pasoActual = expedienteOn && ab(9) ? 9 : planosOn && ab(8) ? 8 : (inspeccionOn || focoMolde) && ab(7) ? 7 : moldeOn && ab(6) ? 6 : particionOn && ab(5) ? 5 : laminaOn && ab(4) ? 4
+    : (lenteId === 'enfriamiento' && ab(3) ? 3 : piezaMalla ? 2 : 1);
+  // LA PUERTA CIERRA: lo que esté abierto más allá del candado se apaga — venga de un botón, una tecla, el riel o la API. Es
+  // la ÚNICA cerradura; los botones solo evitan el parpadeo.
+  useEffect(() => {
+    if (cierraDesde == null) return;
+    if (cierraDesde <= 9 && expedienteOn) setExpedienteOn(false);
+    if (cierraDesde <= 8 && planosOn) setPlanosOn(false);
+    if (cierraDesde <= 8 && planosPend) setPlanosPend(false);
+    if (cierraDesde <= 7 && inspeccionOn) setInspeccionOn(false);
+    if (cierraDesde <= 6 && moldeOn) setMoldeOn(false);
+    if (cierraDesde <= 5 && particionOn) setParticion(false);
+    if (cierraDesde <= 4 && laminaOn) setLaminaOn(false);
+    if (cierraDesde <= 3 && lenteId === 'enfriamiento') setLenteId('medidas');
+  }, [cierraDesde, expedienteOn, planosOn, planosPend, inspeccionOn, moldeOn, particionOn, laminaOn, lenteId]);
   // CADA LENTE MUERE CON SU PASO (crítica 2026-10-23): la escala térmica seguía viva en el molde y las cotas de auditoría (con sus
   // líneas) cruzaban la inspección. Del paso 5 en adelante, el camino apaga la lente del campo y las cotas de auditoría.
   useEffect(() => {
@@ -5502,6 +5601,7 @@ export default function ForgeBRepStudio() {
   }, [modoCamino, pasoActual, cotasOn]);
   // EL RIEL ES LA NAVEGACIÓN del camino: tocar un paso hace lo mismo que su botón de la tira (que en el camino ya no se ve)
   const irAlPaso = useCallback((n: number) => {
+    if (cierraDesde != null && n >= cierraDesde) { setPuertaAbierta(true); return; }   // LA PUERTA: el candado enseña su por qué
     setFocoOn(true);
     if (n === 3) { setLenteId('enfriamiento'); calcularLentes(); }
     else if (n === 4) setLaminaOn(true);
@@ -5511,7 +5611,7 @@ export default function ForgeBRepStudio() {
     else if (n === 8) { if (planosMolde) setPlanosOn(true); else if (mold.ciclo?.e2?.pkg) generarPlanosMolde(); }
     else if (n === 9) setExpedienteOn(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mold.ciclo, planosMolde, generarPlanosMolde, calcularLentes]);
+  }, [mold.ciclo, planosMolde, generarPlanosMolde, calcularLentes, cierraDesde]);
   const [transicion, setTransicion] = useState<{ paso: PasoDelCamino; t0: number } | null>(null);
   const pasoMaxRef = useRef(1);
   const anunciarPaso = useCallback((n: number) => {
@@ -7346,6 +7446,10 @@ export default function ForgeBRepStudio() {
                   campoGPU={focoOn ? lenteActiva?.gpu ?? null : null}
                   campoReloj={focoOn && lenteActiva?.gpu ? relojEnf : null}
                   overhangColors={null} clip={sectionPlanes} holograma={focoOn} />
+                {/* LA PUERTA (orden C): las contrasalidas PINTADAS sobre la pieza, en su lugar */}
+                {puerta && (puerta.medida.contrasalidas.regiones.length > 0) && (
+                  <ContrasalidasEnLaPieza mesh={piezaMalla.mesh} tris={puerta.medida.contrasalidas.triangulos} regiones={puerta.medida.contrasalidas.regiones} />
+                )}
                 {/* U10 · LA MARCA — el punto que MANDA en esta lente (el macizo que
                     fija el ciclo, el último rincón en llenarse). De Horizon: la ficha
                     señala UN lugar, no toda la pieza. */}
@@ -7698,7 +7802,7 @@ export default function ForgeBRepStudio() {
         )}
         {/* EL RIEL DE LOS 9 PASOS: siempre visible con la pieza en pantalla */}
         {piezaMalla && <RielDePasos actual={pasoActual} maximo={Math.max(pasoMaxRef.current, pasoActual)} ancho={modoCamino || focoMolde || recorrido ? 'completo' : 'centro'}
-          arriba={modoCamino} onElegir={modoCamino ? irAlPaso : undefined} />}
+          arriba={modoCamino} onElegir={modoCamino ? irAlPaso : undefined} cierraDesde={cierraDesde} onCandado={() => setPuertaAbierta(true)} />}
         {/* LA TARJETA DE ESTACIÓN (modo camino): lo único que el paso 6 dice en DOM, en dos líneas */}
         {modoCamino && pasoActual === 6 && !focoMolde && !recorrido && <TarjetaEstacion titulo={docName} />}
         {/* LA TRANSICIÓN ENTRE PASOS: encima de todo el visor, se apaga sola */}
@@ -7735,7 +7839,7 @@ export default function ForgeBRepStudio() {
                 const c = id === 'medidas' || id === 'pared' ? '#5fd4f5' : '#e061c8';
                 return (
                   <button key={id} data-testid={`parte-lente-${id}`}
-                    onClick={() => { setFocoOn(true); setLenteId(id); if (id !== 'medidas') calcularLentes(); }}
+                    onClick={() => { if (id === 'enfriamiento' && cerrado(3)) { setPuertaAbierta(true); return; } setFocoOn(true); setLenteId(id); if (id !== 'medidas') calcularLentes(); }}
                     style={{
                       cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
                       font: `${on ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
@@ -7745,16 +7849,16 @@ export default function ForgeBRepStudio() {
               })}
               {/* T7 · PARTIR — no es una lente (campo), es UNA línea. Color acero para separarla
                   del cian (medido) y el magenta (simulado) de las lentes. */}
-              <button data-testid="parte-lente-particion"
-                onClick={() => { setFocoOn(true); setParticion((v) => !v); }}
+              <button data-testid="parte-lente-particion" data-cerrado={cerrado(5) ? 1 : 0}
+                onClick={() => { if (cerrado(5)) { setPuertaAbierta(true); return; } setFocoOn(true); setParticion((v) => !v); }}
                 style={{
                   cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
                   font: `${particionOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
                   color: particionOn ? '#ff8a5c' : '#6f8095', borderBottom: `2px solid ${particionOn ? '#ff8a5c' : 'transparent'}`,
                 }}>PARTIR</button>
               {/* PASO 6 · MOLDE — el ciclo de la máquina sobre ESTA pieza; color oro (acero del molde) */}
-              <button data-testid="parte-lente-molde"
-                onClick={() => { setFocoOn(true); setMoldeOn((v) => !v); }}
+              <button data-testid="parte-lente-molde" data-cerrado={cerrado(6) ? 1 : 0}
+                onClick={() => { if (cerrado(6)) { setPuertaAbierta(true); return; } setFocoOn(true); setMoldeOn((v) => !v); }}
                 style={{
                   cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
                   font: `${moldeOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
@@ -7762,23 +7866,23 @@ export default function ForgeBRepStudio() {
                 }}>MOLDE</button>
               {/* PASO 7 · LA INSPECCIÓN — el Foco escanea y la máquina recorre los puntos críticos, sección por sección */}
               <button data-testid="parte-lente-inspeccion" disabled={!mold.ciclo?.portamoldes}
-                onClick={() => { setFocoOn(true); setPlanosOn(false); setExpedienteOn(false); setInspeccionOn((v) => !v); }}
+                onClick={() => { if (cerrado(7)) { setPuertaAbierta(true); return; } setFocoOn(true); setPlanosOn(false); setExpedienteOn(false); setInspeccionOn((v) => !v); }}
                 style={{
                   cursor: mold.ciclo?.portamoldes ? 'pointer' : 'default', background: 'transparent', border: 0, padding: '3px 2px',
                   font: `${inspeccionOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
                   color: inspeccionOn ? '#4fd8ff' : mold.ciclo?.portamoldes ? '#8fb3c4' : '#3f4a57', borderBottom: `2px solid ${inspeccionOn ? '#4fd8ff' : 'transparent'}`,
                 }}>INSPECCIÓN</button>
               {/* PASO 7 · PLANOS — el juego de láminas del molde de esta pieza */}
-              <button data-testid="parte-lente-planos"
-                onClick={() => { setFocoOn(true); if (planosMolde) { setPlanosOn((v) => !v); return; } if (mold.ciclo?.e2?.pkg) generarPlanosMolde(); else { setMoldeOn(true); setPlanosPend(true); } }}
+              <button data-testid="parte-lente-planos" data-cerrado={cerrado(8) ? 1 : 0}
+                onClick={() => { if (cerrado(8)) { setPuertaAbierta(true); return; } setFocoOn(true); if (planosMolde) { setPlanosOn((v) => !v); return; } if (mold.ciclo?.e2?.pkg) generarPlanosMolde(); else { setMoldeOn(true); setPlanosPend(true); } }}
                 style={{
                   cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
                   font: `${planosOn || planosBusy ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
                   color: planosMolde ? '#dfe7f2' : '#6f8095', borderBottom: `2px solid ${planosOn || planosBusy ? '#dfe7f2' : 'transparent'}`,
                 }}>PLANOS</button>
               {/* PASO 8 · EXPEDIENTE — dictamen + decisiones + cotización + planos, en un archivo */}
-              <button data-testid="parte-lente-expediente"
-                onClick={() => { setFocoOn(true); setExpedienteOn((v) => !v); }}
+              <button data-testid="parte-lente-expediente" data-cerrado={cerrado(9) ? 1 : 0}
+                onClick={() => { if (cerrado(9)) { setPuertaAbierta(true); return; } setFocoOn(true); setExpedienteOn((v) => !v); }}
                 style={{
                   cursor: 'pointer', background: 'transparent', border: 0, padding: '3px 2px',
                   font: `${expedienteOn ? 700 : 500} 10px ui-monospace,Menlo,monospace`, letterSpacing: 1.6,
@@ -7988,19 +8092,24 @@ export default function ForgeBRepStudio() {
         )}
         {/* LA ENTRADA: el archivo que soltaste NO era una pieza parada — se DICE qué se moldea y cómo se paró, sobre el
             lienzo (no en la tira ni en un panel). Se va con «entendido»; vuelve al soltar otro archivo. */}
-        {importedStep && entrada && !entradaVista && (
+        {/* LA PUERTA QUE DICE NO (orden C, 2026-10-24): la tarjeta del paso 2 — cerrada/abierta, cuántos cuerpos, unidades,
+            contrasalidas, y si no se puede, la razón y lo que haría falta. Aquí vive también el error de entrada (`rp-error`): antes
+            estaba en un panel que con la pieza en pantalla ni se dibujaba. Fuera del paso 2, si el camino está cerrado, queda una
+            línea con su candado (se toca y vuelve la tarjeta). */}
+        {errPieza ? <TarjetaPuerta puerta={null} error={errPieza} izquierda={modoCamino ? 18 : 268} />
+          : puertaMidiendo && !(piezaMalla && puerta) ? <TarjetaPuerta puerta={null} midiendo={puertaMidiendo} izquierda={modoCamino ? 18 : 268} />
+          : piezaMalla && puerta && (pasoActual === 2 || puertaAbierta) ? (
+            <TarjetaPuerta puerta={puerta} midiendo={puertaMidiendo ?? undefined} izquierda={modoCamino ? 18 : 268}
+              onElegirSolido={elegirSolido} onUnidades={responderUnidades} onCerrar={pasoActual !== 2 ? () => setPuertaAbierta(false) : undefined} />)
+          : piezaMalla && puerta && cierraDesde != null ? <TarjetaPuerta puerta={puerta} compacta izquierda={modoCamino ? 18 : 268} onAbrir={() => setPuertaAbierta(true)} />
+          : null}
+        {importedStep && entrada && entrada.giro && !entradaVista && (
           <div data-testid="aviso-entrada" data-solidos={entrada.solidos} data-eje={`${entrada.eje}${entrada.boca}`} data-giro={entrada.giro ?? ''}
             style={{ position: 'absolute', left: '50%', top: '9%', transform: 'translateX(-50%)', zIndex: 7, maxWidth: 'min(640px, 86%)',
               padding: '10px 14px', borderLeft: '3px solid #f4c84a', background: 'rgba(10,16,26,0.9)', font: '500 12.5px system-ui,sans-serif', color: '#dfe9f5', lineHeight: 1.45 }}>
-            {entrada.solidos > 1 && (
-              <div>
-                <b style={{ color: '#ffe08a' }}>Tu archivo es un ENSAMBLE de {entrada.solidos} sólidos.</b>{' '}
-                Moldeo la pieza mayor: {entrada.elegido.volCc} cc, {entrada.elegido.tamMm.map((v) => v.toFixed(0)).join(' × ')} mm.
-                <span style={{ color: '#9fb0c4' }}> Los otros {entrada.solidos - 1} quedan fuera ({entrada.volsCc.slice(1, 6).join(' · ')}{entrada.volsCc.length > 6 ? ' …' : ''} cc: tapa, tornillos, insertos…).</span>
-              </div>
-            )}
+            {/* el ENSAMBLE ya no se dice aquí: la puerta del paso 2 trae la lista y pregunta cuál (orden C) */}
             {entrada.giro && (
-              <div style={{ marginTop: entrada.solidos > 1 ? 4 : 0 }}>
+              <div>
                 <b style={{ color: '#7ee2a8' }}>La paré en su eje de apertura</b> — {entrada.giro}.
                 <span style={{ color: '#9fb0c4' }}> El molde abre en Z con la boca arriba (sección llena {entrada.seccionPct[entrada.eje].join(' / ')} % en los extremos de {entrada.eje}).</span>
               </div>
@@ -8748,9 +8857,7 @@ export default function ForgeBRepStudio() {
                 de La Forja»). El lote quedó degradado a un botón de regresiones. */}
             {!collapsed.sim && (piezaMalla || result) && (
               <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${GOLD}22` }}>
-                {errPieza && (
-                  <div data-testid="rp-error" style={{ fontSize: 10.5, color: '#ffb3b3', background: 'rgba(255,92,92,0.12)', border: '1px solid #ff5c5c55', borderRadius: 6, padding: '5px 8px', marginBottom: 6 }}>✗ {errPieza}</div>
-                )}
+                {/* el `rp-error` se mudó a la tarjeta de la puerta del paso 2 (orden C): aquí, con la pieza en pantalla, ni se dibujaba */}
                 <Suspense fallback={<div style={{ fontSize: 11, opacity: 0.6 }}>cargando la revisión…</div>}>
                   <RevisarPiezaPanel
                     onRevision={setRevision}

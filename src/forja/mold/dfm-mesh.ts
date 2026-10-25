@@ -52,8 +52,21 @@ export interface DfmMeshReport {
     zLo: number; zHi: number; volMm3: number; cols: number;
     /** dirección lateral por la que ventea (unitaria en XY); null = sellada */
     dir: [number, number] | null;
+    /** pasa el piso de ruido (`RUIDO_CONTRASALIDA`): es la que decide «con-mecanismos» */
+    significativa: boolean;
   }>;
+  /** LA PUERTA (orden C, 2026-10-24): el mapa POR COLUMNA de las regiones — para PINTARLAS sobre la pieza, no solo contarlas.
+   *  `region[c]` = índice en `regionsDetail` (−1 = sin contrasalida); `lo/hi` = el hueco de esa columna (z relativo a z0).
+   *  Mismas celdas que `thickMap`/`draftMap` (origen x0,y0 de la malla). */
+  undercutMap: { nx: number; ny: number; sx: number; sy: number; x0: number; y0: number; z0: number; region: Int32Array; lo: Float32Array; hi: Float32Array };
 }
+
+/** PISO DE RUIDO de una región de contrasalida (lo que ya decidía «con-mecanismos», ahora con nombre para que la puerta del
+ *  paso 2 cuente LAS MISMAS que el dictamen): <3 columnas o <2 mm³ es artefacto del raster (el embudo daba «con-mecanismos»
+ *  por 1 columna / 0 mm³). Regla de Hefestos, sin cita: el libro no da un tamaño mínimo de contrasalida. */
+export const RUIDO_CONTRASALIDA = { cols: 3, volMm3: 2 } as const;
+export const esContrasalidaSignificativa = (r: { cols: number; volMm3: number }) =>
+  r.cols >= RUIDO_CONTRASALIDA.cols && r.volMm3 >= RUIDO_CONTRASALIDA.volMm3;
 
 /** Tabla 2.14 (LITERAL): draft recomendado por acabado/resina. */
 export const DRAFT_TABLE_2_14: Array<{ finish: string; resin: string; draftDeg: number }> = [
@@ -197,6 +210,8 @@ export function dfmFromMesh(
   // (§2.3.7: ni un side-action la alcanza).
   let regions = 0, enclosedRegions = 0, enclosedCols = 0;
   const regionsDetail: DfmMeshReport['regionsDetail'] = [];
+  // LA PUERTA (orden C): qué región es cada columna, para pintarla sobre la pieza (índice ANTES de ordenar; se remapea abajo)
+  const regionOf = new Int32Array(G * GY).fill(-1);
   {
     const seen = new Uint8Array(G * GY);
     for (let s = 0; s < G * GY; s++) {
@@ -241,6 +256,7 @@ export function dfmFromMesh(
         }
       }
       if (!vents) { enclosedRegions++; enclosedCols += member.length; }
+      for (const n of member) regionOf[n] = regionsDetail.length;
       const best = votes.indexOf(Math.max(...votes));
       const dir: [number, number] | null = vents
         ? ([[1, 0], [-1, 0], [0, 1], [0, -1]] as Array<[number, number]>)[best]
@@ -248,11 +264,18 @@ export function dfmFromMesh(
       regionsDetail.push({
         x0: +(ri0 * dxg).toFixed(1), x1: +((ri1 + 1) * dxg).toFixed(1),
         y0: +(rj0 * dyg).toFixed(1), y1: +((rj1 + 1) * dyg).toFixed(1),
-        zLo: +(rzLo - mnz).toFixed(1), zHi: +(rzHi - mnz).toFixed(1),
+        // ⚠ los cruces ya son RELATIVOS a z_min (az = P.z − mnz, arriba): restar mnz otra vez daba alturas fuera de la pieza
+        // (medido 2026-10-24 en la tapa 1594C: zLo 14.9 en una pieza de 14.1 de alto). Solo cambia donde z_min ≠ 0.
+        zLo: +rzLo.toFixed(1), zHi: +rzHi.toFixed(1),
         volMm3: Math.round(rvol), cols: member.length, dir,
+        significativa: esContrasalidaSignificativa({ cols: member.length, volMm3: Math.round(rvol) }),
       });
     }
-    regionsDetail.sort((a, b) => b.volMm3 - a.volMm3);
+    const orden = regionsDetail.map((_, k) => k).sort((a, b) => regionsDetail[b].volMm3 - regionsDetail[a].volMm3);
+    const nuevo = new Int32Array(orden.length); orden.forEach((viejo, k) => { nuevo[viejo] = k; });
+    for (let n = 0; n < regionOf.length; n++) if (regionOf[n] >= 0) regionOf[n] = nuevo[regionOf[n]];
+    const ordenadas = orden.map((k) => regionsDetail[k]);
+    regionsDetail.length = 0; regionsDetail.push(...ordenadas);
   }
   // PARED §2.3.1: SOLO columnas interiores (erosión ×2) — las columnas de una pared
   // vertical miden su ALTURA en z (26 mm en una carcasa), no el espesor de sección;
@@ -290,7 +313,7 @@ export function dfmFromMesh(
   const enclosedVoids = enclosedRegions > 0;
   // PISO DE RUIDO: una región de <3 columnas o <2 mm³ es artefacto del raster, no
   // un undercut (el embudo daba "con-mecanismos" por 1 columna/0 mm³)
-  const underSignif = regionsDetail.some((r) => r.cols >= 3 && r.volMm3 >= 2);
+  const underSignif = regionsDetail.some((r) => r.significativa);
   const moldable: DfmMeshReport['moldable'] = enclosedVoids ? 'no' : (underSignif ? 'con-mecanismos' : 'si');
   const verdicts: AnalysisVerdict[] = [
     {
@@ -340,5 +363,6 @@ export function dfmFromMesh(
     thickMap: { nx: G, ny: GY, sx: dxg, sy: dyg, x0: mnx, y0: mny, thick: colThick },
     draftMap: { nx: G, ny: GY, sx: dxg, sy: dyg, x0: mnx, y0: mny, deg: draftMap, minDeg: DRAFT_MIN_DEG, tableDeg },
     regionsDetail,
+    undercutMap: { nx: G, ny: GY, sx: dxg, sy: dyg, x0: mnx, y0: mny, z0: mnz, region: regionOf, lo: gapLo, hi: gapHi },
   };
 }

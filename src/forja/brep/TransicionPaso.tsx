@@ -125,30 +125,38 @@ export function TransicionPaso({ paso, t0, total = 9, onFin }: {
 /** EL RIEL DE LOS 9 PASOS — siempre visible arriba del visor (las tres investigaciones de color lo pidieron sin hablarse: es la
  *  respuesta permanente a «nunca siento cuando pasamos al otro lado»). Hechos en cian con ✓, el actual en AMARILLO del operador,
  *  los que faltan en hilo tenue. Es DOM puro, sin estado propio: lo dibuja el paso que el estudio ya deduce. */
-export function RielDePasos({ actual, maximo, ancho = 'completo', arriba = false, onElegir }: {
+export function RielDePasos({ actual, maximo, ancho = 'completo', arriba = false, onElegir, cierraDesde = null, onCandado }: {
   actual: number; maximo: number; ancho?: 'completo' | 'centro';
   /** modo camino: pegado al borde superior del visor (la banda del ribbon ya no existe) */
   arriba?: boolean;
   /** modo camino: el riel ES la navegación — se puede tocar hasta el paso siguiente al más lejano alcanzado */
   onElegir?: (n: number) => void;
+  /** LA PUERTA (orden C, 2026-10-24): desde este paso el camino está CERRADO — apagado, con candado y sin tocar (null = abierto) */
+  cierraDesde?: number | null;
+  /** tocar un paso con candado: el estudio vuelve a enseñar POR QUÉ (la tarjeta de la puerta) */
+  onCandado?: (n: number) => void;
 }) {
   // con los paneles del CAD a la vista, el riel vive ENTRE ellos (no se les encima); en el Foco, la inspección y el modo camino
   // los paneles se apartan y el riel ocupa todo el ancho
   const lados = ancho === 'centro' ? { left: 258, right: 326 } : { left: 18, right: 18 };
   return (
-    <div data-testid="riel-de-pasos" data-actual={actual} style={{ position: 'absolute', ...lados, top: arriba ? 0 : 4, zIndex: 7, pointerEvents: onElegir ? 'auto' : 'none',
+    <div data-testid="riel-de-pasos" data-actual={actual} data-cierra={cierraDesde ?? ''} style={{ position: 'absolute', ...lados, top: arriba ? 0 : 4, zIndex: 7, pointerEvents: onElegir || onCandado ? 'auto' : 'none',
       display: 'flex', gap: 3, font: `600 ${arriba ? 11.5 : 10.5}px ${PIEL.fuente.titulo}`, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
       {PASOS_DEL_CAMINO.map((p) => {
         const es = p.n === actual, hecho = p.n <= maximo && !es;
-        const color = es ? PIEL.texto.sobreAcento : hecho ? PIEL.medido : PIEL.texto.tenue;
-        const tocable = !!onElegir && !es && p.n >= 2 && p.n <= maximo + 1;
+        const cerrado = cierraDesde != null && p.n >= cierraDesde;
+        const color = cerrado ? 'rgba(122,147,163,0.55)' : es ? PIEL.texto.sobreAcento : hecho ? PIEL.medido : PIEL.texto.tenue;
+        const tocable = !cerrado && !!onElegir && !es && p.n >= 2 && p.n <= maximo + 1;
+        const alClic = cerrado ? (onCandado ? () => onCandado(p.n) : undefined) : tocable ? () => onElegir!(p.n) : undefined;
         return (
-          <div key={p.n} data-testid={`riel-paso-${p.n}`} onClick={tocable ? () => onElegir!(p.n) : undefined}
-            style={{ flex: 1, minWidth: 0, padding: arriba ? '6px 8px 6px' : '4px 8px 5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: tocable ? 'pointer' : 'default',
-            color, background: es ? PIEL.operador : 'rgba(3,7,11,0.72)',
-            borderTop: `2px solid ${es ? PIEL.operador : hecho ? PIEL.medido : 'rgba(159,196,214,0.16)'}`,
+          <div key={p.n} data-testid={`riel-paso-${p.n}`} data-cerrado={cerrado ? 1 : 0} onClick={alClic}
+            title={cerrado ? 'cerrado por la puerta del paso 2: tócalo para ver por qué' : undefined}
+            style={{ flex: 1, minWidth: 0, padding: arriba ? '6px 8px 6px' : '4px 8px 5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: alClic ? 'pointer' : 'default',
+            color, background: es ? PIEL.operador : cerrado ? 'rgba(3,7,11,0.55)' : 'rgba(3,7,11,0.72)',
+            // el candado: el filete de arriba en el rojo de la falla (forma + color: el ícono dice «cerrado», el rojo dice por qué)
+            borderTop: `2px solid ${es ? PIEL.operador : cerrado ? 'rgba(255,45,85,0.55)' : hecho ? PIEL.medido : 'rgba(159,196,214,0.16)'}`,
             clipPath: es ? 'polygon(0 0,100% 0,100% 70%,94% 100%,0 100%)' : undefined }}>
-            {String(p.n).padStart(2, '0')} {hecho ? '✓ ' : ''}{p.corto ?? p.titulo.replace(/^(EL|LA|LOS|TU) /, '')}
+            {cerrado && <Candado />}{String(p.n).padStart(2, '0')} {hecho && !cerrado ? '✓ ' : ''}{p.corto ?? p.titulo.replace(/^(EL|LA|LOS|TU) /, '')}
           </div>
         );
       })}
@@ -156,3 +164,13 @@ export function RielDePasos({ actual, maximo, ancho = 'completo', arriba = false
   );
 }
 
+/** el candado en SVG (no emoji: la máquina que filma no trae fuente de emoji y saldría un cuadrito). `inline-block` explícito: el
+ *  preflight de la casa pone `svg { display: block }` y el candado empujaba el nombre del paso un renglón abajo (medido en la captura). */
+export function Candado({ color = 'rgba(255,45,85,0.85)', alto = 11 }: { color?: string; alto?: number }) {
+  return (
+    <svg data-testid="candado" width={alto * 0.8} height={alto} viewBox="0 0 8 10" style={{ display: 'inline-block', marginRight: 5, verticalAlign: '-1px' }} aria-label="cerrado">
+      <path d="M2 4.2V2.9a2 2 0 0 1 4 0v1.3" fill="none" stroke={color} strokeWidth="1.1" />
+      <rect x="0.6" y="4.2" width="6.8" height="5.2" rx="0.8" fill={color} />
+    </svg>
+  );
+}
