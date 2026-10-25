@@ -558,7 +558,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       for (const q of [a, b, c]) { normals[q] += nx; normals[q + 1] += ny; normals[q + 2] += nz; }
     }
     for (let i = 0; i < normals.length; i += 3) { const l = Math.hypot(normals[i], normals[i + 1], normals[i + 2]) || 1; normals[i] /= l; normals[i + 1] /= l; normals[i + 2] /= l; }
-    return { role, name, material: role.startsWith('pieza') ? 'PP' : 'AISI P20', positions, normals, indices, color, opacity };
+    // LOS APAGONES (2026-10-24): la pieza se rotulaba «PP» LITERAL sobre una máquina que corre ABS. El material es el del
+    // intake (el mismo default que la E1: `ik.material ?? 'ABS'`); `intakeRef` se lee al llamar, no al crear el callback.
+    return { role, name, material: role.startsWith('pieza') ? (intakeRef.current.material ?? 'ABS') : 'AISI P20', positions, normals, indices, color, opacity };
   }, [oc]);
   // la línea de partición como LISTÓN dorado (quad por segmento, 0.25 mm sobre el lazo)
   const cursoLoopPart = useCallback((loops: Array<{ pts: Array<[number, number, number]> }>): MoldPart => {
@@ -1422,7 +1424,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       setProgreso({ estacion: 6, paso: 'pintando el circuito sobre el molde', i: 3, n: N8, t0: T8 });
       await respira();
       setCiclo({ ...ciclo, estacion: 6, e8 });
-      setDocName(`${ciclo.pieza.nombre} · estación 6 — EL AGUA: ${cir.segmentos.length} líneas ⌀${e8.lineas.diaMm} (${e8.lineas.plug}) · manda el ${e8.ciclo.manda} (${e8.ciclo.mandaS} s)`);
+      // «16 líneas» contaba `segmentos` (cada extensión y cada cruce es un tramo barrenado, no una línea de agua): LOS APAGONES
+      setDocName(`${ciclo.pieza.nombre} · estación 6 — EL AGUA: ${cir.segmentos.length} tramos ⌀${e8.lineas.diaMm} (${e8.lineas.plug}) · manda el ${e8.ciclo.manda} (${e8.ciclo.mandaS} s)`);
       setCollapsed((c: any) => ({ ...c, features: false }));
       cursoSet(6, [
         `EL MOLDE DE ${ciclo.pieza.nombre.toUpperCase()} · estación 6 — ENFRIAMIENTO (cap 9)`,

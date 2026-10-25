@@ -38,7 +38,7 @@
 import type { MeshLike } from './flowlen-mesh';
 import type { FlowField } from './flowlen';
 import { flowFieldFromMesh, meshVolumeArea } from './revisar-modelo';
-import { coolingTimePlate, ABS_KAZMER, type CoolingMaterial } from './cooling';
+import { coolingTimePlate, coolingTimeRod, ABS_KAZMER, type CoolingMaterial } from './cooling';
 
 export type LenteId = 'pared' | 'enfriamiento' | 'llenado';
 
@@ -104,6 +104,14 @@ export interface Lente {
    *  a lo largo de triángulos de hasta 115 mm: medido en la 1594C, 16.6 % de la superficie pintada «tarde» contra
    *  2.2 % real. Con él, cada píxel lee el vóxel que tiene debajo. */
   gpu?: CampoGPU;
+  /**
+   * EL PAR HONESTO DEL CICLO (LOS APAGONES, 2026-10-24) — solo la lente de ENFRIAMIENTO lo trae.
+   * El mapa aplica Eq 9.5 (PLACA infinita) a cada vóxel; en la 1594C lo más grueso son postes ⌀8 (un CILINDRO), y para un
+   * cilindro el mismo libro da Eq 9.6. La verdad de un poste cae entre las dos: más masa que la barra infinita, menos que
+   * la placa. Se enseñan las DOS cotas con el MISMO material y el MISMO espesor (el del vóxel más lento, tomado como ⌀),
+   * más la pared nominal por Eq 9.5. Ningún número nuevo: Eq 9.6 ya vivía en `cooling.ts` (`coolingTimeRod`).
+   */
+  ciclo?: { gruesoMm: number; barraS: number; placaS: number; paredMm: number; paredS: number; lugares: number };
 }
 
 /**
@@ -533,29 +541,31 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
     // el espesor que produce ese t_c — se despeja de la misma Eq 9.5, no se busca aparte
     const kEq = Math.log((4 / Math.PI) * ((mat.tMelt - mat.tCoolant) / (mat.tEject - mat.tCoolant))) / (Math.PI * Math.PI * mat.alpha);
     const hMax = kEq > 0 ? Math.sqrt(tcMax / kEq) * 1000 : 0;
-    const veces = q.p50 > 0 ? tcMax / q.p50 : 1;
+    // LOS APAGONES (2026-10-24): 134 s NO es «tu ciclo». Es Eq 9.5 (placa) sobre el espesor local de un POSTE; con Eq 9.6
+    // (barra, mismo libro, mismo material, ese espesor como ⌀) el mismo punto da ~65 s. Las dos son cotas: la placa es la
+    // alta (el mapa se queda con ella y lo dice), la barra la baja. La pared nominal va por Eq 9.5 (ahí sí es placa).
+    const barraS = hMax > 0 ? coolingTimeRod(hMax / 1000, mat) : 0;
+    const paredS = paredNominal > 0 ? coolingTimePlate(paredNominal / 1000, mat) : q.p50;
+    const lugares = candidatosEnSuperficie(P, val, 0.95, 15, 12).length;
     lentes.push({
       id: 'enfriamiento', nombre: 'ENFRIAMIENTO', que: 'cuánto tarda cada punto en poder salir del molde',
       unidad: 's', origen: 'simulado', colores, valores: val, ...q, maxCampo: tcMax, escala: esc,
       paradas: [
         { v: esc.lo, hex: rgbHex(colorDe(RAMPA_TERMICA, esc.lo, esc, GAMMA_SIMULADO)), etiqueta: 'lista primero' },
         { v: (esc.lo + esc.hi) / 2, hex: rgbHex(colorDe(RAMPA_TERMICA, (esc.lo + esc.hi) / 2, esc, GAMMA_SIMULADO)), etiqueta: 'a medio camino' },
-        { v: esc.hi, hex: rgbHex(colorDe(RAMPA_TERMICA, esc.hi, esc, GAMMA_SIMULADO)), etiqueta: `tarde (p95) · el peor: ${s1(tcMax)} s` },
+        // el tope del mapa es la cota de PLACA (Eq 9.5): se rotula así, no «el peor»
+        { v: esc.hi, hex: rgbHex(colorDe(RAMPA_TERMICA, esc.hi, esc, GAMMA_SIMULADO)), etiqueta: `tarde (p95) · lo más grueso como placa: ${s1(tcMax)} s (cota alta)` },
       ],
       // «un solo punto» mentía cuando lo lento se repite (los 4 postes de la 1594C, 2026-09-14): se cuentan las ZONAS
-      // empatadas (candidatos a ≥ 15 mm entre sí) y se dice cuántas.
-      titular: (() => {
-        const zonas = candidatosEnSuperficie(P, val, 0.95, 15, 12).length;
-        return zonas > 1
-          ? `El ciclo lo manda lo más lento: ${s1(tcMax)} s, en ${zonas} lugares iguales. El resto está listo en ${s1(q.p50)} s.`
-          : `El ciclo lo manda un solo punto: ${s1(tcMax)} s. El resto está listo en ${s1(q.p50)} s.`;
-      })(),
-      cuerpo: `El molde no abre hasta que el ÚLTIMO punto está firme, así que ese máximo es tu ciclo, `
-        + `no el promedio. Lo más lento tarda ${veces.toFixed(1)}× más que la mitad de la pieza`
-        + (hMax > 0 ? `, porque ahí la pared llega a ${s1(hMax)} mm` : '')
-        + `. El tiempo va con el CUADRADO del espesor (Eq 9.5): bajarle 30 % a ese macizo te quita `
-        + `la mitad del ciclo. Enfriar más fuerte casi no ayuda — el cuello es el plástico, no el agua.`,
-      peor: manda, ref: '§9.2 · Eq 9.5, t_c = h²/(π²α)·ln(4/π·ΔT)', sinDato,
+      // empatadas (candidatos a ≥ 15 mm entre sí) y se dice cuántas. LOS APAGONES: el titular ya no dice «el ciclo lo
+      // manda … 134 s»; dice el PAR (barra–placa) de lo más grueso y la pared, que es lo que el libro sí sostiene.
+      titular: `Lo más grueso (${s1(hMax)} mm${lugares > 1 ? `, en ${lugares} lugares` : ''}): entre ${s1(barraS)} s (barra, Eq 9.6) y ${s1(tcMax)} s (placa, Eq 9.5) · la pared de ${s1(paredNominal)} mm: ${s1(paredS)} s.`,
+      cuerpo: `El molde no abre hasta que lo más grueso está firme. Si ese grueso es un poste, enfría como barra (Eq 9.6); `
+        + `si fuera losa, como placa (Eq 9.5): la verdad de un poste cae entre las dos. El mapa pinta con placa — es la cota alta. `
+        + `Las dos son mínimos teóricos de conducción con el molde a temperatura fija: en máquina el ciclo sale mayor (resistencia de contacto y calidad: nota 1 §9.2.1). `
+        + `El tiempo va con el CUADRADO del espesor: bajarle 30 % a ese macizo le quita la mitad. Enfriar más fuerte casi no ayuda — el cuello es el plástico, no el agua.`,
+      peor: manda, ref: '§9.2 · Eq 9.5 placa (el mapa, cota alta) · Eq 9.6 barra (cota baja)', sinDato,
+      ciclo: { gruesoMm: hMax, barraS, placaS: tcMax, paredMm: paredNominal, paredS, lugares },
       gpu: campoParaGPU(f, tcVox, esc, RAMPA_TERMICA, GAMMA_SIMULADO, mat),
       candidatos: candidatosEnSuperficie(P, val),
     });

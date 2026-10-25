@@ -81,7 +81,11 @@ function sheetOpen(parts: string[]) {
 
 function titleBlock(parts: string[], code: string, name: string, material: string, scale: string, extra?: string) {
   // Cajetín según ISO 7200 (campos: propietario, nº de documento, título, fechas,
-  // responsable, hoja) + tolerancia general ISO 2768-mK + proyección 3er ángulo.
+  // responsable, hoja) + proyección 3er ángulo.
+  // LOS APAGONES (2026-10-24, el abogado del debate de 25 expertos: «es el papel que más acusa si un molde falla»): el
+  // cajetín imprimía «Ra 0.8 cavidad · Ra 3.2 resto», «ISO 2768-mK», «H7 · roscas 6H» y «DIBUJÓ: La Forja CAD» — nada de
+  // eso lo calculó nadie. Queda lo que sí es: la tolerancia general la fija el fabricante del molde, el software GENERÓ
+  // la lámina y REVISÓ/APROBÓ son firmas humanas en blanco. Los ajustes que SÍ calcula `fits.ts` siguen en su cota.
   const W = 150, H = 40, x = PW - MARGIN / 2 - W, y = PH - MARGIN / 2 - H;
   parts.push(`<g data-testid="title-block" font-size="2.6" fill="#111">`);
   parts.push(`<rect x="${x}" y="${y}" width="${W}" height="${H}" fill="#fff" stroke="#111" stroke-width="0.5"/>`);
@@ -99,12 +103,12 @@ function titleBlock(parts: string[], code: string, name: string, material: strin
   const cell = (cx: number, cy: number, k: string, v: string, vs = 2.9) =>
     parts.push(`<text x="${cx}" y="${cy}" font-size="2.1" fill="#666">${esc(k)}</text><text x="${cx}" y="${cy + 4.4}" font-size="${vs}" font-weight="bold">${esc(v)}</text>`);
   cell(x + 3, y + 16.5, 'MATERIAL', material.slice(0, 22));
-  cell(x + 3, y + 30.5, 'ACABADO', 'Ra 0.8 cavidad · Ra 3.2 resto');
-  cell(c1 + 3, y + 16.5, 'TOLERANCIA GENERAL', 'ISO 2768-mK');
-  cell(c1 + 3, y + 30.5, 'BARRENOS', 'H7 · roscas 6H');
+  cell(x + 3, y + 30.5, 'GENERÓ', 'La Forja (software)');
+  cell(c1 + 3, y + 16.5, 'TOLERANCIA GENERAL', 'la fija el fabricante del molde', 2.1);
+  cell(c1 + 3, y + 30.5, 'REVISÓ', '____________');
   cell(c2 + 3, y + 16.5, 'ESCALA', scale);
   cell(c2 + 3, y + 30.5, 'UNIDADES', 'mm');
-  cell(c3 + 3, y + 16.5, 'DIBUJÓ', 'La Forja CAD');
+  cell(c3 + 3, y + 16.5, 'APROBÓ', '__________');
   cell(c3 + 3, y + 30.5, 'HOJA', '1/1 · A3');
   // símbolo de PROYECCIÓN DE TERCER ÁNGULO (ISO 128: tronco + vista circular),
   // junto al valor de escala (el símbolo ES la indicación normativa)

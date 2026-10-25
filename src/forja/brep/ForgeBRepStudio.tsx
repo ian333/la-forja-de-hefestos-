@@ -42,7 +42,8 @@ import { buildMoldParts, packageToAssemblySpec, plateStackZ, buildMoldLaminas, l
 // UNA verdad de las carreras: §6.3.2 (apertura, con su bebedero) y §4.3.2 (expulsión).
 import { carreraDeApertura } from '../mold/threeplate';
 import { carreraDeExpulsionMm } from '../mold/platesizing';
-import { cotizacionPieza, cotizacionSvg, piezaDesdeArbol } from '../mold/estudio-molde-datos';   // PASO 8 · la hoja de cotización de la pieza, dentro del expediente
+import { piezaDesdeArbol } from '../mold/estudio-molde-datos';
+import { horasDelModelo, SIN_TARIFA } from '../mold/expediente';   // PASO 8 · LOS APAGONES: horas de Kazmer cap. 3 en vez de la hoja en USD
 import type { RevisionModelo } from '../mold/revisar-modelo';   // PASO 8 · el dictamen completo (no solo la fila) para el expediente
 import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
 import { flanera } from '../mold/flanera';   // el VASO de la flanera (producto de revolución)
@@ -4067,7 +4068,11 @@ export default function ForgeBRepStudio() {
           revision
             ? { grupo: 'Dictamen', param: 'contratos (el juez, 69 criterios)', valor: `${revision.fila.score}/100 · ${revision.fila.viola} violan · ${revision.fila.advierte} advierten`, ref: '§13', ok: revision.fila.viola === 0 }
             : { grupo: 'Dictamen', param: 'contratos (el juez)', valor: 'sin dictamen: pulsa D sobre la pieza', ref: '§13' },
-          { grupo: 'DFM', param: 'moldeabilidad DFM (la puerta 0, no el juez)', valor: `${pkg.dfm.score}/100`, ref: '§2.3', ok: pkg.dfm.score >= 60 },
+          // LOS APAGONES (2026-10-24): «100/100 ✓» salía de `checkDFM` con SOLO la pared nominal (moldmachine.ts: la pieza
+          // soltada no le pasa costillas, postes ni filetes — `piezaDesdeArbol` no declara `spec.dfm`). Un 100 que no revisó
+          // nada más no se imprime: se dice qué es y qué no revisa, sin puntaje y sin palomita. («moldeabilidad DFM» se queda
+          // en el texto: el paso 8 del camino lo busca para saber que cada renglón trae su nombre.)
+          { grupo: 'DFM', param: 'DFM declarado (pared nominal) · moldeabilidad DFM sin puntaje', valor: 'no revisa costillas, postes ni filetes', ref: '§2.3' },
         ];
         // EL ESCALONADO EN LA TABLA (2026-09-21): la hoja tenía UN solo ⌀ y el pin tiene DOS
         // (punta guiada + cuerpo al hombro, R52). Quien lea la lámina tiene que poder pedir el pin.
@@ -4096,10 +4101,23 @@ export default function ForgeBRepStudio() {
   const expediente = useMemo(() => {
     if (!expedienteOn || !piezaMalla) return null;
     const fecha = new Date().toISOString().slice(0, 10);
-    let cotSvg: string | null = null;
-    try { if (mold.ciclo?.pieza) cotSvg = cotizacionSvg(cotizacionPieza(mold.ciclo.pieza, { fecha })); } catch (e) { console.warn('COT_EXPEDIENTE', e); }
-    const html = expedienteHTML({ nombre: piezaMalla.nombre, fecha, rev: revision, cotSvg, planos: planosMolde, notas: piezaMalla.notas });
-    return { html, tieneDictamen: !!revision, tieneCotizacion: !!cotSvg, nPlanos: planosMolde?.length ?? 0, nDecisiones: revision?.expediente.decisiones.length ?? 0, pendientes: revision?.expediente.pendientes ?? 0 };
+    // LOS APAGONES (2026-10-24): la hoja de cotización imprimía USD a 100/h «EE.UU. por defecto», $/pieza y la banda A-050
+    // (las dos últimas salen del ciclo de 134 s, que es la cota de PLACA de lo más grueso). Mientras no exista la tarifa
+    // del cliente en MXN (orden G) va lo que no depende de ninguna tarifa: las HORAS de los insertos del modelo de Kazmer
+    // (cap. 3) para la arquitectura que gana — el mismo `moldMachine(pieza.spec)` del que salía la hoja (estacion2).
+    let costo: CostoReferencia | null = null;
+    try {
+      if (mold.ciclo?.pieza) {
+        const pk = moldMachine(mold.ciclo.pieza.spec), w = pk.recomendacion;
+        const v = pk.variantes.find((x) => x.arch === w.arch && x.nCav === w.nCav);
+        if (v) { const h = horasDelModelo(v); costo = { arch: v.arch, nCav: v.nCav, maquinadoH: h.maquinadoH, acabadoH: h.acabadoH }; }
+      }
+    } catch (e) { console.warn('COSTO_EXPEDIENTE', e); }
+    // BORRADOR mientras falte UNA firma (§13.10: «no cierra con pendientes»); sin dictamen tampoco hay nada firmado.
+    const pendientes = revision?.expediente.pendientes ?? 0;
+    const borrador = !revision || pendientes > 0;
+    const html = expedienteHTML({ nombre: piezaMalla.nombre, fecha, rev: revision, costo, planos: planosMolde, notas: piezaMalla.notas, borrador });
+    return { html, tieneDictamen: !!revision, tieneCotizacion: !!costo, costo, borrador, nPlanos: planosMolde?.length ?? 0, nDecisiones: revision?.expediente.decisiones.length ?? 0, pendientes };
   }, [expedienteOn, piezaMalla, mold.ciclo, revision, planosMolde]);
   const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
   // LOS BOTADORES DE TU PIEZA (2026-09-17): el ciclo animado (llenar · abrir · expulsar) vive SOLO mientras la
@@ -5436,7 +5454,9 @@ export default function ForgeBRepStudio() {
       if (!vivo) return;
       cerrarFocoMolde();
       const pm = mold.ciclo?.portamoldes as { carreraLibreMm?: number; carreraPedidaMm?: number } | undefined;
-      const P = [rejillaDelMacho(moldParts), equilibrioDeBotadores(moldParts), aguaMasJusta(foco),
+      // la báscula del acero de ESTA pieza (verificacionE3, estación 3): Σ cavidad + macho + pieza contra el bloque — LOS APAGONES
+      const basE3 = mold.ciclo?.e3v?.medidas.find((m) => m.cota.startsWith('Σ cavidad+macho+pieza'));
+      const P = [rejillaDelMacho(moldParts, 10, 5, basE3 ? { errPct: Math.abs(basE3.medido - 100) } : null), equilibrioDeBotadores(moldParts), aguaMasJusta(foco),
         abreSaleEmpuja(moldParts, { aperturaReal: Number.isFinite(ab as number) ? (ab as number) : null, carreraLibre: pm?.carreraLibreMm ?? null, carreraPedida: pm?.carreraPedidaMm ?? null })]
         .filter((x): x is PuntoRecorrido => !!x);
       setRecorrido(P); setRecIdx(0); setRecAuto(true);
@@ -7378,7 +7398,7 @@ export default function ForgeBRepStudio() {
                     </>)}
                     {lenteActiva.gpu && piezaCaja && <EscalaDriver caja={piezaCaja} el={escalaRef} />}
                     {lenteActiva.gpu && (
-                      <RelojEnfriamientoDriver reloj={relojEnf} tcMax={lenteActiva.gpu.tc.max} p50={lenteActiva.p50} els={relojEls} />
+                      <RelojEnfriamientoDriver reloj={relojEnf} tcMax={lenteActiva.gpu.tc.max} p50={lenteActiva.p50} barra={lenteActiva.ciclo?.barraS} els={relojEls} />
                     )}
                     {lenteActiva.candidatos && lenteActiva.candidatos.length > 1 && (
                       <MarcaVisible lenteId={lenteActiva.id} candidatos={lenteActiva.candidatos} mesh={piezaMalla.mesh} onElige={setPuntoVisible} />
@@ -10035,10 +10055,12 @@ export default function ForgeBRepStudio() {
       {expedienteOn && piezaMalla && expediente && (
         <div className="fb-plano-overlay" data-testid="expediente-de-la-pieza"
           data-dictamen={expediente.tieneDictamen ? 1 : 0} data-cotizacion={expediente.tieneCotizacion ? 1 : 0} data-planos={expediente.nPlanos} data-decisiones={expediente.nDecisiones}
+          data-pendientes={expediente.pendientes} data-borrador={expediente.borrador ? 1 : 0}
           onClick={() => setExpedienteOn(false)}>
           <div className="fb-plano-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 980 }}>
             <div className="fb-plano-bar">
-              <span>📁 Expediente · {piezaMalla.nombre} · §13.10</span>
+              {/* LOS APAGONES: «BORRADOR» en el título mientras quede UNA decisión sin firma (el archivo descargado dice lo mismo) */}
+              <span data-testid="expediente-titulo">📁 {expediente.borrador && <b style={{ color: PIEL.aviso, letterSpacing: '0.08em' }}>BORRADOR · </b>}Expediente · {piezaMalla.nombre} · §13.10</span>
               <div className="fb-plano-actions">
                 <button data-testid="btn-expediente-descargar" onClick={() => triggerDownload(new Blob([expediente.html], { type: 'text/html' }), `expediente-${piezaMalla.nombre.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.html`)}>⬇ Descargar (HTML)</button>
                 <button data-testid="btn-expediente-imprimir" onClick={() => { const w = window.open('', '_blank'); if (w) { w.document.write(expediente.html); w.document.close(); } }}>🖨 Imprimir / PDF</button>
@@ -10047,20 +10069,25 @@ export default function ForgeBRepStudio() {
             </div>
             <div style={{ padding: '14px 18px', color: '#dfe7f2', fontFamily: PIEL.fuente.cuerpo, fontSize: 13, lineHeight: 1.5 }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
-                {[
-                  ['DICTAMEN · antes del molde', expediente.tieneDictamen ? `${revision!.fila.score}/100 · ◆ ${revision!.fila.viola} no cumplen · ◇ ${revision!.fila.advierte} de panzazo` : 'abre EL DICTAMEN (D) para incluirlo', expediente.tieneDictamen && revision!.fila.viola === 0],
-                  ['DECISIONES §13.10', expediente.tieneDictamen ? `${expediente.nDecisiones} · ${expediente.pendientes} pendientes de firma` : 'salen del dictamen', expediente.tieneDictamen],
-                  ['COTIZACIÓN', expediente.tieneCotizacion ? 'hoja de la pieza incluida' : 'necesita MOLDE (E1)', expediente.tieneCotizacion],
-                  ['PLANOS', expediente.nPlanos ? `${expediente.nPlanos} láminas incluidas` : 'genera LOS PLANOS (paso 7) para incluirlos', expediente.nPlanos > 0],
-                ].map(([t, v, ok]) => (
-                  <div key={String(t)} style={{ border: `1px solid ${ok ? 'rgba(126,226,168,0.5)' : 'rgba(242,122,108,0.5)'}`, borderRadius: 8, padding: '8px 10px' }}>
-                    <div style={{ font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: ok ? '#7ee2a8' : '#f27a6c' }}>{ok ? '✓' : '·'} {t}</div>
+                {/* LOS APAGONES (2026-10-24): un ✓ verde junto a «5 pendientes de firma» decía «listo» de algo que NO cierra
+                    (§13.10). Tres estados: ✓ completo · ◇ ámbar = está, pero le falta algo (firmas, tu tarifa) · · = no está. */}
+                {([
+                  ['DICTAMEN · antes del molde', expediente.tieneDictamen ? `${revision!.fila.score}/100 · ◆ ${revision!.fila.viola} no cumplen · ◇ ${revision!.fila.advierte} de panzazo` : 'abre EL DICTAMEN (D) para incluirlo', expediente.tieneDictamen && revision!.fila.viola === 0 ? 'ok' : 'falta'],
+                  ['DECISIONES §13.10', expediente.tieneDictamen ? `${expediente.nDecisiones} · ${expediente.pendientes} pendientes de firma` : 'salen del dictamen', !expediente.tieneDictamen ? 'falta' : expediente.pendientes > 0 ? 'pend' : 'ok'],
+                  ['COSTO DE REFERENCIA', expediente.costo ? `${Math.round(expediente.costo.maquinadoH + expediente.costo.acabadoH)} h de insertos (Kazmer cap. 3) · ${SIN_TARIFA.replace('costo de referencia: ', '')}` : 'necesita MOLDE (E1)', expediente.costo ? 'pend' : 'falta'],
+                  ['PLANOS', expediente.nPlanos ? `${expediente.nPlanos} láminas incluidas` : 'genera LOS PLANOS (paso 7) para incluirlos', expediente.nPlanos > 0 ? 'ok' : 'falta'],
+                ] as Array<[string, string, 'ok' | 'pend' | 'falta']>).map(([t, v, est]) => {
+                  const col = est === 'ok' ? '#7ee2a8' : est === 'pend' ? PIEL.aviso : '#f27a6c';
+                  return (
+                  <div key={t} data-testid={`expediente-tarjeta-${est}`} style={{ border: `1px solid ${est === 'ok' ? 'rgba(126,226,168,0.5)' : est === 'pend' ? rgbaDe(PIEL.aviso, 0.55) : 'rgba(242,122,108,0.5)'}`, borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: col }}>{est === 'ok' ? '✓' : est === 'pend' ? '◇' : '·'} {t}</div>
                     <div style={{ fontSize: 12, color: '#c7d2df', marginTop: 3 }}>{v}</div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <div style={{ fontSize: 11.5, color: '#9fb0c4' }}>
-                Tu expediente: el dictamen, las decisiones por firmar, la cotización y los planos, y al final la primera prueba en máquina. Lo que falta viene marcado como pendiente, no inventado.
+                Tu expediente: el dictamen, las decisiones por firmar, el costo de referencia en horas y los planos, y al final la primera prueba en máquina. Lo que falta viene marcado como pendiente, no inventado.{expediente.borrador ? ' Es un BORRADOR hasta que firmen todas las decisiones.' : ''}
               </div>
             </div>
           </div>
@@ -10289,8 +10316,10 @@ function MarcaVisible({ lenteId, candidatos, mesh, onElige }: {
  * escribe el reloj flotante por ref (sin setState por cuadro). Si los cuadros se atrasan (grabación), el reloj se atrasa
  * con ellos: lo que se ve y lo que dice el reloj siempre son el mismo instante.
  */
-function RelojEnfriamientoDriver({ reloj, tcMax, p50, els }: {
+function RelojEnfriamientoDriver({ reloj, tcMax, p50, barra, els }: {
   reloj: React.MutableRefObject<RelojEnfriamiento>; tcMax: number; p50: number;
+  /** LOS APAGONES: la cota de BARRA (Eq 9.6) de lo más grueso — el reloj corre con placa (la cota alta) y lo dice */
+  barra?: number;
   els: React.MutableRefObject<{ t: HTMLElement | null; barra: HTMLElement | null; estado: HTMLElement | null }>;
 }) {
   useEffect(() => { reloj.current.fase = 0; reloj.current.ultimo = 0; }, [reloj, tcMax]);
@@ -10305,7 +10334,10 @@ function RelojEnfriamientoDriver({ reloj, tcMax, p50, els }: {
     const e = els.current;
     if (e.t) e.t.textContent = `t = ${r.t.toFixed(0)} s`;
     if (e.barra) e.barra.style.width = `${Math.min(100, (100 * r.t) / Math.max(1e-6, tcMax)).toFixed(1)}%`;
-    if (e.estado) e.estado.textContent = r.t >= tcMax - 1e-6 ? 'todo firme: ya abre el molde'
+    // LOS APAGONES (2026-10-24): al final del reloj NO es «ya abre el molde»: es la cota de PLACA (Eq 9.5) de lo más grueso.
+    // Si lo grueso es un poste, la barra (Eq 9.6) lo da firme antes: entre las dos marcas está la verdad.
+    if (e.estado) e.estado.textContent = r.t >= tcMax - 1e-6 ? 'firme aun contado como placa (la cota alta)'
+      : barra != null && r.t >= barra ? 'lo grueso: firme si es poste (barra) · como placa sigue blando'
       : r.t >= p50 ? 'la mitad ya está firme · lo grueso sigue blando' : 'enfriando desde que se llenó';
   });
   return null;
@@ -10319,7 +10351,7 @@ function RelojEnfriamientoDriver({ reloj, tcMax, p50, els }: {
  *  · MAPA (golpe 1): los segundos para estar firme, LINEALES en la barra, con la LUT del mapa.
  */
 function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false, modo, onModo, pausa, onPausa, relojEls }: {
-  lente: { unidad: string; p50: number; maxCampo: number };
+  lente: { unidad: string; p50: number; maxCampo: number; ciclo?: { gruesoMm: number; barraS: number; placaS: number; paredMm: number; paredS: number } };
   gpu: CampoGPU;
   refEl: React.MutableRefObject<HTMLDivElement | null>;
   atenuada?: boolean;
@@ -10357,6 +10389,7 @@ function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false, modo, onModo, pa
     { T: tMelt, txt: 'fundido' }, { T: 170, txt: '' }, { T: tEject, txt: '' }, { T: tCoolant, txt: 'agua del molde' },
   ];
   const tcMax = gpu.tc.max;
+  const barraS = lente.ciclo?.barraS;
   const vel = Math.max(1, Math.round(tcMax / RELOJ_PLAY_S));
   const boton: React.CSSProperties = { pointerEvents: 'auto', cursor: 'pointer', font: `600 11px ${PIEL.fuente.cuerpo}`, color: '#dfe9f5', background: 'rgba(12,20,32,0.85)', border: '1px solid rgba(160,190,220,0.35)', borderRadius: 3, padding: '3px 8px' };
   const etiqueta: React.CSSProperties = { font: `600 12.5px ${PIEL.fuente.cuerpo}`, fontVariantNumeric: 'tabular-nums', color: '#eaf2fb', textShadow: '0 1px 3px #000', whiteSpace: 'nowrap' };
@@ -10369,7 +10402,7 @@ function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false, modo, onModo, pa
           <>
             <div style={{ position: 'absolute', left: 0, top: -44, width: 300, font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: '#dfe7f2' }}>
               TU PIEZA ENFRIÁNDOSE
-              <div style={{ font: '500 10.5px system-ui,sans-serif', letterSpacing: 0, color: '#9fb0c4', marginTop: 2 }}>centro de cada pared · Eq 9.5 en el tiempo · {material}</div>
+              <div style={{ font: '500 10.5px system-ui,sans-serif', letterSpacing: 0, color: '#9fb0c4', marginTop: 2 }}>centro de cada pared · Eq 9.5 (placa) · {material}</div>
             </div>
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, borderRadius: 3, background: gradT, boxShadow: '0 0 0 1px rgba(255,255,255,0.22), 0 2px 10px rgba(0,0,0,0.45)' }} />
             {marcasT.map((m) => (
@@ -10388,18 +10421,30 @@ function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false, modo, onModo, pa
             <div style={{ position: 'absolute', left: 0, top: 'calc(100% + 18px)', width: 300 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                 <b ref={(el) => { relojEls.current.t = el; }} data-testid="reloj-enfriamiento" style={{ font: '700 20px system-ui,sans-serif', fontVariantNumeric: 'tabular-nums', color: '#ffffff', textShadow: '0 1px 4px #000' }}>t = 0 s</b>
-                <span style={{ font: '500 11px system-ui,sans-serif', color: '#9fb0c4', textShadow: '0 1px 3px #000' }}>de {s0(tcMax)} s · tiempo ×{vel}</span>
+                <span style={{ font: '500 11px system-ui,sans-serif', color: '#9fb0c4', textShadow: '0 1px 3px #000' }}>de {s0(tcMax)} s como placa · tiempo ×{vel}</span>
               </div>
               <div ref={(el) => { relojEls.current.estado = el; }} style={{ font: '600 11px system-ui,sans-serif', color: '#ffd9a8', textShadow: '0 1px 3px #000', margin: '2px 0 7px' }}>enfriando desde que se llenó</div>
               <div style={{ position: 'relative', width: 280, height: 6, borderRadius: 3, background: 'rgba(160,190,220,0.22)' }}>
                 <div ref={(el) => { relojEls.current.barra = el; }} style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '0%', borderRadius: 3, background: 'linear-gradient(90deg,#ffc23a,#ff7a1f,#3f7bff)' }} />
                 <span style={{ position: 'absolute', left: `${(100 * lente.p50) / tcMax}%`, top: -3, width: 2, height: 12, background: '#a9c4ff' }} />
+                {barraS != null && <span style={{ position: 'absolute', left: `${(100 * barraS) / tcMax}%`, top: -3, width: 2, height: 12, background: '#ffd9a8' }} />}
                 <span style={{ position: 'absolute', left: 'calc(100% - 2px)', top: -3, width: 2, height: 12, background: '#ffffff' }} />
               </div>
-              <div style={{ position: 'relative', width: 280, height: 14, font: '500 10px system-ui,sans-serif', color: '#9fb0c4' }}>
+              {/* LOS APAGONES (2026-10-24): el final de la barra no es «abre» (eso prometía un ciclo): es la cota de PLACA de lo
+                  más grueso; la marca ámbar es la de BARRA (Eq 9.6). La verdad de un poste está entre las dos. */}
+              <div data-testid="reloj-par" data-barra={barraS?.toFixed(1)} data-placa={tcMax.toFixed(1)} data-pared={lente.p50.toFixed(1)}
+                style={{ position: 'relative', width: 280, height: 14, font: '500 10px system-ui,sans-serif', color: '#9fb0c4' }}>
                 <span style={{ position: 'absolute', left: `${(100 * lente.p50) / tcMax}%`, transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>{s0(lente.p50)} s la mitad</span>
-                <span style={{ position: 'absolute', right: 0, whiteSpace: 'nowrap' }}>{s0(tcMax)} s abre</span>
+                {barraS != null && <span style={{ position: 'absolute', left: `${(100 * barraS) / tcMax}%`, transform: 'translateX(-50%)', whiteSpace: 'nowrap', color: '#ffd9a8' }}>{s0(barraS)} s barra</span>}
+                <span style={{ position: 'absolute', right: 0, whiteSpace: 'nowrap' }}>{s0(tcMax)} s placa</span>
               </div>
+              {/* EL PAR EN PALABRAS (LOS APAGONES): en el modo camino la ficha del punto no se ve (piel-futuro la aparta); la
+                  escala es la tarjeta del enfriamiento y dice la frase entera, con las dos ecuaciones y la pared. */}
+              {lente.ciclo && (
+                <div data-testid="escala-par" style={{ width: 300, font: '500 11px/1.4 system-ui,sans-serif', color: '#dfe7f2', textShadow: '0 1px 3px #000', marginTop: 4 }}>
+                  lo más grueso ({s0(lente.ciclo.gruesoMm)} mm): entre <b style={{ color: '#ffd9a8' }}>{s0(lente.ciclo.barraS)} s</b> (barra, Eq 9.6) y <b>{s0(lente.ciclo.placaS)} s</b> (placa, Eq 9.5) · la pared de {s0(lente.ciclo.paredMm)} mm: {s0(lente.ciclo.paredS)} s
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <button type="button" data-testid="reloj-pausa" style={boton} onClick={onPausa}>{pausa ? 'seguir' : 'pausa'}</button>
                 <button type="button" data-testid="reloj-mapa" style={boton} onClick={() => onModo('mapa')}>ver el mapa en segundos</button>
@@ -10410,7 +10455,7 @@ function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false, modo, onModo, pa
           <>
             <div style={{ position: 'absolute', left: 0, top: -40, width: 230, font: '700 10px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: '#dfe7f2' }}>
               SEGUNDOS PARA ESTAR FIRME
-              <div style={{ font: '500 10.5px system-ui,sans-serif', letterSpacing: 0, color: '#9fb0c4', marginTop: 2 }}>Eq 9.5 sobre la pared de cada punto</div>
+              <div style={{ font: '500 10.5px system-ui,sans-serif', letterSpacing: 0, color: '#9fb0c4', marginTop: 2 }}>Eq 9.5, placa: la cota alta</div>
             </div>
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, borderRadius: 3, background: grad, boxShadow: '0 0 0 1px rgba(255,255,255,0.22), 0 2px 10px rgba(0,0,0,0.45)' }} />
             {marcas.map((m) => (
@@ -10420,8 +10465,14 @@ function EscalaEnElMundo({ lente, gpu, refEl, atenuada = false, modo, onModo, pa
               </div>
             ))}
             <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.maxCampo)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#ffb4a8', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
-              ◀ lo más lento: manda el ciclo
+              ◀ lo más grueso como placa (cota alta)
             </div>
+            {/* LOS APAGONES: la cota baja de lo más grueso (barra, Eq 9.6) también se marca en la barra del mapa */}
+            {lente.ciclo && lente.ciclo.barraS >= lo && lente.ciclo.barraS <= hi && (
+              <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.ciclo.barraS)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#ffd9a8', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
+                ◀ {s0(lente.ciclo.barraS)} s: lo más grueso si es poste (barra)
+              </div>
+            )}
             <div style={{ position: 'absolute', left: 78, bottom: `${pct(lente.p50)}%`, transform: 'translateY(50%)', font: '600 11px system-ui,sans-serif', color: '#a9c4ff', whiteSpace: 'nowrap', textShadow: '0 1px 3px #000' }}>
               ◀ la mitad de tu pieza ya está firme
             </div>
@@ -10546,7 +10597,9 @@ function meshToStlBlob(positions: Float32Array, indices: Uint32Array): Blob {
 }
 /** PASO 8 · EL EXPEDIENTE como archivo (§13.10): dictamen → decisiones → cotización → planos → tryout.
  *  Lo que no hay se DICE en el archivo, no se rellena. HTML imprimible (A4 apaisado; láminas A3). */
-function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; cotSvg: string | null; planos: DrawingPage[] | null; notas: string[] }): string {
+/** LOS APAGONES (2026-10-24): lo que reemplaza a la hoja de cotización en USD — las horas de los insertos de la ganadora. */
+interface CostoReferencia { arch: string; nCav: number; maquinadoH: number; acabadoH: number }
+function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; costo: CostoReferencia | null; planos: DrawingPage[] | null; notas: string[]; borrador: boolean }): string {
   const esc = (t: unknown) => String(t ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
   const css = `@page{size:A4 landscape;margin:14mm}html,body{margin:0;background:#fff;color:#111;font:12px/1.45 Inter,system-ui,sans-serif}` +
     `h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 8px;letter-spacing:.06em;text-transform:uppercase;border-bottom:2px solid #111;padding-bottom:4px}` +
@@ -10564,14 +10617,24 @@ function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo 
     `<table><tr><th>tema</th><th>§</th><th>opciones reales</th><th>elección</th></tr>` +
     rev.expediente.decisiones.map((d) => `<tr><td><b>${esc(d.tema)}</b></td><td>${esc(d.cita)}</td><td>${d.opciones.map((x) => `· ${esc(x)}`).join('<br>')}</td><td>${d.eleccion ? esc(d.eleccion) + (d.responsable ? `<br><span class="muted">${esc(d.responsable)} · ${esc(d.fecha)}</span>` : '') : '<span class="muted">pendiente</span>'}</td></tr>`).join('') + `</table>` +
     `<h2>Plan de tryout</h2><ul>${rev.expediente.tryout.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
-  const cot = o.cotSvg ? `<div class="pg">${o.cotSvg}</div>` : `<div class="falta">Sin cotización: el molde (E1) no se armó para esta pieza.</div>`;
+  // sin dinero hasta tu tarifa: horas del modelo (Kazmer cap. 3) y lo que NO entra en ellas, dicho
+  const c = o.costo;
+  const cot = c
+    ? `<table><tr><th>arquitectura</th><th>maquinado de insertos</th><th>acabado de insertos</th><th>de dónde</th></tr>` +
+      `<tr><td>${esc(c.arch)} × ${esc(c.nCav)} cav</td><td><b>${esc(Math.round(c.maquinadoH))} h</b></td><td><b>${esc(Math.round(c.acabadoH))} h</b></td>` +
+      `<td class="muted">Eq 3.8-3.12 y 3.13-3.14 · × ${esc(c.nCav)} cavidades × descuento de la Tabla 3.5</td></tr></table>` +
+      `<p class="falta"><b>${esc(SIN_TARIFA)}.</b> Sin ella no se escribe dinero. La base del molde y su customización (Eq 3.15-3.18) son precios de catálogo: los cotiza tu proveedor. ` +
+      `El costo por pieza tampoco va: depende del ciclo, y el ciclo de lo más grueso es una ventana entre la cota de barra (Eq 9.6) y la de placa (Eq 9.5).</p>`
+    : `<div class="falta">Sin costo de referencia: el molde (E1) no se armó para esta pieza.</div>`;
   const planos = o.planos && o.planos.length ? o.planos.map((p) => `<div class="pg" title="${esc(p.name)}">${p.svg}</div>`).join('') : `<div class="falta">Sin planos: no se generó el juego de láminas (paso 7).</div>`;
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Expediente · ${esc(o.nombre)}</title><style>${css}</style></head><body>` +
-    `<h1>Expediente · ${esc(o.nombre)}</h1><div class="muted">${esc(o.fecha)} · La Forja de Hefestos · §13.10: el entregable no es el molde, es el registro de decisiones firmado</div>` +
+  const brr = o.borrador ? 'BORRADOR · ' : '';
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${brr}Expediente · ${esc(o.nombre)}</title><style>${css}</style></head><body>` +
+    `<h1>${brr}Expediente · ${esc(o.nombre)}</h1><div class="muted">${esc(o.fecha)} · La Forja de Hefestos · §13.10: el entregable no es el molde, es el registro de decisiones firmado</div>` +
+    (o.borrador ? `<p class="falta"><b>BORRADOR</b>: ${o.rev ? `${esc(o.rev.expediente.pendientes)} decisiones sin firma` : 'sin dictamen, ninguna decisión firmada'}. No se fabrica sin la firma del moldista responsable.</p>` : '') +
     (o.notas.length ? `<p class="muted">${o.notas.map(esc).join(' · ')}</p>` : '') +
     `<div class="sec"><h2>1 · Dictamen</h2>${dictamen}</div>` +
     `<div class="sec"><h2>2 · Decisiones §13.10</h2>${decisiones || '<div class="falta">Salen del dictamen.</div>'}</div>` +
-    `<h2>3 · Cotización</h2>${cot}` +
+    `<h2>3 · Costo de referencia (horas)</h2>${cot}` +
     `<h2>4 · Planos del molde</h2>${planos}` +
     `<h2>5 · Video</h2><p class="muted">El video del enfriamiento se agrega después (decisión de ian, 2026-09-04): sale de la misma animación de la lente, no de otra.</p>` +
     `</body></html>`;
