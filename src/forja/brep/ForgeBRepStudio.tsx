@@ -3971,6 +3971,8 @@ export default function ForgeBRepStudio() {
   const docNameRef = useRef(docName);
   useEffect(() => { docNameRef.current = docName; }, [docName]);
   const mold = useMoldStudio({ oc, setCollapsed, setDocName, arbol: arbolRef, arbolRev });
+  // ORDEN D · EL QA REAL (2026-10-24): la huella pesa el acero (moldGeom da solo cajas) y lee los números dorados VIVOS — el efecto que arma `__forgeBrep` no depende del molde (sus deps no traen moldParts ni ciclo); aquí solo referencias, la cuenta la hace scripts/qa-huella.cjs.
+  (window as unknown as { __qaForja?: unknown }).__qaForja = { ciclo: mold.ciclo, intake: mold.intake, moldParts: mold.moldParts, revision, lentes, piezaMalla };
   /** LO QUE HAY SE VE: referencias three del visor (las llena EncuadreBridge) para `__forgeBrep.encuadre()` */
   const encuadreRef = useRef<EncuadreSink | null>(null);
   /** EL PASO 6 SE VE TRABAJAR: el reloj de la leyenda del molde late mientras una estación trabaja (los cuadros

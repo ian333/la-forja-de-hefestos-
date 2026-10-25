@@ -1,0 +1,19 @@
+{
+ "id": "05-tapa-snaps",
+ "archivo": "05-tapa-snaps.stp",
+ "sha256": "c5512663bd6b540f7c58b34cc1766919e32f3036b1271a86323a76c292f32bb2",
+ "bytes": 187195,
+ "deriva": "copia byte a byte de test-parts/inyeccion-reales/1594C Lid.stp",
+ "defecto": "contrasalidas: los snaps de la tapa no salen en línea recta; el DFM ya la marca «con-mecanismos» (intake.json) y aun así se arma molde de 2 placas viable con precio (US$31,464 en el arnés)",
+ "medido": {
+  "moldeableDFM": "con-mecanismos (test-parts/inyeccion-reales/intake.json, 1594C Lid#0)",
+  "triangulos": 2188
+ },
+ "esperado": "sin-molde",
+ "debe": "La puerta dice que la pieza tiene contrasalidas (zonas que no salen en línea recta, Kazmer §2.3.7) y BLOQUEA el molde y el precio: al pedir MOLDE no se arma acero; el expediente no trae cotización.",
+ "dice": "contrasalida|no salen? del molde en l[ií]nea recta|undercut",
+ "sinMolde": true,
+ "sinPrecio": true,
+ "cita": "orden C §4 (contrasalidas bloquean 6–9); red team (h)1; juez C §1.8 (checkUndercut con 0 llamadas)",
+ "fabricado": "scripts/qa-fabrica-rotos.cjs"
+}

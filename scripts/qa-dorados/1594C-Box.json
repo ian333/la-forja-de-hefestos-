@@ -1,0 +1,153 @@
+{
+ "pieza": "test-parts/inyeccion-reales/1594C Box.stp",
+ "tolerancia": 0.05,
+ "nota": "Números del MOTOR de la app real (build del navegador) para esta pieza. Se juzgan con qa-dorados.cjs; re-grabar SOLO con --regrabar \"razón\".",
+ "grabado": {
+  "fecha": "2026-10-25T02:32:13.717Z",
+  "commit": "eeeb24e",
+  "url": "http://localhost:4270/forja-brep.html",
+  "maquina": "iangpu (la corrida; el JSON se grabó en la laptop)",
+  "huella": "b9d3e4d677853d34b65baf98dd09b94224871c4b430847c5a58480861968ccf7",
+  "hashAcero": "c2c74622235abd7ec7e7cb23cc054cc8eaf750d5855078a9198a29649253a20f",
+  "de": "iangpu:/home/ian/el-plan-dev7/qa/huella-control-1/corrida-1.json",
+  "razon": "primera grabación: main eeeb24e + la línea __qaForja de la orden D, build de producción de forja-dev7 servido en iangpu :4270 (corrida huella-control-1/corrida-1, huella b9d3e4d677853d34)"
+ },
+ "numeros": {
+  "clampT": {
+   "v": 3.4041,
+   "unidad": "t",
+   "que": "fuerza de cierre que pide la pieza",
+   "cita": "Kazmer §5.5.3 Eq 5.29 — hoy con la presión de LLENADO, sin el piso de 50 MPa (la orden B la cambia: ≈ 36 t)",
+   "fuente": "ciclo.e2.pkg.diseno.maquina.requerimientos.clampNeedTons"
+  },
+  "clampPct": {
+   "v": 2.3,
+   "unidad": "%",
+   "que": "cierre usado de la inyectora (la hoja: «clamp N % de T t»)",
+   "cita": "Kazmer §4.3.3",
+   "fuente": "ciclo.e2.pkg.diseno.maquina.seleccion.clampUtilPct"
+  },
+  "maquinaT": {
+   "v": 150,
+   "unidad": "t",
+   "que": "la inyectora elegida (la del taller, FCS HT-150SV)",
+   "cita": "Kazmer §4.3.3",
+   "fuente": "ciclo.e2.pkg.diseno.maquina.seleccion.machine.clampTons"
+  },
+  "nCav": {
+   "v": 1,
+   "unidad": "",
+   "que": "cavidades recomendadas",
+   "cita": "Kazmer §3.4",
+   "fuente": "ciclo.e2.pkg.recomendacion.nCav"
+  },
+  "soporteMm": {
+   "v": 22,
+   "unidad": "mm",
+   "que": "espesor de la placa de soporte",
+   "cita": "Kazmer §12.1.2 (δ ≤ venteo)",
+   "fuente": "ciclo.e2.pkg.diseno.placas.soporte.plateThkMm"
+  },
+  "nPilares": {
+   "v": 1,
+   "unidad": "",
+   "que": "pilares bajo la placa de soporte",
+   "cita": "Kazmer §12.1.2",
+   "fuente": "ciclo.e2.pkg.diseno.placas.soporte.nPillars"
+  },
+  "flechaMm": {
+   "v": 0.0057,
+   "unidad": "mm",
+   "que": "cuánto se dobla la placa de soporte con ese cierre",
+   "cita": "Kazmer §12.1.2 Eq 12.10",
+   "fuente": "ciclo.e2.pkg.diseno.placas.soporte.deflectionAtPlateMm"
+  },
+  "fExpulsionN": {
+   "v": 3882,
+   "unidad": "N",
+   "que": "fuerza para despegar la pieza del macho",
+   "cita": "Kazmer §11.2.2",
+   "fuente": "ciclo.e10.fuerza.fEjectN"
+  },
+  "tcPlacaMaxS": {
+   "v": 134.4628,
+   "unidad": "s",
+   "que": "t_c de PLACA en el punto más lento (el «134 s» del paso 3)",
+   "cita": "Kazmer §9.2 Eq 9.5 — juez C D1: en un poste es una ventana 65–136 s; la barra (Eq 9.6) del poste aún no existe",
+   "fuente": "lentes.lentes"
+  },
+  "tcPiezaS": {
+   "v": 21.7,
+   "unidad": "s",
+   "que": "t_c de la pared nominal (estación 8)",
+   "cita": "Kazmer §9.2 Eq 9.5",
+   "fuente": "ciclo.e8.ciclo.tcPiezaS"
+  },
+  "tcBebederoS": {
+   "v": 75.7,
+   "unidad": "s",
+   "que": "t_c del bebedero (barra) — el que manda el ciclo en la estación 8",
+   "cita": "Kazmer §9.2 Eq 9.6",
+   "fuente": "ciclo.e8.ciclo.tcSprueS"
+  },
+  "nPines": {
+   "v": 8,
+   "unidad": "",
+   "que": "botadores colocados por agarre",
+   "cita": "Kazmer §11.2.5",
+   "fuente": "ciclo.e10.pines.n"
+  },
+  "nTramosAgua": {
+   "v": 16,
+   "unidad": "",
+   "que": "tramos del circuito de agua",
+   "cita": "Kazmer §9.2.4–9.2.7",
+   "fuente": "ciclo.e8.circuito.segmentos"
+  },
+  "holguraAguaMinMm": {
+   "v": 3.49,
+   "unidad": "mm",
+   "que": "acero mínimo entre el agua y un barreno (el «de panzazo» del Foco)",
+   "cita": "Kazmer §9.2.7 (½·⌀ = 3.17 mm para ⌀6.35)",
+   "fuente": "__forgeBrep.focoMolde().hallazgos[tipo~agua].medido (mínimo)"
+  },
+  "aperturaMm": {
+   "v": 135.4,
+   "unidad": "mm",
+   "que": "carrera de apertura del molde en la máquina",
+   "cita": "Kazmer §4.3.3 (daylight)",
+   "fuente": "ciclo.e2.pkg.diseno.maquina.seleccion.apertura.strokeMm"
+  },
+  "carreraPedidaMm": {
+   "v": 41.3,
+   "unidad": "mm",
+   "que": "carrera de expulsión que pide la pieza",
+   "cita": "estación 8 de tu pieza (portamoldes)",
+   "fuente": "ciclo.portamoldes.carreraPedidaMm"
+  },
+  "carreraLibreMm": {
+   "v": 46,
+   "unidad": "mm",
+   "que": "carrera que cabe en la caja expulsora",
+   "cita": "estación 8 de tu pieza (portamoldes)",
+   "fuente": "ciclo.portamoldes.carreraLibreMm"
+  },
+  "dictamenViola": {
+   "v": 6,
+   "unidad": "",
+   "que": "contratos que VIOLAN en el dictamen (el 04)",
+   "cita": "Kazmer §13 (los 69 contratos)",
+   "fuente": "revision.fila.viola"
+  }
+ },
+ "historia": [
+  {
+   "fecha": "2026-10-25T02:32:13.717Z",
+   "commit": "eeeb24e",
+   "razon": "primera grabación: main eeeb24e + la línea __qaForja de la orden D, build de producción de forja-dev7 servido en iangpu :4270 (corrida huella-control-1/corrida-1, huella b9d3e4d677853d34)",
+   "cambios": [
+    "primera grabación"
+   ]
+  }
+ ]
+}

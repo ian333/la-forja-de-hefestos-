@@ -1,0 +1,31 @@
+{
+ "id": "03-pulgadas",
+ "archivo": "03-pulgadas.stl",
+ "sha256": "ee7fe9abfaebca266fca6f17bb9fb79fa3864c73954a28d0f5a6a2953c82bcda",
+ "bytes": 286784,
+ "deriva": "test-parts/inyeccion-reales/1594C Box.stp → mallaDesdeArchivo (src/forja/mold/stl.ts, tesela 0.1/0.5) en node · cada coordenada ÷ 25.4 (la caja exportada en pulgadas)",
+ "defecto": "la caja de 66 × 106.5 × 33.3 mm llega como 2.6 × 4.19 × 1.31 «mm»",
+ "medido": {
+  "triangulos": 5734,
+  "cerrada": true,
+  "bordesFrontera": 0,
+  "bordesNoManifold": 0,
+  "devanadoCoherente": true,
+  "componentes": 1,
+  "chi": 2,
+  "genero": 0,
+  "volumenConSigno": 3.4,
+  "areaTotal": 60.19,
+  "diagonal": 5.1,
+  "bbox": [
+   2.6,
+   4.19,
+   1.31
+  ]
+ },
+ "esperado": "pregunta",
+ "debe": "La puerta pregunta «¿está en pulgadas?» (×25.4) antes de medir; no arma un dictamen para un grano de arroz. OJO (medido al fabricarla): su diagonal es 5.10 mm — la regla «diagonal < 5 mm» (orden C §3, red team (e)) NO la caza: esta caja ES el ejemplo del red team y queda 0.1 mm arriba del umbral.",
+ "dice": "pulgada",
+ "cita": "orden C §3 (unidades); red team (f)#2",
+ "fabricado": "scripts/qa-fabrica-rotos.cjs"
+}

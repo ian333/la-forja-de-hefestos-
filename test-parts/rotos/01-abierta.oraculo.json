@@ -1,0 +1,31 @@
+{
+ "id": "01-abierta",
+ "archivo": "01-abierta.stl",
+ "sha256": "6c7f1b6216cb880066d7070deee84a7749f8df7cc165302e218953341528fa5a",
+ "bytes": 286734,
+ "deriva": "test-parts/inyeccion-reales/1594C Box.stp → mallaDesdeArchivo (src/forja/mold/stl.ts, tesela 0.1/0.5) en node · se borró el triángulo #4572 (2926.41 mm², el de mayor área)",
+ "defecto": "malla ABIERTA: un agujero de un triángulo (2926.41 mm²) — el ray-cast por paridad de `inside()` miente y la pared p50 sale basura",
+ "medido": {
+  "triangulos": 5733,
+  "cerrada": false,
+  "bordesFrontera": 3,
+  "bordesNoManifold": 0,
+  "devanadoCoherente": true,
+  "componentes": 1,
+  "chi": 1,
+  "genero": null,
+  "volumenConSigno": 23288.48,
+  "areaTotal": 35904,
+  "diagonal": 129.64,
+  "bbox": [
+   66,
+   106.5,
+   33.3
+  ]
+ },
+ "esperado": "rechaza",
+ "debe": "Al soltarla, la puerta dice que la malla está ABIERTA (no cierra: aristas sueltas) y pide repararla o el STEP; no mide pared ni enfriamiento sobre ella como si fuera sólida.",
+ "dice": "abiert|no cierra|no est[aá] cerrad|grieta|agujero|aristas? (abiertas?|sueltas?|de frontera|libres?)|no[- ]manifold",
+ "cita": "orden C §1 (cierre: aristas abiertas); red team (f)#4; matricula.ts bordesFrontera",
+ "fabricado": "scripts/qa-fabrica-rotos.cjs"
+}
