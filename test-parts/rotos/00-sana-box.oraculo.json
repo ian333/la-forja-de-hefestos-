@@ -1,0 +1,31 @@
+{
+ "id": "00-sana-box",
+ "archivo": "00-sana-box.stl",
+ "sha256": "94e9b71e635c49011da0b6e000bc227f39d0d169c2560125315698c7043eda39",
+ "bytes": 286784,
+ "deriva": "test-parts/inyeccion-reales/1594C Box.stp → mallaDesdeArchivo (src/forja/mold/stl.ts, tesela 0.1/0.5) en node",
+ "defecto": "ninguno: la 1594C Box tal cual, como STL",
+ "medido": {
+  "triangulos": 5734,
+  "cerrada": true,
+  "bordesFrontera": 0,
+  "bordesNoManifold": 0,
+  "devanadoCoherente": true,
+  "componentes": 1,
+  "chi": 2,
+  "genero": 0,
+  "volumenConSigno": 55771.58,
+  "areaTotal": 38830.4,
+  "diagonal": 129.64,
+  "bbox": [
+   66,
+   106.5,
+   33.3
+  ]
+ },
+ "esperado": "pasa",
+ "debe": "La puerta la deja pasar: NO dice abierta, devanado, pulgadas ni varios cuerpos (puede avisar que con un STL solo revisa la pieza y que el molde pide el STEP: eso es información, no rechazo).",
+ "noDice": "abiert|no cierra|no est[aá] cerrad|grieta|agujero|aristas? (abiertas?|sueltas?|de frontera|libres?)|no[- ]manifold|devanado|normales|al rev[eé]s|invertid|volumen negativo|hacia adentro|de adentro hacia afuera|pulgada|\\b(2|dos)\\s+(cuerpos|s[oó]lidos|piezas|componentes|cascarones)\\b|cu[aá]l (moldeo|reviso|mido)",
+ "cita": "par de control (juez C D4; qa-automation (h)2: ningún gate sin su caso sano)",
+ "fabricado": "scripts/qa-fabrica-rotos.cjs"
+}

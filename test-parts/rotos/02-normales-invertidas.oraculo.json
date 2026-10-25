@@ -1,0 +1,31 @@
+{
+ "id": "02-normales-invertidas",
+ "archivo": "02-normales-invertidas.stl",
+ "sha256": "4bd12df72a0f1fe68ddd72cc005ec51c6e3b9880f651b19b74dbf52f086ded78",
+ "bytes": 286784,
+ "deriva": "test-parts/inyeccion-reales/1594C Box.stp → mallaDesdeArchivo (src/forja/mold/stl.ts, tesela 0.1/0.5) en node · cada cara (a,b,c) → (a,c,b)",
+ "defecto": "todas las normales hacia ADENTRO: el volumen con signo sale negativo; `meshVolumeArea` (revisar-modelo.ts:46) usa |vol6| y la deja pasar muda",
+ "medido": {
+  "triangulos": 5734,
+  "cerrada": true,
+  "bordesFrontera": 0,
+  "bordesNoManifold": 0,
+  "devanadoCoherente": true,
+  "componentes": 1,
+  "chi": 2,
+  "genero": 0,
+  "volumenConSigno": -55771.58,
+  "areaTotal": 38830.4,
+  "diagonal": 129.64,
+  "bbox": [
+   66,
+   106.5,
+   33.3
+  ]
+ },
+ "esperado": "rechaza",
+ "debe": "La puerta dice que la malla viene al revés (normales/devanado invertido, volumen negativo) y la rechaza o la voltea DICIÉNDOLO; no la mide en silencio.",
+ "dice": "devanado|normales|al rev[eé]s|invertid|volumen negativo|hacia adentro|de adentro hacia afuera",
+ "cita": "orden C §1 (devanado); red team (f)#3; matricula.ts volumenConSigno",
+ "fabricado": "scripts/qa-fabrica-rotos.cjs"
+}

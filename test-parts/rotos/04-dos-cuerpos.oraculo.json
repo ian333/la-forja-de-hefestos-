@@ -1,0 +1,31 @@
+{
+ "id": "04-dos-cuerpos",
+ "archivo": "04-dos-cuerpos.stl",
+ "sha256": "2a598f5360cdddf1e42f683b8c8e4a1d0940f129291cd009e2ee9094f871da57",
+ "bytes": 396184,
+ "deriva": "test-parts/inyeccion-reales/1594C Box.stp → mallaDesdeArchivo (src/forja/mold/stl.ts, tesela 0.1/0.5) en node + test-parts/inyeccion-reales/1594C Lid.stp (misma ruta) corrida 106.25 mm en +X",
+ "defecto": "DOS cuerpos (caja + tapa) en un STL: `stl.ts` fija `solidos: 1` y se miden como una sola pieza",
+ "medido": {
+  "triangulos": 7922,
+  "cerrada": true,
+  "bordesFrontera": 0,
+  "bordesNoManifold": 0,
+  "devanadoCoherente": true,
+  "componentes": 2,
+  "chi": -4,
+  "genero": 4,
+  "volumenConSigno": 89054.19,
+  "areaTotal": 62330.37,
+  "diagonal": 222.81,
+  "bbox": [
+   192.5,
+   106.5,
+   35.3
+  ]
+ },
+ "esperado": "pregunta",
+ "debe": "La puerta dice que el archivo trae 2 cuerpos y pregunta cuál se revisa/moldea (con su volumen y su caja); no mide el conjunto como una pieza.",
+ "dice": "\\b(2|dos)\\s+(cuerpos|s[oó]lidos|piezas|componentes|cascarones)\\b|cu[aá]l (moldeo|reviso|mido)",
+ "cita": "orden C §2 (cuerpos); red team (f)#5",
+ "fabricado": "scripts/qa-fabrica-rotos.cjs"
+}
