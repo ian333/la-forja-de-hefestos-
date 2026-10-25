@@ -162,6 +162,9 @@ async function camino(page, archivo, { hasta = 'molde', reloj = 'real', log: L =
     if (!res.pines && !res.rompe) res.rompe = 'MOLDE_SOSPECHOSO: la E7 no trae pines por agarre — el molde no es de esta pieza';
     return res;
   }
+  // CONTROL «pared»: la MISMA pieza con otra pared declarada (2.8 en vez de la medida): un molde legítimo y DISTINTO — su huella debe
+  // cambiar; si no, la huella no ve el contenido del molde.
+  if (reloj === 'pared') await page.evaluate(() => window.__qaForja.setIntake({ wallMm: 2.8 }));
   await clic(page, 'parte-lente-molde');
   try {
     await espera(page, `(() => { const m = document.querySelector('[data-testid="molde-de-la-pieza"]'); return m && m.dataset.portamoldes === '1'; })()`, 600000);
@@ -331,17 +334,24 @@ if (require.main === module) (async () => {
   }
   // EL PAR DE CONTROL del gate (--control): una corrida MÁS con la falla conocida (reloj congelado antes de MOLDE). Su huella
   // DEBE salir distinta de la sana; si sale igual, el gate no ve la falla para la que existe y no vale nada.
+  // DESDE e69f8a6 (LA CARRERA DEL ARRANQUE) el reloj congelado YA NO rompe el molde: el control se partió en dos.
+  //  · «pared» (MUERDE): la misma pieza con otra pared → otro molde legítimo → la huella DEBE cambiar.
+  //  · «congelado» (REGRESIÓN): la falla vieja → la huella DEBE salir IGUAL a la sana; si cambia, la carrera regresó.
   let control = null;
   if (argv.includes('--control')) {
-    const browser = await lanza(); let r;
-    try { r = await corrida(browser, URL, PIEZA, { stillEn: path.join(OUT, 'molde-control.jpg'), reloj: 'congelado' }); }
-    finally { await browser.close().catch(() => {}); }
-    fs.writeFileSync(path.join(OUT, 'corrida-control.json'), JSON.stringify(r, null, 1));
-    // la referencia sana: una corrida de esta misma vuelta, o `--sano <corrida-k.json>` (de una vuelta anterior del MISMO build)
-    const sano = corridas.find((x) => x.huella) || (arg('--sano') ? JSON.parse(fs.readFileSync(arg('--sano'), 'utf8')) : null);
-    const cambios = sano && r.huella ? diffHuellas(sano.huella, r.huella) : [];
-    control = { hash: r.hash || null, rompe: r.rompe || '', muerde: !!(sano && r.hash && r.hash !== sano.hash) || /SOSPECHOSO/.test(r.rompe || ''), cambios, noVale: r.noVale };
-    log(`control (reloj congelado): ${r.hash ? r.hash.slice(0, 16) : '—'} · ${r.rompe || 'ok'} · ${control.muerde ? 'MUERDE' : 'NO MUERDE'} · ${cambios.length} diferencias`);
+    const sano = () => corridas.find((x) => x.huella) || (arg('--sano') ? JSON.parse(fs.readFileSync(arg('--sano'), 'utf8')) : null);
+    const corre = async (reloj, still) => { const browser = await lanza(); try { return await corrida(browser, URL, PIEZA, { stillEn: path.join(OUT, still), reloj }); } finally { await browser.close().catch(() => {}); } };
+    const rp = await corre('pared', 'molde-control-pared.jpg'); fs.writeFileSync(path.join(OUT, 'corrida-control-pared.json'), JSON.stringify(rp, null, 1));
+    const rc = await corre('congelado', 'molde-control-congelado.jpg'); fs.writeFileSync(path.join(OUT, 'corrida-control-congelado.json'), JSON.stringify(rc, null, 1));
+    const s0 = sano();
+    const cambiosP = s0 && rp.huella ? diffHuellas(s0.huella, rp.huella) : [];
+    const cambiosC = s0 && rc.huella ? diffHuellas(s0.huella, rc.huella) : [];
+    const muerdeP = !!(s0 && rp.hash && rp.hash !== s0.hash);
+    const regresa = !(s0 && rc.hash && rc.hash === s0.hash && !rc.rompe);
+    control = { hash: rp.hash || null, rompe: rp.rompe || '', muerde: muerdeP && !regresa, cambios: cambiosP, noVale: rp.noVale || rc.noVale,
+      pared: { hash: rp.hash || null, muerde: muerdeP, cambios: cambiosP.length }, congelado: { hash: rc.hash || null, regresion: regresa, rompe: rc.rompe || '', cambios: cambiosC } };
+    log(`control «pared 2.8»: ${rp.hash ? rp.hash.slice(0, 16) : '—'} · ${muerdeP ? 'MUERDE' : 'NO MUERDE'} · ${cambiosP.length} diferencias`);
+    log(`regresión «reloj congelado»: ${rc.hash ? rc.hash.slice(0, 16) : '—'} · ${regresa ? 'LA CARRERA REGRESÓ' : 'igual a la sana'} · ${rc.rompe || 'ok'} · ${cambiosC.length} diferencias`);
   }
   const noVale = corridas.filter((r) => r.noVale);
   const hashes = corridas.map((r) => r.hash || null);
@@ -357,7 +367,11 @@ if (require.main === module) (async () => {
   for (const d of diffs) { console.log(`  diferencias ${d.entre} (${d.cambios.length}):`); for (const c of d.cambios.slice(0, 40)) console.log('    ' + c); }
   for (const r of corridas) if (r.rompe) console.log(`  corrida ${r.k}: ${r.rompe}`);
   for (const s of resumen.noVale) console.log(`  NO VALE ${s}`);
-  if (control) { console.log(`PAR_DE_CONTROL: ${control.muerde ? 'MUERDE' : 'NO MUERDE'} · la corrida con el reloj congelado: ${(control.hash || '—').slice(0, 16)} ${control.rompe}`); for (const c of control.cambios.slice(0, 25)) console.log('    ' + c); }
+  if (control) {
+    console.log(`PAR_DE_CONTROL: ${control.pared.muerde ? 'MUERDE' : 'NO MUERDE'} · pared 2.8: ${(control.pared.hash || '—').slice(0, 16)} (${control.pared.cambios} diferencias)`);
+    console.log(`REGRESION_CARRERA: ${control.congelado.regresion ? 'ROJO · la carrera del arranque regresó' : 'VERDE · el reloj congelado da el molde sano'} · ${(control.congelado.hash || '—').slice(0, 16)} ${control.congelado.rompe}`);
+    for (const c of control.congelado.cambios.slice(0, 25)) console.log('    ' + c);
+  }
   // con --control, el control que NO muerde también es ROJO: el gate no vería la falla para la que existe
   process.exit(veredicto === 'NO VALE' ? 2 : (veredicto === 'VERDE' || veredicto === 'SOLO CONTROL · MUERDE') && (!control || control.muerde) ? 0 : 1);
 })().catch((e) => { console.error('FATAL', e); process.exit(2); });

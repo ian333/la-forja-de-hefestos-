@@ -124,8 +124,10 @@ export interface PuertaDeLaPieza {
   medida: MedidaPuerta;
 }
 
-/** STL más chico que esto (diagonal de su caja) ⇒ «¿está en pulgadas?». Literal de la orden C (juez A, D7): «diagonal < 5 mm». */
-export const DIAGONAL_SOSPECHA_PULGADAS_MM = 5;
+/** STL más chico que esto (diagonal de su caja) ⇒ «¿está en pulgadas?». Regla de Hefestos, sin cita. La orden C la puso en 5 mm
+ *  (juez A, D7); la orden D midió que la 1594C Box en pulgadas (÷25.4) mide 5.10 mm de diagonal y pasaba por una décima. El sólido más
+ *  chico de los 73 Hammond mide 35.3 mm: 10 mm deja margen de los dos lados. */
+export const DIAGONAL_SOSPECHA_PULGADAS_MM = 10;
 
 /** del veredicto medido a la tarjeta: el orden de las preguntas es el del taller (¿qué es?, ¿está sana?, ¿sale del molde?) */
 export function armarPuerta(m: MedidaPuerta): PuertaDeLaPieza {

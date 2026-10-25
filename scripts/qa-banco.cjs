@@ -286,7 +286,10 @@ if (require.main === module) (async () => {
   // Medido 2026-10-24: con la cola llena, cada turno esperaba 15–40 min; pedir uno por corrida multiplicaba la espera ×4.
   const conControl = LISTA !== 'box' || argv.includes('--control');
   const specsBox = Array.from({ length: N }, (_, i) => ({ id: '1594C-Box', clase: 'box', archivo: BOX, k: i + 1, still: path.join(OUT, 'stills', `1594C-Box-${i + 1}.jpg`) }));
-  if (conControl) specsBox.push({ id: '1594C-Box-control', clase: 'box', archivo: BOX, k: 1, reloj: 'congelado', still: path.join(OUT, 'stills', '1594C-Box-control.jpg') });
+  // desde e69f8a6 (LA CARRERA DEL ARRANQUE arreglada) el control son DOS corridas: «pared 2.8» DEBE dar otra huella (muerde) y
+  // «reloj congelado» (la falla vieja) DEBE dar la MISMA huella que la sana (regresión de la carrera)
+  if (conControl) specsBox.push({ id: '1594C-Box-control', clase: 'box', archivo: BOX, k: 1, reloj: 'pared', still: path.join(OUT, 'stills', '1594C-Box-control.jpg') },
+    { id: '1594C-Box-regresion', clase: 'box', archivo: BOX, k: 1, reloj: 'congelado', still: path.join(OUT, 'stills', '1594C-Box-regresion.jpg') });
   const resBox = [].concat(corre(specsBox));
   const corridas = resBox.filter((r) => r.id === '1594C-Box');
   for (const r of resBox) fs.writeFileSync(path.join(OUT, 'corridas', `${r.id}-${r.k || 1}.json`), JSON.stringify(r, null, 1));   // una por corrida: `qa-dorados --medido` las lee
@@ -299,6 +302,9 @@ if (require.main === module) (async () => {
     const sano = corridas.find((x) => x.huella);
     box.controlHuella = { hash: r.hash || null, rompe: r.rompe || '', still: r.still, noVale: r.noVale || '',
       muerde: !!(sano && ((r.hash && r.hash !== sano.hash) || /SOSPECHOSO/.test(r.rompe || ''))), cambios: sano && r.huella ? H.diffHuellas(sano.huella, r.huella) : [] };
+    const g = resBox.find((x) => x.id === '1594C-Box-regresion') || { rompe: 'la regresión no dejó resultado' };
+    box.regresion = { hash: g.hash || null, rompe: g.rompe || '', still: g.still, ok: !!(sano && g.hash && g.hash === sano.hash && !g.rompe),
+      cambios: sano && g.huella ? H.diffHuellas(sano.huella, g.huella) : [] };
   }
   const rutaDor = path.join(REPO, DORADOS_BOX);
   const med = corridas.find((r) => r.dorados);
@@ -338,14 +344,14 @@ if (require.main === module) (async () => {
   const sanaSTL = piezas.find((p) => p.clase === 'roto' && p.oraculo && p.oraculo.esperado === 'pasa');
   const noVale = piezas.concat(corridas).filter((p) => p.noVale);
   const confiable = LISTA === 'box' ? null : pasaron.length === 0 && (!sanaSTL || sanaSTL.juicio.cumple);
-  const verde = piezas.every((p) => p.juicio.cumple) && noVale.length === 0 && (!box.controlHuella || box.controlHuella.muerde) && (!box.control || box.control.ok);
+  const verde = piezas.every((p) => p.juicio.cumple) && noVale.length === 0 && (!box.controlHuella || box.controlHuella.muerde) && (!box.regresion || box.regresion.ok) && (!box.control || box.control.ok);
   // qué build se midió: COMMIT=<sha> manda. Sin él se lee temis-deploy.json del servidor — OJO: en las copias forja-devN `public/`
   // es un symlink al repo principal y ese archivo dice el commit de PRODUCCIÓN, no el de la copia (medido 2026-10-24: «6f70032»)
   let servido = process.env.COMMIT ? `${process.env.COMMIT} (COMMIT=)` : 'local';
   if (!process.env.COMMIT) try { servido = (JSON.parse(execSync(`curl -sS --max-time 5 ${JSON.stringify(URL.replace(/\/[^/]*$/, '') + '/temis-deploy.json')}`, { encoding: 'utf8' })).commit || '').slice(0, 7) || 'sin temis-deploy'; servido += ' (temis-deploy.json del servidor: pasa COMMIT=)'; } catch (e) {}
   const resumen = [
     noVale.length ? `NO VALE: ${noVale.map((p) => p.id + ' ' + p.noVale).join('; ')}` : '',
-    `Box: huella ×${N} ${box.huellaVeredicto}${box.controlHuella ? ` (su control ${box.controlHuella.muerde ? 'muerde' : 'NO muerde'})` : ''}, dorados ${box.dorados ? box.dorados.veredicto : '—'}${box.dorados && box.dorados.rojos.length ? ' (' + box.dorados.rojos.map((f) => `${f.k} ${num(f.dorado)}→${num(f.medido)}`).join(', ') + ')' : ''}${box.control ? ` (su control ${box.control.ok ? 'muerde' : 'NO muerde'})` : ''}`,
+    `Box: huella ×${N} ${box.huellaVeredicto}${box.controlHuella ? ` (su control ${box.controlHuella.muerde ? 'muerde' : 'NO muerde'}${box.regresion ? `; la carrera ${box.regresion.ok ? 'no regresó' : 'REGRESÓ'}` : ''})` : ''}, dorados ${box.dorados ? box.dorados.veredicto : '—'}${box.dorados && box.dorados.rojos.length ? ' (' + box.dorados.rojos.map((f) => `${f.k} ${num(f.dorado)}→${num(f.medido)}`).join(', ') + ')' : ''}${box.control ? ` (su control ${box.control.ok ? 'muerde' : 'NO muerde'})` : ''}`,
     LISTA !== 'box' ? `${pasaron.length} de ${rotos.length} piezas rotas pasaron la puerta${pasaron.length ? ' (' + pasaron.map((p) => p.id).join(', ') + ')' : ''}${sanaSTL ? `; el control sano ${sanaSTL.juicio.cumple ? 'pasó' : 'NO pasó'}` : ''}` : 'solo la Box (sin rotos: la confiabilidad no se juzga)',
     confiable === false ? 'mientras una pieza rota pase, un verde de esta corrida no certifica nada' : '',
   ].filter(Boolean).join(' · ');

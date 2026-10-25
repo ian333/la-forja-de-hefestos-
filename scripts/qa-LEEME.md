@@ -65,7 +65,10 @@ pase un fixture.
 - En las copias `forja-devN`, `test-parts` y `public/*` son **symlinks al repo principal**: no escribas ahí (`--out`/`--rotos` a tu carpeta).
 - Los números dorados se leen del MOTOR (`window.__qaForja`, una línea en `ForgeBRepStudio.tsx`), no del texto de la hoja.
 - Los tiempos se anotan en el acta pero no se juzgan: en GPU compartida los relojes son clima.
-- El control de la huella reproduce una carrera que SIGUE en la app (el temporizador de la E2 nace con la pieza maciza y la
+- **ACTUALIZADO 2026-10-24 (e69f8a6, LA CARRERA DEL ARRANQUE arreglada):** el control se partió en dos. «pared 2.8» (la misma pieza con
+  otra pared declarada vía `__qaForja.setIntake`) DEBE dar otra huella (PAR_DE_CONTROL: MUERDE); «reloj congelado» (la falla vieja)
+  DEBE dar la MISMA huella que la sana (REGRESION_CARRERA: VERDE). Si la del reloj congelado cambia, la carrera regresó.
+- (historia) El control de la huella reproducía una carrera que SEGUÍA en la app (el temporizador de la E2 nace con la pieza maciza y la
   re-siembra de la pared lo cancela un commit después; con el reloj congelado antes de MOLDE gana la carrera: molde de otra pieza,
   0 pines, «manda la pieza 2350 s», F 40 kN — medido 2026-10-24, huella a7c2b9c0…, igual las dos veces). Con los 40 ms reales que
   hoy deja la filmadora NO se reproduce (misma huella que la sana). Si algún día se arregla esa carrera en la app, este control deja
