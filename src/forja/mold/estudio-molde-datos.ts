@@ -1469,6 +1469,8 @@ export interface ArbolPiezaMeta {
   /** llave de PLASTICOS_A. Default ABS DECLARADO: el intake de material es v1·5 */
   material?: string;
   annualVolume?: number;
+  /** p_pack del intake (MPa, orden 2026-10-24-b); sin él la máquina usa 50 (§5.5.3) */
+  packMPa?: number;
 }
 
 /** De un Shape OCC del árbol → el PiezaSpec que consumen estacion1/estacion2.
@@ -1491,6 +1493,7 @@ export function piezaDesdeArbol(oc: any, shape: any, m: ArbolPiezaMeta): PiezaSp
     name: m.nombre, Lmm: L, Wmm: W, Hmm: H, cavityShape: m.round ? 'round' : 'rect',
     surfaceMm2: Math.round(area), volumeMm3: Math.round(vol), wallMm: wall,
     annualVolume: Q, totalVolume: Q, plastic: material, finish: 'SPI B-3',
+    ...(m.packMPa != null ? { packMPa: m.packMPa } : {}),   // p_pack declarado viaja en la spec (orden 2026-10-24-b)
   } as MachineSpec;
   const surface = { finish: 'SPI B-3', roughnessUm: 12 };
   return {
@@ -4929,7 +4932,9 @@ export function estacion12Dado(pkg: MoldPackage, d: DatumsColada, o?: {
     {
       id: 'estructura', titulo: 'ESTRUCTURA (E11): R90 con números',
       decision: `sobrepresión ✓ · fatiga ✓ · flash ✓ (δ ${e11!.soporte.deltaMm} < vent ${e11!.soporte.ventGapMm})`,
-      costo: '0 pilares (la placa aguanta sola) — nada que agregar',
+      // los pilares SE LEEN (orden 2026-10-24-b): el «0 pilares» estaba tecleado; con el piso de empaque el cubo pide 1
+      costo: e11!.soporte.nPillars === 0 ? '0 pilares (la placa aguanta sola) — nada que agregar'
+        : `${e11!.soporte.nPillars} pilar(es) de soporte bajo la placa de ${e11!.soporte.tMm} mm (el cierre a p_pack los pide, §12.2.3)`,
       beneficio: `los K de lo perforado con margen (agua ${e11!.barrenos[0].K} · baffle ${e11!.barrenos[1].K} vs endurance 456)`,
       riesgo: 'el barreno del pin es R81: la grieta se frena en el pin, pero el binding se VIGILA en producción',
       responsable: 'ian', seccion: '§12.5 · R90',

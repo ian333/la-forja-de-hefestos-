@@ -611,10 +611,13 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   // puente lo fijaba en ABS) y volumen anual. Sin formulario aparte: tres campos en
   // la E1 que re-siembran el ciclo. `intakeRev` obliga a re-sembrar aunque el sólido
   // sea el mismo (el guard de "mismo shape" lo bloqueaba).
-  const [intake, setIntakeState] = useState<{ wallMm?: number; material?: string; annualVolume?: number }>({});
+  // LA PRESIÓN DE EMPAQUE (orden 2026-10-24-b): `packMPa` = p_pack, la presión de sostenimiento en la cavidad.
+  // Sin declarar, la máquina usa 50 MPa (§5.5.3, `P_PACK_DEFECTO_MPA`); declarada, cierra el molde y dimensiona
+  // soporte, pilares y expulsión con ese número. Re-siembra el ciclo igual que los otros tres campos.
+  const [intake, setIntakeState] = useState<{ wallMm?: number; material?: string; annualVolume?: number; packMPa?: number }>({});
   const [intakeRev, setIntakeRev] = useState(0);
   const intakeRef = useRef(intake);
-  const setIntake = useCallback((patch: { wallMm?: number; material?: string; annualVolume?: number }) => {
+  const setIntake = useCallback((patch: { wallMm?: number; material?: string; annualVolume?: number; packMPa?: number }) => {
     const next = { ...intakeRef.current, ...patch };
     intakeRef.current = next; setIntakeState(next); setIntakeRev((v) => v + 1);
   }, []);
@@ -636,7 +639,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       const pieza = piezaDesdeArbol(oc, a.shape, {
         nombre: a.nombre || 'PIEZA DEL ÁRBOL', wallMm: ik.wallMm ?? a.wallMm, draftDeg: a.draftDeg,
         filletMm: a.filletMm, round: a.round, material: ik.material ?? 'ABS',   // intake §2.1.5 (sprint 2): declarado > adivinado
-        annualVolume: ik.annualVolume,
+        annualVolume: ik.annualVolume, packMPa: ik.packMPa,                 // p_pack (orden 2026-10-24-b): sin declarar → 50 MPa en la máquina
       });
       intakeAplicadoRef.current = intakeRev;
       const e1 = estacion1(pieza);
@@ -1941,7 +1944,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       setCollapsed((c: any) => ({ ...c, features: false }));
       cursoSet(11, [
         'CICLO DEL DADO · estación 11 — ESTRUCTURA (cap 12): lo perforado rinde cuentas',
-        `soporte ${e11.soporte.tMm} mm: δ ${e11.soporte.deltaMm} < ${e11.soporte.ventGapMm} (EL VENT DE LA E7) — la alarma maestra R70, verde · 0 pilares (la placa aguanta sola)`,
+        // los pilares SE LEEN (orden 2026-10-24-b): con el piso de empaque el cubo cierra a 8.2 t y su soporte pide 1 pilar;
+        // el «0 pilares (la placa aguanta sola)» estaba tecleado y se volvía mentira
+        `soporte ${e11.soporte.tMm} mm: δ ${e11.soporte.deltaMm} < ${e11.soporte.ventGapMm} (EL VENT DE LA E7) — la alarma maestra R70, verde · ${e11.soporte.nPillars === 0 ? '0 pilares (la placa aguanta sola)' : `${e11.soporte.nPillars} pilar(es) de soporte`}`,
         `K de los barrenos (Eq 12.19): agua-A ${e11.barrenos[0].K} · baffle ${e11.barrenos[1].K} · pin ${e11.barrenos[2].K} (R81: la grieta se frena en el pin; el riesgo es binding)`,
         `hoop del macho ${e11.hoop.sigmaEsperada}/${e11.hoop.sigmaSobre} MPa · R90: 3 veredictos ✓ · la E3 NO se reabre (soporte ${e11.retornoE3.soporteStackMm} == ${e11.retornoE3.soportePkgMm})`,
       ], moldParts);

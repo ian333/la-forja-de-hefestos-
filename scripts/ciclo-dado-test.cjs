@@ -50,6 +50,45 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('A-050: el ganador CAMBIA dentro de la banda', cambio > 0, cambio > 0 ? `en ${e2.banda[cambio].q.toLocaleString()} pzas → ×${e2.banda[cambio].nCav}` : 'nunca cambia');
   check('A-054: proporción sana (<30 %)', e2.proporcion.pct < 30, e2.proporcion.pct + ' %');
 
+  // ══ B · LA PRESIÓN DE EMPAQUE (orden 2026-10-24-b · ACTA R95) ══
+  // Dos presiones con nombre (juez C, D2): el cierre va con max(½·p_fill, p_pack) — Eq 5.29 / §5.5.3 — y de ese
+  // cierre salen soporte, pilares y expulsión. PAR DE CONTROL: con p_pack = 0 el molde vuelve BIT-IGUAL al de
+  // antes del piso (el cambio es el piso, no otra cosa); un nominal ≤ 0 a p_pack SÍ viola.
+  console.log('── B · La presión de empaque (Eq 5.29 · §5.5.3)');
+  {
+    const mm = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'moldmachine.ts'));
+    const mc = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-contratos.ts'));
+    const fi = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'filling.ts'));
+    const spec = ed.DADO_PIEZA.spec;
+    const A = spec.Lmm * spec.Wmm * 1e-6;
+    const winDe = (p) => p.variantes.find((v) => v.arch === p.recomendacion.arch && v.nCav === p.recomendacion.nCav);
+    const pkgD = e2.pkg, wD = winDe(pkgD);
+    const pkgC = mm.moldMachine({ ...spec, packMPa: 0 }), wC = winDe(pkgC);
+    const prC = mm.presionesDelMolde({ ...spec, packMPa: 0 }, fi.ABS_MG47);
+    const spD = pkgD.diseno.placas.soporte, spC = pkgC.diseno.placas.soporte;
+    check('B · el cierre es max(½·p_fill, p_pack): 50 MPa por defecto (§5.5.3) cierran el cubo; con p_pack = 0 vuelve BIT-IGUAL al de llenado (control)',
+      pkgD.diseno.packMPa === mm.P_PACK_DEFECTO_MPA && pkgD.diseno.clampManda === 'empaque' && cerca(wD.clampTons, 50e6 * A / 9806.65, 1e-9)
+        && pkgC.diseno.clampManda === 'llenado' && cerca(wC.clampTons, prC.cavityMPa * 1e6 * A / 9806.65, 1e-9),
+      `p_pack ${pkgD.diseno.packMPa} MPa (${pkgD.diseno.packFuente}) → ${wD.clampTons.toFixed(3)} t · control p_pack 0 → ½·p_fill ${prC.cavityMPa.toFixed(2)} MPa → ${wC.clampTons.toFixed(3)} t`);
+    check('B · la ESTRUCTURA carga con ese cierre: soporte 22 + 1 pilar a 50 MPa · CONTROL p_pack 0 → el soporte de antes (22 · 0 pilares · δ 0.0081)',
+      spD.plateThkMm === 22 && spD.nPillars === 1 && cerca(spD.deflectionAtPlateMm, 0.0095, 1e-4) && spD.hefestos.estado === 'CUMPLE'
+        && spC.plateThkMm === 22 && spC.nPillars === 0 && cerca(spC.deflectionAtPlateMm, 0.0081, 1e-4),
+      `a 50 MPa: ${spD.plateThkMm} mm + ${spD.nPillars} pilar · δ ${spD.deflectionAtPlateMm} (${spD.hefestos.usoPct} %) · a ½·p_fill: ${spC.plateThkMm} mm + ${spC.nPillars} · δ ${spC.deflectionAtPlateMm} (${spC.hefestos.usoPct} %)`);
+    const crit = (p) => mc.contratos(p).subsistemas.flatMap((s) => s.criterios);
+    const cD = crit(pkgD), byId = (cs, id) => cs.find((c) => c.id === id);
+    const pkgPlaca = mm.moldMachine({ ...spec, warpageTopology: { tipo: 'placa', solidFrac: 1, interiorEmptyFrac: 0 } });
+    const pkgMarco = mm.moldMachine({ ...spec, warpageTopology: { tipo: 'marco', solidFrac: 0.3, interiorEmptyFrac: 0.7 } });
+    const pkgSobre = mm.moldMachine({ ...spec, packMPa: 120 });
+    const wPlaca = byId(crit(pkgPlaca), 'contr-warpage-topologia'), wMarco = byId(crit(pkgMarco), 'contr-warpage-topologia');
+    const posSobre = byId(crit(pkgSobre), 'contr-positiva');
+    check('B · las palomitas que no podían fallar NO suman (agua-ciclo, POSITIVA, WARPAGE de área cerrada: SIN-CABLEAR con deuda) · CONTROLES: el marco sigue juzgado y un nominal ≤ 0 a p_pack 120 VIOLA',
+      byId(cD, 'agua-ciclo').estado === 'SIN-CABLEAR' && !!byId(cD, 'agua-ciclo').deuda
+        && byId(cD, 'contr-positiva').estado === 'SIN-CABLEAR' && !!byId(cD, 'contr-positiva').deuda
+        && wPlaca.estado === 'SIN-CABLEAR' && !!wPlaca.deuda && wMarco.estado === 'CUMPLE'
+        && pkgSobre.diseno.contraccion.nominalPct <= 0 && posSobre.estado === 'VIOLA',
+      `cubo: nominal ${pkgD.diseno.contraccion.nominalPct.toFixed(2)} % a ${pkgD.diseno.contraccion.pNominalMPa} MPa · placa ${wPlaca.estado} · marco ${wMarco.estado} · a 120 MPa nominal ${pkgSobre.diseno.contraccion.nominalPct.toFixed(2)} % → ${posSobre.estado}`);
+  }
+
   // ══ SEPARACIÓN — la MISMA máquina corre el VASO, no solo el cubo ══
   // (orden 2026-08-21-separar-maquina-del-cubo · ian: "debe funcionar para ambos")
   console.log('── SEPARACIÓN · la máquina del molde, ya no la del cubo');
@@ -1372,8 +1411,11 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check('E12 · EL ACTA FIRMA con las 11 estaciones (R92: aprobadas y documentadas)',
       acta.veredicto === 'FIRMADO' && acta.faltantes.length === 0,
       `${acta.conteo.estaciones} estaciones · ${acta.decisiones.length} decisiones · ${acta.conteo.checksGate} checks`);
+    // ACTA R95 (orden 2026-10-24-b, la presión de empaque): $0.423/$1.162 → $0.399/$0.965. El cierre del cubo pasó
+    // de 0.87 t (½·p_fill) a 8.16 t (p_pack 50) y Eq 3.24 cobra la hora de máquina con ese tonelaje: a 0.87 t la
+    // fórmula EXTRAPOLABA (el −4.7·ln T la subía a 47.7 $/h, más cara que una de 50 t); a 8.16 t da 37.7 $/h.
     check('E12 · LA ARQUITECTURA con los DOS números (el dinero decide, no la opinión)',
-      acta.decisiones[0].id === 'arquitectura' && acta.decisiones[0].beneficio.includes('$0.423') && acta.decisiones[0].beneficio.includes('$1.162'),
+      acta.decisiones[0].id === 'arquitectura' && acta.decisiones[0].beneficio.includes('$0.399') && acta.decisiones[0].beneficio.includes('$0.965'),
       acta.decisiones[0].decision + ' — con PLAN B frío documentado');
     check('E12 · toda decisión lleva costo/beneficio/riesgo/responsable (R92 literal)',
       acta.decisiones.length >= 6 && acta.decisiones.every((x) => x.costo && x.beneficio && x.riesgo && x.responsable && x.seccion),
@@ -1480,8 +1522,11 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     const rGear = rm.revisarModelo({ mesh: gear, nombre: 'gear', annualVolume: 200_000, flowMaxVoxels: 40_000 });
     const crit = rGear.contratos.subsistemas.flatMap((x) => x.criterios);
     const viola = crit.filter((c) => c.estado === 'VIOLA').length;
-    check('T1 · el dictamen de ESA pieza cuadra con lo que se ve en el panel (7 violaciones, score 64)',
-      viola === 7 && rGear.fila.score === 64 && crit.every((c) => c.cita && c.detalle),
+    // ACTA R95 (orden 2026-10-24-b): 7 → 6 violaciones. Se fue ✗ FUERZA (F_eject = 108 % de un cierre de 0.52 t con
+    // ½·p_fill; con p_pack 50 el engrane cierra a 51 t). El score se queda en 64: entra FUERZA a cumple y sale
+    // agua-ciclo (cumplía con cualquier ciclo > 0) a SIN-CABLEAR.
+    check('T1 · el dictamen de ESA pieza cuadra con lo que se ve en el panel (6 violaciones, score 64)',
+      viola === 6 && rGear.fila.score === 64 && crit.every((c) => c.cita && c.detalle),
       `score ${rGear.fila.score} · ✗${viola} ⚠${crit.filter((c) => c.estado === 'ADVIERTE').length} ✓${crit.filter((c) => c.estado === 'CUMPLE').length} · todos con § y detalle`);
   }
 

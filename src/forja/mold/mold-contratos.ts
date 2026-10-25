@@ -169,13 +169,21 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 1) ΔP del feed ≤ min(50 % de la cavidad, 50 MPa) — §6.2.2 ──
+  // LA PRESIÓN QUE LE TOCA (orden 2026-10-24-b): el presupuesto de la colada se juzga con p_fill, la de
+  // LLENADO — no con la de empaque, que no fluye por el bebedero. Si el paquete trae la del solver FAN
+  // (E5) se usa ésa; si no, la estimada (longitud de flujo ≈ largo) y se DICE: con la estimada el ✗ puede
+  // ser del estimado; con la del FAN, si sigue ✗, es real.
   const limDP = Math.min(0.5 * fillMPa, 50);
+  const fillRot = pkg.diseno.fillRotulo ?? 'estimada (longitud de flujo ≈ largo)';
   C.push({
     ...juzgaMax({
       id: 'feed-dp', subsistema: S, cita: '§6.2.2 / §6.4',
       criterio: 'ΔP del sistema de alimentación ≤ min(50 % de la presión de cavidad, 50 MPa)',
       medido: feed.dPMPa, limite: limDP, unidad: 'MPa',
-      detalle: `ΔP sprue ${num(feed.dPMPa)} MPa vs límite ${num(limDP)} MPa (50 % de ${num(fillMPa)} MPa de cavidad, tope 50) · ⌀${num(feed.diaBaseMm, 2)} mm, sprue L=${num(feed.sprueLenMm)} mm`,
+      detalle: `ΔP sprue ${num(feed.dPMPa)} MPa vs límite ${num(limDP)} MPa (50 % de p_fill ${num(fillMPa)} MPa, ${fillRot}; tope 50) · ⌀${num(feed.diaBaseMm, 2)} mm, sprue L=${num(feed.sprueLenMm)} mm`
+        + (pkg.diseno.fillFuente === 'FAN E5'
+          ? ' — p_fill del FAN se mide en la BOQUILLA (incluye la colada): si con ella sigue ✗, es real'
+          : ' — p_fill ESTIMADA: el solver de llenado de la E5 la mide desde la boquilla; con ésa se re-juzga'),
     }),
   });
 
@@ -477,14 +485,25 @@ export function contratoEnfriamiento(pkg: MoldPackage, ens?: EnsambleMedido): Co
   });
 
   // ── 9) t_c: el enfriamiento cumple el ciclo prometido — §9.2.1 ──
+  // ANTES (hallazgo 11 del debate, 2026-10-24): CUMPLE con cualquier ciclo > 0 — una palomita que no
+  // podía fallar y sumaba al puntaje. Lo que §9.2.1 pide es t_c sobre la sección MÁS GRUESA con criterio
+  // de línea central, y el paquete numérico NO trae esa sección: solo la pared nominal (`spec.wallMm`).
+  // Compararla contra el ciclo tampoco mide nada: el ciclo del costo es Eq 3.23 = 4·h²·η sobre la MISMA
+  // pared, y Eq 9.5 para ABS da ≈ 2.1·h² — 4·h² nunca queda abajo (1594C Box: 41.0 s contra 21.7 s).
+  // DECISIÓN: SIN-CABLEAR hasta que la sección más gruesa viaje al paquete (la lente ENFRIAMIENTO del
+  // Foco la mide por vóxel; la ventana «poste 65–136 s · pared 21.7 s» es la orden del CICLO CON FORMA).
   const cicloS = pkg.diseno.enfriamiento.cicloS;
+  const tcPared = pkg.diseno.alimentacion?.tcPartS;
   C.push({
     id: 'agua-ciclo', subsistema: S, cita: '§9.2.1',
     criterio: 'el tiempo de enfriamiento se calcula sobre la sección MÁS GRUESA con criterio de línea central (conservador)',
     medido: cicloS, unidad: 's',
-    estado: Number.isFinite(cicloS) && cicloS > 0 ? 'CUMPLE' : 'VIOLA',
-    detalle: `ciclo ${num(cicloS)} s · regla de dedo del libro 2·h² = ${num(2 * pkg.spec.wallMm ** 2)} s para pared ${num(pkg.spec.wallMm, 1)} mm`
-      + ' — el real será MAYOR: resistencia térmica de contacto + requisitos de calidad (nota 1 §9.2.1)',
+    estado: 'SIN-CABLEAR',
+    detalle: `ciclo del costo ${num(cicloS)} s (Eq 3.23) · t_c de la pared NOMINAL ${num(tcPared)} s (Eq 9.5, h = ${num(pkg.spec.wallMm, 1)} mm) — `
+      + 'la sección MÁS GRUESA (postes, nervios, uniones) no viaja en el paquete numérico, así que §9.2.1 no se puede juzgar aquí; '
+      + 'comparar el ciclo contra la pared nominal no mide nada (4·h² de Eq 3.23 siempre queda arriba de Eq 9.5 en la misma pared). '
+      + 'El real será MAYOR: resistencia térmica de contacto + requisitos de calidad (nota 1 §9.2.1)',
+    deuda: 'la sección más gruesa la mide la lente ENFRIAMIENTO (foco-lentes, por vóxel); cuando su t_c con la forma correcta (Eq 9.5 placa / 9.6 barra) viaje al paquete, se juzga ciclo ≥ t_c(sección más gruesa)',
   });
 
   return resumir(S, C);
@@ -507,14 +526,21 @@ export function contratoExpulsion(pkg: MoldPackage, ens?: EnsambleMedido): Contr
   // El libro valida por orden de magnitud: la expulsión de la máquina ≈ 2 % del
   // tonelaje de cierre, y sus estimaciones caen ~0.5 %. Fuera de esa banda el
   // número es sospechoso aunque la fórmula esté bien.
+  // EL CIERRE CON SU PRESIÓN (orden 2026-10-24-b): `clampTons` ya es max(½·p_fill, p_pack)·A (Eq 5.29).
+  // Antes era ½·p_fill a secas y este ✗ era del cierre, no de la expulsión: 1594C Box 3 890 N / 3.1 t =
+  // 12.8 % > 2 % ⇒ ✗; con p_pack 50 MPa el cierre es 35.8 t y la misma fuerza es 1.1 %.
   const clampForceN = clampTons * 9806.65;
   const pctClamp = clampForceN > 0 ? (v.fEjectN / clampForceN) * 100 : NaN;
+  const dz = pkg.diseno;
+  const conQue = dz.clampMPa != null
+    ? ` · cierre a ${num(dz.clampMPa)} MPa = max(½·p_fill ${num(dz.cavityMPa)}, p_pack ${num(dz.packMPa)} ${dz.packFuente ?? ''})`
+    : '';
   C.push({
     id: 'eject-fuerza', subsistema: S, cita: '§11.2.2',
     criterio: 'la fuerza de expulsión debe caber en la de la máquina (≈2 % del tonelaje) y caer en el orden del libro (~0.5 %)',
     medido: pctClamp, limite: 2, unidad: '% del clamp',
     estado: !Number.isFinite(pctClamp) ? 'SIN-MÓDULO' : (pctClamp > 2 ? 'VIOLA' : 'CUMPLE'),
-    detalle: `F_eject ${num(v.fEjectN, 0)} N = ${num(pctClamp, 2)} % del cierre (${num(clampTons, 0)} t) · la máquina entrega ≈2 % · el libro cae en ~0.5 %`
+    detalle: `F_eject ${num(v.fEjectN, 0)} N = ${num(pctClamp, 2)} % del cierre (${num(clampTons, 0)} t${conQue}) · la máquina entrega ≈2 % · el libro cae en ~0.5 %`
       + ` — σ residual ${num(v.sigmaPa / 1e6)} MPa, peso ${num(v.weightN)} N`,
   });
 
@@ -620,7 +646,9 @@ export function contratoEstructural(pkg: MoldPackage): ContratoSubsistema {
     medido: deflex, limite: J ? J.defectoMm : ref, unidad: 'mm',
     estado: !J ? 'SIN-MÓDULO' : J.estado,
     detalle: !J ? 'sin deflexión o sin venteo'
-      : `${J.texto} · venteo de la E7 ${num(hVent, 3)} mm, referencia ${num(ref, 3)} mm (la más estricta con la práctica 0.02 de la partición)`
+      // LA CARGA SE DICE (orden 2026-10-24-b): flecha por viga (Eq 12.10) con la presión de cierre — antes la
+      // placa se calculaba con ½·p_fill (4.3 MPa en la 1594C Box) y nadie lo leía en la pantalla.
+      : `${J.texto} · flecha por viga (Eq 12.10) cargada a ${num(pkg.diseno.clampMPa)} MPa (p_pack ${num(pkg.diseno.packMPa)} MPa ${pkg.diseno.packFuente ?? ''}) · venteo de la E7 ${num(hVent, 3)} mm, referencia ${num(ref, 3)} mm (la más estricta con la práctica 0.02 de la partición)`
         + (J.rebaba ? ` — FLASH GARANTIZADO: "The mold design must be improved" §12.1.2. Y la rebaba DESGASTA el plano de partición hasta pedir resuperficiado §8.1.2` : ''),
   });
 
@@ -741,13 +769,13 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
   const fill = pkg.diseno.fillMPa, cav = pkg.diseno.cavityMPa;
   const win = pkg.variantes.find((x) => x.arch === pkg.recomendacion.arch && x.nCav === pkg.recomendacion.nCav);
 
-  // ── 1) Techo de diseño 100 MPa — §5.1 ──
+  // ── 1) Techo de diseño 100 MPa — §5.1 ──  (con p_fill: la de LLENADO, rotulada por su fuente)
   C.push({
     ...juzgaMax({
       id: 'llenado-techo', subsistema: S, cita: '§5.1',
       criterio: 'ΔP de cavidad ≤ 100 MPa de DISEÑO (la máquina da ~200: el margen 2× cubre el feed system y las varianzas)',
       medido: fill, limite: 100, unidad: 'MPa',
-      detalle: `ΔP ${num(fill)} MPa · techo de diseño 100 · capacidad de máquina ~200`,
+      detalle: `ΔP ${num(fill)} MPa (p_fill ${pkg.diseno.fillRotulo ?? 'estimada'}) · techo de diseño 100 · capacidad de máquina ~200`,
     }),
   });
 
@@ -787,16 +815,21 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 5) Tonelaje: llenado Y empaque, el mayor manda, con piso de 50 MPa — §5.5.3 ──
+  // ANTES (orden 2026-10-24-b): el cierre iba con ½·p_fill a secas y este criterio solo ADVERTÍA que el
+  // moldeador empacaría a ~50 MPa. Ahora el cierre ES max(½·p_fill, p_pack) (`presionesDelMolde`), así que
+  // se juzga la presión con la que SÍ se cerró: ≥ 50 cumple; si el intake declaró un p_pack menor, advierte.
   const clampT = win?.clampTons ?? 0;
+  const dz = pkg.diseno;
+  const pCierre = dz.clampMPa ?? cav;
   C.push({
     id: 'llenado-tonelaje', subsistema: S, cita: '§5.5.3',
     criterio: 'el tonelaje se calcula en llenado Y en empaque (gana el mayor) sobre área PROYECTADA, con piso de 50 MPa de presión de cavidad',
-    medido: cav, limite: 50, unidad: 'MPa',
-    estado: cav < 50 ? 'ADVIERTE' : 'CUMPLE',
-    detalle: `presión de cavidad ${num(cav)} MPa → ${num(clampT, 0)} t. `
-      + (cav < 50
-        ? `⚠ §5.5.3: "molders will generally use packing pressures in the vicinity of 50 MPa" — el moldeador empacará ahí aunque el análisis diga menos, así que el tonelaje real será mayor`
-        : 'por encima del piso de empaque del libro ✓'),
+    medido: pCierre, limite: 50, unidad: 'MPa',
+    estado: pCierre < 50 ? 'ADVIERTE' : 'CUMPLE',
+    detalle: `llenado ½·p_fill = ${num(cav)} MPa · empaque p_pack = ${num(dz.packMPa ?? NaN)} MPa (${dz.packFuente ?? '—'}) → cierra con ${num(pCierre)} MPa (manda el ${dz.clampManda ?? 'llenado'}) → ${num(clampT, 1)} t (Eq 5.29, sin el 10 % de margen de la máquina). `
+      + (pCierre < 50
+        ? `⚠ §5.5.3: "molders will generally use packing pressures in the vicinity of 50 MPa" — con el p_pack declarado el cierre queda abajo de eso: si el moldeador empaca a 50, el tonelaje real será mayor`
+        : 'con el piso de empaque del libro ✓'),
   });
 
   // ── 6) Área PROYECTADA, con descuento por ventanas — §5.5.3 / §3.4.3 ──
@@ -1122,14 +1155,20 @@ export function contratoContraccion(pkg: MoldPackage): ContratoSubsistema {
     // NOMINAL sale ≤ 0, el molde está mal diseñado (VIOLA). Si solo el extremo del
     // rango lo hace, el molde está bien pero existe una condición de proceso
     // alcanzable que sobre-empaca: eso se ADVIERTE al moldeador, no se reprueba.
-    estado: sh.nominalPct <= 0 ? 'VIOLA' : (sh.positiva ? 'CUMPLE' : 'ADVIERTE'),
+    //
+    // ⚠ LA CONSTANTE QUE PARECÍA HALLAZGO (orden 2026-10-24-b · materiales-contraccion y juez C D3): el
+    // extremo inferior del rango se evalúa al techo práctico de empaque de §10.1.6, max(1.2·P_iny, 100 MPa).
+    // Para TODA pieza ABS que llena a menos de 83 MPa eso es s(132 °C, 100 MPa) = −0.25 %: el mismo ⚠ para
+    // cualquier pieza, no una medida de la tuya. Mientras el proceso no declare SU presión máxima de
+    // empaque (ficha del grado o tryout), ese extremo NO se juzga: SIN-CABLEAR. Lo que SÍ se mide es el
+    // NOMINAL a tu p_pack: si sale ≤ 0, el molde está diseñado en sobre-empaque y VIOLA.
+    estado: sh.nominalPct <= 0 ? 'VIOLA' : 'SIN-CABLEAR',
     detalle: sh.nominalPct <= 0
-      ? `⚠ la contracción NOMINAL da ${num(sh.nominalPct, 2)} % ≤ 0: el molde está diseñado en SOBRE-EMPAQUE. No es precisión — la pieza no sale de costillas ni bosses. `
+      ? `⚠ la contracción NOMINAL da ${num(sh.nominalPct, 2)} % ≤ 0 a ${num(sh.pNominalMPa ?? NaN)} MPa (${sh.pNominalFuente ?? '—'}): el molde está diseñado en SOBRE-EMPAQUE. No es precisión — la pieza no sale de costillas ni bosses. `
         + 'Un optimizador que minimice contracción diseña un molde que NO EXPULSA'
-      : sh.positiva
-        ? `nominal ${num(sh.nominalPct, 2)} % y el límite inferior ${num(sh.lowPct, 2)} % siguen positivos ✓ (escala del molde ×${sh.moldScale.toFixed(5)})`
-        : `nominal ${num(sh.nominalPct, 2)} % ✓, pero empacando al máximo del libro (${num(Math.max(1.2 * pkg.diseno.fillMPa, 100), 0)} MPa) la contracción cae a ${num(sh.lowPct, 2)} % ≤ 0: `
-          + 'AVISAR al moldeador que existe una ventana de proceso que sobre-empaca y trabaría la pieza en costillas y bosses §10.1.6',
+      : `nominal ${num(sh.nominalPct, 2)} % a ${num(sh.pNominalMPa ?? NaN)} MPa (${sh.pNominalFuente ?? '—'}) > 0 ✓ — el extremo inferior del rango (${num(sh.lowPct, 2)} % a ${num(sh.pHighMPa ?? Math.max(1.2 * pkg.diseno.fillMPa, 100), 0)} MPa, techo práctico de §10.1.6) `
+        + 'es el mismo para toda pieza ABS que llena a < 83 MPa: no mide TU proceso. Se juzga cuando declares tu presión MÁXIMA de empaque (ficha del grado o tryout)',
+    deuda: sh.nominalPct <= 0 ? undefined : 'la presión máxima de empaque del proceso (ficha del grado / tryout) — con ella el extremo inferior deja de ser la constante de 100 MPa',
   });
 
   // ── 2) La recomendación es un RANGO, no un número — §10.1.6 ──
@@ -1138,7 +1177,7 @@ export function contratoContraccion(pkg: MoldPackage): ContratoSubsistema {
     criterio: 'la recomendación es un RANGO (inferior con pack largo y alto, superior con pack corto y flojo), y si sale ancho se recomienda pack extendido',
     medido: sh.spanPct, unidad: '% de span',
     estado: sh.anchoExcesivo ? 'ADVIERTE' : 'CUMPLE',
-    detalle: `rango ${num(sh.lowPct, 2)} – ${num(sh.highPct, 2)} % (span ${num(sh.spanPct, 2)}), nominal ${num(sh.nominalPct, 2)} % `
+    detalle: `rango ${num(sh.lowPct, 2)} – ${num(sh.highPct, 2)} % (span ${num(sh.spanPct, 2)}), nominal ${num(sh.nominalPct, 2)} % a ${num(sh.pNominalMPa ?? NaN)} MPa (${sh.pNominalFuente ?? '—'}) `
       + `· límites del libro: P_max = max(1.2·Pinj, 100 MPa), P_min = min(0.4·Pinj, 30 MPa) con T = (T_noflow+T_melt)/2`
       + (sh.anchoExcesivo ? ' — ANCHO: recomendar al moldeador pack extendido con presiones altas' : ''),
   });
@@ -1168,28 +1207,33 @@ export function contratoContraccion(pkg: MoldPackage): ContratoSubsistema {
   // §10.3.1 con la FÍSICA del libro (Ec. 10.19): el pandeo se evalúa con las
   // contracciones que el propio paquete ya calculó en sus extremos de empaque —
   // s_centro con pack alto (lowPct) y s_borde con pack flojo (highPct).
+  // ⚠ LA VENTANA ENTERA NO ES UN DISPARO (orden 2026-10-24-b · materiales-contraccion y juez C D3): Eq 10.19
+  // compara s_borde − s_centro de UN disparo (lo que se contrae la orilla, que se empacó menos, contra el
+  // centro). Aquí se usaba (high − low): la ventana de PROCESO entera — el extremo de 100 MPa contra el de
+  // 30 MPa con el fundido caliente. MEDIDO en la 1594C Box: 0.029 contra el umbral 0.0041 ⇒ «PANDEA»; con
+  // la caída de empaque centro→borde de un disparo (10–15 MPa, materiales) saldría 0.0018–0.0027: NO pandea.
+  // El paquete no trae p(centro) ni p(borde) de un disparo: para el área cerrada el criterio pasa a
+  // SIN-CABLEAR hasta que un solver de empaque los dé. El MARCO sigue juzgado: su veredicto es topológico.
   const topo = pkg.spec.warpageTopology;
   const Whalf = Math.min(pkg.spec.Lmm, pkg.spec.Wmm) / 2;
   const warpCrit = 0.44 * (pkg.spec.wallMm / Whalf) ** 2;
-  const dsPandeo = (sh.highPct - sh.lowPct) / 100;
-  const pandearia = dsPandeo > warpCrit;
+  const dsVentana = (sh.highPct - sh.lowPct) / 100;
   C.push({
     id: 'contr-warpage-topologia', subsistema: S, cita: '§10.3.1',
     criterio: 'el alabeo lo decide la TOPOLOGÍA: un marco con ventana está desacoplado y no alabea; un área cerrada pandea si (s_borde − s_centro) > 0.44·(h/W)²',
-    medido: dsPandeo, limite: warpCrit, unidad: 'Δs',
-    estado: !topo ? 'SIN-CABLEAR'
-      : topo.tipo === 'marco' ? 'CUMPLE'
-        : pandearia ? 'VIOLA' : 'CUMPLE',
+    limite: warpCrit, unidad: 'Δs',
+    estado: topo && topo.tipo === 'marco' ? 'CUMPLE' : 'SIN-CABLEAR',
     detalle: !topo
       ? `sin datos de raster — el criterio del libro sería Δs > ${warpCrit.toFixed(5)} = 0.44·(${pkg.spec.wallMm}/${Whalf.toFixed(0)})²`
-      : `topología: ${topo.tipo} (${(topo.interiorEmptyFrac * 100).toFixed(0)} % interior vacío) · Δs de empaque ${dsPandeo.toFixed(5)} vs umbral ${warpCrit.toFixed(5)} (Ec. 10.19) — `
+      : `topología: ${topo.tipo} (${(topo.interiorEmptyFrac * 100).toFixed(0)} % interior vacío) · umbral ${warpCrit.toFixed(5)} = 0.44·(${pkg.spec.wallMm}/${Whalf.toFixed(0)})² (Ec. 10.19) — `
         + (topo.tipo === 'marco'
           ? 'MARCO: "the material within the molding is in continuous contact" NO aplica — la contracción despareja se acomoda EN EL PLANO, no pandea ✓'
-          : pandearia
-            ? 'ÁREA CERRADA sobre el umbral: "may only be resolved through out of plane distortion of the part" — PANDEA. Remedio: emparejar el empaque (gate/pack) o abrir el área'
-            : 'área cerrada pero Δs bajo el umbral: no pandea ✓')
-        + ' · el alabeo por ESPESOR (Ec. 10.17-10.18, gradiente núcleo↔cavidad) lo calcula warpage.ts: 2 °C bastan para 1.6 mm',
-    deuda: topo ? undefined : 'dfm-mesh.warpageTopology clasifica la pieza; pasar al spec para activar este criterio',
+          : `ÁREA CERRADA: Ec. 10.19 pide s_borde − s_centro de UN disparo y el paquete no trae la presión de empaque en el centro y en la orilla. `
+            + `La ventana de proceso entera (${dsVentana.toFixed(5)}, de ${num(sh.pHighMPa ?? 100, 0)} a ${num(sh.pLowMPa ?? 30, 0)} MPa) no es un disparo: no se juzga con ella`)
+        + ' · el alabeo por ESPESOR (Ec. 10.17-10.18, gradiente núcleo↔cavidad) lo calcula warpage.ts',
+    deuda: !topo ? 'dfm-mesh.warpageTopology clasifica la pieza; pasar al spec para activar este criterio'
+      : topo.tipo === 'marco' ? undefined
+        : 'la presión de empaque en el centro y en la orilla de UN disparo (solver de empaque): con ella s_borde − s_centro sale del Tait (Ec. 10.19)',
   });
 
   return resumir(S, C);

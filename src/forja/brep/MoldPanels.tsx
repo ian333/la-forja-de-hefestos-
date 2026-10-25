@@ -12,6 +12,7 @@ import { GOLD } from './ui-theme';
 import { Ic } from './icons';
 import { moldThermalResistanceStudy, heatToExtractW } from '../mold/thermal-resistance';
 import { estPartVolumeCc } from '../mold/feed';
+import { P_PACK_DEFECTO_MPA } from '../mold/moldmachine';
 import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
 import type { CalcPaso } from '../mold/cooling-design';
 import { construirMolde, CICLO_KAZMER, cotizacionPieza, cotizacionSvg, DADO_PIEZA, type PiezaSpec } from '../mold/estudio-molde-datos';
@@ -609,7 +610,17 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
                 style={{ width: '100%', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }} />
             </label>
           </div>
-          <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 3 }}>sin cascarón en el árbol la pared se lee MACIZA (la menor dimensión) — un STEP siempre necesita declararla</div>
+          {/* LA PRESIÓN DE EMPAQUE (orden 2026-10-24-b): p_pack, 50 MPa por defecto (§5.5.3), editable. Con ella se
+              cierra el molde (Eq 5.29, la mayor entre ½·p_fill y p_pack) y se dimensionan soporte, pilares y expulsión. */}
+          <label style={{ display: 'grid', gridTemplateColumns: '1fr 5.5em', alignItems: 'center', gap: 6, marginTop: 5, fontSize: 10, color: '#8fa1b8' }}>
+            <span>presión de empaque (MPa) <span style={{ opacity: 0.7 }}>· 50 por defecto (§5.5.3)</span></span>
+            <input data-testid="intake-ppack" type="number" step={1} min={1} max={200}
+              defaultValue={intake.packMPa ?? (ciclo.pieza.spec as any).packMPa ?? P_PACK_DEFECTO_MPA}
+              onBlur={(e) => { const v = parseFloat(e.target.value); const ahora = intake.packMPa ?? (ciclo.pieza!.spec as any).packMPa ?? P_PACK_DEFECTO_MPA; if (Number.isFinite(v) && v > 0 && v !== ahora) setIntake({ packMPa: v }); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+              style={{ width: '100%', fontFamily: "'JetBrains Mono', monospace" }} />
+          </label>
+          <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 3 }}>sin cascarón en el árbol la pared se lee MACIZA (la menor dimensión) — un STEP siempre necesita declararla · el empaque cierra el molde y carga el soporte, los pilares y la expulsión</div>
         </div>
       )}
       {cand(ciclo.e1.macizo, 'ciclo-macizo')}

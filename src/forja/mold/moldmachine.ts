@@ -83,6 +83,13 @@ export interface MachineSpec {
   margin?: number;
   /** Área proyectada REAL (mm²) desde dfm-mesh. Si se omite, se usa L×W (bbox). */
   projectedAreaMm2?: number;
+  /** p_pack — presión de EMPAQUE en la cavidad (MPa), declarada en el intake. Sin ella, 50 MPa
+   *  (`P_PACK_DEFECTO_MPA`, §5.5.3). Cierra el molde con ½·p_fill (gana la mayor) y de ese cierre
+   *  salen placa de soporte, pilares y expulsión. Ver `presionesDelMolde`. */
+  packMPa?: number;
+  /** p_fill MEDIDA — `pMaxMPa` del solver FAN de la E5 (desde la boquilla). Sin ella, p_fill es la
+   *  estimada (longitud de flujo ≈ largo) y la pantalla lo dice. Juzga colada, techo y máquina. */
+  fillMPaFan?: number;
   /** §10.3.1: topología de alabeo desde dfm-mesh. */
   warpageTopology?: { tipo: 'marco' | 'placa' | 'mixta'; solidFrac: number; interiorEmptyFrac: number };
   /** §10.1.7: quién firma la contracción (diseñador/moldeador/cliente/prototipo). */
@@ -104,7 +111,14 @@ interface ArchCav {
  * dibujo, un molde óptimo maquinable con placas y plugs de catálogo.
  */
 export interface DiseñoFisico {
+  /** p_fill y la presión media de cavidad al LLENAR (½·p_fill) */
   fillMPa: number; cavityMPa: number;
+  /** de dónde salió p_fill: 'FAN E5' o 'estimada' (longitud de flujo ≈ largo), con su rótulo */
+  fillFuente: PresionesDelMolde['fillFuente']; fillRotulo: string;
+  /** p_pack (MPa) y si la declaró el intake o es la de §5.5.3 */
+  packMPa: number; packFuente: PresionesDelMolde['packFuente'];
+  /** la presión de cavidad con la que se CIERRA y se dimensiona la estructura = max(½·p_fill, p_pack) */
+  clampMPa: number; clampManda: PresionesDelMolde['manda'];
   /** §5.5.1: la velocidad y SU ESCALERA de convergencia (un número sin su
    *  convergencia no es auditable — el libro publica la escalera completa). */
   velocidad: { vMs: number; escalera: number[]; convergio: boolean; vueltas: number };
@@ -168,15 +182,72 @@ const ARCH_CUSTOM: Record<Arch, { feed: string; feedWaste: 'cold' | 'hot-long'; 
  */
 const CAVITY_PRESSURE_FACTOR = 0.5;
 
-/** Presión de llenado + clamp por cavidad (filling.ts, puro). */
-function clampFor(spec: MachineSpec, melt: MeltMaterial, nCav: number): { dPMPa: number; clampTons: number } {
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * LAS DOS PRESIONES CON NOMBRE (orden 2026-10-24-b · juez C, disputa D2 · decisión que ian
+ * delegó a los expertos el 2026-10-24)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * Hasta hoy el molde entero se dimensionaba con UNA presión: la de LLENADO estimada con la
+ * longitud de flujo ≈ largo de la pieza, sin piso. MEDIDO en la 1594C Box (node, pared 3.2):
+ * p_fill 8.6 MPa → cavidad ½·8.6 = 4.3 MPa → cierre 3.1 t → la hoja decía «clamp 2.3 % de 150 t»
+ * y la placa de soporte se calculaba para 4.3 MPa (22 mm + 1 pilar). El propio contrato
+ * `llenado-tonelaje` cita §5.5.3: *"molders will generally use packing pressures in the vicinity
+ * of 50 MPa"* — y solo ADVERTÍA. Con ese mismo cierre de 3 t salía ✗ FUERZA (F_eject / clamp).
+ *
+ *   · p_pack — presión de EMPAQUE/sostenimiento en la cavidad. ENTRADA del intake, 50 MPa por
+ *     defecto (§5.5.3), editable. Cierra el molde junto con la de llenado: Eq 5.29 sobre el área
+ *     proyectada con la MAYOR de las dos (§5.5.3: «el tonelaje se calcula en llenado Y en empaque,
+ *     gana el mayor»). De ese cierre salen la placa de soporte, los pilares y la expulsión.
+ *   · p_fill — presión de LLENADO. El `pMaxMPa` del solver FAN de la E5 cuando el que llama lo
+ *     trae (`spec.fillMPaFan`); si no, la estimada aquí (longitud de flujo ≈ largo), y se DICE.
+ *     Juzga el presupuesto de la colada (§6.2.2), el techo de llenado (§5.1) y la presión de la
+ *     inyectora (§4.3.3).
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+/** p_pack por defecto (MPa) — Kazmer §5.5.3 literal: "in the vicinity of 50 MPa". Editable en el intake. */
+export const P_PACK_DEFECTO_MPA = 50;
+
+export interface PresionesDelMolde {
+  /** p_fill (MPa) — la presión de LLENADO que juzga colada, techo y máquina */
+  fillMPa: number;
+  fillFuente: 'FAN E5' | 'estimada';
+  /** el rótulo para pantalla: de dónde salió p_fill */
+  fillRotulo: string;
+  /** presión MEDIA de cavidad durante el llenado = ½·p_fill (perfil triangular, ver CAVITY_PRESSURE_FACTOR) */
+  cavityMPa: number;
+  /** p_pack (MPa) — declarada en el intake o la de §5.5.3 */
+  packMPa: number;
+  packFuente: 'declarada' | 'por defecto §5.5.3';
+  /** la presión de cavidad que CIERRA el molde = max(½·p_fill, p_pack) — Eq 5.29 / §5.5.3 */
+  clampMPa: number;
+  /** qué fase manda el cierre */
+  manda: 'empaque' | 'llenado';
+  vTrace: ReturnType<typeof convergeVelocityTraced>;
+}
+
+/** Las dos presiones de una pieza (puro). UNA función: la usan el cierre de cada variante y el diseño físico. */
+export function presionesDelMolde(spec: MachineSpec, melt: MeltMaterial): PresionesDelMolde {
   const wallM = spec.wallMm / 1000, flowM = spec.Lmm / 1000;   // longitud de flujo ≈ largo (aprox)
   const vTrace = convergeVelocityTraced(melt, wallM);
-  const v = vTrace.v;
-  const dP = pressureDropSegment(melt, flowM, wallM, v);
+  const fan = Number.isFinite(spec.fillMPaFan) && (spec.fillMPaFan as number) > 0 ? (spec.fillMPaFan as number) : null;
+  const fillMPa = fan ?? pressureDropSegment(melt, flowM, wallM, vTrace.v) / 1e6;
+  const declarada = Number.isFinite(spec.packMPa) && (spec.packMPa as number) >= 0;
+  const packMPa = declarada ? (spec.packMPa as number) : P_PACK_DEFECTO_MPA;
+  const cavityMPa = fillMPa * CAVITY_PRESSURE_FACTOR;
+  const clampMPa = Math.max(cavityMPa, packMPa);
+  return {
+    fillMPa, fillFuente: fan != null ? 'FAN E5' : 'estimada',
+    fillRotulo: fan != null ? 'medida por el solver de llenado (FAN, E5)' : 'estimada (longitud de flujo ≈ largo)',
+    cavityMPa, packMPa, packFuente: declarada ? 'declarada' : 'por defecto §5.5.3',
+    clampMPa, manda: packMPa >= cavityMPa ? 'empaque' : 'llenado', vTrace,
+  };
+}
+
+/** Presión de llenado + clamp por cavidad (filling.ts, puro). El cierre va con la MAYOR de
+ *  ½·p_fill y p_pack (Eq 5.29, §5.5.3) — antes solo con la de llenado, sin piso. */
+function clampFor(spec: MachineSpec, melt: MeltMaterial, nCav: number): { dPMPa: number; clampTons: number } {
+  const pr = presionesDelMolde(spec, melt);
   const projAreaM2 = nCav * (spec.Lmm * spec.Wmm) * 1e-6;      // área proyectada = L×W por cavidad
-  const clamp = clampMetricTons(dP * CAVITY_PRESSURE_FACTOR, projAreaM2);
-  return { dPMPa: dP / 1e6, clampTons: clamp };
+  const clamp = clampMetricTons(pr.clampMPa * 1e6, projAreaM2);
+  return { dPMPa: pr.fillMPa, clampTons: clamp };
 }
 
 export function moldMachine(spec: MachineSpec): MoldPackage {
@@ -209,6 +280,9 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
   const todas: ArchCav[] = [];
   for (const arch of archs) for (const nCav of cavs) {
     const ac = ARCH_CUSTOM[arch];
+    // el cierre con el piso de empaque (orden 2026-10-24-b) ALIMENTA también la tarifa de máquina de Eq 3.24
+    // (UN tonelaje). MEDIDO: a 3.1 t la fórmula extrapolaba (47 + 0.073·T − 4.7·ln T sube cuando T → 0: 41.9 $/h,
+    // más cara que una de 50 t); a 35.8 t da 32.8 $/h → 1594C Box $1.009 → $0.903/pza, cubo $0.436 → $0.391/pza.
     const { clampTons } = clampFor(spec, melt, nCav);
     const cost = estimateMoldCost(buildCostInputs(spec, metal.metal.key, nCav, machiningFactor, machRate, spi, arch));
     const part = estimatePartCost(cost.totalUSD, totalQty, {
@@ -282,11 +356,12 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
  */
 function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, insertos: InsertSizing, melt: MeltMaterial, plastic: string): DiseñoFisico {
   const nCav = win.nCav;
-  const wallM = spec.wallMm / 1000, flowM = spec.Lmm / 1000;
-  const vTrace = convergeVelocityTraced(melt, wallM);
+  const wallM = spec.wallMm / 1000;
+  // LAS DOS PRESIONES (orden 2026-10-24-b): la MISMA función que cerró cada variante (`clampFor`).
+  const pr = presionesDelMolde(spec, melt);
+  const vTrace = pr.vTrace;
   const v = vTrace.v;
-  const fillPa = pressureDropSegment(melt, flowM, wallM, v);
-  const fillMPa = fillPa / 1e6, cavityMPa = fillMPa * CAVITY_PRESSURE_FACTOR;  // media ≈ ½ del pico
+  const fillMPa = pr.fillMPa, cavityMPa = pr.cavityMPa;  // media ≈ ½ del pico
 
   // ── ALIMENTACIÓN (§6.4, LAZO): ΔP asignado → ⌀; si la colada domina el ciclo,
   //    regresar y bajar el ⌀ (§6.4.7). El conflicto §6.4.7↔§6.2.2 se REPORTA, no
@@ -314,7 +389,8 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   // ── CONTRACCIÓN (§10.1.6): rango, no número. Y la alarma que un optimizador
   //    rompería por diseño: s ≤ 0 no es precisión, es una pieza que no expulsa. ──
   const contraccion = shrinkageRecommendation({
-    tait: ABS_TAIT, fillMPa,
+    // el NOMINAL a p_pack (la MISMA presión que cierra el molde, juez C D2); el rango, literal de §10.1.6
+    tait: ABS_TAIT, fillMPa, packMPa: pr.packMPa,
     tNoFlowC: PLASTIC_TNOFLOW[plastic] ?? 132,
     tMeltC: melt.tMelt,
   });
@@ -356,6 +432,9 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   // (`venteoDeReferenciaMm`: la más estricta entre la práctica 0.02 de la partición y el venteo de
   // la E7) — antes aquí caía el default 0.02 y el contrato miraba el de la E7: dos verdades. Con la
   // flecha objetivo al 70 % (regla de Hefestos, dentro de `sizeSupportPlate`).
+  // LA CARGA (orden 2026-10-24-b): `win.clampTons` ya es max(½·p_fill, p_pack)·A_proy (Eq 5.29). Antes
+  // era ½·p_fill a secas: la 1594C Box se dimensionaba para 4.3 MPa (3.1 t) y salía 22 mm + 1 pilar; a los
+  // 50 MPa de §5.5.3 esa misma placa de 36 sin pilares se dobla 0.120 mm = 6 venteos de 0.02.
   const soporte = optimizeSupportPlate({ clampTons: win.clampTons, spanM, widthM, maxPillars: 4, ventGapM: venteoDeReferenciaMm(venteo.hSpecMm) * 1e-3 });
   // §4.2.1: la placa cavidad = prof + 3·⌀ de la línea REAL. DEBE usar el ⌀ de `lineas`
   // (designCoolingLines, física §9.2.4) — NO el estimado preliminar de sizeInserts, o la
@@ -370,7 +449,9 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   const projAreaM2 = nCav * spec.Lmm * spec.Wmm * 1e-6;
   const partCc = spec.volumeMm3 * 1e-3;
   const requerimientos = machineRequirements({
-    projectedAreaM2: projAreaM2, cavityPressureMPa: cavityMPa,
+    // el cierre de la máquina con la MISMA presión que la estructura: max(½·p_fill, p_pack), Eq 5.29.
+    // Antes iba ½·p_fill a secas (4.3 MPa en la 1594C Box → «2.3 % de 150 t»).
+    projectedAreaM2: projAreaM2, cavityPressureMPa: pr.clampMPa,
     // volumen REAL de la colada (§6.2.3), no la proporción fabricada partCc×0.25
     partVolumeCc: partCc, nCav, runnerVolumeCc: alimentacion.volCc,
     fillPressureMPa: fillMPa, ejectionForceN: vector.fEjectN,
@@ -399,6 +480,9 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
 
   return {
     fillMPa: +fillMPa.toFixed(1), cavityMPa: +cavityMPa.toFixed(1),
+    fillFuente: pr.fillFuente, fillRotulo: pr.fillRotulo,
+    packMPa: +pr.packMPa.toFixed(1), packFuente: pr.packFuente,
+    clampMPa: +pr.clampMPa.toFixed(1), clampManda: pr.manda,
     velocidad: { vMs: v, escalera: vTrace.escalera, convergio: vTrace.convergio, vueltas: vTrace.vueltas },
     alimentacion, venteo, contraccion, gate,
     enfriamiento: { qCavidadJ: +qCavJ.toFixed(0), qTotalW: +qTotalW.toFixed(0), cicloS: +cicloS.toFixed(1), lineas },
@@ -459,7 +543,7 @@ function buildReport(spec: MachineSpec, dfm: DFMReport, metal: { metal: MoldMeta
     `╠── COSTO POR PIEZA (§3.4) ───────────────────────────────────────`,
     `║ molde/pza $${win.part.moldPerPart.toFixed(3)} + material $${win.part.materialPerPart.toFixed(3)} + proceso $${win.part.processPerPart.toFixed(3)} → $${win.part.partUSD.toFixed(3)}/pza (ciclo ${win.part.cycleTimeS.toFixed(1)}s)`,
     `╠── DISEÑO FÍSICO · el molde como ecuaciones resueltas ───────────`,
-    `║ LLENADO: ${d.fillMPa} MPa · cavidad ${d.cavityMPa} MPa`,
+    `║ LLENADO: p_fill ${d.fillMPa} MPa (${d.fillRotulo}) · cavidad ${d.cavityMPa} MPa · EMPAQUE p_pack ${d.packMPa} MPa (${d.packFuente}) → cierra con ${d.clampMPa} MPa (manda el ${d.clampManda})`,
     `║ ENFRIAMIENTO: ${d.enfriamiento.qTotalW} W → ${(cl.flowM3s * 1e6).toFixed(0)} cm³/s · Ø ${cl.dMinMm.toFixed(1)}-${cl.dMaxMm.toFixed(1)} mm → plug ${cl.plug?.dme ?? '—'} (${cl.plug?.diaMm ?? '—'} mm) · Re ${cl.reAtPlug.toFixed(0)} ${cl.turbulento ? 'turbulento ✓' : '⚠ laminar'} · ${cl.controller ?? '—'}`,
     `║ EXPULSIÓN: F_eject ${ev.fEjectN.toFixed(0)} N (σ ${(ev.sigmaPa / 1e6).toFixed(1)} MPa · peso ${ev.weightN.toFixed(1)} N g=${ev.gUsed}) → ${d.expulsion.pines.dMinMm.toFixed(2)} mm/pin (cortante gobierna)`,
     `║ PLACAS: soporte ${sp.plateThkMm ?? '—'} mm ${sp.nPillars > 0 ? `+ ${sp.nPillars} pilar(es)` : 'sin pilares'} (δ ${sp.deflectionAtPlateMm} mm = ${sp.hefestos.usoPct} % del venteo ${sp.flashOk ? (sp.hefestos.estado === 'CUMPLE' ? 'ok' : `⚠ ${sp.hefestos.estado} regla de Hefestos`) : '⚠ FLASH'}, ${sp.steelMassKg} kg vs ${kgBase.toFixed(0)} sin pilares) · cavidad ${d.placas.cavidad.plateThkMm ?? '—'} mm (${d.placas.cavidad.governs})`,

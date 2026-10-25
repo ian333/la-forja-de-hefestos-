@@ -74,14 +74,27 @@ export function shrinkage(
  */
 export function shrinkageRecommendation(o: {
   tait: TaitCoeffs; fillMPa: number; tNoFlowC: number; tMeltC: number; tUseC?: number;
+  /** p_pack (MPa) — la presión de empaque del PROCESO (intake; 50 por defecto, §5.5.3). Si viene,
+   *  el NOMINAL se evalúa ahí. Sin ella, el nominal sigue siendo 0.8·p_fill (§10.1.2). */
+  packMPa?: number;
 }): {
   nominalPct: number; lowPct: number; highPct: number; spanPct: number;
   moldScale: number; positiva: boolean; anchoExcesivo: boolean; notas: string[];
+  /** la presión (MPa) a la que se evaluó el nominal, y de dónde salió */
+  pNominalMPa: number; pNominalFuente: 'p_pack' | '0.8·p_fill';
+  /** los extremos de empaque del rango (§10.1.6 literal): low a pHigh, high a pLow con fundido caliente */
+  pHighMPa: number; pLowMPa: number;
 } {
   const K = (c: number) => c + 273.15;
   const tUseK = K(o.tUseC ?? 20);
-  // nominal: el pack típico del libro = 80 % de la presión de llenado (§10.1.2)
-  const pNom = 0.8 * o.fillMPa * 1e6;
+  // NOMINAL — LA PRESIÓN DE EMPAQUE DEL PROCESO (orden 2026-10-24-b, juez C D2: p_pack alimenta
+  // el Tait). Antes: el pack típico del libro = 80 % de la presión de llenado (§10.1.2). MEDIDO en la
+  // 1594C Box: p_fill estimada 8.6 MPa → nominal a 6.9 MPa = 1.49 % (moldScale 1.0151), un empaque que
+  // ningún moldeador corre (§5.5.3: "in the vicinity of 50 MPa"). Con p_pack 50 → 0.58 %.
+  // El RANGO (low/high) NO se toca: sus dos presiones son literales de §10.1.6.
+  const conPack = Number.isFinite(o.packMPa) && (o.packMPa as number) > 0;
+  const pNomMPa = conPack ? (o.packMPa as number) : 0.8 * o.fillMPa;
+  const pNom = pNomMPa * 1e6;
   const nominal = shrinkage(o.tait, { tNoFlowK: K(o.tNoFlowC), pPackPa: pNom, tUseK });
   // límite INFERIOR de contracción: pack alto y largo
   const pHigh = Math.max(1.2 * o.fillMPa, 100) * 1e6;
@@ -107,5 +120,7 @@ export function shrinkageRecommendation(o: {
   return {
     nominalPct: nomPct, lowPct, highPct, spanPct,
     moldScale: nominal.moldScale, positiva, anchoExcesivo, notas,
+    pNominalMPa: +pNomMPa.toFixed(1), pNominalFuente: conPack ? 'p_pack' : '0.8·p_fill',
+    pHighMPa: +(pHigh / 1e6).toFixed(1), pLowMPa: +(pLow / 1e6).toFixed(1),
   };
 }
