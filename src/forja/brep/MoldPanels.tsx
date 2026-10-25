@@ -592,7 +592,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
           <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>INTAKE §2.1.5 — declara tu pieza</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 4 }}>
             <label style={{ fontSize: 10, color: '#8fa1b8' }}>pared (mm)
-              <input data-testid="intake-pared" type="number" step={0.1} min={0.3} defaultValue={ciclo.pieza.pieza.wallMm}
+              <input data-testid="intake-pared" key={`pared-${ciclo.pieza.pieza.wallMm}`} type="number" step={0.1} min={0.3} defaultValue={ciclo.pieza.pieza.wallMm}
                 onBlur={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && v > 0 && v !== ciclo.pieza!.pieza.wallMm) setIntake({ wallMm: v }); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                 style={{ width: '100%', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }} />

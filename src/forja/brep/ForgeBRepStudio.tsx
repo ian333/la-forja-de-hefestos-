@@ -4068,6 +4068,11 @@ export default function ForgeBRepStudio() {
       return;
     }
     if (mold.cursoBusy) return;
+    // LA CARRERA DEL ARRANQUE (medida 3 veces el 2026-10-23/24: la filmadora con el reloj congelado, un clic al dictamen y al molde
+    // en 0.8 s, y salir del campo «pared» del intake): este efecto pone el intake y EL PUENTE re-siembra la E1 en el commit
+    // siguiente; si en medio corría la E2, el molde salía de la pieza MACIZA (agua «manda la pieza 2350 s», 0 pines, 958 h).
+    // Ninguna estación avanza mientras la E1 no sea la del intake de AHORA.
+    if (c.intakeRev !== mold.intakeRev) return;
     // E4 dejó las placas a 0.08 para enseñar el llenado y el visor se veía negro (medido 2026-09-07).
     // Se devuelve el cuerpo ANTES de la estación del agua: el circuito se barrena sobre acero que se ve.
     if (c.estacion >= 5 && moldeOpacidadRef.current !== c.piezaShape) { moldeOpacidadRef.current = c.piezaShape; mold.setMoldOpacity({ 'placa-a-ghost': 0.38, 'placa-b-ghost': 0.38 }); }
@@ -5532,8 +5537,17 @@ export default function ForgeBRepStudio() {
       if (!vivo) return;
       const api = apiInsp();
       // LA APERTURA REAL se LEE del molde abierto (la misma medición del inspector, no la fórmula 2.5·H)
-      api?.inspeccion.estado(1, 0); await espera(450);
-      const ab = api?.animZ('clamp') ?? null; api?.inspeccion.estado(0, 0);
+      // la apertura se LEE cuando el molde terminó de abrir (dos lecturas iguales), no a los 450 ms: en una máquina lenta la
+      // lectura caía a medio camino y el punto 4 decía «abre 0.0 mm · NO CUMPLE» con el molde abierto en pantalla (el revisor, 10-24)
+      api?.inspeccion.estado(1, 0);
+      let ab: number | null = null;
+      for (let k = 0, prev = NaN; k < 20; k++) {
+        await espera(150);
+        const z = api?.animZ('clamp') ?? null;
+        if (z != null && Number.isFinite(z) && z > 1 && Math.abs(z - prev) < 0.05) { ab = z; break; }
+        prev = z ?? NaN;
+      }
+      api?.inspeccion.estado(0, 0);
       if (!vivo) return;
       cerrarFocoMolde();
       const pm = mold.ciclo?.portamoldes as { carreraLibreMm?: number; carreraPedidaMm?: number } | undefined;
