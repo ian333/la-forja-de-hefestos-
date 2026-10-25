@@ -1524,7 +1524,7 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   console.log('── U10 · LAS LENTES DEL FOCO (pared · enfriamiento · llenado)');
   {
     const { lentesDelFoco } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'foco-lentes.ts'));
-    const { coolingTimePlate, ABS_KAZMER } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'cooling.ts'));
+    const { coolingTimePlate, coolingTimeRod, ABS_KAZMER } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'cooling.ts'));
     const { parseSTL } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'stl.ts'));
 
     // ORÁCULO: la Eq 9.5 sobre una placa ABS de 2 mm da los 8.4 s del libro (p.203).
@@ -1574,10 +1574,17 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       r.lentes.every((x) => x.escala.hi > x.escala.lo),
       r.lentes.map((x) => `${x.nombre} ${x.escala.lo.toFixed(1)}→${x.escala.hi.toFixed(1)}`).join(' · '));
 
-    check('LENTE · la ficha habla ESPAÑOL y nombra el punto que manda (no símbolos crudos)',
+    // ACTA R94 (LOS APAGONES, 2026-10-24): el titular ya no dice «el ciclo lo manda … 134 s» — Eq 9.5 (placa) sobre un
+    // poste no es un ciclo. Dice el PAR de lo más grueso: barra (Eq 9.6) y placa (Eq 9.5) del MISMO espesor y material,
+    // barra < placa. Es el mismo check (266 siguen siendo 266): cambia lo que exige del titular y suma el par numérico.
+    const parC = L('enfriamiento').ciclo;
+    check('LENTE · la ficha habla ESPAÑOL y da el PAR barra–placa de lo más grueso (no «tu ciclo»; no símbolos crudos)',
       r.lentes.every((x) => x.titular.length > 25 && x.cuerpo.length > 80 && !/[=]{1}\s*\d/.test(x.titular))
-      && /ciclo lo manda/.test(L('enfriamiento').titular) && L('enfriamiento').peor != null,
-      `«${L('enfriamiento').titular}»`);
+      && /barra, Eq 9\.6/.test(L('enfriamiento').titular) && /placa, Eq 9\.5/.test(L('enfriamiento').titular)
+      && !/ciclo lo manda/.test(L('enfriamiento').titular) && L('enfriamiento').peor != null
+      && !!parC && Math.abs(parC.placaS - tcMax) < 1e-6 && Math.abs(parC.barraS - coolingTimeRod(parC.gruesoMm / 1000, ABS_KAZMER)) < 1e-6
+      && Math.abs(coolingTimePlate(parC.gruesoMm / 1000, ABS_KAZMER) - parC.placaS) < 0.01 * parC.placaS && parC.barraS < parC.placaS,
+      `«${L('enfriamiento').titular}»` + (parC ? ` · h ${parC.gruesoMm.toFixed(2)} mm → barra ${parC.barraS.toFixed(1)} s · placa ${parC.placaS.toFixed(1)} s` : ' · sin par'));
 
     check('LENTE · LA MARCA cae DENTRO de la pieza y coincide con el máximo de la ficha',
       r.lentes.every((x) => {

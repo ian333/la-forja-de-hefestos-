@@ -290,6 +290,31 @@ export function cavityGrid(s: MoldAssemblySpec, D: number): Array<{ cx: number; 
 }
 
 /**
+ * LOS APAGONES (2026-10-24) — LAS DOS BÚSQUEDAS DE MATERIAL QUE CAÍAN EN SILENCIO.
+ *  · ACERO: la clave viene de `MOLD_METALS` (moldbase.ts: 'P20', 'H13', 'Al QC-7', 'SS420', 'D2'…) y la tabla térmica
+ *    `ACEROS_MOLDE` (cooling-design.ts) escribe el aluminio sin prefijo ('QC-7'). Con volumen < 5,000 la Máquina cotiza
+ *    aluminio (`selectMetal` → prototipo → 'Al QC-7') y esta hoja calculaba el agua con P20 (k 32 contra 160) sin decirlo.
+ *    Ahora se encuentra el QC-7 (y «AISI P20» = P20, la clave de los specs armados a mano), y una clave que NO tiene datos
+ *    (SS420, D2, Cu 940, A6, S7, 1045, 4140, Al 7075-T6 hoy) REVIENTA con «material sin datos»
+ *    en vez de caer a P20: el agua de un inoxidable no se diseña con la conductividad de otro acero.
+ *  · PLÁSTICO: caía a 'PP' cuando el spec no traía resina; la resina del molde es la del intake y su default es ABS
+ *    (`intake.material ?? 'ABS'`, useMoldStudio). Una resina fuera de `PLASTICOS_A` también revienta.
+ */
+export function aceroTermico(clave: string | undefined): { kWmC: number; sigmaEnduranceMPa: number } {
+  const k = clave ?? 'P20';
+  // el mismo acero con su prefijo de norma o de familia: «AISI P20» (los 21 specs a mano del repo) es P20; «Al QC-7» es QC-7
+  const a = ACEROS_MOLDE[k] ?? ACEROS_MOLDE[k.replace(/^(AISI|Al)\s+/, '')];
+  if (!a) throw new Error(`material sin datos: el acero «${k}» no tiene k ni límite de fatiga en ACEROS_MOLDE (§9.2.5) — no se cae a P20`);
+  return a;
+}
+export function plasticoTermico(clave: string | undefined): (typeof PLASTICOS_A)[string] {
+  const k = (clave ?? 'ABS').toUpperCase();
+  const m = PLASTICOS_A[k];
+  if (!m) throw new Error(`material sin datos: la resina «${k}» no está en PLASTICOS_A (Apéndice A) — no se cae a otra`);
+  return m;
+}
+
+/**
  * ══ LA FUENTE ÚNICA DEL CIRCUITO DE AGUA (orden 2026-09-10 EL AGUA DICE DOS COSAS) ══
  * EL PROCESO §9.2 APLICADO AL MOLDE REAL — traduce el spec del ensamble a la
  * entrada de `coolingDesign` y devuelve, además del diseño, la BANDA en Y que
@@ -318,8 +343,8 @@ export function coolingCircuitDesign(s: MoldAssemblySpec, D: number, o?: {
   const cells = cavityGrid(s, D), { fy } = cavityFootprint(s);
   const ys = cells.map((c) => c.cy);
   const bandY0 = Math.min(...ys) - fy / 2, bandY1 = Math.max(...ys) + fy / 2;
-  const mat = PLASTICOS_A[(s.plastic ?? 'PP').toUpperCase()] ?? PLASTICOS_A.PP;
-  const acero = ACEROS_MOLDE[s.cavityMetal ?? 'P20'] ?? ACEROS_MOLDE.P20;
+  const mat = plasticoTermico(s.plastic);
+  const acero = aceroTermico(s.cavityMetal);
   // largo de línea DISPONIBLE = ancho de placa menos los cantos (el recorte fino
   // por barrenos se hace después, línea por línea)
   const edge = Math.max(16, Math.round(s.widthMm * 0.05));

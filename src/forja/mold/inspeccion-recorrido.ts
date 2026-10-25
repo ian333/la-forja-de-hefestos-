@@ -4,7 +4,8 @@
  * ian (2026-10-22): «el análisis del video del inspector no es algo aparte: es parte del pipeline». El inspector
  * (scripts/inspecciona-molde.cjs) recorría 17 puntos con su corte y su cota; la revisión cruzada (2026-09-28) los dejó en
  * focos y cada agente eligió el suyo. Aquí viven, DENTRO de la app, los cuatro que un moldista revisa primero:
- *   1. ¿El macho llena tu pieza?          — rejilla de rayos sobre la huella (el error que ya nos pasó: 1/50 → 50/50)
+ *   1. ¿El techo del macho toca tu pieza? — rejilla de rayos sobre la huella (el error que ya nos pasó: 1/50 → 50/50);
+ *                                           no ve rasgos menores que el paso de la rejilla (LOS APAGONES, 2026-10-24)
  *   2. ¿Los botadores empujan parejo?      — el centro de los pines contra el centro del área, con su tope (regla de Hefestos)
  *   3. ¿Dónde queda menos acero junto al agua? — el par más justo del Foco (geometría exacta), aunque cumpla
  *   4. ¿Abre, sale y empuja?               — la apertura contra la pieza con su bebedero, y la carrera contra su caja
@@ -49,9 +50,14 @@ const caja = (p: PiezaMolde) => {
 };
 const f1 = (x: number) => x.toFixed(1), f2 = (x: number) => x.toFixed(2);
 
-/** 1 · ¿EL MACHO LLENA TU PIEZA? — en cada punto de una rejilla sobre la huella, un rayo vertical: el techo del macho
- *  (su cruce más alto) tiene que tocar la cara de la pieza (≤ 0.5 mm). Donde no hay pieza o no hay macho, gris. */
-export function rejillaDelMacho(piezas: PiezaMolde[], nx = 10, ny = 5): PuntoRecorrido | null {
+/** 1 · ¿EL TECHO DEL MACHO TOCA TU PIEZA? — en cada punto de una rejilla sobre la huella, un rayo vertical: el techo del
+ *  macho (su cruce más alto) tiene que tocar la cara de la pieza (≤ 0.5 mm). Donde no hay pieza o no hay macho, gris.
+ *  LOS APAGONES (2026-10-24, juez A · D9): «50 de 50 puntos tocan · el macho llena tu pieza» prometía más de lo que mide.
+ *  Con 10×5 rayos el paso es de 9–19 mm en la 1594C y los postes ⌀8 caen ENTRE rayos: quítale un poste y sigue 50/50.
+ *  Ahora dice lo que mide (N rayos sobre el techo, todos a ≤ 0.5 mm) y lo que NO (rasgos menores que el paso, que se
+ *  calcula de la rejilla — no se teclea). La báscula del acero (Σ cavidad + macho + pieza = bloque, `verificacionE3`)
+ *  se suma si el que llama la trae; si no, no se inventa. */
+export function rejillaDelMacho(piezas: PiezaMolde[], nx = 10, ny = 5, bascula?: { errPct: number } | null): PuntoRecorrido | null {
   const pz = piezas.find((p) => p.role === 'pieza'), nu = piezas.find((p) => p.role === 'nucleo');
   if (!pz || !nu) return null;
   const B = caja(pz), N = caja(nu);
@@ -73,13 +79,17 @@ export function rejillaDelMacho(piezas: PiezaMolde[], nx = 10, ny = 5): PuntoRec
   const total = tocan + huecos;
   const cy = (B.mn[1] + B.mx[1]) / 2, cx = (B.mn[0] + B.mx[0]) / 2;
   const v: Veredicto = huecos === 0 ? 'ok' : 'falla';
+  // el PASO de la rejilla: lo que un rasgo tiene que medir para que un rayo seguro lo pise
+  const pasoX = (0.88 * (B.mx[0] - B.mn[0])) / nx, pasoY = (0.88 * (B.mx[1] - B.mn[1])) / ny;
+  const noRevisa = `no revisa rasgos menores que el paso de la rejilla (${f1(pasoX)} × ${f1(pasoY)} mm): postes, nervios`;
+  const bas = bascula && Number.isFinite(bascula.errPct) ? ` Báscula del acero: cavidad + macho + pieza = bloque, error ${bascula.errPct.toFixed(2)} %.` : '';
   return {
-    id: 'macho-llena', pregunta: '¿El macho llena tu pieza?',
-    numero: `${tocan} de ${total} puntos tocan`, limite: 'todos, a ≤ 0.5 mm', veredicto: v,
-    frase: huecos === 0
-      ? `El acero de abajo forma el interior de tu pieza: en ${tocan} puntos su techo toca el plástico. Si no tocara, ese hueco saldría como un bloque macizo de plástico.`
-      : `En ${huecos} de ${total} puntos el macho no llega a la pieza (hasta ${f1(peor)} mm de hueco): ahí el molde haría un bloque macizo de plástico.`,
-    regla: 'rayo vertical contra la malla real del macho y de la pieza · tolerancia 0.5 mm (regla de Hefestos)',
+    id: 'macho-llena', pregunta: '¿El techo del macho toca tu pieza?',
+    numero: huecos === 0 ? `${total} rayos tocan la pieza` : `${huecos} de ${total} rayos no tocan`, limite: 'sobre el techo del macho, a ≤ 0.5 mm', veredicto: v,
+    frase: (huecos === 0
+      ? `Tiré ${total} rayos verticales sobre el techo del macho: todos tocan la pieza a ≤ 0.5 mm. Van uno cada ${f1(pasoX)} × ${f1(pasoY)} mm; un poste o un nervio más chico que eso puede caer entre dos rayos sin que lo vea.`
+      : `En ${huecos} de ${total} rayos el techo del macho no llega a la pieza (hasta ${f1(peor)} mm de hueco): ahí el molde haría un bloque macizo de plástico.`) + bas,
+    regla: `rayo vertical contra la malla real del macho y de la pieza · tolerancia 0.5 mm (regla de Hefestos) · ${noRevisa}`,
     marcas, cotas: [],
     vista: { roles: ['nucleo', 'pieza'], opacs: { nucleo: 0.95, pieza: 0.22 }, corte: { eje: 'y', mm: cy }, camara: { az: 0, el: 22, r: Math.max(B.mx[0] - B.mn[0], 120) * 1.7, objetivo: [cx, cy, (B.mn[2] + B.mx[2]) / 2] } },
   };

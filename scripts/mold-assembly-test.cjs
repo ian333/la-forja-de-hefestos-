@@ -34,7 +34,11 @@
   console.log('BOM filas:', dwg.bom.length, '· nComps:', dwg.nComps, '· escala:', dwg.scale);
   checks.svgValido = dwg.svg.startsWith('<svg') && dwg.svg.includes('</svg>') && dwg.svg.length > 2000;
   checks.bomCompleto = dwg.bom.length >= 9;                             // ≥9 renglones de pieza
-  checks.cajetin = dwg.svg.includes('title-block') && dwg.svg.includes('ISO 2768');
+  // LOS APAGONES (2026-10-24): el cajetín ya no imprime ISO 2768-mK / Ra 0.8 / H7·6H / «DIBUJÓ: La Forja CAD» (nadie los
+  // calculó): la tolerancia general la fija el fabricante y REVISÓ/APROBÓ son firmas humanas. El check mide eso, y que lo
+  // inventado NO vuelva.
+  checks.cajetin = dwg.svg.includes('title-block') && dwg.svg.includes('la fija el fabricante del molde') && dwg.svg.includes('REVISÓ')
+    && dwg.svg.includes('APROBÓ') && !/ISO 2768|Ra 0\.8|La Forja CAD|roscas 6H/.test(dwg.svg);
   checks.notasAnalisis = dwg.svg.includes('§12.3') || dwg.svg.includes('§12.1') || dwg.svg.includes('deflexión');
 
   // escribe el SVG para renderizarlo a PNG y entregarlo

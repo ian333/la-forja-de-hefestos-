@@ -48,6 +48,23 @@ export interface Expediente {
 
 const num = (v: number, d = 2) => (Number.isFinite(v) ? v.toFixed(d) : '—');
 
+/**
+ * LAS HORAS DEL MODELO DE KAZMER (cap. 3) — LOS APAGONES, 2026-10-24.
+ * El expediente enseñaba «molde $49,344 · pieza $0.42» con `machiningRateUSDh ?? 100` («EE.UU. por defecto»,
+ * moldmachine.ts) y formato en-US: una planta del Bajío paga otra cosa y el comprador cuelga. Hasta que exista la
+ * tarifa del cliente en MXN (orden G, semana 2) se enseñan las HORAS, que no dependen de ninguna tarifa:
+ *   maquinado (Eq 3.8-3.12) + acabado (Eq 3.13-3.14) de UN juego de insertos (`estimateMoldCost` → `cost.cavity`),
+ *   × n cavidades × el descuento por juegos de la Tabla 3.5 (`cost.discount`) — la misma cuenta que el dinero, antes
+ *   de multiplicar por la tarifa. La base comprada (Eq 3.15-3.17) y la customización (Eq 3.18) son precios de
+ *   catálogo en USD, no horas: tampoco se escriben.
+ */
+export function horasDelModelo(v: { nCav: number; cost: { discount: number; cavity: { tMachiningH: number; tFinishH: number } } }): { maquinadoH: number; acabadoH: number } {
+  const k = v.nCav * v.cost.discount;
+  return { maquinadoH: v.cost.cavity.tMachiningH * k, acabadoH: v.cost.cavity.tFinishH * k };
+}
+/** El renglón que sustituye al dinero mientras no haya tarifa (lo usan el expediente y la tarjeta del paso 9). */
+export const SIN_TARIFA = 'costo de referencia: falta tu tarifa por hora (MXN)';
+
 /** Deriva las decisiones que el libro exige del humano, con opciones del paquete. */
 export function decisionesDelPaquete(pkg: MoldPackage, rep?: ContratoReporte, ens?: EnsambleMedido): Expediente {
   const D: Decision[] = [];
@@ -59,10 +76,11 @@ export function decisionesDelPaquete(pkg: MoldPackage, rep?: ContratoReporte, en
   const gano = pkg.recomendacion;
   D.push({
     id: 'arquitectura', tema: 'arquitectura y número de cavidades', cita: '§3.2.2 · §3.5',
-    opciones: factibles.map((v) => `${v.arch} × ${v.nCav} cav — molde $${Math.round(v.moldUSD).toLocaleString('en-US')} · pieza $${v.partUSD.toFixed(4)}`),
+    // sin dinero (LOS APAGONES): las horas de Kazmer cap. 3 por variante; la cifra en pesos espera la tarifa del cliente
+    opciones: factibles.map((v) => { const h = horasDelModelo(v); return `${v.arch} × ${v.nCav} cav — insertos: ${Math.round(h.maquinadoH)} h de maquinado + ${Math.round(h.acabadoH)} h de acabado (Kazmer cap. 3)`; }),
     eleccion: `${gano.arch} × ${gano.nCav} cav (recomendación por costo total; "the customer can be given more than one design")`,
     responsable: null, fecha: null,
-    notas: pkg.spec.cavPref != null ? `el cliente IMPUSO ${pkg.spec.cavPref} cavidades (§2.2.2)` : undefined,
+    notas: [pkg.spec.cavPref != null ? `el cliente IMPUSO ${pkg.spec.cavPref} cavidades (§2.2.2)` : '', SIN_TARIFA].filter(Boolean).join(' · '),
   });
 
   // ── 2) Escuela de steel-safe de contracción — §10.2.2 (ninguna es default) ──

@@ -274,7 +274,9 @@ export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
             borderLeft: `2px solid ${colorSev(h)}`, clipPath: corte(7), color: FOCO.tinta,
             boxShadow: `0 0 18px ${colorSev(h)}22`, transition: 'opacity 220ms',
           }}>
-          <div style={{ ...etiqueta, color: colorSev(h) }}>{h.sev === 'falla' ? '◆ punto débil' : '◇ de panzazo'}</div>
+          {/* LOS APAGONES (2026-10-24, debate de 25 expertos): «punto débil» prometía un juicio del molde entero; la ficha
+              solo sabe de su par de barrenos (o de la punta de un pin contra el núcleo). Se rotula como lo que es: una falla. */}
+          <div style={{ ...etiqueta, color: colorSev(h) }}>{h.sev === 'falla' ? '◆ falla' : '◇ de panzazo'}</div>
           <div style={{ font: '600 13px/1.25 Barlow,system-ui,sans-serif', marginTop: 2 }}>{h.titulo}</div>
           <div style={{ font: mono, marginTop: 3, color: colorSev(h) }}>
             {h.tipo === 'agua-atraviesa' ? `se meten ${(-h.medido).toFixed(2)} mm` : h.tipo === 'piel-sobre-punta' ? `${h.medido.toFixed(2)} mm de acero` : `${h.medido.toFixed(2)} mm de acero`}
@@ -296,22 +298,29 @@ export function FocoMoldeHUD({ foco, pieza, sel, onSel, onCerrar, refs }: {
         <div style={{ font: '400 12px/1.4 Barlow,system-ui,sans-serif', color: FOCO.gris, marginTop: 2 }}>
           {barrenos} barrenos identificados · {foco.pares} pares medidos eje a eje
         </div>
+        {/* EL ALCANCE (LOS APAGONES, 2026-10-24): el escaneo mide el AGUA contra cada barreno vecino (`foco-molde.ts`, el doble
+            lazo agua × vecinos) y la punta de cada pin contra el núcleo — nada más. «0 puntos débiles en el molde» prometía el
+            molde entero; lo que NO revisa se dice aquí, junto al número, no en una nota aparte. */}
+        <div data-testid="foco-alcance" style={{ font: '400 11.5px/1.4 Barlow,system-ui,sans-serif', color: FOCO.gris, marginTop: 4 }}>
+          revisé {foco.pares} pares agua contra barreno · no revisé: agua contra agua, pines contra guías, acero contra plástico
+        </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
           <div style={{ flex: 1, padding: '6px 8px', border: `1px solid ${nF ? FOCO.falla : FOCO.cianTenue}`, clipPath: corte(5) }}>
             <div style={{ font: '700 22px Barlow,system-ui,sans-serif', color: nF ? FOCO.falla : FOCO.cian, textShadow: nF ? `0 0 12px ${FOCO.falla}88` : 'none' }}>{nF}</div>
-            <div style={{ ...etiqueta, color: FOCO.gris }}>{nF === 1 ? 'punto débil en el molde' : 'puntos débiles en el molde'}</div>
+            <div style={{ ...etiqueta, color: FOCO.gris }}>{nF === 1 ? 'choque entre barrenos' : 'choques entre barrenos'}</div>
           </div>
           <div style={{ flex: 1, padding: '6px 8px', border: `1px solid ${nA ? FOCO.aviso : FOCO.cianTenue}`, clipPath: corte(5) }}>
             <div style={{ font: '700 22px Barlow,system-ui,sans-serif', color: nA ? FOCO.aviso : FOCO.cian }}>{nA}</div>
             <div style={{ ...etiqueta, color: FOCO.gris }}>de panzazo</div>
           </div>
         </div>
-        {H.length === 0 && <div style={{ font: '500 13px Barlow,system-ui,sans-serif', color: FOCO.cian, marginTop: 10 }}>Nada que reportar: ningún barreno se mete en otro y cada pin entra hasta su punta.</div>}
+        {H.length === 0 && <div style={{ font: '500 13px Barlow,system-ui,sans-serif', color: FOCO.cian, marginTop: 10 }}>Nada que reportar en lo revisado: ninguna línea de agua se acerca a un barreno vecino bajo ½·⌀ y cada pin entra hasta su punta.</div>}
       </div>
 
       {/* la lista: cada hallazgo, un clic → la cámara vuela ahí */}
       {H.length > 0 && (
-        <div style={{ position: 'absolute', left: 18, top: 248, width: 330, maxHeight: 'calc(100% - 330px)', overflowY: 'auto', pointerEvents: 'auto',
+        // la cabecera creció dos renglones (el alcance): la lista baja 40 px para no quedar debajo
+        <div style={{ position: 'absolute', left: 18, top: 288, width: 330, maxHeight: 'calc(100% - 370px)', overflowY: 'auto', pointerEvents: 'auto',
           display: 'flex', flexDirection: 'column', gap: 6 }}>
           {H.map((h, i) => (
             <button key={h.id} data-testid={`foco-hallazgo-${i}`} onClick={() => onSel(sel === i ? null : i)} style={{
