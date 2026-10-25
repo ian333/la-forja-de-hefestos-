@@ -1567,3 +1567,151 @@ export function TarjetaEstacion({ titulo }: { titulo: string }) {
     </div>
   );
 }
+
+/**
+ * LA PUERTA QUE DICE NO — la tarjeta del paso 2 (orden C, 2026-10-24; juez A, disputa D7).
+ * ============================================================================================================================
+ * Lo que la máquina midió al soltar (matrícula, cuerpos, unidades, contrasalidas sobre la apertura del paso 5) dicho en palabras
+ * de taller, con su semáforo (pasa / aviso / no / pregunta) y — si no se puede — la razón y lo que haría falta. Aquí vive
+ * también el error de entrada (`rp-error`): antes estaba en un panel que con la pieza en pantalla ni se dibujaba.
+ * Es ANÁLISIS (un dato que se juzga): piel cyberpunk — forma + palabra + color, nunca solo color (◆ no, ◇ aviso, ✓ pasa, ? pregunta).
+ * `compacta`: lo que queda en los pasos 3–5 cuando el camino está cerrado — una línea que se toca para volver a ver la tarjeta.
+ */
+export function TarjetaPuerta({ puerta, error, midiendo, compacta = false, izquierda = 18, onElegirSolido, onUnidades, onAbrir, onCerrar }: {
+  puerta: import('../mold/stl').PuertaDeLaPieza | null;
+  /** «no se pudo abrir …» — el error de la entrada */
+  error?: string;
+  /** la espera se dice: «abriendo…», «midiendo el sólido n.º 2…» */
+  midiendo?: string;
+  /** dónde empieza (en el modo camino, pegada al borde; con los paneles del CAD, a su derecha) */
+  izquierda?: number;
+  compacta?: boolean;
+  onElegirSolido?: (i: number) => void;
+  onUnidades?: (u: 'mm' | 'pulgadas') => void;
+  onAbrir?: () => void;
+  onCerrar?: () => void;
+}) {
+  const COL = { verde: PIEL.pasa, ambar: PIEL.aviso, rojo: PIEL.falla, pregunta: PIEL.aviso } as const;
+  const FORMA = { verde: '✓', ambar: '◇', rojo: '◆', pregunta: '?' } as const;
+  const FILA = { ok: { c: PIEL.cumple, f: '✓' }, aviso: { c: PIEL.avisoTexto, f: '◇' }, falla: { c: PIEL.fallaTexto, f: '◆' }, pregunta: { c: PIEL.avisoTexto, f: '?' } } as const;
+  const base = { position: 'absolute' as const, left: izquierda, zIndex: 8, background: PIEL.fondo.vidrio, color: PIEL.texto.primario };
+  const espera = midiendo ? (
+    <div data-testid="puerta-midiendo" style={{ font: `500 12.5px ${PIEL.fuente.cuerpo}`, color: PIEL.medido, marginTop: 6 }}>{midiendo}</div>
+  ) : null;
+  if (error) {
+    return (
+      <div data-testid="puerta-pieza" data-estado="error" style={{ ...base, top: 64, width: 'min(364px, 31vw)', padding: '12px 16px 14px', borderLeft: `3px solid ${PIEL.falla}` }}>
+        <div style={{ font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.18em', color: PIEL.fallaTexto }}>LA PUERTA · PASO 2</div>
+        <div style={{ font: `700 18px/1.15 ${PIEL.fuente.titulo}`, marginTop: 4, color: PIEL.falla }}>◆ NO PUDE ABRIR TU ARCHIVO</div>
+        <div data-testid="rp-error" style={{ font: `500 13px/1.45 ${PIEL.fuente.cuerpo}`, marginTop: 8, color: PIEL.fallaTexto }}>{error}</div>
+        <div style={{ font: `400 12.5px/1.45 ${PIEL.fuente.cuerpo}`, marginTop: 8, color: PIEL.texto.secundario }}>Suelta otro archivo: .step, .stp (el molde) o .stl (la revisión).</div>
+      </div>
+    );
+  }
+  if (!puerta) {
+    if (!midiendo) return null;
+    return (
+      <div data-testid="puerta-pieza" data-estado="midiendo" style={{ ...base, top: 64, width: 'min(364px, 31vw)', padding: '12px 16px 14px', borderLeft: `3px solid ${PIEL.medido}` }}>
+        <div style={{ font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.18em', color: PIEL.texto.secundario }}>LA PUERTA · PASO 2</div>
+        {espera}
+        <div style={{ font: `400 12px/1.45 ${PIEL.fuente.cuerpo}`, color: PIEL.texto.tenue, marginTop: 4 }}>reviso que esté cerrada, cuántos cuerpos trae y si sale del molde en línea recta</div>
+      </div>
+    );
+  }
+  const p = puerta, col = COL[p.estado], cs = p.medida.contrasalidas;
+  const datos = {
+    'data-estado': p.estado, 'data-cierra': p.cierraDesde ?? '', 'data-ms': p.medida.ms, 'data-fuente': p.medida.fuente,
+    'data-ms-importar': p.medida.tiempos?.importarMs ?? '', 'data-ms-entrada': p.medida.tiempos?.entradaMs ?? '',
+    'data-ms-tesela': p.medida.tiempos?.teselaMs ?? '', 'data-ms-puerta': p.medida.tiempos?.puertaMs ?? '',
+    'data-cuerpos': p.medida.cuerpos.lista.length || p.medida.malla.componentes, 'data-elegido': p.medida.cuerpos.elegido,
+    'data-malla': p.medida.malla.estado, 'data-aristas-sueltas': p.medida.malla.aristasSueltas, 'data-brep': p.medida.malla.brepValido == null ? '' : p.medida.malla.brepValido ? 1 : 0,
+    'data-contrasalidas': cs.regiones.length, 'data-moldable': cs.moldable, 'data-pintados': cs.triangulos.length,
+  };
+  if (compacta) {
+    const n = cs.regiones.length;
+    return (
+      <div data-testid="puerta-candado" {...datos} onClick={onAbrir} style={{ ...base, top: 64, padding: '7px 12px', cursor: onAbrir ? 'pointer' : 'default', pointerEvents: 'auto',
+        borderLeft: `3px solid ${col}`, font: `600 12px ${PIEL.fuente.titulo}`, letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ color: col }}>{FORMA[p.estado]}</span>
+        <span>{p.estado === 'pregunta' ? 'LA PUERTA ESPERA TU RESPUESTA' : n > 0 ? `${n} ${n === 1 ? 'CONTRASALIDA' : 'CONTRASALIDAS'}` : p.titulo}</span>
+        <span style={{ color: PIEL.texto.tenue, fontWeight: 500 }}>· pasos {p.cierraDesde}–9 cerrados</span>
+      </div>
+    );
+  }
+  // ε de las zonas que no se estiran: el rango basta (seis números casi iguales son ruido)
+  const eps = cs.regiones.map((r) => r.dictamen.check?.strainPct).filter((x): x is number => x != null);
+  const lista = [...p.medida.cuerpos.lista].sort((a, b) => b.volCc - a.volCc);
+  const VISIBLES = 8;
+  const esperaCuerpo = p.medida.cuerpos.lista.length > 1 && !p.medida.cuerpos.confirmado;
+  const sospechaUnidades = p.filas.some((f) => f.id === 'unidades' && f.estado === 'pregunta');
+  const boton = (activo: boolean) => ({ display: 'flex', justifyContent: 'space-between', gap: 10, width: '100%', textAlign: 'left' as const, cursor: 'pointer',
+    padding: '5px 9px', marginTop: 4, font: `500 12.5px ${PIEL.fuente.cuerpo}`, color: PIEL.texto.primario,
+    background: activo ? 'rgba(252,238,10,0.10)' : 'rgba(12,30,40,0.85)', border: `1px solid ${activo ? PIEL.operador : PIEL.fondo.hiloFuerte}`, borderRadius: 2 });
+  return (
+    <div data-testid="puerta-pieza" {...datos} style={{ ...base, top: 64, width: 'min(364px, 31vw)', maxHeight: 'calc(100% - 150px)', overflowY: 'auto', pointerEvents: 'auto',
+      padding: '12px 16px 14px', borderLeft: `3px solid ${col}`, boxShadow: p.estado === 'rojo' ? `0 0 26px ${PIEL.falla}26` : undefined }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.18em', color: PIEL.texto.secundario }}>
+        <span>LA PUERTA · PASO 2</span>
+        <span style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+          <span style={{ font: `500 11px ${PIEL.fuente.mono}`, letterSpacing: 0 }} title={`desde que llegó el archivo${p.medida.tiempos ? `: leerlo ${p.medida.tiempos.importarMs} ms · pararlo ${p.medida.tiempos.entradaMs} · teselarlo ${p.medida.tiempos.teselaMs} · la puerta ${p.medida.tiempos.puertaMs}` : ''}`}>{(p.medida.ms / 1000).toFixed(1)} s</span>
+          {onCerrar && <span data-testid="puerta-cerrar" onClick={onCerrar} style={{ cursor: 'pointer', color: PIEL.texto.tenue }}>✕</span>}
+        </span>
+      </div>
+      <div data-testid="puerta-titulo" style={{ font: `700 17px/1.15 ${PIEL.fuente.titulo}`, marginTop: 5, color: col, letterSpacing: '0.02em' }}>{FORMA[p.estado]} {p.titulo}</div>
+      {p.razon && <div style={{ font: `500 13px/1.45 ${PIEL.fuente.cuerpo}`, marginTop: 7, color: PIEL.texto.primario }}>{p.razon}</div>}
+      {espera}
+      {/* ¿CUÁL MOLDEO? — la lista, mayor primero; el que está en pantalla se marca */}
+      {esperaCuerpo && onElegirSolido && (
+        <div data-testid="puerta-lista" style={{ marginTop: 8 }}>
+          {lista.slice(0, VISIBLES).map((s) => {
+            const enPantalla = s.i === p.medida.cuerpos.elegido;
+            return (
+              // `data-en-pantalla`: el que ya se midió — tocarlo CONFIRMA sin volver a medir (los arneses que sueltan un ensamble lo tocan)
+              <button key={s.i} data-testid={`puerta-solido-${s.i}`} data-en-pantalla={enPantalla ? 1 : 0} onClick={() => onElegirSolido(s.i)} style={boton(enPantalla)}>
+                <span style={{ whiteSpace: 'nowrap' }}><b style={{ font: `600 12px ${PIEL.fuente.mono}` }}>n.º {s.i + 1}</b> · {s.volCc.toFixed(2)} cc</span>
+                <span style={{ whiteSpace: 'nowrap', font: `500 11.5px ${PIEL.fuente.mono}`, color: PIEL.texto.secundario }}>≈ {s.tamMm.map((v) => (v >= 10 ? v.toFixed(0) : v.toFixed(1))).join(' × ')} mm</span>
+              </button>
+            );
+          })}
+          {lista.length > VISIBLES && (
+            <div style={{ font: `400 11.5px ${PIEL.fuente.cuerpo}`, color: PIEL.texto.tenue, marginTop: 5 }}>
+              {lista.length - VISIBLES === 1
+                ? `y 1 más chico (${lista[VISIBLES].volCc.toFixed(2)} cc: un tornillo, un empaque, un inserto…)`
+                : `y ${lista.length - VISIBLES} más chicos (de ${lista[lista.length - 1].volCc.toFixed(2)} a ${lista[VISIBLES].volCc.toFixed(2)} cc: tornillos, empaques, insertos…)`}
+            </div>
+          )}
+          <div style={{ font: `400 11px/1.4 ${PIEL.fuente.cuerpo}`, color: PIEL.texto.tenue, marginTop: 4 }}>
+            <span style={{ color: PIEL.operador }}>▮</span> la que ves ahora (tócala para confirmarla) · caja por aristas (≈): para reconocerlas, no para cotizar
+          </div>
+        </div>
+      )}
+      {/* ¿PULGADAS? — un STL no dice sus unidades */}
+      {sospechaUnidades && onUnidades && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <button data-testid="puerta-pulgadas-si" onClick={() => onUnidades('pulgadas')} style={{ ...boton(true), justifyContent: 'center' }}>sí, son pulgadas (×25.4)</button>
+          <button data-testid="puerta-pulgadas-no" onClick={() => onUnidades('mm')} style={{ ...boton(false), justifyContent: 'center' }}>no, son milímetros</button>
+        </div>
+      )}
+      <div style={{ borderTop: `1px solid ${PIEL.fondo.hilo}`, marginTop: 10, paddingTop: 7, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {p.filas.map((f, k) => (
+          <div key={k} data-testid={`puerta-fila-${f.id}`} data-estado={f.estado} title={f.detalle} style={{ display: 'flex', gap: 8, font: `500 12.5px/1.35 ${PIEL.fuente.cuerpo}`, color: FILA[f.estado].c }}>
+            <span style={{ width: 12, flex: 'none', textAlign: 'center' }}>{FILA[f.estado].f}</span><span>{f.texto}</span>
+          </div>
+        ))}
+      </div>
+      {p.hariaFalta.length > 0 && (
+        <div data-testid="puerta-haria-falta" style={{ borderTop: `1px solid ${PIEL.fondo.hilo}`, marginTop: 9, paddingTop: 7 }}>
+          <div style={{ font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.16em', color: PIEL.texto.secundario }}>LO QUE HARÍA FALTA</div>
+          {p.hariaFalta.map((h, k) => <div key={k} style={{ font: `400 12.5px/1.45 ${PIEL.fuente.cuerpo}`, color: PIEL.texto.primario, marginTop: 3 }}>· {h}</div>)}
+          {eps.length > 0 && (
+            <div style={{ font: `400 12px/1.45 ${PIEL.fuente.cuerpo}`, color: PIEL.texto.secundario, marginTop: 3 }}>
+              · ¿se estiran al botarlas? ε = δ/L {eps.length > 1 ? `entre ${Math.min(...eps).toFixed(1)} y ${Math.max(...eps).toFixed(1)} %` : `${eps[0].toFixed(1)} %`}
+              {' '}contra 2 % (Kazmer §11.3.5): {eps.every((e) => e >= 2) ? 'ninguna' : `${eps.filter((e) => e < 2).length} sí`}
+              <span style={{ color: PIEL.texto.tenue }}> (δ = la contrasalida medida, L = la pared que se dobla: regla de Hefestos)</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

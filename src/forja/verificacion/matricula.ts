@@ -692,3 +692,34 @@ export function lineaMatricula(m: Matricula): string {
     + `I=[${m.inercia.I1.toExponential(4)},${m.inercia.I2.toExponential(4)},${m.inercia.I3.toExponential(4)}] `
     + `q=${m.quiralidad.toExponential(3)}${m.quiralidadDeterminada ? '' : '(?)'}`;
 }
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* LA MATRÍCULA EN PALABRAS DE TALLER (orden C · la puerta que dice NO)       */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Lo que la puerta del paso 2 dice de la MALLA, en palabras de taller (nada de χ ni de «no-manifold» en la frase; el número
+ * va en `detalle` para quien lo quiera). Cuatro estados y su consecuencia física:
+ *  · `sana`     — cerrada, cada arista con sus dos caras y todas mirando hacia afuera: la pared y el enfriamiento se pueden
+ *                 medir (los rayos de paridad que usan el Foco y el campo saben qué es «dentro»).
+ *  · `abierta`  — aristas con UNA cara (le faltan triángulos) o con tres o más: un rayo que entra por el hueco ya no sabe si
+ *                 está dentro o fuera — la pared y el enfriamiento MIENTEN cerca de ahí.
+ *  · `volteada` — cerrada pero con el volumen negativo: todas las caras miran hacia adentro (se arregla volteándolas).
+ *  · `revuelta` — cerrada pero con caras volteadas sueltas: el volumen por divergencia no es de fiar; los rayos sí.
+ * Puro: entra la matrícula, salen palabras.
+ */
+export function mallaEnPalabras(m: Matricula): { estado: 'sana' | 'abierta' | 'volteada' | 'revuelta'; frase: string; detalle: string } {
+  const n = (x: number) => x.toLocaleString('es-MX');
+  const detalle = `χ ${m.chi} · ${m.componentes} cuerpo(s) · ${n(m.F)} triángulos · aristas sueltas ${m.bordesFrontera} · con 3+ caras ${m.bordesNoManifold} · volteadas ${m.bordesMalOrientados}`;
+  if (m.bordesFrontera > 0 || m.bordesNoManifold > 0) {
+    const partes = [
+      m.bordesFrontera > 0 ? `${n(m.bordesFrontera)} aristas sueltas (le faltan caras)` : '',
+      m.bordesNoManifold > 0 ? `${n(m.bordesNoManifold)} aristas con tres o más caras` : '',
+    ].filter(Boolean);
+    return { estado: 'abierta', frase: `abierta: ${partes.join(' y ')}`, detalle };
+  }
+  if (m.bordesMalOrientados > 0) return { estado: 'revuelta', frase: `cerrada, pero con ${n(m.bordesMalOrientados)} aristas entre caras volteadas`, detalle };
+  if (m.volumenConSigno <= 0) return { estado: 'volteada', frase: 'cerrada, pero con todas las caras mirando hacia adentro', detalle };
+  const hoyos = m.generoValido && m.genero > 0 ? ` (${m.genero} ${m.genero === 1 ? 'agujero pasante' : 'agujeros pasantes'})` : '';
+  return { estado: 'sana', frase: `cerrada: sin huecos en la superficie${hoyos}`, detalle };
+}

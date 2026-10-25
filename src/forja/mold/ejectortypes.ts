@@ -93,6 +93,52 @@ export function checkUndercut(m: EjectionMaterial, o: {
   };
 }
 
+// ── LA PUERTA (orden C, 2026-10-24): ¿esta contrasalida medida se podría botar ESTIRÁNDOSE? ─────────────────
+/** Una región de contrasalida tal como la mide `dfm-mesh` (§2.3.7) sobre la dirección de apertura del paso 5 (+Z). */
+export interface RegionContrasalida {
+  x0: number; x1: number; y0: number; y1: number; zLo: number; zHi: number;
+  dir: [number, number] | null;
+}
+export interface ContrasalidaDictamen {
+  /** penetración medida a lo largo de su dirección de jale (mm) — la misma lectura que `planSideAction` */
+  deltaMm: number;
+  /** el tramo de pared que tendría que doblarse para soltarla (mm): la altura a la que está el labio */
+  lMm: number;
+  /** null = cavidad sellada (no ventea a ningún lado): ni una corredera la alcanza */
+  check: UndercutCheck | null;
+  /** lo que haría falta, en una línea de taller */
+  haria: string;
+}
+/**
+ * El juez del libro (`checkUndercut`, §11.3.5 Eq 11.20–11.23) cableado a UNA región medida. La geometría sale de la región:
+ *  · δ = cuánto se mete la contrasalida en su dirección de jale (bbox a lo largo de `dir`, como `planSideAction`); con el
+ *    raster de ~0.8 mm, una región de una columna mide δ = una celda: la resolución manda y se dice.
+ *  · L = zHi (la altura a la que empieza el material de arriba = el tramo de pared que se dobla para soltar el labio).
+ *  · A_eff = ancho ⊥ jale × alto del hueco (la cara que roza), como el A_proj de `planSideAction`.
+ *  · φ y h: el libro los da para una TAPA REDONDA (el anillo π·φ·h que corta la placa extractora). Para un labio recto el
+ *    anillo se vuelve el ancho del labio: φ = ancho/π y h = la pared de la pieza.
+ *  Regla de Hefestos, sin cita (L = zHi, φ = ancho/π): el libro solo trae el caso redondo (δ 1 mm sobre L 77 mm, ε 1.3 %).
+ * NO decide la puerta (la puerta cierra con cualquier contrasalida significativa: aquí no hay placa extractora ni
+ * correderas): dice QUÉ HARÍA FALTA.
+ */
+export function contrasalidaQueHariaFalta(m: EjectionMaterial, r: RegionContrasalida, paredMm: number): ContrasalidaDictamen {
+  if (!r.dir) return { deltaMm: 0, lMm: 0, check: null, haria: 'hueco encerrado por todos lados: no lo alcanza ni una corredera — hay que cambiar la pieza (§2.3.7)' };
+  const alongX = Math.abs(r.dir[0]) > Math.abs(r.dir[1]);
+  const deltaMm = +(alongX ? r.x1 - r.x0 : r.y1 - r.y0).toFixed(1);
+  const ancho = Math.max(0.1, alongX ? r.y1 - r.y0 : r.x1 - r.x0);
+  const alto = Math.max(0.1, r.zHi - r.zLo);
+  const lMm = +Math.max(1, r.zHi).toFixed(1);
+  const check = checkUndercut(m, { deltaMm, lMm, aEffM2: ancho * alto * 1e-6, phiMm: ancho / Math.PI, hMm: Math.max(0.3, paredMm) });
+  // el cortante solo se dice si se estira: pasada la cedencia, la fuerza de Eq 11.23 ya no describe nada (medido en la tapa
+  // 1594C: ε 6.6 % daba τ 250 MPa — un número que solo hace ruido)
+  const haria = check.ok
+    ? `podría botarse estirándose con placa extractora: ε ${check.strainPct} % < 2 % (§11.3.5) — aquí no la diseño`
+    : !check.strainOk
+      ? `no se estira (ε = ${deltaMm}/${lMm} = ${check.strainPct} % ≥ 2 %, §11.3.5): pide corredera o botador inclinado (§11.3.6–7)`
+      : `se estiraría (ε ${check.strainPct} % < 2 %) pero la placa extractora la deformaría (τ ${check.shearMPa} MPa ≥ ½ cedencia): pide corredera o botador inclinado (§11.3.6–7)`;
+  return { deltaMm, lMm, check, haria };
+}
+
 export type EjectorType = 'pin' | 'blade' | 'sleeve' | 'stripper';
 /** Decide el tipo de expulsor por la geometría de la pieza (§11.3.1-4). */
 export function chooseEjectorType(feat: {
