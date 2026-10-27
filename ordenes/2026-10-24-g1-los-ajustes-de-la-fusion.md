@@ -93,3 +93,11 @@ mide 35.3 mm). Y los dorados de D, grabados contra eeeb24e, deben re-grabarse co
 - (parcial, 2026-10-24 23:30) código hecho y en el commit; la evidencia del banco (huella ×3 + control «pared» + regresión «reloj
   congelado» + los 5 rotos + dorados) corre en iangpu (`/home/ian/el-plan/qa/semana1/`, log `qa-semana1.log`) y se anota aquí al terminar;
   los dorados se re-graban con la razón de la orden B cuando el banco confirme que se movieron SOLO clamp/soporte/pilares/flecha.
+- **EVIDENCIA (banco del 2026-10-24, build de main fusionado A+B+C+D+E+G0+G1 en iangpu :4280, GPU real, acta `/home/ian/el-plan/qa/semana1/rotos/acta.html`):**
+  - BANCO: **CONFIABLE**. Huella ×3 **VERDE** (`857ac2b532fc5140` las tres, acero `ba09ea8a16f99eb7`, 75 cuerpos, 8 pines).
+  - PAR_DE_CONTROL «pared 2.8»: **MUERDE** (`0ee978028e383b9f`: pared 3.2→2.8, F expulsión 3882→3397 N, t_c pared 21.7→16.6 s).
+  - REGRESIÓN «reloj congelado»: **la carrera no regresó** (misma huella que la sana).
+  - Piezas rotas: **0 de 5 pasaron la puerta** (abierta, normales invertidas, pulgadas, dos cuerpos, la tapa con snaps); la Box sana como
+    STL pasa. Revisado en el acta con los ojos (stills 4K de cada una con su tarjeta).
+  - DORADOS: ROJO exactamente en clampT 3.40→39.42, clampPct 2.3→26.3, nPilares 1→3, flecha 0.0057→0.0082, dictamenViola 6→4 (la
+    orden B); **re-grabados** con la razón y la huella → VERDE; su par de control MUERDE.
