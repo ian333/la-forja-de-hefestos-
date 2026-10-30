@@ -34,6 +34,105 @@ export interface InjectionMachine {
   ejectionForceKN: number;                 // fuerza de expulsión provista (~2 % clamp)
   /** §6.3.1: orificio de boquilla (mm). 4.0 mm típico para nozzles estándar. */
   nozzleOrificeMm?: number;
+  /** §6.3.1: radio de la punta de la boquilla (mm) — «the nozzle of the molding machine mates with the radius of the
+   *  sprue bushing». Solo lo trae una máquina de la ficha de la planta (orden 2026-10-29-g); el libro no da número. */
+  nozzleRadiusMm?: number;
+  /** la máquina viene de la ficha de la planta (no del catálogo de referencia ni del taller) */
+  dePlanta?: boolean;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * LA FICHA DE TU PLANTA (orden 2026-10-29-g · LOS DATOS DE TU PLANTA)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * ian (2026-10-24): «descarga y configura todos sus datos». La planta que compra moldes captura UNA vez sus tarifas por
+ * centro, sus inyectoras (lo que §4.3.3 pide medir: tonelaje, luz entre columnas, daylight mínimo y máximo de la Fig 4.24,
+ * disparo) con su boquilla (§6.3.1: radio y orificio) y su resina. Vive en SU navegador (localStorage) y en un archivo que
+ * ella descarga y sube; nada de esto viaja a nuestro servidor. Lo que no captura queda SIN DATO y la pantalla lo dice —
+ * aquí no hay un solo número de relleno.
+ */
+export interface InyectoraDeLaPlanta {
+  nombre: string;
+  /** fuerza de cierre (t métricas) */
+  tonelajeT?: number;
+  /** luz entre columnas, horizontal × vertical (mm) — §4.3.3 «easily measurable on an available molding machine» */
+  barrasHmm?: number; barrasVmm?: number;
+  /** Fig 4.24: el molde más DELGADO que cierra (A) y el más ALTO que cabe con la platina abierta (B), en mm */
+  daylightMinMm?: number; daylightMaxMm?: number;
+  /** capacidad de disparo (cm³) */
+  disparoCc?: number;
+  /** §6.3.1: la punta de la boquilla — radio y orificio (mm) */
+  boquillaRadioMm?: number; boquillaOrificioMm?: number;
+  /** opcionales: presión máxima de inyección (MPa) y fuerza de expulsión (kN) — sin ellas esos dos criterios no se juzgan */
+  presionMaxMPa?: number; expulsionKN?: number;
+}
+/** tarifas por centro de trabajo (MXN por hora facturada) */
+export interface TarifasDeLaPlanta { fresadoMXNh?: number; edmMXNh?: number; bancoMXNh?: number; ingenieriaMXNh?: number }
+export interface FichaDeLaPlanta {
+  formato: 'la-forja/planta'; version: 1;
+  nombre?: string;
+  tarifas: TarifasDeLaPlanta;
+  inyectoras: InyectoraDeLaPlanta[];
+  /** §4.3.3: «the maximum mold width, INCLUDING cooling plugs, hot runner connectors, etc.» — cuánto sobresalen TUS conectores
+   *  de agua por cada lado del molde (mm). Sin el dato, la luz entre columnas se juzga con la base sola y se dice. */
+  conectoresMm?: number;
+  /** la resina que más corres (clave de la ficha de Kazmer, Apéndice A) — la que el intake propone para una pieza nueva */
+  resina?: string;
+}
+/** la ficha vacía: sin tarifas, sin inyectoras (la app funciona como hoy y lo dice) */
+export const FICHA_PLANTA_VACIA: FichaDeLaPlanta = { formato: 'la-forja/planta', version: 1, tarifas: {}, inyectoras: [] };
+
+const finito = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+/** ¿La ficha trae algo que cambie el cálculo? (tarifas o inyectoras) */
+export function plantaConDatos(p?: FichaDeLaPlanta | null): boolean {
+  return !!p && (Object.values(p.tarifas ?? {}).some((v) => finito(v) && v > 0) || (p.inyectoras ?? []).length > 0);
+}
+/** Lee y VALIDA un archivo de planta (lo que suba el usuario o lo que haya en localStorage). Números ≤ 0 o no numéricos se
+ *  descartan (quedan sin dato) — nunca se rellenan. Devuelve null si no es un archivo de planta. */
+export function leeFichaDeLaPlanta(x: unknown): FichaDeLaPlanta | null {
+  if (!x || typeof x !== 'object') return null;
+  const o = x as Record<string, unknown>;
+  if (o.formato !== 'la-forja/planta') return null;
+  const pos = (v: unknown) => (finito(v) && v > 0 ? v : undefined);
+  const t = (o.tarifas ?? {}) as Record<string, unknown>;
+  const tarifas: TarifasDeLaPlanta = {
+    fresadoMXNh: pos(t.fresadoMXNh), edmMXNh: pos(t.edmMXNh), bancoMXNh: pos(t.bancoMXNh), ingenieriaMXNh: pos(t.ingenieriaMXNh),
+  };
+  const inyectoras: InyectoraDeLaPlanta[] = (Array.isArray(o.inyectoras) ? o.inyectoras : []).flatMap((r) => {
+    if (!r || typeof r !== 'object') return [];
+    const i = r as Record<string, unknown>;
+    const nombre = typeof i.nombre === 'string' && i.nombre.trim() ? i.nombre.trim().slice(0, 60) : '';
+    if (!nombre) return [];
+    return [{
+      nombre, tonelajeT: pos(i.tonelajeT), barrasHmm: pos(i.barrasHmm), barrasVmm: pos(i.barrasVmm),
+      daylightMinMm: pos(i.daylightMinMm), daylightMaxMm: pos(i.daylightMaxMm), disparoCc: pos(i.disparoCc),
+      boquillaRadioMm: pos(i.boquillaRadioMm), boquillaOrificioMm: pos(i.boquillaOrificioMm),
+      presionMaxMPa: pos(i.presionMaxMPa), expulsionKN: pos(i.expulsionKN),
+    }];
+  });
+  return {
+    formato: 'la-forja/planta', version: 1,
+    nombre: typeof o.nombre === 'string' ? o.nombre.slice(0, 80) : undefined,
+    tarifas, inyectoras, conectoresMm: pos(o.conectoresMm),
+    resina: typeof o.resina === 'string' && o.resina.trim() ? o.resina.trim().slice(0, 40) : undefined,
+  };
+}
+/** Una inyectora de la ficha como máquina del motor. Lo que falta va como NaN: `juzgarMaquina` lo dice «sin dato» (los
+ *  criterios DUROS — tonelaje, columnas, daylight máximo, disparo — sin dato NO pasan; presión y expulsión se avisan). */
+export function maquinaDeLaPlanta(i: InyectoraDeLaPlanta): InjectionMachine {
+  const v = (x?: number) => (finito(x) ? x : NaN);
+  return {
+    name: `${i.nombre} (tu planta)`, dePlanta: true,
+    clampTons: v(i.tonelajeT), shotCc: v(i.disparoCc), maxInjPressureMPa: v(i.presionMaxMPa),
+    tieHmm: v(i.barrasHmm), tieVmm: v(i.barrasVmm), minDaylightMm: v(i.daylightMinMm), maxDaylightMm: v(i.daylightMaxMm),
+    ejectionForceKN: v(i.expulsionKN), nozzleOrificeMm: finito(i.boquillaOrificioMm) ? i.boquillaOrificioMm : undefined,
+    nozzleRadiusMm: finito(i.boquillaRadioMm) ? i.boquillaRadioMm : undefined,
+  };
+}
+/** La inyectora del taller como renglón de la ficha (para el botón «usar la del taller»): solo lo que su catálogo publica. */
+export function inyectoraDelTaller(): InyectoraDeLaPlanta {
+  const m = MAQUINA_DEL_TALLER;
+  return { nombre: m.name.replace(/ \(taller\)$/, ''), tonelajeT: m.clampTons, barrasHmm: m.tieHmm, barrasVmm: m.tieVmm,
+    daylightMinMm: m.minDaylightMm, daylightMaxMm: m.maxDaylightMm, disparoCc: m.shotCc, presionMaxMPa: m.maxInjPressureMPa, expulsionKN: m.ejectionForceKN };
 }
 
 /**
@@ -122,6 +221,9 @@ export interface MachineSelection {
    *  dice POR QUÉ la pieza no cabe en la que está en el piso (y `machine` es lo que pediría el mercado).
    *  `null` solo cuando se pide explícitamente sin taller (ejercicios del libro). */
   taller: { machine: InjectionMachine; ok: boolean; issues: string[] } | null;
+  /** LAS INYECTORAS DE TU PLANTA (orden 2026-10-29-g): cada una juzgada con lo que falla y lo que solo avisa. `null` cuando
+   *  la ficha no trae inyectoras (entonces manda el taller y el catálogo de referencia, como antes). */
+  planta?: Array<{ nombre: string; pasa: boolean; fallas: string[]; avisos: string[] }> | null;
 }
 
 /** Juzga UNA máquina: las cuatro restricciones de §4.3.3 + el ajuste (columnas y daylight del molde
@@ -129,33 +231,54 @@ export interface MachineSelection {
 function juzgarMaquina(
   m: InjectionMachine, req: MachineRequirements,
   mold: { wmm: number; lmm: number; stackMm: number; openStrokeMm: number }, needMm: number,
+  /** solo para las máquinas de la ficha de la planta (orden 2026-10-29-g): cuánto sobresalen los conectores del agua */
+  plugs?: { conectoresMm?: number },
 ) {
-  const cierre = m.clampTons >= req.clampNeedTons;
+  // SIN DATO (orden 2026-10-29-g): una inyectora de la ficha puede no traer un número. Los criterios DUROS de §4.3.3
+  // (tonelaje, columnas, daylight máximo, disparo) sin dato NO pasan — no se aprueba lo que no se midió; presión y
+  // expulsión sin dato se AVISAN y no se juzgan. Las máquinas del taller y del catálogo traen todo: nada cambia para ellas.
+  const sd = (x: number) => !Number.isFinite(x);
+  const sinDato: string[] = [];
+  const cierre = !sd(m.clampTons) && m.clampTons >= req.clampNeedTons;
   const shotPct = 100 * req.shotNeedCc / m.shotCc;
   // ventana IDEAL 25-50 % (§4.3.3); pero <25 % es solo advertencia de residencia,
   // no fallo. El gate DURO es que el barril alcance el shot con cojín (≤85 %).
   const shotFits = shotPct <= 85;
   const shotVentana = shotPct >= 25 && shotPct <= 50;
-  const presion = m.maxInjPressureMPa >= req.injPressureNeedMPa;
-  const expulsion = m.ejectionForceKN >= req.ejectionNeedKN;
+  const presion = sd(m.maxInjPressureMPa) || m.maxInjPressureMPa >= req.injPressureNeedMPa;
+  const expulsion = sd(m.ejectionForceKN) || m.ejectionForceKN >= req.ejectionNeedKN;
   // ajuste DURO: cabe entre columnas y el daylight traga el molde ABIERTO
   // (stack + carrera, §6.3.2) — NO el cerrado. Estar por debajo del daylight
   // mínimo es solo advertencia (se agregan risers), no fallo.
   const baseMedida = Number.isFinite(mold.wmm) && Number.isFinite(mold.lmm);
-  const columnas = mold.wmm <= m.tieHmm && mold.lmm <= m.tieVmm;   // NaN → false: sin base medida no cabe (y se dice)
+  // §4.3.3 «the maximum mold width, INCLUDING cooling plugs, hot runner connectors, etc.»: con la ficha de la planta se suman
+  // sus conectores por los DOS lados y en las DOS direcciones (no sabemos por qué cara salen: regla de Hefestos, del lado seguro).
+  const extra = plugs && Number.isFinite(plugs.conectoresMm) ? 2 * (plugs.conectoresMm as number) : 0;
+  const anchoW = mold.wmm + extra, anchoL = mold.lmm + extra;
+  const columnas = anchoW <= m.tieHmm && anchoL <= m.tieVmm;   // NaN → false: sin base medida (o sin luz medida) no cabe (y se dice)
   const daylight = needMm <= m.maxDaylightMm;
   const ajuste = columnas && daylight;
   const fallas: string[] = [];
-  if (!cierre) fallas.push(`clamp ${req.clampNeedTons.toFixed(0)} t > ${m.clampTons} t`);
-  if (!shotFits) fallas.push(`shot ${shotPct.toFixed(0)} % > 85 % del barril (${m.shotCc} cc)`);
+  if (sd(m.clampTons)) fallas.push('tonelaje: sin dato — captúralo en tu planta');
+  else if (!cierre) fallas.push(`clamp ${req.clampNeedTons.toFixed(0)} t > ${m.clampTons} t`);
+  if (sd(m.shotCc)) fallas.push('disparo: sin dato — captura los cm³ de tu unidad de inyección');
+  else if (!shotFits) fallas.push(`shot ${shotPct.toFixed(0)} % > 85 % del barril (${m.shotCc} cc)`);
   if (!presion) fallas.push(`presión ${req.injPressureNeedMPa.toFixed(0)} MPa > ${m.maxInjPressureMPa} MPa`);
   if (!expulsion) fallas.push(`expulsión ${req.ejectionNeedKN.toFixed(1)} kN > ${m.ejectionForceKN} kN`);
+  const conPlugs = extra > 0 ? ` (+ ${(extra / 2).toFixed(0)} mm de conectores por lado = ${anchoW.toFixed(0)}×${anchoL.toFixed(0)}, §4.3.3)` : '';
   if (!baseMedida) fallas.push('columnas sin juzgar: no hay base estándar medida (molde CUSTOM §4.3.4)');
-  else if (!columnas) fallas.push(`base ${mold.wmm.toFixed(0)}×${mold.lmm.toFixed(0)} mm no pasa entre columnas ${m.tieHmm}×${m.tieVmm}`);
-  if (!daylight) fallas.push(`molde abierto ${needMm.toFixed(0)} mm > daylight ${m.maxDaylightMm} mm (§6.3.2)`);
+  else if (sd(m.tieHmm) || sd(m.tieVmm)) fallas.push('columnas: sin dato — mide la luz entre barras de tu máquina (§4.3.3)');
+  else if (!columnas) fallas.push(`base ${mold.wmm.toFixed(0)}×${mold.lmm.toFixed(0)} mm${conPlugs} no pasa entre columnas ${m.tieHmm}×${m.tieVmm}`);
+  if (sd(m.maxDaylightMm)) fallas.push('daylight máximo: sin dato — captura el molde más alto que abre tu máquina (Fig 4.24, cota B)');
+  else if (!daylight) fallas.push(`molde abierto ${needMm.toFixed(0)} mm > daylight ${m.maxDaylightMm} mm (§6.3.2)`);
   const avisos: string[] = [];
-  if (shotPct < 25) avisos.push(`shot ${shotPct.toFixed(0)}% < 25%: barril grande para la pieza → subir cavidades o máquina más chica`);
+  if (sd(m.maxInjPressureMPa)) sinDato.push(`presión de inyección: tu máquina no la declara — no se juzga (pide ${req.injPressureNeedMPa.toFixed(0)} MPa)`);
+  if (sd(m.ejectionForceKN)) sinDato.push(`fuerza de expulsión: tu máquina no la declara — no se juzga (pide ${req.ejectionNeedKN.toFixed(1)} kN)`);
+  if (sd(m.minDaylightMm)) sinDato.push(`daylight mínimo: sin dato — no sé si tu máquina cierra un molde de ${mold.stackMm.toFixed(0)} mm (Fig 4.24, cota A)`);
+  if (plugs && extra === 0) sinDato.push('columnas juzgadas con la base sola: §4.3.3 pide contar los conectores del agua — captura cuánto sobresalen los tuyos');
+  if (!sd(m.shotCc) && shotPct < 25) avisos.push(`shot ${shotPct.toFixed(0)}% < 25%: barril grande para la pieza → subir cavidades o máquina más chica`);
   if (mold.stackMm < m.minDaylightMm) avisos.push(`stack ${mold.stackMm.toFixed(0)} < daylight mín ${m.minDaylightMm}: agregar risers`);
+  avisos.push(...sinDato);
   return { pasa: cierre && shotFits && presion && expulsion && ajuste, cierre, shotPct, shotVentana, presion, expulsion, ajuste, fallas, avisos };
 }
 
@@ -180,10 +303,14 @@ export function selectInjectionMachine(
   catalog: InjectionMachine[] = INJECTION_MACHINES,
   /** la máquina del taller; `null` = ejercicio de libro, solo mercado. */
   taller: InjectionMachine | null = MAQUINA_DEL_TALLER,
+  /** LAS INYECTORAS DE TU PLANTA (orden 2026-10-29-g): si la ficha trae inyectoras, se elige SOLO entre ellas (ni el taller
+   *  ni el catálogo de referencia entran) y los conectores del agua cuentan en la luz entre columnas (§4.3.3). */
+  planta?: { inyectoras: InyectoraDeLaPlanta[]; conectoresMm?: number } | null,
 ): MachineSelection {
-  const sorted = [...catalog].sort((a, b) => a.clampTons - b.clampTons);
   // el daylight tiene que tragar el molde ABIERTO (Tabla 6.1: 264 + 75 = 339).
   const needMm = daylightNeededMm(mold.stackMm, mold.openStrokeMm);
+  if (planta && planta.inyectoras.length) return seleccionEnLaPlanta(req, mold, needMm, planta);
+  const sorted = [...catalog].sort((a, b) => a.clampTons - b.clampTons);
   const arma = (m: InjectionMachine, ev: ReturnType<typeof juzgarMaquina>, ok: boolean, governs: MachineSelection['governs'], issues: string[], t: MachineSelection['taller']): MachineSelection => ({
     machine: m, ok, governs,
     shotPct: +ev.shotPct.toFixed(1), clampUtilPct: +(100 * req.clampNeedTons / m.clampTons).toFixed(1),
@@ -246,5 +373,39 @@ export function selectInjectionMachine(
       holguraMm: +(big.maxDaylightMm - needMm).toFixed(1),
     },
     taller: tallerInfo,
+  };
+}
+
+/**
+ * LA SELECCIÓN EN TU PLANTA (orden 2026-10-29-g) — §4.3.3 contra CADA inyectora de la ficha: cierre, disparo, columnas con
+ * los conectores del agua, daylight del molde abierto (§6.3.2) y, si los declaraste, presión y expulsión. Gana la MÁS CHICA
+ * que pasa (§4.3.3: «if the molding machine provides too much tonnage to a very undersized mold, however, the mold may be
+ * damaged») — la misma regla que el mercado de referencia. Si ninguna pasa, `ok: false` y `issues` dice, máquina por máquina,
+ * QUÉ criterio falla; `machine` queda en la más grande para que la hoja tenga contra qué dibujar.
+ */
+function seleccionEnLaPlanta(
+  req: MachineRequirements, mold: { wmm: number; lmm: number; stackMm: number; openStrokeMm: number }, needMm: number,
+  planta: { inyectoras: InyectoraDeLaPlanta[]; conectoresMm?: number },
+): MachineSelection {
+  const ton = (m: InjectionMachine) => (Number.isFinite(m.clampTons) ? m.clampTons : Infinity);
+  const juicios = planta.inyectoras.map(maquinaDeLaPlanta).sort((a, b) => ton(a) - ton(b))
+    .map((m) => ({ m, ev: juzgarMaquina(m, req, mold, needMm, { conectoresMm: planta.conectoresMm }) }));
+  const lista = juicios.map(({ m, ev }) => ({ nombre: m.name, pasa: ev.pasa, fallas: ev.fallas, avisos: ev.avisos }));
+  const gana = juicios.find((j) => j.ev.pasa);
+  const grande = juicios.reduce((a, b) => ((Number.isFinite(b.m.clampTons) ? b.m.clampTons : -1) > (Number.isFinite(a.m.clampTons) ? a.m.clampTons : -1) ? b : a));
+  const { m, ev } = gana ?? grande;
+  const issues = gana
+    ? ev.avisos
+    : [`ninguna de tus inyectoras admite este molde (§4.3.3): ${juicios.map(({ m: q, ev: e }) => `${q.name}: ${e.fallas.join(' · ')}`).join(' — ')}`];
+  const governs: MachineSelection['governs'] = gana ? 'cierre'
+    : !ev.cierre ? 'cierre' : !(ev.shotPct <= 85) ? 'shot' : !ev.presion ? 'presión' : !ev.expulsion ? 'expulsión' : 'ajuste';
+  return {
+    machine: m, ok: !!gana, governs,
+    shotPct: +ev.shotPct.toFixed(1), clampUtilPct: +(100 * req.clampNeedTons / m.clampTons).toFixed(1),
+    checks: { cierre: ev.cierre, shotVentana: ev.shotVentana, presion: ev.presion, expulsion: ev.expulsion, ajuste: ev.ajuste },
+    issues,
+    apertura: { strokeMm: mold.openStrokeMm, stackMm: mold.stackMm, needMm, holguraMm: +(m.maxDaylightMm - needMm).toFixed(1) },
+    taller: null,
+    planta: lista,
   };
 }

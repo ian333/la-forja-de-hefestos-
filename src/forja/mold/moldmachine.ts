@@ -26,14 +26,15 @@ import { sizeInserts, selectMoldBase, selectMetal, type InsertSizing, type BaseS
 import {
   estimateMoldCost, estimatePartCost, MACHINING_FACTOR, type CostInputs, type CostBreakdown, type PartCostBreakdown,
 } from './moldcost-detailed';
-import { heatToRemove, ABS_KAZMER } from './cooling';
+import { heatToRemove, ABS_KAZMER, type CoolingMaterial } from './cooling';
 import { designCoolingLines, type CoolingLineDesign } from './coolinglines';
-import { ABS_EJECT, ejectionVector, effectiveArea, ejectorPinSizing, type EjectionVector } from './ejection';
+import { ABS_EJECT, ejectionVector, effectiveArea, ejectorPinSizing, type EjectionVector, type EjectionMaterial } from './ejection';
 import { optimizeSupportPlate, sizeCavityPlate, sizeCorePlate, venteoDeReferenciaMm, type PlateSizing, type CavityPlateSizing } from './platesizing';
-import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection } from './machinesizing';
+import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection, type FichaDeLaPlanta } from './machinesizing';
 import { carreraDeApertura } from './threeplate';
-import { designFeedSystem, estPartVolumeCc, FEED_MATERIALS, pressureDropRunner, runnerCoolingTimeS, shearRateRunner, reynolds, type FeedSystemDesign } from './feed';
-import { shrinkageRecommendation, ABS_TAIT } from './shrinkage';
+import { designFeedSystem, estPartVolumeCc, feedMaterial, pressureDropRunner, runnerCoolingTimeS, shearRateRunner, reynolds, type FeedSystemDesign } from './feed';
+import { shrinkageRecommendation, ABS_TAIT, type TaitCoeffs } from './shrinkage';
+import { fichaResinaOError, RESINA_POR_DEFECTO, type FichaResina } from './materials';
 import { designGateProcess, gateFreezeCylS, type GateProcessDesign, type GateType } from './gating';
 import { ventDesign } from './venting';
 
@@ -58,12 +59,17 @@ export interface MachineSpec {
   surfaceMm2: number; volumeMm3: number; wallMm: number;
   /** Producción anual + horizonte total (piezas). */
   annualVolume: number; totalVolume?: number;
-  /** Plástico (llave de PLASTICS). */
+  /** La resina: clave de su ficha del libro (Kazmer Apéndice A, `RESINAS_KAZMER` en materials.ts). Sin ficha → el motor NO
+   *  calcula (`ResinaSinFicha`): antes todo lo que no fuera ABS se volvía PP. Sin declarar: `RESINA_POR_DEFECTO` (ABS). */
   plastic?: string;
   /** Acabado objetivo (SPI) sobre TODA la superficie (o desglose fino). */
   finish?: 'texture' | 'SPI B-3' | 'SPI A-3' | 'SPI A-1';
-  /** Región de manufactura → tarifa de maquinado ($/h facturado). */
+  /** Tarifa de maquinado del MODELO DE REFERENCIA (USD/h). Sin ella, la que asume el libro (`TARIFA_LIBRO_USDH`). No es la de
+   *  ninguna planta: la de la planta va en `planta.tarifas` (MXN/h por centro) y el costo en pesos lo arma `costoDeReferencia`. */
   machiningRateUSDh?: number;
+  /** LOS DATOS DE TU PLANTA (orden 2026-10-29-g): tarifas MXN/h por centro, inyectoras con su boquilla, conectores del agua.
+   *  Con inyectoras, la máquina se elige SOLO entre ellas (§4.3.3); con tarifas, el costo sale en MXN por centro. */
+  planta?: FichaDeLaPlanta;
   /** DFM: geometría declarada de la pieza (costillas, bosses, esquinas…). */
   dfm?: Partial<DFMPart>;
   /** Resina cargada/corrosiva (para el acero). */
@@ -164,14 +170,61 @@ export interface MoldPackage {
   reporte: string[];
 }
 
-/** Densidad del plástico (kg/m³) para masa/calor por ciclo. */
-const PLASTIC_RHO: Record<string, number> = { ABS: 1050, PP: 905, PS: 1040, PC: 1200, PE: 950, PA: 1140, POM: 1410 };
-/** T de no-flujo (°C) — Apéndice A, mismos valores que FEED_MATERIALS en feed.ts. */
-const PLASTIC_TNOFLOW: Record<string, number> = { ABS: 132, PP: 176 };
-/** γ̇ máx y difusividad — Apéndice A (mismos valores que FEED_MATERIALS). */
-const PLASTIC_SHEARMAX: Record<string, number> = { ABS: 50000, PP: 100000 };
-const PLASTIC_ALPHA: Record<string, number> = { ABS: 8.73e-8, PP: 8.15e-8 };
-const PLASTIC_CP: Record<string, number> = { ABS: 2000, PP: 2100, PS: 1900, PC: 1250, PE: 2300, PA: 1700, POM: 1500 };
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * EL MOTOR DE UNA RESINA (orden 2026-10-29-g) — de su ficha del libro (Kazmer Apéndice A, materials.ts) a lo que piden las
+ * ecuaciones: la power-law del llenado (cap 5), el Tait de la contracción (cap 10), el calor por ciclo (cap 9), la expulsión
+ * (cap 11) y la colada (cap 6). Antes vivían aquí cinco tablas a mano (PLASTIC_RHO/CP/TNOFLOW/SHEARMAX/ALPHA): el no-flujo,
+ * γ̇ y α solo tenían ABS y PP; el llenado, el Tait y la expulsión eran SIEMPRE del ABS (`ABS_MG47`, `ABS_TAIT`, `ABS_EJECT`), y
+ * el material de la colada `plastic === 'ABS' ? 'ABS' : 'PP'`. Hallazgo 5 del debate: «elegir PP o PA66 no cambia contracción
+ * ni presión». Ahora UNA función por resina, y sin ficha no hay motor.
+ *
+ * El ABS es la excepción DECLARADA: conserva los números con los que el libro RESUELVE sus ejemplos y que el repo ya verificó
+ * contra ellos — `ABS_MG47` (k 17,070 del cap 5; la tabla imprime 1.71E+04), `ABS_TAIT` (b3m 1.33E+08 del ejemplo de p.240; la
+ * tabla imprime 1.35E+08), `ABS_KAZMER` (α 8.69e-8 y T_eject 97.6 con que el libro calcula sus 8.4/18.9/22.9 s) y `ABS_EJECT`
+ * (los 1,800 y 4,700 N del cup y el bezel). Su densidad y su cp para el calor por ciclo eran 1050 y 2000 a mano: van los del
+ * Apéndice A (1044 y 2340) — MEDIDO en la 1594C Box en el CIERRE de la orden.
+ * La fricción μ = 0.5 de la expulsión NO es de la resina: es la del acero pulido (§11.2, «0.5 for highly polished surfaces»).
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+export interface MotorDeLaResina {
+  clave: string; ficha: FichaResina;
+  melt: MeltMaterial; tait: TaitCoeffs; cooling: CoolingMaterial; eject: EjectionMaterial;
+  /** masa y calor por ciclo (kg/m³, J/kg·°C) — Apéndice A «Density at 20 °C», «Specific heat» */
+  rhoKgM3: number; cpJkgC: number;
+  /** compuerta (§7.1): no-flujo, γ̇ máx y difusividad — Apéndice A */
+  tNoFlowC: number; shearMaxS: number; alphaM2s: number;
+}
+/** μ del acero pulido contra el plástico (Kazmer §11.2: «0.5 for highly polished surfaces») — el mismo de `ABS_EJECT` */
+const MU_ACERO_PULIDO = 0.5;
+export function motorDeLaResina(clave?: string): MotorDeLaResina {
+  const f = fichaResinaOError(clave ?? RESINA_POR_DEFECTO);   // sin ficha → ResinaSinFicha: no se calcula con otra resina
+  const tAgua = (f.refrigeranteMinC + f.refrigeranteMaxC) / 2; // el medio del rango de refrigerante (como el 60 del ABS)
+  const base = {
+    clave: f.clave, ficha: f, rhoKgM3: f.rho20KgM3, cpJkgC: f.cpJkgC, tNoFlowC: f.noFlujoC, shearMaxS: f.corteMaxS, alphaM2s: f.alphaM2s,
+  };
+  if (f.clave === 'ABS') return { ...base, melt: ABS_MG47, tait: ABS_TAIT, cooling: ABS_KAZMER, eject: ABS_EJECT };
+  return {
+    ...base,
+    melt: { k: f.powerK, n: f.powerN, kappa: f.kWmC, tMelt: f.fundidoMedioC, tWall: tAgua },
+    tait: { b1m: f.tait.b1m, b2m: f.tait.b2m, b3m: f.tait.b3m, b4m: f.tait.b4m, b1s: f.tait.b1s, b2s: f.tait.b2s, b3s: f.tait.b3s, b4s: f.tait.b4s,
+      b5: f.tait.b5, b6: f.tait.b6, b7: f.tait.b7, b8: f.tait.b8, b9: f.tait.b9 },
+    cooling: { alpha: f.alphaM2s, tMelt: f.fundidoMedioC, tCoolant: tAgua, tEject: f.dtulC },
+    eject: { E: f.moduloMPa * 1e6, cte: f.cte1C, tSolid: f.noFlujoC, tEject: f.dtulC, mu: MU_ACERO_PULIDO, sigmaYield: f.cedenciaMPa * 1e6, rho: f.rho20KgM3 },
+  };
+}
+
+/** LAS TARIFAS QUE ASUME EL LIBRO (USD/h) — Kazmer §3.3.1.3 (p.50): «Assuming a billed hourly rate for the machinists of
+ *  100 $/h» (sobre los 23.94 $/h de salario del Apéndice D, ×3 por cargas e indirectos) y §3.3.1.5 (p.52): «If the labor
+ *  rate for finishing is 50 $/h». Son las del EJEMPLO del bezel en EE.UU.: el costo con ellas es una REFERENCIA del libro, no
+ *  una cotización. Antes el código las rotulaba «EE.UU. por defecto (Apéndice D ×3)». */
+export const TARIFA_LIBRO_USDH = { maquinado: 100, acabado: 50 } as const;
+
+/** El factor de maquinado de la Tabla 3.4 con el que se calculan las horas (Eq 3.9): EDM (4) si la complejidad de Eq 3.12
+ *  pasa de 2.5 (el bezel del libro, «many narrow ribs … produced primarily with EDM», tiene 2.5), fresado (1) si es baja, y 2
+ *  en medio (regla de Hefestos: la tabla no trae un 2). UNA función: la usan las horas y el centro que las cobra (expediente). */
+export function factorDeMaquinado(spec: Pick<MachineSpec, 'surfaceMm2' | 'wallMm' | 'volumeMm3'>): number {
+  const complexity = (spec.surfaceMm2 * spec.wallMm) / spec.volumeMm3;
+  return complexity > 2.5 ? MACHINING_FACTOR.edm : complexity > 1.5 ? 2 : MACHINING_FACTOR.fresado;
+}
 
 const FINISH_MAP: Record<string, { spi: 'texture' | 'SPI A-1' | 'SPI A-3' | 'SPI B-3' }['spi']> = {
   texture: 'SPI B-3', 'SPI B-3': 'SPI B-3', 'SPI A-3': 'SPI A-3', 'SPI A-1': 'SPI A-1',
@@ -278,7 +331,7 @@ export function areaProyectadaMm2(spec: MachineSpec): number {
  * cono truncado para el volumen) — no se rediseña: el lazo §6.4.7 ya no corre porque el acero ya se cortó; si con él chocan
  * presión y ciclo, el conflicto se REPORTA (§1.2, lo arbitra el humano). */
 function alimentacionDelBebederoCortado(base: FeedSystemDesign, b: NonNullable<MachineSpec['bebederoCortado']>, material: string, nCav: number, partCc: number): FeedSystemDesign {
-  const m = FEED_MATERIALS[material] ?? FEED_MATERIALS.ABS;
+  const m = feedMaterial(material);                               // sin ficha → error, no ABS (fusión G+H)
   const mm = m as unknown as MeltMaterial;
   // EL CAUDAL es el de la PIEZA (V/t_llenado, el MISMO del feed diseñado, de la compuerta y de la columna ①): de la E5 se toma la
   // GEOMETRÍA que cortó, no el caudal con que la dimensionó. MEDIDO en la app (1594C Box): la E5 dimensionó con el volumen de su
@@ -341,9 +394,16 @@ function compuertaDelBebederoCortado(base: GateProcessDesign, b: NonNullable<Mac
   };
 }
 export function moldMachine(spec: MachineSpec): MoldPackage {
-  const melt = ABS_MG47;
-  const plastic = spec.plastic ?? 'ABS';
-  const machRate = spec.machiningRateUSDh ?? 100;             // EE.UU. por defecto (Apéndice D ×3)
+  // LA RESINA DE TU PIEZA (orden 2026-10-29-g): su ficha del libro manda el llenado, la contracción, la colada, el calor y la
+  // expulsión. Sin ficha, `motorDeLaResina` lanza `ResinaSinFicha` y no sale ningún número (antes: ABS_MG47 para todas y la
+  // colada en PP para todo lo que no fuera ABS).
+  const R = motorDeLaResina(spec.plastic);
+  const melt = R.melt;
+  const plastic = R.clave;
+  // la tarifa del MODELO DE REFERENCIA: la que asume el ejemplo del libro (§3.3.1.3, 100 $/h). Elige arquitectura y cavidades
+  // (todo el modelo de cap. 3 está en USD: acero, base, customización); el costo con la tarifa de TU planta (MXN por centro)
+  // lo arma `costoDeReferencia` (expediente.ts) con las HORAS de la ganadora. Antes: «EE.UU. por defecto (Apéndice D ×3)».
+  const machRate = spec.machiningRateUSDh ?? TARIFA_LIBRO_USDH.maquinado;
   const spi = FINISH_MAP[spec.finish ?? 'SPI B-3'];
 
   // ── PUERTA 0: DFM (¿moldeable?) ──
@@ -358,7 +418,7 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
 
   // ── OPTIMIZACIÓN arch × cavidades por COSTO TOTAL @ volumen ──
   const complexity = (spec.surfaceMm2 * spec.wallMm) / spec.volumeMm3;
-  const machiningFactor = complexity > 2.5 ? MACHINING_FACTOR.edm : complexity > 1.5 ? 2 : MACHINING_FACTOR.fresado;
+  const machiningFactor = factorDeMaquinado(spec);
   const totalQty = spec.totalVolume ?? spec.annualVolume;
   // el cliente puede EXIGIR la alimentación (colada caliente por calidad); si no,
   // se optimiza sobre las tres arquitecturas por costo total.
@@ -376,7 +436,8 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
     const { clampTons } = clampFor(spec, melt, nCav);
     const cost = estimateMoldCost(buildCostInputs(spec, metal.metal.key, nCav, machiningFactor, machRate, spi, arch));
     const part = estimatePartCost(cost.totalUSD, totalQty, {
-      VpartMm3: spec.volumeMm3, plastic: plastic as any, feedWaste: ac.feedWaste,
+      // ρ y κ de la ficha (Apéndice A) — antes `PLASTICS[plastic]`, que no traía PS ni PA6 (la E2 tronaba) y tenía el PP a mano
+      VpartMm3: spec.volumeMm3, plastic: plastic as any, resina: { rhoKgM3: R.ficha.rho20KgM3, costKg: R.ficha.costoUSDkg }, feedWaste: ac.feedWaste,
       nCavities: nCav, clampTons, wallMm: spec.wallMm, cycleMode: 'automatico', hotRunner: ac.hotRunner,
     });
     todas.push({ arch, nCav, factible: false, clampTons, moldUSD: cost.totalUSD, partUSD: part.partUSD, totalUSD: cost.totalUSD + totalQty * part.partUSD, cost, part });
@@ -396,7 +457,7 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
 
   // ── DISEÑO FÍSICO: el molde como sistema de ecuaciones acopladas, resuelto de
   //    punta a punta sobre la ganadora (enfriamiento → expulsión → placas → máquina) ──
-  const diseno = physicalDesign(spec, win, base, insertos, melt, plastic);
+  const diseno = physicalDesign(spec, win, base, insertos, melt, R);
   const sel = diseno.maquina.seleccion;
   const maq = { nombre: sel.machine?.name ?? '—', ok: sel.ok, issues: sel.issues };
 
@@ -417,7 +478,8 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
   // `viable: true`, cotizado en $3 M, bajo una bandera que solo decía "verificar".
   // `sel.ok` es la señal correcta: solo es true si pasan las cinco restricciones DURAS;
   // las advertencias blandas (shot <25 %, risers) viven en el otro brazo y no lo apagan.
-  if (!maq?.ok) banderas.push(`NINGUNA inyectora del catálogo admite este molde (§4.3.3): ${maq.issues.join(' · ')}`);
+  // con la ficha de la planta, `issues[0]` ya dice «ninguna de tus inyectoras admite este molde (§4.3.3): <máquina>: <criterio>»
+  if (!maq?.ok) banderas.push(sel.planta ? maq.issues.join(' · ') : `NINGUNA inyectora del catálogo admite este molde (§4.3.3): ${maq.issues.join(' · ')}`);
   const margin = spec.margin ?? 1.6;
   const precioMolde = Math.round(win.cost.totalUSD * margin);
   const entregaSemanas = Math.ceil(win.cost.cavity.tMachiningH / 40) + (win.arch === 'hot-runner' ? 4 : 2) + 2;
@@ -444,7 +506,7 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
  * (cierre+shot+presión+expulsión → inyectora). Cada ecuación aterriza en un
  * componente de catálogo. PURO.
  */
-function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, insertos: InsertSizing, melt: MeltMaterial, plastic: string): DiseñoFisico {
+function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, insertos: InsertSizing, melt: MeltMaterial, R: MotorDeLaResina): DiseñoFisico {
   const nCav = win.nCav;
   const wallM = spec.wallMm / 1000;
   // LAS DOS PRESIONES (orden 2026-10-24-b): la MISMA función que cerró cada variante (`clampFor`).
@@ -462,16 +524,19 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   });
   // el sprue va de la cara de la boquilla al plano de partición: clamp + placa A
   const sprueLenMm = base.plateAmm + 25.4;                       // 25.4 = clamp de 1", estándar de las bases
-  const feedDiseñado = designFeedSystem({
-    material: plastic === 'ABS' ? 'ABS' : 'PP', partVolumeCc: partCcReal,
+  // la colada con LA resina de la pieza (antes `plastic === 'ABS' ? 'ABS' : 'PP'`: un PC se diseñaba como PP)
+  const feedDe = (nozzleOrificeMm?: number) => designFeedSystem({
+    material: R.clave, partVolumeCc: partCcReal,
     partWallMm: spec.wallMm, sprueLenMm, nCav, fillMPa,
-    hotRunner: win.arch === 'hot-runner',
+    hotRunner: win.arch === 'hot-runner', nozzleOrificeMm,
   });
   // UN BEBEDERO (orden H): con el molde hecho, el que se juzga es el que la E5 CORTA (límite de ΔP y t_c de la pared, del
   // diseñado: la misma p_fill y la misma pared). En colada caliente no hay bebedero frío que juzgar: se queda el diseñado.
-  const alimentacion = spec.bebederoCortado && win.arch !== 'hot-runner'
-    ? alimentacionDelBebederoCortado(feedDiseñado, spec.bebederoCortado, plastic === 'ABS' ? 'ABS' : 'PP', nCav, partCcReal)
-    : feedDiseñado;
+  // Fusión G+H: el diseñado sale con LA resina de la pieza (orden G) y, si la planta declara orificio, se re-diseña abajo.
+  const conBebederoCortado = (f: FeedSystemDesign) => spec.bebederoCortado && win.arch !== 'hot-runner'
+    ? alimentacionDelBebederoCortado(f, spec.bebederoCortado, R.clave, nCav, partCcReal)
+    : f;
+  let alimentacion = conBebederoCortado(feedDe());
 
   // ── VENTEO (cap 8): el aire desplazado ≈ el volumen inyectado (§8.2.1) y cada
   //    venteo se dimensiona para TODO el flujo local, no para el flujo dividido
@@ -485,8 +550,8 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   //    rompería por diseño: s ≤ 0 no es precisión, es una pieza que no expulsa. ──
   const contraccion = shrinkageRecommendation({
     // el NOMINAL a p_pack (la MISMA presión que cierra el molde, juez C D2); el rango, literal de §10.1.6
-    tait: ABS_TAIT, fillMPa, packMPa: pr.packMPa,
-    tNoFlowC: PLASTIC_TNOFLOW[plastic] ?? 132,
+    tait: R.tait, fillMPa, packMPa: pr.packMPa,          // el Tait de SU ficha (antes ABS_TAIT para todas)
+    tNoFlowC: R.tNoFlowC,
     tMeltC: melt.tMelt,
   });
 
@@ -499,21 +564,21 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   };
   const gateSupuesto = designGateProcess({
     type: GATE_POR_ARCH[win.arch], wallMm: spec.wallMm,
-    VdotM3s: (partCcReal * 1e-6) / 1, shearMaxS: PLASTIC_SHEARMAX[plastic] ?? 50000,
-    melt, alphaM2s: PLASTIC_ALPHA[plastic] ?? 8.73e-8,
-    tMeltC: melt.tMelt, tCoolC: melt.tWall, tNoFlowC: PLASTIC_TNOFLOW[plastic] ?? 132,
+    VdotM3s: (partCcReal * 1e-6) / 1, shearMaxS: R.shearMaxS,
+    melt, alphaM2s: R.alphaM2s,
+    tMeltC: melt.tMelt, tCoolC: melt.tWall, tNoFlowC: R.tNoFlowC,
     tPackNeededS: alimentacion.tcPartS,   // Eq 9.5 de la pared, ya calculada por el feed: UNA fuente
   });
   // la compuerta del molde que SÍ se corta (orden H): en sprue directo es la base del bebedero de la E5 (§7.2.1)
   const gate = spec.bebederoCortado?.modo === 'sprue-directo' && win.arch !== 'hot-runner'
     ? compuertaDelBebederoCortado(gateSupuesto, spec.bebederoCortado, (alimentacion.VdotCcS as number) * 1e-6,
-      PLASTIC_ALPHA[plastic] ?? 8.73e-8, melt, PLASTIC_TNOFLOW[plastic] ?? 132)
+      R.alphaM2s, melt, R.tNoFlowC)
     : gateSupuesto;
 
   // ── ENFRIAMIENTO: calor por ciclo → caudal → Ø turbulento → plug DME ──
-  const rho = PLASTIC_RHO[plastic] ?? 1050, cp = PLASTIC_CP[plastic] ?? 2000;
+  const rho = R.rhoKgM3, cp = R.cpJkgC;                         // Apéndice A (antes 1050 / 2000 a mano para el ABS)
   const massKg = spec.volumeMm3 * 1e-9 * rho;                   // masa por cavidad
-  const qCavJ = heatToRemove(massKg, cp, ABS_KAZMER);           // J por cavidad por ciclo
+  const qCavJ = heatToRemove(massKg, cp, R.cooling);            // J por cavidad por ciclo
   const cicloS = win.part.cycleTimeS;
   const qTotalW = (qCavJ * nCav) / cicloS;                      // W a disipar (todas las cavidades)
   const lineLenM = 2 * (base.base.wmm + base.base.lmm) / 1000;  // circuito perimetral aprox
@@ -522,8 +587,8 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   // ── EXPULSIÓN: vector con peso real + dimensionado de pines ──
   const aEffM2 = effectiveArea({ h: wallM, L: spec.Lmm / 1000, W: spec.Wmm / 1000 });
   const draft = Math.max(1, spec.dfm?.draftDeg ?? 1);
-  const vector = ejectionVector(ABS_EJECT, { aEffM2, draftDeg: draft, massKg: massKg * nCav });
-  const pines = ejectorPinSizing(ABS_EJECT, vector.fEjectN, Math.max(4, 4 * nCav), wallM);
+  const vector = ejectionVector(R.eject, { aEffM2, draftDeg: draft, massKg: massKg * nCav });     // la resina de la pieza (antes ABS_EJECT)
+  const pines = ejectorPinSizing(R.eject, vector.fEjectN, Math.max(4, 4 * nCav), wallM);
 
   // ── PLACAS: soporte por deflexión (+pilares óptimos) + cavidad por enfriamiento ──
   const spanM = (Math.min(base.base.wmm, base.base.lmm) / 1000) * 0.6;   // claro entre rieles
@@ -548,7 +613,7 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   // ── MÁQUINA: cuatro restricciones → inyectora comercial ──
   const projAreaM2 = nCav * areaProyectadaMm2(spec) * 1e-6;     // la MISMA área que cerró cada variante (orden H, cambio 5)
   const partCc = spec.volumeMm3 * 1e-3;
-  const requerimientos = machineRequirements({
+  let requerimientos = machineRequirements({
     // el cierre de la máquina con la MISMA presión que la estructura: max(½·p_fill, p_pack), Eq 5.29.
     // Antes iba ½·p_fill a secas (4.3 MPa en la 1594C Box → «2.3 % de 150 t»).
     projectedAreaM2: projAreaM2, cavityPressureMPa: pr.clampMPa,
@@ -576,7 +641,23 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
     alturaPiezaMm: spec.Hmm,
     coladaMm: win.arch === 'hot-runner' ? 0 : Math.max(0, sprueLenMm - spec.Hmm),
   }).mm;
-  const seleccion = selectInjectionMachine(requerimientos, { wmm: base.base.wmm, lmm: base.base.lmm, stackMm, openStrokeMm });
+  // LAS INYECTORAS DE TU PLANTA (orden 2026-10-29-g): con la ficha, se elige SOLO entre ellas y los conectores cuentan (§4.3.3)
+  const plantaMaq = spec.planta?.inyectoras?.length ? { inyectoras: spec.planta.inyectoras, conectoresMm: spec.planta.conectoresMm } : null;
+  const moldeEnMaquina = { wmm: base.base.wmm, lmm: base.base.lmm, stackMm, openStrokeMm };
+  let seleccion = selectInjectionMachine(requerimientos, moldeEnMaquina, undefined, undefined, plantaMaq);
+  // TU BOQUILLA (§6.3.1): la entrada del bebedero se abre sobre el orificio de LA boquilla que lo va a inyectar. Si la máquina
+  // elegida de tu planta declara su orificio, la colada se re-diseña con él (una vuelta: cambia la entrada del bebedero y su
+  // volumen) y la máquina se vuelve a juzgar con ese disparo. Sin orificio declarado (el taller, el catálogo) nada cambia.
+  const orificio = plantaMaq && seleccion.ok ? seleccion.machine?.nozzleOrificeMm : undefined;
+  if (orificio != null) {
+    alimentacion = conBebederoCortado(feedDe(orificio));
+    requerimientos = machineRequirements({
+      projectedAreaM2: projAreaM2, cavityPressureMPa: pr.clampMPa,
+      partVolumeCc: partCc, nCav, runnerVolumeCc: alimentacion.volCc,
+      fillPressureMPa: fillMPa, ejectionForceN: vector.fEjectN,
+    });
+    seleccion = selectInjectionMachine(requerimientos, moldeEnMaquina, undefined, undefined, plantaMaq);
+  }
 
   return {
     fillMPa: +fillMPa.toFixed(1), cavityMPa: +cavityMPa.toFixed(1),
@@ -601,7 +682,7 @@ function buildCostInputs(spec: MachineSpec, metalKey: string, nCav: number, mach
   return {
     part: { LpartMm: spec.Lmm, WpartMm: spec.Wmm, HpartMm: spec.Hmm, ApartSurfaceMm2: spec.surfaceMm2, VpartMm3: spec.volumeMm3, wallMm: spec.wallMm },
     metalKey, nCavities: nCav, machiningFactor, machiningRateUSDh: machRate,
-    finishAreas: [{ spi: spi === 'texture' ? 'SPI B-3' : spi, areaMm2: spec.surfaceMm2 }], finishRateUSDh: 50,
+    finishAreas: [{ spi: spi === 'texture' ? 'SPI B-3' : spi, areaMm2: spec.surfaceMm2 }], finishRateUSDh: TARIFA_LIBRO_USDH.acabado,   // §3.3.1.5
     moldSteel: 'AISI P20', custom,
   };
 }

@@ -23,6 +23,15 @@
  * texto tecleado, valores de inputs, teclas, movimiento de ratón, ni nada que
  * permita reconstruir la sesión. Los eventos son AGREGABLES, no reproducibles.
  *
+ * NI EL NOMBRE DE TU ARCHIVO (orden 2026-10-29-g · juez B, D7: el STEP de una
+ * planta es secreto de SU cliente, LFPPI 163-169). El nombre del archivo que
+ * sueltas o subes —y el de la pieza que sale de él— se registra como SECRETO en
+ * el instante del `drop`/`change` (fase de captura, antes que la app lo vea) y
+ * TODO evento se limpia antes de salir: en el texto de un clic, en un aviso de
+ * consola, en un error o en la URL aparece «‹archivo›». Sin esto, el clic en el
+ * título («Expediente · <tu pieza>») o un console.warn de la importación
+ * mandaban el nombre a `/api/telemetry/events` (lo vio la orden D).
+ *
  * Endpoint configurable via window.__TELEMETRY_URL o default /api/telemetry.
  *
  * Uso:
@@ -136,6 +145,9 @@ class Telemetry {
   private vitals: Record<string, number> = {};
   private tpi = 0;                   // tiempo hasta la primera interacción (ms)
   private scrollPend = false;
+  /** nombres de archivo / pieza que NO viajan (ver encabezado) — en minúsculas, del más largo al más corto */
+  private secretos: string[] = [];
+  private secretoRe: RegExp | null = null;
 
   constructor() {
     this.sid = getSid();
@@ -144,6 +156,14 @@ class Telemetry {
   install() {
     if (this.installed || typeof window === 'undefined') return;
     this.installed = true;
+
+    // ─── El nombre del archivo del cliente NO viaja (orden 2026-10-29-g) ───
+    // En CAPTURA sobre document: corre antes que el handler de la app, así ni el primer evento lleva el nombre.
+    const deArchivos = (fl: FileList | null | undefined) => { if (fl) for (const f of Array.from(fl)) this.ocultar(f.name); };
+    document.addEventListener('drop', (e) => { try { deArchivos((e as DragEvent).dataTransfer?.files); } catch { /* nunca romper el drop */ } }, { capture: true });
+    document.addEventListener('change', (e) => {
+      try { const t = e.target as HTMLInputElement | null; if (t && t.type === 'file') deArchivos(t.files); } catch { /* nunca romper el input */ }
+    }, { capture: true });
 
     // ─── Errores JS ───────────────────────────────────────────────
     window.addEventListener('error', (e) => {
@@ -332,6 +352,35 @@ class Telemetry {
     (window as { telemetry?: Telemetry }).telemetry = this;
   }
 
+  /** Registra un nombre que NO debe viajar en ningún evento (el archivo del cliente, su pieza). Guarda el nombre y su raíz
+   *  sin extensión («1594C Box.stp» → también «1594C Box»); ignora lo de menos de 3 letras (taparía media telemetría). */
+  ocultar(nombre: string | null | undefined) {
+    if (!nombre) return;
+    const base = String(nombre).trim();
+    const sinExt = base.replace(/\.[a-z0-9]{1,5}$/i, '');
+    for (const n of [base, sinExt]) {
+      const k = n.toLowerCase();
+      if (k.length >= 3 && !this.secretos.includes(k)) this.secretos.push(k);
+    }
+    this.secretos.sort((a, b) => b.length - a.length);
+    const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    this.secretoRe = this.secretos.length ? new RegExp(this.secretos.map(esc).join('|'), 'gi') : null;
+  }
+
+  /** Quita los secretos de cualquier valor (cadenas en objetos y arreglos, a cualquier profundidad). */
+  private limpia<T>(x: T, prof = 0): T {
+    const re = this.secretoRe;
+    if (!re || prof > 6) return x;
+    if (typeof x === 'string') return x.replace(re, '‹archivo›') as unknown as T;
+    if (Array.isArray(x)) return x.map((v) => this.limpia(v, prof + 1)) as unknown as T;
+    if (x && typeof x === 'object') {
+      const o: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(x as Record<string, unknown>)) o[k] = this.limpia(v, prof + 1);
+      return o as T;
+    }
+    return x;
+  }
+
   event(type: string, data: Record<string, unknown> = {}) {
     if (typeof window === 'undefined') return;
     // Un evento con NOMBRE (lab.*, masterclass.*) es una interacción deliberada:
@@ -341,8 +390,9 @@ class Telemetry {
       t: Date.now(),
       type,
       sid: this.sid,
-      url: cleanUrl(location.href),
-      data,
+      // sin el nombre del archivo del cliente, ni en los datos ni en la URL (orden 2026-10-29-g)
+      url: this.limpia(cleanUrl(location.href)),
+      data: this.limpia(data),
     });
     if (this.queue.length >= MAX_BATCH) {
       this.flush();
@@ -374,7 +424,8 @@ class Telemetry {
     if (this.queue.length === 0) return;
     const batch = this.queue;
     this.queue = [];
-    const body = JSON.stringify(batch);
+    // segunda pasada al salir: un secreto registrado DESPUÉS de encolar un evento tampoco viaja (orden 2026-10-29-g)
+    const body = JSON.stringify(this.limpia(batch));
     try {
       const blob = new Blob([body], { type: 'application/json' });
       if (navigator.sendBeacon(ENDPOINT, blob)) return;

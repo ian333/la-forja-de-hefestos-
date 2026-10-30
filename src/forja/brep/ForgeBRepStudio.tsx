@@ -43,7 +43,8 @@ import { buildMoldParts, packageToAssemblySpec, plateStackZ, buildMoldLaminas, l
 import { carreraDeApertura } from '../mold/threeplate';
 import { carreraDeExpulsionMm } from '../mold/platesizing';
 import { piezaDesdeArbol } from '../mold/estudio-molde-datos';
-import { horasDelModelo, SIN_TARIFA } from '../mold/expediente';   // PASO 8 · LOS APAGONES: horas de Kazmer cap. 3 en vez de la hoja en USD
+import { costoDeReferencia, costoReferenciaLinea, costoReferenciaHTML, type CostoDeReferencia } from '../mold/expediente';   // PASO 9 · LOS DATOS DE TU PLANTA (orden G): tu tarifa en MXN o la referencia del libro, rotulada
+import { plantaConDatos } from '../mold/machinesizing';   // orden G: ¿la ficha de la planta trae tarifas o inyectoras?
 import { tituloCorto, type Criterio as CriterioContrato, type ContratoEstado } from '../mold/mold-contratos';   // UN VEREDICTO (orden H): los renglones de las dos columnas
 import { rejuzgarConElMolde, type RevisionModelo } from '../mold/revisar-modelo';   // PASO 8 · el dictamen completo (no solo la fila) para el expediente · UN VEREDICTO (orden H): el re-juicio con el molde
 import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
@@ -71,7 +72,7 @@ import { PIEL, PIEL_CSS } from './piel-futuro';   // LA PIEL DEL FUTURO: cyberpu
 import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm, FillVivo } from './MoldScene';
 import { useMoldStudio, moldeRealDelCiclo, type ArbolPieza } from './useMoldStudio';
-import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel, TarjetaEstacion, TarjetaPuerta } from './MoldPanels';
+import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel, TarjetaEstacion, TarjetaPuerta, TarjetaPlanta } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
 import { isoSurface } from '../../lib/viz/isosurface';
@@ -4067,10 +4068,16 @@ export default function ForgeBRepStudio() {
     const seccionGruesa = ce && ce.tcS > 0
       ? { mm: +ce.gruesoMm.toFixed(2), forma: ce.forma, tcS: +ce.tcS.toFixed(1), barraS: +ce.barraS.toFixed(1), placaS: +ce.placaS.toFixed(1), lugares: ce.lugares, anchoMm: +ce.anchoMm.toFixed(1), regla: ce.regla }
       : undefined;
-    try { return { ...piezaDesdeArbol(oc, shape, { nombre: piezaMalla.nombre, wallMm: +p.toFixed(2), material: mold.intake.material ?? 'ABS', annualVolume: mold.intake.annualVolume, packMPa: mold.intake.packMPa }).spec, ...(seccionGruesa ? { seccionGruesa } : {}) }; }
+    // LOS DATOS DE TU PLANTA (orden 2026-10-29-g): la resina de la pieza (intake > tu planta > el taller) y, si la ficha trae datos,
+    // la ficha misma — el dictamen elige la máquina entre TUS inyectoras igual que el molde (UNA spec, como en EL PUENTE).
+    try {
+      const sp0 = piezaDesdeArbol(oc, shape, { nombre: piezaMalla.nombre, wallMm: +p.toFixed(2), material: mold.resina, annualVolume: mold.intake.annualVolume, packMPa: mold.intake.packMPa }).spec;
+      const sp = seccionGruesa ? { ...sp0, seccionGruesa } : sp0;
+      return plantaConDatos(mold.planta) ? { ...sp, planta: mold.planta } : sp;
+    }
     catch (e) { console.warn('SPEC_PIEZA_ERR', e); return undefined; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [oc, arbolRev, piezaMalla, lentes, mold.intake]);
+  }, [oc, arbolRev, piezaMalla, lentes, mold.intake, mold.planta, mold.resina]);
   const moldeOpacidadRef = useRef<unknown>(null);   // E5: restaurar opacidades una sola vez por sólido
   // PASO 6 · EL MOLDE SE ARMA SOLO. El humano tocó MOLDE; la máquina: (1) la PARED la mide el
   // Foco (p50 de la lente PARED — nadie la teclea; sin ella el STEP se leía MACIZO y cotizaba
@@ -4200,13 +4207,11 @@ export default function ForgeBRepStudio() {
     // (las dos últimas salen del ciclo de 134 s, que es la cota de PLACA de lo más grueso). Mientras no exista la tarifa
     // del cliente en MXN (orden G) va lo que no depende de ninguna tarifa: las HORAS de los insertos del modelo de Kazmer
     // (cap. 3) para la arquitectura que gana — el mismo `moldMachine(pieza.spec)` del que salía la hoja (estacion2).
-    let costo: CostoReferencia | null = null;
+    // LOS DATOS DE TU PLANTA (orden 2026-10-29-g): con tu tarifa, MXN por centro (horas × tarifa); sin ella, las mismas horas y la
+    // referencia del libro en USD, rotulada «falta tu tarifa» — `costoDeReferencia` (expediente.ts) dice cuál de los dos es.
+    let costo: CostoDeReferencia | null = null;
     try {
-      if (mold.ciclo?.pieza) {
-        const pk = moldMachine(mold.ciclo.pieza.spec), w = pk.recomendacion;
-        const v = pk.variantes.find((x) => x.arch === w.arch && x.nCav === w.nCav);
-        if (v) { const h = horasDelModelo(v); costo = { arch: v.arch, nCav: v.nCav, maquinadoH: h.maquinadoH, acabadoH: h.acabadoH }; }
-      }
+      if (mold.ciclo?.pieza) costo = costoDeReferencia(moldMachine(mold.ciclo.pieza.spec));
     } catch (e) { console.warn('COSTO_EXPEDIENTE', e); }
     // BORRADOR mientras falte UNA firma (§13.10: «no cierra con pendientes»); sin dictamen tampoco hay nada firmado.
     // UN VEREDICTO (orden H): con el molde hecho, las decisiones por firmar son las del molde que SE CORTA (columna ②)
@@ -8250,6 +8255,9 @@ export default function ForgeBRepStudio() {
               onElegirSolido={elegirSolido} onUnidades={responderUnidades} onCerrar={pasoActual !== 2 ? () => setPuertaAbierta(false) : undefined} />)
           : piezaMalla && puerta && cierraDesde != null ? <TarjetaPuerta puerta={puerta} compacta izquierda={modoCamino ? 18 : 268} onAbrir={() => setPuertaAbierta(true)} />
           : null}
+        {/* TU PLANTA (orden 2026-10-29-g): la ficha de la planta vive en el paso 2 del camino, a la derecha de la puerta — tarifas,
+            inyectoras, resina; y lo que le hace a ESTA pieza (máquina o criterio que falla, costo de referencia) */}
+        {modoCamino && piezaMalla && !errPieza && pasoActual === 2 && <TarjetaPlanta mold={mold} spec={specPieza} />}
         {importedStep && entrada && entrada.giro && !entradaVista && (
           <div data-testid="aviso-entrada" data-solidos={entrada.solidos} data-eje={`${entrada.eje}${entrada.boca}`} data-giro={entrada.giro ?? ''}
             style={{ position: 'absolute', left: '50%', top: '9%', transform: 'translateX(-50%)', zIndex: 7, maxWidth: 'min(640px, 86%)',
@@ -10309,7 +10317,7 @@ export default function ForgeBRepStudio() {
                   // UN VEREDICTO (orden H): las dos columnas también aquí — ① tu pieza sola (paso 4) · ② en el acero (con el molde)
                   ['DICTAMEN · ① tu pieza sola · ② en el acero', expediente.tieneDictamen ? `① ${revision!.fila.score}/100 · ◆ ${revision!.fila.viola} · ◇ ${revision!.fila.advierte} │ ② ${rejuicio ? `${rejuicio.rev.fila.score}/100 · ◆ ${rejuicio.rev.fila.viola} · ◇ ${rejuicio.rev.fila.advierte}` : 'falta el molde'}` : 'abre EL DICTAMEN (D) para incluirlo', expediente.tieneDictamen && (rejuicio?.rev ?? revision)!.fila.viola === 0 ? 'ok' : 'falta'],
                   ['DECISIONES §13.10', expediente.tieneDictamen ? `${expediente.nDecisiones} · ${expediente.pendientes} pendientes de firma` : 'salen del dictamen', !expediente.tieneDictamen ? 'falta' : expediente.pendientes > 0 ? 'pend' : 'ok'],
-                  ['COSTO DE REFERENCIA', expediente.costo ? `${Math.round(expediente.costo.maquinadoH + expediente.costo.acabadoH)} h de insertos (Kazmer cap. 3) · ${SIN_TARIFA.replace('costo de referencia: ', '')}` : 'necesita MOLDE (E1)', expediente.costo ? 'pend' : 'falta'],
+                  ['COSTO DE REFERENCIA', expediente.costo ? costoReferenciaLinea(expediente.costo) : 'necesita MOLDE (E1)', expediente.costo ? (expediente.costo.modo === 'tu-tarifa' && expediente.costo.completo ? 'ok' : 'pend') : 'falta'],
                   ['PLANOS', expediente.nPlanos ? `${expediente.nPlanos} láminas incluidas` : 'genera LOS PLANOS (paso 7) para incluirlos', expediente.nPlanos > 0 ? 'ok' : 'falta'],
                 ] as Array<[string, string, 'ok' | 'pend' | 'falta']>).map(([t, v, est]) => {
                   const col = est === 'ok' ? '#7ee2a8' : est === 'pend' ? PIEL.aviso : '#f27a6c';
@@ -10322,7 +10330,7 @@ export default function ForgeBRepStudio() {
                 })}
               </div>
               <div style={{ fontSize: 11.5, color: '#9fb0c4' }}>
-                Tu expediente: el dictamen, las decisiones por firmar, el costo de referencia en horas y los planos, y al final la primera prueba en máquina. Lo que falta viene marcado como pendiente, no inventado.{expediente.borrador ? ' Es un BORRADOR hasta que firmen todas las decisiones.' : ''}
+                Tu expediente: el dictamen, las decisiones por firmar, el costo de referencia ({expediente.costo?.modo === 'tu-tarifa' ? 'en pesos, con tu tarifa' : 'horas y la referencia del libro: falta tu tarifa'}) y los planos, y al final la primera prueba en máquina. Lo que falta viene marcado como pendiente, no inventado.{expediente.borrador ? ' Es un BORRADOR hasta que firmen todas las decisiones.' : ''}
               </div>
             </div>
           </div>
@@ -10865,9 +10873,9 @@ function renglonesDelVeredicto(rev: RevisionModelo | null, rj: RevisionModelo | 
   return filas;
 }
 
-/** LOS APAGONES (2026-10-24): lo que reemplaza a la hoja de cotización en USD — las horas de los insertos de la ganadora. */
-interface CostoReferencia { arch: string; nCav: number; maquinadoH: number; acabadoH: number }
-function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; rj?: RevisionModelo | null; rjFuentes?: string[]; costo: CostoReferencia | null; planos: DrawingPage[] | null; notas: string[]; borrador: boolean }): string {
+/** LOS DATOS DE TU PLANTA (orden 2026-10-29-g): la sección 3 la arma `costoReferenciaHTML` (expediente.ts) — con tu tarifa en MXN
+ *  por centro, o las horas + la referencia del libro en USD rotulada «falta tu tarifa». */
+function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; rj?: RevisionModelo | null; rjFuentes?: string[]; costo: CostoDeReferencia | null; planos: DrawingPage[] | null; notas: string[]; borrador: boolean }): string {
   const esc = (t: unknown) => String(t ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
   const css = `@page{size:A4 landscape;margin:14mm}html,body{margin:0;background:#fff;color:#111;font:12px/1.45 Inter,system-ui,sans-serif}` +
     `h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 8px;letter-spacing:.06em;text-transform:uppercase;border-bottom:2px solid #111;padding-bottom:4px}` +
@@ -10899,15 +10907,8 @@ function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo 
     `<table><tr><th>tema</th><th>§</th><th>opciones reales</th><th>elección</th></tr>` +
     revD.expediente.decisiones.map((d) => `<tr><td><b>${esc(d.tema)}</b></td><td>${esc(d.cita)}</td><td>${d.opciones.map((x) => `· ${esc(x)}`).join('<br>')}</td><td>${d.eleccion ? esc(d.eleccion) + (d.responsable ? `<br><span class="muted">${esc(d.responsable)} · ${esc(d.fecha)}</span>` : '') : '<span class="muted">pendiente</span>'}</td></tr>`).join('') + `</table>` +
     `<h2>Plan de tryout</h2><ul>${revD.expediente.tryout.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
-  // sin dinero hasta tu tarifa: horas del modelo (Kazmer cap. 3) y lo que NO entra en ellas, dicho
-  const c = o.costo;
-  const cot = c
-    ? `<table><tr><th>arquitectura</th><th>maquinado de insertos</th><th>acabado de insertos</th><th>de dónde</th></tr>` +
-      `<tr><td>${esc(c.arch)} × ${esc(c.nCav)} cav</td><td><b>${esc(Math.round(c.maquinadoH))} h</b></td><td><b>${esc(Math.round(c.acabadoH))} h</b></td>` +
-      `<td class="muted">Eq 3.8-3.12 y 3.13-3.14 · × ${esc(c.nCav)} cavidades × descuento de la Tabla 3.5</td></tr></table>` +
-      `<p class="falta"><b>${esc(SIN_TARIFA)}.</b> Sin ella no se escribe dinero. La base del molde y su customización (Eq 3.15-3.18) son precios de catálogo: los cotiza tu proveedor. ` +
-      `El costo por pieza tampoco va: depende del ciclo, y el ciclo de lo más grueso es una ventana entre la cota de barra (Eq 9.6) y la de placa (Eq 9.5).</p>`
-    : `<div class="falta">Sin costo de referencia: el molde (E1) no se armó para esta pieza.</div>`;
+  // el costo de referencia: con tu tarifa (MXN por centro) o la referencia del libro, dicho cuál (orden 2026-10-29-g)
+  const cot = costoReferenciaHTML(o.costo);
   const planos = o.planos && o.planos.length ? o.planos.map((p) => `<div class="pg" title="${esc(p.name)}">${p.svg}</div>`).join('') : `<div class="falta">Sin planos: no se generó el juego de láminas (paso 7).</div>`;
   const brr = o.borrador ? 'BORRADOR · ' : '';
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${brr}Expediente · ${esc(o.nombre)}</title><style>${css}</style></head><body>` +
@@ -10916,7 +10917,7 @@ function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo 
     (o.notas.length ? `<p class="muted">${o.notas.map(esc).join(' · ')}</p>` : '') +
     `<div class="sec"><h2>1 · Dictamen</h2>${dictamen}</div>` +
     `<div class="sec"><h2>2 · Decisiones §13.10</h2>${decisiones || '<div class="falta">Salen del dictamen.</div>'}</div>` +
-    `<h2>3 · Costo de referencia (horas)</h2>${cot}` +
+    `<h2>3 · Costo de referencia — ${o.costo?.modo === 'tu-tarifa' ? 'con TU tarifa (MXN)' : 'horas + referencia del libro (USD) · falta tu tarifa'}</h2>${cot}` +
     `<h2>4 · Planos del molde</h2>${planos}` +
     `<h2>5 · Video</h2><p class="muted">El video del enfriamiento se agrega después (decisión de ian, 2026-09-04): sale de la misma animación de la lente, no de otra.</p>` +
     `</body></html>`;

@@ -23,7 +23,12 @@
  * por TIEMPO DE RUTA, no por altura. Sistema STANDALONE: se conecta a
  * cualquier molde después.
  */
-import { FEED_MATERIALS, minRunnerRadius, steelSafeDiaMm, pressureDropRunner } from './feed';
+import { feedMaterial, minRunnerRadius, steelSafeDiaMm, pressureDropRunner, type FeedMaterial } from './feed';
+import { RESINA_POR_DEFECTO } from './materials';
+import type { MeltMaterial } from './filling';
+/** la colada de la resina como la leen las Eq 6.5/6.8 (solo k y n de la power-law — el mismo cast que feed.ts; antes cada
+ *  llamada pasaba el objeto crudo y tsc lo marcaba 7 veces) */
+const feedPL = (material: string) => feedMaterial(material) as unknown as FeedMaterial & MeltMaterial;
 
 export interface FeedSeg {
   a: [number, number, number]; b: [number, number, number];
@@ -66,7 +71,7 @@ export function layoutBranched(o: {
   const nCav = o.nCav ?? 8;
   const pitch = o.pitchMm ?? 55;
   const Vdot = o.VdotCcS ?? 60;
-  const m = FEED_MATERIALS[o.material ?? 'ABS'] ?? FEED_MATERIALS.ABS;
+  const m = feedPL(o.material ?? RESINA_POR_DEFECTO);   // sin ficha → error con su razón (orden 2026-10-29-g)
   const Lsprue = o.sprueLenMm ?? 70;
   const levels = Math.log2(nCav);                       // 2→1, 4→2, 8→3, 16→4
   const segs: FeedSeg[] = [];
@@ -137,7 +142,7 @@ export function layoutRadial(o: {
   const nCav = o.nCav ?? 12;
   const R = o.Rmm ?? 70;
   const Vdot = o.VdotCcS ?? 60;
-  const m = FEED_MATERIALS[o.material ?? 'ABS'] ?? FEED_MATERIALS.ABS;
+  const m = feedPL(o.material ?? RESINA_POR_DEFECTO);   // sin ficha → error con su razón (orden 2026-10-29-g)
   const Lsprue = o.sprueLenMm ?? 70;
   const segs: FeedSeg[] = [];
   const rSprue = Math.max(2.5, minRunnerRadius(m, Lsprue / 1000, Vdot * 1e-6, 12e6) * 1000);
@@ -178,7 +183,7 @@ export function layoutSeries(o: {
   const nP = o.nPairs ?? 4;
   const pitch = o.pitchMm ?? 42, Lsec = 30;
   const Vdot = o.VdotCcS ?? 60;
-  const m = FEED_MATERIALS[o.material ?? 'ABS'] ?? FEED_MATERIALS.ABS;
+  const m = feedPL(o.material ?? RESINA_POR_DEFECTO);   // sin ficha → error con su razón (orden 2026-10-29-g)
   const Lsprue = o.sprueLenMm ?? 70;
   const segs: FeedSeg[] = [];
   const rSprue = Math.max(2.5, minRunnerRadius(m, Lsprue / 1000, Vdot * 1e-6, 10e6) * 1000);
@@ -226,7 +231,7 @@ export function layoutHybrid(o: {
   VdotCcS?: number; material?: string; sprueLenMm?: number; pitchMm?: number;
 }): FeedNetwork {
   const Vdot = o.VdotCcS ?? 60;
-  const m = FEED_MATERIALS[o.material ?? 'ABS'] ?? FEED_MATERIALS.ABS;
+  const m = feedPL(o.material ?? RESINA_POR_DEFECTO);   // sin ficha → error con su razón (orden 2026-10-29-g)
   const Lsprue = o.sprueLenMm ?? 70;
   const pitch = o.pitchMm ?? 58, Rrad = 26;
   const segs: FeedSeg[] = [];
@@ -280,8 +285,8 @@ export function layoutHybrid(o: {
  * iguales — esta función es el juez que dice si lo logró.
  * MUTA la red: V̇/tiempos de cada segmento y cavidad pasan a ser los físicos.
  */
-export function applyResistanceNetwork(net: FeedNetwork, material = 'ABS'): void {
-  const m = FEED_MATERIALS[material] ?? FEED_MATERIALS.ABS;
+export function applyResistanceNetwork(net: FeedNetwork, material: string = RESINA_POR_DEFECTO): void {
+  const m = feedPL(material);                             // la resina de la pieza; sin ficha → error, no ABS en silencio
   const n = m.n;
   const segs = net.segs;
   const keyOf = (pt: [number, number, number]) => `${pt[0].toFixed(2)},${pt[1].toFixed(2)},${pt[2].toFixed(2)}`;
@@ -362,7 +367,10 @@ export function layoutForGrid(
     rimRmm: number; partVolCc: number; material?: string; fillTimeS?: number;
   },
 ): FeedNetwork {
-  const m = FEED_MATERIALS[o.material ?? 'PP'] ?? FEED_MATERIALS.PP;
+  // LA RESINA DEL INTAKE (orden 2026-10-29-g): antes `?? 'PP'` — un molde de ABS sin resina declarada se dimensionaba con
+  // la viscosidad del PP. Sin declarar: la del taller (`RESINA_POR_DEFECTO`); sin ficha del libro: error con su razón.
+  const resina = o.material ?? RESINA_POR_DEFECTO;
+  const m = feedPL(resina);
   const Vdot = (o.partVolCc * cells.length) / (o.fillTimeS ?? 1);
   const Lsprue = o.sprueTopZ - o.zPart;
   const segs: FeedSeg[] = [];
@@ -392,7 +400,7 @@ export function layoutForGrid(
       { k: '⌀ cadena', v: `sprue ${(2 * rSprue).toFixed(1)} → prim ${(2 * rPrim).toFixed(1)} → sec ${(2 * rSec).toFixed(1)} → gate ${(2 * EDGE_GATE_R).toFixed(1)} mm`, ref: 'Eq 6.1 D/√2 + Eq 6.8 + fresas §6.5.4' },
     ],
   };
-  applyResistanceNetwork(net, o.material ?? 'PP');        // V̇/tiempos FÍSICOS
+  applyResistanceNetwork(net, resina);        // V̇/tiempos FÍSICOS
   // llenado de cada vaso con SU caudal real (V/V̇ — Kazmer, no forma)
   for (const c of net.cavities) c.tFillS = o.partVolCc / Math.max(1e-6, segByTip(net, c).VdotCcS);
   net.totalFillS = Math.max(...net.cavities.map((c) => c.tStartS + c.tFillS));
@@ -415,7 +423,7 @@ export function layoutForGrid(
     {
       titulo: 'Radio del sprue por caída de presión asignada',
       formula: 'R ≥ [ (ΔP/(k·L))·(n/(3n+1))ⁿ·(π/V̇)ⁿ ]^(−1/(3n+1))   (ley de potencia)',
-      sustitucion: `ΔP=15 MPa · L=${f2(Lsprue, 0)}mm · k=${m.k} Pa·sⁿ · n=${m.n} (${o.material ?? 'PP'})`,
+      sustitucion: `ΔP=15 MPa · L=${f2(Lsprue, 0)}mm · k=${m.k} Pa·sⁿ · n=${m.n} (${resina})`,
       resultado: `⌀ sprue = ${f2(2 * rSprue, 1)} mm`, ref: 'Eq 6.8 (de Eq 6.5)', ok: true,
     },
     {
