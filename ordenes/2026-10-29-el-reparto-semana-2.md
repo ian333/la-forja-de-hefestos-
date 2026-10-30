@@ -48,6 +48,7 @@ a Kazmer y despliega UNA vez.
 - src/forja/mold/moldmachine.ts
 - src/forja/mold/revisar-modelo.ts
 - ordenes/2026-10-29-j-el-expediente-limpio.md
+- ordenes/2026-10-29-g2-los-ajustes-de-la-fusion-semana-2.md
 - scripts/mold-assembly-test.cjs
 - scripts/qa-huella.cjs
 - src/forja/mold/estudio-molde-datos.ts
