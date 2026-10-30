@@ -177,9 +177,12 @@ sonda sobre `__qaForja`/`__forgeBrep` en la MISMA app)
   CON PLUGS; la colada y la compuerta cumplen) NO sale la compuerta, la colada va sin chips y los dos rojos entran en Estructura y en
   La máquina → PASA. Un recorrido con los cuatro fijos fallaría el segundo caso. Y **sin dictamen** (no se abrió el paso 4) el cierre
   NO dice «ningún rojo»: dice «Sin dictamen: los rojos no se juzgaron» (`control-sin.ts`, rc 0).
-- **control en la app (1598B Bottom, del banco Hammond)**: encolado en el turno de GPU (`/home/ian/el-plan-dev4/v3-1598/`); al cerrar
-  esta orden el turno lo tenía un render de Blender de otra sesión (`flock -w 14400 … rinde_p5_iangpu.sh`). La 1599HBK no llegó al
-  enfriamiento en 180 s (dos mitades; se descartó).
+- **control en la app (1598B Bottom, del banco Hammond; `/home/ian/el-plan-dev4/v3-1598/`)**: su dictamen trae **3** rojos — DP (11.5
+  contra 6.0 MPa), COLADA VS CICLO, FREEZE (13.7 contra 35.8 s) — y CLARO le **cumple** (3.33 contra 3.17). La inspección enseña ESOS:
+  «3 de 69 no cumplen», chips en colada y compuerta, y el punto del agua SIN chip de CLARO (dice «el dictamen midió 3.33 contra 3.17 en
+  otro par»); el cierre pide 3 decisiones. Con la Box salen 4 (con CLARO). → los rojos salen del dictamen vivo, no de una lista.
+  (La 1599HBK, dos mitades, no llegó al enfriamiento en 180 s; se descartó.) La pieza en fantasma ya se ve en el agua y en los
+  botadores (`06-agua-justa-c-macro2`, `07-botadores-b-macro`): el arreglo de `tFill` probado con los ojos.
 
 **evidencia**
 - capturas 4K de la app real, abiertas con Read y juzgadas (antes/después), en iangpu `/home/ian/el-plan-dev4/`: `sonda-box/` (la
@@ -193,8 +196,10 @@ sonda sobre `__qaForja`/`__forgeBrep` en la MISMA app)
   anima» la malla de la pieza no se dibuja, y su pintura solo sale con la pieza ≥ 50 % opaca. Arreglo: la inspección deja la pieza llena
   (`setTFill(1)`). También: el cenital de la máquina con más aire (×2.7), el rótulo «◇ MANDA EL BEBEDERO», el ⌀ exacto del agua del
   dictamen (9.53, no 9.6) y cada punto reclama sus rojos (placa, máquina, botadores, agua) para que un rojo con vista no se repita como
-  «sin vista». Verificación con los ojos encolada: `/home/ian/el-plan-dev4/v4-box/` (mismo turno de GPU, detrás del render de Blender).
-  La película la refilma el coordinador tras la fusión.
+  «sin vista». **Verificado con los ojos** en `/home/ian/el-plan-dev4/v4-box/` (Box, 22:36): el punto del agua ya enseña la pieza en
+  fantasma junto al par de la esquina (`06-agua-justa-c-macro2`), el cenital de la máquina enseña el molde entero con su cota
+  (`10-maquina-c-macro2`), «◇ MANDA EL BEBEDERO» y ⌀9.53; paso 7 en dev 158.4 s (mismos 10 puntos, 129.5 s de recorrido). La película
+  la refilma el coordinador tras la fusión.
 - el juez: `node scripts/orden-gate.cjs` → VERDE. tsc 67 = base (diferencia vacía). El cubo 270/0.
 - **el camino de la carcasa (runner)**: NO pasa, y no por esta orden: se rompe en el paso 3 (`tclick parte-lente-enfriamiento`, Timeout
   15 s) porque el MODO CAMINO (4373705, 2026-10-24) le pone `pointer-events:none` a la tira de lentes (`piel-futuro.ts:109`) y el runner
