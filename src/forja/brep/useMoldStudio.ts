@@ -138,9 +138,9 @@ export function moldeRealDelCiclo(c: any, moldParts: MoldPart[]): MoldeReal | nu
     const perp = lb.length ? (Math.abs(lb[0].p1[0] - lb[0].p0[0]) > Math.abs(lb[0].p1[1] - lb[0].p0[1]) ? 1 : 0) : 0;
     const us = lb.map((sg: any) => sg.p0[perp]).sort((a: number, b: number) => a - b);
     const pasoReal = us.length > 1 ? Math.max(...us.slice(1).map((u: number, k: number) => u - us[k])) : e8.lineas.wMm;
-    // MEDIDO en la app (1594C Box): la E5/E6 reciben el volumen de la pieza de la rejilla de la E4 (`e5tuberia.volPiezaCc`
-    // 1.918 cc) y no el del sólido (55.8 cc): el calor y el caudal TÉRMICO de la E6 salen ~8× chicos. El veredicto del ⌀ no
-    // cambia (manda la turbulencia), pero el número sí: se DICE aquí; arreglarlo es de la E4/E5, no de este re-juicio.
+    // MEDIDO en la app (1594C Box, orden H): la E5/E6 recibían el volumen de la rejilla de la E4 (`e5tuberia.volPiezaCc`
+    // 1.918 cc) y no el del sólido (55.8 cc): el calor y el caudal TÉRMICO de la E6 salían ~8× chicos. LA ORDEN L lo cerró en la
+    // E5 (la pieza manda con su SÓLIDO); este aviso se queda como GUARDA: si algún día vuelven a diferir más de 25 %, se DICE.
     const vE5 = c.e5tuberia?.volPiezaCc, vSol = c.pieza?.pieza?.volCc;
     const avisoVol = vE5 != null && vSol != null && Math.abs(vE5 - vSol) > 0.25 * vSol
       ? ` · ⚠ su calor sale de ${vE5.toFixed(1)} cc de pieza (la rejilla de la E4) contra ${vSol.toFixed(1)} cc del sólido`
@@ -261,8 +261,12 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
     esPieza?: Uint8Array;
     /** ocupación FRACCIONAL por celda (verdad sub-vóxel) — el cono se ve cono */
     ocupacion?: Float32Array;
-    /** LA ALARMA de tubería única + los volúmenes medidos del campo conjunto */
-    e5tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number };
+    /** LA ALARMA de tubería única + los volúmenes medidos del campo conjunto.
+     *  `volPiezaCc` = el volumen de la pieza con que la E5 y la E6 dimensionan (EL VOLUMEN CORRECTO, orden L: el del SÓLIDO,
+     *  el mismo de la puerta y del dictamen; el cubo, su rejilla analítica). `volPiezaVoxE4Cc` = lo que trae la rejilla de la
+     *  E4 (`frenteVert`), que se queda sólo como testigo; `volPiezaFuente` dice cuál de los dos manda. */
+    e5tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number;
+      volPiezaVoxE4Cc?: number; volPiezaFuente?: 'el sólido' | 'la rejilla de la E4' };
     /** RENDER EXACTO de la espiral (enmienda 2 cola-de-puerco-de-acero): el líquido
      *  viste la MALLA de la fórmula del acero; el FAN recorta por arco (sV≤sFront) */
     espiralExacta?: { positions: Float32Array; normals: Float32Array; indices: Uint32Array; sV: Float32Array; fillV: Float32Array; sFront: Float32Array;
@@ -1338,7 +1342,18 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       const piezaSpec5 = ciclo.pieza;
       const lo5 = piezaSpec5?.local ?? DADO_PIEZA.local!;
       const wallMm = piezaSpec5 ? piezaSpec5.pieza.wallMm : 2;
-      const partVolCc = ((ciclo.frenteVert?.length ?? 0) * Math.pow(ciclo.cellMm ?? 1, 3)) / 1000;
+      // EL VOLUMEN CORRECTO (orden L · el reporte de análisis, 2026-10-30). Antes la E5 dimensionaba con los vóxeles que la E4
+      // dejó en `frenteVert`, y ese volumen viajaba a la E6 (`e5tuberia.volPiezaCc`). MEDIDO en la app, 1594C Box: la rejilla
+      // de la E4 trae 1.918 cc contra 55.8 cc del sólido → el bebedero se diseñaba con V̇ = 1.9 cc/s (§6.4.6), el regrind
+      // salía 2.6 cc / 1.9 cc = 134 % ✗ (Eq 6.6) y la E6 calculaba su calor con 7.3 g (Eq 9.10): Q̇ 16.8 W y un caudal térmico
+      // de 0.008 GPM por línea, ~8× chicos (orden H, CIERRE). Ahora la pieza de TU STEP manda con el volumen de su SÓLIDO
+      // (`spec.volumeMm3` = occVolume, el mismo con que juzgan la puerta y el dictamen: UNA verdad). El cubo conserva su
+      // rejilla analítica (bit-igual: su E5 no trae `ciclo.pieza`). El volumen de la rejilla se queda como testigo.
+      const volVoxE4Cc = ((ciclo.frenteVert?.length ?? 0) * Math.pow(ciclo.cellMm ?? 1, 3)) / 1000;
+      const volSolidoCc = piezaSpec5
+        ? (piezaSpec5.spec.volumeMm3 > 0 ? piezaSpec5.spec.volumeMm3 / 1000 : piezaSpec5.pieza.volCc)
+        : null;
+      const partVolCc = volSolidoCc ?? volVoxE4Cc;
       const cavidadMPa = Number((ciclo.e2.pkg as any)?.diseno?.fillMPa) || 10.7;
       // TODA la geometría viene del GENERADOR. Este handler ya no construye ni mide nada:
       // antes tenía makeCone/makeCylinder/makeBox/fuseAll y bboxes inline — por eso su
@@ -1460,7 +1475,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         frenteGrid: fanJ.frente, grid: { nx: campoJ.nx, ny: campoJ.ny, nz: campoJ.nz, cellMm: campoJ.cellMm, x0: campoJ.x0, y0: campoJ.y0, z0: campoJ.z0 },
         e5fan: { pMaxMPa: fanJ.pMaxMPa, tFillS: fanJ.tFillS, shortShot: fanJ.shortShot, incompleto: fanJ.incompleto, conservacionMaxRel: fanJ.conservacionMaxRel, etaEffPaS: fanJ.etaEffPaS, QmmS: fanJ.QmmS, nNodos: fanJ.nNodos },
         frenteVert: fvJ, frenteQ: frenteQJ, voxPos: posJ, cellMm: campoJ.cellMm, esPieza, ocupacion: ocupacionJ,
-        e5tuberia: { unreachable: campoJ.unreachable, snapMm, volColadaVoxCc, volPiezaCc: partVolCc },
+        e5tuberia: { unreachable: campoJ.unreachable, snapMm, volColadaVoxCc, volPiezaCc: partVolCc,
+          volPiezaVoxE4Cc: +volVoxE4Cc.toFixed(3), volPiezaFuente: volSolidoCc != null ? 'el sólido' : 'la rejilla de la E4' },
       });
       cursoSet(5, [], [...moldParts.filter((p: any) => p.role !== 'colada'),
         // FANTASMA a propósito: el tubo se ve, y el FUNDIDO (FrenteSuperficie del campo

@@ -2579,7 +2579,9 @@ export interface Estacion5Dado {
 }
 
 /**
- * @param partVolCc  volumen MEDIDO de la pieza (de los vóxeles de la E4), no estimado
+ * @param partVolCc  volumen MEDIDO de la pieza, no estimado: el del SÓLIDO de tu pieza (orden L, 2026-10-30 — la rejilla de
+ *                   la E4 daba 1.918 cc contra 55.8 cc del sólido en la 1594C Box y el regrind salía 134 %); el cubo, su
+ *                   rejilla analítica. Es el mismo número que viaja a la E6 (`e5tuberia.volPiezaCc`).
  * @param cavidadMPa ΔP de CAVIDAD de la E4 (lay-flat §5.5.2, que a propósito NO incluye
  *                   la alimentación: "does not include the pressure drop through the
  *                   feed system"). Aquí se cierra la cuenta.
