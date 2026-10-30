@@ -46,6 +46,7 @@ política del archivo». Plan: `Downloads/la-forja-video-1/00-EL-VIDEO-1.md`.
 - ordenes/2026-10-30-k-el-molde-en-step-y-con-nombre-iso.md
 - ordenes/2026-10-30-l-el-reporte-de-analisis.md
 - ordenes/2026-10-30-p-el-modo-pelicula.md
+- ordenes/2026-10-30-m-los-rojos-mal-juzgados-y-el-folio.md
 - src/forja/mold/molde-step.ts
 
 ## BORRA
