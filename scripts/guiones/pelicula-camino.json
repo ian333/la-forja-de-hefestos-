@@ -56,50 +56,86 @@
  {
   "toma": "07 la inspeccion",
   "en": 2.8,
-  "voz": "El Foco recorre el molde y mide cada barreno contra todos los demás.",
-  "sub": "El Foco recorre el molde y mide cada barreno contra todos los demás."
+  "voz": "La inspección. El Foco recorre el molde y mide el agua contra cada barreno.",
+  "sub": "La inspección: el Foco mide el agua contra cada barreno."
  },
  {
   "toma": "07 la inspeccion",
-  "en": 8.9,
-  "voz": "Cincuenta rayos tocan la pieza. Los postes chicos se revisan aparte.",
-  "sub": "50 rayos tocan la pieza; los postes chicos se revisan aparte."
+  "en": 8.7,
+  "voz": "Primero, las reglas que no cumplen. Las vas a ver cada una en su capítulo.",
+  "sub": "Primero, las reglas que no cumplen: las vas a ver cada una en su capítulo."
  },
  {
   "toma": "07 la inspeccion",
-  "en": 19.9,
-  "voz": "Los ocho botadores empujan a cuatro milímetros del centro de tu pieza.",
-  "sub": "Los 8 botadores empujan a 3.85 mm del centro de tu pieza."
+  "en": 17.0,
+  "voz": "La colada se come más presión de la que el libro le da.",
+  "sub": "La colada se come más presión de la que el libro le da."
  },
  {
   "toma": "07 la inspeccion",
-  "en": 26.4,
-  "voz": "El tope es diez. Sale derecha.",
-  "sub": "El tope es 10.65: sale derecha."
+  "en": 23.3,
+  "voz": "Y el bebedero tarda más en enfriar que tu pieza: él manda el ciclo.",
+  "sub": "Y el bebedero tarda más en enfriar que tu pieza: él manda el ciclo."
  },
  {
   "toma": "07 la inspeccion",
-  "en": 30.9,
-  "voz": "Junto a dos interlocks, el agua deja tres y medio milímetros de acero.",
-  "sub": "Junto a 2 interlocks, el agua deja 3.49 mm de acero."
+  "en": 32.0,
+  "voz": "La compuerta se congela antes de que termine el empaque. Falta dibujarla: ves dónde entra el plástico.",
+  "sub": "La compuerta se congela antes de que termine el empaque; falta dibujarla: ves dónde entra el plástico."
  },
  {
   "toma": "07 la inspeccion",
-  "en": 36.6,
-  "voz": "El mínimo es tres punto dos. Cumple, de panzazo.",
-  "sub": "El mínimo es 3.17: cumple, de panzazo."
+  "en": 43.0,
+  "voz": "Qué manda el ciclo. Tu pared tarda veintiún segundos y medio; los postes, sesenta y cinco.",
+  "sub": "Qué manda el ciclo: tu pared tarda 21.5 s; los postes, 65."
  },
  {
   "toma": "07 la inspeccion",
-  "en": 41.9,
-  "voz": "El molde abre ciento cincuenta y dos milímetros. Tu pieza con su bebedero pide ciento doce.",
-  "sub": "El molde abre 152.5 mm; tu pieza con su bebedero pide 112.5."
+  "en": 50.2,
+  "voz": "En el mismo corte, cada línea de agua con su profundidad y su paso. Dos medidas quedan fuera.",
+  "sub": "En el mismo corte, cada línea de agua con su profundidad y su paso: 2 medidas quedan fuera."
  },
  {
   "toma": "07 la inspeccion",
-  "en": 47.8,
-  "voz": "Le sobran cuarenta. Y la placa expulsora cabe en su caja.",
-  "sub": "Le sobran 40, y la placa expulsora cabe en su caja."
+  "en": 61.0,
+  "voz": "Entre el agua y un interlock quedan tres y medio milímetros de acero. El mínimo es tres punto dos: de panzazo.",
+  "sub": "Entre el agua y un interlock quedan 3.49 mm de acero; el mínimo es 3.17: de panzazo."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 73.0,
+  "voz": "Para despegar tu pieza hacen falta casi cuatro mil newtons: ocho botadores, cada uno junto a una pared.",
+  "sub": "Para despegar tu pieza hacen falta 3,882 N: 8 botadores, cada uno junto a una pared."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 81.0,
+  "voz": "La máquina empuja con treinta y nueve kilonewtons: le sobra.",
+  "sub": "La máquina empuja con 39.2 kN: le sobra."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 88.0,
+  "voz": "El molde abre ciento cincuenta y dos milímetros; tu pieza con su bebedero pide ciento doce, y la expulsora cabe en su caja.",
+  "sub": "El molde abre 152.5 mm; tu pieza con su bebedero pide 112.5, y la expulsora cabe en su caja."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 102.0,
+  "voz": "La placa de soporte se dobla ocho milésimas de milímetro: el cuarenta y uno por ciento del venteo. Aquí, mil veces exagerada.",
+  "sub": "La placa de soporte se dobla 0.0082 mm: el 41 % del venteo. Aquí, exagerada ×1,000."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 115.0,
+  "voz": "En la máquina del taller: treinta y nueve toneladas de ciento cincuenta, y pasa entre las barras. El barril queda casi vacío.",
+  "sub": "En la máquina del taller: 39.4 t de 150, y pasa entre las barras. El barril queda casi vacío (20 %)."
+ },
+ {
+  "toma": "07 la inspeccion",
+  "en": 126.3,
+  "voz": "Cada rojo pide una decisión antes de cortar acero. Y esto es lo que la inspección no revisó.",
+  "sub": "Cada rojo pide una decisión antes de cortar acero, y esto es lo que la inspección no revisó."
  },
  {
   "toma": "08 los planos",

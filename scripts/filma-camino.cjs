@@ -88,14 +88,15 @@ const RELOJ_VIRTUAL = () => {
   page.on('pageerror', (e) => console.log(ts(), 'PAGEERR', String(e).slice(0, 200)));
   const cdp = await ctx.newCDPSession(page);
   let n = 0; const tomas = [];
-  /** filma `seg` segundos; `cada(k)` corre ANTES de cada cuadro (cámara por fórmula, gestos en un cuadro exacto) */
+  /** filma `seg` segundos; `cada(k)` corre ANTES de cada cuadro (cámara por fórmula, gestos en un cuadro exacto). Si `cada` devuelve
+   *  'fin', la toma corta ahí (la inspección dura lo que duran SUS puntos: el recorrido avisa con `data-fin`, orden I 2026-10-29) */
   const filma = async (nombre, seg, cada, sigue = false) => {
     pasoActual = +nombre.slice(0, 2);
     if (pasoActual < DESDE) { if (!sigue) await page.evaluate(() => window.__vt.apaga()); console.log(ts(), `(sin filmar: «${nombre}»)`); return; }
     await page.evaluate(() => window.__vt.enciende());
     const k0 = n, N = Math.round(seg * FPS);
     for (let k = 0; k < N; k++) {
-      if (cada) await cada(k);
+      if (cada && (await cada(k)) === 'fin') break;
       await page.evaluate(async (paso) => { await window.__vt.avanza(paso); }, 1000 / FPS);
       const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 92, optimizeForSpeed: true, clip: { x: 0, y: 0, width: W, height: H, scale: DPR } });
       fs.writeFileSync(path.join(OUT, 'cuadros', String(n).padStart(6, '0') + '.jpg'), Buffer.from(data, 'base64')); n++;
@@ -210,7 +211,17 @@ const RELOJ_VIRTUAL = () => {
   if (DESDE <= 7) {
   await ev(() => window.__vt.enciende());
   await clic('parte-lente-inspeccion');
-  await filma('07 la inspeccion', 2.3 + 5.5 + 0.6 + 11 + 11 + 11 + 12.6);
+  // LA INSPECCIÓN SEGÚN KAZMER (orden I, 2026-10-29): ya no son 4 puntos fijos de 11 s — son los del dictamen VIVO, cada uno con su
+  // `dur`. Se filma hasta que el recorrido avisa que terminó (`data-fin="1"`, tope 300 s) y se anota cuándo empieza cada punto
+  // (`inspeccion-puntos.json`: de ahí salen los «en» del guion y el cuadro de cada punto).
+  const puntos7 = []; let idx7 = null;
+  await filma('07 la inspeccion', 300, async (k) => {
+    if (k % 6) return null;
+    const r = await ev(() => { const e = document.querySelector('[data-testid="inspeccion-recorrido"]'); return e ? { idx: e.dataset.idx, id: e.dataset.id, fin: e.dataset.fin } : null; });
+    if (r && r.idx !== idx7) { idx7 = r.idx; puntos7.push({ idx: +r.idx, id: r.id, t: +(k / FPS).toFixed(2), cuadro: n }); console.log(ts(), `  punto ${r.idx} «${r.id}» a los ${(k / FPS).toFixed(1)} s del paso 7`); }
+    return r && r.fin === '1' ? 'fin' : null;
+  });
+  fs.writeFileSync(path.join(OUT, 'inspeccion-puntos.json'), JSON.stringify(puntos7, null, 1));
   }
   if (HASTA <= 7) { fs.writeFileSync(path.join(OUT, 'tomas.json'), JSON.stringify({ fps: FPS, px: `${W * DPR}×${H * DPR}`, tomas }, null, 1)); console.log(ts(), 'FIN (HASTA=7)', n); await browser.close(); return; }
 
