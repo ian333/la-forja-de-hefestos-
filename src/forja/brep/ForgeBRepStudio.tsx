@@ -47,6 +47,7 @@ import { colocacionEnLaBase } from '../mold/estudio-molde-datos';   // EL MOLDE 
 import { cuerposDelMolde, idaYVuelta } from '../mold/molde-step';
 import { numerarHojas } from '../mold/mold-drawings';   // EL CAJETÍN ISO 7200 (orden K): hoja n de N del juego terminado   // EL MOLDE EN STEP (orden K): el ensamble B-Rep con nombre ISO
 import { costoDeReferencia, costoReferenciaLinea, costoReferenciaHTML, type CostoDeReferencia } from '../mold/expediente';   // PASO 9 · LOS DATOS DE TU PLANTA (orden G): tu tarifa en MXN o la referencia del libro, rotulada
+import { reporteDeAnalisis, reporteDeAnalisisHTML, VISTAS_DEL_REPORTE, type DatosDelReporte, type EstadoRenglon, type ReporteDeAnalisis } from '../mold/expediente';   // ORDEN L: el reporte de análisis por secciones
 import { plantaConDatos } from '../mold/machinesizing';   // orden G: ¿la ficha de la planta trae tarifas o inyectoras?
 import { tituloCorto, type Criterio as CriterioContrato, type ContratoEstado } from '../mold/mold-contratos';   // UN VEREDICTO (orden H): los renglones de las dos columnas
 import { rejuzgarConElMolde, type RevisionModelo } from '../mold/revisar-modelo';   // PASO 8 · el dictamen completo (no solo la fila) para el expediente · UN VEREDICTO (orden H): el re-juicio con el molde
@@ -4275,6 +4276,94 @@ export default function ForgeBRepStudio() {
   useEffect(() => {
     if (planosPend && mold.ciclo?.e2?.pkg && !planosBusy) { setPlanosPend(false); generarPlanosMolde(); }
   }, [planosPend, mold.ciclo, planosBusy, generarPlanosMolde]);
+  // ── ORDEN L · EL ÁLBUM DEL REPORTE (2026-10-30) ──────────────────────────────────────────────────────────────────────────
+  // El reporte de análisis lleva en cada sección «una imagen de la app: el lienzo de la lente o de la estación que corresponde».
+  // No hay otra cámara ni otra escena: cuando una vista ESTÁ en pantalla (una lente, el llenado de la E5, el agua de la E6, el
+  // molde entero) se guarda lo que el lienzo pinta — `gl.render` + `drawImage` en la MISMA tarea (sin preserveDrawingBuffer: el
+  // búfer sigue vivo hasta que la tarea suelta el hilo), reducido a ≤ 1600 px en JPEG. Lo que no se abrió no se finge: la
+  // sección dice qué abrir. El álbum es de UNA pieza: si cambia, se vacía.
+  const albumRef = useRef<{ de: unknown; vistas: Record<string, { src: string; que: string }> }>({ de: null, vistas: {} });
+  const [albumRev, setAlbumRev] = useState(0);
+  if (albumRef.current.de !== piezaMalla) albumRef.current = { de: piezaMalla, vistas: {} };
+  const grabaElLienzo = useCallback((clave: string) => {
+    const s = encuadreRef.current;
+    if (!s) return;
+    try {
+      s.gl.render(s.scene, s.camera);
+      const c = s.gl.domElement;
+      const w = Math.min(1600, c.width), h = Math.round((c.height * w) / c.width);
+      if (!(w > 0 && h > 0)) return;
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const g = cv.getContext('2d'); if (!g) return;
+      // el lienzo es transparente (el fondo lo pone el div en degradado): sin esto el JPEG sale negro detrás de la pieza
+      const fondo = g.createRadialGradient(w * 0.5, h * 0.38, 0, w * 0.5, h * 0.38, Math.max(w, h) * 0.75);
+      fondo.addColorStop(0, '#16283F'); fondo.addColorStop(0.52, '#0C1626'); fondo.addColorStop(1, '#050A14');
+      g.fillStyle = fondo; g.fillRect(0, 0, w, h);
+      g.drawImage(c, 0, 0, w, h);
+      albumRef.current.vistas[clave] = { src: cv.toDataURL('image/jpeg', 0.86), que: VISTAS_DEL_REPORTE[clave]?.que ?? clave };
+      setAlbumRev((v) => v + 1);
+    } catch (e) { console.warn('ALBUM_ERR', clave, e); }
+  }, []);
+  const capturaDelLienzo = useCallback((clave: string) => {
+    // LA LENTE ENFRIAMIENTO se guarda en modo MAPA (los segundos para estar firme): en modo TIEMPO el reloj corre y a los
+    // 1.8 s la pieza sale casi toda «fundido» — MEDIDO en la primera captura (1594C Box): crema parejo, ningún color del
+    // mapa. El modo llega al shader en `useFrame` (uniform `uModo`): se pide el mapa, se esperan dos cuadros, se graba y
+    // se devuelve el modo que tenía (la escala flotante es DOM y no se entera).
+    const reloj = relojEnf.current;
+    if (clave === 'lente-enfriamiento' && reloj.modo !== 0) {
+      const modo0 = reloj.modo; reloj.modo = 0;
+      requestAnimationFrame(() => requestAnimationFrame(() => { grabaElLienzo(clave); reloj.modo = modo0; }));
+      return;
+    }
+    grabaElLienzo(clave);
+  }, [grabaElLienzo]);
+  // una LENTE en pantalla (fuera del molde): 1.8 s después de entrar (la cámara ya voló a su marca), se guarda su lienzo
+  useEffect(() => {
+    if (!lenteActiva || moldeOn || planosOn || expedienteOn) return;
+    const t = setTimeout(() => capturaDelLienzo(`lente-${lenteActiva.id}`), 1800);
+    return () => clearTimeout(t);
+  }, [lenteActiva, moldeOn, planosOn, expedienteOn, capturaDelLienzo]);
+  // el MOLDE: el llenado de la E5 y el agua de la E6 se guardan en cuanto terminan (antes de los 400 ms en que arranca la
+  // estación siguiente); el molde entero, 2.5 s después del portamoldes (el ciclo ya corre)
+  const cicloEst = mold.ciclo?.estacion, cicloPorta = !!mold.ciclo?.portamoldes, cicloConPieza = !!mold.ciclo?.pieza;
+  useEffect(() => {
+    if (!moldeOn || !cicloConPieza || planosOn || expedienteOn) return;
+    const clave = cicloPorta ? 'molde' : cicloEst === 5 ? 'llenado-e5' : cicloEst === 6 ? 'agua' : null;
+    if (!clave || (clave === 'molde' && albumRef.current.vistas.molde)) return;
+    const t = setTimeout(() => capturaDelLienzo(clave), clave === 'molde' ? 2500 : 150);
+    return () => clearTimeout(t);
+  }, [moldeOn, cicloEst, cicloPorta, cicloConPieza, planosOn, expedienteOn, capturaDelLienzo]);
+  // ── EL REPORTE DE ANÁLISIS (orden L): los criterios del dictamen (② si hay molde) + los datos de las MISMAS estaciones ──
+  const reporte = useMemo(() => {
+    if (!expedienteOn || !piezaMalla || !revision) return null;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const c = mold.ciclo as any;
+      const lp = lentes?.lentes.find((l) => l.id === 'pared'), le = lentes?.lentes.find((l) => l.id === 'enfriamiento'), ll = lentes?.lentes.find((l) => l.id === 'llenado');
+      const e8 = c?.pieza && c?.e8 ? c.e8 : null;
+      const datos: DatosDelReporte = {
+        volumen: c?.e5tuberia ? { cc: c.e5tuberia.volPiezaCc, fuente: c.e5tuberia.volPiezaFuente ?? 'la rejilla de la estación 4', voxE4Cc: c.e5tuberia.volPiezaVoxE4Cc } : null,
+        fan: c?.e5fan ? { pMaxMPa: c.e5fan.pMaxMPa, tFillS: c.e5fan.tFillS, shortShot: !!c.e5fan.shortShot, incompleto: !!c.e5fan.incompleto } : null,
+        lentes: {
+          pared: lp ? { p50: lp.p50, max: lp.maxCampo, titular: lp.titular, ref: lp.ref } : null,
+          enfriamiento: le?.ciclo ? { titular: le.titular, ref: le.ref, paredMm: le.ciclo.paredMm, paredS: le.ciclo.paredS, gruesoMm: le.ciclo.gruesoMm, forma: le.ciclo.forma,
+            tcS: le.ciclo.tcS, barraS: le.ciclo.barraS, placaS: le.ciclo.placaS, lugares: le.ciclo.lugares } : null,
+          llenado: ll ? { lMaxMm: ll.maxCampo, titular: ll.titular, ref: ll.ref, inalcanzables: lentes?.campo.inalcanzables ?? 0 } : null,
+        },
+        agua: e8 ? {
+          masaG: e8.cd.massKg * 1000, qShotKJ: e8.cd.qShotJ / 1000, qCoolingW: e8.cd.qCoolingW, tcCircuitoS: e8.cd.tcS, nLineas: e8.cd.nLines,
+          diaMm: e8.lineas.diaMm, plug: e8.lineas.plug, nTramos: e8.circuito.segmentos.length, hAmm: e8.circuito.ladoA.hMm, hBmm: e8.circuito.ladoB.hMm,
+          gpmTermico: e8.caudal.termicoGPM, gpmBombeado: e8.caudal.manda === 'turbulencia' ? e8.caudal.turbulentoGPM : e8.caudal.termicoGPM,
+          manda: e8.caudal.manda, dMaxMm: e8.cd.dMaxMm,
+        } : null,
+        vistas: Object.fromEntries(Object.entries(albumRef.current.vistas).map(([k, v]) => [k, v.que])),
+      };
+      const r = reporteDeAnalisis(revision, rejuicio?.rev ?? null, datos);
+      return { r, html: reporteDeAnalisisHTML(r, (k) => albumRef.current.vistas[k]?.src) };
+    } catch (e) { console.warn('REPORTE_ERR', e); return null; }
+    // albumRev: una vista nueva en el álbum re-arma el reporte (el álbum vive en una ref)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expedienteOn, piezaMalla, revision, rejuicio, mold.ciclo, lentes, albumRev]);
   // PASO 8 · el expediente como archivo: lo que HAY hoy, con lo que falta dicho
   const expediente = useMemo(() => {
     if (!expedienteOn || !piezaMalla) return null;
@@ -4294,9 +4383,9 @@ export default function ForgeBRepStudio() {
     const revE = rejuicio?.rev ?? revision;
     const pendientes = revE?.expediente.pendientes ?? 0;
     const borrador = !revision || pendientes > 0;
-    const html = expedienteHTML({ nombre: piezaMalla.nombre, fecha, rev: revision, rj: rejuicio?.rev ?? null, rjFuentes: rejuicio?.fuente ?? [], costo, planos: planosMolde, notas: piezaMalla.notas, borrador });
+    const html = expedienteHTML({ nombre: piezaMalla.nombre, fecha, rev: revision, rj: rejuicio?.rev ?? null, rjFuentes: rejuicio?.fuente ?? [], costo, planos: planosMolde, notas: piezaMalla.notas, borrador, reporte: reporte?.html ?? null });
     return { html, tieneDictamen: !!revision, tieneCotizacion: !!costo, costo, borrador, nPlanos: planosMolde?.length ?? 0, nDecisiones: revE?.expediente.decisiones.length ?? 0, pendientes };
-  }, [expedienteOn, piezaMalla, mold.ciclo, revision, rejuicio, planosMolde]);
+  }, [expedienteOn, piezaMalla, mold.ciclo, revision, rejuicio, planosMolde, reporte]);
   const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
   // LOS BOTADORES DE TU PIEZA (2026-09-17): el ciclo animado (llenar · abrir · expulsar) vive SOLO mientras la
   // lente MOLDE está a la vista. Medido en el paseo: con el rAF corriendo bajo los planos y el expediente, cada
@@ -10444,6 +10533,7 @@ export default function ForgeBRepStudio() {
                   : 'Molde 3D (STEP): sale cuando el molde está entero (el portamoldes del paso 6).'}
               </div>
             </div>
+            <ReporteDeAnalisisVista reporte={reporte?.r ?? null} img={(k) => albumRef.current.vistas[k]?.src} />
           </div>
         </div>
       )}
@@ -10984,9 +11074,85 @@ function renglonesDelVeredicto(rev: RevisionModelo | null, rj: RevisionModelo | 
   return filas;
 }
 
+/**
+ * ORDEN L · EL REPORTE DE ANÁLISIS EN EL PASO 9 — la misma `ReporteDeAnalisis` que va al archivo (expediente.ts), en la pantalla:
+ * por sección, la imagen de la app (del álbum), el número de HOY contra su límite con su cita, y «lo que NO se calculó».
+ * Sin dictamen no hay reporte (cada veredicto sale de él) y se dice.
+ */
+const COLOR_RENGLON: Record<EstadoRenglon, string> = {
+  'VIOLA': '#f27a6c', 'ADVIERTE': PIEL.aviso, 'CUMPLE': '#7ee2a8', 'SIN-CABLEAR': '#7fb2f0', 'SIN-MÓDULO': '#7fb2f0', 'DATO': '#9fb0c4',
+};
+const ICONO_RENGLON: Record<EstadoRenglon, string> = { 'VIOLA': '✗', 'ADVIERTE': '⚠', 'CUMPLE': '✓', 'SIN-CABLEAR': '🔌', 'SIN-MÓDULO': '∅', 'DATO': '·' };
+function ReporteDeAnalisisVista({ reporte, img }: { reporte: ReporteDeAnalisis | null; img: (clave: string) => string | undefined }) {
+  if (!reporte) {
+    return (
+      <div data-testid="reporte-de-analisis" data-secciones={0} style={{ padding: '0 18px 16px', color: '#f27a6c', fontSize: 12.5 }}>
+        REPORTE DE ANÁLISIS · sale del dictamen: abre EL DICTAMEN (D) y vuelve al expediente.
+      </div>
+    );
+  }
+  const t = reporte.totales;
+  return (
+    <div data-testid="reporte-de-analisis" data-secciones={reporte.secciones.length} data-con-vista={t.conVista} data-juzga={reporte.juzga}
+      style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 18px 18px', borderTop: '1px solid rgba(255,255,255,0.08)', fontFamily: PIEL.fuente.cuerpo }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 1, background: '#0f141c', padding: '10px 0 8px', display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+        <span style={{ font: '700 11px ui-monospace,Menlo,monospace', letterSpacing: 1.6, color: '#dfe7f2' }}>REPORTE DE ANÁLISIS</span>
+        <span style={{ fontSize: 12, color: '#c7d2df' }}>juzga {reporte.juzga} · <b style={{ color: COLOR_RENGLON.VIOLA }}>✗ {t.viola}</b> · <b style={{ color: COLOR_RENGLON.ADVIERTE }}>⚠ {t.advierte}</b> · ✓ {t.cumple} · {t.conVista} de {reporte.secciones.length} secciones con imagen de la app</span>
+      </div>
+      {reporte.aviso && <div data-testid="reporte-aviso" style={{ fontSize: 12, color: '#f27a6c', border: '1px solid rgba(242,122,108,0.45)', borderRadius: 6, padding: '6px 10px', margin: '2px 0 10px' }}>{reporte.aviso}</div>}
+      {reporte.secciones.map((s) => {
+        const vistas = s.vistas.map((v) => ({ v, src: img(v.clave) })).filter((x) => !!x.src);
+        return (
+          <section key={s.id} data-testid={`reporte-seccion-${s.id}`} data-vistas={vistas.length} style={{ margin: '12px 0 18px', scrollMarginTop: 46 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.10)', paddingBottom: 4, marginBottom: 8 }}>
+              <span style={{ font: '700 12px ui-monospace,Menlo,monospace', letterSpacing: 1.4, color: PIEL.aviso }}>{s.n} · {s.titulo.toUpperCase()}</span>
+              <span style={{ fontSize: 11, color: '#7f8da3' }}>Kazmer {s.cita}</span>
+            </div>
+            {vistas.length > 0
+              ? (
+                <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+                  {vistas.map(({ v, src }) => (
+                    <figure key={v.clave} style={{ margin: 0, flex: 1, maxWidth: vistas.length > 1 ? '50%' : '62%' }}>
+                      <img src={src} alt={v.que} style={{ width: '100%', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', display: 'block' }} />
+                      <figcaption style={{ fontSize: 10.5, color: '#8fa0b5', marginTop: 3 }}>{v.que}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )
+              : <div data-testid={`reporte-sin-vista-${s.id}`} style={{ fontSize: 11.5, color: '#9fb0c4', fontStyle: 'italic', marginBottom: 8 }}>sin imagen — {s.sinVista}</div>}
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, color: '#c7d2df' }}>
+              <thead><tr style={{ color: '#7f8da3', textAlign: 'left', fontSize: 10.5 }}>
+                <th style={{ padding: '3px 6px', fontWeight: 600 }}>qué</th><th style={{ padding: '3px 6px', fontWeight: 600 }}>hoy</th>
+                <th style={{ padding: '3px 6px', fontWeight: 600 }}>límite</th><th style={{ padding: '3px 6px', fontWeight: 600 }}>Kazmer</th>
+              </tr></thead>
+              <tbody>
+                {s.renglones.map((x, i) => (
+                  <tr key={i} data-estado={x.estado} title={x.nota ? `${x.nota} — ${x.fuente}` : x.fuente} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', verticalAlign: 'top' }}>
+                    <td style={{ padding: '4px 6px' }}>
+                      <span style={{ color: COLOR_RENGLON[x.estado], fontWeight: 700, marginRight: 6 }}>{ICONO_RENGLON[x.estado]}</span>
+                      <b style={{ color: '#dfe7f2' }}>{x.que}</b>
+                      {x.nota && <div style={{ fontSize: 10.5, color: '#8fa0b5', marginTop: 1, maxWidth: 520 }}>{x.nota.length > 220 ? `${x.nota.slice(0, 217)}…` : x.nota}</div>}
+                    </td>
+                    <td style={{ padding: '4px 6px', whiteSpace: x.hoy.length > 26 ? 'normal' : 'nowrap', minWidth: 90, maxWidth: 300, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: x.estado === 'DATO' ? '#dfe7f2' : COLOR_RENGLON[x.estado] }}>{x.hoy}</td>
+                    <td style={{ padding: '4px 6px', whiteSpace: 'nowrap', fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: '#9fb0c4' }}>{x.limite}</td>
+                    <td style={{ padding: '4px 6px', color: '#9fb0c4', fontSize: 10.5 }}>{x.cita}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div data-testid={`reporte-no-calculado-${s.id}`} style={{ fontSize: 11, color: '#9fb0c4', borderLeft: `2px solid ${PIEL.aviso}`, padding: '4px 10px', marginTop: 8 }}>
+              <b style={{ color: '#dfe7f2' }}>Lo que NO se calculó:</b> {s.noCalculado.join(' ')}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 /** LOS DATOS DE TU PLANTA (orden 2026-10-29-g): la sección 3 la arma `costoReferenciaHTML` (expediente.ts) — con tu tarifa en MXN
  *  por centro, o las horas + la referencia del libro en USD rotulada «falta tu tarifa». */
-function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; rj?: RevisionModelo | null; rjFuentes?: string[]; costo: CostoDeReferencia | null; planos: DrawingPage[] | null; notas: string[]; borrador: boolean }): string {
+function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; rj?: RevisionModelo | null; rjFuentes?: string[]; costo: CostoDeReferencia | null; planos: DrawingPage[] | null; notas: string[]; borrador: boolean; reporte?: string | null }): string {
   const esc = (t: unknown) => String(t ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
   const css = `@page{size:A4 landscape;margin:14mm}html,body{margin:0;background:#fff;color:#111;font:12px/1.45 Inter,system-ui,sans-serif}` +
     `h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 8px;letter-spacing:.06em;text-transform:uppercase;border-bottom:2px solid #111;padding-bottom:4px}` +
@@ -11027,6 +11193,8 @@ function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo 
     (o.borrador ? `<p class="falta"><b>BORRADOR</b>: ${revD ? `${esc(revD.expediente.pendientes)} decisiones sin firma` : 'sin dictamen, ninguna decisión firmada'}. No se fabrica sin la firma del moldista responsable.</p>` : '') +
     (o.notas.length ? `<p class="muted">${o.notas.map(esc).join(' · ')}</p>` : '') +
     `<div class="sec"><h2>1 · Dictamen</h2>${dictamen}</div>` +
+    // ORDEN L · EL REPORTE DE ANÁLISIS: las 8 secciones de la industria (imagen de la app · número · límite · cita · lo que NO se calculó)
+    (o.reporte ? `<div class="reporte-de-analisis">${o.reporte}</div>` : `<div class="falta">Sin reporte de análisis: sale del dictamen — abre EL DICTAMEN (D).</div>`) +
     `<div class="sec"><h2>2 · Decisiones §13.10</h2>${decisiones || '<div class="falta">Salen del dictamen.</div>'}</div>` +
     `<h2>3 · Costo de referencia — ${o.costo?.modo === 'tu-tarifa' ? 'con TU tarifa (MXN)' : 'horas + referencia del libro (USD) · falta tu tarifa'}</h2>${cot}` +
     `<h2>4 · Planos del molde</h2>${planos}` +
