@@ -7,6 +7,7 @@
  * Verificado contra el hot-runner del laptop bezel (p.139-144).
  */
 import type { MeltMaterial } from './filling';
+import { RESINAS_KAZMER, RESINA_POR_DEFECTO, fichaResinaOError } from './materials';
 
 export interface RunnerSegment {
   name: string;
@@ -79,13 +80,29 @@ export function steelSafeDiaMm(diaMm: number): number {
 
 /** Apéndice A (p.390-393, LITERAL) — propiedades térmicas/proceso por material
  *  para el diseño de la colada. tCool/tMelt = medios de los rangos impresos. */
-export const FEED_MATERIALS: Record<string, {
+export type FeedMaterial = {
   k: number; n: number; alpha: number; tMelt: number; tCool: number;
   tEject: number; tNoFlow: number; shearMax: number; rhoMeltKgM3: number;
-}> = {
+};
+export const FEED_MATERIALS: Record<string, FeedMaterial> = {
+  // PP y ABS: los dos que el cap 6 VERIFICÓ contra sus ejemplos (el runner ⌀4.76 del cup/lid da 22.9 s con tCool 40 — el
+  // medio impreso del PP sería 35: es el valor del ejemplo, no el del rango, y así reproduce p.203). No se tocan.
   PP:  { k: 5300,  n: 0.378, alpha: 8.15e-8, tMelt: 220, tCool: 40, tEject: 80,   tNoFlow: 176, shearMax: 100000, rhoMeltKgM3: 781 },
   ABS: { k: 17100, n: 0.348, alpha: 8.73e-8, tMelt: 239, tCool: 60, tEject: 96.7, tNoFlow: 132, shearMax: 50000,  rhoMeltKgM3: 930 },
+  // LAS OTRAS 14 (orden 2026-10-29-g): de la MISMA tabla y con la MISMA regla que dice el encabezado — k y n de la
+  // power-law (p.392-393), α (p.390-391), tMelt = «Mid-range melt temperature», tCool = medio del rango de refrigerante,
+  // tEject = DTUL (como el 96.7 del ABS y el 80 del PP), no-flujo, γ̇ máx y densidad del fundido. Antes, cualquiera de ellas
+  // caía a PP en silencio (`FEED_MATERIALS[o.material] ?? FEED_MATERIALS.PP`).
+  ...Object.fromEntries(Object.values(RESINAS_KAZMER).filter((f) => f.clave !== 'PP' && f.clave !== 'ABS').map((f) => [f.clave, {
+    k: f.powerK, n: f.powerN, alpha: f.alphaM2s, tMelt: f.fundidoMedioC, tCool: (f.refrigeranteMinC + f.refrigeranteMaxC) / 2,
+    tEject: f.dtulC, tNoFlow: f.noFlujoC, shearMax: f.corteMaxS, rhoMeltKgM3: f.rhoFundidoKgM3,
+  } satisfies FeedMaterial])),
 };
+/** La colada de UNA resina, o el error «sin ficha: no se calcula» — nunca otra resina en su lugar (antes: `?? PP`). */
+export function feedMaterial(material: string): FeedMaterial {
+  const clave = fichaResinaOError(material).clave;
+  return FEED_MATERIALS[clave];
+}
 
 /**
  * DISEÑO DEL SPRUE de colada fría con gate directo (§6.3.1 + §7.2.1) — el caso
@@ -103,7 +120,7 @@ export function designSprueFeed(o: {
   material: string; partVolumeCc: number; partWallMm: number; sprueLenMm: number;
   fillTimeS?: number; dPAllocMPa?: number; nozzleOrificeMm?: number; taperDeg?: number;
 }) {
-  const m = FEED_MATERIALS[o.material] ?? FEED_MATERIALS.PP;
+  const m = feedMaterial(o.material);                              // sin ficha → error, no PP (orden 2026-10-29-g)
   const mm = m as unknown as MeltMaterial;                         // FEED_MATERIALS trae el subconjunto power-law que usan estas Eq
   const tFill = o.fillTimeS ?? 1;                                  // convención de los ejemplos del libro
   const Vdot = (o.partVolumeCc * 1e-6) / tFill;                    // m³/s
@@ -157,8 +174,10 @@ export function sprueDesignFromCavity(
   cavity: { shape?: string; widthMm: number; lenMm?: number; depthMm: number; wallMm?: number },
   sprueLenMm: number,
 ) {
+  // la resina de la pieza (el intake). Sin declarar: la del taller (`RESINA_POR_DEFECTO`, ABS) — antes era 'PP' a secas
+  // y el sprue de un molde de ABS se dimensionaba con la viscosidad del PP (orden 2026-10-29-g).
   return designSprueFeed({
-    material: plastic ?? 'PP', partVolumeCc: estPartVolumeCc(cavity),
+    material: plastic ?? RESINA_POR_DEFECTO, partVolumeCc: estPartVolumeCc(cavity),
     partWallMm: cavity.wallMm ?? 2, sprueLenMm,
   });
 }
@@ -191,7 +210,7 @@ export function designFeedSystem(o: {
   /** colada caliente: el límite de volumen es otro (§6.2.3, n_turns ≈ 1) */
   hotRunner?: boolean;
 }) {
-  const m = FEED_MATERIALS[o.material] ?? FEED_MATERIALS.PP;
+  const m = feedMaterial(o.material);                            // sin ficha → error, no PP (orden 2026-10-29-g)
   const mm = m as unknown as MeltMaterial;                       // FEED_MATERIALS trae el subconjunto power-law que usan estas Eq
   const tFill = o.fillTimeS ?? 1;
   const Vdot = (o.partVolumeCc * 1e-6) / tFill;

@@ -70,6 +70,7 @@ import {
   type LazoSeccion, type PiezaSeccionada, type Vec2, type Vec3, type EstadoV,
 } from './lamina-seccion';
 import { steelSafeDiaMm, FEED_MATERIALS, sprueDesignFromCavity } from './feed';
+import { RESINA_POR_DEFECTO, fichaResina } from './materials';
 import { shearRateCyl, shearRateStrip, gateDropStripPL, GATE_TABLE, type GateType } from './gating';
 import { suckerPinDesign } from './threeplate';
 import { verificarTamanoMinimo, type RasgoBajoJuicio } from '../verificacion/fiducial';
@@ -475,8 +476,12 @@ export function modeloCompuerta(o: OpcionesCompuerta): ModeloCompuerta {
   if (o.gateLargoMm == null) ext.push(`largo del land = max(0.8, espesor) = ${Lg.toFixed(2)} mm (el libro solo acota el pin-point: "on the order of its diameter")`);
 
   // ── flujo (para γ̇ y ΔP con las fórmulas del propio libro) ──
-  const material = o.material ?? o.spec?.plastic ?? 'PP';
-  const mat = FEED_MATERIALS[material] ?? null;
+  // LA RESINA DEL INTAKE (orden 2026-10-29-g): antes `?? 'PP'` — sin resina declarada la lámina rotulaba «PP» y juzgaba el
+  // corte con el γ̇ máx del PP. Sin declarar: la del taller (`RESINA_POR_DEFECTO`); sin ficha del libro, `mat` = null y la
+  // lámina deja SIN CABLEAR lo que necesita la resina (no se juzga con otra).
+  const material = o.material ?? o.spec?.plastic ?? RESINA_POR_DEFECTO;
+  const ficha = fichaResina(material);
+  const mat = ficha ? FEED_MATERIALS[ficha.clave] ?? null : null;
   let Vdot: number | null = o.VdotM3s ?? null;
   if (Vdot == null && o.spec) Vdot = sprueDesignFromCavity(o.spec.plastic, o.spec.cavity, 60).VdotCcS * 1e-6;
 
@@ -1192,7 +1197,7 @@ export function medirCompuerta(sec: Seccion, meta: MetaCompuerta, o: OpcionesCom
       datos.fanRazonAncho = +razon.toFixed(6);
       // 2ª condición: ΔP transversal (a lo ancho del abanico) vs. ΔP del land
       let segunda: string, okSeg: boolean | null = null;
-      const mat = FEED_MATERIALS[meta.material];
+      const fm = fichaResina(meta.material), mat = fm ? FEED_MATERIALS[fm.clave] : undefined;   // sin ficha → sin juicio, no otra resina
       if (meta.VdotM3s != null && mat) {
         const mm = mat as unknown as Parameters<typeof gateDropStripPL>[0];
         const dpTrans = gateDropStripPL(mm, anchoFan / 2 / 1000, meta.gateEspesorMm / 1000, meta.gateEspesorMm / 1000, meta.VdotM3s / 2) / 1e6;

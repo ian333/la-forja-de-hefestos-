@@ -57,7 +57,9 @@ import { gripEjectorLayout, pisoInteriorPorRayo, ejectorHeadGeom, claroPinAgua }
 import { resolverLlenadoFAN, resolverLlenadoFANAsync } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
-import { mark } from '../telemetry-forja';
+import { mark, ocultarEnTelemetria } from '../telemetry-forja';
+import { FICHA_PLANTA_VACIA, leeFichaDeLaPlanta, plantaConDatos, type FichaDeLaPlanta } from '../mold/machinesizing';
+import { RESINA_POR_DEFECTO } from '../mold/materials';
 
 /** FLECHA de teselado del AGUA (barrenos, tapones NPT, O-rings) en el estudio — EL CORTE ÚNICO, pregunta 10 de ian
  *  («sí» a teselar más fino). Antes 0.9 mm (y 0.9 rad de ángulo): en un ⌀6.35 eso es un HEPTÁGONO cuya cuerda se
@@ -99,6 +101,18 @@ const volteaMalla = (base: MoldPart, col: { tx: number; ty: number; tz: number }
   }
   return { ...base, role: 'pieza', name, color, opacity, positions: pos, normals: nor, edges };
 };
+/** LOS DATOS DE TU PLANTA (orden 2026-10-29-g) — la llave de SU navegador y la lectura que nunca truena: sin localStorage, con
+ *  un JSON roto o con un archivo de otra cosa, la ficha arranca vacía y la app funciona como antes. */
+const LLAVE_PLANTA = 'forja.planta.v1';
+function leePlantaGuardada(): FichaDeLaPlanta {
+  try {
+    const t = typeof localStorage !== 'undefined' ? localStorage.getItem(LLAVE_PLANTA) : null;
+    const f = t ? leeFichaDeLaPlanta(JSON.parse(t)) : null;
+    if (f) return f;
+  } catch { /* sin localStorage o JSON roto: ficha vacía */ }
+  return FICHA_PLANTA_VACIA;
+}
+
 export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 0 }: {
   oc: any;
   setCollapsed: Dispatch<SetStateAction<Record<string, boolean>>>;
@@ -483,7 +497,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
         const parts = buildMoldParts(OCC, oc, liveMoldSpec, 'blocks', liveMoldMesh ?? undefined, liveRealSolidsRef.current ?? undefined);
         // TELEMETRÍA del tiempo REAL del armado — la op más pesada del estudio.
         // El freeze de hoy fue exactamente esto sin medir ni avisar.
-        mark('mold-build', performance.now() - t0, { name: liveMoldSpec.name ?? '?', parts: parts.length });
+        // sin el NOMBRE del molde (orden 2026-10-29-g): «Molde <tu pieza>» es secreto del cliente (LFPPI 163-169, juez B D7)
+        mark('mold-build', performance.now() - t0, { parts: parts.length });
         if (!cancelled) {
           // platinas de la máquina ocultas por defecto (contexto): el molde se ve limpio.
           setMoldParts(parts); setMoldHidden({ 'platina-fija': true, 'platina-movil': true }); setMoldOpacity({}); setMoldSelected(null); setMoldOffset({}); setMoldMoveMode(false); setMoldColors({});
@@ -496,7 +511,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
       }
       catch (e) {
         console.error('MOLD_BUILD_ERR:', e);
-        mark('mold-build', performance.now() - t0, { name: liveMoldSpec.name ?? '?', ok: false, err: String((e as Error)?.message ?? e).slice(0, 200) });
+        mark('mold-build', performance.now() - t0, { ok: false, err: String((e as Error)?.message ?? e).slice(0, 200) });
         if (!cancelled) setMoldParts([]);
       }
       finally { if (!cancelled) setMoldBuilding(false); }
@@ -563,7 +578,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
     for (let i = 0; i < normals.length; i += 3) { const l = Math.hypot(normals[i], normals[i + 1], normals[i + 2]) || 1; normals[i] /= l; normals[i + 1] /= l; normals[i + 2] /= l; }
     // LOS APAGONES (2026-10-24): la pieza se rotulaba «PP» LITERAL sobre una máquina que corre ABS. El material es el del
     // intake (el mismo default que la E1: `ik.material ?? 'ABS'`); `intakeRef` se lee al llamar, no al crear el callback.
-    return { role, name, material: role.startsWith('pieza') ? (intakeRef.current.material ?? 'ABS') : 'AISI P20', positions, normals, indices, color, opacity };
+    return { role, name, material: role.startsWith('pieza') ? (intakeRef.current.material ?? plantaRef.current.resina ?? RESINA_POR_DEFECTO) : 'AISI P20', positions, normals, indices, color, opacity };
   }, [oc]);
   // la línea de partición como LISTÓN dorado (quad por segmento, 0.25 mm sobre el lazo)
   const cursoLoopPart = useCallback((loops: Array<{ pts: Array<[number, number, number]> }>): MoldPart => {
@@ -624,6 +639,19 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
     const next = { ...intakeRef.current, ...patch };
     intakeRef.current = next; setIntakeState(next); setIntakeRev((v) => v + 1);
   }, []);
+  // LOS DATOS DE TU PLANTA (orden 2026-10-29-g): tarifas MXN/h por centro, inyectoras con su boquilla, conectores del agua y la
+  // resina que más corre. Se capturan UNA vez y viven en SU navegador (localStorage, siempre en try/catch: sin él la app
+  // funciona igual, solo no recuerda) y en un archivo que la planta descarga y sube. Cambiar la ficha re-siembra el ciclo como
+  // cualquier campo del intake (la máquina, la colada y el costo cambian). Sin ficha la spec queda BIT-IGUAL a la de antes.
+  const [planta, setPlantaState] = useState<FichaDeLaPlanta>(leePlantaGuardada);
+  const plantaRef = useRef(planta);
+  const setPlanta = useCallback((p: FichaDeLaPlanta) => {
+    const f = leeFichaDeLaPlanta(p) ?? FICHA_PLANTA_VACIA;          // valida: lo que no es número > 0 queda SIN DATO
+    plantaRef.current = f; setPlantaState(f); setIntakeRev((v) => v + 1);
+    try { localStorage.setItem(LLAVE_PLANTA, JSON.stringify(f)); } catch { /* sin localStorage: la ficha vive en esta pestaña y en tu archivo */ }
+  }, []);
+  /** la resina de ESTA pieza: la del intake > la de tu planta > la del taller (ABS) — UNA regla para el puente, la etiqueta y el dictamen */
+  const resina = intake.material ?? planta.resina ?? RESINA_POR_DEFECTO;
   const intakeAplicadoRef = useRef(-1);
   useEffect(() => {
     const a = arbol?.current;
@@ -639,11 +667,15 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
     if (ciclo?.pieza && ciclo.piezaShape === a.shape && intakeAplicadoRef.current === intakeRev) return;   // mismo sólido y mismo intake: nada que hacer
     try {
       const ik = intakeRef.current;
+      if (a.nombre) ocultarEnTelemetria(a.nombre);                        // el nombre de la pieza no viaja (orden 2026-10-29-g)
       const pieza = piezaDesdeArbol(oc, a.shape, {
         nombre: a.nombre || 'PIEZA DEL ÁRBOL', wallMm: ik.wallMm ?? a.wallMm, draftDeg: a.draftDeg,
-        filletMm: a.filletMm, round: a.round, material: ik.material ?? 'ABS',   // intake §2.1.5 (sprint 2): declarado > adivinado
+        filletMm: a.filletMm, round: a.round, material: ik.material ?? plantaRef.current.resina ?? RESINA_POR_DEFECTO,   // intake §2.1.5: declarado > tu planta > el taller
         annualVolume: ik.annualVolume, packMPa: ik.packMPa,                 // p_pack (orden 2026-10-24-b): sin declarar → 50 MPa en la máquina
       });
+      // LA FICHA DE TU PLANTA viaja en la spec (orden 2026-10-29-g): la máquina se elige entre tus inyectoras y el costo sale con
+      // tu tarifa. Sin datos no se agrega nada: la spec es la de siempre (los dorados no se mueven por existir la ficha).
+      if (plantaConDatos(plantaRef.current)) pieza.spec = { ...pieza.spec, planta: plantaRef.current };
       intakeAplicadoRef.current = intakeRev;
       const e1 = estacion1(pieza);
       cursoRef.current = { ...cursoRef.current, pieza: a.shape, vols: { ...cursoRef.current.vols, pieza: a.volMm3 }, stage: Math.max(1, cursoRef.current.stage) };
@@ -2277,5 +2309,5 @@ export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 
   // props de los paneles — con moldParts (Float32Arrays de millones) eso es el
   // main thread muerto. Cazado con Debugger.pause el 2026-07-27.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => ({ intakeRev, progreso, telemetria: telemetriaRef.current, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloAguaPieza, cicloBotadoresPieza, cicloPortamoldesPieza, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloProgRef, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [intakeRev, progreso, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloAguaPieza, cicloBotadoresPieza, cicloPortamoldesPieza, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
+  return useMemo(() => ({ planta, setPlanta, resina, intakeRev, progreso, telemetria: telemetriaRef.current, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloAguaPieza, cicloBotadoresPieza, cicloPortamoldesPieza, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloProgRef, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [planta, setPlanta, resina, intakeRev, progreso, telemetriaRev, moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, intake, setIntake, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloAguaPieza, cicloBotadoresPieza, cicloPortamoldesPieza, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
 }

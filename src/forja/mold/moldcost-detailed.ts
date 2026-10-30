@@ -212,6 +212,9 @@ export function cycleTimeEstimate(wallMm: number, cycleEff: number): number {
 
 export interface PartCostInputs {
   VpartMm3: number; plastic: keyof typeof PLASTICS;
+  /** ρ (kg/m³) y κ (USD/kg) de la ficha de la resina (Kazmer Apéndice A, materials.ts) — orden 2026-10-29-g. Con ella no se
+   *  usa `PLASTICS` (que no trae PS ni PA6: `plc` salía undefined y el costo tronaba). El ABS da lo mismo (1044 · 2.16). */
+  resina?: { rhoKgM3: number; costKg: number };
   feedWaste: keyof typeof FEED_WASTE;
   nCavities: number; clampTons: number; wallMm: number;
   cycleMode: keyof typeof CYCLE_EFFICIENCY; hotRunner: boolean;
@@ -230,7 +233,7 @@ export interface PartCostBreakdown {
 export function estimatePartCost(totalMoldUSD: number, annualOrTotalQty: number, p: PartCostInputs): PartCostBreakdown {
   const fMaint = p.fMaintenance ?? 3;                        // ejemplo del libro: ×3
   const moldPerPart = (totalMoldUSD / annualOrTotalQty) * fMaint;       // Eq 3.20
-  const plc = PLASTICS[p.plastic];
+  const plc = p.resina ?? PLASTICS[p.plastic];
   const materialPerPart = (p.VpartMm3 * 1e-9) * plc.rhoKgM3 * plc.costKg * FEED_WASTE[p.feedWaste]; // Eq 3.21
   const cycleEff = CYCLE_EFFICIENCY[p.cycleMode][p.hotRunner ? 1 : 0];
   const cycleTimeS = cycleTimeEstimate(p.wallMm, cycleEff);            // Eq 3.23

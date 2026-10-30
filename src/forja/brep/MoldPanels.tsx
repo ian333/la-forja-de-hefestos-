@@ -12,7 +12,10 @@ import { GOLD } from './ui-theme';
 import { Ic } from './icons';
 import { moldThermalResistanceStudy, heatToExtractW } from '../mold/thermal-resistance';
 import { estPartVolumeCc } from '../mold/feed';
-import { P_PACK_DEFECTO_MPA } from '../mold/moldmachine';
+import { P_PACK_DEFECTO_MPA, moldMachine, type MachineSpec } from '../mold/moldmachine';
+import { RESINAS_KAZMER, fichaResina, ResinaSinFicha } from '../mold/materials';
+import { FICHA_PLANTA_VACIA, inyectoraDelTaller, leeFichaDeLaPlanta, type FichaDeLaPlanta, type InyectoraDeLaPlanta, type TarifasDeLaPlanta } from '../mold/machinesizing';
+import { costoDeReferencia, costoReferenciaLinea } from '../mold/expediente';
 import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
 import type { CalcPaso } from '../mold/cooling-design';
 import { construirMolde, CICLO_KAZMER, cotizacionPieza, cotizacionSvg, DADO_PIEZA, type PiezaSpec } from '../mold/estudio-molde-datos';
@@ -597,10 +600,14 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
                 onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                 style={{ width: '100%', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }} />
             </label>
-            <label style={{ fontSize: 10, color: '#8fa1b8' }}>material
-              <select data-testid="intake-material" value={intake.material ?? ciclo.pieza.material}
+            {/* LA RESINA (orden 2026-10-29-g): solo las 16 con ficha COMPLETA del libro (Kazmer Apéndice A). Antes la lista decía
+                seis y el motor tenía dos (todo lo que no era ABS se calculaba como PP; PS y PA6 tronaban el costo). Una resina que no
+                está en la lista no se calcula: la tarjeta TU PLANTA del paso 2 deja escribir otra y dice «sin ficha». */}
+            <label style={{ fontSize: 10, color: '#8fa1b8' }}>resina
+              <select data-testid="intake-material" value={fichaResina(intake.material ?? ciclo.pieza.material)?.clave ?? ''}
                 onChange={(e) => setIntake({ material: e.target.value })} style={{ width: '100%', marginTop: 2 }}>
-                {['ABS', 'PP', 'PS', 'PC', 'POM', 'PA6'].map((m) => <option key={m} value={m}>{m}</option>)}
+                {!fichaResina(intake.material ?? ciclo.pieza.material) && <option value="">{intake.material ?? ciclo.pieza.material} — sin ficha</option>}
+                {Object.values(RESINAS_KAZMER).map((r) => <option key={r.clave} value={r.clave}>{r.clave}</option>)}
               </select>
             </label>
             <label style={{ fontSize: 10, color: '#8fa1b8' }}>pzas/año
@@ -859,7 +866,8 @@ function CotizacionE3({ pieza }: { pieza?: PiezaSpec }) {
   // LECCIÓN 1 (v1·6): abrir LA COTIZACIÓN de una pieza del ÁRBOL es el final del
   // recorrido "Tu primera pieza, tu primer molde" — se marca en telemetría.
   useEffect(() => {
-    if (cot && pieza) mark('leccion.completa', 0, { pieza: pieza.nombre, moldeUSD: cot.dinero.moldeUSD, totalPza: cot.dinero.totalPzaUSD });
+    // sin el nombre de la pieza (orden 2026-10-29-g): el evento dice QUE se completó, no DE QUÉ pieza (secreto del cliente)
+    if (cot && pieza) mark('leccion.completa', 0, { deArbol: true, moldeUSD: cot.dinero.moldeUSD, totalPza: cot.dinero.totalPzaUSD });
   }, [cot, pieza]);
   return (
     <>
@@ -1721,6 +1729,206 @@ export function TarjetaPuerta({ puerta, error, midiendo, compacta = false, izqui
               <span style={{ color: PIEL.texto.tenue }}> (δ = la contrasalida medida, L = la pared que se dobla: regla de Hefestos)</span>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * TU PLANTA — la ficha de la planta en el PASO 2 (orden 2026-10-29-g · LOS DATOS DE TU PLANTA)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * ian (2026-10-24): «descarga y configura todos sus datos». Se captura UNA vez: tarifas MXN/h por centro, inyectoras (§4.3.3)
+ * con su boquilla (§6.3.1), conectores del agua y la resina con ficha del libro. Vive en el navegador de la planta (localStorage
+ * en try/catch, en useMoldStudio) y en SU archivo (⬇/⬆). Abajo, lo que la ficha le hace a ESTA pieza, del MISMO motor que el
+ * dictamen y el expediente (`moldMachine` sobre la spec de la pieza): la máquina elegida o el criterio que falla, y el costo de
+ * referencia (MXN por centro o la referencia del libro, rotulada). Lo que falta se dice «falta: …»; nada se rellena.
+ */
+type BorradorPlanta = {
+  nombre: string; resina: string; conectoresMm: string;
+  tarifas: Record<keyof TarifasDeLaPlanta, string>;
+  inyectoras: Array<Record<keyof InyectoraDeLaPlanta, string>>;
+};
+const CAMPOS_INY: Array<[keyof InyectoraDeLaPlanta, string, string]> = [
+  ['nombre', 'nombre', ''], ['tonelajeT', 'cierre', 't'], ['barrasHmm', 'barras H', 'mm'], ['barrasVmm', 'barras V', 'mm'],
+  ['daylightMinMm', 'daylight mín', 'mm'], ['daylightMaxMm', 'daylight máx', 'mm'], ['disparoCc', 'disparo', 'cm³'],
+  ['boquillaRadioMm', 'boquilla R', 'mm'], ['boquillaOrificioMm', 'orificio', 'mm'], ['presionMaxMPa', 'presión máx', 'MPa'], ['expulsionKN', 'expulsión', 'kN'],
+];
+const TARIFAS: Array<[keyof TarifasDeLaPlanta, string]> = [['fresadoMXNh', 'fresado CNC'], ['edmMXNh', 'electroerosión'], ['bancoMXNh', 'banco / ajuste'], ['ingenieriaMXNh', 'ingeniería']];
+const strDe = (v: unknown) => (v == null ? '' : String(v));
+function aBorrador(f: FichaDeLaPlanta): BorradorPlanta {
+  return {
+    nombre: strDe(f.nombre), resina: strDe(f.resina), conectoresMm: strDe(f.conectoresMm),
+    tarifas: Object.fromEntries(TARIFAS.map(([k]) => [k, strDe(f.tarifas?.[k])])) as BorradorPlanta['tarifas'],
+    inyectoras: (f.inyectoras ?? []).map((i) => Object.fromEntries(CAMPOS_INY.map(([k]) => [k, strDe(i[k])])) as BorradorPlanta['inyectoras'][number]),
+  };
+}
+function deBorrador(b: BorradorPlanta): FichaDeLaPlanta {
+  const n = (t: string) => { const v = parseFloat(t.replace(',', '.')); return Number.isFinite(v) ? v : undefined; };
+  return leeFichaDeLaPlanta({
+    formato: 'la-forja/planta', version: 1, nombre: b.nombre.trim() || undefined, resina: b.resina.trim() || undefined, conectoresMm: n(b.conectoresMm),
+    tarifas: Object.fromEntries(TARIFAS.map(([k]) => [k, n(b.tarifas[k])])),
+    inyectoras: b.inyectoras.map((r) => Object.fromEntries(CAMPOS_INY.map(([k]) => [k, k === 'nombre' ? r.nombre : n(r[k])]))),
+  }) ?? FICHA_PLANTA_VACIA;
+}
+
+export function TarjetaPlanta({ mold, spec, derecha = 18 }: {
+  mold: MoldBag;
+  /** la spec de la pieza con la pared MEDIDA (la del dictamen): con ella se dice qué le hace la ficha a esta pieza */
+  spec?: MachineSpec;
+  derecha?: number;
+}) {
+  const { planta, setPlanta, resina, setIntake } = mold;
+  const [abierta, setAbierta] = useState(false);
+  const [b, setB] = useState<BorradorPlanta>(() => aBorrador(planta));
+  const [aviso, setAviso] = useState('');
+  // «otra (sin ficha del libro)…» elegida a propósito: sin esto el borrador vacío caía de vuelta a la resina actual y el campo
+  // de texto nunca aparecía (lo cazó la corrida de la resina sin ficha, 2026-10-29)
+  const [otraResina, setOtraResina] = useState(false);
+  const subirRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => { if (!abierta) { setB(aBorrador(planta)); setOtraResina(false); } }, [planta, abierta]);
+  // LO QUE TU FICHA LE HACE A ESTA PIEZA — el mismo motor que el dictamen (la spec ya trae la planta y la resina)
+  const vista = useMemo(() => {
+    if (!spec) return null;
+    try {
+      const pk = moldMachine(spec);
+      return { sel: pk.diseno.maquina.seleccion, req: pk.diseno.maquina.requerimientos, costo: costoDeReferencia(pk), contrPct: pk.diseno.contraccion.nominalPct as number | null, error: '' };
+    } catch (e) {
+      return { sel: null, req: null, costo: null, contrPct: null, error: e instanceof ResinaSinFicha ? e.message : `no se pudo calcular: ${String((e as Error)?.message ?? e).slice(0, 140)}` };
+    }
+  }, [spec]);
+  const ficha = fichaResina(resina);
+  const tarifasN = TARIFAS.filter(([k]) => planta.tarifas?.[k] != null);
+  const faltaTarifa = TARIFAS.filter(([k]) => planta.tarifas?.[k] == null).map(([, t]) => t);
+  const sel = vista?.sel;
+  const descarga = () => {
+    const blob = new Blob([JSON.stringify(planta, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    const slug = (planta.nombre || 'mi-planta').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'mi-planta';
+    a.download = `planta-${slug}.json`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  const sube = async (file?: File | null) => {
+    if (!file) return;
+    try {
+      const f = leeFichaDeLaPlanta(JSON.parse(await file.text()));
+      if (!f) { setAviso('ese archivo no es una ficha de planta de La Forja'); return; }
+      setPlanta(f); if (f.resina) setIntake({ material: f.resina });
+      setAviso(`ficha cargada: ${f.inyectoras.length} inyectora(s), ${TARIFAS.filter(([k]) => f.tarifas[k] != null).length} de 4 tarifas`);
+    } catch { setAviso('no pude leer ese archivo (¿es el .json que descargaste?)'); }
+  };
+  const guarda = () => {
+    const f = deBorrador(b);
+    setPlanta(f);
+    if (f.resina && f.resina !== resina) setIntake({ material: f.resina });
+    setAbierta(false); setAviso('ficha guardada en este navegador · descárgala para tenerla en un archivo');
+  };
+  const inp = (val: string, on: (v: string) => void, tid: string, ancho = '100%', ph = '') => (
+    <input data-testid={tid} type="text" inputMode="decimal" value={val} placeholder={ph} onChange={(e) => on(e.target.value)}
+      style={{ width: ancho, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', border: `1px solid ${PIEL.fondo.hilo}`, color: PIEL.texto.numero,
+        font: `500 12px 'JetBrains Mono',monospace`, padding: '3px 5px', borderRadius: 3 }} />
+  );
+  const fila = (forma: string, color: string, texto: string, tid?: string, datos?: Record<string, string | number>, k?: number) => (
+    <div key={k} data-testid={tid} {...(datos ?? {})} style={{ display: 'flex', gap: 8, font: `500 12.5px/1.4 ${PIEL.fuente.cuerpo}`, color, marginTop: 3 }}>
+      <span style={{ width: 12, flex: 'none', textAlign: 'center' }}>{forma}</span><span>{texto}</span>
+    </div>
+  );
+  const etq = { font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.16em', color: PIEL.texto.secundario } as const;
+  const boton = (primario: boolean) => ({ font: `600 11.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.06em', padding: '5px 9px', borderRadius: 3, cursor: 'pointer',
+    background: primario ? PIEL.operador : 'transparent', color: primario ? PIEL.texto.sobreAcento : PIEL.texto.primario, border: `1px solid ${primario ? PIEL.operador : PIEL.fondo.hiloFuerte}` });
+  const maqTxt = !sel ? '' : sel.ok
+    ? `${sel.machine?.name ?? '—'} · cierre ${sel.clampUtilPct} % de ${sel.machine?.clampTons} t · disparo ${sel.shotPct} % · abre ${Math.round(sel.apertura.needMm)} de ${sel.machine?.maxDaylightMm} mm (§4.3.3)`
+    : 'ninguna de tus inyectoras admite este molde (§4.3.3)';
+  const conPlanta = planta.inyectoras.length > 0;
+  return (
+    <div data-testid="ficha-planta" data-inyectoras={planta.inyectoras.length} data-tarifas={tarifasN.length} data-resina={ficha?.clave ?? `sin-ficha:${resina}`}
+      data-maquina={sel?.machine?.name ?? ''} data-maquina-ok={sel ? (sel.ok ? 1 : 0) : ''} data-clamp-pct={sel?.clampUtilPct ?? ''}
+      data-costo-modo={vista?.costo?.modo ?? ''} data-costo-mxn={vista?.costo?.totalMXN != null ? Math.round(vista.costo.totalMXN) : ''}
+      data-costo-usd={vista?.costo ? Math.round(vista.costo.referenciaUSD.moldeUSD) : ''} data-horas={vista?.costo ? Math.round(vista.costo.maquinadoH + vista.costo.acabadoH) : ''}
+      data-error={vista?.error ? 1 : 0}
+      style={{ position: 'absolute', right: derecha, top: 64, zIndex: 8, width: abierta ? 'min(600px, 48vw)' : 'min(420px, 34vw)', maxHeight: 'calc(100% - 150px)', overflowY: 'auto',
+        boxSizing: 'border-box', padding: '12px 16px 13px', background: PIEL.fondo.vidrio, borderLeft: `3px solid ${PIEL.medido}`, color: PIEL.texto.primario, pointerEvents: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+        <div style={etq}>TU PLANTA · PASO 2</div>
+        <button data-testid="planta-editar" onClick={() => setAbierta((v) => !v)} style={boton(false)}>{abierta ? 'cerrar' : 'capturar / editar'}</button>
+      </div>
+      <div style={{ font: `700 17px/1.2 ${PIEL.fuente.titulo}`, marginTop: 4 }}>{planta.nombre?.trim() || 'Tus datos, una sola vez'}</div>
+      {!abierta && (<>
+        {fila(tarifasN.length ? '✓' : '·', tarifasN.length ? PIEL.cumple : PIEL.avisoTexto,
+          tarifasN.length
+            ? `tarifas: ${tarifasN.map(([k, t]) => `${t} $${planta.tarifas[k]!.toLocaleString('es-MX')}/h`).join(' · ')}${faltaTarifa.length ? ` · falta: ${faltaTarifa.join(', ')}` : ''}`
+            : 'falta: tus tarifas por hora (MXN) de fresado, electroerosión, banco e ingeniería', 'planta-tarifas')}
+        {fila(conPlanta ? '✓' : '·', conPlanta ? PIEL.cumple : PIEL.avisoTexto,
+          conPlanta
+            ? `inyectoras: ${planta.inyectoras.map((i) => `${i.nombre}${i.tonelajeT ? ` ${i.tonelajeT} t` : ''}`).join(' · ')}${planta.conectoresMm ? ` · conectores ${planta.conectoresMm} mm/lado` : ' · falta: cuánto sobresalen tus conectores de agua'}`
+            : 'falta: tus inyectoras — hoy decide la del taller (FCS HT-150SV) y, si no cabe, el catálogo de referencia', 'planta-inyectoras')}
+        {fila(ficha ? '✓' : '◆', ficha ? PIEL.cumple : PIEL.fallaTexto,
+          ficha ? `resina: ${ficha.nombre} · ${ficha.comercial} (${ficha.proveedor}) — ficha del libro, Kazmer Apéndice A ${ficha.paginas} · contracción publicada ${ficha.contraccionMinPct}–${ficha.contraccionMaxPct} %${vista?.contrPct != null ? ` · el Tait de esta pieza da ${vista.contrPct.toFixed(2)} %${vista.contrPct > ficha.contraccionMaxPct || vista.contrPct < ficha.contraccionMinPct ? ' (FUERA del rango de la ficha: el fabricante del molde decide, §10.1.7)' : ''}` : ''}`
+            : `resina: ${resina} — sin ficha en el libro (Kazmer Apéndice A): no se calcula`, 'planta-resina')}
+        <div style={{ borderTop: `1px solid ${PIEL.fondo.hilo}`, marginTop: 9, paddingTop: 7 }}>
+          <div style={etq}>LO QUE TU FICHA LE HACE A ESTA PIEZA</div>
+          {!spec && fila('·', PIEL.texto.tenue, 'midiendo tu pieza (la pared del Foco)…')}
+          {vista?.error && fila('◆', PIEL.fallaTexto, vista.error, 'planta-error')}
+          {sel && fila(sel.ok ? '✓' : '◆', sel.ok ? PIEL.cumple : PIEL.fallaTexto, `máquina: ${maqTxt}`, 'planta-maquina',
+            { 'data-ok': sel.ok ? 1 : 0, 'data-pide-t': vista?.req ? +vista.req.clampNeedTons.toFixed(1) : '' })}
+          {sel && !sel.ok && (sel.planta
+            ? sel.planta.map((p, k) => fila('◆', PIEL.fallaTexto, `${p.nombre}: ${p.fallas.join(' · ')}`, 'planta-maquina-falla', undefined, k))
+            : sel.issues.map((x, k) => fila('◆', PIEL.fallaTexto, x, 'planta-maquina-falla', undefined, k)))}
+          {sel && sel.ok && sel.planta && sel.issues.filter((x) => /sin dato|no se juzga|conectores/.test(x)).map((x, k) => fila('◇', PIEL.avisoTexto, x, 'planta-maquina-aviso', undefined, k))}
+          {vista?.costo && fila(vista.costo.modo === 'tu-tarifa' && vista.costo.completo ? '✓' : '◇', vista.costo.modo === 'tu-tarifa' && vista.costo.completo ? PIEL.cumple : PIEL.avisoTexto,
+            `costo: ${costoReferenciaLinea(vista.costo)}${vista.costo.faltan.length && vista.costo.modo === 'tu-tarifa' ? ` · falta: ${vista.costo.faltan.join(', ')}` : ''}`, 'planta-costo')}
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+          <button data-testid="planta-descargar" onClick={descarga} style={boton(false)}>⬇ archivo de la planta</button>
+          <button data-testid="planta-subir" onClick={() => subirRef.current?.click()} style={boton(false)}>⬆ subir archivo</button>
+          <input data-testid="planta-subir-archivo" ref={subirRef} type="file" accept=".json,application/json" style={{ display: 'none' }}
+            onChange={(e) => { void sube(e.target.files?.[0]); e.target.value = ''; }} />
+        </div>
+        <div data-testid="planta-aviso" style={{ font: `400 11.5px/1.4 ${PIEL.fuente.cuerpo}`, color: PIEL.texto.tenue, marginTop: 6 }}>
+          {aviso || 'tus datos se quedan en este navegador y en tu archivo; a nuestro servidor no llegan'}
+        </div>
+      </>)}
+      {abierta && (
+        <div data-testid="planta-editor" style={{ marginTop: 8, font: `500 12px ${PIEL.fuente.cuerpo}`, color: PIEL.texto.secundario }}>
+          <label style={{ display: 'block' }}>nombre de tu planta {inp(b.nombre, (v) => setB({ ...b, nombre: v }), 'planta-nombre', '100%', 'p. ej. Plásticos del Bajío, planta 2')}</label>
+          <div style={{ ...etq, marginTop: 10 }}>TARIFAS (MXN por hora facturada)</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginTop: 4 }}>
+            {TARIFAS.map(([k, t]) => <label key={k}>{t}{inp(b.tarifas[k], (v) => setB({ ...b, tarifas: { ...b.tarifas, [k]: v } }), `planta-tarifa-${k}`)}</label>)}
+          </div>
+          <div style={{ ...etq, marginTop: 10 }}>INYECTORAS (§4.3.3 · boquilla §6.3.1)</div>
+          {b.inyectoras.map((r, i) => (
+            <div key={i} data-testid={`planta-iny-${i}`} style={{ display: 'grid', gridTemplateColumns: '2fr repeat(5, 1fr)', gap: 4, marginTop: 6, paddingTop: 6, borderTop: `1px solid ${PIEL.fondo.hilo}` }}>
+              {CAMPOS_INY.map(([k, t, u]) => (
+                <label key={k} style={{ fontSize: 10.5 }}>{t}{u ? ` (${u})` : ''}
+                  {inp(r[k], (v) => { const ny = b.inyectoras.slice(); ny[i] = { ...r, [k]: v }; setB({ ...b, inyectoras: ny }); }, `planta-iny-${i}-${k}`)}
+                </label>
+              ))}
+              <button data-testid={`planta-iny-${i}-quitar`} onClick={() => setB({ ...b, inyectoras: b.inyectoras.filter((_, j) => j !== i) })} style={{ ...boton(false), alignSelf: 'end' }}>quitar</button>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            <button data-testid="planta-iny-agregar" onClick={() => setB({ ...b, inyectoras: [...b.inyectoras, Object.fromEntries(CAMPOS_INY.map(([k]) => [k, ''])) as BorradorPlanta['inyectoras'][number]] })} style={boton(false)}>+ inyectora</button>
+            <button data-testid="planta-iny-taller" onClick={() => setB({ ...b, inyectoras: [...b.inyectoras, aBorrador({ ...FICHA_PLANTA_VACIA, inyectoras: [inyectoraDelTaller()] }).inyectoras[0]] })} style={boton(false)}>+ la del taller (FCS HT-150SV)</button>
+          </div>
+          <label style={{ display: 'block', marginTop: 8 }}>¿cuánto sobresalen tus conectores de agua por lado? (mm · §4.3.3 los cuenta en la luz entre barras)
+            {inp(b.conectoresMm, (v) => setB({ ...b, conectoresMm: v }), 'planta-conectores', '8em')}</label>
+          <div style={{ ...etq, marginTop: 10 }}>RESINA (solo con ficha completa del libro: Kazmer Apéndice A)</div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
+            <select data-testid="planta-resina-sel" value={otraResina ? '__otra' : fichaResina(b.resina || resina)?.clave ?? '__otra'}
+              onChange={(e) => { const otra = e.target.value === '__otra'; setOtraResina(otra); setB({ ...b, resina: otra ? '' : e.target.value }); }}
+              style={{ background: 'rgba(255,255,255,0.04)', color: PIEL.texto.primario, border: `1px solid ${PIEL.fondo.hilo}`, padding: '3px 5px' }}>
+              {Object.values(RESINAS_KAZMER).map((r) => <option key={r.clave} value={r.clave}>{r.clave} · {r.comercial}</option>)}
+              <option value="__otra">otra (sin ficha del libro)…</option>
+            </select>
+            {(otraResina || !fichaResina(b.resina || resina)) && inp(b.resina, (v) => setB({ ...b, resina: v }), 'planta-resina-otra', '12em', 'p. ej. PBT Valox 420')}
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+            <button data-testid="planta-guardar" onClick={guarda} style={boton(true)}>guardar mi planta</button>
+            <button onClick={() => { setB(aBorrador(planta)); setAbierta(false); }} style={boton(false)}>cancelar</button>
+          </div>
+          <div style={{ font: `400 11.5px/1.4 ${PIEL.fuente.cuerpo}`, color: PIEL.texto.tenue, marginTop: 6 }}>
+            lo que dejes vacío queda SIN DATO y la pantalla lo dice; no se rellena con nada
+          </div>
         </div>
       )}
     </div>

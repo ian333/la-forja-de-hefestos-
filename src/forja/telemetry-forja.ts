@@ -8,6 +8,14 @@ import { telemetry } from '../lib/telemetry';
 
 const ms = (t0: number) => +(performance.now() - t0).toFixed(1);
 
+/** El nombre de la pieza o del archivo NO viaja en ningún evento (orden 2026-10-29-g · juez B D7: el STEP de una planta es
+ *  secreto de su cliente). Los archivos que se sueltan o suben se registran solos (lib/telemetry.ts, en el `drop`/`change`);
+ *  esto agrega el nombre con el que la app llama a la pieza (el del árbol, el del STEP). Ningún `mark` de La Forja manda
+ *  `name`/`pieza`: dicen QUÉ pasó y cuánto tardó, nunca DE QUÉ pieza. */
+export function ocultarEnTelemetria(nombre: string | null | undefined): void {
+  telemetry.ocultar(nombre);
+}
+
 /** Cronometra `fn` y loguea `forja.<name>` con {ms, ...meta}. Re-lanza si falla
  *  (logueando ok:false + el error). Para procesos SÍNCRONOS. */
 export function timed<T>(name: string, fn: () => T, meta: Record<string, unknown> = {}): T {

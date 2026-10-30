@@ -23,7 +23,8 @@
  * Convención del archivo (la misma de `mold-plano-set`): lo que toca el kernel recibe
  * `(K, oc)` por parámetro; el módulo NO importa occt.
  */
-import { designSprueFeed, steelSafeDiaMm, STANDARD_RUNNER_DIAMM, FEED_MATERIALS } from './feed';
+import { designSprueFeed, steelSafeDiaMm, STANDARD_RUNNER_DIAMM, feedMaterial } from './feed';
+import { RESINA_POR_DEFECTO } from './materials';
 import { gateDesign, gateFreezeStripS, gateFreezeCylS } from './gating';
 
 // ─────────────────────────────────────────────────────────────────
@@ -97,8 +98,11 @@ export function datumsColada(o: {
   const LsprueParticionMm = zCaraClampMm - o.zPartMm;
 
   // ── los RADIOS: del motor del libro (§6.3.1 + Eq 6.8), nunca a mano
+  // LA RESINA DE TU PIEZA (orden 2026-10-29-g): la clave de su ficha (Kazmer Apéndice A), no «¿dice PP? → PP; si no → ABS»
+  // (así un PC se diseñaba como ABS y un PP + 30 % de fibra como PP puro). Sin ficha: el diseño se detiene con su razón.
+  const resina = o.plastic ?? RESINA_POR_DEFECTO;
   const fd = designSprueFeed({
-    material: (o.plastic ?? 'ABS').toUpperCase().includes('PP') ? 'PP' : 'ABS',
+    material: resina,
     partVolumeCc: o.partVolCc, partWallMm: o.wallMm,
     sprueLenMm: Math.max(1, LsprueParticionMm), fillTimeS: o.fillTimeS ?? 1,
   });
@@ -123,7 +127,7 @@ export function datumsColada(o: {
   let rTopUso = fd.rTopMm, rBaseUso = fd.rBaseMm, VdotUso = fd.VdotCcS;
   if (!(dentroDeLaHuella && o.pieza.bocaHaciaElSprue) && dentroDeLaHuella) {
     const fdD = designSprueFeed({
-      material: (o.plastic ?? 'ABS').toUpperCase().includes('PP') ? 'PP' : 'ABS',
+      material: resina,
       partVolumeCc: o.partVolCc, partWallMm: o.wallMm,
       sprueLenMm: Math.max(1, LsprueMm), fillTimeS: o.fillTimeS ?? 1,
     });
@@ -172,8 +176,7 @@ export function datumsColada(o: {
   // este criterio vivía en la vieja estación 5 y se PERDIÓ al mover la selección aquí
   // (inconsistencia latente cazada en el retorno 2026-08-12: con rBase más chico salía
   // ⌀5, que congela a 2.99 s contra los 3.25 s de la compuerta).
-  const matK = (o.plastic ?? 'ABS').toUpperCase().includes('PP') ? 'PP' : 'ABS';
-  const mat = FEED_MATERIALS[matK];
+  const mat = feedMaterial(resina);
   const freezeCompuertaS = gateFreezeStripS(mat.alpha, g.thicknessMm / 1000, mat.tMelt, mat.tCool, mat.tNoFlow);
   const runnerDiaMm = LrunnerMm > 0 ? (STANDARD_RUNNER_DIAMM.find((d) =>
     d > g.thicknessMm && d >= steelSafeDiaMm(runnerDiaCrudoMm) &&
