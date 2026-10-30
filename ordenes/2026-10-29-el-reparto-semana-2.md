@@ -74,6 +74,8 @@ a Kazmer y despliega UNA vez.
 - src/forja/mold/moldcost-detailed.ts
 - src/forja/telemetry-forja.ts
 - src/lib/telemetry.ts
+- caminos/la-carcasa-de-mitsubishi.md
+- scripts/camino-runner.cjs
 
 ## CREA
 - ordenes/2026-10-29-g-los-datos-de-tu-planta.md
