@@ -59,6 +59,34 @@ export interface EnsambleMedido {
   aguaPuertosPorMitad?: number;
   /** plugs que sellan los barrenos pasantes del serpentín (§9.3.1) */
   aguaPlugs?: number;
+  /** ⌀ del circuito sobre el que se MIDIÓ `holguraAguaMm` (orden H). ANTES el contrato medía la holgura con el circuito de
+   *  `coolingCircuit` (⌀6.35 en la 1594C Box: «½⌀ = 3.17») y la juzgaba contra ½ del plug del diseño numérico (⌀9.53 →
+   *  4.765), una línea que ningún circuito barrena: así salía CLARO ✗ con 3.76 mm que contra su propio ⌀ cumplían. */
+  aguaDiaMm?: number;
+  /** EL AGUA QUE SE BARRENA (orden H · un veredicto): el circuito de la E6 del molde de TU pieza (`estacion8Dado` → lineas,
+   *  cd, caudal, circuito). Con él, el contrato del enfriamiento juzga el acero y no la línea del paquete numérico
+   *  (`designCoolingLines({ nLines: nCav })`, moldmachine.ts). */
+  aguaDelMolde?: {
+    fuente: string;
+    diaMm: number; plug: string; nLineas: number; nTramos: number;
+    /** profundidad (mm, centro de la línea a la cara de la pieza) de cada familia de líneas: [{ que, hMm }] */
+    profundidades: Array<{ que: string; hMm: number }>;
+    pasoMm: number; pasoDe: number;
+    dMinMm: number; dMaxMm: number;
+    reTermico: number; reBombeado: number; caudalManda: 'turbulencia' | 'ΔT';
+    gpmTermicoLinea: number; gpmLinea: number; gpmTotal: number; controladorOk: boolean;
+    puertosPorMitad?: number;
+  };
+  /** EL CLARO MEDIDO EN EL MOLDE (orden H): el par con MENOS acero contra su límite que mide EL FOCO (`escanearMolde`:
+   *  agua ↔ barrenos, eje↔eje; agua ↔ la cavidad, contra la cara de tu pieza). El MISMO par que lee la inspección (punto 3). */
+  claroDelMolde?: {
+    aceroMm: number; limiteMm: number; a: string; b: string; fuente: string;
+    pares: number; paresCavidad: number;
+    /** el agua contra la cavidad (la cara de tu pieza), aunque no sea el par más justo */
+    cavidad?: { aceroMm: number; limiteMm: number; a: string } | null;
+    /** el juez de la E6 (por datums) cuida el agua contra las CARAS de insertos y placas, que el Foco no escanea */
+    juezE6?: { aceroMm: number; limiteMm: number; contra: string } | null;
+  };
 }
 
 export type ContratoEstado = 'CUMPLE' | 'ADVIERTE' | 'VIOLA' | 'SIN-CABLEAR' | 'SIN-MÓDULO';
@@ -168,6 +196,12 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
     depthMm: pkg.spec.Hmm, wallMm: pkg.spec.wallMm,
   });
 
+  // UN BEBEDERO (orden H): con el molde hecho se juzga el que CORTA la E5 (`spec.bebederoCortado`); sin molde, el del diseño
+  // numérico. La frase dice cuál: ⌀ de entrada → ⌀ de base × largo, el MISMO renglón en dictamen, hoja y expediente.
+  const bc = pkg.spec.bebederoCortado;
+  const cualBebedero = `bebedero ⌀${num(feed.diaTopMm, 2)}→⌀${num(feed.diaBaseMm, 2)} × L ${num(feed.sprueLenMm)} mm `
+    + (bc ? '(el que CORTA la E5)' : '(el del diseño numérico: la E5 corta el suyo)');
+
   // ── 1) ΔP del feed ≤ min(50 % de la cavidad, 50 MPa) — §6.2.2 ──
   // LA PRESIÓN QUE LE TOCA (orden 2026-10-24-b): el presupuesto de la colada se juzga con p_fill, la de
   // LLENADO — no con la de empaque, que no fluye por el bebedero. Si el paquete trae la del solver FAN
@@ -180,10 +214,12 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
       id: 'feed-dp', subsistema: S, cita: '§6.2.2 / §6.4',
       criterio: 'ΔP del sistema de alimentación ≤ min(50 % de la presión de cavidad, 50 MPa)',
       medido: feed.dPMPa, limite: limDP, unidad: 'MPa',
-      detalle: `ΔP sprue ${num(feed.dPMPa)} MPa vs límite ${num(limDP)} MPa (50 % de p_fill ${num(fillMPa)} MPa, ${fillRot}; tope 50) · ⌀${num(feed.diaBaseMm, 2)} mm, sprue L=${num(feed.sprueLenMm)} mm`
+      detalle: `ΔP sprue ${num(feed.dPMPa)} MPa vs límite ${num(limDP)} MPa (50 % de p_fill ${num(fillMPa)} MPa, ${fillRot}; tope 50) · ${cualBebedero}`
         + (pkg.diseno.fillFuente === 'FAN E5'
           ? ' — p_fill del FAN se mide en la BOQUILLA (incluye la colada): si con ella sigue ✗, es real'
-          : ' — p_fill ESTIMADA: el solver de llenado de la E5 la mide desde la boquilla; con ésa se re-juzga'),
+          : ' — p_fill ESTIMADA: el solver de llenado de la E5 la mide desde la boquilla; con ésa se re-juzga')
+        // el caudal de la caída es el de la pieza; si la E5 dimensionó con otro, se dice (orden H)
+        + (bc && (feed.iteraciones[0]?.accion ?? '').includes(' · ⚠ la E5') ? (feed.iteraciones[0].accion.slice(feed.iteraciones[0].accion.indexOf(' · ⚠ la E5'))) : ''),
     }),
   });
 
@@ -208,7 +244,8 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
     criterio: 'el tiempo de enfriamiento de la colada no debe exceder al de la cavidad',
     medido: feed.tcSprueS, limite: feed.tcPartS, unidad: 's',
     estado: feed.tcSprueS > feed.tcPartS * 1.25 ? 'VIOLA' : (feed.tcSprueS > feed.tcPartS ? 'ADVIERTE' : 'CUMPLE'),
-    detalle: `t_c colada ${num(feed.tcSprueS)} s vs t_c pieza ${num(feed.tcPartS)} s — ${feed.tcSprueS > feed.tcPartS ? 'la colada DOMINA el ciclo: reducir ⌀ (steel-safe)' : 'la pieza manda el ciclo ✓'} · el lazo §6.4.7 corrió ${feed.iteraciones.length} paso(s)`,
+    detalle: `t_c colada ${num(feed.tcSprueS)} s (Eq 9.6, ⌀${num(feed.diaBaseMm, 2)}) vs t_c pieza ${num(feed.tcPartS)} s (Eq 9.5, la pared) — ${feed.tcSprueS > feed.tcPartS ? 'la colada DOMINA el ciclo: reducir ⌀ (steel-safe)' : 'la pieza manda el ciclo ✓'} · `
+      + (bc ? `${cualBebedero}: el acero ya se cortó, se juzga (p.149: el ⌀ «can be reduced albeit with a higher pressure drop» — DP y este renglón son UNA decisión)` : `el lazo §6.4.7 corrió ${feed.iteraciones.length} paso(s)`),
   });
 
   // ── 4) γ̇ dentro del máximo del material — §7.1.4 / Tabla 7.2 ──
@@ -385,126 +422,224 @@ export function contratoEnfriamiento(pkg: MoldPackage, ens?: EnsambleMedido): Co
   const S = 'enfriamiento';
   const C: Criterio[] = [];
   const L = pkg.diseno.enfriamiento.lineas;
-  const D = L.plug?.diaMm ?? 0;
+  // UN VEREDICTO (orden H): con el molde hecho, el contrato juzga el agua que SE BARRENA (la E6), no la línea del paquete
+  // numérico (`designCoolingLines({ nLines: nCav })`: en la 1594C Box 1 línea ⌀9.53 a H 19.1 — el acero lleva 8 líneas ⌀6.35
+  // a H 25.4/15.9). Sin molde (el paso 4) se queda la del paquete, y la pantalla lo dice («tu pieza sola»).
+  const W = ens?.aguaDelMolde;
+  const D = W ? W.diaMm : (L.plug?.diaMm ?? 0);
+  // la fuente corta en cada renglón; el aviso del volumen (si lo hay) sólo donde pesa: el ⌀ y el caudal
+  const enAcero = W ? ` — en el acero: ${W.fuente.split(' · ⚠')[0]}` : '';
+  const avisoFuente = W && W.fuente.includes(' · ⚠') ? W.fuente.slice(W.fuente.indexOf(' · ⚠')) : '';
 
   // ── 1) Diámetro dentro de la ventana [Dmin, Dmax] — §9.2.4 ──
-  C.push({
-    id: 'agua-diametro', subsistema: S, cita: '§9.2.4',
-    criterio: 'diámetro de línea entre el mínimo (caída de presión) y el máximo (turbulencia)',
-    medido: D, unidad: 'mm',
-    estado: !L.plug ? 'VIOLA' : (D >= L.dMinMm && D <= L.dMaxMm ? 'CUMPLE' : 'VIOLA'),
-    detalle: L.plug
-      ? `⌀ ${num(D, 2)} mm ∈ [${num(L.dMinMm, 2)}, ${num(L.dMaxMm, 2)}] mm — plug ${L.plug.dme}`
-      : `sin plug de catálogo que caiga en [${num(L.dMinMm, 2)}, ${num(L.dMaxMm, 2)}] mm`,
-  });
+  if (W) {
+    const enVentana = D >= W.dMinMm && D <= W.dMaxMm;
+    // la E6 lo dice: el caudal TÉRMICO de una pieza chica deja el agua laminar y D_max cae abajo del piso maquinable; la
+    // E6 sube el caudal hasta Re = 4000 (Eq 9.14 despejada, EXTENSIÓN DECLARADA de la E6) y con ese caudal D_max = ⌀.
+    const rescatado = !enVentana && D >= W.dMinMm && W.caudalManda === 'turbulencia';
+    C.push({
+      id: 'agua-diametro', subsistema: S, cita: '§9.2.4',
+      criterio: 'diámetro de línea entre el mínimo (caída de presión) y el máximo (turbulencia)',
+      medido: D, unidad: 'mm',
+      estado: enVentana ? 'CUMPLE' : rescatado ? 'ADVIERTE' : 'VIOLA',
+      detalle: enVentana
+        ? `⌀ ${num(D, 2)} mm ∈ [${num(W.dMinMm, 2)}, ${num(W.dMaxMm, 2)}] mm — plug ${W.plug}${enAcero}`
+        : rescatado
+          ? `⌀ ${num(D, 2)} mm > D_max ${num(W.dMaxMm, 2)} mm del caudal TÉRMICO (${num(W.gpmTermicoLinea, 3)} GPM/línea: el calor de tu pieza es chico). `
+            + `La E6 bombea ${num(W.gpmLinea, 3)} GPM por línea para llegar a Re 4000 y con ése el ⌀ queda en la orilla de la ventana — `
+            + `el taller tiene que poner el controlador a ese caudal o el agua se vuelve laminar${enAcero}${avisoFuente}`
+          : `⌀ ${num(D, 2)} mm fuera de [${num(W.dMinMm, 2)}, ${num(W.dMaxMm, 2)}] mm${enAcero}`,
+    });
+  } else {
+    C.push({
+      id: 'agua-diametro', subsistema: S, cita: '§9.2.4',
+      criterio: 'diámetro de línea entre el mínimo (caída de presión) y el máximo (turbulencia)',
+      medido: D, unidad: 'mm',
+      estado: !L.plug ? 'VIOLA' : (D >= L.dMinMm && D <= L.dMaxMm ? 'CUMPLE' : 'VIOLA'),
+      detalle: L.plug
+        ? `⌀ ${num(D, 2)} mm ∈ [${num(L.dMinMm, 2)}, ${num(L.dMaxMm, 2)}] mm — plug ${L.plug.dme}`
+        : `sin plug de catálogo que caiga en [${num(L.dMinMm, 2)}, ${num(L.dMaxMm, 2)}] mm`,
+    });
+  }
 
   // ── 2) El diámetro es de CATÁLOGO (plugs DME), no un óptimo continuo — §9.2.4 ──
   C.push({
     id: 'agua-catalogo', subsistema: S, cita: '§9.2.4 · Tabla 9.2',
     criterio: 'el diámetro debe ser una talla estándar de plug, compatible con el estándar del taller',
-    estado: L.plug ? 'CUMPLE' : 'VIOLA',
-    detalle: L.plug ? `plug DME ${L.plug.dme} ⌀ ${num(L.plug.diaMm, 2)} mm` : 'ninguna talla de catálogo satisface la ventana',
+    estado: W ? (W.plug ? 'CUMPLE' : 'VIOLA') : (L.plug ? 'CUMPLE' : 'VIOLA'),
+    detalle: W ? `plug ${W.plug} ⌀ ${num(W.diaMm, 2)} mm${enAcero}`
+      : L.plug ? `plug DME ${L.plug.dme} ⌀ ${num(L.plug.diaMm, 2)} mm` : 'ninguna talla de catálogo satisface la ventana',
   });
 
   // ── 3) Flujo TURBULENTO: Re > 4000 — §9.2.4 ──
-  C.push({
-    id: 'agua-turbulento', subsistema: S, cita: '§9.2.4',
-    criterio: 'Re > 4000 (el flujo laminar no transfiere calor: el agua se estratifica)',
-    medido: L.reAtPlug, limite: 4000, unidad: '',
-    estado: L.turbulento ? 'CUMPLE' : 'VIOLA',
-    detalle: `Re ${Math.round(L.reAtPlug).toLocaleString()} · límite 4000 — ${L.turbulento ? 'turbulento ✓' : 'LAMINAR: el agua no está enfriando'}`,
-  });
+  C.push(W
+    ? {
+      id: 'agua-turbulento', subsistema: S, cita: '§9.2.4',
+      criterio: 'Re > 4000 (el flujo laminar no transfiere calor: el agua se estratifica)',
+      medido: W.reBombeado, limite: 4000, unidad: '',
+      estado: W.reBombeado >= 4000 ? 'CUMPLE' : 'VIOLA',
+      detalle: `Re ${Math.round(W.reBombeado).toLocaleString()} al caudal que bombea la E6 (${num(W.gpmLinea, 3)} GPM/línea) · límite 4000`
+        + (W.caudalManda === 'turbulencia' ? ` — con el caudal TÉRMICO serían Re ${Math.round(W.reTermico).toLocaleString()} (laminar): el caudal lo fija la turbulencia, no el calor` : ' ✓')
+        + enAcero,
+    }
+    : {
+      id: 'agua-turbulento', subsistema: S, cita: '§9.2.4',
+      criterio: 'Re > 4000 (el flujo laminar no transfiere calor: el agua se estratifica)',
+      medido: L.reAtPlug, limite: 4000, unidad: '',
+      estado: L.turbulento ? 'CUMPLE' : 'VIOLA',
+      detalle: `Re ${Math.round(L.reAtPlug).toLocaleString()} · límite 4000 — ${L.turbulento ? 'turbulento ✓' : 'LAMINAR: el agua no está enfriando'}`,
+    });
 
   // ── 4) Profundidad 2D < H < 5D — §9.2.5 ──
-  C.push({
-    id: 'agua-profundidad', subsistema: S, cita: '§9.2.5',
-    criterio: 'profundidad de la línea entre 2 y 5 diámetros (estructural abajo, térmico arriba)',
-    medido: D ? L.depthMm / D : undefined, limite: 5, unidad: '×⌀',
-    estado: !D ? 'SIN-MÓDULO' : (L.depthMm >= 2 * D && L.depthMm <= 5 * D ? 'CUMPLE' : 'VIOLA'),
-    detalle: D
-      ? `H ${num(L.depthMm)} mm = ${num(L.depthMm / D, 2)}×⌀ · ventana [2, 5]×⌀ = [${num(2 * D)}, ${num(5 * D)}] mm`
-      : 'sin diámetro no se puede juzgar la profundidad',
-  });
+  if (W) {
+    const fuera = W.profundidades.filter((p) => p.hMm < 2 * D || p.hMm > 5 * D);
+    const hMin = Math.min(...W.profundidades.map((p) => p.hMm));
+    C.push({
+      id: 'agua-profundidad', subsistema: S, cita: '§9.2.5',
+      criterio: 'profundidad de la línea entre 2 y 5 diámetros (estructural abajo, térmico arriba)',
+      medido: D ? hMin / D : undefined, limite: 5, unidad: '×⌀',
+      estado: !D ? 'SIN-MÓDULO' : fuera.length ? 'VIOLA' : 'CUMPLE',
+      detalle: `${W.profundidades.map((p) => `${p.que} H ${num(p.hMm)} mm = ${num(p.hMm / D, 2)}×⌀`).join(' · ')} · ventana [2, 5]×⌀ = [${num(2 * D)}, ${num(5 * D)}] mm${enAcero}`,
+    });
+  } else {
+    const Dp = L.plug?.diaMm ?? 0;
+    C.push({
+      id: 'agua-profundidad', subsistema: S, cita: '§9.2.5',
+      criterio: 'profundidad de la línea entre 2 y 5 diámetros (estructural abajo, térmico arriba)',
+      medido: Dp ? L.depthMm / Dp : undefined, limite: 5, unidad: '×⌀',
+      estado: !Dp ? 'SIN-MÓDULO' : (L.depthMm >= 2 * Dp && L.depthMm <= 5 * Dp ? 'CUMPLE' : 'VIOLA'),
+      detalle: Dp
+        ? `H ${num(L.depthMm)} mm = ${num(L.depthMm / Dp, 2)}×⌀ · ventana [2, 5]×⌀ = [${num(2 * Dp)}, ${num(5 * Dp)}] mm`
+        : 'sin diámetro no se puede juzgar la profundidad',
+    });
+  }
 
   // ── 5) Paso H < W < 2H — §9.2.6 ──
+  const pasoMm = W ? W.pasoMm : L.pitchMm, pasoDe = W ? W.pasoDe : L.depthMm;
   C.push({
     id: 'agua-paso', subsistema: S, cita: '§9.2.6',
     criterio: 'paso entre líneas entre 1 y 2 veces la profundidad (más allá, la variación de flujo de calor se dispara)',
-    medido: L.depthMm ? L.pitchMm / L.depthMm : undefined, limite: 2, unidad: '×H',
-    estado: !L.depthMm ? 'SIN-MÓDULO'
-      : (L.pitchMm >= L.depthMm && L.pitchMm <= 2 * L.depthMm ? 'CUMPLE' : 'VIOLA'),
-    detalle: `paso ${num(L.pitchMm)} mm = ${num(L.pitchMm / (L.depthMm || 1), 2)}×H · ventana [1, 2]×H = [${num(L.depthMm)}, ${num(2 * L.depthMm)}] mm`
-      + ' — OJO §9.2.6: un material más conductivo NO autoriza paso más ancho (empeora la uniformidad)',
+    medido: pasoDe ? pasoMm / pasoDe : undefined, limite: 2, unidad: '×H',
+    // 2 decimales: el paso de la E6 cae JUSTO en 2·H (50.8 = 2 × 25.4) y el redondeo flotante no debe tumbarlo
+    estado: !pasoDe ? 'SIN-MÓDULO'
+      : (pasoMm >= pasoDe - 1e-6 && pasoMm <= 2 * pasoDe + 1e-6 ? 'CUMPLE' : 'VIOLA'),
+    detalle: `${W ? 'paso REAL de la serpentina B' : 'paso'} ${num(pasoMm)} mm = ${num(pasoMm / (pasoDe || 1), 2)}×H · ventana [1, 2]×H = [${num(pasoDe)}, ${num(2 * pasoDe)}] mm`
+      + ' — OJO §9.2.6: un material más conductivo NO autoriza paso más ancho (empeora la uniformidad)' + enAcero,
   });
 
   // ── 6) El controlador comercial existe y alcanza — §9.2.3 ──
-  C.push({
-    id: 'agua-controlador', subsistema: S, cita: '§9.2.3 · Tabla 9.1',
-    criterio: 'el caudal total debe caber en un controlador comercial real',
-    medido: L.totalFlowM3s * 1e3, unidad: 'L/s',
-    estado: L.controller ? 'CUMPLE' : 'VIOLA',
-    detalle: L.controller
-      ? `${L.controller} · ${num(L.flowGPM, 1)} GPM por línea, ${L.nLines} líneas`
-      : `ningún controlador de catálogo entrega ${num(L.totalFlowM3s * 1e3, 2)} L/s — se necesitan varios`,
-  });
+  C.push(W
+    ? {
+      id: 'agua-controlador', subsistema: S, cita: '§9.2.3 · Tabla 9.1',
+      criterio: 'el caudal total debe caber en un controlador comercial real',
+      medido: W.gpmTotal, unidad: 'GPM',
+      estado: W.controladorOk ? 'CUMPLE' : 'VIOLA',
+      detalle: `${num(W.gpmTotal, 2)} GPM en ${W.nLineas} líneas (${num(W.gpmLinea, 3)} GPM cada una) — ${W.controladorOk ? 'cabe en un controlador de agua del catálogo ✓' : 'ningún controlador de agua del catálogo lo entrega'}${enAcero}`,
+    }
+    : {
+      id: 'agua-controlador', subsistema: S, cita: '§9.2.3 · Tabla 9.1',
+      criterio: 'el caudal total debe caber en un controlador comercial real',
+      medido: L.totalFlowM3s * 1e3, unidad: 'L/s',
+      estado: L.controller ? 'CUMPLE' : 'VIOLA',
+      detalle: L.controller
+        ? `${L.controller} · ${num(L.flowGPM, 1)} GPM por línea, ${L.nLines} líneas`
+        : `ningún controlador de catálogo entrega ${num(L.totalFlowM3s * 1e3, 2)} L/s — se necesitan varios`,
+    });
 
   // ── 7) Usabilidad de taller: ≤2 conexiones por mitad — §9.1.6 ──
   // El ruteo YA existe: coolingCircuit (drawing-set) conecta las N líneas en
   // SERPENTÍN con cross-drills y plugs → puertos IN/OUT. Este criterio vivió como
   // SIN-MÓDULO porque el contrato leía el diseño numérico (N líneas) sin ver que
   // la geometría las une en un circuito — el bug de contabilidad de siempre.
-  const puertos = ens?.aguaPuertosPorMitad;
+  const puertos = W?.puertosPorMitad ?? ens?.aguaPuertosPorMitad;
+  const nLin = W ? W.nLineas : L.nLines;
   C.push({
     id: 'agua-conexiones', subsistema: S, cita: '§9.1.6',
     criterio: 'máximo 2 conexiones externas por mitad de molde (una entrada, una salida); si hay más, etiquetadas in/out',
-    medido: puertos ?? L.nLines, limite: 2, unidad: 'conexiones',
+    medido: puertos ?? nLin, limite: 2, unidad: 'conexiones',
     estado: puertos == null ? 'SIN-CABLEAR' : (puertos <= 2 ? 'CUMPLE' : 'VIOLA'),
     detalle: puertos == null
-      ? `${L.nLines} líneas en el diseño numérico — el circuito ruteado (coolingCircuit: serpentín + cross-drills + plugs) sí las reduce a 2 puertos, pero sin ensamble no se mide`
-      : `${puertos} puerto(s) por mitad (IN/OUT del serpentín) · ${ens?.aguaPlugs ?? 0} plugs sellan los barrenos pasantes — §9.3.1: manifold interno a "very little added cost" ✓`,
+      ? `${nLin} líneas en el diseño numérico — el circuito ruteado (coolingCircuit: serpentín + cross-drills + plugs) sí las reduce a 2 puertos, pero sin ensamble no se mide`
+      : `${puertos} puerto(s) por mitad (IN/OUT del serpentín)${W ? enAcero : ` · ${ens?.aguaPlugs ?? 0} plugs sellan los barrenos pasantes — §9.3.1: manifold interno a "very little added cost" ✓`}`,
     deuda: puertos == null ? 'pasa el MoldAssemblySpec a contratos(pkg, ens) — medirEnsamble cuenta los puertos del circuito' : undefined,
   });
 
   // ── 8) Claro ≥ ½⌀ contra cualquier otro componente — §9.2.7 ──
-  // §9.2.7 exige ≥ ½⌀ de claro. Si viene el molde ENSAMBLADO, coordAudit lo mide
-  // sobre la geometría real; si no, el criterio queda sin medir (no aprobado).
-  const holguraAgua = ens?.holguraAguaMm;
-  C.push({
-    id: 'agua-claro', subsistema: S, cita: '§9.2.7',
-    criterio: 'al menos medio diámetro de claro entre la línea y CUALQUIER otro componente (estructura + fugas por corrosión)',
-    medido: holguraAgua, limite: D / 2, unidad: 'mm',
-    estado: holguraAgua == null ? 'SIN-CABLEAR'
-      : (holguraAgua < D / 2 ? 'VIOLA' : 'CUMPLE'),
-    detalle: holguraAgua == null
-      ? `claro exigido ${num(D / 2, 2)} mm contra cavidad, insertos, expulsores, return pins, guías, bushing del sprue y tornillos — sin molde ensamblado no se puede medir`
-      : `holgura MEDIDA ${num(holguraAgua, 2)} mm vs exigida ${num(D / 2, 2)} mm (½ de ⌀${num(D, 2)})`
-        + (holguraAgua < D / 2
-          ? ` — VIOLA §9.2.7. OJO: coordAudit usa un umbral FIJO de 2 mm, más flojo que el ½⌀ del libro, así que puede estar en verde mientras esto está en rojo`
-          : ' ✓'),
-    deuda: holguraAgua == null ? 'pasa el MoldAssemblySpec a contratos(pkg, ens) — packageToAssemblySpec(pkg) lo construye' : undefined,
-  });
+  // UN VEREDICTO (orden H). Con el molde hecho, el número es EL DEL FOCO (agua ↔ barrenos eje↔eje + agua ↔ la cavidad): el
+  // MISMO par que lee la inspección. «De panzazo» con la misma regla del Foco: menos de 0.5 mm sobre el límite (regla de
+  // Hefestos — el libro da el mínimo, no la banda). Sin molde, el del ensamble del paquete, juzgado contra el ⌀ del circuito
+  // que se midió (`ens.aguaDiaMm`) — antes contra ½ del plug del diseño numérico (ver `aguaDiaMm`).
+  const AVISO_CLARO_MM = 0.5;
+  const K = ens?.claroDelMolde;
+  if (K) {
+    const est: ContratoEstado = K.aceroMm < K.limiteMm ? 'VIOLA' : K.aceroMm < K.limiteMm + AVISO_CLARO_MM ? 'ADVIERTE' : 'CUMPLE';
+    C.push({
+      id: 'agua-claro', subsistema: S, cita: '§9.2.7',
+      criterio: 'al menos medio diámetro de claro entre la línea y CUALQUIER otro componente (estructura + fugas por corrosión)',
+      medido: K.aceroMm, limite: K.limiteMm, unidad: 'mm',
+      estado: est,
+      detalle: `el punto más justo del molde: entre ${K.a} y ${K.b} quedan ${num(K.aceroMm, 2)} mm de acero contra ${num(K.limiteMm, 2)} de mínimo`
+        + (est === 'VIOLA' ? ' — VIOLA §9.2.7' : est === 'ADVIERTE' ? ` — cumple de panzazo (menos de ${AVISO_CLARO_MM} mm de sobra, regla de Hefestos)` : ' ✓')
+        + ` · ${K.fuente}: ${K.pares} pares agua↔barreno + ${K.paresCavidad} agua↔cavidad`
+        + (K.cavidad ? ` · contra la cavidad (la cara de tu pieza): ${num(K.cavidad.aceroMm, 2)} mm desde ${K.cavidad.a} (mínimo ${num(K.cavidad.limiteMm, 2)})` : '')
+        + (K.juezE6 ? ` · las caras de insertos y placas las cuida el juez de la E6 por datums: el más justo ${num(K.juezE6.aceroMm, 2)} contra ${num(K.juezE6.limiteMm, 2)} (${K.juezE6.contra})` : ''),
+    });
+  } else {
+    const holguraAgua = ens?.holguraAguaMm;
+    const Dc = ens?.aguaDiaMm ?? D;
+    const lim = Dc / 2;
+    const est: ContratoEstado = holguraAgua == null ? 'SIN-CABLEAR'
+      : holguraAgua < lim ? 'VIOLA' : holguraAgua < lim + AVISO_CLARO_MM ? 'ADVIERTE' : 'CUMPLE';
+    C.push({
+      id: 'agua-claro', subsistema: S, cita: '§9.2.7',
+      criterio: 'al menos medio diámetro de claro entre la línea y CUALQUIER otro componente (estructura + fugas por corrosión)',
+      medido: holguraAgua, limite: lim, unidad: 'mm',
+      estado: est,
+      detalle: holguraAgua == null
+        ? `claro exigido ${num(lim, 2)} mm contra cavidad, insertos, expulsores, return pins, guías, bushing del sprue y tornillos — sin molde ensamblado no se puede medir`
+        : `holgura ${num(holguraAgua, 2)} mm vs exigida ${num(lim, 2)} mm (½ de ⌀${num(Dc, 2)}, el circuito que se midió) sobre el ensamble del DISEÑO NUMÉRICO (sus pines y tornillos, no los de tu molde)`
+          + (est === 'VIOLA' ? ' — VIOLA §9.2.7' : est === 'ADVIERTE' ? ` — de panzazo (menos de ${AVISO_CLARO_MM} mm de sobra, regla de Hefestos)` : ' ✓')
+          + ' · el claro del molde que se corta lo mide el Foco cuando armas el MOLDE',
+      deuda: holguraAgua == null ? 'pasa el MoldAssemblySpec a contratos(pkg, ens) — packageToAssemblySpec(pkg) lo construye' : undefined,
+    });
+  }
 
   // ── 9) t_c: el enfriamiento cumple el ciclo prometido — §9.2.1 ──
-  // ANTES (hallazgo 11 del debate, 2026-10-24): CUMPLE con cualquier ciclo > 0 — una palomita que no
-  // podía fallar y sumaba al puntaje. Lo que §9.2.1 pide es t_c sobre la sección MÁS GRUESA con criterio
-  // de línea central, y el paquete numérico NO trae esa sección: solo la pared nominal (`spec.wallMm`).
-  // Compararla contra el ciclo tampoco mide nada: el ciclo del costo es Eq 3.23 = 4·h²·η sobre la MISMA
-  // pared, y Eq 9.5 para ABS da ≈ 2.1·h² — 4·h² nunca queda abajo (1594C Box: 41.0 s contra 21.7 s).
-  // DECISIÓN: SIN-CABLEAR hasta que la sección más gruesa viaje al paquete (la lente ENFRIAMIENTO del
-  // Foco la mide por vóxel; la ventana «poste 65–136 s · pared 21.7 s» es la orden del CICLO CON FORMA).
+  // ANTES (hallazgo 11 del debate, 2026-10-24): CUMPLE con cualquier ciclo > 0; luego SIN-CABLEAR porque el paquete no traía la
+  // sección más gruesa. AHORA (orden H, cambio 4) la trae `spec.seccionGruesa` desde la lente ENFRIAMIENTO CON SU FORMA: un
+  // poste enfría como BARRA (Eq 9.6), una losa como PLACA (Eq 9.5) — §9.2.1: «consider the thickest section». Se juzga el
+  // ciclo con el que se cotizó (Eq 3.23, sobre la pared) contra el t_c de lo más grueso: si es menor, la cotización promete un
+  // ciclo que la pieza no da (Kazmer, revisión de la película §2 punto 8: «hay que avisarle al cliente»).
   const cicloS = pkg.diseno.enfriamiento.cicloS;
   const tcPared = pkg.diseno.alimentacion?.tcPartS;
-  C.push({
-    id: 'agua-ciclo', subsistema: S, cita: '§9.2.1',
-    criterio: 'el tiempo de enfriamiento se calcula sobre la sección MÁS GRUESA con criterio de línea central (conservador)',
-    medido: cicloS, unidad: 's',
-    estado: 'SIN-CABLEAR',
-    detalle: `ciclo del costo ${num(cicloS)} s (Eq 3.23) · t_c de la pared NOMINAL ${num(tcPared)} s (Eq 9.5, h = ${num(pkg.spec.wallMm, 1)} mm) — `
-      + 'la sección MÁS GRUESA (postes, nervios, uniones) no viaja en el paquete numérico, así que §9.2.1 no se puede juzgar aquí; '
-      + 'comparar el ciclo contra la pared nominal no mide nada (4·h² de Eq 3.23 siempre queda arriba de Eq 9.5 en la misma pared). '
-      + 'El real será MAYOR: resistencia térmica de contacto + requisitos de calidad (nota 1 §9.2.1)',
-    deuda: 'la sección más gruesa la mide la lente ENFRIAMIENTO (foco-lentes, por vóxel); cuando su t_c con la forma correcta (Eq 9.5 placa / 9.6 barra) viaje al paquete, se juzga ciclo ≥ t_c(sección más gruesa)',
-  });
+  const G = pkg.spec.seccionGruesa;
+  if (G && G.tcS > 0) {
+    const corto = cicloS < G.tcS;
+    C.push({
+      id: 'agua-ciclo', subsistema: S, cita: '§9.2.1',
+      criterio: 'el tiempo de enfriamiento se calcula sobre la sección MÁS GRUESA con criterio de línea central (conservador)',
+      medido: cicloS, limite: G.tcS, unidad: 's',
+      estado: corto ? 'VIOLA' : 'CUMPLE',
+      detalle: `lo más grueso de tu pieza: ${num(G.mm, 1)} mm${G.lugares > 1 ? ` en ${G.lugares} lugares` : ''}, con forma de ${G.forma === 'barra' ? 'POSTE → enfría como barra (Eq 9.6)' : 'LOSA → enfría como placa (Eq 9.5)'}: ${num(G.tcS)} s`
+        + ` (la otra cota: ${G.forma === 'barra' ? `placa ${num(G.placaS)} s, cota alta` : `barra ${num(G.barraS)} s, cota baja`}) · ciclo con el que se cotizó ${num(cicloS)} s (Eq 3.23, sobre la pared ${num(pkg.spec.wallMm, 1)} mm; Eq 9.5 de esa pared: ${num(tcPared)} s) — `
+        + (corto
+          ? `la cotización promete un ciclo que lo más grueso no da: le faltan ${num(G.tcS - cicloS)} s. Si esos postes son macizos el ciclo lo fija la pieza (§2.3.1): aligerarlos (vaciarlos por dentro) o cotizar con ${num(G.tcS)} s`
+          : 'el ciclo cotizado cubre a lo más grueso ✓')
+        + ` · la forma: ${G.regla} · el real será MAYOR (resistencia de contacto + calidad, nota 1 §9.2.1)`,
+    });
+  } else {
+    C.push({
+      id: 'agua-ciclo', subsistema: S, cita: '§9.2.1',
+      criterio: 'el tiempo de enfriamiento se calcula sobre la sección MÁS GRUESA con criterio de línea central (conservador)',
+      medido: cicloS, unidad: 's',
+      estado: 'SIN-CABLEAR',
+      detalle: `ciclo del costo ${num(cicloS)} s (Eq 3.23) · t_c de la pared NOMINAL ${num(tcPared)} s (Eq 9.5, h = ${num(pkg.spec.wallMm, 1)} mm) — `
+        + 'la sección MÁS GRUESA (postes, nervios, uniones) no viajó en este paquete, así que §9.2.1 no se puede juzgar aquí; '
+        + 'comparar el ciclo contra la pared nominal no mide nada (4·h² de Eq 3.23 siempre queda arriba de Eq 9.5 en la misma pared). '
+        + 'El real será MAYOR: resistencia térmica de contacto + requisitos de calidad (nota 1 §9.2.1)',
+      deuda: 'la sección más gruesa la mide la lente ENFRIAMIENTO (foco-lentes, por vóxel) y viaja en `spec.seccionGruesa` con su forma (Eq 9.5 placa / 9.6 barra): sin la lente no llega',
+    });
+  }
 
   return resumir(S, C);
 }
@@ -833,6 +968,8 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 6) Área PROYECTADA, con descuento por ventanas — §5.5.3 / §3.4.3 ──
+  // orden H, cambio 5: el cierre SÍ usa el área real (`areaProyectadaMm2`, moldmachine.ts). ANTES iba L×W y este renglón decía
+  // «descuento ya aplicado ✓» sin que lo estuviera (1594C Box: 7,021 contra 7,029 mm²; con ventanas el cierre sobreestimaba).
   const bboxAreaMm2 = pkg.spec.Lmm * pkg.spec.Wmm;
   const realAreaMm2 = pkg.spec.projectedAreaMm2;
   const areaUsada = realAreaMm2 ?? bboxAreaMm2;
@@ -841,12 +978,10 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
     id: 'llenado-area-proyectada', subsistema: S, cita: '§5.5.3 · §3.4.3',
     criterio: 'el tonelaje va sobre área PROYECTADA, y las ventanas/huecos de la pieza se descuentan (si no, sobreestima)',
     medido: areaUsada, limite: bboxAreaMm2, unidad: 'mm²',
-    estado: realAreaMm2 != null
-      ? (areaRatio < 0.7 ? 'ADVIERTE' : 'CUMPLE')
-      : 'ADVIERTE',
+    estado: realAreaMm2 != null ? 'CUMPLE' : 'ADVIERTE',
     detalle: realAreaMm2 != null
-      ? `área real ${realAreaMm2.toFixed(0)} mm² vs bbox ${bboxAreaMm2.toFixed(0)} mm² (${(areaRatio * 100).toFixed(0)} %) — `
-        + (areaRatio < 0.7 ? `el tonelaje calculado sobreestima ~${((1 - areaRatio) * 100).toFixed(0)} %: "the true required clamp tonnage is likely less" §3.4.3` : 'descuento ya aplicado ✓')
+      ? `el cierre (${num(clampT, 2)} t) va sobre el área real ${realAreaMm2.toFixed(0)} mm² (${(areaRatio * 100).toFixed(0)} % de la bbox ${bboxAreaMm2.toFixed(0)} mm²) — descuento aplicado ✓`
+        + (areaRatio < 0.7 ? ` · con la bbox el tonelaje habría salido ~${((1 / areaRatio - 1) * 100).toFixed(0)} % más alto: "the true required clamp tonnage is likely less" §3.4.3` : '')
       : `se usa bbox ${bboxAreaMm2.toFixed(0)} mm² (L×W) — si la pieza tiene ventanas/huecos, el tonelaje sobreestima. Pasar projectedAreaMm2 en el spec para descontar`,
   });
 
@@ -896,9 +1031,14 @@ export function contratoGates(pkg: MoldPackage): ContratoSubsistema {
     criterio: 'el t_freeze del gate debe cubrir el empaque que la pieza necesita — puede REPROBAR un gate que ya pasó corte y presión',
     medido: g.freezeS, limite: g.tPackNeededS, unidad: 's',
     estado: g.freezeCorto ? 'VIOLA' : 'CUMPLE',
-    detalle: `freeze ${num(g.freezeS, 2)} s vs empaque necesario ${num(g.tPackNeededS, 2)} s — `
+    // UNA COMPUERTA (orden H): con el molde hecho y sprue directo, la compuerta es la BASE del bebedero de la E5 (§7.2.1),
+    // no el edge gate que el paquete suponía por arquitectura. Engrosarla es engrosar el bebedero: choca con COLADA VS CICLO.
+    detalle: (g.type === 'sprue'
+      ? `la compuerta de tu molde es la BASE del bebedero (sprue directo §7.2.1, ⌀${num(g.thicknessMm, 2)}): freeze ${num(g.freezeS, 2)} s vs empaque necesario ${num(g.tPackNeededS, 2)} s — `
+      : `${g.type} gate ${num(g.thicknessMm, 2)} mm (supuesto por la arquitectura): freeze ${num(g.freezeS, 2)} s vs empaque necesario ${num(g.tPackNeededS, 2)} s — `)
       + (g.freezeCorto
         ? 'CONGELA ANTES: contracción volumétrica excesiva. §7.1.5 "the dimensions should be adjusted EVEN IF the shear rates and pressure drops were found acceptable". Remedios en su orden §7.3.5: (1) subir presión de empaque, (2) engrosar el gate, (3) adelgazar la pieza'
+          + (g.type === 'sprue' ? ' — aquí (2) es engrosar el bebedero, y eso alarga COLADA VS CICLO: es la MISMA decisión' : '')
         : 'aguanta el empaque ✓ · ojo: la ecuación da el MÍNIMO (ignora la convección del flujo), el real será mayor'),
   });
 
@@ -1309,6 +1449,9 @@ export function medirEnsamble(spec: MoldAssemblySpec): EnsambleMedido {
     const cc = coolingCircuit(spec, plateDepth(spec));
     out.aguaPuertosPorMitad = cc.ports.length;
     out.aguaPlugs = cc.plugs.length;
+    // el ⌀ del MISMO circuito con el que coordAudit midió la holgura (`coolingCircuit(s, plateDepth(s))`): el claro se juzga
+    // contra ½ de ESTE ⌀, no del plug del diseño numérico (orden H)
+    out.aguaDiaMm = cc.diaMm;
   } catch { /* idem */ }
   return out;
 }

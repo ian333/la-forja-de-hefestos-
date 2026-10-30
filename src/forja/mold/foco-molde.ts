@@ -189,9 +189,93 @@ export function crucesVerticales(p: PiezaMolde, o: V3, sentido: 1 | -1 = 1): num
   return out.filter((d, i) => i === 0 || d - out[i - 1] > 1e-3);
 }
 
+/* ─────────────────── el agua contra una malla (orden H) ─────────────────── */
+
+type Tri = { a: V3; b: V3; c: V3; min: V3; max: V3 };
+function triangulosDe(p: PiezaMolde): Tri[] {
+  const P = p.positions; const n = Math.floor(P.length / 3);
+  const idx = p.indices && p.indices.length ? p.indices : Array.from({ length: n }, (_, i) => i);
+  const out: Tri[] = [];
+  const v = (i: number): V3 => [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]];
+  for (let t = 0; t + 2 < idx.length; t += 3) {
+    const a = v(idx[t]), b = v(idx[t + 1]), c = v(idx[t + 2]);
+    out.push({ a, b, c, min: [Math.min(a[0], b[0], c[0]), Math.min(a[1], b[1], c[1]), Math.min(a[2], b[2], c[2])], max: [Math.max(a[0], b[0], c[0]), Math.max(a[1], b[1], c[1]), Math.max(a[2], b[2], c[2])] });
+  }
+  return out;
+}
+/** punto más cercano de un triángulo a un punto (Ericson §5.1.5) */
+function ptTri(p: V3, a: V3, b: V3, c: V3): V3 {
+  const sub = (x: V3, y: V3): V3 => [x[0] - y[0], x[1] - y[1], x[2] - y[2]];
+  const dot = (x: V3, y: V3) => x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
+  const ab = sub(b, a), ac = sub(c, a), ap = sub(p, a);
+  const d1 = dot(ab, ap), d2 = dot(ac, ap); if (d1 <= 0 && d2 <= 0) return a;
+  const bp = sub(p, b), d3 = dot(ab, bp), d4 = dot(ac, bp); if (d3 >= 0 && d4 <= d3) return b;
+  const vc = d1 * d4 - d3 * d2;
+  if (vc <= 0 && d1 >= 0 && d3 <= 0) { const v = d1 / (d1 - d3); return [a[0] + v * ab[0], a[1] + v * ab[1], a[2] + v * ab[2]]; }
+  const cp = sub(p, c), d5 = dot(ab, cp), d6 = dot(ac, cp); if (d6 >= 0 && d5 <= d6) return c;
+  const vb = d5 * d2 - d1 * d6;
+  if (vb <= 0 && d2 >= 0 && d6 <= 0) { const w = d2 / (d2 - d6); return [a[0] + w * ac[0], a[1] + w * ac[1], a[2] + w * ac[2]]; }
+  const va = d3 * d6 - d5 * d4;
+  if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) { const w = (d4 - d3) / ((d4 - d3) + (d5 - d6)); return [b[0] + w * (c[0] - b[0]), b[1] + w * (c[1] - b[1]), b[2] + w * (c[2] - b[2])]; }
+  const den = 1 / (va + vb + vc), v = vb * den, w = vc * den;
+  return [a[0] + ab[0] * v + ac[0] * w, a[1] + ab[1] * v + ac[1] * w, a[2] + ab[2] * v + ac[2] * w];
+}
+/** distancia EXACTA segmento ↔ triángulo (0 si se cruzan): la cota baja de la cápsula */
+function segTri(p0: V3, p1: V3, t: Tri): number {
+  const dir: V3 = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]]; const L = Math.hypot(dir[0], dir[1], dir[2]) || 1;
+  const u: V3 = [dir[0] / L, dir[1] / L, dir[2] / L];
+  const h = rayoTri(p0, u, t.a, t.b, t.c); if (h != null && h <= L) return 0;
+  const dP = (q: V3) => { const c = ptTri(q, t.a, t.b, t.c); return Math.hypot(q[0] - c[0], q[1] - c[1], q[2] - c[2]); };
+  return Math.min(dP(p0), dP(p1), segSeg(p0, p1, t.a, t.b).d, segSeg(p0, p1, t.b, t.c).d, segSeg(p0, p1, t.c, t.a).d);
+}
+/** distancia de un punto al cilindro SÓLIDO finito (eje p0→p1, radio r, extremos planos) y su punto más cercano */
+function aCilindro(q: V3, w: Cilindro): { d: number; c: V3 } {
+  const ax: V3 = [w.p1[0] - w.p0[0], w.p1[1] - w.p0[1], w.p1[2] - w.p0[2]]; const L = Math.hypot(ax[0], ax[1], ax[2]) || 1;
+  const u: V3 = [ax[0] / L, ax[1] / L, ax[2] / L];
+  const v: V3 = [q[0] - w.p0[0], q[1] - w.p0[1], q[2] - w.p0[2]];
+  const t = v[0] * u[0] + v[1] * u[1] + v[2] * u[2];
+  const rad: V3 = [v[0] - t * u[0], v[1] - t * u[1], v[2] - t * u[2]]; const rho = Math.hypot(rad[0], rad[1], rad[2]);
+  const tc = Math.max(0, Math.min(L, t)), rc = Math.min(rho, w.r);
+  const k = rho > 1e-12 ? rc / rho : 0;
+  const c: V3 = [w.p0[0] + u[0] * tc + rad[0] * k, w.p0[1] + u[1] * tc + rad[1] * k, w.p0[2] + u[2] * tc + rad[2] * k];
+  return { d: Math.hypot(q[0] - c[0], q[1] - c[1], q[2] - c[2]), c };
+}
+/** el acero entre un cilindro de agua y una malla: mín sobre los triángulos de la distancia al cilindro finito */
+export function aceroCilindroMalla(w: Cilindro, tris: Tri[]): { acero: number; c1: V3; c2: V3 } | null {
+  const lo: V3 = [Math.min(w.p0[0], w.p1[0]), Math.min(w.p0[1], w.p1[1]), Math.min(w.p0[2], w.p1[2])];
+  const hi: V3 = [Math.max(w.p0[0], w.p1[0]), Math.max(w.p0[1], w.p1[1]), Math.max(w.p0[2], w.p1[2])];
+  const M = w.r + 25;   // sólo interesa lo cercano: más allá de 25 mm de acero el par no decide nada
+  const cand: Array<{ t: Tri; lb: number }> = [];
+  for (const t of tris) {
+    if (t.max[0] < lo[0] - M || t.min[0] > hi[0] + M || t.max[1] < lo[1] - M || t.min[1] > hi[1] + M || t.max[2] < lo[2] - M || t.min[2] > hi[2] + M) continue;
+    cand.push({ t, lb: Math.max(0, segTri(w.p0, w.p1, t) - w.r) });
+  }
+  if (!cand.length) return null;
+  cand.sort((x, y) => x.lb - y.lb);
+  let mejor: { acero: number; c1: V3; c2: V3 } | null = null;
+  const PHI = (Math.sqrt(5) - 1) / 2;
+  const aurea = (f: (x: number) => number, a: number, b: number, n = 36): { x: number; v: number } => {
+    let x1 = b - PHI * (b - a), x2 = a + PHI * (b - a), f1 = f(x1), f2 = f(x2);
+    for (let i = 0; i < n; i++) { if (f1 < f2) { b = x2; x2 = x1; f2 = f1; x1 = b - PHI * (b - a); f1 = f(x1); } else { a = x1; x1 = x2; f1 = f2; x2 = a + PHI * (b - a); f2 = f(x2); } }
+    const x = (a + b) / 2; return { x, v: f(x) };
+  };
+  for (const { t, lb } of cand) {
+    if (mejor && lb >= mejor.acero) break;   // la cápsula es cota BAJA del cilindro: ningún triángulo que sigue puede ganar
+    const e1: V3 = [t.b[0] - t.a[0], t.b[1] - t.a[1], t.b[2] - t.a[2]], e2: V3 = [t.c[0] - t.a[0], t.c[1] - t.a[1], t.c[2] - t.a[2]];
+    const pt = (s: number, r: number): V3 => [t.a[0] + s * e1[0] + r * e2[0], t.a[1] + s * e1[1] + r * e2[1], t.a[2] + s * e1[2] + r * e2[2]];
+    const interior = (s: number) => aurea((r) => aCilindro(pt(s, r), w).d, 0, 1 - s, 30);
+    const ext = aurea((s) => interior(s).v, 0, 1, 30);
+    const r = interior(ext.x).x, q = pt(ext.x, r), cc = aCilindro(q, w);
+    if (!mejor || cc.d < mejor.acero) mejor = { acero: cc.d, c1: cc.c, c2: q };
+  }
+  return mejor;
+}
+
 /* ─────────────────────────── el escaneo ─────────────────────────── */
 
 const ES_AGUA = (r: string) => /^agua-(A|B)-(linea|norte|sur|este|oeste|ext|cruce)/.test(r);
+/** el baffle del macho (E6): un barreno de agua vertical que sube DENTRO del macho hacia la pieza (orden H: contra la cavidad) */
+const ES_BAFFLE = (r: string) => /^agua-B-baffle$/.test(r);
 /** lo que el agua NUNCA puede tocar: todo barreno que lleva otra cosa adentro */
 const VECINOS_DEL_AGUA: Array<{ re: RegExp; nombre: (k: number, p: PiezaMolde) => string }> = [
   { re: /^pin-punta-\d+$/, nombre: (_k, p) => `la punta de ${idPin(p)}` },
@@ -225,8 +309,13 @@ export interface ParJusto {
 }
 export interface ResultadoFoco {
   hallazgos: Hallazgo[];
-  /** el par agua↔barreno con MENOS acero de todo el molde, aunque cumpla (el punto 3 de la inspección) */
+  /** el par con MENOS acero contra su límite de todo el molde, aunque cumpla (el punto 3 de la inspección): agua↔barreno
+   *  o, desde la orden H, agua↔cavidad (la cara de tu pieza) — gana el de menor margen sobre su ½·⌀ */
   masJusto: ParJusto | null;
+  /** EL AGUA CONTRA LA CAVIDAD (orden H · un veredicto): §9.2.7 pide ½·⌀ «between the surface of the cooling line and the
+   *  surface of ANY other mold component» y la cara que forma tu pieza es la de la cavidad. Antes el Foco no la medía (Kazmer,
+   *  revisión de la película: «quizá el agua contra el plástico, que el Foco no revisó»). `pares` = líneas medidas contra ella. */
+  cavidad: { pares: number; masJusto: ParJusto | null };
   /** lo que el escaneo identificó (para las etiquetas de máquina y para auditar la cobertura) */
   cilindros: Cilindro[];
   pares: number;
@@ -284,6 +373,51 @@ export function escanearMolde(piezas: PiezaMolde[], o: OpcionesFoco = {}): Resul
     }
   }
 
+  // 1b · EL AGUA CONTRA LA CAVIDAD (orden H) — cada línea (y el baffle del macho, que es la que más se le acerca) contra la
+  // malla de TU pieza, que es la cara de la cavidad. El agua NO es una cápsula: es un cilindro de extremo PLANO (la broca
+  // termina en su cara), y la distancia se mide contra ese cilindro finito — con cápsula, el baffle ⌀9.53 que termina 5.24 mm
+  // bajo el ápice saldría con 0.48 mm de acero falsos. Exacto: por triángulo, la cota baja de la cápsula descarta, y en los que
+  // quedan se minimiza la distancia al cilindro (convexa sobre el triángulo) por sección áurea anidada.
+  let paresCav = 0, masJustoCav: ParJusto | null = null;
+  const pz = piezas.find((p) => p.role === 'pieza');
+  if (pz) {
+    const aguaCav: Cilindro[] = [...agua];
+    for (const p of piezas) {
+      if (!ES_BAFFLE(p.role)) continue;
+      const cs = cuerposDe(p), fis = piezasFisicas(cs);
+      cs.forEach((c, k) => { const cil = cilindroDeCaja(c.min, c.max); if (cil) aguaCav.push({ role: p.role, cuerpo: fis[k], nombre: 'el baffle del macho', ...cil }); });
+    }
+    const tris = triangulosDe(pz);
+    for (const w of aguaCav) {
+      const m = aceroCilindroMalla(w, tris);
+      if (!m) continue;
+      paresCav++;
+      const lim = frac * 2 * w.r, acero = m.acero;
+      const par: ParJusto = { acero: +acero.toFixed(2), limite: +lim.toFixed(2), rA: 0, rB: 0, c1: m.c1, c2: m.c2,
+        lugar: [(m.c1[0] + m.c2[0]) / 2, (m.c1[1] + m.c2[1]) / 2, (m.c1[2] + m.c2[2]) / 2],
+        roleA: w.role, roleB: 'pieza', nombreA: w.nombre, nombreB: 'la cavidad (la cara de tu pieza)', ejeAgua: w.eje };
+      if (!masJustoCav || acero - lim < masJustoCav.acero - masJustoCav.limite) masJustoCav = par;
+      if (!masJusto || acero - lim < masJusto.acero - masJusto.limite) masJusto = par;
+      if (acero >= lim + aviso) continue;
+      const f = (x: number) => x.toFixed(2);
+      const base = { lugar: par.lugar, cota: [m.c1, m.c2] as [V3, V3], limite: +lim.toFixed(2), unidad: 'mm' as const,
+        regla: `§9.2.7: ≥ ½·⌀ de acero (${f(lim)} mm) entre el agua y la cara de la cavidad`,
+        a: { role: w.role, cuerpo: w.cuerpo, nombre: w.nombre }, b: { role: 'pieza', cuerpo: 0, nombre: 'la cavidad' } };
+      const id = `agua×${w.role}×pieza`;
+      // la distancia a un cilindro SÓLIDO no es negativa: si se tocan sale ~0 (la sección áurea deja 1e-9), no 0 exacto —
+      // el par de control lo cazó («entra 2 mm» salía «sin acero 0.00»). Bajo 0.01 mm es que se tocan.
+      if (acero < 0.01) hallazgos.push({ ...base, id, tipo: 'agua-atraviesa', sev: 'falla', medido: +acero.toFixed(2),
+        titulo: 'El agua entra a la cavidad',
+        frase: `${cap(w.nombre)} toca la cara de tu pieza: el agua saldría por la cavidad. Pide ${f(lim)} mm de acero entre las dos.` });
+      else if (acero < lim) hallazgos.push({ ...base, id, tipo: 'agua-sin-acero', sev: 'falla', medido: +acero.toFixed(2),
+        titulo: 'Casi no queda acero entre el agua y tu pieza',
+        frase: `Entre ${w.nombre} y la cara de tu pieza quedan ${f(acero)} mm de acero; el mínimo es ${f(lim)}. Con la presión de inyección y el calor esa pared se agrieta y el agua llega al plástico.` });
+      else hallazgos.push({ ...base, id, tipo: 'agua-justa', sev: 'aviso', medido: +acero.toFixed(2),
+        titulo: 'Pasa de panzazo junto a la cavidad',
+        frase: `Entre ${w.nombre} y la cara de tu pieza quedan ${f(acero)} mm de acero contra ${f(lim)} de mínimo: cumple por ${f(acero - lim)} mm.` });
+    }
+  }
+
   // 2 · la piel de acero sobre cada punta (la broca que se quedó corta)
   const nucleo = piezas.find((p) => p.role === 'nucleo');
   if (nucleo) for (const p of piezas) {
@@ -315,7 +449,7 @@ export function escanearMolde(piezas: PiezaMolde[], o: OpcionesFoco = {}): Resul
   const peso = (h: Hallazgo) => (h.sev === 'falla' ? 0 : 1) * 1e6 + (h.tipo === 'agua-atraviesa' || h.tipo === 'piel-sobre-punta' ? 0 : 1e3) + h.medido;
   finales.sort((a, b) => peso(a) - peso(b));
   const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  return { hallazgos: finales, masJusto, cilindros, pares, ms: Math.round(t1 - t0) };
+  return { hallazgos: finales, masJusto, cavidad: { pares: paresCav, masJusto: masJustoCav }, cilindros, pares, ms: Math.round(t1 - t0) };
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -345,6 +479,10 @@ function agrupar(hs: Crudo[]): Hallazgo[] {
     const peor = g[0];
     const lugares = g.map((h) => ({ lugar: h.lugar, cota: h.cota, nombre: h.b.nombre, roles: [h.a.role, h.b.role] as [string, string] }));
     if (g.length === 1) { out.push({ ...peor, titulo: es(peor.titulo), frase: es(peor.frase), lugares }); continue; }
+    if (peor.b.role === 'pieza') {   // contra la cavidad (orden H): una cara, varias líneas
+      out.push({ ...peor, id: `${peor.tipo}|pieza`, titulo: `${peor.titulo} (${g.length} líneas)`, frase: es(peor.frase) + ` Es la más justa de ${g.length} líneas.`, lugares });
+      continue;
+    }
     const cuerpos = new Set(g.map((h) => `${h.b.role}#${h.b.cuerpo}`)).size;
     const quien = plural(peor.b.role, cuerpos);
     const cruces = g.length > cuerpos ? ` (${g.length} cruces)` : '';

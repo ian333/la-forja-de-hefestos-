@@ -15,6 +15,12 @@ export interface MoldAssemblySpec {
   /** resina de la PIEZA (clave de PLASTICS). La necesita el campo térmico para saber si
    *  corre con datos suyos o prestados — y decirlo. Sin ella se asumía ABS en silencio. */
   plastic?: string;
+  /** UN VEREDICTO (orden H, 2026-10-29): el bebedero que CORTA la E5 (colada.ts). Con él, el barreno de las láminas sale de
+   *  ESTE ⌀ y no de un tercer diseño del sprue (`sprueDesignFromCavity` con el largo del stack de la lámina). */
+  bebedero?: { diaTopMm: number; diaBaseMm: number; largoMm: number };
+  /** UN VEREDICTO (orden H): el agua que BARRENA la E6 (profundidad de cada familia y el paso REAL de la serpentina B). Con
+   *  él la hoja de análisis juzga el acero y no el H/W de diseño del circuito (la E6 sube la línea B y conserva el paso). */
+  aguaE6?: { profundidades: Array<{ que: string; hMm: number }>; pasoMm: number; pasoDe: number };
   widthMm: number;                                  // ancho de la base (X en la sección)
   /** FONDO real de la base (Y). Viene de `selectMoldBase` (§4.3) — la base estándar es
    *  RECTANGULAR (p.ej. 296×396) y su segundo lado es un DATO, no una proporción.

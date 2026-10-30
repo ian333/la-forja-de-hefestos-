@@ -32,9 +32,9 @@ import { ABS_EJECT, ejectionVector, effectiveArea, ejectorPinSizing, type Ejecti
 import { optimizeSupportPlate, sizeCavityPlate, sizeCorePlate, venteoDeReferenciaMm, type PlateSizing, type CavityPlateSizing } from './platesizing';
 import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection } from './machinesizing';
 import { carreraDeApertura } from './threeplate';
-import { designFeedSystem, estPartVolumeCc, type FeedSystemDesign } from './feed';
+import { designFeedSystem, estPartVolumeCc, FEED_MATERIALS, pressureDropRunner, runnerCoolingTimeS, shearRateRunner, reynolds, type FeedSystemDesign } from './feed';
 import { shrinkageRecommendation, ABS_TAIT } from './shrinkage';
-import { designGateProcess, type GateProcessDesign, type GateType } from './gating';
+import { designGateProcess, gateFreezeCylS, type GateProcessDesign, type GateType } from './gating';
 import { ventDesign } from './venting';
 
 export type Arch = 'cold-2placas' | 'cold-3placas' | 'hot-runner';
@@ -90,6 +90,15 @@ export interface MachineSpec {
   /** p_fill MEDIDA — `pMaxMPa` del solver FAN de la E5 (desde la boquilla). Sin ella, p_fill es la
    *  estimada (longitud de flujo ≈ largo) y la pantalla lo dice. Juzga colada, techo y máquina. */
   fillMPaFan?: number;
+  /** EL BEBEDERO QUE SE CORTA (orden H · un veredicto): la colada de la E5 (`datumsColada`, colada.ts) — ⌀ de entrada, ⌀ de
+   *  base, largo, modo y el caudal con el que la E5 la dimensionó. Con él la alimentación se JUZGA sobre ese cono (ΔP, t_c,
+   *  volumen, γ̇, Re) en vez de diseñar otro, y en sprue DIRECTO la compuerta ES su base (§7.2.1). Sin él (el paso 4, antes
+   *  del molde) el feed se diseña aquí como siempre. MEDIDO en la 1594C Box: el paquete juzgaba ⌀5.0→⌀11.94 × L 85.4 (⌀9.47
+   *  con la p_fill del FAN) mientras la E5 corta ⌀5.0→⌀8.62 × L 69.2 — dos bebederos para el mismo molde. */
+  bebederoCortado?: { diaTopMm: number; diaBaseMm: number; largoMm: number; modo: 'sprue-directo' | 'sprue+runner' | 'requiere-offset'; VdotCcS?: number };
+  /** LA SECCIÓN MÁS GRUESA con su FORMA (orden H): la mide la lente ENFRIAMIENTO del Foco (§9.2.1 «consider the thickest
+   *  section»). Un poste enfría como BARRA (Eq 9.6), una losa como PLACA (Eq 9.5); `tcS` es la que le toca a su forma. */
+  seccionGruesa?: { mm: number; forma: 'barra' | 'placa'; tcS: number; barraS: number; placaS: number; lugares: number; anchoMm: number; regla: string };
   /** §10.3.1: topología de alabeo desde dfm-mesh. */
   warpageTopology?: { tipo: 'marco' | 'placa' | 'mixta'; solidFrac: number; interiorEmptyFrac: number };
   /** §10.1.7: quién firma la contracción (diseñador/moldeador/cliente/prototipo). */
@@ -245,11 +254,92 @@ export function presionesDelMolde(spec: MachineSpec, melt: MeltMaterial): Presio
  *  ½·p_fill y p_pack (Eq 5.29, §5.5.3) — antes solo con la de llenado, sin piso. */
 function clampFor(spec: MachineSpec, melt: MeltMaterial, nCav: number): { dPMPa: number; clampTons: number } {
   const pr = presionesDelMolde(spec, melt);
-  const projAreaM2 = nCav * (spec.Lmm * spec.Wmm) * 1e-6;      // área proyectada = L×W por cavidad
+  const projAreaM2 = nCav * areaProyectadaMm2(spec) * 1e-6;
   const clamp = clampMetricTons(pr.clampMPa * 1e6, projAreaM2);
   return { dPMPa: pr.fillMPa, clampTons: clamp };
 }
 
+/** EL ÁREA PROYECTADA de UNA cavidad (mm²) con la que se cierra el molde (Eq 5.29) — orden H, cambio 5. La real del raster
+ *  (`projectedAreaMm2`, dfm-mesh) cuando la hay; si no, L×W y se dice. ANTES el cierre usaba L×W siempre mientras el contrato
+ *  `llenado-area-proyectada` imprimía «descuento ya aplicado ✓»: en la 1594C Box 7,021 contra 7,029 mm² (0.1 %); en una pieza
+ *  con ventanas el cierre sobreestimaba sin decirlo (§3.4.3: «the true required clamp tonnage is likely less»). UNA función:
+ *  la usan el cierre de cada variante y la máquina. */
+export function areaProyectadaMm2(spec: MachineSpec): number {
+  return spec.projectedAreaMm2 != null && spec.projectedAreaMm2 > 0 ? spec.projectedAreaMm2 : spec.Lmm * spec.Wmm;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * EL BEBEDERO QUE SE CORTA (orden H · un veredicto, cambio 3)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * El paquete numérico DISEÑA un bebedero (`designFeedSystem`: el ⌀ por el ΔP asignado de §6.4.5, largo = placa A + clamp de
+ * 1") y la E5 CORTA otro (`datumsColada`: largo del stack real, ⌀ por Eq 6.8 con el taper de extracción). El dictamen juzgaba
+ * el primero y el acero llevaba el segundo. Con `spec.bebederoCortado` la alimentación se JUZGA sobre el cono de la E5 con las
+ * MISMAS ecuaciones del feed (Eq 6.5 ΔP power-law con el radio medio, Eq 9.6 para su t_c, Eq 6.4 γ̇ en la entrada, Eq 6.2 Re,
+ * cono truncado para el volumen) — no se rediseña: el lazo §6.4.7 ya no corre porque el acero ya se cortó; si con él chocan
+ * presión y ciclo, el conflicto se REPORTA (§1.2, lo arbitra el humano). */
+function alimentacionDelBebederoCortado(base: FeedSystemDesign, b: NonNullable<MachineSpec['bebederoCortado']>, material: string, nCav: number, partCc: number): FeedSystemDesign {
+  const m = FEED_MATERIALS[material] ?? FEED_MATERIALS.ABS;
+  const mm = m as unknown as MeltMaterial;
+  // EL CAUDAL es el de la PIEZA (V/t_llenado, el MISMO del feed diseñado, de la compuerta y de la columna ①): de la E5 se toma la
+  // GEOMETRÍA que cortó, no el caudal con que la dimensionó. MEDIDO en la app (1594C Box): la E5 dimensionó con el volumen de su
+  // rejilla de la E4, y con ESE caudal la caída salía 3.3 MPa contra 10.8 con el de la pieza — el ✓ habría sido del caudal, no
+  // del bebedero. Si los dos difieren más de 25 % se DICE (el ⌀ de la E5 pudo salir chico; en la Box lo gobierna el taper).
+  const Vdot = (base.VdotCcS as number) * 1e-6;
+  const vE5 = b.VdotCcS;
+  const avisoCaudal = vE5 != null && Math.abs(vE5 - base.VdotCcS) > 0.25 * base.VdotCcS
+    ? ` · ⚠ la E5 lo dimensionó con ${vE5.toFixed(1)} cc/s contra ${base.VdotCcS.toFixed(1)} cc/s de la pieza (el volumen de su rejilla): su ⌀ de diseño pudo salir chico`
+    : '';
+  const L = b.largoMm / 1000, rTop = b.diaTopMm / 2000, rBase = b.diaBaseMm / 2000, rMean = (rTop + rBase) / 2;
+  const dPMPa = pressureDropRunner(mm, { name: 'sprue', L, R: rMean, Vdot }) / 1e6;
+  const tcSprueS = runnerCoolingTimeS(m.alpha, 2 * rBase, m.tMelt, m.tCool, m.tEject);
+  const volCc = ((Math.PI * L) / 3) * (rTop * rTop + rTop * rBase + rBase * rBase) * 1e6;
+  const shear = shearRateRunner(Vdot, rTop);
+  const re = reynolds(m.rhoMeltKgM3, Vdot, 100, 2 * rMean);
+  const pctRegrind = (volCc / (partCc * nCav)) * 100;
+  const dpMal = dPMPa > base.limDPMPa, cicloMal = tcSprueS > base.tcPartS;
+  const conflicto = dpMal && cicloMal
+    ? `§6.4.7 (ciclo) CHOCA con §6.2.2 (presión) en el bebedero que CORTA la E5 (⌀${b.diaTopMm.toFixed(2)}→⌀${b.diaBaseMm.toFixed(2)} · L ${b.largoMm.toFixed(1)}): `
+      + `cuesta ΔP ${dPMPa.toFixed(1)} > ${base.limDPMPa.toFixed(2)} MPa Y su colada tarda ${tcSprueS.toFixed(1)} s > ${base.tcPartS.toFixed(1)} s de la pared. `
+      + `Engrosarlo baja la presión y alarga el ciclo; adelgazarlo hace lo contrario (p.149: «can be reduced albeit with a higher pressure drop»). Lo arbitra el humano §1.2`
+    : null;
+  const notas: string[] = [];
+  if (dpMal) notas.push(`ΔP ${dPMPa.toFixed(1)} > ${base.limDPMPa.toFixed(1)} MPa §6.2.2`);
+  if (pctRegrind > base.limPct) notas.push(`volumen ${pctRegrind.toFixed(1)} % > ${base.limPct} % §6.2.3`);
+  if (cicloMal) notas.push('la colada domina el ciclo §6.4.7');
+  if (shear > base.shearMax) notas.push(`γ̇ ${Math.round(shear)} > ${base.shearMax} 1/s §7.1.4`);
+  return {
+    ...base,
+    diaBaseMm: b.diaBaseMm, diaTopMm: b.diaTopMm, sprueLenMm: b.largoMm,
+    dPMPa, volCc, pctRegrind, tcSprueS, shear, re, VdotCcS: Vdot * 1e6,
+    iteraciones: [{ paso: 1, diaBaseMm: b.diaBaseMm, dPMPa, tcSprueS,
+      accion: `el bebedero que CORTA la E5 (colada.ts, ${b.modo}): se JUZGA, no se rediseña — ⌀${b.diaTopMm.toFixed(2)}→⌀${b.diaBaseMm.toFixed(2)} × L ${b.largoMm.toFixed(1)} mm a ${(Vdot * 1e6).toFixed(1)} cc/s`
+        + (b.modo === 'sprue-directo' ? '' : ' (el runner y la compuerta de la E5 no entran en esta caída: sólo el bebedero)') + avisoCaudal }],
+    conflicto, notas, ok: notas.length === 0 && !conflicto,
+  };
+}
+
+/** LA COMPUERTA DEL SPRUE DIRECTO (§7.2.1, orden H): «the sprue gate itself is the interface… it has no length, there is no
+ *  pressure drop». En el molde que corta la E5 la compuerta es la BASE del bebedero (⌀ = 2·rBase), no el edge gate de la
+ *  pared que el paquete suponía por arquitectura (en la 1594C Box: edge 3.2 mm, freeze 8.33 s). Su freeze es el de un
+ *  cilindro (Tabla 7.4, `gateFreezeCylS`) — el MISMO número que imprime la E6 («⌀8.62 → empaca 19.99 s»). */
+function compuertaDelBebederoCortado(base: GateProcessDesign, b: NonNullable<MachineSpec['bebederoCortado']>, VdotM3s: number, alphaM2s: number, melt: MeltMaterial, tNoFlowC: number): GateProcessDesign {
+  const dM = b.diaBaseMm / 1000;
+  const freezeS = gateFreezeCylS(alphaM2s, dM, melt.tMelt, melt.tWall, tNoFlowC);
+  const shear = shearRateRunner(VdotM3s, dM / 2);
+  const freezeCorto = freezeS < base.tPackNeededS;
+  return {
+    ...base, type: 'sprue', agrandable: false,
+    thicknessMm: +b.diaBaseMm.toFixed(3), widthMm: null, thicknessSteelSafeMm: +b.diaBaseMm.toFixed(2),
+    shear, dPMPa: 0, freezeS, freezeCorto, dpVeredicto: '§7.2.1: la compuerta del sprue directo no tiene largo — sin caída propia',
+    escalaTipo: null,
+    iteraciones: [
+      { paso: 1, que: 'tipo sprue (directo)', accion: `§7.2.1 la base del bebedero de la E5 (⌀${b.diaBaseMm.toFixed(2)}) ES la compuerta: «directly abuts» la base cerrada de la pieza` },
+      { paso: 5, que: `freeze ${freezeS.toFixed(2)} s vs empaque necesario ${base.tPackNeededS.toFixed(2)} s`,
+        accion: freezeCorto ? '§7.1.5 la base del bebedero congela ANTES de terminar el empaque' : '§7.3.4 la base del bebedero aguanta el empaque ✓' },
+    ],
+    ok: shear <= base.shearMax && !freezeCorto,
+  };
+}
 export function moldMachine(spec: MachineSpec): MoldPackage {
   const melt = ABS_MG47;
   const plastic = spec.plastic ?? 'ABS';
@@ -372,11 +462,16 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   });
   // el sprue va de la cara de la boquilla al plano de partición: clamp + placa A
   const sprueLenMm = base.plateAmm + 25.4;                       // 25.4 = clamp de 1", estándar de las bases
-  const alimentacion = designFeedSystem({
+  const feedDiseñado = designFeedSystem({
     material: plastic === 'ABS' ? 'ABS' : 'PP', partVolumeCc: partCcReal,
     partWallMm: spec.wallMm, sprueLenMm, nCav, fillMPa,
     hotRunner: win.arch === 'hot-runner',
   });
+  // UN BEBEDERO (orden H): con el molde hecho, el que se juzga es el que la E5 CORTA (límite de ΔP y t_c de la pared, del
+  // diseñado: la misma p_fill y la misma pared). En colada caliente no hay bebedero frío que juzgar: se queda el diseñado.
+  const alimentacion = spec.bebederoCortado && win.arch !== 'hot-runner'
+    ? alimentacionDelBebederoCortado(feedDiseñado, spec.bebederoCortado, plastic === 'ABS' ? 'ABS' : 'PP', nCav, partCcReal)
+    : feedDiseñado;
 
   // ── VENTEO (cap 8): el aire desplazado ≈ el volumen inyectado (§8.2.1) y cada
   //    venteo se dimensiona para TODO el flujo local, no para el flujo dividido
@@ -402,13 +497,18 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   const GATE_POR_ARCH: Record<Arch, GateType> = {
     'cold-2placas': 'edge', 'cold-3placas': 'pin-point', 'hot-runner': 'thermal-sprue',
   };
-  const gate = designGateProcess({
+  const gateSupuesto = designGateProcess({
     type: GATE_POR_ARCH[win.arch], wallMm: spec.wallMm,
     VdotM3s: (partCcReal * 1e-6) / 1, shearMaxS: PLASTIC_SHEARMAX[plastic] ?? 50000,
     melt, alphaM2s: PLASTIC_ALPHA[plastic] ?? 8.73e-8,
     tMeltC: melt.tMelt, tCoolC: melt.tWall, tNoFlowC: PLASTIC_TNOFLOW[plastic] ?? 132,
     tPackNeededS: alimentacion.tcPartS,   // Eq 9.5 de la pared, ya calculada por el feed: UNA fuente
   });
+  // la compuerta del molde que SÍ se corta (orden H): en sprue directo es la base del bebedero de la E5 (§7.2.1)
+  const gate = spec.bebederoCortado?.modo === 'sprue-directo' && win.arch !== 'hot-runner'
+    ? compuertaDelBebederoCortado(gateSupuesto, spec.bebederoCortado, (alimentacion.VdotCcS as number) * 1e-6,
+      PLASTIC_ALPHA[plastic] ?? 8.73e-8, melt, PLASTIC_TNOFLOW[plastic] ?? 132)
+    : gateSupuesto;
 
   // ── ENFRIAMIENTO: calor por ciclo → caudal → Ø turbulento → plug DME ──
   const rho = PLASTIC_RHO[plastic] ?? 1050, cp = PLASTIC_CP[plastic] ?? 2000;
@@ -446,7 +546,7 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   const nucleo = sizeCorePlate({ lineDiaMm: realCoolDiaMm });
 
   // ── MÁQUINA: cuatro restricciones → inyectora comercial ──
-  const projAreaM2 = nCav * spec.Lmm * spec.Wmm * 1e-6;
+  const projAreaM2 = nCav * areaProyectadaMm2(spec) * 1e-6;     // la MISMA área que cerró cada variante (orden H, cambio 5)
   const partCc = spec.volumeMm3 * 1e-3;
   const requerimientos = machineRequirements({
     // el cierre de la máquina con la MISMA presión que la estructura: max(½·p_fill, p_pack), Eq 5.29.

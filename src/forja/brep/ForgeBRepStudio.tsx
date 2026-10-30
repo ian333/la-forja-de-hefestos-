@@ -44,7 +44,8 @@ import { carreraDeApertura } from '../mold/threeplate';
 import { carreraDeExpulsionMm } from '../mold/platesizing';
 import { piezaDesdeArbol } from '../mold/estudio-molde-datos';
 import { horasDelModelo, SIN_TARIFA } from '../mold/expediente';   // PASO 8 · LOS APAGONES: horas de Kazmer cap. 3 en vez de la hoja en USD
-import type { RevisionModelo } from '../mold/revisar-modelo';   // PASO 8 · el dictamen completo (no solo la fila) para el expediente
+import { tituloCorto, type Criterio as CriterioContrato, type ContratoEstado } from '../mold/mold-contratos';   // UN VEREDICTO (orden H): los renglones de las dos columnas
+import { rejuzgarConElMolde, type RevisionModelo } from '../mold/revisar-modelo';   // PASO 8 · el dictamen completo (no solo la fila) para el expediente · UN VEREDICTO (orden H): el re-juicio con el molde
 import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
 import { flanera } from '../mold/flanera';   // el VASO de la flanera (producto de revolución)
 import { splitMold, shapeBBox, scaleForShrinkage } from '../mold/mold';    // core/cavidad genérico (probado en el banco: cup/lid/…)
@@ -67,7 +68,7 @@ const tituloDelPaso = (n: number) => { const t = (PASOS_DEL_CAMINO[n - 1]?.titul
 import { PIEL, PIEL_CSS } from './piel-futuro';   // LA PIEL DEL FUTURO: cyberpunk + holograma de cine (ian, 2026-10-22)
 import { partingLoops, type PartingLoop } from '../mold/parting';   // T7 · PARTIR: la línea de partición desde la malla (pull +Z), sobre la pieza
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm, FillVivo } from './MoldScene';
-import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
+import { useMoldStudio, moldeRealDelCiclo, type ArbolPieza } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel, TarjetaEstacion, TarjetaPuerta } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
@@ -4031,8 +4032,18 @@ export default function ForgeBRepStudio() {
   const docNameRef = useRef(docName);
   useEffect(() => { docNameRef.current = docName; }, [docName]);
   const mold = useMoldStudio({ oc, setCollapsed, setDocName, arbol: arbolRef, arbolRev });
+  // UN VEREDICTO (orden H, 2026-10-29): cuando el molde existe, el dictamen se RE-JUZGA con lo que el acero lleva — la p_fill
+  // del FAN (E5), el bebedero que corta la E5, el agua de la E6 y el claro del Foco (con el portamoldes entero). Es la segunda
+  // columna de la lámina del dictamen, de la hoja de análisis y del expediente. Sin molde: null, y la pantalla lo dice.
+  const rejuicio = useMemo(() => {
+    if (!revision) return null;
+    const m = moldeRealDelCiclo(mold.ciclo, mold.moldParts);
+    if (!m || !m.fuentes.length) return null;
+    try { return { rev: rejuzgarConElMolde(revision, m), fuente: m.fuentes, completo: !!mold.ciclo?.portamoldes, notas: m.fuentes }; }
+    catch (e) { console.warn('REJUICIO_ERR', e); return null; }
+  }, [revision, mold.ciclo, mold.moldParts]);
   // ORDEN D · EL QA REAL (2026-10-24): la huella pesa el acero (moldGeom da solo cajas) y lee los números dorados VIVOS — el efecto que arma `__forgeBrep` no depende del molde (sus deps no traen moldParts ni ciclo); aquí solo referencias, la cuenta la hace scripts/qa-huella.cjs.
-  (window as unknown as { __qaForja?: unknown }).__qaForja = { setIntake: mold.setIntake, ciclo: mold.ciclo, intake: mold.intake, moldParts: mold.moldParts, revision, lentes, piezaMalla };
+  (window as unknown as { __qaForja?: unknown }).__qaForja = { setIntake: mold.setIntake, ciclo: mold.ciclo, intake: mold.intake, moldParts: mold.moldParts, revision, rejuicio, lentes, piezaMalla };
   /** LO QUE HAY SE VE: referencias three del visor (las llena EncuadreBridge) para `__forgeBrep.encuadre()` */
   const encuadreRef = useRef<EncuadreSink | null>(null);
   /** EL PASO 6 SE VE TRABAJAR: el reloj de la leyenda del molde late mientras una estación trabaja (los cuadros
@@ -4048,7 +4059,13 @@ export default function ForgeBRepStudio() {
   const specPieza = useMemo(() => {
     const shape = arbolRef.current?.shape; const p = lentes?.lentes.find((l) => l.id === 'pared')?.p50;
     if (!oc || !shape || !piezaMalla || !(p && p > 0)) return undefined;
-    try { return piezaDesdeArbol(oc, shape, { nombre: piezaMalla.nombre, wallMm: +p.toFixed(2), material: mold.intake.material ?? 'ABS', annualVolume: mold.intake.annualVolume, packMPa: mold.intake.packMPa }).spec; }
+    // UN VEREDICTO (orden H, cambio 4): la sección MÁS GRUESA viaja al paquete desde la lente ENFRIAMIENTO con su FORMA
+    // (poste → barra Eq 9.6, losa → placa Eq 9.5) y `agua-ciclo` deja de ser SIN-CABLEAR (§9.2.1).
+    const ce = lentes?.lentes.find((l) => l.id === 'enfriamiento')?.ciclo;
+    const seccionGruesa = ce && ce.tcS > 0
+      ? { mm: +ce.gruesoMm.toFixed(2), forma: ce.forma, tcS: +ce.tcS.toFixed(1), barraS: +ce.barraS.toFixed(1), placaS: +ce.placaS.toFixed(1), lugares: ce.lugares, anchoMm: +ce.anchoMm.toFixed(1), regla: ce.regla }
+      : undefined;
+    try { return { ...piezaDesdeArbol(oc, shape, { nombre: piezaMalla.nombre, wallMm: +p.toFixed(2), material: mold.intake.material ?? 'ABS', annualVolume: mold.intake.annualVolume, packMPa: mold.intake.packMPa }).spec, ...(seccionGruesa ? { seccionGruesa } : {}) }; }
     catch (e) { console.warn('SPEC_PIEZA_ERR', e); return undefined; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oc, arbolRev, piezaMalla, lentes, mold.intake]);
@@ -4107,6 +4124,12 @@ export default function ForgeBRepStudio() {
     setTimeout(() => {
       try {
         const aspec = packageToAssemblySpec(pkg);
+        // UN VEREDICTO (orden H): UN bebedero — el que corta la E5 — en dictamen, hoja, lámina y expediente
+        const d5b = mold.ciclo?.e5datums;
+        if (d5b) aspec.bebedero = { diaTopMm: 2 * d5b.rTopMm, diaBaseMm: 2 * d5b.rBaseMm, largoMm: d5b.LsprueMm };
+        // … y UN agua: la hoja juzga H y W con lo que barrena la E6 (la misma fuente que la columna ② del dictamen)
+        const aE6 = moldeRealDelCiclo(mold.ciclo, [])?.agua;
+        if (aE6) aspec.aguaE6 = { profundidades: aE6.profundidades, pasoMm: aE6.pasoMm, pasoDe: aE6.pasoDe };
         // LOS BOTADORES DE TU PIEZA: si la E7 ya colocó los pines por agarre, la lámina «Placa expulsora»
         // dibuja ESOS (misma fuente que el 3D), no la rejilla genérica del paquete (19 × ⌀10 para la carcasa).
         const e10 = mold.ciclo?.e10, d5 = mold.ciclo?.e5datums;
@@ -4132,9 +4155,12 @@ export default function ForgeBRepStudio() {
         const rows = [
           { grupo: 'Recomendación', param: 'arquitectura × cavidades', valor: `${r.arch} × ${r.nCav}${cavDict == null ? '' : cavDict === r.nCav ? ' = dictamen' : ` ≠ dictamen (${cavDict})`}`, ref: '§3.4', ok: cavDict == null ? undefined : cavDict === r.nCav },
           { grupo: 'Máquina', param: 'inyectora', valor: maqValor, ref: '§4.3.3', ok: sel.ok },
+          // UN VEREDICTO (orden H): las DOS columnas — ① tu pieza sola (paso 4) · ② en el acero (con el molde). El ✓/✗ del renglón
+          // es el del acero cuando existe: es lo que se va a cortar.
           revision
-            ? { grupo: 'Dictamen', param: 'contratos (el juez, 69 criterios)', valor: `${revision.fila.score}/100 · ${revision.fila.viola} violan · ${revision.fila.advierte} advierten`, ref: '§13', ok: revision.fila.viola === 0 }
+            ? { grupo: 'Dictamen', param: 'contratos (el juez, 69 criterios) · ① tu pieza sola · ② en el acero', valor: `① ${revision.fila.score}/100 · ${revision.fila.viola} violan · ${revision.fila.advierte} advierten │ ② ${rejuicio ? `${rejuicio.rev.fila.score}/100 · ${rejuicio.rev.fila.viola} violan · ${rejuicio.rev.fila.advierte} advierten` : 'falta el molde: pulsa MOLDE'}`, ref: '§13', ok: (rejuicio?.rev.fila ?? revision.fila).viola === 0 }
             : { grupo: 'Dictamen', param: 'contratos (el juez)', valor: 'sin dictamen: pulsa D sobre la pieza', ref: '§13' },
+          ...renglonesDelVeredicto(revision, rejuicio?.rev ?? null),
           // LOS APAGONES (2026-10-24): «100/100 ✓» salía de `checkDFM` con SOLO la pared nominal (moldmachine.ts: la pieza
           // soltada no le pasa costillas, postes ni filetes — `piezaDesdeArbol` no declara `spec.dfm`). Un 100 que no revisó
           // nada más no se imprime: se dice qué es y qué no revisa, sin puntaje y sin palomita. («moldeabilidad DFM» se queda
@@ -4159,7 +4185,7 @@ export default function ForgeBRepStudio() {
       finally { setPlanosBusy(false); }
     }, 30);
     return true;
-  }, [oc, mold.ciclo, revision]);
+  }, [oc, mold.ciclo, revision, rejuicio]);
   // si pidieron PLANOS antes de que exista E2, MOLDE arma el ciclo y esto los genera al llegar
   useEffect(() => {
     if (planosPend && mold.ciclo?.e2?.pkg && !planosBusy) { setPlanosPend(false); generarPlanosMolde(); }
@@ -4181,11 +4207,13 @@ export default function ForgeBRepStudio() {
       }
     } catch (e) { console.warn('COSTO_EXPEDIENTE', e); }
     // BORRADOR mientras falte UNA firma (§13.10: «no cierra con pendientes»); sin dictamen tampoco hay nada firmado.
-    const pendientes = revision?.expediente.pendientes ?? 0;
+    // UN VEREDICTO (orden H): con el molde hecho, las decisiones por firmar son las del molde que SE CORTA (columna ②)
+    const revE = rejuicio?.rev ?? revision;
+    const pendientes = revE?.expediente.pendientes ?? 0;
     const borrador = !revision || pendientes > 0;
-    const html = expedienteHTML({ nombre: piezaMalla.nombre, fecha, rev: revision, costo, planos: planosMolde, notas: piezaMalla.notas, borrador });
-    return { html, tieneDictamen: !!revision, tieneCotizacion: !!costo, costo, borrador, nPlanos: planosMolde?.length ?? 0, nDecisiones: revision?.expediente.decisiones.length ?? 0, pendientes };
-  }, [expedienteOn, piezaMalla, mold.ciclo, revision, planosMolde]);
+    const html = expedienteHTML({ nombre: piezaMalla.nombre, fecha, rev: revision, rj: rejuicio?.rev ?? null, rjFuentes: rejuicio?.fuente ?? [], costo, planos: planosMolde, notas: piezaMalla.notas, borrador });
+    return { html, tieneDictamen: !!revision, tieneCotizacion: !!costo, costo, borrador, nPlanos: planosMolde?.length ?? 0, nDecisiones: revE?.expediente.decisiones.length ?? 0, pendientes };
+  }, [expedienteOn, piezaMalla, mold.ciclo, revision, rejuicio, planosMolde]);
   const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
   // LOS BOTADORES DE TU PIEZA (2026-09-17): el ciclo animado (llenar · abrir · expulsar) vive SOLO mientras la
   // lente MOLDE está a la vista. Medido en el paseo: con el rAF corriendo bajo los planos y el expediente, cada
@@ -8044,7 +8072,10 @@ export default function ForgeBRepStudio() {
             {(() => {
               const tinte = !dictamen ? '#6db3f2' : dictamen.viola > 0 ? '#ff5c5c' : dictamen.advierte > 0 ? '#ffb347' : '#59d98c';
               const ritmo = !dictamen ? 20 : dictamen.viola >= 4 ? 9 : dictamen.viola > 0 ? 14 : dictamen.advierte > 0 ? 20 : 28;
-              const chip = !dictamen ? 'MIDIENDO' : dictamen.viola > 0 ? `◆ ${dictamen.viola} NO CUMPLEN` : dictamen.advierte > 0 ? `◇ ${dictamen.advierte} DE PANZAZO` : '✓ LIMPIA';
+              const chip0 = !dictamen ? 'MIDIENDO' : dictamen.viola > 0 ? `◆ ${dictamen.viola} NO CUMPLEN` : dictamen.advierte > 0 ? `◇ ${dictamen.advierte} DE PANZAZO` : '✓ LIMPIA';
+              // UN VEREDICTO (orden H): con el molde, el chip dice también lo del ACERO (la columna 2)
+              const fa = rejuicio?.rev.fila;
+              const chip = fa ? `${chip0} · EN EL ACERO ${fa.viola > 0 ? `◆ ${fa.viola}` : fa.advierte > 0 ? `◇ ${fa.advierte}` : '✓'}` : chip0;
               return (
             <div data-testid="lamina-dictamen" data-tinte={tinte}
               onClickCapture={(e) => {
@@ -8102,8 +8133,12 @@ export default function ForgeBRepStudio() {
               {/* EL ALCANCE (crítica 2026-10-23: dos veredictos): el dictamen juzga el diseño numérico ANTES de armar el molde; lo que
                   se mide en el acero (el claro del agua, los pines) lo dice la inspección del paso 7 — por eso aquí puede haber un ◆
                   que allá cumple de panzazo. */}
+              {/* UN VEREDICTO (orden H, 2026-10-29): ya no hay «otro» veredicto en el paso 7 — con el molde hecho, la columna ② re-juzga
+                  con lo que el acero lleva y su claro ES el del Foco y la inspección. */}
               <div data-testid="lamina-alcance" style={{ position: 'relative', zIndex: 1, font: `500 11.5px/1.4 ${PIEL.fuente.cuerpo}`, color: '#9DB3BF', marginBottom: 10 }}>
-                Juzga tu pieza y su diseño numérico, antes de armar el molde. Lo que se mide en el acero lo dice la inspección (paso 7).
+                {rejuicio
+                  ? <>Dos columnas: ① tu pieza sola, con su diseño numérico (paso 4) · ② en el acero, con lo que el molde lleva: {rejuicio.fuente.join(' · ')}.</>
+                  : <>Juzga tu pieza y su diseño numérico, antes de armar el molde. Cuando armes el MOLDE, la columna ② la vuelve a juzgar con el acero.</>}
               </div>
               <div style={{ position: 'relative', zIndex: 1 }}>
               <Suspense fallback={<div style={{ fontSize: 11, opacity: 0.6 }}>cargando la revisión…</div>}>
@@ -8111,6 +8146,7 @@ export default function ForgeBRepStudio() {
                   pieza={{ mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas, spec: specPieza }}
                   onDictamen={(f) => setDictamen({ viola: f.viola, advierte: f.advierte, cumple: f.cumple })}
                   onRevision={setRevision}
+                  rejuicio={rejuicio?.rev ?? null} molde={rejuicio ? { fuentes: rejuicio.fuente, completo: rejuicio.completo } : null}
                   onAbrirLote={() => { setLaminaOn(false); setRevisarLoteOn(true); }} />
               </Suspense>
               </div>
@@ -10195,7 +10231,8 @@ export default function ForgeBRepStudio() {
                 {/* LOS APAGONES (2026-10-24): un ✓ verde junto a «5 pendientes de firma» decía «listo» de algo que NO cierra
                     (§13.10). Tres estados: ✓ completo · ◇ ámbar = está, pero le falta algo (firmas, tu tarifa) · · = no está. */}
                 {([
-                  ['DICTAMEN · antes del molde', expediente.tieneDictamen ? `${revision!.fila.score}/100 · ◆ ${revision!.fila.viola} no cumplen · ◇ ${revision!.fila.advierte} de panzazo` : 'abre EL DICTAMEN (D) para incluirlo', expediente.tieneDictamen && revision!.fila.viola === 0 ? 'ok' : 'falta'],
+                  // UN VEREDICTO (orden H): las dos columnas también aquí — ① tu pieza sola (paso 4) · ② en el acero (con el molde)
+                  ['DICTAMEN · ① tu pieza sola · ② en el acero', expediente.tieneDictamen ? `① ${revision!.fila.score}/100 · ◆ ${revision!.fila.viola} · ◇ ${revision!.fila.advierte} │ ② ${rejuicio ? `${rejuicio.rev.fila.score}/100 · ◆ ${rejuicio.rev.fila.viola} · ◇ ${rejuicio.rev.fila.advierte}` : 'falta el molde'}` : 'abre EL DICTAMEN (D) para incluirlo', expediente.tieneDictamen && (rejuicio?.rev ?? revision)!.fila.viola === 0 ? 'ok' : 'falta'],
                   ['DECISIONES §13.10', expediente.tieneDictamen ? `${expediente.nDecisiones} · ${expediente.pendientes} pendientes de firma` : 'salen del dictamen', !expediente.tieneDictamen ? 'falta' : expediente.pendientes > 0 ? 'pend' : 'ok'],
                   ['COSTO DE REFERENCIA', expediente.costo ? `${Math.round(expediente.costo.maquinadoH + expediente.costo.acabadoH)} h de insertos (Kazmer cap. 3) · ${SIN_TARIFA.replace('costo de referencia: ', '')}` : 'necesita MOLDE (E1)', expediente.costo ? 'pend' : 'falta'],
                   ['PLANOS', expediente.nPlanos ? `${expediente.nPlanos} láminas incluidas` : 'genera LOS PLANOS (paso 7) para incluirlos', expediente.nPlanos > 0 ? 'ok' : 'falta'],
@@ -10720,26 +10757,73 @@ function meshToStlBlob(positions: Float32Array, indices: Uint32Array): Blob {
 }
 /** PASO 8 · EL EXPEDIENTE como archivo (§13.10): dictamen → decisiones → cotización → planos → tryout.
  *  Lo que no hay se DICE en el archivo, no se rellena. HTML imprimible (A4 apaisado; láminas A3). */
+/**
+ * UN VEREDICTO (orden H, 2026-10-29) — los renglones que cambian al juzgar el ACERO, con su número en las DOS columnas.
+ * La hoja de análisis los imprime («① tu pieza sola · ② en el acero») y el expediente usa los mismos criterios: UN número
+ * por criterio en todo el sistema. Sin molde, la columna ② dice que falta.
+ */
+const IDS_DEL_VEREDICTO = ['feed-dp', 'feed-ciclo', 'gate-freeze', 'agua-claro', 'agua-paso', 'agua-ciclo'];
+const ICONO_ESTADO: Record<ContratoEstado, string> = { 'CUMPLE': '✓', 'ADVIERTE': '⚠', 'VIOLA': '✗', 'SIN-CABLEAR': '🔌', 'SIN-MÓDULO': '∅' };
+function numDelCriterio(c: CriterioContrato | undefined): string {
+  if (!c) return '—';
+  const f = (x: number) => (Math.abs(x) >= 100 ? x.toFixed(0) : Math.abs(x) >= 10 ? x.toFixed(1) : x.toFixed(2));
+  const u = c.unidad && c.unidad !== '×H' && c.unidad !== '×⌀' ? ` ${c.unidad}` : c.unidad ?? '';
+  return `${ICONO_ESTADO[c.estado]} ${c.medido != null ? f(c.medido) : ''}${c.limite != null ? ` de ${f(c.limite)}` : ''}${u}`.trim();
+}
+function renglonesDelVeredicto(rev: RevisionModelo | null, rj: RevisionModelo | null): Array<{ grupo: string; param: string; valor: string; ref: string; ok?: boolean }> {
+  if (!rev) return [];
+  const de = (r: RevisionModelo | null) => new Map<string, CriterioContrato>((r?.contratos.subsistemas.flatMap((x) => x.criterios) ?? []).map((c) => [c.id, c]));
+  const m1 = de(rev), m2 = de(rj);
+  const filas: Array<{ grupo: string; param: string; valor: string; ref: string; ok?: boolean }> = [];
+  // UN bebedero: el que corta la E5 cuando hay molde; si no, el del diseño numérico, y se dice
+  const al = (rj ?? rev).pkg.diseno.alimentacion, cortado = !!rj?.spec.bebederoCortado;
+  filas.push({ grupo: 'Alimentación §6.3.1', param: cortado ? 'el bebedero (UNO: el que corta la E5)' : 'el bebedero (del diseño numérico: la E5 aún no corta el suyo)',
+    valor: `⌀${al.diaTopMm.toFixed(2)}→⌀${al.diaBaseMm.toFixed(2)} × L ${al.sprueLenMm.toFixed(1)} mm · ΔP ${al.dPMPa.toFixed(1)} de ${al.limDPMPa.toFixed(1)} MPa · su colada ${al.tcSprueS.toFixed(1)} s contra ${al.tcPartS.toFixed(1)} s de la pared`,
+    ref: '§6.3.1 · §6.2.2 · §6.4.7', ok: al.dPMPa <= al.limDPMPa && al.tcSprueS <= al.tcPartS });
+  for (const id of IDS_DEL_VEREDICTO) {
+    const c1 = m1.get(id), c2 = m2.get(id);
+    if (!c1) continue;
+    filas.push({ grupo: `Dictamen · ${c1.subsistema}`, param: `${tituloCorto(id)} ${c1.cita}`,
+      valor: `① ${numDelCriterio(c1)} │ ② ${rj ? numDelCriterio(c2) : 'falta el molde'}`,
+      ref: c1.cita, ok: (c2 ?? c1).estado !== 'VIOLA' });
+  }
+  return filas;
+}
+
 /** LOS APAGONES (2026-10-24): lo que reemplaza a la hoja de cotización en USD — las horas de los insertos de la ganadora. */
 interface CostoReferencia { arch: string; nCav: number; maquinadoH: number; acabadoH: number }
-function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; costo: CostoReferencia | null; planos: DrawingPage[] | null; notas: string[]; borrador: boolean }): string {
+function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo | null; rj?: RevisionModelo | null; rjFuentes?: string[]; costo: CostoReferencia | null; planos: DrawingPage[] | null; notas: string[]; borrador: boolean }): string {
   const esc = (t: unknown) => String(t ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
   const css = `@page{size:A4 landscape;margin:14mm}html,body{margin:0;background:#fff;color:#111;font:12px/1.45 Inter,system-ui,sans-serif}` +
     `h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 8px;letter-spacing:.06em;text-transform:uppercase;border-bottom:2px solid #111;padding-bottom:4px}` +
     `.sec{page-break-inside:avoid}.muted{color:#666}.pg{page-break-before:always;width:100%;display:flex;justify-content:center}.pg svg{width:100%;height:auto}` +
     `table{border-collapse:collapse;width:100%;font-size:11.5px}td,th{border-bottom:1px solid #ddd;padding:4px 6px;text-align:left;vertical-align:top}` +
     `.VIOLA{color:#b3261e;font-weight:700}.ADVIERTE{color:#9a6b00;font-weight:700}.CUMPLE{color:#1b7f3b}.falta{background:#fff4f2;border:1px solid #f0b6ad;padding:10px 12px;border-radius:6px}`;
-  const rev = o.rev;
+  const rev = o.rev, rj = o.rj ?? null;
+  // UN VEREDICTO (orden H): DOS columnas — ① tu pieza sola (paso 4, el diseño numérico) · ② en el acero (con el molde). Entra
+  // todo criterio que duele en CUALQUIERA de las dos; si la ② dice lo mismo que la ①, se escribe «igual».
   const dictamen = rev ? (() => {
-    const cs = rev.contratos.subsistemas.flatMap((s) => s.criterios).filter((c) => c.estado === 'VIOLA' || c.estado === 'ADVIERTE');
-    return `<p><b>${esc(rev.fila.score)}/100</b> · ${esc(rev.fila.viola)} violan · ${esc(rev.fila.advierte)} advierten · ${esc(rev.fila.cumple)} cumplen · ${esc(rev.fila.sinCablear)} sin cablear</p>` +
-      `<table><tr><th>§</th><th>criterio</th><th>estado</th><th>lo medido</th></tr>` +
-      cs.map((c) => `<tr><td>${esc(c.cita)}</td><td>${esc(c.criterio)}</td><td class="${c.estado}">${esc(c.estado)}</td><td>${esc(c.detalle)}</td></tr>`).join('') + `</table>`;
+    const duele = (c?: { estado: string }) => !!c && (c.estado === 'VIOLA' || c.estado === 'ADVIERTE');
+    const m2 = new Map((rj?.contratos.subsistemas.flatMap((s) => s.criterios) ?? []).map((c) => [c.id, c]));
+    const cs = rev.contratos.subsistemas.flatMap((s) => s.criterios).filter((c) => duele(c) || duele(m2.get(c.id)));
+    const fila = (r: RevisionModelo) => `<b>${esc(r.fila.score)}/100</b> · ${esc(r.fila.viola)} violan · ${esc(r.fila.advierte)} advierten · ${esc(r.fila.cumple)} cumplen · ${esc(r.fila.sinCablear)} sin cablear`;
+    return `<p>① <b>tu pieza sola</b> (paso 4, antes del molde): ${fila(rev)}</p>` +
+      `<p>② <b>en el acero</b> (con el molde): ${rj ? `${fila(rj)}<br><span class="muted">re-juzgado con ${esc((o.rjFuentes ?? []).join(' · '))}</span>` : '<span class="falta">falta el molde: arma el MOLDE para juzgar el acero</span>'}</p>` +
+      `<table><tr><th>§</th><th>criterio</th><th>① tu pieza sola</th><th>② en el acero</th></tr>` +
+      cs.map((c) => {
+        const c2 = m2.get(c.id);
+        const col2 = !rj ? '<span class="muted">—</span>' : !c2 ? '<span class="muted">—</span>'
+          : (c2.estado === c.estado && c2.detalle === c.detalle) ? '<span class="muted">igual</span>'
+          : `<span class="${c2.estado}">${esc(c2.estado)}</span> · ${esc(c2.detalle)}`;
+        return `<tr><td>${esc(c.cita)}</td><td>${esc(c.criterio)}</td><td><span class="${c.estado}">${esc(c.estado)}</span> · ${esc(c.detalle)}</td><td>${col2}</td></tr>`;
+      }).join('') + `</table>`;
   })() : `<div class="falta">Sin dictamen: no se abrió EL DICTAMEN (D) antes de armar el expediente.</div>`;
-  const decisiones = rev ? `<p>${esc(rev.expediente.decisiones.length)} decisiones que el libro exige del humano · <b>${esc(rev.expediente.pendientes)} pendientes de firma</b> · ${rev.expediente.cerrable ? 'CERRABLE' : 'NO CIERRA sin firmas (§13.10)'}</p>` +
+  // las decisiones por firmar son las del molde que SE CORTA cuando existe (columna ②)
+  const revD = rj ?? rev;
+  const decisiones = revD ? `<p>${esc(revD.expediente.decisiones.length)} decisiones que el libro exige del humano · <b>${esc(revD.expediente.pendientes)} pendientes de firma</b> · ${revD.expediente.cerrable ? 'CERRABLE' : 'NO CIERRA sin firmas (§13.10)'}</p>` +
     `<table><tr><th>tema</th><th>§</th><th>opciones reales</th><th>elección</th></tr>` +
-    rev.expediente.decisiones.map((d) => `<tr><td><b>${esc(d.tema)}</b></td><td>${esc(d.cita)}</td><td>${d.opciones.map((x) => `· ${esc(x)}`).join('<br>')}</td><td>${d.eleccion ? esc(d.eleccion) + (d.responsable ? `<br><span class="muted">${esc(d.responsable)} · ${esc(d.fecha)}</span>` : '') : '<span class="muted">pendiente</span>'}</td></tr>`).join('') + `</table>` +
-    `<h2>Plan de tryout</h2><ul>${rev.expediente.tryout.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
+    revD.expediente.decisiones.map((d) => `<tr><td><b>${esc(d.tema)}</b></td><td>${esc(d.cita)}</td><td>${d.opciones.map((x) => `· ${esc(x)}`).join('<br>')}</td><td>${d.eleccion ? esc(d.eleccion) + (d.responsable ? `<br><span class="muted">${esc(d.responsable)} · ${esc(d.fecha)}</span>` : '') : '<span class="muted">pendiente</span>'}</td></tr>`).join('') + `</table>` +
+    `<h2>Plan de tryout</h2><ul>${revD.expediente.tryout.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
   // sin dinero hasta tu tarifa: horas del modelo (Kazmer cap. 3) y lo que NO entra en ellas, dicho
   const c = o.costo;
   const cot = c
@@ -10753,7 +10837,7 @@ function expedienteHTML(o: { nombre: string; fecha: string; rev: RevisionModelo 
   const brr = o.borrador ? 'BORRADOR · ' : '';
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${brr}Expediente · ${esc(o.nombre)}</title><style>${css}</style></head><body>` +
     `<h1>${brr}Expediente · ${esc(o.nombre)}</h1><div class="muted">${esc(o.fecha)} · La Forja de Hefestos · §13.10: el entregable no es el molde, es el registro de decisiones firmado</div>` +
-    (o.borrador ? `<p class="falta"><b>BORRADOR</b>: ${o.rev ? `${esc(o.rev.expediente.pendientes)} decisiones sin firma` : 'sin dictamen, ninguna decisión firmada'}. No se fabrica sin la firma del moldista responsable.</p>` : '') +
+    (o.borrador ? `<p class="falta"><b>BORRADOR</b>: ${revD ? `${esc(revD.expediente.pendientes)} decisiones sin firma` : 'sin dictamen, ninguna decisión firmada'}. No se fabrica sin la firma del moldista responsable.</p>` : '') +
     (o.notas.length ? `<p class="muted">${o.notas.map(esc).join(' · ')}</p>` : '') +
     `<div class="sec"><h2>1 · Dictamen</h2>${dictamen}</div>` +
     `<div class="sec"><h2>2 · Decisiones §13.10</h2>${decisiones || '<div class="falta">Salen del dictamen.</div>'}</div>` +

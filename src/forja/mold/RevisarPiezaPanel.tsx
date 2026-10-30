@@ -32,6 +32,8 @@ import { tituloCorto, type Criterio, type ContratoEstado } from './mold-contrato
 import type { Lente, LenteId, LentesFoco } from './foco-lentes';
 
 const GOLD = '#c9a227';
+/** #rrggbb + alfa → rgba() (UN VEREDICTO: el borde de la columna del acero) */
+const rgbaHex = (hex: string, a: number) => `rgba(${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)},${a})`;
 const COLOR: Record<ContratoEstado, string> = {
   'CUMPLE': '#59d98c', 'ADVIERTE': '#ffb347', 'VIOLA': '#ff5c5c',
   'SIN-CABLEAR': '#6db3f2', 'SIN-MÓDULO': '#8a93a3',
@@ -55,8 +57,13 @@ export interface PiezaEnRevision {
   annualVolume?: number;
 }
 
-export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, foco, onDictamen, onRevision }: {
+export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, foco, onDictamen, onRevision, rejuicio, molde }: {
   pieza: PiezaEnRevision | null;
+  /** UN VEREDICTO (orden H, 2026-10-29): la MISMA revisión re-juzgada con el molde (p_fill del FAN, el bebedero que corta la
+   *  E5, el agua de la E6, el claro del Foco). Es la segunda columna; sin molde no hay, y el panel lo dice. */
+  rejuicio?: RevisionModelo | null;
+  /** de dónde salió el re-juicio (en palabras) y si el molde ya está ENTERO (el claro sólo se mide con el portamoldes) */
+  molde?: { fuentes: string[]; completo: boolean } | null;
   /** X6 · avisa los conteos (viola/advierte/cumple) en cuanto hay dictamen. La lámina
    *  viva los usa para TEÑIRSE y para su ritmo: el color de la pantalla es el estado. */
   onDictamen?: (fila: FilaRevision) => void;
@@ -131,8 +138,15 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
   }
 
   const criterios: Criterio[] = rev ? rev.contratos.subsistemas.flatMap((s) => s.criterios) : [];
-  const ordenados = [...criterios].sort((a, b) => PESO[a.estado] - PESO[b.estado] || a.cita.localeCompare(b.cita));
-  const duelen = ordenados.filter((c) => c.estado === 'VIOLA' || c.estado === 'ADVIERTE');
+  // UN VEREDICTO (orden H): la columna 2 es el mismo criterio re-juzgado en el acero. Se ordena por el PEOR de los dos: lo
+  // que duele en cualquiera de las columnas sube.
+  const enAcero = new Map<string, Criterio>((rejuicio ? rejuicio.contratos.subsistemas.flatMap((s) => s.criterios) : []).map((c) => [c.id, c]));
+  const peso2 = (c: Criterio) => Math.min(PESO[c.estado], enAcero.has(c.id) ? PESO[enAcero.get(c.id)!.estado] : 9);
+  // a igual severidad, primero lo que CAMBIA entre columnas (medido: con 16 que duelen y 12 a la vista, CLARO ✓→⚠ quedaba fuera)
+  const cambia = (c: Criterio) => (enAcero.has(c.id) && enAcero.get(c.id)!.estado !== c.estado ? 0 : 1);
+  const ordenados = [...criterios].sort((a, b) => peso2(a) - peso2(b) || cambia(a) - cambia(b) || a.cita.localeCompare(b.cita));
+  const duelenEn = (c: Criterio) => c.estado === 'VIOLA' || c.estado === 'ADVIERTE';
+  const duelen = ordenados.filter((c) => duelenEn(c) || (enAcero.has(c.id) && duelenEn(enAcero.get(c.id)!)));
   const mostrar = verTodo ? ordenados : duelen.slice(0, 12);
   /**
    * X2 · AGRUPADO POR SUBSISTEMA. Cazado A OJO leyendo la lista ya encogida: los
@@ -147,7 +161,7 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
     const m = new Map<string, Criterio[]>();
     for (const c of mostrar) { const k = c.subsistema || '—'; if (!m.has(k)) m.set(k, []); m.get(k)!.push(c); }
     return [...m.entries()]
-      .map(([nombre, cs]) => ({ nombre, cs, peor: Math.min(...cs.map((c) => PESO[c.estado])) }))
+      .map(([nombre, cs]) => ({ nombre, cs, peor: Math.min(...cs.map((c) => peso2(c))) }))
       .sort((a, b) => a.peor - b.peor || a.nombre.localeCompare(b.nombre));
   })();
   const t = rev?.contratos.total;
@@ -200,11 +214,36 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
       ))}
 
       {t && (
-        <div style={{ display: 'flex', gap: 10, fontSize: 10.5, opacity: 0.85, marginBottom: 6 }}>
-          <span style={{ color: COLOR.VIOLA }}>✗ {t.viola}</span>
-          <span style={{ color: COLOR.ADVIERTE }}>⚠ {t.advierte}</span>
-          <span style={{ color: COLOR.CUMPLE }}>✓ {t.cumple}</span>
-          <span style={{ color: COLOR['SIN-CABLEAR'] }}>🔌 {t.sinCablear}</span>
+        <div data-testid="rp-columnas" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 10.5, marginBottom: 6 }}>
+          {/* UN VEREDICTO (orden H): las DOS columnas con su nombre. La 1 juzga tu pieza y su diseño numérico ANTES del molde;
+              la 2, lo que el acero SÍ lleva. Cada renglón de abajo trae el estado de las dos, en este orden. */}
+          <div data-testid="rp-col-paso4" style={{ border: '1px solid rgba(159,179,200,0.18)', borderRadius: 6, padding: '5px 8px' }}>
+            <div style={{ fontSize: 9, letterSpacing: 1.4, opacity: 0.6 }}>① TU PIEZA SOLA · paso 4</div>
+            <div style={{ display: 'flex', gap: 9, marginTop: 2 }}>
+              <b style={{ color: GOLD }}>{rev!.fila.score}<span style={{ opacity: 0.5, fontWeight: 400 }}>/100</span></b>
+              <span style={{ color: COLOR.VIOLA }}>✗ {t.viola}</span>
+              <span style={{ color: COLOR.ADVIERTE }}>⚠ {t.advierte}</span>
+              <span style={{ color: COLOR.CUMPLE }}>✓ {t.cumple}</span>
+              <span style={{ color: COLOR['SIN-CABLEAR'] }}>🔌 {t.sinCablear}</span>
+            </div>
+          </div>
+          {rejuicio ? (
+            <div data-testid="rp-col-molde" title={molde?.fuentes.join(' · ')} style={{ border: `1px solid ${rgbaHex(GOLD, 0.45)}`, borderRadius: 6, padding: '5px 8px', background: 'rgba(201,162,39,0.06)' }}>
+              <div style={{ fontSize: 9, letterSpacing: 1.4, opacity: 0.8, color: GOLD }}>② EN EL ACERO · con el molde{molde && !molde.completo ? ' (armando…)' : ''}</div>
+              <div style={{ display: 'flex', gap: 9, marginTop: 2 }}>
+                <b style={{ color: GOLD }}>{rejuicio.fila.score}<span style={{ opacity: 0.5, fontWeight: 400 }}>/100</span></b>
+                <span style={{ color: COLOR.VIOLA }}>✗ {rejuicio.contratos.total.viola}</span>
+                <span style={{ color: COLOR.ADVIERTE }}>⚠ {rejuicio.contratos.total.advierte}</span>
+                <span style={{ color: COLOR.CUMPLE }}>✓ {rejuicio.contratos.total.cumple}</span>
+                <span style={{ color: COLOR['SIN-CABLEAR'] }}>🔌 {rejuicio.contratos.total.sinCablear}</span>
+              </div>
+            </div>
+          ) : (
+            <div data-testid="rp-falta-molde" style={{ border: '1px dashed rgba(159,179,200,0.28)', borderRadius: 6, padding: '5px 8px', opacity: 0.75 }}>
+              <div style={{ fontSize: 9, letterSpacing: 1.4, opacity: 0.7 }}>② EN EL ACERO · con el molde</div>
+              <div style={{ marginTop: 2 }}>falta el molde: pulsa <b>MOLDE</b></div>
+            </div>
+          )}
         </div>
       )}
 
@@ -231,7 +270,8 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
                 background: on ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.02)',
                 borderRadius: '0 6px 6px 0', cursor: 'pointer' }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-                <span style={{ color: COLOR[c.estado] }}>{ICON[c.estado]}</span>
+                <span title="① tu pieza sola · paso 4" style={{ color: COLOR[c.estado] }}>{ICON[c.estado]}</span>
+                <span data-testid={`rp-h-molde-${c.id}`} title="② en el acero · con el molde" style={{ color: enAcero.has(c.id) ? COLOR[enAcero.get(c.id)!.estado] : '#5b6676', minWidth: 12 }}>{enAcero.has(c.id) ? ICON[enAcero.get(c.id)!.estado] : '·'}</span>
                 <span data-testid={`rp-h-titulo-${c.id}`}
                   style={{ fontWeight: 700, fontSize: 10.5, letterSpacing: 0.5, whiteSpace: 'nowrap',
                     overflow: 'hidden', textOverflow: 'ellipsis' }}>{tituloCorto(c.id)}</span>
@@ -241,7 +281,20 @@ export default function RevisarPiezaPanel({ pieza, onAbrirLote, onVerHallazgo, f
               {on && (
                 <div data-testid={`rp-h-cuerpo-${c.id}`} style={{ paddingLeft: 18, marginTop: 3 }}>
                   <div style={{ fontSize: 10.5, lineHeight: 1.5 }}>{c.criterio}</div>
-                  <div style={{ fontSize: 10.5, opacity: 0.66, lineHeight: 1.5, marginTop: 3 }}>{c.detalle}</div>
+                  {(() => {
+                    const m2 = enAcero.get(c.id);
+                    const igual = !m2 || (m2.detalle === c.detalle && m2.estado === c.estado);
+                    return (
+                      <>
+                        <div style={{ fontSize: 10.5, opacity: 0.66, lineHeight: 1.5, marginTop: 3 }}>{rejuicio ? <b style={{ opacity: 0.8 }}>① tu pieza sola: </b> : null}{c.detalle}</div>
+                        {rejuicio && m2 && (
+                          <div data-testid={`rp-h-cuerpo-molde-${c.id}`} style={{ fontSize: 10.5, lineHeight: 1.5, marginTop: 3, color: igual ? undefined : '#e9dcb0', opacity: igual ? 0.55 : 0.9 }}>
+                            <b style={{ color: GOLD }}>② en el acero: </b>{igual ? 'igual (no depende del molde o aún no se mide en el acero)' : m2.detalle}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>
