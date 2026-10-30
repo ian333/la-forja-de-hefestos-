@@ -57,6 +57,19 @@ export interface PlateSpec {
   code: string; name: string; material?: string;
   wmm: number; dmm: number; thickMm: number;
   holes: PlateHole[]; sideHoles?: SideHole[]; openings?: PlateOpening[]; cooling?: CoolingCircuit;
+  /** el término inglés de ISO 12165 de esta placa (va al título suplementario del cajetín) */
+  en?: string;
+  cajetin?: DatosCajetin;
+}
+/** LO QUE EL CAJETÍN SABE DE AFUERA (ISO 7200, orden K): lo que no se sabe NO se llena — va su línea vacía. */
+export interface DatosCajetin {
+  /** propietario legal del documento (ISO 7200 §5.1.2, obligatorio): la planta que lo libera. Sin dato, la línea vacía. */
+  propietario?: string;
+  /** el día en que La Forja GENERÓ la lámina (AAAA-MM-DD). NO es la fecha de emisión (§5.1.5: la del día en que se
+   *  libera oficialmente): esa la escribe quien aprueba. */
+  generado?: string;
+  /** la pieza que moldea (va al título suplementario, §5.2.3) */
+  pieza?: string;
 }
 export interface PlateDrawing { svg: string; rows: string[][]; nHoles: number; scale: string }
 
@@ -68,6 +81,9 @@ export interface StackComp {
   tint?: string;                        // relleno de color (p.ej. corredera) en vez de achurado
   circles?: Array<{ x: number; z: number; dia: number; note?: string }>; // p.ej. líneas de agua cortadas
   lines?: Array<{ x0: number; z0: number; x1: number; z1: number; widthMm?: number; note?: string }>; // p.ej. perno inclinado (angle pin)
+  /** EL RENGLÓN DE LA BOM CON NOMBRE ISO (orden K): denominación en español del término de ISO 12165 (+ medida), el término
+   *  inglés y la norma del componente («tipo ISO nnnn»). Sin él, la BOM usa `name` como siempre. */
+  bom?: { es: string; en?: string; norma?: string };
 }
 export interface AssemblyDrawing { svg: string; bom: string[][]; nComps: number; scale: string }
 
@@ -82,44 +98,99 @@ function sheetOpen(parts: string[]) {
   parts.push(`<rect x="${MARGIN / 2}" y="${MARGIN / 2}" width="${PW - MARGIN}" height="${PH - MARGIN}" fill="none" stroke="#111" stroke-width="0.7"/>`);
 }
 
-function titleBlock(parts: string[], code: string, name: string, material: string, scale: string, extra?: string) {
-  // Cajetín según ISO 7200 (campos: propietario, nº de documento, título, fechas,
-  // responsable, hoja) + proyección 3er ángulo.
-  // LOS APAGONES (2026-10-24, el abogado del debate de 25 expertos: «es el papel que más acusa si un molde falla»): el
-  // cajetín imprimía «Ra 0.8 cavidad · Ra 3.2 resto», «ISO 2768-mK», «H7 · roscas 6H» y «DIBUJÓ: La Forja CAD» — nada de
-  // eso lo calculó nadie. Queda lo que sí es: la tolerancia general la fija el fabricante del molde, el software GENERÓ
-  // la lámina y REVISÓ/APROBÓ son firmas humanas en blanco. Los ajustes que SÍ calcula `fits.ts` siguen en su cota.
-  const W = 150, H = 40, x = PW - MARGIN / 2 - W, y = PH - MARGIN / 2 - H;
-  parts.push(`<g data-testid="title-block" font-size="2.6" fill="#111">`);
+/** ancho aproximado de un texto Arial (mm), por clase de carácter: mayúscula 0.68, espacio/puntuación 0.3, lo demás
+ *  0.53 del tamaño (+7 % en negrita). MEDIDO en la corrida B (2026-10-30): con un promedio plano de 0.57 el encabezado
+ *  «MATERIAL · NORMA» (todo mayúsculas) se salía 0.6 mm de su columna. Solo para ENCOGER un texto que no cabe en su
+ *  celda; el juez fino (getBBox) lo corre el arnés en el navegador. */
+const anchoArial = (t: string, fs: number, bold = false) => {
+  let w = 0;
+  for (const ch of t) w += /[A-ZÁÉÍÓÚÑ⌀Ø]/.test(ch) ? 0.68 : /[\s.,:;·'|()[\]/-]/.test(ch) ? 0.3 : 0.53;
+  return w * fs * (bold ? 1.07 : 1);
+};
+/** el tamaño de letra (≤ fs, ≥ min) con el que `t` cabe en `w` mm */
+const cabeEn = (t: string, w: number, fs: number, bold = false, min = 1.5) => Math.max(min, Math.min(fs, w / Math.max(1e-6, anchoArial(t, 1, bold))));
+
+/** Marca de «hoja sin numerar»: el cajetín no sabe cuántas láminas trae el juego; quien arma el juego final las numera
+ *  con `numerarHojas` (las 4 vistas se intercalan después, en mold-plano-set.ts). */
+const HOJA_SIN_NUMERAR = 'data-hoja="sin-numerar">—<';
+/** ISO 7200 §5.1.6 + §5.1.7 (hoja y número de hojas): numera el juego TERMINADO, en su orden. Las láminas sin cajetín
+ *  (4 vistas, hoja de análisis) cuentan en el total aunque no lleven el número escrito. */
+export function numerarHojas<T extends { svg: string }>(pages: T[]): T[] {
+  const N = pages.length;
+  return pages.map((p, i) => (p.svg.includes(HOJA_SIN_NUMERAR) ? { ...p, svg: p.svg.replace(HOJA_SIN_NUMERAR, `data-hoja="${i + 1}/${N}">${i + 1} / ${N}<`) } : p));
+}
+
+/**
+ * CAJETÍN SEGÚN ISO 7200:2004 (orden K · EL MOLDE EN STEP Y CON NOMBRE ISO, 2026-10-30).
+ * Los campos y su obligación salen de las Tablas 1–3 de la norma (leídas en su adopción idéntica IS 11665:2009, pública):
+ *   OBLIGATORIOS (M): propietario legal §5.1.2 · número de identificación §5.1.3 (≤ 16 caracteres) · fecha de emisión §5.1.5 ·
+ *   hoja §5.1.6 · título §5.2.2 (25/30 caracteres) · aprobó §5.3.4 · elaboró §5.3.5 · tipo de documento §5.3.6.
+ *   OPCIONALES (O) que se usan: revisión §5.1.4 · número de hojas §5.1.7 · idioma §5.1.8 · título suplementario §5.2.3 ·
+ *   formato §5.3.11. Escala, símbolo de proyección y tolerancia general NO son campos de ISO 7200 («se presentan fuera del
+ *   cajetín, solo cuando se usan», §4): van en una franja propia, rotulada, sobre la rejilla de la norma.
+ * SIN INVENTAR VALORES: el propietario, la fecha de EMISIÓN (el día en que se libera, no el día en que se generó), la
+ * revisión y las tres firmas van con su línea vacía; «generado por La Forja (software) el AAAA-MM-DD» se dice aparte,
+ * chico, porque ELABORÓ es una persona (§5.3.5: «the person who has prepared the document»).
+ * LOS APAGONES (2026-10-24) siguen: sin «ISO 2768-mK», sin «Ra 0.8», sin «DIBUJÓ: La Forja CAD»; la tolerancia general la
+ * fija el fabricante del molde. Ancho 166 mm (la norma muestra 180 en su §6 para A4: aquí la sección del ensamble llega a
+ * x = 246.5 en la carcasa 246 y un cajetín de 180 se le montaba encima).
+ */
+function titleBlock(parts: string[], code: string, name: string, material: string, scale: string,
+  o: { tipo: string; en?: string; datos?: DatosCajetin }) {
+  const W = 166, H = 40, x = PW - MARGIN / 2 - W, y = PH - MARGIN / 2 - H;
+  const d = o.datos ?? {};
+  parts.push(`<g data-testid="title-block" data-norma="ISO 7200:2004" font-size="2.6" fill="#111">`);
   parts.push(`<rect x="${x}" y="${y}" width="${W}" height="${H}" fill="#fff" stroke="#111" stroke-width="0.5"/>`);
-  // fila superior: código + título + marca
-  parts.push(`<line x1="${x}" y1="${y + 12}" x2="${x + W}" y2="${y + 12}" stroke="#111" stroke-width="0.3"/>`);
-  parts.push(`<text x="${x + 3}" y="${y + 5.4}" font-size="4.2" font-weight="bold">${esc(code)} · ${esc(name).slice(0, 32)}</text>`);
-  parts.push(`<text x="${x + 3}" y="${y + 9.8}" font-size="2.4" fill="#666">${esc(extra ?? 'MOLDE DE INYECCIÓN')}</text>`);
-  parts.push(`<text x="${x + W - 2.5}" y="${y + 5.4}" font-size="2.8" fill="#b8860b" text-anchor="end">La Forja · GAIA</text>`);
-  // rejilla ISO 7200: material | tolerancias | escala/proyección | firmas
-  const c1 = x + W * 0.34, c2 = x + W * 0.62, c3 = x + W * 0.82;
-  parts.push(`<line x1="${c1}" y1="${y + 12}" x2="${c1}" y2="${y + H}" stroke="#111" stroke-width="0.3"/>`);
-  parts.push(`<line x1="${c2}" y1="${y + 12}" x2="${c2}" y2="${y + H}" stroke="#111" stroke-width="0.3"/>`);
-  parts.push(`<line x1="${c3}" y1="${y + 12}" x2="${c3}" y2="${y + H}" stroke="#111" stroke-width="0.3"/>`);
-  parts.push(`<line x1="${x}" y1="${y + 26}" x2="${c2}" y2="${y + 26}" stroke="#111" stroke-width="0.25"/>`);
-  const cell = (cx: number, cy: number, k: string, v: string, vs = 2.9) =>
-    parts.push(`<text x="${cx}" y="${cy}" font-size="2.1" fill="#666">${esc(k)}</text><text x="${cx}" y="${cy + 4.4}" font-size="${vs}" font-weight="bold">${esc(v)}</text>`);
-  cell(x + 3, y + 16.5, 'MATERIAL', material.slice(0, 22));
-  cell(x + 3, y + 30.5, 'GENERÓ', 'La Forja (software)');
-  cell(c1 + 3, y + 16.5, 'TOLERANCIA GENERAL', 'la fija el fabricante del molde', 2.1);
-  cell(c1 + 3, y + 30.5, 'REVISÓ', '____________');
-  cell(c2 + 3, y + 16.5, 'ESCALA', scale);
-  cell(c2 + 3, y + 30.5, 'UNIDADES', 'mm');
-  cell(c3 + 3, y + 16.5, 'APROBÓ', '__________');
-  cell(c3 + 3, y + 30.5, 'HOJA', '1/1 · A3');
-  // símbolo de PROYECCIÓN DE TERCER ÁNGULO (ISO 128: tronco + vista circular),
-  // junto al valor de escala (el símbolo ES la indicación normativa)
-  const sx = c2 + 15, sy = y + 19.3;
+  const hl = (yy: number, x0 = x, x1 = x + W) => parts.push(`<line x1="${x0}" y1="${(y + yy).toFixed(2)}" x2="${x1}" y2="${(y + yy).toFixed(2)}" stroke="#111" stroke-width="0.3"/>`);
+  const vl = (xx: number, y0: number, y1: number) => parts.push(`<line x1="${(x + xx).toFixed(2)}" y1="${(y + y0).toFixed(2)}" x2="${(x + xx).toFixed(2)}" y2="${(y + y1).toFixed(2)}" stroke="#111" stroke-width="0.3"/>`);
+  // celda: rótulo chico arriba (en español, con la cláusula de la norma) y el valor; sin valor, la LÍNEA para escribirlo
+  const cell = (x0: number, x1: number, y0: number, y1: number, campo: string, rotulo: string, valor: string | null, o2: { fs?: number; bold?: boolean; abajo?: string } = {}) => {
+    const w = x1 - x0 - 2.4, fs = o2.fs ?? 2.5, bold = o2.bold ?? true;
+    parts.push(`<g data-iso7200="${campo}">`);
+    parts.push(`<text x="${(x + x0 + 1.2).toFixed(2)}" y="${(y + y0 + 2.5).toFixed(2)}" font-size="${cabeEn(rotulo, w, 1.8, false, 1.3).toFixed(2)}" fill="#555">${esc(rotulo)}</text>`);
+    if (valor != null && valor !== '') {
+      const f = cabeEn(valor, w, fs, bold);
+      parts.push(`<text x="${(x + x0 + 1.2).toFixed(2)}" y="${(y + y0 + 2.5 + Math.max(2.6, f + 0.6)).toFixed(2)}" font-size="${f.toFixed(2)}"${bold ? ' font-weight="bold"' : ''}${campo === 'hoja' ? ` ${HOJA_SIN_NUMERAR.split('>')[0]}` : ''}>${esc(valor)}</text>`);
+    } else {
+      parts.push(`<line x1="${(x + x0 + 1.4).toFixed(2)}" y1="${(y + y1 - (o2.abajo ? 3.2 : 1.6)).toFixed(2)}" x2="${(x + x1 - 1.4).toFixed(2)}" y2="${(y + y1 - (o2.abajo ? 3.2 : 1.6)).toFixed(2)}" stroke="#888" stroke-width="0.2" data-vacio="1"/>`);
+    }
+    if (o2.abajo) parts.push(`<text x="${(x + x0 + 1.2).toFixed(2)}" y="${(y + y1 - 0.9).toFixed(2)}" font-size="${cabeEn(o2.abajo, w, 1.7, false, 1.2).toFixed(2)}" fill="#666">${esc(o2.abajo)}</text>`);
+    parts.push(`</g>`);
+  };
+  // ── fila 1 (0–9): propietario legal · tipo de documento
+  hl(9); vl(100, 0, 9);
+  cell(0, 100, 0, 9, 'propietario', 'PROPIETARIO LEGAL (ISO 7200 §5.1.2)', d.propietario ?? null);
+  cell(100, W, 0, 9, 'tipo', 'TIPO DE DOCUMENTO (§5.3.6)', o.tipo, { fs: 2.3 });
+  // ── fila 2 (9–20): título + suplementario · nº de identificación · revisión · hoja
+  hl(20); vl(100, 9, 20); vl(132, 9, 20); vl(146, 9, 20);
+  const supl = [o.en, d.pieza].filter(Boolean).join(' · ');
+  parts.push(`<g data-iso7200="titulo">`);
+  parts.push(`<text x="${(x + 1.2).toFixed(2)}" y="${(y + 11.3).toFixed(2)}" font-size="1.8" fill="#555">TÍTULO (§5.2.2) · TÍTULO SUPLEMENTARIO (§5.2.3)</text>`);
+  parts.push(`<text x="${(x + 1.2).toFixed(2)}" y="${(y + 15.4).toFixed(2)}" font-size="${cabeEn(name, 97.6, 3.4, true).toFixed(2)}" font-weight="bold">${esc(name)}</text>`);
+  if (supl) parts.push(`<text x="${(x + 1.2).toFixed(2)}" y="${(y + 18.8).toFixed(2)}" font-size="${cabeEn(supl, 97.6, 2.1, false, 1.2).toFixed(2)}" fill="#333">${esc(supl)}</text>`);
+  parts.push(`</g>`);
+  cell(100, 132, 9, 20, 'identificacion', 'Nº DE IDENTIFICACIÓN §5.1.3', code, { fs: 3.0 });
+  cell(132, 146, 9, 20, 'revision', 'REV. §5.1.4', null);
+  cell(146, W, 9, 20, 'hoja', 'HOJA (§5.1.6-7)', '—', { fs: 2.8 });
+  // ── fila 3 (20–30): fuera de la norma (rotulado): material · escala + proyección · unidades · tolerancia · fecha de emisión
+  hl(30); vl(36, 20, 30); vl(72, 20, 30); vl(86, 20, 30); vl(126, 20, 30);
+  cell(0, 36, 20, 30, 'material', 'MATERIAL', material.slice(0, 26));
+  cell(36, 72, 20, 30, 'escala', 'ESCALA · PROYECCIÓN 3er ÁNG.', scale);
+  cell(72, 86, 20, 30, 'unidades', 'UNIDADES', 'mm');
+  cell(86, 126, 20, 30, 'tolerancia', 'TOLERANCIA GENERAL', 'la fija el fabricante del molde', { fs: 2.0, bold: false });
+  cell(126, W, 20, 30, 'fecha', 'FECHA DE EMISIÓN (§5.1.5)', null, { abajo: d.generado ? `generado el ${d.generado}` : undefined });
+  // símbolo de PROYECCIÓN DE TERCER ÁNGULO (tronco + vista circular) junto a la escala — el símbolo ES la indicación
+  const sx = x + 36 + 18, sy = y + 26.2;
   parts.push(`<g stroke="#111" stroke-width="0.3" fill="none" data-testid="projection-symbol">`);
   parts.push(`<circle cx="${sx + 3}" cy="${sy}" r="2.4"/><circle cx="${sx + 3}" cy="${sy}" r="1.05"/>`);
   parts.push(`<path d="M ${sx + 7.5} ${sy - 2.4} L ${sx + 13.5} ${sy - 1.3} L ${sx + 13.5} ${sy + 1.3} L ${sx + 7.5} ${sy + 2.4} z"/>`);
   parts.push(`</g>`);
+  // ── fila 4 (30–40): elaboró · revisó · aprobó · idioma y formato
+  vl(42, 30, H); vl(84, 30, H); vl(126, 30, H);
+  cell(0, 42, 30, H, 'elaboro', 'ELABORÓ (§5.3.5)', null, { abajo: 'generado por La Forja (software)' });
+  cell(42, 84, 30, H, 'reviso', 'REVISÓ', null);
+  cell(84, 126, 30, H, 'aprobo', 'APROBÓ (§5.3.4)', null);
+  cell(126, W, 30, H, 'idioma', 'IDIOMA · FORMATO (§5.1.8 · §5.3.11)', 'es · A3', { fs: 2.4 });
   parts.push(`</g>`);
 }
 
@@ -267,7 +338,7 @@ export function renderPlateDrawing(p: PlateSpec): PlateDrawing {
   });
   parts.push(`</g>`);
 
-  titleBlock(parts, p.code, p.name, p.material ?? 'Acero P20', scaleLabel);
+  titleBlock(parts, p.code, p.name, p.material ?? 'Acero P20', scaleLabel, { tipo: 'Plano de taller de placa', en: p.en, datos: p.cajetin });
   parts.push(`</svg>`);
   return { svg: parts.join(''), rows, nHoles: p.holes.length, scale: scaleLabel };
 }
@@ -294,7 +365,7 @@ function hatchRect(parts: string[], r: { x: number; y: number; w: number; h: num
 
 export function renderAssemblySection(
   comps: StackComp[],
-  meta: { code: string; name: string; extra?: string; extraBom?: string[][]; notes?: string[]; sectionLabel?: string; partings?: Array<{ z: number; label: string }> },
+  meta: { code: string; name: string; extra?: string; extraBom?: string[][]; notes?: string[]; sectionLabel?: string; partings?: Array<{ z: number; label: string }>; en?: string; cajetin?: DatosCajetin },
 ): AssemblyDrawing {
   const parts: string[] = [];
   sheetOpen(parts);
@@ -349,7 +420,8 @@ export function renderAssemblySection(
     parts.push(`<line x1="${gx0.toFixed(1)}" y1="${gy0.toFixed(1)}" x2="${bx}" y2="${by}" stroke="#b8860b" stroke-width="0.25"/>`);
     parts.push(`<circle cx="${bx}" cy="${by}" r="3.4" fill="#fff" stroke="#b8860b" stroke-width="0.5" data-balloon="${c.id}"/>`);
     parts.push(`<text x="${bx}" y="${by + 1.1}" font-size="3.4" font-weight="bold" fill="#b8860b" text-anchor="middle">${c.id}</text>`);
-    bom.push([String(c.id), c.name, String(c.qty), c.material ?? '—']);
+    // [Nº, denominación, cant, material, término inglés, norma] — los dos últimos solo si el componente trae su nombre ISO
+    bom.push(c.bom ? [String(c.id), c.bom.es, String(c.qty), c.material ?? '—', c.bom.en ?? '', c.bom.norma ?? ''] : [String(c.id), c.name, String(c.qty), c.material ?? '—']);
   });
 
   // líneas de partición (2 placas: una; 3 placas: A-B y A-X)
@@ -369,31 +441,53 @@ export function renderAssemblySection(
   parts.push(`<text x="${X((x0 + x1) / 2)}" y="${oyTop - 6}" font-size="3.6" fill="#444" text-anchor="middle">${esc(meta.sectionLabel ?? 'SECCIÓN A-A · plano medio')}</text>`);
 
   // ── BOM ──
-  const tX = 300, tY = MARGIN + 14, colW = [10, 52, 12, 34];
-  const tW = colW.reduce((a, b) => a + b, 0), rowH = 5.6;
-  parts.push(`<g font-size="2.7" data-testid="bom-table">`);
-  parts.push(`<text x="${tX}" y="${tY - 3}" font-size="3.4" font-weight="bold">LISTA DE MATERIALES (BOM)</text>`);
-  const header = ['Nº', 'DENOMINACIÓN', 'CANT', 'MATERIAL/NORMA'];
-  const drawRow = (vals: string[], y: number, bold = false) => {
-    let cx = tX;
-    vals.forEach((v, c) => { parts.push(`<text x="${cx + 1.2}" y="${y + 3.9}" ${bold ? 'font-weight="bold"' : ''}>${esc(v)}</text>`); cx += colW[c]; });
-  };
-  parts.push(`<rect x="${tX}" y="${tY}" width="${tW}" height="${rowH}" fill="#eef2f7" stroke="#111" stroke-width="0.3"/>`);
-  drawRow(header, tY, true);
+  // CON NOMBRE ISO (orden K, 2026-10-30): el renglón de un componente con nombre de la norma lleva DOS líneas — arriba la
+  // denominación en español (+ medida), abajo, chico, el término inglés de ISO 12165 y en la columna de material la norma
+  // del componente («tipo ISO nnnn»). Los renglones sin nombre ISO (los ids de los botadores, 11.1…) quedan de una línea.
+  // Todo se ENCOGE para caber: la tabla, sus notas y el cajetín comparten la columna derecha de la A3 (de y 24 a y 252).
+  const tX = 298, tY = MARGIN + 14, colW = [9, 69, 9, 25];
+  const tW = colW.reduce((a, b) => a + b, 0);
   // filas extra (piezas fuera del plano de corte: pilares, tornillería — viven
   // en los planos de placa pero DEBEN estar en la BOM del ensamble)
   for (const r of meta.extraBom ?? []) bom.push(r);
-  bom.forEach((r, i) => {
-    const y = tY + rowH * (i + 1);
-    parts.push(`<rect x="${tX}" y="${y}" width="${tW}" height="${rowH}" fill="none" stroke="#999" stroke-width="0.2"/>`);
-    drawRow(r, y);
-  });
+  // (orden K) el renglón hijo «11.3» va DEBAJO de su padre 11 y antes del 12 — antes los ids de los botadores quedaban
+  // al final, después del bebedero: orden por (padre, hijo)
+  const clave = (id: string) => id.split('.').map((x) => (Number.isFinite(+x) ? +x : 0));
+  bom.sort((a, b) => { const p = clave(a[0]), q = clave(b[0]); return (p[0] - q[0]) || ((p[1] ?? -1) - (q[1] ?? -1)); });
+  const dos = (r: string[]) => !!(r[4] || r[5]);
+  const notas = meta.notes ?? [];
+  const yMax = PH - MARGIN / 2 - 40 - 2;                          // el cajetín empieza en PH − 5 − 40
+  let k = 1.0;                                                    // factor de encogimiento (1 → 0.8)
+  const alto = (f: number) => 5.6 * f + bom.reduce((a, r) => a + (dos(r) ? 7.0 : 4.6) * f, 0) + 6 + notas.length * 4.2 * f;
+  while (tY + alto(k) > yMax && k > 0.8) k = +(k - 0.02).toFixed(2);
+  const headH = 5.6 * k;
+  parts.push(`<g font-size="2.7" data-testid="bom-table">`);
+  parts.push(`<text x="${tX}" y="${tY - 3}" font-size="3.4" font-weight="bold">LISTA DE MATERIALES (BOM)</text>`);
+  parts.push(`<rect x="${tX}" y="${tY}" width="${tW}" height="${headH.toFixed(2)}" fill="#eef2f7" stroke="#111" stroke-width="0.3"/>`);
+  const header = ['Nº', 'DENOMINACIÓN · ISO 12165', 'CANT', 'MATERIAL · NORMA'];
+  { let cx = tX; header.forEach((h, c) => { parts.push(`<text x="${cx + 1.2}" y="${(tY + 3.9 * k).toFixed(2)}" font-size="${cabeEn(h, colW[c] - 2, 2.5 * k, true).toFixed(2)}" font-weight="bold">${esc(h)}</text>`); cx += colW[c]; }); }
+  let y = tY + headH;
+  for (const r of bom) {
+    const h = (dos(r) ? 7.0 : 4.6) * k;
+    parts.push(`<rect x="${tX}" y="${y.toFixed(2)}" width="${tW}" height="${h.toFixed(2)}" fill="none" stroke="#999" stroke-width="0.2"/>`);
+    let cx = tX;
+    for (let c = 0; c < 4; c++) {
+      const v = r[c] ?? '', fs = cabeEn(v, colW[c] - 2.4, (dos(r) ? 2.6 : 2.4) * k);
+      parts.push(`<text x="${(cx + 1.2).toFixed(2)}" y="${(y + (dos(r) ? 3.1 : 3.3) * k).toFixed(2)}" font-size="${fs.toFixed(2)}"${dos(r) && c === 1 ? ' font-weight="bold"' : ''}>${esc(v)}</text>`);
+      cx += colW[c];
+    }
+    if (dos(r)) {
+      if (r[4]) parts.push(`<text x="${(tX + colW[0] + 1.2).toFixed(2)}" y="${(y + 6.0 * k).toFixed(2)}" font-size="${cabeEn(`(${r[4]})`, colW[1] - 2.4, 1.9 * k, false, 1.2).toFixed(2)}" fill="#444" data-iso12165="1">(${esc(r[4])})</text>`);
+      if (r[5]) parts.push(`<text x="${(tX + colW[0] + colW[1] + colW[2] + 1.2).toFixed(2)}" y="${(y + 6.0 * k).toFixed(2)}" font-size="${cabeEn(r[5], colW[3] - 2.4, 1.9 * k, false, 1.2).toFixed(2)}" fill="#1a5fb4" data-norma="1">${esc(r[5])}</text>`);
+    }
+    y += h;
+  }
   parts.push(`</g>`);
-  (meta.notes ?? []).forEach((n, i) => {
-    parts.push(`<text x="${tX}" y="${tY + rowH * (bom.length + 1) + 9 + i * 4.6}" font-size="2.9" fill="#333" data-note="1">· ${esc(n)}</text>`);
+  notas.forEach((n, i) => {
+    parts.push(`<text x="${tX}" y="${(y + 6 + i * 4.2 * k).toFixed(2)}" font-size="${cabeEn(`· ${n}`, tW + 4, 2.6 * k, false, 1.5).toFixed(2)}" fill="#333" data-note="1">· ${esc(n)}</text>`);
   });
 
-  titleBlock(parts, meta.code, meta.name, 'VER BOM', scaleLabel, meta.extra);
+  titleBlock(parts, meta.code, meta.name, 'VER BOM', scaleLabel, { tipo: 'Plano de ensamble con lista de materiales', en: meta.en ?? meta.extra, datos: meta.cajetin });
   parts.push(`</svg>`);
   return { svg: parts.join(''), bom, nComps: comps.length, scale: scaleLabel };
 }

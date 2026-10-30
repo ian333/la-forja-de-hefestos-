@@ -2190,7 +2190,7 @@ export function tessellate(
   for (const f of uniqueFaces) f.delete?.();
   mesh.delete?.();
 
-  return {
+  const salida: TessellatedMesh = {
     positions: new Float32Array(positions),
     normals: new Float32Array(normals),
     indices: new Uint32Array(indices),
@@ -2199,6 +2199,23 @@ export function tessellate(
     faceIds: new Uint32Array(faceIds),
     faceGroups,
   };
+  formaDeLaMallaMap.set(salida.positions, shape);   // la malla recuerda de qué B-Rep salió (orden K, ver abajo)
+  return salida;
+}
+
+// ═══ LA MALLA SABE DE QUÉ SÓLIDO SALIÓ (orden K · EL MOLDE EN STEP, 2026-10-30) ════════════════════════════════
+// El molde de la app es una lista de MALLAS (`MoldPart.positions`): el kernel tesela cada sólido y el B-Rep se
+// soltaba. Para entregar el molde en STEP hace falta el sólido de cada cuerpo, no su malla (un STEP de triángulos no
+// se acota ni se barrena en ningún CAD). `tessellate` es el EMBUDO por donde pasa todo cuerpo B-Rep antes de verse,
+// así que aquí se apunta: el arreglo de posiciones que sale → la forma que entró. Sin tocar a quien arma los cuerpos.
+// Es un WeakMap: no retiene mallas que la app ya tiró. Y es HONESTO por construcción: cualquier malla que alguien
+// copia o mueve (`new Float32Array(…)`, volteos, el núcleo corrido +40) es OTRO arreglo y ya no tiene forma — así
+// una malla movida nunca entrega el sólido en su lugar viejo. Quien lo usa compara además la caja (molde-step.ts).
+const formaDeLaMallaMap = new WeakMap<Float32Array, Shape>();
+/** El B-Rep del que salió esta malla (si salió de `tessellate` y nadie la copió), o null. */
+export function formaDeLaMalla(positions: ArrayLike<number> | null | undefined): Shape | null {
+  if (!(positions instanceof Float32Array)) return null;
+  return formaDeLaMallaMap.get(positions) ?? null;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -2289,6 +2306,143 @@ export function importSTEP(
     /* noop */
   }
   return shape;
+}
+
+// ═══ EL ENSAMBLE CON NOMBRES (orden K · EL MOLDE EN STEP, 2026-10-30) ═══════════════════════════════════════════
+// `exportSTEP` escribe UNA forma sin nombre: el CAD de la planta abre un ladrillo. Un ensamble de verdad lleva un
+// PRODUCT por cuerpo con su nombre (AP214, el mismo esquema que ya sale: 'AUTOMOTIVE_DESIGN'), y para eso OCCT usa el
+// documento XCAF (TDocStd_Document + XCAFDoc_ShapeTool + TDataStd_Name) y STEPCAFControl_Writer. MEDIDO en este build
+// de opencascade.js — OCCT 7.4, lo dice el encabezado que escribe — (sonda en iangpu, 2026-10-30): existen TDocStd_Document (ctor con TCollection_ExtendedString),
+// XCAFDoc_DocumentTool.ShapeTool/ShapesLabel, XCAFDoc_ShapeTool.NewShape/AddShape/AddComponent_1/UpdateAssemblies,
+// TDataStd_Name.Set_1 y STEPCAFControl_Writer.Perform_2(handle, nombre); NO existen Message_ProgressRange ni
+// TDF_LabelSequence (por eso `Transfer_1` con progreso falla y la lectura recorre las etiquetas hijo por hijo).
+// Tres límites de OCCT 7.4 que se pagan aquí y no en el CAD del cliente:
+//  · el escritor convierte el nombre a ASCII (lo que no es ASCII sale crudo en Latin-1 o «?», y un STEP con bytes
+//    fuera de ASCII viola la Parte 21) → el nombre se pasa YA en ASCII (`nombreSTEP`: ⌀→D, ×→x, acentos fuera);
+//  · cambia los espacios por «_» (GetLabelName: `ChangeAll(' ','_')`) → se devuelven al texto después de escribir,
+//    nombre por nombre (cadena completa entre apóstrofos: solo se toca el literal que es exactamente ese nombre);
+//  · parte las cadenas largas en dos renglones (MEDIDO: a los 72 caracteres, el salto DENTRO del apóstrofo) → la
+//    restitución recorre cada literal ignorando sus saltos y conserva el salto donde OCCT lo puso.
+//  El encabezado dice 'Open CASCADE Shape Model' y autor 'Author': va el nombre del molde y el autor VACÍO (no se inventa).
+/** El nombre como lo acepta el escritor de STEP de OCCT 7.4: ASCII imprimible, sin apóstrofos, ≤ 100 caracteres. */
+export function nombreSTEP(s: string): string {
+  const t = s
+    .replace(/[⌀Ø∅]/g, 'D').replace(/×/g, 'x').replace(/[—–]/g, '-').replace(/·/g, '-')
+    .replace(/[≈]/g, '~').replace(/[«»"“”]/g, '').replace(/'/g, '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^\x20-\x7e]/g, '').replace(/\s+/g, ' ').trim();
+  return t.slice(0, 100).trim() || 'cuerpo';
+}
+export interface CuerpoSTEP { nombre: string; forma: Shape }
+/**
+ * Escribe un ENSAMBLE STEP (AP214): una raíz `ensamble` y un componente por cuerpo, cada uno con su nombre, la
+ * geometría en coordenadas del molde (ubicación identidad). Devuelve el texto y los nombres tal como quedaron.
+ */
+export function exportSTEPEnsamble(oc: OC, ensamble: string, cuerpos: CuerpoSTEP[]): { texto: string; nombres: string[]; ensamble: string } {
+  const ext = (s: string) => new oc.TCollection_ExtendedString_2(s, true);
+  const doc = new oc.TDocStd_Document(ext('XmlXCAF'));
+  const st = oc.XCAFDoc_DocumentTool.ShapeTool(doc.Main()).get();
+  const raiz = nombreSTEP(ensamble);
+  const asm = st.NewShape();
+  oc.TDataStd_Name.Set_1(asm, ext(raiz));
+  const usados = new Set<string>([raiz]);
+  const nombres: string[] = [];
+  for (const c of cuerpos) {
+    let n = nombreSTEP(c.nombre);
+    for (let k = 2; usados.has(n); k++) n = `${nombreSTEP(c.nombre).slice(0, 95)} #${k}`;   // un PRODUCT por nombre: sin gemelos
+    usados.add(n); nombres.push(n);
+    const lab = st.AddShape(c.forma, false, false);
+    oc.TDataStd_Name.Set_1(lab, ext(n));
+    const comp = st.AddComponent_1(asm, lab, new oc.TopLoc_Location_1());
+    oc.TDataStd_Name.Set_1(comp, ext(n));
+  }
+  st.UpdateAssemblies();
+  const w = new oc.STEPCAFControl_Writer_1();
+  w.SetNameMode(true);
+  const ok = w.Perform_2(new oc.Handle_TDocStd_Document_2(doc), STEP_SCRATCH);
+  w.delete?.();
+  if (!ok) throw new Error('exportSTEPEnsamble: el escritor STEP (XCAF) no transfirió el documento');
+  const bytes: Uint8Array = oc.FS.readFile(STEP_SCRATCH, { encoding: 'binary' });
+  try { oc.FS.unlink(STEP_SCRATCH); } catch { /* noop */ }
+  let texto = new TextDecoder().decode(bytes);
+  // los espacios de vuelta: UNA pasada por los literales del archivo; el literal (sin sus saltos de renglón) que es
+  // exactamente un nombre con «_» recupera sus espacios, carácter por carácter, y conserva el salto donde estaba
+  const conEspacios = new Map<string, string>();
+  for (const n of [raiz, ...nombres]) if (n.includes(' ')) conEspacios.set(n.replace(/ /g, '_'), n);
+  texto = texto.replace(/'[^']*'/g, (m) => {
+    const n = conEspacios.get(m.slice(1, -1).replace(/\r?\n/g, ''));
+    if (!n) return m;
+    let j = 0, out = '';
+    for (let i = 0; i < m.length; i++) { const ch = m[i]; out += i === 0 || i === m.length - 1 || ch === '\n' || ch === '\r' ? ch : n[j++]; }
+    return out;
+  });
+  texto = texto.replace("FILE_NAME('Open CASCADE Shape Model',", `FILE_NAME('${raiz}',`).replace(/(FILE_NAME\('[^']*','[^']*',)\('Author'\)/, "$1('')");
+  return { texto, nombres, ensamble: raiz };
+}
+/** Los literales de nombre del archivo (PRODUCT y NEXT_ASSEMBLY_USAGE_OCCURRENCE), en ASCII de la Parte 21. */
+function nombresDelTexto(texto: string): string[] {
+  const t = texto.replace(/\r?\n/g, '');
+  const out = new Set<string>();
+  for (const m of t.matchAll(/PRODUCT\(\s*'((?:[^']|'')*)'/g)) out.add(m[1].replace(/''/g, "'"));
+  for (const m of t.matchAll(/NEXT_ASSEMBLY_USAGE_OCCURRENCE\(\s*'(?:[^']|'')*'\s*,\s*'((?:[^']|'')*)'/g)) out.add(m[1].replace(/''/g, "'"));
+  return [...out];
+}
+/** El nombre de una etiqueta XCAF. MEDIDO: este build no deja LEER un TCollection_ExtendedString (Value y ToExtString
+ *  devuelven char16_t sin tipo en embind: «unbound types: Ds»), pero sí COMPARARLO (IsEqual). Así que el nombre se
+ *  decide contra los literales del archivo: el que el kernel dice que es IGUAL. Si ninguno lo es, null (no se adivina). */
+function nombreDeEtiqueta(oc: OC, lab: any, candidatos: string[]): string | null {
+  try {
+    const h = new oc.Handle_TDF_Attribute_1();
+    if (!lab.FindAttribute_1(oc.TDataStd_Name.GetID(), h)) return null;
+    const e = h.get()?.Get?.();       // embind entrega el tipo más derivado (TDataStd_Name)
+    if (!e) return null;
+    for (const c of candidatos) {
+      const x = new oc.TCollection_ExtendedString_2(c, true);
+      let igual = false;
+      try { igual = e.IsEqual_1(x); } catch { try { igual = e.IsEqual_2(x); } catch { igual = false; } }
+      if (igual) return c;
+    }
+    return null;
+  } catch { return null; }
+}
+/**
+ * Lee un ensamble STEP con sus NOMBRES (STEPCAFControl_Reader → documento XCAF). Devuelve la raíz y, por
+ * componente, su nombre y su forma ya ubicada. Si el archivo no trae ensamble, cada forma libre es un cuerpo.
+ */
+export function importSTEPEnsamble(oc: OC, stepData: string | Uint8Array): { ensamble: string | null; cuerpos: CuerpoSTEP[] } {
+  const bytes = typeof stepData === 'string' ? new TextEncoder().encode(stepData) : stepData;
+  const candidatos = nombresDelTexto(typeof stepData === 'string' ? stepData : new TextDecoder().decode(stepData));
+  oc.FS.writeFile(STEP_SCRATCH, bytes);
+  const ext = (s: string) => new oc.TCollection_ExtendedString_2(s, true);
+  const doc = new oc.TDocStd_Document(ext('XmlXCAF'));
+  const r = new oc.STEPCAFControl_Reader_1();
+  r.SetNameMode(true);
+  const RET_DONE = oc.IFSelect_ReturnStatus.IFSelect_RetDone.value as number;
+  const st = r.ReadFile(STEP_SCRATCH).value as number;
+  try { oc.FS.unlink(STEP_SCRATCH); } catch { /* noop */ }
+  if (st !== RET_DONE) { r.delete?.(); throw new Error('importSTEPEnsamble: ReadFile falló (status=' + st + ')'); }
+  const ok = r.Transfer_1(new oc.Handle_TDocStd_Document_2(doc));
+  r.delete?.();
+  if (!ok) throw new Error('importSTEPEnsamble: la transferencia al documento XCAF falló');
+  const SL = oc.XCAFDoc_DocumentTool.ShapesLabel(doc.Main());
+  let ensamble: string | null = null;
+  const cuerpos: CuerpoSTEP[] = [], libres: CuerpoSTEP[] = [];
+  for (let k = 1; k <= SL.NbChildren(); k++) {
+    const L = SL.FindChild(k, false);
+    if (oc.XCAFDoc_ShapeTool.IsAssembly(L)) {
+      ensamble = ensamble ?? nombreDeEtiqueta(oc, L, candidatos);
+      for (let j = 1; j <= L.NbChildren(); j++) {
+        const C = L.FindChild(j, false);
+        if (!oc.XCAFDoc_ShapeTool.IsComponent(C)) continue;
+        const ref = new oc.TDF_Label();
+        const conRef = oc.XCAFDoc_ShapeTool.GetReferredShape(C, ref);
+        cuerpos.push({ nombre: nombreDeEtiqueta(oc, C, candidatos) ?? (conRef ? nombreDeEtiqueta(oc, ref, candidatos) : null) ?? `cuerpo ${j}`, forma: oc.XCAFDoc_ShapeTool.GetShape_2(C) });
+      }
+    } else if (oc.XCAFDoc_ShapeTool.IsFree(L)) {
+      libres.push({ nombre: nombreDeEtiqueta(oc, L, candidatos) ?? `cuerpo ${k}`, forma: oc.XCAFDoc_ShapeTool.GetShape_2(L) });
+    }
+  }
+  return { ensamble, cuerpos: cuerpos.length ? cuerpos : libres };
 }
 
 // ═══ COSTURA Y CARAS TRIANGULARES (la base de la partición NO PLANA) ═══════
