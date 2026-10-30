@@ -56,6 +56,12 @@ a Kazmer y despliega UNA vez.
 - src/forja/mold/mold-plano-set.ts
 - src/forja/mold/mold-threads.ts
 - src/forja/mold/moldbase.ts
+- ordenes/2026-10-29-i-la-inspeccion-segun-kazmer.md
+- scripts/filma-camino.cjs
+- scripts/guiones/pelicula-camino.json
+- scripts/guiones/pelicula-camino.txt
+- src/forja/brep/FocoMolde3D.tsx
+- src/forja/mold/inspeccion-recorrido.ts
 
 ## CREA
 - ordenes/2026-10-29-g-los-datos-de-tu-planta.md
