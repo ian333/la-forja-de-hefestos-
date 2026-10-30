@@ -111,7 +111,67 @@ export interface Lente {
    * la placa. Se enseñan las DOS cotas con el MISMO material y el MISMO espesor (el del vóxel más lento, tomado como ⌀),
    * más la pared nominal por Eq 9.5. Ningún número nuevo: Eq 9.6 ya vivía en `cooling.ts` (`coolingTimeRod`).
    */
-  ciclo?: { gruesoMm: number; barraS: number; placaS: number; paredMm: number; paredS: number; lugares: number };
+  ciclo?: { gruesoMm: number; barraS: number; placaS: number; paredMm: number; paredS: number; lugares: number;
+    /** LA FORMA de lo más grueso (orden H · un veredicto, cambio 4): §9.2.1 pide el t_c de la sección más gruesa, y Kazmer da
+     *  DOS ecuaciones según su forma — barra (Eq 9.6) para un poste, placa (Eq 9.5) para una losa. `tcS` es la que le toca;
+     *  la otra se queda como la cota contraria. `anchoMm` = √12·σ₂ del núcleo grueso (ver `formaDeLoMasGrueso`). */
+    forma: 'barra' | 'placa'; tcS: number; anchoMm: number; largoMm: number; regla: string };
+}
+
+/** regla de Hefestos (orden H): el núcleo grueso es una BARRA si su ancho es menor que 2 veces su espesor; si no, una LOSA.
+ *  Kazmer da las dos ecuaciones (Eq 9.5 placa infinita, Eq 9.6 cilindro infinito) pero no el umbral entre ellas. */
+export const FORMA_BARRA_SI_ANCHO_MENOR_QUE = 2;
+
+/**
+ * LA FORMA DE LO MÁS GRUESO (orden H, cambio 4). El espesor local (Hildebrand–Rüegsegger) le da a cada vóxel el ⌀ de la
+ * esfera más grande que lo contiene: dentro de un poste macizo ⌀8 TODOS sus vóxeles valen ≈ 8; dentro de una losa de 8,
+ * también — lo que las separa es cómo se REPARTE ese núcleo grueso. Se toma el componente conexo (26 vecinos) de los vóxeles
+ * con espesor ≥ 90 % del máximo que contiene al máximo, y su covarianza: σ₁ ≥ σ₂ ≥ σ₃. Un poste es una LÍNEA (σ₂ chica:
+ * ancho √12·σ₂ ≈ 0.87·⌀); una losa es un PLANO (σ₂ del orden de su lado). Puro sobre el campo; sin malla.
+ */
+export function formaDeLoMasGrueso(f: FlowField, espesor: Float32Array): { gruesoMm: number; anchoMm: number; largoMm: number; forma: 'barra' | 'placa'; vox: number } | null {
+  let max = -Infinity, t = -1;
+  for (let i = 0; i < espesor.length; i++) if (f.cavity[i] && Number.isFinite(espesor[i]) && espesor[i] > max) { max = espesor[i]; t = i; }
+  if (t < 0 || !(max > 0)) return null;
+  const umbral = 0.9 * max, nx = f.nx, ny = f.ny, nz = f.nz;
+  const visto = new Uint8Array(espesor.length);
+  const cola: number[] = [t]; visto[t] = 1;
+  let n = 0, sx = 0, sy = 0, sz = 0, sxx = 0, syy = 0, szz = 0, sxy = 0, sxz = 0, syz = 0;
+  while (cola.length) {
+    const q = cola.pop() as number;
+    const i = q % nx, fila = (q - i) / nx, j = fila % ny, k = (fila - j) / ny;
+    const x = i * f.cellMm, y = j * f.cellMm, z = k * f.cellMm;
+    n++; sx += x; sy += y; sz += z; sxx += x * x; syy += y * y; szz += z * z; sxy += x * y; sxz += x * z; syz += y * z;
+    for (let dk = -1; dk <= 1; dk++) for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const a = i + di, b = j + dj, c = k + dk;
+      if (a < 0 || b < 0 || c < 0 || a >= nx || b >= ny || c >= nz) continue;
+      const v = (c * ny + b) * nx + a;
+      if (visto[v] || !f.cavity[v] || !(espesor[v] >= umbral)) continue;
+      visto[v] = 1; cola.push(v);
+    }
+  }
+  const mx = sx / n, my = sy / n, mz = sz / n;
+  const C = [[sxx / n - mx * mx, sxy / n - mx * my, sxz / n - mx * mz], [0, syy / n - my * my, syz / n - my * mz], [0, 0, szz / n - mz * mz]];
+  C[1][0] = C[0][1]; C[2][0] = C[0][2]; C[2][1] = C[1][2];
+  const lam = autovaloresSimetrica3(C).map((l) => Math.max(0, l)).sort((a, b) => b - a);
+  // √12·σ = el ancho de un reparto uniforme; un vóxel solo tiene σ = 0 pero mide una celda: piso de una celda
+  const ancho = Math.max(f.cellMm, Math.sqrt(12 * lam[1])), largo = Math.max(f.cellMm, Math.sqrt(12 * lam[0]));
+  return { gruesoMm: max, anchoMm: ancho, largoMm: largo, forma: ancho < FORMA_BARRA_SI_ANCHO_MENOR_QUE * max ? 'barra' : 'placa', vox: n };
+}
+
+/** autovalores de una matriz simétrica 3×3 (método trigonométrico cerrado) */
+function autovaloresSimetrica3(A: number[][]): [number, number, number] {
+  const p1 = A[0][1] ** 2 + A[0][2] ** 2 + A[1][2] ** 2;
+  const q = (A[0][0] + A[1][1] + A[2][2]) / 3;
+  if (p1 < 1e-18) return [A[0][0], A[1][1], A[2][2]];
+  const p2 = (A[0][0] - q) ** 2 + (A[1][1] - q) ** 2 + (A[2][2] - q) ** 2 + 2 * p1;
+  const p = Math.sqrt(p2 / 6);
+  const B = A.map((r, i) => r.map((v, j) => (v - (i === j ? q : 0)) / p));
+  const detB = B[0][0] * (B[1][1] * B[2][2] - B[1][2] * B[2][1]) - B[0][1] * (B[1][0] * B[2][2] - B[1][2] * B[2][0]) + B[0][2] * (B[1][0] * B[2][1] - B[1][1] * B[2][0]);
+  const r = Math.max(-1, Math.min(1, detB / 2));
+  const phi = Math.acos(r) / 3;
+  const e1 = q + 2 * p * Math.cos(phi), e3 = q + 2 * p * Math.cos(phi + (2 * Math.PI) / 3);
+  return [e1, 3 * q - e1 - e3, e3];
 }
 
 /**
@@ -547,6 +607,14 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
     const barraS = hMax > 0 ? coolingTimeRod(hMax / 1000, mat) : 0;
     const paredS = paredNominal > 0 ? coolingTimePlate(paredNominal / 1000, mat) : q.p50;
     const lugares = candidatosEnSuperficie(P, val, 0.95, 15, 12).length;
+    // UN VEREDICTO (orden H, cambio 4): la FORMA de lo más grueso decide cuál de las dos cotas es SU t_c (§9.2.1). MEDIDO en
+    // la 1594C Box: el núcleo grueso es un poste (ancho ≈ 0.9·⌀) → barra, Eq 9.6 ≈ 65 s; la placa (134 s) queda de cota alta.
+    const fm = formaDeLoMasGrueso(f, f.thicknessMm);
+    const forma: 'barra' | 'placa' = fm?.forma ?? 'placa';
+    const tcForma = forma === 'barra' ? barraS : tcMax;
+    const reglaForma = fm
+      ? `núcleo grueso ${s1(fm.largoMm)} × ${s1(fm.anchoMm)} mm (√12·σ de ${fm.vox} vóxeles ≥ 90 % del máximo): ancho ${fm.anchoMm < FORMA_BARRA_SI_ANCHO_MENOR_QUE * fm.gruesoMm ? '<' : '≥'} ${FORMA_BARRA_SI_ANCHO_MENOR_QUE}× su espesor → ${forma === 'barra' ? 'BARRA' : 'LOSA'} (umbral: regla de Hefestos)`
+      : 'sin núcleo grueso medible: se toma la placa (cota alta)';
     lentes.push({
       id: 'enfriamiento', nombre: 'ENFRIAMIENTO', que: 'cuánto tarda cada punto en poder salir del molde',
       unidad: 's', origen: 'simulado', colores, valores: val, ...q, maxCampo: tcMax, escala: esc,
@@ -559,13 +627,16 @@ export function lentesDelFoco(mesh: MeshLike, o?: OpcionesLentes): LentesFoco {
       // «un solo punto» mentía cuando lo lento se repite (los 4 postes de la 1594C, 2026-09-14): se cuentan las ZONAS
       // empatadas (candidatos a ≥ 15 mm entre sí) y se dice cuántas. LOS APAGONES: el titular ya no dice «el ciclo lo
       // manda … 134 s»; dice el PAR (barra–placa) de lo más grueso y la pared, que es lo que el libro sí sostiene.
-      titular: `Lo más grueso (${s1(hMax)} mm${lugares > 1 ? `, en ${lugares} lugares` : ''}): entre ${s1(barraS)} s (barra, Eq 9.6) y ${s1(tcMax)} s (placa, Eq 9.5) · la pared de ${s1(paredNominal)} mm: ${s1(paredS)} s.`,
-      cuerpo: `El molde no abre hasta que lo más grueso está firme. Si ese grueso es un poste, enfría como barra (Eq 9.6); `
-        + `si fuera losa, como placa (Eq 9.5): la verdad de un poste cae entre las dos. El mapa pinta con placa — es la cota alta. `
+      titular: forma === 'barra'
+        ? `Lo más grueso (${s1(hMax)} mm${lugares > 1 ? `, en ${lugares} lugares` : ''}) es un POSTE: enfría en ${s1(barraS)} s (barra, Eq 9.6) · la cota alta del mapa, ${s1(tcMax)} s (placa, Eq 9.5) · la pared de ${s1(paredNominal)} mm: ${s1(paredS)} s.`
+        : `Lo más grueso (${s1(hMax)} mm${lugares > 1 ? `, en ${lugares} lugares` : ''}) es una LOSA: enfría en ${s1(tcMax)} s (placa, Eq 9.5) · la cota baja, ${s1(barraS)} s (barra, Eq 9.6) · la pared de ${s1(paredNominal)} mm: ${s1(paredS)} s.`,
+      cuerpo: `El molde no abre hasta que lo más grueso está firme. Un poste enfría como barra (Eq 9.6), una losa como placa (Eq 9.5); `
+        + `el tuyo es ${forma === 'barra' ? 'un POSTE' : 'una LOSA'} (${reglaForma}). El mapa pinta con placa — en un poste es la cota alta. `
         + `Las dos son mínimos teóricos de conducción con el molde a temperatura fija: en máquina el ciclo sale mayor (resistencia de contacto y calidad: nota 1 §9.2.1). `
         + `El tiempo va con el CUADRADO del espesor: bajarle 30 % a ese macizo le quita la mitad. Enfriar más fuerte casi no ayuda — el cuello es el plástico, no el agua.`,
       peor: manda, ref: '§9.2 · Eq 9.5 placa (el mapa, cota alta) · Eq 9.6 barra (cota baja)', sinDato,
-      ciclo: { gruesoMm: hMax, barraS, placaS: tcMax, paredMm: paredNominal, paredS, lugares },
+      ciclo: { gruesoMm: hMax, barraS, placaS: tcMax, paredMm: paredNominal, paredS, lugares,
+        forma, tcS: tcForma, anchoMm: fm?.anchoMm ?? 0, largoMm: fm?.largoMm ?? 0, regla: reglaForma },
       gpu: campoParaGPU(f, tcVox, esc, RAMPA_TERMICA, GAMMA_SIMULADO, mat),
       candidatos: candidatosEnSuperficie(P, val),
     });

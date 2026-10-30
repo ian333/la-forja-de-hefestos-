@@ -222,6 +222,49 @@ export function revisarModelo(input: RevisionInput): RevisionModelo {
 }
 
 /**
+ * UN VEREDICTO (orden H, 2026-10-29) — EL RE-JUICIO CON EL MOLDE.
+ * ============================================================================
+ * El dictamen corre en el paso 4, ANTES del molde: con la p_fill ESTIMADA, el bebedero del paquete numérico y una línea de
+ * agua que ningún circuito barrena. Cuando el molde existe, la revisión se vuelve a correr con lo que el acero SÍ lleva:
+ *   · la p_fill que mide el FAN de la E5 (desde la boquilla) → `spec.fillMPaFan` (la tubería de la orden B);
+ *   · el bebedero que CORTA la E5 → `spec.bebederoCortado` (feed-dp, COLADA VS CICLO, el lazo y, en sprue directo, FREEZE);
+ *   · el agua que BARRENA la E6 → `ens.aguaDelMolde` (⌀, número, H, W, caudal, puertos);
+ *   · el claro que mide EL FOCO sobre el molde entero → `ens.claroDelMolde` (el mismo par que lee la inspección).
+ * Lo demás (raster, venteos, pines del ensamble) se queda como en el paso 4: no depende del molde o aún no se mide en el acero.
+ * Es la segunda columna de la pantalla: «tu pieza sola (paso 4)» · «en el acero (con el molde)». PURO.
+ */
+export interface MoldeReal {
+  /** qué estaciones aportaron, en palabras (la pantalla lo dice) */
+  fuentes: string[];
+  fillMPaFan?: number;
+  bebedero?: MachineSpec['bebederoCortado'];
+  agua?: EnsambleMedido['aguaDelMolde'];
+  claro?: EnsambleMedido['claroDelMolde'];
+}
+
+export function rejuzgarConElMolde(rev: RevisionModelo, m: MoldeReal): RevisionModelo {
+  const spec: MachineSpec = {
+    ...rev.spec,
+    ...(m.fillMPaFan != null && m.fillMPaFan > 0 ? { fillMPaFan: m.fillMPaFan } : {}),
+    ...(m.bebedero ? { bebederoCortado: m.bebedero } : {}),
+  };
+  const pkg = moldMachine(spec);
+  const ens: EnsambleMedido = { ...rev.ens, ...(m.agua ? { aguaDelMolde: m.agua } : {}), ...(m.claro ? { claroDelMolde: m.claro } : {}) };
+  const rep = contratos(pkg, ens);
+  const expediente = decisionesDelPaquete(pkg, rep, ens);
+  const fila: FilaRevision = {
+    nombre: spec.name, score: rep.score,
+    cumple: rep.total.cumple, advierte: rep.total.advierte, viola: rep.total.viola,
+    sinCablear: rep.total.sinCablear, sinModulo: rep.total.sinModulo,
+    congelables: rep.subsistemas.filter((s) => s.congelable).length,
+    criticos: rev.criticos.length,
+    pendientes: expediente.pendientes,
+  };
+  return { ...rev, spec, pkg, ens, contratos: rep, expediente, fila,
+    notas: [...rev.notas, `re-juzgado con el molde: ${m.fuentes.join(' · ') || 'nada del molde todavía'}`] };
+}
+
+/**
  * LAS LÁMINAS de una revisión — el OJO del libro sobre ESTE modelo.
  * Se generan BAJO DEMANDA (no dentro de revisarModelo) porque son SVG grandes:
  * meterlas en cada fila del lote inflaría 12 modelos de golpe. La pantalla las

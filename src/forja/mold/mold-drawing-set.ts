@@ -622,7 +622,15 @@ export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
     { grupo: 'Enfriamiento §9.2', param: 'línea de agua (plug DME, ⌀ por caudal §9.2.5 con piso maquinable)', valor: `${cdRows.plug} · ⌀${dia} mm`, ref: '§9.2.4 · Tabla 9.2', ok: true },
     { grupo: 'Enfriamiento §9.2', param: `profundidad a la cavidad H = ${(depth / dia).toFixed(1)}·D (2D<H<5D, recortada por Eq 9.21)`, valor: `${depth} mm`, ref: 'Eqs 9.21/9.22', ok: depth >= 2 * dia - 1e-6 && depth <= cdRows.hLineMaxMm + 1e-6 },
     { grupo: 'Enfriamiento §9.2', param: 'paso entre líneas W ∈ [H, 2H]', valor: `${pitch} mm (${cdRows.nPerSide}/lado)`, ref: 'Eq 9.24', ok: pitch >= depth - 1 && pitch <= 2 * depth + 1 },
+    // UN VEREDICTO (orden H): con el molde hecho, los dos renglones de arriba se REEMPLAZAN por lo que barrena la E6 (abajo):
+    // la misma hoja decía «W 50.8 ✓» (diseño) y el dictamen «paso real 58.3 = 2.47·H ✗» (acero). Un número por criterio.
   ];
+  if (s.aguaE6) {
+    const w = s.aguaE6, nRows = rows.length;
+    rows.splice(nRows - 2, 2,
+      { grupo: 'Enfriamiento §9.2', param: 'profundidad a la cavidad H (2D<H<5D) · lo que barrena la E6', valor: `${w.profundidades.map((p) => `${p.que} ${p.hMm.toFixed(1)} mm = ${(p.hMm / dia).toFixed(2)}·D`).join(' · ')} (diseño ${depth})`, ref: 'Eqs 9.21/9.22', ok: w.profundidades.every((p) => p.hMm >= 2 * dia - 1e-6 && p.hMm <= 5 * dia + 1e-6) },
+      { grupo: 'Enfriamiento §9.2', param: 'paso entre líneas W ∈ [H, 2H] · el REAL de la serpentina B', valor: `${w.pasoMm.toFixed(1)} mm = ${(w.pasoMm / w.pasoDe).toFixed(2)}·H (H ${w.pasoDe.toFixed(1)}; diseño ${pitch})`, ref: 'Eq 9.24', ok: w.pasoMm >= w.pasoDe - 1e-6 && w.pasoMm <= 2 * w.pasoDe + 1e-6 });
+  }
   // EXPULSIÓN §11.2.6 — la CABEZA CAPTURADA: sin esto las hojas decían «aloj. cabeza
   // ⌀+3 PASANTE» (la cabeza se cae) y nadie la retenía. Fig 11.15 Det. D.
   if (s.ejectors.type !== 'stripper') {
@@ -853,7 +861,8 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole, o?: { lamina
       const pd = plateDefs(s);
       const Lsprue = (pd.find((d) => d.role === 'clamp')?.thick ?? 36) + (pd.find((d) => d.role === 'A')?.thick ?? 56) + 6 - s.cavity.depthMm;
       const fd = sprueDesignFromCavity(s.plastic, s.cavity, Lsprue);
-      holes.push({ x: cells[0].cx, y: cells[0].cy, dia: Math.ceil(2 * fd.rBaseMm + 0.6), type: 'bebedero (sprue cónico §6.3.1)' });
+      // UN VEREDICTO (orden H): con molde, el ⌀ de base es el del bebedero que CORTA la E5 (`s.bebedero`), no este diseño propio
+      holes.push({ x: cells[0].cx, y: cells[0].cy, dia: Math.ceil((s.bebedero?.diaBaseMm ?? 2 * fd.rBaseMm) + 0.6), type: 'bebedero (sprue cónico §6.3.1)' });
     } else {
       for (const c of cells) holes.push({ x: c.cx, y: c.cy, dia: 3, type: 'compuerta (gate)' });
     }

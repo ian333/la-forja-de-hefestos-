@@ -143,6 +143,24 @@ export function decisionesDelPaquete(pkg: MoldPackage, rep?: ContratoReporte, en
   }
 
   // ── 6) Pilares↔placa: el menú §12.2.3 (la Máquina eligió por §12.1.3) ──
+  // UN VEREDICTO (orden H, cambio 4): lo más grueso de la pieza pide más ciclo que el cotizado (§9.2.1, `agua-ciclo` ✗). Kazmer,
+  // revisión de la película §2 punto 8: «si los postes son macizos, el ciclo lo fija la pieza (§2.3.1) y hay que avisarle al
+  // cliente». No lo decide el software: lo firma quien cotiza, con el cliente.
+  const sg = spec.seccionGruesa;
+  const aguaCiclo = rep?.subsistemas.flatMap((s) => s.criterios).find((c) => c.id === 'agua-ciclo');
+  if (sg && aguaCiclo?.estado === 'VIOLA') {
+    D.push({
+      id: 'ciclo-grueso', tema: 'el ciclo lo fija lo más grueso de tu pieza', cita: '§9.2.1 · §2.3.1',
+      opciones: [
+        `cotizar con ${num(sg.tcS, 1)} s (lo que pide lo más grueso: ${sg.forma === 'barra' ? 'poste, barra Eq 9.6' : 'losa, placa Eq 9.5'}) en vez de ${num(pkg.diseno.enfriamiento.cicloS, 1)} s`,
+        `aligerar lo grueso (${num(sg.mm, 1)} mm en ${sg.lugares} lugar(es): vaciarlo por dentro, §2.3.1) — lo decide el cliente, es su pieza`,
+        `cotizar con ${num(pkg.diseno.enfriamiento.cicloS, 1)} s y medir el ciclo real en el tryout (el riesgo lo asume quien firma)`,
+      ],
+      eleccion: null, responsable: null, fecha: null,
+      notas: aguaCiclo.detalle,
+    });
+  }
+
   const sp = pkg.diseno.placas.soporte;
   const ops = (pkg.diseno.placas.soporteOpciones ?? []).filter((o) => o.plateThkMm != null).slice(0, 4);
   if (ops.length > 1) {

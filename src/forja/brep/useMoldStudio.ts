@@ -58,6 +58,8 @@ import { resolverLlenadoFAN, resolverLlenadoFANAsync } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
+import { escanearMolde } from '../mold/foco-molde';                    // UN VEREDICTO (orden H): el claro del molde = el del Foco
+import type { MoldeReal } from '../mold/revisar-modelo';
 
 /** FLECHA de teselado del AGUA (barrenos, tapones NPT, O-rings) en el estudio — EL CORTE ÚNICO, pregunta 10 de ian
  *  («sí» a teselar más fino). Antes 0.9 mm (y 0.9 rad de ángulo): en un ⌀6.35 eso es un HEPTÁGONO cuya cuerda se
@@ -99,6 +101,84 @@ const volteaMalla = (base: MoldPart, col: { tx: number; ty: number; tz: number }
   }
   return { ...base, role: 'pieza', name, color, opacity, positions: pos, normals: nor, edges };
 };
+/**
+ * UN VEREDICTO (orden H, 2026-10-29) — lo que el MOLDE de tu pieza ya sabe, para re-juzgar el dictamen (`rejuzgarConElMolde`).
+ * Puro sobre el ciclo y las piezas del molde: cada estación aporta lo suyo cuando existe —
+ *   E5 → la p_fill del FAN (desde la boquilla) y el bebedero que CORTA · E6 → el agua que se barrena (⌀, H, W, caudal, puertos)
+ *   · E8 (el portamoldes entero) → el CLARO que mide EL FOCO (`escanearMolde`: agua ↔ barrenos y agua ↔ cavidad), el MISMO
+ *   número que lee la inspección. Sin pieza (el cubo) no hay dictamen de pieza: null.
+ * MEDIDO en la 1594C Box (app, antes de esta orden): el dictamen juzgaba p_fill 8.6 estimada, bebedero ⌀5.0→⌀11.94 × 85.4,
+ * agua 1 línea ⌀9.53; el acero lleva p_fill 18.57 del FAN, bebedero ⌀5.0→⌀8.62 × 69.2 y 8 líneas ⌀6.35 (16 tramos).
+ */
+export function moldeRealDelCiclo(c: any, moldParts: MoldPart[]): MoldeReal | null {
+  if (!c?.pieza) return null;
+  const fuentes: string[] = [];
+  const out: MoldeReal = { fuentes };
+  const fan = c.e5fan;
+  if (fan && fan.pMaxMPa > 0 && !fan.incompleto) {
+    out.fillMPaFan = fan.pMaxMPa;
+    fuentes.push(`p_fill ${fan.pMaxMPa.toFixed(1)} MPa del FAN (E5, desde la boquilla${fan.shortShot ? ' · ⚠ TIRO CORTO: es el tope del solver' : ''})`);
+  }
+  const d = c.e5datums;
+  if (d) {
+    out.bebedero = { diaTopMm: 2 * d.rTopMm, diaBaseMm: 2 * d.rBaseMm, largoMm: d.LsprueMm, modo: d.modo, VdotCcS: d.VdotCcS };
+    fuentes.push(`el bebedero que corta la E5 (⌀${(2 * d.rTopMm).toFixed(2)}→⌀${(2 * d.rBaseMm).toFixed(2)} × L ${d.LsprueMm.toFixed(1)})`);
+  }
+  const e8 = c.e8;
+  if (e8) {
+    const cir = e8.circuito, cd = e8.cd, q = e8.caudal;
+    // el caudal TÉRMICO por línea y el que la E6 BOMBEA (por turbulencia, Eq 9.14 despejada: Re = 4000 exacto)
+    const gpmLinea = q.manda === 'turbulencia' ? q.turbulentoGPM : q.termicoGPM;
+    // EL PASO REAL de la serpentina B (Eq 9.24 lo pide contra SU profundidad): la separación más grande entre líneas B
+    // vecinas, medida sobre los tramos barrenados — no el W de diseño, que se fijó para otra H (la E6 sube la línea para
+    // dejar ½⌀ sobre la cara de la placa y el paso se queda). Sin líneas B, el W de diseño.
+    const lb = cir.segmentos.filter((sg: any) => /^B-linea/.test(sg.id));
+    const perp = lb.length ? (Math.abs(lb[0].p1[0] - lb[0].p0[0]) > Math.abs(lb[0].p1[1] - lb[0].p0[1]) ? 1 : 0) : 0;
+    const us = lb.map((sg: any) => sg.p0[perp]).sort((a: number, b: number) => a - b);
+    const pasoReal = us.length > 1 ? Math.max(...us.slice(1).map((u: number, k: number) => u - us[k])) : e8.lineas.wMm;
+    // MEDIDO en la app (1594C Box): la E5/E6 reciben el volumen de la pieza de la rejilla de la E4 (`e5tuberia.volPiezaCc`
+    // 1.918 cc) y no el del sólido (55.8 cc): el calor y el caudal TÉRMICO de la E6 salen ~8× chicos. El veredicto del ⌀ no
+    // cambia (manda la turbulencia), pero el número sí: se DICE aquí; arreglarlo es de la E4/E5, no de este re-juicio.
+    const vE5 = c.e5tuberia?.volPiezaCc, vSol = c.pieza?.pieza?.volCc;
+    const avisoVol = vE5 != null && vSol != null && Math.abs(vE5 - vSol) > 0.25 * vSol
+      ? ` · ⚠ su calor sale de ${vE5.toFixed(1)} cc de pieza (la rejilla de la E4) contra ${vSol.toFixed(1)} cc del sólido`
+      : '';
+    out.agua = {
+      fuente: `la E6 (${cir.segmentos.length} tramos barrenados)${avisoVol}`,
+      diaMm: e8.lineas.diaMm, plug: e8.lineas.plug, nLineas: cd.nLines, nTramos: cir.segmentos.length,
+      profundidades: [
+        { que: 'anillo A (sobre la base cerrada)', hMm: cir.ladoA.hMm },
+        { que: 'serpentina B (bajo el macho)', hMm: cir.ladoB.hMm },
+      ],
+      pasoMm: +pasoReal.toFixed(2), pasoDe: cir.ladoB.hMm,
+      dMinMm: cd.dMinMm, dMaxMm: cd.dMaxMm,
+      reTermico: cd.reynolds, reBombeado: q.manda === 'turbulencia' ? 4000 : cd.reynolds, caudalManda: q.manda,
+      gpmTermicoLinea: q.termicoGPM, gpmLinea, gpmTotal: q.totalGPM, controladorOk: q.controladorOk,
+      puertosPorMitad: cir.conexionesPorMitad,
+    };
+    fuentes.push(`el agua que barrena la E6 (${cd.nLines} líneas ⌀${e8.lineas.diaMm})`);
+  }
+  // EL CLARO: sólo con el molde ENTERO (E8) — antes faltan pines, guías, bujes y tornillos, y el «más justo» mentiría
+  if (c.portamoldes && moldParts.length) {
+    try {
+      const r = escanearMolde(moldParts);
+      const mj = r.masJusto;
+      if (mj) {
+        const juezCaras = (e8?.circuito?.juez?.claros ?? []).filter((k: any) => k.categoria === 'inserto' || k.categoria === 'placa')
+          .sort((a: any, b: any) => (a.claroMm - a.minMm) - (b.claroMm - b.minMm))[0];
+        out.claro = {
+          aceroMm: mj.acero, limiteMm: mj.limite, a: mj.nombreA, b: mj.nombreB, fuente: 'el Foco del molde (eje↔eje y contra la cara de tu pieza)',
+          pares: r.pares, paresCavidad: r.cavidad.pares,
+          cavidad: r.cavidad.masJusto ? { aceroMm: r.cavidad.masJusto.acero, limiteMm: r.cavidad.masJusto.limite, a: r.cavidad.masJusto.nombreA } : null,
+          juezE6: juezCaras ? { aceroMm: juezCaras.claroMm, limiteMm: juezCaras.minMm, contra: juezCaras.contra } : null,
+        };
+        fuentes.push(`el claro que mide el Foco (${r.pares} + ${r.cavidad.pares} pares)`);
+      }
+    } catch (e) { console.warn('REJUICIO_FOCO_ERR', e); }
+  }
+  return out;
+}
+
 export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 0 }: {
   oc: any;
   setCollapsed: Dispatch<SetStateAction<Record<string, boolean>>>;
