@@ -47,6 +47,15 @@ a Kazmer y despliega UNA vez.
 - src/forja/mold/mold-drawing-set.ts
 - src/forja/mold/moldmachine.ts
 - src/forja/mold/revisar-modelo.ts
+- ordenes/2026-10-29-j-el-expediente-limpio.md
+- scripts/mold-assembly-test.cjs
+- scripts/qa-huella.cjs
+- src/forja/mold/estudio-molde-datos.ts
+- src/forja/mold/mold-drawings.ts
+- src/forja/mold/mold-heads.ts
+- src/forja/mold/mold-plano-set.ts
+- src/forja/mold/mold-threads.ts
+- src/forja/mold/moldbase.ts
 
 ## CREA
 - ordenes/2026-10-29-g-los-datos-de-tu-planta.md
