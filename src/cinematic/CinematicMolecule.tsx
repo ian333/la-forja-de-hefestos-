@@ -1494,7 +1494,9 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.7, elev: 0.22, rMul: 1.5 }), dur: 5.777, label: 'órbita: líneas celestes del sodio, azules del agua, todo calculado (l10)' },
     { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 11.148, label: 'se acercan — looming bajo la línea MÁS LARGA; ese morado (l11-l12)' },
     { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 8.023, label: 'se pega cinco veces más fuerte — la nube llena el cuadro (l13-l14)' },
-    { shot: pullOut({}), dur: 15.644, label: 'payoff: lo viste / se vistió de agua / tu sangre / la sed (l15-l18) → corte al vaso real' },
+    // rFromMul (gotcha de pullOut, camera-shots.ts:219): sin él arranca a 0.18 bohr DENTRO de la nube — medido aquí
+    // 10-30: esferas gigantes + ~6 s de puro ruido justo sobre «lo rodea y lo viste» (15.6 s de toma, no 10 como wsal).
+    { shot: pullOut({ rFromMul: 0.62 }), dur: 15.644, label: 'payoff: lo viste / se vistió de agua / tu sangre / la sed (l15-l18) → corte al vaso real' },
   ],
   // EL VASO SUDA (rey #3, 2026-10-30): las 9 tomas de wgotas (ganador «Dos gotas»), sin inventar cámara, re-cronometradas
   // a la voz de vasosuda. t=0 = arranque de l3 (el corte desde el vaso real). Cada corte cae en el ARRANQUE de su línea:
@@ -1524,7 +1526,8 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 7.159, label: 'CLÍMAX: vale casi lo mismo, el noventa y seis por ciento (l9-l10)' },
     { shot: orbitOne({ side: -1, azim0: 2.1, span: 1.2, rMul: 0.60 }), dur: 9.196, label: 'ORO: para el agua esa punta es casi otra agua / se mezclan solos (l11-l12)' },
     { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 7.159, label: 'el gel en tus manos: se agarra del agua de tu piel (l13-l14)' },
-    { shot: pullOut({ rTdMul: 0.95 }), dur: 8.843, label: 'se evapora y se lleva esa agua / manos resecas (l15-l16) → corte al vaso real en «Y tú»' },
+    // rFromMul 0.62 = el de wcolor/wgotas con este mismo rTdMul: sin él arranca DENTRO de la nube (gotcha medido en wsalr 10-30)
+    { shot: pullOut({ rFromMul: 0.62, rTdMul: 0.95 }), dur: 8.843, label: 'se evapora y se lleva esa agua / manos resecas (l15-l16) → corte al vaso real en «Y tú»' },
   ],
   wtribr: [
     // LA GOTA QUE NO CAE (rey #5, 2026-10-30): LAS 9 TOMAS DEL GANADOR wtrib, MISMO ORDEN, sin inventar cámara; 9 en 58.9 s de
