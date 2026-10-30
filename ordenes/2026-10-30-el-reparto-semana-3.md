@@ -37,6 +37,10 @@ política del archivo». Plan: `Downloads/la-forja-video-1/00-EL-VIDEO-1.md`.
 - src/forja/mold/mold-drawing-set.ts
 - src/forja/mold/mold-drawings.ts
 - src/forja/mold/mold-plano-set.ts
+- ordenes/2026-10-30-l-el-reporte-de-analisis.md
+- src/forja/brep/useMoldStudio.ts
+- src/forja/mold/estudio-molde-datos.ts
+- src/forja/mold/expediente.ts
 
 ## CREA
 - ordenes/2026-10-30-k-el-molde-en-step-y-con-nombre-iso.md
