@@ -62,6 +62,17 @@ a Kazmer y despliega UNA vez.
 - scripts/guiones/pelicula-camino.txt
 - src/forja/brep/FocoMolde3D.tsx
 - src/forja/mold/inspeccion-recorrido.ts
+- ordenes/2026-10-29-g-los-datos-de-tu-planta.md
+- src/forja/brep/MoldPanels.tsx
+- src/forja/mold/colada.ts
+- src/forja/mold/feed-layouts.ts
+- src/forja/mold/feed.ts
+- src/forja/mold/lamina-compuerta.ts
+- src/forja/mold/machinesizing.ts
+- src/forja/mold/materials.ts
+- src/forja/mold/moldcost-detailed.ts
+- src/forja/telemetry-forja.ts
+- src/lib/telemetry.ts
 
 ## CREA
 - ordenes/2026-10-29-g-los-datos-de-tu-planta.md
