@@ -10440,7 +10440,7 @@ export default function ForgeBRepStudio() {
               {/* EL MOLDE EN STEP (orden K): qué trae el archivo 3D, en una línea */}
               <div data-testid="expediente-step-linea" style={{ fontSize: 11.5, color: '#9fb0c4', marginTop: 6 }}>
                 {mold.ciclo?.portamoldes
-                  ? 'Molde 3D (STEP): el molde entero, un sólido por pieza con su nombre de la norma ISO 12165 (placas, insertos, botadores, guías, pilares, pernos) — se abre en Fusion, SolidWorks o FreeCAD.'
+                  ? 'Molde 3D (STEP AP214, el formato de intercambio que leen Fusion, SolidWorks y FreeCAD): el molde entero, un sólido por pieza con su nombre de la norma ISO 12165 (placas, insertos, botadores, guías, pilares, pernos).'
                   : 'Molde 3D (STEP): sale cuando el molde está entero (el portamoldes del paso 6).'}
               </div>
             </div>

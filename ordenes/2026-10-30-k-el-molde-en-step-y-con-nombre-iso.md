@@ -85,8 +85,13 @@ por el camino hasta el portamoldes) con el medidor `mide-step.cjs`: corrida A (S
 BOM + cajetín) y C (final, con los arreglos de legibilidad de B).
 1. **El STEP del molde — HECHO.** Botón «⬇ Molde 3D (STEP)» en el expediente (paso 9, activo con el portamoldes) y
    `window.__moldeSTEP` para arneses. AP214 (`AUTOMOTIVE_DESIGN`), en mm, ASCII puro: **73 PRODUCT (raíz + 72 cuerpos),
-   72 NAUO, 80 MANIFOLD_SOLID_BREP, CERO caras trianguladas**, 7.98 MB. Armar 8.4 s · escribir 3.3 s · leer de vuelta 14.1 s
-   (vite dev; relojes = clima). La descarga del botón = el archivo de la API (salvo la fecha y el contador de NAUO).
+   72 NAUO, 80 MANIFOLD_SOLID_BREP, CERO caras trianguladas**, 7.98 MB. Corrida C (final): armar 8.3 s · escribir 3.4 s ·
+   leer de vuelta 14.9 s (vite dev; relojes = clima). La descarga del botón = el archivo de la API (salvo la fecha y el
+   contador de NAUO del escritor). **Leído por:** el lector XCAF de OCCT 7.4 (nombres + geometría), su STEPControl_Reader
+   (OneShape: Σvol igual, sonda) y Blender 4.5 (el OBJ de lo LEÍDO: 72 objetos, `mira-armado.png`/`mira-explosion.png` — el
+   molde entero, placas con sus ranuras y bolsas, postes con collar, bujes, pernos, pilares, botadores, tapones; un color por
+   cuerpo). **NO lo abrí en Fusion/SolidWorks/FreeCAD** (no hay ninguno en iangpu): es AP214, el formato que esos leen, pero
+   la prueba en un CAD de la planta queda pendiente (pregunta 3).
 2. **La BOM con nombre ISO — HECHO.** Cada renglón: denominación en español del término de ISO 12165:2019 (+ medida), el
    término inglés debajo, y en MATERIAL · NORMA «tipo ISO nnnn» (la norma del componente que cita la columna de referencias
    de ISO 12165; para el buje guía y los botadores, la norma cuyo título los nombra: ISO 8018, ISO 8694 / 6751). Entran
@@ -110,7 +115,7 @@ BOM + cajetín) y C (final, con los arreglos de legibilidad de B).
 | la pieza del árbol, colocada como la E3 | la pieza (referencia, plástico) |
 | **NO van (17)**: 16 líneas/bore de agua (son HUECO, ya barrenado en insertos y placas) + la lámina visual de la partición | — |
 
-**La ida y vuelta (corrida B; 72 cuerpos, leídos con STEPCAFControl_Reader → XCAF).** Archivo ↔ B-Rep enviado: **72/72
+**La ida y vuelta (corrida B; la C final da lo mismo: 72/72, mismos Δ; 72 cuerpos, leídos con STEPCAFControl_Reader → XCAF).** Archivo ↔ B-Rep enviado: **72/72
 exactos — nombre IGUAL, Δcaja 0 mm**, Δvol < 1e-13 en 69 cuerpos, insertos 2.8e-10 y 1.2e-7, la pieza del cliente (superficies
 libres) 1.7e-6. Tolerancia declarada: vol ≤ 1e-5 relativo, caja ≤ 1e-3 mm. La corrida A salió ROJA en 23 nombres: OCCT 7.4 cambia
 espacios por «_» y PARTE las cadenas de > 72 caracteres en dos renglones; la restitución ahora recorre cada literal (B: 72/72).
@@ -159,16 +164,26 @@ ese cuerpo y solo en ese** (Δcaja 0.5000 mm; los otros 71 exactos): `PAR_DE_CON
   Hefestos). Sin norma (fuente Kazmer, «†»): retornos, insertos, O-ring, baffle, líneas de agua (la Tabla 5 de ISO 12165,
   expulsión, no está en la muestra pública).
 
-**Evidencia (iangpu `/home/ian/el-plan-dev7/k/`).** `mide-step.cjs` (el medidor) · `A-step/` · `B-todo/` · `C-final/` (cada una
+**Evidencia (iangpu `/home/ian/el-plan-dev7/k/`).** `mide-step.cjs` (el medidor) · `step-a-obj.cjs` + `mira-step.py` (la mirada
+de Blender) · `A-step/` · `B-todo/` · `C-final/` (cada una
 `medida.json`, `molde.step`, el `.step` bajado por el botón, `expediente.jpg`, y en B/C `lamina-00.jpg`, `lamina-00-abajo.jpg`,
 `lamina-04*.jpg`, `lamina-00.svg`, `lamina-04.svg`) · `B-todo/mira-armado.png` y `mira-explosion.png` (el STEP LEÍDO de vuelta y
 pintado en Blender, un color por cuerpo: otros ojos que los de la app) · sondas `sonda-*.cjs` (XCAF en este build). Capturas
-juzgadas con Read: expediente con el botón (A), ensamble con la BOM ISO (B) y su recorte, cajetín de cerca (B), placa A con su
-cajetín «5 / 17» (B). Juez getBBox en las 17 láminas (B): 0 textos encimados en cajetín y BOM, BOM hasta x 410.6 de 415.
+juzgadas con Read: expediente con el botón (A, C — con la línea del STEP), ensamble con la BOM ISO (B y C, recortes), cajetín
+de cerca (B y C), placa A con su cajetín «5 / 17» (B), el STEP leído en Blender armado y en explosión. Lo que B enseñó y C
+arregló (visto en la captura, no en el número): el encabezado «MATERIAL · NORMA» se salía 0.6 mm (estimador de ancho por
+clase de carácter), los dos renglones de pernos encogidos a 1.9 mm («Tornillo de cabeza cilíndrica»), los ids 11.1–11.8 debajo
+del 12 (orden padre/hijo), las notas ISO a 1.2 mm (cuatro renglones a 2.6) y los rótulos del cajetín a 1.55 mm (1.8). Juez
+getBBox en las 17 láminas (C): 0 textos encimados en cajetín y BOM, BOM hasta x 408.0 de 415.
 
 **Pruebas.** El cubo **270/270** (sin ACTA: ningún literal se movió) · tsc **58 = 58 de la base, 0 nuevos** (`tsc-base.txt`,
 `tsc-final.txt`; occt.ts está fuera del tsconfig desde antes) · `mold-assembly-test.cjs` 17/17 (los checks J siguen: «Pilar de
 soporte ⌀40 × 96» y «Poste guía ⌀25 ×» en la BOM) · `mold-drawings-test.cjs` 14/14 · `node scripts/orden-gate.cjs` → VERDE.
+**La huella NO se mueve** (la geometría del molde no cambia: lo nuevo es papel y archivo): `qa-huella` en la misma copia dev7,
+primero con el src de la BASE y luego con el de la orden — **a6974b11bde767a5 = a6974b11bde767a5** (75 cuerpos; el mismo hash
+de la ADENDA de la orden J), `VOLUMEN_GATE: VERDE`, `PAR_DE_CONTROL_VOLUMEN: MUERDE` en las dos; `qa-dorados --medido`:
+**DORADOS_GATE: VERDE** en las dos (holguraAguaMinMm 3.49, aperturaMm 135.4, carreras 41.3/46, dictamenViola 4) —
+`huella-base/`, `huella-k/`, `huellas.sh`.
 
 **Visto, de otras órdenes o para después (no lo toqué).**
 - Las placas A y B de la app son cajas «fantasma» macizas (12 triángulos); el STEP lleva las de la lámina. Y esas placas (lámina
@@ -189,14 +204,18 @@ los planos). `expediente.ts` estaba en TOCA y NO se tocó (región de L intacta)
 
 **Preguntas para ian.**
 1. *Los botadores en pulgadas.* Los 8 botadores de tu carcasa miden ⌀2.381 en la punta y ⌀4.763 en el cuerpo: son 3/32 y 3/16
-   de pulgada. La norma ISO de ese botador (ISO 8694) es de catálogo métrico; si el taller compra métrico, ese botador no
-   existe tal cual y hay que pasar a la medida métrica de al lado (y re-checar el pandeo). Hoy la BOM dice «tipo ISO 8694» sin
-   designación. ¿El taller compra botadores en pulgadas o en milímetros? **Recomiendo** preguntárselo junto con el proveedor de
+   de pulgada. La norma ISO de ese botador (ISO 8694) da sus medidas en milímetros (lo dice su alcance; su tabla no la vi:
+   no se compró): si el taller compra métrico, lo probable es pasar a la medida métrica de al lado y re-checar el pandeo.
+   Hoy la BOM dice «tipo ISO 8694» sin designación. ¿El taller compra botadores en pulgadas o en milímetros? **Recomiendo** preguntárselo junto con el proveedor de
    la base: con esa respuesta la BOM ya puede escribir la designación de su catálogo.
 2. *El tornillo largo de la mitad móvil.* Sube desde abajo de la sujeción inferior hasta morder la placa B: mide 156.9 mm bajo
    la cabeza (M6). Ese largo sale de la cuenta, no de una tabla: en la tienda no hay 156.9. Si se compra el comercial más
    corto, la rosca muerde menos de lo calculado; si el más largo, toca fondo. ¿Ajusto el largo al catálogo del proveedor y
    recalculo cuánto muerde? **Recomiendo** que sí, en cuanto tengamos el catálogo (es la misma pregunta del proveedor).
-3. *Quién firma como dueño de los planos.* El cajetín ISO pide «propietario legal» del documento: hoy va la línea vacía. ¿Las
+3. *Abrirlo en tu CAD.* El molde viaja en STEP AP214, que es lo que leen Fusion, SolidWorks y FreeCAD; aquí lo leyeron OCCT y
+   Blender (72 cuerpos con su nombre, la geometría exacta), pero ningún CAD de planta porque iangpu no tiene uno. ¿Lo abres en
+   tu Fusion y me dices si ves 72 cuerpos con nombre bajo «Molde 1594C Box»? **Recomiendo** que sí, antes de mandárselo a una
+   planta: es el único juez que falta, y toma un minuto.
+4. *Quién firma como dueño de los planos.* El cajetín ISO pide «propietario legal» del documento: hoy va la línea vacía. ¿Las
    láminas son de la planta que compra el molde (su nombre de TU PLANTA, paso 2) o de GAIA? **Recomiendo** la planta: el
    expediente lo libera y lo firma ella; GAIA queda como «generado por».
