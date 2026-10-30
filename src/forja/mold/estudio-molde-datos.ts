@@ -3473,9 +3473,17 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
   // ── EL CRUCE E6↔E8: el bushing MÍNIMO que todavía empaca ──
   const tPackNeededS = o?.tPackNeededS ?? dz.alimentacion.tcPartS;
   const freezeDe = (diaMm: number) => +gateFreezeCylS(A.alphaM2s, diaMm / 1000, A.tMeltC, A.tCoolC, T_NOFLOW_ABS_C).toFixed(2);
-  const freezeActualS = freezeDe(diaActualMm);
+  // EL SIGNO DEL EMPAQUE (orden G2, 2026-10-29): este renglón imprimía «≥ … ✓» FIJO. MEDIDO en la 1594C Box: «⌀8.62 → empaca
+  // 19.99s ≥ t_pack 21.70s ✓» — 19.99 < 21.70: la base del bebedero se congela 1.7 s ANTES de terminar el empaque (§7.1.5,
+  // §7.3.4) y el renglón decía lo contrario. Ahora compara de verdad (como los renglones de abajo). Y el freeze del bebedero que se
+  // CORTÓ se calcula con su ⌀ EXACTO (2·rBase), el mismo con que el dictamen con el molde (columna ②, `gate-freeze`) juzga
+  // FREEZE: con el ⌀ redondeado a 8.62 salía 19.99 y el ② decía 20.01 (mismas constantes del ABS, medido: la diferencia es el
+  // redondeo, d² = (8.6243/8.62)²). El ⌀ del rótulo sigue a 2 decimales; los del catálogo de abajo son exactos de por sí.
+  const freezeActualS = +gateFreezeCylS(A.alphaM2s, (2 * d.rBaseMm) / 1000, A.tMeltC, A.tCoolC, T_NOFLOW_ABS_C).toFixed(2);
+  const empacaActual = freezeActualS >= tPackNeededS;
   const cadena: string[] = [
-    `bebedero de la E5/E6: ⌀${diaActualMm} → empaca ${freezeActualS}s ≥ t_pack ${tPackNeededS.toFixed(2)}s ✓ pero ENFRÍA en ${tcSprueS}s (Eq 9.6) vs ${tcPiezaS}s de la pieza`,
+    `bebedero de la E5/E6: ⌀${diaActualMm} → empaca ${freezeActualS}s ${empacaActual ? '≥' : '<'} t_pack ${tPackNeededS.toFixed(2)}s ${empacaActual ? '✓' : '✗ VIOLA el empaque (rechupes): la base se congela antes de terminar de empacar'}`
+      + ` ${empacaActual ? 'pero' : 'y'} ENFRÍA en ${tcSprueS}s (Eq 9.6) vs ${tcPiezaS}s de la pieza`,
   ];
   let diaOptimoMm: number | null = null, tcOptimoS: number | null = null, freezeOptimoS: number | null = null;
   for (const dia of BUSHING_ORIFICIOS_MM) {

@@ -139,18 +139,21 @@ const esRojo = (k?: Criterio) => k?.estado === 'VIOLA';
 const rojosDe = (c: ContratoReporte | null | undefined, ids: string[]) => ids.map((id) => criterio(c, id)).filter((k) => esRojo(k)).map((k) => tituloCorto(k!.id));
 const verDe = (k?: Criterio): Veredicto => (k?.estado === 'VIOLA' ? 'falla' : k?.estado === 'ADVIERTE' ? 'aviso' : 'ok');
 
-/** 0 · EL DICTAMEN — «69 criterios, 4 no cumplen; los vas a ver cada uno en su capítulo». */
-export function puntoDelDictamen(piezas: PiezaMolde[], c: ContratoReporte | null | undefined): PuntoRecorrido | null {
+/** 0 · EL DICTAMEN — «69 criterios, 4 no cumplen; los vas a ver cada uno en su capítulo».
+ *  `enElAcero` (orden G2): el dictamen que llega es el re-juicio con el molde (columna ② de la orden H) — se dice, porque la
+ *  lámina del dictamen enseña las dos columnas y la inspección juzga la que se va a cortar. */
+export function puntoDelDictamen(piezas: PiezaMolde[], c: ContratoReporte | null | undefined, enElAcero = false): PuntoRecorrido | null {
   if (!c) return null;
   const R = rojosDelDictamen(c), t = c.total;
   const cam = camaraDeContexto(piezas);
+  const quien = enElAcero ? 'El dictamen, re-juzgado con tu molde (el bebedero que se corta, el agua que se barrena y la presión que mide el llenado),' : 'El dictamen de tu pieza sola (paso 4, todavía sin molde)';
   return {
     id: 'dictamen', capitulo: 'El dictamen · cap 13', pregunta: '¿Qué reglas no cumple tu molde?',
     numero: `${R.length} de ${t.criterios} no cumplen`, limite: `${t.cumple} cumplen · ${t.advierte} de panzazo`, veredicto: R.length ? 'falla' : 'ok',
     frase: R.length
-      ? `El dictamen revisó ${t.criterios} reglas del libro: ${R.length} no cumplen (${R.map((r) => r.titulo).join(', ')}). Vas a ver cada una en su capítulo, con su número contra su límite.`
-      : `El dictamen revisó ${t.criterios} reglas del libro y ninguna sale en rojo. Lo que va de panzazo se ve en su capítulo.`,
-    regla: 'el juez de contratos de Kazmer (69 criterios con su §) — leído del dictamen vivo, no de una lista fija',
+      ? `${quien} revisó ${t.criterios} reglas del libro: ${R.length} no cumplen (${R.map((r) => r.titulo).join(', ')}). Vas a ver cada una en su capítulo, con su número contra su límite.`
+      : `${quien} revisó ${t.criterios} reglas del libro y ninguna sale en rojo. Lo que va de panzazo se ve en su capítulo.`,
+    regla: `el juez de contratos de Kazmer (69 criterios con su §) — leído del dictamen vivo, no de una lista fija · ${enElAcero ? '② en el acero (con el molde)' : '① tu pieza sola (paso 4)'}`,
     rojos: R.map((r) => r.titulo),
     marcas: [], cotas: [], contexto: cam.objetivo, dur: 6.5,
     vista: { roles: ['*'], corte: null, camara: cam },
@@ -174,11 +177,14 @@ export function laColada(piezas: PiezaMolde[], c: ContratoReporte | null | undef
     barras.push({ etiqueta: 'reloj del bebedero (enfría)', valor: ci.medido, unidad: 's', limite: ci.limite, tipo: 'max', veredicto: verDe(ci), nota: 'barra · Eq 9.6' });
     barras.push({ etiqueta: 'reloj de la pared de tu pieza', valor: ci.limite, unidad: 's', veredicto: 'neutro', nota: 'placa · Eq 9.5' });
   }
-  // EL BEBEDERO QUE SE JUZGA vs EL QUE SE CORTA (orden B lo vio, la orden H los une): si difieren, se DICE en pantalla
-  const mDict = /⌀\s*([\d.]+)\s*mm,\s*sprue L=([\d.]+)/.exec(dp?.detalle ?? '');
+  // EL BEBEDERO QUE SE JUZGA vs EL QUE SE CORTA (orden B lo vio, la orden H los unió): el renglón de la DP dice cuál juzgó
+  // («bebedero ⌀a→⌀b × L c mm (el que CORTA la E5)» o «(el del diseño numérico…)», mold-contratos.ts). MEDIDO (orden G2): el regex
+  // de antes buscaba el formato viejo («⌀X mm, sprue L=Y») y tras la fusión de H ya no casaba con nada — la nota se apagó SOLA,
+  // también cuando el dictamen juzgaba el del diseño. Ahora: solo si el dictamen juzgó el del diseño y difiere del que se corta.
+  const mDict = /bebedero ⌀([\d.]+)→⌀([\d.]+) × L ([\d.]+) mm \((el que CORTA|el del diseño)/.exec(dp?.detalle ?? '');
   const mDib = /⌀([\d.]+)→⌀([\d.]+)/.exec(col.name ?? '');
-  const dosBebederos = mDict && mDib && Math.abs(+mDict[1] - +mDib[2]) > 0.05 * +mDib[2]
-    ? `Dos bebederos: el dictamen juzgó ⌀${(+mDict[1]).toFixed(2)} × ${(+mDict[2]).toFixed(1)} mm; se corta ⌀${(+mDib[2]).toFixed(2)} × ${f1(Lc)} sobre la pieza.`
+  const dosBebederos = mDict && mDict[4] === 'el del diseño' && mDib && Math.abs(+mDict[2] - +mDib[2]) > 0.05 * +mDib[2]
+    ? `Dos bebederos: el dictamen del paso 4 juzgó ⌀${(+mDict[2]).toFixed(2)} × ${(+mDict[3]).toFixed(1)} mm (el del diseño numérico); se corta ⌀${(+mDib[2]).toFixed(2)} × ${f1(Lc)} sobre la pieza.`
     : '';
   const frase = [
     dp?.medido != null && dp.limite != null
@@ -193,7 +199,7 @@ export function laColada(piezas: PiezaMolde[], c: ContratoReporte | null | undef
     limite: dp?.limite != null ? `presupuesto ${f1(dp.limite)} MPa` : `pared ${f1(ci?.limite ?? 0)} s`, veredicto: v,
     frase, rojos: [dp, ci].filter((k) => esRojo(k)).map((k) => tituloCorto(k!.id)),
     regla: '§6.4 p.132: «no greater than 50% of the pressure required to fill the mold cavities or 50 MPa» · §6.4.7 p.148: «…greatly exceeds the cooling time of the mold cavities… redesign the feed system» · p.149: «can be reduced albeit with a higher pressure drop»',
-    falta: dosBebederos ? `${dosBebederos} El número es el del dictamen (los une la orden «un veredicto»).` : undefined,
+    falta: dosBebederos ? `${dosBebederos} El número es el del paso 4: con el molde armado se juzga el que se corta.` : undefined,
     barras,
     marcas: [{ tipo: 'punto', p: [cc[0], cc[1], B.mn[2]], color: v }],
     cotas: [{ a: [B.mx[0] + 6, cc[1], B.mn[2]], b: [B.mx[0] + 6, cc[1], B.mx[2]], etiqueta: 'bebedero sobre la pieza' }],
@@ -308,6 +314,9 @@ export function queMandaElCiclo(piezas: PiezaMolde[], o: {
   lente: CicloDeLaLente | null; posteMolde: V3 | null; colada?: Criterio; aguaProf?: Criterio; aguaPaso?: Criterio;
   /** el CLARO del dictamen: su límite es ½·⌀ EXACTO del agua que juzgó (el «H 19.1 = 2.00×⌀» del detalle viene redondeado: daba ⌀9.6) */
   aguaClaro?: Criterio;
+  /** `agua-ciclo` (§9.2.1, orden H): el ciclo con que se cotizó contra el t_c de lo MÁS GRUESO con su forma — ES la pregunta de
+   *  este punto («qué manda el ciclo»): su ✗ se enseña aquí (orden G2), no como un rojo sin vista */
+  aguaCiclo?: Criterio;
 }): PuntoRecorrido | null {
   const pz = piezas.find((p) => p.role === 'pieza'); if (!pz || !o.lente) return null;
   const P = caja(pz); const L = o.lente;
@@ -351,23 +360,45 @@ export function queMandaElCiclo(piezas: PiezaMolde[], o: {
     { etiqueta: `un poste de ${f1(L.gruesoMm)} mm (barra)`, valor: L.barraS, unidad: 's', veredicto: 'aviso', nota: `hasta ${f0(L.placaS)} como placa (cota alta)` },
   ];
   if (tcCol != null) barras.push({ etiqueta: 'el bebedero', valor: tcCol, unidad: 's', veredicto: verDe(o.colada), nota: 'barra · Eq 9.6' });
+  // LO QUE SE COTIZÓ contra lo más grueso (agua-ciclo, §9.2.1) y EL PASO que juzga el dictamen (agua-paso, Eq 9.24): sus números son
+  // los del dictamen, no los de este corte (orden G2). El paso del dictamen con el molde es el REAL de la serpentina B (la mayor
+  // separación entre líneas B vecinas, contra la H de la serpentina); las cotas W de este corte miden solo entre líneas que ven la pieza.
+  const ac = o.aguaCiclo;
+  if (ac?.medido != null && ac.limite != null) barras.push({ etiqueta: 'el ciclo con que se cotizó', valor: ac.medido, unidad: 's', limite: ac.limite, tipo: 'min', veredicto: verDe(ac), nota: `lo más grueso pide ${f1(ac.limite)}` });
+  const ap = o.aguaPaso;
+  const mPaso = /paso (?:REAL de la serpentina B )?([\d.]+) mm = ([\d.]+)×H · ventana \[1, 2\]×H = \[([\d.]+), ([\d.]+)\]/.exec(ap?.detalle ?? '');
+  if (mPaso && esRojo(ap)) barras.push({ etiqueta: /REAL/.test(ap!.detalle) ? 'el paso real de la serpentina B' : 'el paso entre líneas', valor: +mPaso[1], unidad: 'mm', limite: +mPaso[4], tipo: 'max', veredicto: 'falla', nota: `${mPaso[2]}·H · máx 2·H` });
   const malas = cotas.filter((k) => k.ok === false).length;
   // ¿el dictamen juzgó la MISMA agua que se dibuja? (su H/⌀ trae el ⌀: «H 19.1 mm = 2.00×⌀» → ⌀9.53 contra ⌀6.35 dibujado)
   const mH = /H ([\d.]+) mm = ([\d.]+)×⌀/.exec(o.aguaProf?.detalle ?? '');
   const dDict = o.aguaClaro?.limite != null ? 2 * o.aguaClaro.limite : mH && +mH[2] > 0 ? +mH[1] / +mH[2] : null;
   const aguaDict = dDict != null && D > 0 && Math.abs(dDict - D) > 0.1 && o.aguaPaso?.detalle
     ? `El dictamen juzgó otra agua: ⌀${f2(dDict)}, ${o.aguaProf!.detalle.split(' · ')[0]}, ${o.aguaPaso.detalle.split(' · ')[0]}.` : '';
+  // los dos rojos de este capítulo en palabras: lo que se cotizó contra lo más grueso, y el paso que juzga el dictamen
+  const fraseCiclo = esRojo(ac) && ac!.medido != null && ac!.limite != null
+    ? ` Se cotizó con ${f1(ac!.medido)} s: le faltan ${f1(ac!.limite - ac!.medido)} s por pieza.` : '';
+  const frasePaso = mPaso && esRojo(ap)
+    ? ` El ${/REAL/.test(ap!.detalle) ? 'paso real de la serpentina B' : 'paso entre líneas'}, ${mPaso[1]} mm = ${mPaso[2]}·H, pasa de 2·H: entre líneas tan separadas la pieza enfría dispareja.` : '';
+  // CABE EN LA TARJETA (medido con los ojos, orden G2): con los dos rojos y sus dos barras la frase larga empujaba la cita del libro
+  // fuera de la tarjeta (alto máximo, overflow oculto). Con rojos, las barras ya dicen cada número contra su límite: la frase va corta.
+  const conRojos = !!(fraseCiclo || frasePaso);
+  const fraseAgua = `En el corte, el agua: H de ${f1(lo)} a ${f1(hi)} mm (⌀${f2(D)}) y W entre H y 2H —`
+    + (malas ? ` ${malas} cota${malas > 1 ? 's' : ''} fuera` : ' todas dentro')
+    + (lejos.length ? (conRojos ? `; lejos de la pieza: ${lejos.map((x) => x.split(' (')[0]).join(', ')}.` : `. Lejos de la pieza: ${lejos.join(', ')}.`) : '.');
+  const frase = conRojos
+    ? `El molde abre cuando lo más grueso está firme: manda ${quien}, ${f0(manda)} s contra ${f1(L.paredS)} s de tu pared${quien !== 'los postes' ? ` (los postes: ${f0(L.barraS)} s)` : ''}.${fraseCiclo} ${fraseAgua}${frasePaso}`
+    : `El molde no abre hasta que lo más grueso esté firme: tu pared de ${f1(L.paredMm)} mm tarda ${f1(L.paredS)} s; ${L.lugares > 1 ? `los ${L.lugares} postes` : 'el poste'} de ${f1(L.gruesoMm)} mm, como barra, ${f0(L.barraS)} s${tcCol != null ? `; el bebedero, ${f0(tcCol)} s` : ''}. Manda ${quien}. ${fraseAgua}`;
   return {
     id: 'ciclo', capitulo: 'Enfriamiento · cap 9', pregunta: '¿Qué manda el ciclo, y el agua está donde enfría?',
-    numero: `${f0(manda)} s manda ${quien}`, limite: `la pared sola: ${f1(L.paredS)} s`, veredicto: manda > 1.25 * L.paredS ? 'aviso' : 'ok',
-    textoVeredicto: manda > 1.25 * L.paredS ? `◇ ${quien.startsWith('los ') ? 'MANDAN' : 'MANDA'} ${quien.toUpperCase()}` : undefined,
-    frase: `El molde no abre hasta que lo más grueso esté firme: tu pared de ${f1(L.paredMm)} mm tarda ${f1(L.paredS)} s; ${L.lugares > 1 ? `los ${L.lugares} postes` : 'el poste'} de ${f1(L.gruesoMm)} mm, como barra, ${f0(L.barraS)} s${tcCol != null ? `; el bebedero, ${f0(tcCol)} s` : ''}. Manda ${quien}. `
-      + `En el corte, el agua: H de ${f1(lo)} a ${f1(hi)} mm (⌀${f2(D)}) y W entre H y 2H —`
-      + (malas ? ` ${malas} cota${malas > 1 ? 's' : ''} fuera.` : ' todas dentro.') + (lejos.length ? ` Lejos de la pieza: ${lejos.join(', ')}.` : ''),
-    falta: aguaDict ? `${aguaDict} La une la orden «un veredicto».` : undefined,
+    // un ✗ del dictamen en este capítulo (ciclo cotizado, paso o profundidad) pinta el punto en rojo; si no, «manda X» es aviso
+    numero: `${f0(manda)} s manda ${quien}`, limite: `la pared sola: ${f1(L.paredS)} s`,
+    veredicto: esRojo(ac) || esRojo(ap) || esRojo(o.aguaProf) ? 'falla' : manda > 1.25 * L.paredS ? 'aviso' : 'ok',
+    textoVeredicto: !(esRojo(ac) || esRojo(ap) || esRojo(o.aguaProf)) && manda > 1.25 * L.paredS ? `◇ ${quien.startsWith('los ') ? 'MANDAN' : 'MANDA'} ${quien.toUpperCase()}` : undefined,
+    frase,
+    falta: aguaDict ? `${aguaDict} Con el molde armado se juzga el agua que se barrena.` : undefined,
     regla: '§9.2.1 p.203: «consider the thickest section» · poste = barra (Eq 9.6), pared = placa (Eq 9.5) · Eq 9.22 p.213: 2D < H < 5D · Eq 9.24 p.214: H < W < 2H · H del centro de la línea a la cara de la pieza, en este corte',
     barras, pinta: 'enfriamiento',
-    rojos: [o.aguaProf, o.aguaPaso].filter((k) => esRojo(k)).map((k) => tituloCorto(k!.id)),
+    rojos: [o.aguaProf, o.aguaPaso, o.aguaCiclo].filter((k) => esRojo(k)).map((k) => tituloCorto(k!.id)),
     marcas: [{ tipo: 'punto', p: poste, color: 'aviso', r: 2.2 }],
     cotas, contexto: poste, dur: 18,
     vista: {
@@ -692,7 +723,11 @@ const DECISION: Record<string, string> = {
   'feed-dp': 'el diámetro del bebedero (una sola decisión con COLADA VS CICLO): más delgado acorta su reloj y sube su caída; o colada caliente',
   'feed-ciclo': 'el mismo diámetro: el bebedero no debe mandar el ciclo (§6.4.7)',
   'gate-freeze': 'en este orden: subir el empaque, engrosar la compuerta, adelgazar la pieza (§7.3.5)',
-  'agua-claro': 'aclarar qué agua juzga el dictamen contra la que se barrena; con la que se barrena el peor acero sale arriba',
+  // orden G2: con el re-juicio de H el CLARO es el del agua que se barrena (ya no hay «otra agua» que aclarar); si sale ✗ es físico
+  'agua-claro': 'mover la línea de agua o el componente hasta dejar medio diámetro de acero entre los dos (§9.2.7 p.216)',
+  // los dos rojos que el acero agregó (orden H) y la inspección ahora enseña en «qué manda el ciclo»; la decisión es la del libro
+  'agua-ciclo': 'cotizar con el tiempo de lo más grueso o aligerar esos postes por dentro para que mande la pared (§9.2.1 p.203 · §2.3.1)',
+  'agua-paso': 'acercar las líneas de la serpentina (o meter una más) hasta que el paso no pase de dos veces su profundidad (Eq 9.24 p.214)',
 };
 export function cierreDeLaInspeccion(piezas: PiezaMolde[], rojos: RojoDictamen[], vistos: string[], sinDictamen = false): PuntoRecorrido {
   const cam = camaraDeContexto(piezas);

@@ -4156,10 +4156,16 @@ export default function ForgeBRepStudio() {
         // UNA SOLA VERDAD: la hoja dice lo MISMO que el dictamen (mismo pkg) y lo comprueba a la vista;
         // la máquina trae números, no palomitas; cada puntaje lleva su nombre (contratos = el juez;
         // DFM = la puerta 0). Lo que falta se dice («sin dictamen»), no se rellena.
-        const sel = pkg.diseno.maquina.seleccion; const mq = sel.machine;
+        // UNA APERTURA (orden G2): la máquina de la hoja se juzga con el molde que SE CORTA — el paquete re-juzgado (②: el bebedero
+        // de la E5) — cuando existe. MEDIDO en main fusionado (1594C Box): esta fila decía «abierto 447 de 1010» con la apertura del
+        // bebedero ESTIMADO (135.4 = 2.5·33.3 + 85.4 − 33.3) dos renglones arriba de «el bebedero (UNO: el que corta la E5) … L 69.2»,
+        // y la inspección abría 152.5. Ahora dice la CARRERA (= `animZ('clamp')`) y el alto abierto; sin molde, la del paquete E2,
+        // rotulada «estimada». El alto cerrado sigue siendo el que estima el motor (placas A+B+soporte+200): se dice.
+        const pkgAcero = rejuicio?.rev.pkg ?? null;
+        const sel = (pkgAcero ?? pkg).diseno.maquina.seleccion; const mq = sel.machine;
         const cavDict = revision?.pkg.recomendacion.nCav;
         const maqValor = mq
-          ? `${mq.name} · clamp ${sel.clampUtilPct} % de ${mq.clampTons} t · shot ${sel.shotPct} % del barril · abierto ${Math.round(sel.apertura.needMm)} de ${mq.maxDaylightMm} mm${sel.taller && !sel.taller.ok ? ` · no cabe en la ${sel.taller.machine.name}: ${sel.taller.issues[0] ?? ''}` : ''}`
+          ? `${mq.name} · clamp ${sel.clampUtilPct} % de ${mq.clampTons} t · shot ${sel.shotPct} % del barril · abre ${sel.apertura.strokeMm.toFixed(1)} mm${pkgAcero ? '' : ' (estimada: sin el bebedero que se corta)'} · abierto ${Math.round(sel.apertura.needMm)} de ${mq.maxDaylightMm} mm (cerrado ≈ ${Math.round(sel.apertura.stackMm)}, estimado)${sel.taller && !sel.taller.ok ? ` · no cabe en la ${sel.taller.machine.name}: ${sel.taller.issues[0] ?? ''}` : ''}`
           : 'ninguna inyectora del catálogo';
         const rows = [
           { grupo: 'Recomendación', param: 'arquitectura × cavidades', valor: `${r.arch} × ${r.nCav}${cavDict == null ? '' : cavDict === r.nCav ? ' = dictamen' : ` ≠ dictamen (${cavDict})`}`, ref: '§3.4', ok: cavDict == null ? undefined : cavDict === r.nCav },
@@ -5608,12 +5614,37 @@ export default function ForgeBRepStudio() {
       api?.inspeccion.estado(0, 0);
       if (!vivo) return;
       cerrarFocoMolde();
+      previoInsp.current = { foco, ab: Number.isFinite(ab as number) ? (ab as number) : null };
+      armarInspRef.current(foco, previoInsp.current.ab);
+    })();
+    return () => { vivo = false; timers.forEach((t) => clearTimeout(t)); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspeccionOn]);
+  // LA INSPECCIÓN LEE EL ACERO (orden G2, 2026-10-29). Con el molde hecho existe el re-juicio de la orden H (columna ②: la p_fill
+  // del FAN, el bebedero que corta la E5, el agua que barrena la E6, el claro del Foco): la inspección enseña ESE dictamen, no el
+  // del paso 4 (①). MEDIDO en main fusionado (1594C Box): la inspección leía ① — DP 8.7 de 4.3, COLADA 145 contra 21.7, FREEZE 8.33
+  // (un edge gate supuesto), sin el ✗ del paso — mientras la lámina del dictamen y el expediente ya decían ② (DP 11.0 de 9.29,
+  // COLADA 75.8, FREEZE 20.01 de la base del bebedero, PASO 58.3 = 2.47·H: 5 ✗). El recorrido se ARMA con lo de este render
+  // (`armarInspRef`): el efecto de arriba corre su preámbulo ~8 s (cortina + pulso + apertura) y antes leía el `revision` del render
+  // en que se abrió. Y se RE-ARMA si el juicio cambia con la inspección abierta (`firmaJuicioInsp`: p. ej. el FAN de la E5 llega
+  // después y mueve la DP), conservando el punto en que ibas.
+  const juicioInsp = rejuicio?.rev ?? revision;
+  const firmaJuicioInsp = useMemo(() => {
+    if (!juicioInsp) return '';
+    const cs = juicioInsp.contratos.subsistemas.flatMap((s) => s.criterios).filter((k) => k.estado === 'VIOLA' || k.estado === 'ADVIERTE');
+    const sel = juicioInsp.pkg.diseno.maquina.seleccion;
+    return `${rejuicio ? '②' : '①'}|${juicioInsp.fila.score}|${cs.map((k) => `${k.id}:${k.estado}:${k.medido?.toFixed(2) ?? ''}`).join(',')}|${sel.apertura.strokeMm.toFixed(1)}|${sel.shotPct}`;
+  }, [juicioInsp, rejuicio]);
+  /** lo que el preámbulo midió (el pulso del Foco y la apertura leída del molde abierto): el re-armado no lo repite */
+  const previoInsp = useRef<{ foco: ReturnType<typeof escanearElMolde>; ab: number | null } | null>(null);
+  const armarInspRef = useRef<(foco: ReturnType<typeof escanearElMolde>, ab: number | null, conservar?: string) => void>(() => {});
+  armarInspRef.current = (foco, aperturaReal, conservar) => {
       // ── LO QUE YA CALCULÓ EL ESTUDIO (nada se recalcula aquí: se LEE) ──
-      // EL DICTAMEN VIVO: los ✗ salen de aquí en tiempo de ejecución (la orden H re-juzga en paralelo y cambia cuáles salen)
-      const C = revision?.contratos ?? null;
+      // EL DICTAMEN VIVO: los ✗ salen de aquí en tiempo de ejecución — el del ACERO (②) cuando el molde existe, si no el del paso 4
+      const C = juicioInsp?.contratos ?? null;
       const rojos = rojosDelDictamen(C);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const dz = ((revision?.pkg ?? mold.ciclo?.e2?.pkg) as unknown as { diseno?: any } | undefined)?.diseno;
+      const dz = ((juicioInsp?.pkg ?? mold.ciclo?.e2?.pkg) as unknown as { diseno?: any } | undefined)?.diseno;
       const pm = mold.ciclo?.portamoldes as { carreraLibreMm?: number; carreraPedidaMm?: number } | undefined;
       // la lente de ENFRIAMIENTO (paso 3) llevada al marco del molde: el poste más lento y la pintura de la pieza
       const lente = lentes?.lentes.find((l) => l.id === 'enfriamiento') ?? null;
@@ -5634,13 +5665,12 @@ export default function ForgeBRepStudio() {
       const so = dz?.placas?.soporte;
       const soporte = so ? { deltaMm: +so.deflectionAtPlateMm, venteoMm: +so.ventGapMm, nPilares: +so.nPillars, espesorMm: +so.plateThkMm,
         usoPct: so.hefestos?.usoPct, topePct: so.hefestos ? (100 * so.hefestos.defectoMm) / so.hefestos.venteoMm : undefined } : null;
-      const aperturaReal = Number.isFinite(ab as number) ? (ab as number) : null;
       // EL RECORRIDO, en el orden de los capítulos del libro (Kazmer §2): colada → compuerta → enfriamiento → expulsión → estructura → máquina
       const base = [
-        puntoDelDictamen(moldParts, C),
+        puntoDelDictamen(moldParts, C, !!rejuicio),
         laColada(moldParts, C),
         laCompuerta(moldParts, C),
-        queMandaElCiclo(moldParts, { lente: lente?.ciclo ?? null, posteMolde, colada: crit('feed-ciclo'), aguaProf: crit('agua-profundidad'), aguaPaso: crit('agua-paso'), aguaClaro: crit('agua-claro') }),
+        queMandaElCiclo(moldParts, { lente: lente?.ciclo ?? null, posteMolde, colada: crit('feed-ciclo'), aguaProf: crit('agua-profundidad'), aguaPaso: crit('agua-paso'), aguaClaro: crit('agua-claro'), aguaCiclo: crit('agua-ciclo') }),
         aguaMasJusta(foco, C, moldParts),
         botadoresEnSuAgarre(moldParts, pines, maquina ? { nombre: maquina.nombre, expulsionKN: maquina.expulsionKN, cierreT: maquina.cierreT } : null, C),
         abreSaleEmpuja(moldParts, { aperturaReal, carreraLibre: pm?.carreraLibreMm ?? null, carreraPedida: pm?.carreraPedidaMm ?? null, aperturaMotor: sel?.apertura?.strokeMm ?? null }),
@@ -5650,11 +5680,14 @@ export default function ForgeBRepStudio() {
       const P = armarRecorrido(base, moldParts, rojos);
       P.push(cierreDeLaInspeccion(moldParts, rojos, P.map((q) => q.id), !C));
       recEtiquetas.current = [];
-      setRecorrido(P); setRecIdx(0); setRecAuto(true);
-    })();
-    return () => { vivo = false; timers.forEach((t) => clearTimeout(t)); };
+      const k = conservar ? P.findIndex((q) => q.id === conservar) : -1;
+      setRecorrido(P); setRecIdx(Math.max(0, k)); setRecAuto(true);
+  };
+  useEffect(() => {
+    if (!inspeccionOn || !recorrido || !previoInsp.current) return;
+    armarInspRef.current(previoInsp.current.foco, previoInsp.current.ab, recorrido[recIdx]?.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inspeccionOn]);
+  }, [firmaJuicioInsp]);
   // aplicar la VISTA del punto — LA REGLA DE CÁMARA DE KAZMER: 2 s de CONTEXTO (el molde completo, sin corte, el lugar marcado) y
   // luego el MACRO (lo aislado, el corte por lo medido, la cota, la cámara cerca; la pieza SIEMPRE presente). Y la pose animada.
   useEffect(() => {
@@ -8257,7 +8290,7 @@ export default function ForgeBRepStudio() {
           : null}
         {/* TU PLANTA (orden 2026-10-29-g): la ficha de la planta vive en el paso 2 del camino, a la derecha de la puerta — tarifas,
             inyectoras, resina; y lo que le hace a ESTA pieza (máquina o criterio que falla, costo de referencia) */}
-        {modoCamino && piezaMalla && !errPieza && pasoActual === 2 && <TarjetaPlanta mold={mold} spec={specPieza} />}
+        {modoCamino && piezaMalla && !errPieza && pasoActual === 2 && <TarjetaPlanta mold={mold} spec={specPieza} pkgMolde={rejuicio?.rev.pkg ?? null} />}
         {importedStep && entrada && entrada.giro && !entradaVista && (
           <div data-testid="aviso-entrada" data-solidos={entrada.solidos} data-eje={`${entrada.eje}${entrada.boca}`} data-giro={entrada.giro ?? ''}
             style={{ position: 'absolute', left: '50%', top: '9%', transform: 'translateX(-50%)', zIndex: 7, maxWidth: 'min(640px, 86%)',

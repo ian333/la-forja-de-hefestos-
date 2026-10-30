@@ -637,10 +637,17 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   // 4 piezas del plan de inspección el bebedero medía 58-87 mm (más que la pieza entera).
   // `sprueLenMm` va de la cara de la boquilla al plano de partición y la pieza ocupa H de
   // ese tramo ⇒ lo que sobresale SOBRE la pieza es `sprueLenMm − H`.
-  const openStrokeMm = carreraDeApertura({
-    alturaPiezaMm: spec.Hmm,
-    coladaMm: win.arch === 'hot-runner' ? 0 : Math.max(0, sprueLenMm - spec.Hmm),
-  }).mm;
+  // UNA APERTURA (orden G2, 2026-10-29): con el molde hecho, la colada que sale con la pieza es la que CORTA la E5
+  // (`spec.bebederoCortado.largoMm`). `datumsColada` la mide SOBRE la pieza — de la base cerrada a la cara de la boquilla, lo
+  // mismo que la animación mide en el acero dibujado (`coladaSobrePiezaMm`) — así que NO se le vuelve a restar H: daría 119.2 en
+  // la 1594C Box, la TERCERA apertura que advirtió la orden I. MEDIDO en main fusionado (1594C Box): pantalla y `animZ('clamp')`
+  // 152.5 = 2.5·33.3 + 69.2; motor 135.4 = 2.5·33.3 + (85.4 − 33.3) con el bebedero ESTIMADO de arriba (placa A del catálogo +
+  // clamp de 1"). §6.3.1 p.123: el bebedero mide «the combined thicknesses of the top clamp plate and the A plate» — las que se
+  // cortan · Tabla 6.1 p.129. Sin molde (paso 4, E2) se queda el estimado y quien lo imprime lo rotula «estimada».
+  const coladaSobrePieza = win.arch === 'hot-runner' ? 0
+    : spec.bebederoCortado ? Math.max(0, spec.bebederoCortado.largoMm)
+    : Math.max(0, sprueLenMm - spec.Hmm);
+  const openStrokeMm = carreraDeApertura({ alturaPiezaMm: spec.Hmm, coladaMm: coladaSobrePieza }).mm;
   // LAS INYECTORAS DE TU PLANTA (orden 2026-10-29-g): con la ficha, se elige SOLO entre ellas y los conectores cuentan (§4.3.3)
   const plantaMaq = spec.planta?.inyectoras?.length ? { inyectoras: spec.planta.inyectoras, conectoresMm: spec.planta.conectoresMm } : null;
   const moldeEnMaquina = { wmm: base.base.wmm, lmm: base.base.lmm, stackMm, openStrokeMm };
