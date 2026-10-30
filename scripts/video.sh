@@ -171,12 +171,14 @@ paso_montaje() {
   # ffmpeg lea UNA sola secuencia; los de la escena se enlazan (ln) sin copiar. Verifica la cuenta total.
   [ "$PRE_N" -gt 0 ] || [ "$POST_N" -gt 0 ] || { echo "   (sin preroll/postroll: el ensamble lee $FRAMES)"; return 0; }
   echo "── MONTAJE (preroll $PRE_N + escena $NFRAMES_E + postroll $POST_N = $NFRAMES) ──"
-  rm -rf "$MONTAJE"; mkdir -p "$MONTAJE"
+  # vaciar SIN borrar la carpeta: en iangpu $MONTAJE es un enlace a /mnt/d (rm -rf del enlace lo tiraría y
+  # mkdir crearía una carpeta de GB en el disco de WSL — ian 10-30: «todo en iangpu», nunca GB al vhdx)
+  mkdir -p "$MONTAJE"/ && find -L "$MONTAJE"/ -maxdepth 1 -type f -name "*.$FEXT" -delete
   python3 - "$PRE_DIR" "$PRE_N" "$FRAMES" "$NFRAMES_E" "$POST_DIR" "$POST_N" "$MONTAJE" "$FEXT" <<'PYMON'
 import glob, os, subprocess, sys
 pre_d, pre_n, esc_d, esc_n, post_d, post_n, out, ext = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4]), sys.argv[5], int(sys.argv[6]), sys.argv[7], sys.argv[8]
 def externos(d, n):
-    fs = sorted(glob.glob(os.path.join(d, '*.png')))
+    fs = sorted(glob.glob(os.path.join(d, '*.png')) + glob.glob(os.path.join(d, '*.jpg')))   # PNG de Blender o JPG ya convertidos
     assert len(fs) >= n, f'{d}: hay {len(fs)} cuadros, se piden {n}'
     return fs[:n]
 def pon(src, i):

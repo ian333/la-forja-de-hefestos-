@@ -20,15 +20,16 @@
     "batch": 40,
     "frames": "dist-video/.hielofframes",
     "preroll": {
-      "dir": "dist-video/.hielof-pre",
+      "dir": "/mnt/d/hielo-rey/pre",
       "frames": 151,
       "nota": "cuadros del gancho de Blender: 1440×2560 ×64 muestras en impares (laptop) → scripts/blender-a-cuadros.sh (minterpolate 15→30 fps + 4K lanczos). Origen /home/ian/ai/hielo/gancho-1440/. frames = arranque REAL de l3 × fps."
     },
     "postroll": {
-      "dir": "dist-video/.hielof-post",
+      "dir": "/mnt/d/hielo-rey/post",
       "frames": 376,
       "nota": "el vaso real desde l19 («Y tú…») hasta el final: UN still 4K de Blender (/home/ian/ai/hielo/cierre-4k/frame_0200.png) + paneo suave de zoompan (blender-a-cuadros.sh cierre). frames = (formato.dur − t(l19)) × fps."
-    }
+    },
+    "nota_iangpu": "En iangpu: dist-video/.hielofframes → /mnt/d/hielo-rey/escena y dist-video/.hielofframes-montaje → /mnt/d/hielo-rey/montaje2 (enlaces). pre = los 151 cuadros del gancho ya montados (JPG q1); post = blender-a-cuadros.sh cierre sobre /mnt/d/hielo-rey/cierre-4k/frame_0200.png."
   },
   "audio": {
     "dir": "dist-video/hielof-narracion",
@@ -43,9 +44,10 @@
     "voz": "XTTS Matilda, TAKES=4 (mediana)"
   },
   "salida": {
-    "dir": "dist-video/masters",
+    "dir": "/mnt/d/hielo-rey/masters",
     "master": "agua-el-hielo-flota-4k-master.mp4",
-    "h264": "agua-el-hielo-flota-4k.mp4"
+    "h264": "agua-el-hielo-flota-4k.mp4",
+    "nota_iangpu": "ian 10-30: «NADA se hace en esta laptop, todo en iangpu». Ensamble en iangpu desde /mnt/d/hielo-rey/montaje (los 2547 cuadros montados, enlazados como dist-video/.hielofframes-montaje); salidas en D:, nunca en el vhdx."
   },
   "capsula": {
     "bins": [
@@ -97,7 +99,9 @@
       "valor_propio": "porque enseña con un vaso de la cocina que el hielo flota por un HUECO que se ve, y de ahí salen los peces del invierno",
       "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B): el sujeto es el vaso de quien ve."
     },
-    "nota_programar": "hora canon 18:45 CDMX o la nueva de ciencia 20:30 (plan 2026-10-23). Sin publicar.autorizado con las palabras de ian NADA sube."
+    "nota_programar": "rey diario a las 20:30 CDMX (plan 2026-10-23: ciencia en su propio horario; Don Chuy sigue a las 18:45). Sin publicar.autorizado con las palabras de ian NADA sube.",
+    "autorizado": "2026-10-30 ig,yt — dicho por ian en sesión: «saca el rey, debemos sacar uno del rey diario :D»",
+    "programar": "2026-10-30T20:30:00-06:00"
   },
   "ritmo": {
     "brazo": "A",
