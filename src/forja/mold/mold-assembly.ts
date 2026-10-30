@@ -178,7 +178,7 @@ export function buildMoldStack(s: MoldAssemblySpec): { comps: StackComp[]; parti
 }
 
 /** Genera el PLANO de ensamble (SVG A3, sección + BOM + notas de análisis). */
-export function moldAssemblyDrawing(s: MoldAssemblySpec): AssemblyDrawing {
+export function moldAssemblyDrawing(s: MoldAssemblySpec, extra?: { piezas?: Array<{ nombre: string; cant: number; material: string }> }): AssemblyDrawing {
   const { comps, partings } = buildMoldStack(s);
   const notes = [
     `Molde de inyección · base ${s.widthMm} mm · máquina ${s.machine ?? '—'}${s.clampTons ? ` (${s.clampTons.toFixed(0)} t)` : ''}`,
@@ -201,6 +201,11 @@ export function moldAssemblyDrawing(s: MoldAssemblySpec): AssemblyDrawing {
     notes.push(`Tabla de eyectores §11.2.6: ${tabla.length} pines con id · largo ${Math.min(...ls)}–${Math.max(...ls)} mm`);
     notes.push(s.ejectors.llave ? `LLAVE: plano a ${s.ejectors.llave.planoAlEjeMm} mm del eje (regla de Hefestos) · id en cabeza y retenedora` : 'id grabado en la cabeza y junto a su barreno en la retenedora');
   }
+  // PIEZAS FUERA DEL PLANO DE CORTE (orden J, 2026-10-29): los pilares de soporte, los postes y los bujes guía viven en el
+  // acero (y el 3D los arma) pero la sección A-A no los corta, así que la BOM no los traía — un taller compraría la base sin
+  // los 3 pilares que la orden B puso bajo la cavidad. Quien llama (`moldDrawingSet`) los manda con las MISMAS fuentes que el
+  // sólido (posiciones colocadas, ⌀ de `guiaNominalMm`/`guideGeom`); aquí solo se numeran a continuación de los componentes.
+  (extra?.piezas ?? []).forEach((p, k) => extraBom.push([String(comps.length + k + 1), p.nombre, String(p.cant), p.material]));
   return renderAssemblySection(comps, {
     code: s.code ?? 'MLD-001', name: s.name, extra: 'ENSAMBLE · MOLDE DE INYECCIÓN',
     notes, partings, sectionLabel: 'SECCIÓN A-A (plano medio)',

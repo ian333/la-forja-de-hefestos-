@@ -20,6 +20,7 @@ import {
   coolingCircuitDesign,
   cavityFootprint, moldBoltSizing,
   insertDims, returnPinLayout, expulsoraMargenes, EXPULSORA_MARGEN_X_MM, EXPULSORA_MARGEN_Y_MM,
+  supportPillarPositions, PILAR_SOPORTE_DIA_MM,
   type DrawingPage, type AnalysisRow, type PlateDef } from './mold-drawing-set';
 import { PISO_MAQUINABLE_MM } from './cooling-design';   // el piso del taller, UNA definición
 import { resolveThread, threadSurfaceMesh, plainShaftMesh, type Mesh as ThreadMesh } from './mold-threads';
@@ -51,34 +52,10 @@ export const PART_STYLE: IsoStyle = { color: [224, 122, 48], opacity: 0.55, edge
 
 /** Construye una PLACA como SÓLIDO del kernel: caja + apertura de cavidad (A/B) +
  *  barrenos estándar pasantes. `K` = módulo occt, `oc` = instancia activa. */
-// POSICIONES de los PILARES DE SOPORTE (Kazmer §12.2.3): reducen la deflexión de placa,
-// van DIRECTO bajo las zonas de fuerza de la cavidad PERO su ubicación CHOCA con los pines
-// eyectores y el vástago KO — el libro dice AJUSTAR EL LAYOUT para librarlos. Esta función
-// es la ÚNICA fuente: LEE los obstáculos (pines/return/KO/tornillos del housing) y coloca
-// los pilares en el HUECO más cercano al centro que los libra → "todo se habla con todo".
-// La usan el COMPONENTE (pilares-soporte) Y las holguras de las placas expulsoras.
-export function supportPillarPositions(spec: MoldAssemblySpec, D: number): Array<{ x: number; y: number }> {
-  // EL ESTUDIO MANDA: `optimizeSupportPlate` (§12.2, δ=F·L³/48EI) ya calculó CUÁNTOS pilares
-  // se necesitan según la deflexión de la placa vs el venteo — y puede ser CERO (molde chico
-  // y rígido NO los necesita). Antes la geometría clavaba 2 SIEMPRE, ignorando el cálculo
-  // (feedback del user: "no está calculado el estrés → está mal"). Aquí respetamos el número.
-  const nWanted = Math.max(0, Math.round(spec.supportPillars ?? 0));
-  if (nWanted === 0) return [];                                  // la placa aguanta sola: sin pilares
-  const W = spec.widthMm, pillarR = 20;
-  const obstacles = standardHoles(spec, 'support').map((h) => ({ x: h.x, y: h.y, r: h.dia / 2 }));
-  const clears = (x: number, y: number) => obstacles.every((o) => Math.hypot(x - o.x, y - o.y) >= pillarR + o.r + 3);
-  const cx0 = W / 2, cy0 = D / 2;
-  const cands: Array<{ x: number; y: number; d: number }> = [];
-  for (let fx = 0.26; fx <= 0.74; fx += 0.02) for (const fy of [0.3, 0.42, 0.5, 0.58, 0.7]) {
-    const x = Math.round(W * fx), y = Math.round(D * fy);
-    if (x < 75 || x > W - 75) continue;                          // dentro de los rieles del housing
-    if (clears(x, y)) cands.push({ x, y, d: Math.hypot(x - cx0, y - cy0) });   // libra pines+KO
-  }
-  cands.sort((a, b) => a.d - b.d);                               // los más cerca del centro (bajo la fuerza, §12.2.3)
-  const chosen: Array<{ x: number; y: number }> = [];
-  for (const c of cands) { if (chosen.every((k) => Math.hypot(c.x - k.x, c.y - k.y) > 55)) chosen.push({ x: c.x, y: c.y }); if (chosen.length >= nWanted) break; }
-  return chosen;
-}
+// POSICIONES de los PILARES DE SOPORTE (Kazmer §12.2.3): la función se MUDÓ a mold-drawing-set.ts (orden J, 2026-10-29)
+// para que las LÁMINAS y la BOM la lean sin import circular — se RE-EXPORTA aquí para que nadie tenga que saber que se mudó.
+// Misma regla, mismo número (⌀ = PILAR_SOPORTE_DIA_MM = 40).
+export { supportPillarPositions, PILAR_SOPORTE_DIA_MM };
 
 // ── EL PORTAMOLDES, UNA SOLA VERDAD (orden 2026-09-18-el-portamoldes-de-tu-pieza) ──
 // Estas cotas vivían como literales sueltos (65/20/130/40 en la expulsora, 50 en el riel, la oreja y el tinte dentro de
@@ -143,7 +120,7 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
     // LIBRAMIENTO de los SUPPORT PILLARS (Fig 1.6): las placas expulsoras SUBEN Y BAJAN
     // por los pilares ⌀40 (en W·0.35 y W·0.65) — sin este barreno el pilar y la placa
     // ocupan el mismo acero (imposible). Holgura REAL de fits.ts (no inventada).
-    const pillarClearR = pillarClearanceFit(40).holeDiaMm / 2;   // ⌀40 + holgura del libro
+    const pillarClearR = pillarClearanceFit(PILAR_SOPORTE_DIA_MM).holeDiaMm / 2;   // ⌀40 + holgura del libro (la MISMA constante que la lámina)
     for (const pp of supportPillarPositions(spec, D))             // MISMA fuente que el componente
       mete(`holgura del pilar (${Math.round(pp.x)},${Math.round(pp.y)})`, () => K.makeCylinder(oc, pillarClearR, t + 2, { origin: [pp.x, pp.y, -1], dir: [0, 0, 1] }));
   }
@@ -695,7 +672,9 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       const smoothLen = Math.max(0, L - eng);
       let m: ThreadMesh = headLocal;
       if (smoothLen > 0.5) m = meshMerge(m, plainShaftMesh(ts.major / 2, 0, smoothLen), headH);   // caña lisa al Ø mayor
-      m = meshMerge(m, threadSurfaceMesh(ts, eng), headH + smoothLen);                            // hilo en el engrane (chaflán ISO 4753)
+      // hilo en el engrane, chaflán ISO 4753 en la PUNTA: el hilo arranca (z=0) pegado a la caña y la punta es su z=eng —
+      // antes iba con el chaflán por defecto ('start' = z=0) y la punta salía SIN chaflán y el cuello con él (orden J).
+      m = meshMerge(m, threadSurfaceMesh(ts, eng, { chamfer: 'end' }), headH + smoothLen);
       return m;
     };
     // DOS buffers: los de la cavidad viajan CON la placa A al abrir, los del núcleo se
@@ -1354,8 +1333,8 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     // SUPPORT PILLARS (Fig 1.6): postes que evitan que la placa de soporte flexione.
     const pillarPos = supportPillarPositions(spec, D);            // MISMA fuente que las holguras
     push('pilares-soporte', `Support pillars (${pillarPos.length})`, spec.baseSteel ?? '1.1730',
-      pillarPos.map((pp) => cyl(20, eh, [pp.x, pp.y, bc], [0, 0, 1])), '#b9c2d0', 1,
-      ['⌀40 mm, cruzan el housing', 'resisten la deflexión de la placa de soporte (§12.2.3)', 'ubicados en el HUECO que libra pines+KO (todo se habla con todo)']);
+      pillarPos.map((pp) => cyl(PILAR_SOPORTE_DIA_MM / 2, eh, [pp.x, pp.y, bc], [0, 0, 1])), '#b9c2d0', 1,
+      [`⌀${PILAR_SOPORTE_DIA_MM} mm, cruzan el housing`, 'resisten la deflexión de la placa de soporte (§12.2.3)', 'ubicados en el HUECO que libra pines+KO (todo se habla con todo)']);
   }
 
   // 7) ANILLO CENTRADOR (⌀100 estándar del libro §1.3.1) + SPRUE BUSHING al centro

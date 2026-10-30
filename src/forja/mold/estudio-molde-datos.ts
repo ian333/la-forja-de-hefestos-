@@ -1683,7 +1683,9 @@ export function estacion3Dado(pkg: MoldPackage, pieza?: PiezaSpec): Estacion3Dad
       },
     ],
     base: {
-      aritmetica: `envolvente ${b.envelope.wmm}×${b.envelope.lmm} + reserva 2×${b.reserveMm} (pilares ⌀${b.leaderPinDia} + holgura §4.3.2) = necesita ${need} → catálogo: ${b.base.wmm}×${b.base.lmm} ✓`,
+      // orden J (2026-10-29): decía «(pilares ⌀16 + holgura)» con el ⌀ de la RESERVA mientras la base se barrena a ⌀25 —
+      // dos números para la misma guía. La reserva es regla de Hefestos; el ⌀ de la guía es el que se barrena (`guiaNominalMm`).
+      aritmetica: `envolvente ${b.envelope.wmm}×${b.envelope.lmm} + reserva 2×${b.reserveMm} (regla de Hefestos: guías y retornos, holgura §4.3.2) = necesita ${need} → catálogo: ${b.base.wmm}×${b.base.lmm} ✓ · guía ⌀${b.leaderPinDia} (la que se barrena)`,
       porque: 'la base SE COMPRA, no se fabrica (§4.3.2): la primera medida comercial que aloja la necesidad',
     },
     stack: filas.map(([nombre, espesorMm, rol]) => ({ nombre, espesorMm, ...acero(rol) })),
