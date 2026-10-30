@@ -49,6 +49,16 @@ política del archivo». Plan: `Downloads/la-forja-video-1/00-EL-VIDEO-1.md`.
 
 ## PREEXISTENTE
 (sucios de otras sesiones en el árbol principal al crear el reparto; los worktrees nacen limpios)
+(y commiteados a main por la sesión de los reyes bajo su propia orden — 47f908b, 3717c01, ccd1509 — no son de este reparto)
+- scripts/guiones/gelrey.txt
+- scripts/guiones/gotarey.txt
+- scripts/guiones/salrey.txt
+- scripts/guiones/vasosuda.txt
+- scripts/reels-1080.py
+- videos/mol-etoh-el-gel-de-tus-manos.json
+- videos/mol-h2o-el-vaso-suda.json
+- videos/mol-h2o-la-gota-que-no-cae.json
+- videos/mol-h2o-la-sal-no-desaparece.json
 - public/comando/analisis-ig.json
 - public/comando/comentarios-analisis.json
 - public/comando/comentarios.json
