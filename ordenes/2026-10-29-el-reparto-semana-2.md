@@ -34,7 +34,19 @@ a Kazmer y despliega UNA vez.
 - Entregas en Downloads de los dos PCs.
 
 ## TOCA
-- (nada: este superticket solo coordina; G, H, I, J declaran lo suyo)
+(este superticket solo coordina; lo que entra aquí entra POR FUSIÓN de una rama cuyo gate salió VERDE en su worktree)
+- ordenes/2026-10-29-h-un-veredicto.md
+- src/forja/brep/ForgeBRepStudio.tsx
+- src/forja/brep/useMoldStudio.ts
+- src/forja/mold/RevisarPiezaPanel.tsx
+- src/forja/mold/expediente.ts
+- src/forja/mold/foco-lentes.ts
+- src/forja/mold/foco-molde.ts
+- src/forja/mold/mold-assembly.ts
+- src/forja/mold/mold-contratos.ts
+- src/forja/mold/mold-drawing-set.ts
+- src/forja/mold/moldmachine.ts
+- src/forja/mold/revisar-modelo.ts
 
 ## CREA
 - ordenes/2026-10-29-g-los-datos-de-tu-planta.md
