@@ -1,0 +1,117 @@
+{
+  "id": "mol-h2o-el-vaso-suda",
+  "titulo": "El vaso suda — de lo real a lo invisible (H₂O···H₂O)",
+  "nota": "REY #3 de la línea «un rey diario» (ian 2026-10-30: «saca el rey, debemos sacar uno del rey diario, hazlo con opus»). COPIA de dos recetas ganadoras: la ESTRUCTURA del rey #1 (mol-h2o-el-hielo-flota: gancho REAL de Blender como render.preroll, corte seco por escala al mundo molecular, cierre REAL como render.postroll sobre «Y tú» + sello) y la ESCENA de «Dos gotas» (mol-h2o-dos-gotas, m=wgotas, 2,836 vistas: mismo bin water-approach, mismas 9 tomas de CAMERA_SHOTS.wgotas y mismas capas WGOTAS_CAPAS, solo movidas a los arranques de ESTA voz). Gancho: el vaso del rey #1 SUDANDO; dos gotitas se tocan, se vuelven una y la grande resbala dejando un caminito; la cámara empuja hasta el instante en que la gota grande va a tocar otra y corta al mundo molecular (dos moléculas sueltas que se juntan). Física honesta del gancho: el agua de afuera es vapor del aire que se condensa en el vidrio frío; NO sale del vaso.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wgotash",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wgotash): render-clip exige formato.dur − preroll − postroll == duración de la escena (WGOTASH_DURATION). Tomas y capas del ganador wgotas CALIBRADAS a segs.json de vasosuda (t=0 = arranque de l3, el corte desde el vaso real). Las 4 entradas para pegar en CinematicMolecule.tsx: /mnt/d/reyes/rey-03-el-vaso-suda/registro.tsx.txt"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 81.3,
+    "nota_dur": "REAL: voz 78.737 s (segs.json, 17 líneas; mp3 79.14 s) + cola 2.5 → 81.3 s = 2439 cuadros = preroll 207 + escena 1872 (62.400 s) + postroll 360."
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.vasosudaframes",
+    "preroll": {
+      "dir": "/mnt/d/reyes/rey-03-el-vaso-suda/gancho-4k",
+      "frames": 207,
+      "nota": "cuadros del gancho de Blender: /mnt/d/reyes/blender/vaso_suda_gancho.py modo=plan var=150 ngancho=207 → /mnt/d/reyes/rey-03-el-vaso-suda/gancho-1440 (impares) → blender-a-cuadros.sh gancho … gancho-4k 207. frames = arranque REAL de l3 (6.897 s) × fps."
+    },
+    "postroll": {
+      "dir": "/mnt/d/reyes/rey-03-el-vaso-suda/cierre-4k",
+      "frames": 360,
+      "nota": "el vaso sudando, quieto, desde l16 («Y tú…», 69.301 s) hasta el final: still 4K/128 del cuadro 200 del cierre (/mnt/d/reyes/rey-03-el-vaso-suda/cierre-still/frame_0200.png) + blender-a-cuadros.sh cierre … cierre-4k 360. frames = (formato.dur − t(l16)) × fps."
+    }
+  },
+  "audio": {
+    "dir": "dist-video/vasosuda-narracion",
+    "narracion": "vasosuda-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del GANADOR «Dos gotas» (dist-video/dosgotas-narracion/wpair-music.wav = la del rey EL PUENTE, 83.1 s), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 77.8,
+    "segs": "segs.json",
+    "ass": "vasosuda.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "/mnt/d/reyes/rey-03-el-vaso-suda/masters",
+    "master": "agua-el-vaso-suda-4k-master.mp4",
+    "h264": "agua-el-vaso-suda-4k.mp4",
+    "nota_iangpu": "ian 10-30: «NADA se hace en esta laptop, todo en iangpu». Salidas en D:, nunca en el vhdx."
+  },
+  "capsula": {
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
+    "guion": "vasosuda.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ],
+    "extra": "el gancho y el cierre de Blender: /mnt/d/reyes/blender/vaso_suda_gancho.py (derivado de hielo_gancho.py del rey #1) en iangpu"
+  },
+  "fisica": {
+    "fuente": "public/precomputed/water-approach.bin (WAP2, el bin del rey EL PUENTE y de «Dos gotas»), medido con /mnt/d/reyes/rey-03-el-vaso-suda/medir-bin.py",
+    "metodo": "dímero de agua RHF/cc-pVDZ (precompute-water-approach.py), 30 separaciones O···O de 5.60 Å a 2.78 Å; Δρ = ρ(dímero) − ρ(monómeros) y campo MEP reales",
+    "atomos_electrones": "2 moléculas · 6 átomos · 20 electrones (Z del bin)",
+    "puente_menos_de_una_decima": "∫Δρ>0 = 0.0056 e a 5.60 Å → 0.0883 e a 2.78 Å (el más pegado del cálculo). En la escena (capa apertura del ganador): 0.017 e sueltas (0.55, O···O 4.33 Å) → 0.065 e al nacer el puente (0.10, O···O 3.06 Å), respirando entre 0.052 y 0.083 e. TODO el barrido queda por debajo de 0.1 e: «menos de una décima de electrón cambiando de lugar».",
+    "honestidad_del_gancho": "El agua de afuera del vaso es vapor del aire que se condensa en el vidrio frío; no atraviesa el vidrio. El cálculo es UN par de moléculas de agua en el vacío, no la orilla de una gota ni el vidrio: la voz lo presenta «como estas dos» y dice que en la orilla donde chocan dos gotitas «pasa esto mismo» (moléculas de cada lado que arman puentes), sin cifras de cuántos.",
+    "no_se_dice": "«un billón de puentes» (copy del ganador): una gota real tiene del orden de 10²¹ puentes, no 10¹²; no se repite."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/vasosuda.txt",
+    "lineas": 17,
+    "palabras": 181,
+    "nota": "Prosa fluida (canon §GUION FLUIDO), 2ª persona, cotidiano (el vaso que suda) → hueco («esa agua no salió de adentro») → revelación con lo calculado (el puente de hidrógeno naciendo, líneas l6-l9 del ganador casi literales) → número del bin (menos de una décima de electrón) → consecuencia cotidiana (el charco en la mesa) → «Y tú» → sello."
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-el-vaso-suda.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-el-vaso-suda-capsula.tar.gz",
+    "pieza": "mol-h2o el vaso suda",
+    "nueva": true,
+    "copy": {
+      "titulo": "Tu vaso suda, pero esa agua no salió de adentro (y por eso deja un charco en la mesa)",
+      "descripcion": "Tu vaso con hielo está sudando, y esa agua no salió de adentro: venía en el aire, en moléculas sueltas de vapor, y el vidrio frío las junta. 💧 Nunca habías visto ese instante de cerca. Lo que ves después del vaso no es una animación: son dos moléculas de agua (6 átomos, 20 electrones) resueltas con física cuántica (ab initio) en 30 separaciones distintas, y las líneas son el campo eléctrico real que las jala, calculado y no dibujado. El hidrógeno de una apunta al oxígeno de la otra y avanza; cuando se tocan, la nube cambia de forma: eso que nace es un puente de hidrógeno. Y todo ese puente es menos de una décima de electrón cambiando de lugar (0.09 en la separación más corta del cálculo). Con eso tan poquito, el agua se mantiene junta: cuando dos gotitas chocan, pasa esto mismo en la orilla donde se juntan, y en un instante son una sola. La gota crece, pesa más de lo que el vidrio aguanta y resbala. Por eso tu vaso deja un charco en la mesa aunque nadie lo derrame. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#agua",
+        "#gota",
+        "#condensación",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#enlacedehidrógeno",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque con el vaso de mi mesa me enseña que el agua que «suda» viene del aire, y deja ver el instante en que dos gotas se vuelven una",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B): el sujeto es el vaso de quien ve."
+    },
+    "nota_programar": "rey diario a las 20:30 CDMX; sale el 2026-11-01 si todo pasa. Sin publicar.autorizado con las palabras de ian NADA sube; programar lo pone quien tenga la autorización."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota": "11 tomas en 81.3 s (gancho real + 9 tomas del ganador wgotas + cierre real) = 10 cortes = 7.4 cortes/min, brazo A. Se mide con scripts/ritmo-pieza.py."
+  }
+}

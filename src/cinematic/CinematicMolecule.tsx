@@ -346,6 +346,81 @@ const WHEX6H_CAPAS: CapasSpec = {
   // ordenan en esta forma de seis» (l12) — prender/apagar es la demostración (canon §LA MECÁNICA DEL O₂).
   apertura: { base: 0.10, mods: [{ wins: [[32.219, 36.193]], a: 0.42, label: 'sueltas: en el líquido se amontonan (l11) → se ordenan (l12)' }] },
 };
+// LA SAL NO DESAPARECE (rey #2, 2026-10-30): la ESCENA es solo el tramo molecular (l3…l18); el gancho (la sal
+// cayendo en el vaso real, Blender) y el cierre (el vaso con el agua ya transparente) van como preroll/postroll del
+// manifiesto. t = 0 = cuadro 177 (5.900 s); ventanas = segs.json − 5.900 (tabla de arriba).
+const WSALR_DURATION = 68.767;
+const WSALR_CAPAS: CapasSpec = {
+  // de WSALB: base 0.55 (separados, se leen los DOS) + el acercamiento ENCADENADO sobre «Se acercan» (l11): 15 escalones
+  // de 0.6 s (= rampa continua, el truco de ECOLCHON) de 0.55 a 0.05 → pegados antes de «Se pega» (l13) y así se quedan.
+  apertura: { base: 0.55, mods: [{ wins: [[33.952, 69], [34.552, 69], [35.152, 69], [35.752, 69], [36.352, 69], [36.952, 69], [37.552, 69],
+                                          [38.152, 69], [38.752, 69], [39.352, 69], [39.952, 69], [40.552, 69], [41.152, 69], [41.752, 69],
+                                          [42.352, 69]],
+                                   a: -0.0333, combine: 'sum', label: 'se acercan: el sodio jala al agua hasta pegarla (l11-l12) y se queda pegada (l13-)' }] },
+  nubes:    { base: 1,    mods: [{ wins: [[28.175, 33.552]], a: -0.42, label: 'el CAMPO solo: las líneas celestes son del sodio, las azules del agua (l10) — nubes a 58 %, no a muerto' }] },
+  campo:    { base: 1,    mods: [
+    { wins: [[0.0, 20.046]], a: -0.72, label: 'BAJA el campo del ion desde la primera toma: a plena potencia QUEMA el cuadro (sal-b: fill 0.66) (l3-l7)' },
+    { wins: [[4.075, 20.046]], a: -0.13, label: 'campo a 15 % mientras se presentan el sodio, sus electrones y el agua (l4-l7); ENCIENDE en «Mira el campo del sodio» (l8)' },
+    { wins: [[53.123, 61.076]], a: -0.85, label: 'APAGAR PARA PROBAR: el agua lo rodea y lo viste — queda la nube sola (l15-l16)' },
+  ] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[4.075, 12.498]], a: 0.42, label: 'PARPADEO: un sodio al que le falta un electrón, once protones y diez electrones (l4-l5)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[20.046, 27.775], [33.952, 61.076]], a: 0.9, label: 'Δρ magenta ARDE: el campo del sodio y el agua que lo siente (l8-l9); se acercan, ese morado, se pega, lo viste (l11-l16)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[15.101, 19.646]], a: 0.5, label: 'ORO: «con su corazón dorado, el oxígeno» (l7)' }] },
+};
+// EL VASO SUDA (rey #3, 2026-10-30): la ESCENA es solo el tramo molecular (l3…l15); el gancho (el vaso del
+// rey #1 sudando, Blender) y el cierre van como preroll/postroll del manifiesto. t = 0 = arranque de l3.
+// Capas = WGOTAS_CAPAS (ganador «Dos gotas») con sus ventanas movidas a la voz de vasosuda (segs.json arriba):
+// el evento es l8-l9 («se tocan… acaba de nacer»): ahí arde el spin y se cierra la apertura y así se queda
+// hasta el corte al vaso real (l16). Las líneas bajan en el close-up de l5 para que se lea la nube.
+const WGOTASH_DURATION = 62.4;
+const WGOTASH_CAPAS: CapasSpec = {
+  apertura: { base: 0.55, mods: [
+    { wins: [[24.39, 62.4]], a: -0.25, label: 'se tocan (l08)' },
+    { wins: [[28.727, 62.4]], a: -0.20, label: 'acaba de nacer el puente (l09)' },
+  ] },
+  nubes:    { base: 1,    mods: [] },
+  campo:    { base: 1,    mods: [{ wins: [[9.332, 13.157]], a: -0.60, label: 'close-up: mira el hueco, todavía separadas (l05)' }] },
+  campoNuc: { base: 0,    mods: [] },
+  campoEle: { base: 0,    mods: [] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[9.332, 13.157]], a: 0.35, label: 'todavía separadas (l05)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[24.39, 62.4]], a: 0.9, label: 'ARDE: nace el puente → menos de una décima de electrón → la gota resbala (l08-l15)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[19.68, 24.39]], a: 0.4, label: 'ORO: el hidrógeno de una apunta al oxígeno de la otra (l07)' }] },
+};
+const WROBAR_DURATION = 59.667;
+// EL GEL DE TUS MANOS (rey #4) — las capas de WROBA_CAPAS movidas a las ventanas reales de gelrey.
+// Mapa de líneas ganador → esta voz: roba l03 «mira la punta» = l5 · l04 «la misma punta del agua» = l6 ·
+// l05 «estas líneas» = l7 · l06 «le arma un puente» = l8 · l07 «vale casi lo mismo» = l9-l10 ·
+// l08-l10 (se lleva el agua / manos resecas) = l11-l16 · l11 (GAIA) = l17 (aquí ya es el vaso real).
+const WROBAR_CAPAS: CapasSpec = {
+  apertura: { base: 0.55, mods: [{ wins: [[23.336, 59.667]], a: -0.35, label: 'se acercan hasta que el alcohol le arma un puente al agua (l8)' }] },
+  nubes:    { base: 1,    mods: [] },
+  campo:    { base: 0.22, mods: [{ wins: [[19.362, 27.310]], a: 0.55, label: 'estas líneas son el jalón real entre las dos (l7-l8)' }] },
+  campoNuc: { base: 0,    mods: [] },
+  campoEle: { base: 0,    mods: [] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[9.985, 19.362]], a: 0.35, label: 'mira la punta del alcohol / es la misma punta del agua (l5-l6)' }] },
+  spin:     { base: 0.55, mods: [{ wins: [[23.336, 59.667]], a: 0.8, label: 'ARDE: el puente, el 96 %, el agua que se lleva (l8-l16)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[9.985, 23.336]], a: 0.35, label: 'ORO: la punta de oxígeno, la misma del agua (l5-l7)' }] },
+};
+// LA GOTA QUE NO CAE (rey #5, 2026-10-30): la ESCENA es solo el tramo molecular (l3…l15); el gancho (la llave real con la
+// gota que crece, tiembla y cae, Blender) y el cierre (la llave con la gota nueva, quieta) van como preroll/postroll del
+// manifiesto. t = 0 es el arranque de l3 en segs.json. CAPAS = las de WTRIB_CAPAS movidas a las ventanas reales de ESTA voz
+// (+ la apertura de WTRI_CAPAS para probar «por separado» → «juntas»: prender/apagar es la demostración, canon §LA MECÁNICA DEL O₂).
+const WTRIBR_DURATION = 58.9;
+const WTRIBR_CAPAS: CapasSpec = {
+  campo:    { base: 0.55, mods: [{ wins: [[15.416, 33.766]], a: 0.45, label: 'cooperatividad: el campo manda — juntas hacen más fuerza / casi el doce por ciento / cooperatividad (l7-10)' }] },
+  nubes:    { base: 1,    mods: [{ wins: [[4.337, 7.660]], a: -0.34, label: 'deja LEER el puente: le presta un hidrógeno a la vecina (l4)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[0.0, 4.337]], a: 0.42, label: 'los electrones cuando se nombra la molécula: tres moléculas, nueve átomos (l3)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[15.416, 43.890]], a: 0.85, label: 'ARDE: juntas hacen más fuerza … la piel invisible (l7-12)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[0.0, 4.337]], a: 0.45, label: 'ORO del oxígeno cuando se nombra la molécula (l3)' }] },
+  enlaces:  { base: 0,    mods: [{ wins: [[0.0, 4.337]], a: 1.0, label: 'tres moléculas, nueve átomos: contables (l3)' }] },
+  dipolo:   { base: 0,    mods: [{ wins: [[33.766, 49.250]], a: 1.0, label: 'la piel invisible: los dipolos alineados — superficie / piel / tensión superficial (l11-13)' }] },
+  ceros:    { base: 0,    mods: [] },
+  // EL EVENTO (de WTRI_CAPAS, «siguen separadas» 0.55): el anillo se ABRE con «que la suma de cada par por separado» (l8) y se
+  // CIERRA solo con «casi el doce por ciento de su agarre sale de estar las tres juntas» (l9). Medido en el ganador padre: la
+  // cooperatividad nace de 0.5 % (abierto) a 11.8 % del enlace (cerrado) — lo que se ve es el escaneo ab initio del .bin.
+  apertura: { base: 0.10, mods: [{ wins: [[19.529, 22.714]], a: 0.45, label: 'por separado: el anillo se abre (l8) → juntas: se cierra (l9)' }] },
+};
+
 const WTRIB_DURATION = 55;
 // ANILLO IDENTIDAD — el evento es l7 (cooperatividad) y el payoff l9-l11 (tu dedo, el árbol,
 // el mosquito). PROVISIONAL hasta segs.json.
@@ -1406,6 +1481,66 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: loomPush({ rFrom: 2.45, rTo: 1.30, elev: 0.34, azim: 0.85, fov: 33 }), dur: 8.86, label: 'SE VIENE ENCIMA: tú también eres agua / crecería en tus células (l9-10)' },
     { shot: pullOut({ azim0: 1.57, span: 0.50, rFromMul: 2.60, rTdMul: 3.30 }), dur: 13.85, label: 'payoff: lo bonito es lo que te mataría + GAIA + cola (l11-12)' },
   ],
+  wsalr: [
+    // LA SAL NO DESAPARECE (rey #2, 2026-10-30): las 9 tomas del ganador 'wsal' (= 'wsalb') sin inventar cámara; t=0 =
+    // cuadro 177 (el corte desde el grano de sal real). CALIBRADAS a segs.json (20 líneas, voz 82.659 s), cada corte en el
+    // ARRANQUE de su línea (−5.900): l4 4.075 · l6 12.898 · l7 15.101 · l8 20.046 · l10 28.175 · l11 33.952 · l13 45.100 · l15 53.123.
+    // Σ = 68.767 = WSALR_DURATION. 10 cortes en 85.2 s = 7.0/min (brazo A).
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.4, elev: 0.15, rMul: 1.58 }), dur: 4.075, label: 'cada grano se parte en iones, y este es uno — el ion y el agua (l3)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 2.0, rMul: 0.5 }), dur: 8.823, label: 'EL ION solo: le falta un electrón, once protones y diez electrones (l4-l5)' },
+    { shot: orbitOne({ side: 1, azim0: 2.5, span: 1.3, rMul: 0.5 }), dur: 2.203, label: 'y esta es el agua (l6)' },
+    { shot: orbitOne({ side: 1, azim0: 1.6, span: 1.8, rMul: 0.5 }), dur: 4.945, label: 'el corazón dorado O, su lado negativo (l7)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 8.129, label: 'mira el campo del sodio — ángulo bajo; el agua lo siente desde lejos (l8-l9)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.7, elev: 0.22, rMul: 1.5 }), dur: 5.777, label: 'órbita: líneas celestes del sodio, azules del agua, todo calculado (l10)' },
+    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 11.148, label: 'se acercan — looming bajo la línea MÁS LARGA; ese morado (l11-l12)' },
+    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 8.023, label: 'se pega cinco veces más fuerte — la nube llena el cuadro (l13-l14)' },
+    { shot: pullOut({}), dur: 15.644, label: 'payoff: lo viste / se vistió de agua / tu sangre / la sed (l15-l18) → corte al vaso real' },
+  ],
+  // EL VASO SUDA (rey #3, 2026-10-30): las 9 tomas de wgotas (ganador «Dos gotas»), sin inventar cámara, re-cronometradas
+  // a la voz de vasosuda. t=0 = arranque de l3 (el corte desde el vaso real). Cada corte cae en el ARRANQUE de su línea:
+  // l5 9.332 · l6 13.157 · l7 19.680 · l8 24.390 · l9 28.727 · l10 33.394 · l12 43.283 · l14 52.234 · fin 62.4 (= l16, corte al vaso).
+  // pullOut con rFromMul (gotcha del anillo, igual que wgotas). Σ = 62.400 = WGOTASH_DURATION.
+  wgotash: [
+    { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 9.332, label: 'las dos sueltas, como venían en el aire / se frenan y se buscan (l3-4)' },
+    { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 3.825, label: 'mira el hueco: todavía separadas — close bajo (l5)' },
+    { shot: orbitOne({ side: 1, azim0: 0.3, span: 1.7, rMul: 0.42, elev: 0.2 }), dur: 6.523, label: 'estas líneas son el campo que las jala — flip de molécula (l6)' },
+    { shot: orbitOne({ side: 1, azim0: 2.2, span: 2.2, rMul: 0.48, elev: 0.35 }), dur: 4.710, label: 'el hidrógeno apunta al oxígeno (ORO) — elevado (l7)' },
+    { shot: craneOverPair({ azim0: 2.9, span: 1.5, elevFrom: 0.5, elevTo: -0.55, rMul: 1.35 }), dur: 4.337, label: 'se tocan, la nube cambia de forma — grúa profunda (l8)' },
+    { shot: twoShot({ dir: 1, azim0: 0.5, span: 2.3, elev: -0.12, rMul: 1.42 }), dur: 4.667, label: 'ahí: acaba de nacer un puente de hidrógeno — barrido bajo (l9)' },
+    { shot: pushToBridge({ rFrom: 1.95, rTo: 0.8, azim: 2.6, elev: 0.12 }), dur: 9.889, label: 'menos de una décima de electrón / el agua se mantiene junta — looming al puente (l10-11)' },
+    { shot: crashIn({ rMul: 1.05, azim0: 2.7, span: 1.5, elev: 0.2 }), dur: 8.951, label: 'dos gotitas chocan… ya son una sola — choque (l12-13)' },
+    { shot: pullOut({ rFromMul: 0.62, azim0: 1.0, span: 1.4 }), dur: 10.166, label: 'la gota crece y resbala / el charco en la mesa → corte al vaso real (l14-15)' },
+  ],
+  wrobar: [
+    // EL GEL DE TUS MANOS (rey #4, 2026-10-30): las 9 tomas de wroba, sin inventar cámara, CALIBRADAS a segs.json de
+    // gelrey (t=0 = arranque de l3 = el corte desde el vaso real). Cada corte cae en el ARRANQUE de su línea:
+    // l5 9.985 · l6 14.514 · l7 19.362 · l8 23.336 · l9 27.310 · l11 34.469 · l13 43.665 · l15 50.824 · fin 59.667.
+    // El rMul NO manda aquí (ley de encuadre, ver wcolor); se acerca con ?zoom=0.55 declarado en el manifiesto.
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.2, elev: 0.15, rMul: 1.10 }), dur: 9.985, label: 'los dos: la grande es el alcohol, la pequeña el agua / verde, dorado, blanco (l3-l4)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.8, rMul: 0.72 }), dur: 4.529, label: 'MAGENTA: mira la punta del alcohol, un oxígeno con su hidrógeno (l5)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.40, rMul: 1.05 }), dur: 4.848, label: 'la misma punta que tiene el agua, y por eso la busca (l6)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.6, elev: 0.20, rMul: 1.05 }), dur: 3.974, label: 'AZUL: estas líneas son el jalón real (l7)' },
+    { shot: pushToBridge({ rFrom: 1.20, rTo: 0.70, azim: 1.15 }), dur: 3.974, label: 'se acercan hasta que le arma un puente: rampa de looming (l8)' },
+    { shot: crashIn({ rMul: 0.80, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 7.159, label: 'CLÍMAX: vale casi lo mismo, el noventa y seis por ciento (l9-l10)' },
+    { shot: orbitOne({ side: -1, azim0: 2.1, span: 1.2, rMul: 0.60 }), dur: 9.196, label: 'ORO: para el agua esa punta es casi otra agua / se mezclan solos (l11-l12)' },
+    { shot: eyeLevelLock({ rMul: 0.78, azim: 1.2 }), dur: 7.159, label: 'el gel en tus manos: se agarra del agua de tu piel (l13-l14)' },
+    { shot: pullOut({ rTdMul: 0.95 }), dur: 8.843, label: 'se evapora y se lleva esa agua / manos resecas (l15-l16) → corte al vaso real en «Y tú»' },
+  ],
+  wtribr: [
+    // LA GOTA QUE NO CAE (rey #5, 2026-10-30): LAS 9 TOMAS DEL GANADOR wtrib, MISMO ORDEN, sin inventar cámara; 9 en 58.9 s de
+    // escena (11 tomas / 78.1 s con gancho y cierre = 7.68 cortes/min = brazo A). t=0 = arranque de l3 (el corte desde la llave
+    // real). CALIBRADAS a segs.json (2026-10-30, 17 líneas, voz 75.53 s): cada corte cae en el ARRANQUE de su línea:
+    // l4 4.337 · l5 7.660 · l7 15.416 · l9 22.714 · l11 33.766 · l13 43.890 · l14 49.250 · l15 53.683. Σ dur = 58.900 = WTRIBR_DURATION.
+    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 4.337, label: 'el corte desde la llave: el anillo de frente — tres moléculas, nueve átomos (l3)' },
+    { shot: ringWide({ rMul: 1.14, azim0: 0.55, span: 1.0, elev: 0.30, fov: 34 }), dur: 3.323, label: 'las TRES: cada una le presta un hidrógeno a la vecina (l4)' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 7.756, label: 'se agarran en un anillo / eso que ves moverse es carga de verdad (l5-6)' },
+    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 7.298, label: 'juntas hacen más fuerza que cada par por separado: se abre y se cierra (l7-8)' },
+    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 11.052, label: 'COOPERATIVIDAD: casi el doce por ciento, se viene encima (l9-10)' },
+    { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.03, span: 0.62 }), dur: 10.124, label: 'en la superficie de tu gota se agarran así: la piel invisible (l11-12)' },
+    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 5.360, label: 'ÍNTIMO: la tensión superficial, la gota colgando de la llave (l13)' },
+    { shot: crashIn(), dur: 4.433, label: 'y cae cuando pesa más de lo que esa piel aguanta (l14)' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 5.217, label: 'payoff: el mosquito camina sobre el agua (l15) → corte a la llave real' },
+  ],
   whex6h: [
     // EL HIELO FLOTA (rey #1, 2026-10-24): tomas del ganador whex6b/whex6 sin inventar cámara; 10 en
     // ~70 s (8.6 cortes/min = brazo A). t=0 = arranque de l3 (el corte desde el vaso real). CALIBRADAS a segs.json (2026-10-24, 20 líneas, voz 82.35 s): cada corte cae en el
@@ -1904,6 +2039,10 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   ecolchon: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
   whex6b: { name: 'No te pueden congelar', formula: '(H₂O)₆', fact: 'El hexágono que hace bonito a un copo de nieve es el que te reventaría las células.' },
+  wsalr: { name: 'La sal no desaparece', formula: 'Na⁺···H₂O', fact: 'La sal no se va: cada sodio se viste de agua — y por eso te da sed.' },
+  wgotash: { name: 'El vaso suda', formula: 'H₂O···H₂O', fact: 'El instante en que dos gotas se vuelven una es un puente de hidrógeno naciendo: menos de una décima de electrón cambiando de lugar.' },
+  wrobar: { name: 'El gel de tus manos', formula: 'C₂H₅OH···H₂O', fact: 'La punta del alcohol es la del agua: por eso se mezclan, y por eso el gel te reseca las manos.' },
+  wtribr: { name: 'La gota que no cae', formula: '(H₂O)₃', fact: 'Juntas, tres aguas hacen más fuerza que cada par por separado (11.8 %): así se agarra la superficie de tu gota.' },
   whex6h: { name: 'El hielo flota', formula: '(H₂O)₆', fact: 'Al congelarse, el agua se ordena en esta forma de seis, con hueco: por eso el hielo flota.' },
   wtrib: { name: 'La gota que no cae', formula: '(H₂O)₃', fact: 'Tres aguas juntas jalan 12 % más que por separado: esa es la piel del agua.' },
   wroba: { name: 'Te roba el agua', formula: 'C₂H₅OH···H₂O', fact: 'La punta del alcohol es la del agua: por eso el gel te reseca las manos.' },
@@ -3562,6 +3701,11 @@ const WATER_BINS: Record<string, WaterEntry> = {
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
             capas: WHEX6B_CAPAS, dur: WHEX6B_DURATION },
+  wsalr: { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSALR_CAPAS, dur: WSALR_DURATION },
+  wgotash: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WGOTASH_DURATION, capas: WGOTASH_CAPAS },
+  wrobar: { bin: 'water-ethanol', ef: 'water-ethanol-efield', ex: 16, dur: WROBAR_DURATION, sizeMul: 1.7, binColors: true, capas: WROBAR_CAPAS },
+  wtribr: { bin: 'water-trimer', ef: 'water-trimer-efield', ex: 10, anillo: true,
+            ceros: 'water-trimer-ceros', capas: WTRIBR_CAPAS, dur: WTRIBR_DURATION },
   whex6h: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
             capas: WHEX6H_CAPAS, dur: WHEX6H_DURATION },
   wtrib: { bin: 'water-trimer', ef: 'water-trimer-efield', ex: 10, anillo: true,

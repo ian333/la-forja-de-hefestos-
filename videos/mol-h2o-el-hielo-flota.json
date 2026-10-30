@@ -101,7 +101,18 @@
     },
     "nota_programar": "rey diario a las 20:30 CDMX (plan 2026-10-23: ciencia en su propio horario; Don Chuy sigue a las 18:45). Sin publicar.autorizado con las palabras de ian NADA sube.",
     "autorizado": "2026-10-30 ig,yt — dicho por ian en sesión: «saca el rey, debemos sacar uno del rey diario :D»",
-    "programar": "2026-10-30T20:30:00-06:00"
+    "programar": "2026-10-30T20:30:00-06:00",
+    "subidas": {
+      "yt": {
+        "id": "ZaAvIQ8LLqk",
+        "url": "https://youtu.be/ZaAvIQ8LLqk",
+        "privacidad": "private",
+        "publishAt": "2026-10-30T20:30:00-06:00",
+        "captions": "AUieDaalTJ9SXTx_H4W-80i_aEmSxKl8tYXH68CJcEDu-OH-T5X0NFSn-w",
+        "fecha": "2026-10-30T16:31"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-el-hielo-flota.mp4?v=becce6402a"
   },
   "ritmo": {
     "brazo": "A",

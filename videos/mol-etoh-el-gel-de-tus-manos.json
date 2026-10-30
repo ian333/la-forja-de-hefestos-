@@ -1,0 +1,119 @@
+{
+  "id": "mol-etoh-el-gel-de-tus-manos",
+  "titulo": "El gel de tus manos — de lo real a lo invisible (C₂H₅OH···H₂O)",
+  "nota": "REY #4 del rey diario (ian 2026-10-30: «saca el rey, debemos sacar uno del rey diario»). Copia LITERAL de la estructura del rey #1 (mol-h2o-el-hielo-flota): gancho REAL de Blender (un chorro de alcohol cae en un vaso de agua y se ven las estrías de mezcla = schlieren) como render.preroll, CORTE SECO al mundo molecular en el arranque de l3, y el vaso real quieto como render.postroll desde «Y tú». La escena molecular es la del ganador TE ROBA EL AGUA (mol-etoh-te-roba-el-agua, wroba: 2,708 vistas, 11.4 compartidos por mil): mismo bin water-ethanol, mismas 9 tomas, mismas capas, re-cronometradas a la voz de este guion. Física = la del manifiesto de EL ALCOHOL (fisica: −3.68 contra −3.82 kcal/mol = 96 %).",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wrobar&zoom=0.55",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wrobar): render-clip exige formato.dur − preroll − postroll == duración de la escena (WROBAR_DURATION). Tomas y capas = las de wroba CALIBRADAS a segs.json de gelrey (t=0 = arranque de l3). Las 4 entradas para pegar en CinematicMolecule.tsx viven en /mnt/d/reyes/rey-04-el-gel/registro.tsx.txt. zoom 0.55 = el del ganador (ley de encuadre: el rMul no manda con la cola de carbono)."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 78.2,
+    "nota_dur": "REAL: voz 75.617 s (segs.json, 18 líneas) + cola 2.5 = 78.117 → 78.2 s = 2346 cuadros = preroll 206 + escena 1790 (59.667 s) + postroll 350."
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.gelreyframes",
+    "preroll": {
+      "dir": "/mnt/d/reyes/rey-04-el-gel/gancho-4k",
+      "frames": 206,
+      "nota": "cuadros del gancho de Blender (/mnt/d/reyes/blender/gel_gancho.py modo=plan ng=206: impares 1440×2560/64 → gancho-1440/) → bash /mnt/d/reyes/blender/blender-a-cuadros.sh gancho /mnt/d/reyes/rey-04-el-gel/gancho-1440 /mnt/d/reyes/rey-04-el-gel/gancho-4k 206. frames = round(arranque REAL de l3 6.855 × 30)."
+    },
+    "postroll": {
+      "dir": "/mnt/d/reyes/rey-04-el-gel/cierre-4k",
+      "frames": 350,
+      "nota": "el vaso real quieto desde l17 («Y tú…», 66.544 s) hasta el final: UN still 4K de Blender (gel_gancho.py modo=plan → /mnt/d/reyes/rey-04-el-gel/cierre-still/frame_0200.png) + paneo (blender-a-cuadros.sh cierre <still> /mnt/d/reyes/rey-04-el-gel/cierre-4k 350). frames = round((formato.dur − t(l17)) × 30)."
+    }
+  },
+  "audio": {
+    "dir": "dist-video/gelrey-narracion",
+    "narracion": "gelrey-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del GANADOR te-roba-el-agua (dist-video/roba-narracion/wpair-music.wav, que a su vez es la del rey), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 74.7,
+    "segs": "segs.json",
+    "ass": "gelrey.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "/mnt/d/reyes/rey-04-el-gel/masters",
+    "master": "etoh-el-gel-de-tus-manos-4k-master.mp4",
+    "h264": "etoh-el-gel-de-tus-manos-4k.mp4",
+    "nota_iangpu": "ian 10-30: «NADA se hace en esta laptop, todo en iangpu». Salidas en D:, nunca en el vhdx."
+  },
+  "capsula": {
+    "bins": [
+      "water-ethanol.bin",
+      "water-ethanol-efield.bin"
+    ],
+    "guion": "gelrey.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ],
+    "extra": "el gancho y el cierre de Blender: /mnt/d/reyes/blender/gel_gancho.py (iangpu)",
+    "nota_bins": "El manifiesto del ganador (te-roba-el-agua) lista water-approach.bin por copia del rey, pero su escena (WATER_BINS.wroba) carga water-ethanol; aquí van los que de verdad se usan."
+  },
+  "fisica": {
+    "fuente": "videos/mol-etoh-el-alcohol.json → fisica (mismo bin water-ethanol)",
+    "metodo": "RHF/aug-cc-pVDZ, SCF en GPU (gpu4pyscf), Δρ de interacción contra promolécula; colores por elemento con Hirshfeld (water-ethanol.bin)",
+    "ebind_etanol_agua_kcal": -3.68,
+    "ebind_agua_agua_kcal": -3.82,
+    "razon": 0.96,
+    "control": "MISMO método y MISMA fuente de geometría en los dos — el 96 % es una comparación pareada",
+    "lo_que_dice_la_voz": "«casi lo mismo que el del agua consigo misma: el noventa y seis por ciento» (l9-l10). «en cualquier proporción» (l12) = la afirmación del copy de EL ALCOHOL (etanol y agua son miscibles). «se lleva esa agua con él» (l15) y «sientes las manos resecas» (l16) = las líneas del ganador te-roba-el-agua, sin agregar consejos ni causas médicas."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/gelrey.txt",
+    "lineas": 18,
+    "palabras": 178,
+    "nota": "PROSA FLUIDA (canon §GUION FLUIDO), 2ª persona. l1-2 = el vaso real (Blender); l3-l16 = mundo molecular (t=0 de la escena = arranque de l3); l17 «Y tú» + l18 sello = el vaso real quieto."
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-etoh-el-gel-de-tus-manos.mp4",
+    "capsulaRel": "moleculas/_code/mol-etoh-el-gel-de-tus-manos-capsula.tar.gz",
+    "pieza": "mol-etoh el gel de tus manos",
+    "nueva": true,
+    "copy": {
+      "titulo": "Mira quién se lleva el agua de tus manos cuando te pones gel",
+      "descripcion": "Echas alcohol a un vaso de agua y se mezcla solito, sin que lo muevas. Nunca habías visto por qué. 🔬 Lo que ves después del vaso no es una animación: es una molécula de alcohol (etanol) y una de agua resueltas con física cuántica (ab initio, RHF/aug-cc-pVDZ), y lo que se mueve es su carga eléctrica calculada. Los colores son por elemento —verde carbono, oro oxígeno, blanco hidrógeno—, repartidos con la regla de Hirshfeld, no a ojo. La punta del alcohol es un oxígeno con su hidrógeno: la misma punta que tiene el agua. Por esa punta le arma al agua un puente de hidrógeno que vale casi lo mismo que el del agua consigo misma: 3.68 contra 3.82 kilocalorías por mol, el 96 %, calculados con el mismo método y la misma fuente de geometría. Para el agua, esa punta es casi otra agua; por eso se mezclan en cualquier proporción. Y por eso el gel te reseca las manos: su alcohol se agarra del agua de tu piel y, cuando se evapora, se la lleva con él. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#alcohol",
+        "#geldemanos",
+        "#agua",
+        "#química",
+        "#cuántica",
+        "#enlacedehidrógeno",
+        "#piel",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque con un vaso de agua y mis propias manos me enseña quién se lleva el agua cuando me pongo gel, con un número que puedo repetir: el 96 %",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B): el sujeto son las manos de quien ve, como en el ganador TE ROBA EL AGUA (10.7 compartidos por mil)."
+    },
+    "nota_programar": "rey diario a las 20:30 CDMX; sale el 2026-11-02 si todo pasa. Sin publicar.autorizado con las palabras de ian NADA sube."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota": "9 tomas del ganador sobre ~60 s de escena = brazo A. Se mide con scripts/ritmo-pieza.py cuando exista segs.json."
+  }
+}

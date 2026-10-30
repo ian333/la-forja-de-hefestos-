@@ -1,0 +1,131 @@
+{
+  "id": "mol-h2o-la-sal-no-desaparece",
+  "titulo": "La sal no desaparece — de tu vaso al ion (Na⁺···H₂O)",
+  "nota": "REY #2 del rey diario (ian 2026-10-30: «saca el rey, debemos sacar uno del rey diario, hazlo con opus»). Misma física y mismo bin de LA SAL (ganador 08-26: 3,426 vistas, «Nunca habías visto A DÓNDE se va la sal»; su recorte sal-b: 16.7 compartidos por mil, «Por esto te da sed») con la receta del rey #1 (el hielo flota): (1) GANCHO REAL en Blender — una cucharada de sal cae en el MISMO vaso del rey #1 (sin hielo): granos CÚBICOS (NaCl cristaliza en cubos) que bajan girando, se juntan en el fondo y empiezan a disolverse; la cámara empuja hasta quedar pegada a un grano y CORTE SECO por escala al ion (render.preroll); (2) CIERRE en el mismo vaso, agua transparente, la sal ya no se ve, sobre «Y tú» + sello (render.postroll). Guion nuevo en prosa fluida, 2ª persona, brazo A. HONESTIDAD: la escena calcula UN sodio y UNA molécula de agua; «lo rodea» se dice «en tu vaso», nunca que la escena muestre la capa completa de hidratación.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wsalr",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wsalr): render-clip exige formato.dur − preroll − postroll == WSALR_DURATION. Tomas = las 9 del ganador wsal (= wsalb, misma lista) sin inventar cámara; capas = las de WSAL_CAPAS (= WPAIR_CAPAS) movidas a las ventanas de ESTA voz + dos cosas de WSALB_CAPAS: `apertura` declarada (si no, el acercamiento queda quemado en los segundos 49-62 del rey) y el campo bajo en la primera toma (a plena potencia quema el cuadro, fill 0.66 medido en sal-b). Registro listo para pegar: /mnt/d/reyes/rey-02-la-sal/registro.tsx.txt"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 85.2,
+    "nota_dur": "REAL: voz 82.659 s (segs.json, 20 líneas, TAKES=4, portero whisper ✓ 20/20) + cola 2.5 → 85.2 s = 2556 cuadros = preroll 177 (arranque de l3 5.916 s × 30) + escena 2063 (68.767 s) + postroll 316 ((85.2 − 74.663 de l19) × 30)."
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.salreyframes",
+    "preroll": {
+      "dir": "/mnt/d/reyes/rey-02-la-sal/gancho-4k",
+      "frames": 177,
+      "nota": "Cuadros del gancho de Blender: `~/ai/blender/run -b --python /mnt/d/reyes/blender/sal_gancho.py -- modo=plan ngancho=177` (impares 1440×2560 ×64 + el cuadro 177 → /mnt/d/reyes/rey-02-la-sal/gancho-1440/) → `bash scripts/blender-a-cuadros.sh gancho /mnt/d/reyes/rey-02-la-sal/gancho-1440 /mnt/d/reyes/rey-02-la-sal/gancho-4k 177` (minterpolate 15→30 fps + 4K lanczos). frames = round(arranque REAL de l3 5.916 s × 30) = 177; el cuadro 177 es el de la cámara pegada al grano (corta al ion)."
+    },
+    "postroll": {
+      "dir": "/mnt/d/reyes/rey-02-la-sal/cierre-4k",
+      "frames": 316,
+      "nota": "El vaso con el agua ya transparente desde l19 («Y tú…», 74.663 s) hasta el final: UN still 4K de Blender (el plan lo deja en /mnt/d/reyes/rey-02-la-sal/cierre-still-4k/frame_0200.png) + paneo suave: `bash scripts/blender-a-cuadros.sh cierre /mnt/d/reyes/rey-02-la-sal/cierre-still-4k/frame_0200.png /mnt/d/reyes/rey-02-la-sal/cierre-4k 316`. frames = round((85.2 − 74.663) × 30) = 316."
+    }
+  },
+  "audio": {
+    "dir": "dist-video/salrey-narracion",
+    "narracion": "salrey-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama de LA SAL (dist-video/sal-narracion/wpair-music.wav, que es la del rey), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 81.7,
+    "segs": "segs.json",
+    "ass": "salrey.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "/mnt/d/reyes/rey-02-la-sal/masters",
+    "master": "agua-la-sal-no-desaparece-4k-master.mp4",
+    "h264": "agua-la-sal-no-desaparece-4k.mp4",
+    "nota_iangpu": "ian 10-30: «NADA se hace en esta laptop, todo en iangpu». Salidas en D:, nunca en el vhdx."
+  },
+  "capsula": {
+    "bins": [
+      "water-sodium.bin",
+      "water-sodium-efield.bin"
+    ],
+    "guion": "salrey.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py",
+      "blender-a-cuadros.sh"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ],
+    "extra": "el gancho y el cierre de Blender: /mnt/d/reyes/blender/sal_gancho.py (iangpu; derivado de hielo_gancho.py del rey #1, mismo vaso)"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/salrey.txt",
+    "lineas": 20,
+    "palabras": 184
+  },
+  "fisica": {
+    "metodo": "la de LA SAL, sin recalcular: RHF/aug-cc-pVDZ (PySCF), promolécula Na⁺ + H₂O, Δρ = ρ(complejo) − ρ(Na⁺) − ρ(H₂O); campo MEP real (motor campo_lineas, siembra por flujo). bin water-sodium / water-sodium-efield.",
+    "gate": {
+      "E_enlace_kcal": -24.03,
+      "d_NaO_A": 2.25,
+      "experimento": "−24.0 kcal/mol, 2.2–2.3 Å (Dzidic & Kebarle, J. Phys. Chem. 1970)",
+      "drho_monotono": true
+    },
+    "de_donde_sale_cada_frase": {
+      "cada grano se parte en iones": "copy de mol-h2o-la-sal",
+      "once protones y diez electrones, una carga entera": "copy de mol-h2o-la-sal (Na⁺: Z=11, 10 e⁻)",
+      "corazón dorado, el oxígeno, su lado negativo": "guion sal.txt l7-8 / copy sal-b",
+      "el campo sale igual hacia todos lados": "copy de mol-h2o-la-sal («sale radial, igual hacia todos lados»)",
+      "líneas celestes = sodio, azules = agua, todo calculado": "copy de mol-h2o-la-sal",
+      "jala los electrones del oxígeno; ese morado son sus electrones": "copy de mol-h2o-la-sal",
+      "cinco veces más fuerte que un puente de hidrógeno": "copy de mol-h2o-la-sal («se pega, cinco veces más fuerte que un puente de hidrógeno») y su guion sal.txt l17",
+      "la misma energía que mide el laboratorio": "fisica.gate de mol-h2o-la-sal (Dzidic & Kebarle 1970)",
+      "en tu vaso el agua lo rodea y lo viste": "copy de sal-b («el agua lo rodea») y de sal («así el agua lo viste») — se dice EN TU VASO porque la escena calcula UNA sola agua",
+      "si comes salado, el agua se va con la sal, y te da sed": "copy de sal-b («si comes de más, el agua se va con la sal y tu cuerpo pide más»)"
+    },
+    "gancho_real": "NaCl: cristal cúbico (sal de mesa = cubitos de ~0.3-0.5 mm), densidad 2.165 g/cm³, n = 1.544 (en el agua el índice relativo es 1.544/1.333 = 1.158: el grano se ve más tenue bajo el agua, como en la realidad). Vaso y agua = los del rey #1 (vidrio 1.45, agua 1.333). La caída y el disolverse van en tiempo real-ish: un grano de 0.4 mm cae ~3-5 cm/s; en los ~5 s del gancho un grano pierde solo una fracción de su tamaño (esquinas que se redondean) — por eso el gancho muestra que EMPIEZA a disolverse y el cierre (otro momento) muestra el agua ya transparente.",
+    "color_ion": "celeste = EVOCATIVO (Na⁺ es incoloro; la línea D amarilla es del átomo neutro)"
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-la-sal-no-desaparece.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-la-sal-no-desaparece-capsula.tar.gz",
+    "pieza": "mol-h2o la sal no desaparece",
+    "nueva": true,
+    "copy": {
+      "titulo": "Nunca habías visto a dónde se va la sal de tu vaso (y por eso te da sed)",
+      "descripcion": "Echas sal en tu vaso de agua y desaparece. Nunca habías visto a dónde se va. 🧂 Lo que ves después del vaso no es una animación: es un ion de sodio y una molécula de agua resueltos con física cuántica (ab initio, RHF/aug-cc-pVDZ), y lo que se mueve es carga eléctrica calculada. Cada grano de sal se parte en iones. Este es uno: un sodio al que le falta un electrón, once protones y diez electrones, una carga ENTERA de más. Su campo sale igual hacia todos lados (las líneas celestes; las azules son del agua) y el agua lo siente desde lejos: le apunta su oxígeno, su lado negativo, y sus electrones se jalan hacia el ion (ese morado). Se pega cinco veces más fuerte que un puente de hidrógeno, y la energía calculada (−24.0 kcal/mol a 2.25 Å) es exactamente la que se mide en el laboratorio (Dzidic & Kebarle, 1970). Aquí calculamos una sola molécula de agua; en tu vaso, el agua lo rodea y lo viste. La sal no desapareció: se vistió de agua. Y eso pasa ahora mismo en tu sangre: si comes salado, el agua se va con la sal, y por eso te da sed. Nada está inventado (el celeste del ion es evocativo: el Na⁺ es incoloro).\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#sal",
+        "#agua",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#ciencia",
+        "#sed",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque con la sal y el vaso de su cocina enseña que la sal no se va: se viste de agua, y de ahí sale la sed después de comer salado",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B): el sujeto es el vaso y la sangre de quien ve."
+    },
+    "nota_programar": "rey diario a las 20:30 CDMX (salida prevista 2026-10-31 si todo pasa). Sin publicar.autorizado con las palabras de ian NADA sube; ni autorizado ni programar se escriben aquí."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota": "se mide con scripts/ritmo-pieza.py cuando exista segs.json"
+  }
+}

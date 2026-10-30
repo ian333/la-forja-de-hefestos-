@@ -1,0 +1,122 @@
+{
+  "id": "mol-h2o-la-gota-que-no-cae",
+  "titulo": "La gota que no cae — de la llave real a la piel invisible (H₂O)₃",
+  "nota": "REY #5 del rey diario (ian 2026-10-30: «saca el rey, debemos sacar uno del rey diario, hazlo con opus»). Plantilla EXACTA del rey #1 (mol-h2o-el-hielo-flota): gancho REAL de Blender (la boca de una llave de cocina en cromo, una gota que crece, tiembla y no cae… hasta que cae; push-in a la piel de la gota nueva) como render.preroll, escena molecular del GANADOR el anillo-b (wtrib: mismo bin water-trimer, mismas tomas, mismas capas) y cierre real (la llave con una gota nueva formándose, quieta) como render.postroll. Honestidad del ganador: la gota NO es un anillo de tres; lo que la sostiene es que las moléculas de la superficie se agarran entre sí y juntas jalan más (cooperatividad medida 11.8 % del enlace).",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wtribr",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (wtribr): render-clip exige formato.dur − preroll − postroll == duración de la escena (WTRIBR_DURATION = 58.9). Registro listo para pegar: /mnt/d/reyes/rey-05-la-gota/registro.tsx.txt — tomas y capas del ganador wtrib (+ la apertura del padre wtri) CALIBRADAS a segs.json (t=0 = arranque de l3; cortes en arranques de l4, l5, l7, l9, l11, l13, l14, l15)."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 78.1,
+    "nota_dur": "REAL: voz 75.526 s (segs.json, 17 líneas) + cola 2.5 → 78.1 s (redondeado arriba a 0.1, como el rey #1) = 2343 cuadros = preroll 238 + escena 1767 (58.9 s) + postroll 338."
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.gotareyframes",
+    "preroll": {
+      "dir": "/mnt/d/reyes/rey-05-la-gota/gancho-4k",
+      "frames": 238,
+      "nota": "cuadros del gancho de Blender (/mnt/d/reyes/blender/gota_gancho.py plano=gancho: 244 cuadros, la gota se suelta en el 151 = «hasta que CAE»). frames = arranque REAL de l3 (7.921 s) × 30 = 238. gancho-1440 (30 fps, TODOS los cuadros) → 4K lanczos → aquí."
+    },
+    "postroll": {
+      "dir": "/mnt/d/reyes/rey-05-la-gota/cierre-4k",
+      "frames": 338,
+      "nota": "la llave real desde l16 «Y tú…» (66.826 s) hasta el final: UN still 4K de Blender (cierre-still/) + paneo suave (blender-a-cuadros.sh cierre). frames = (78.1 − 66.826) × 30 = 338."
+    }
+  },
+  "audio": {
+    "dir": "dist-video/gotarey-narracion",
+    "narracion": "gotarey-narracion.mp3",
+    "musica": "whex6-music.wav",
+    "musicaFuente": "la cama del GANADOR el anillo-b (dist-video/anillob-narracion/whex6-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 74.6,
+    "segs": "segs.json",
+    "ass": "gotarey.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "/mnt/d/reyes/rey-05-la-gota/masters",
+    "master": "agua-la-gota-que-no-cae-4k-master.mp4",
+    "h264": "agua-la-gota-que-no-cae-4k.mp4",
+    "nota_iangpu": "ian 10-30: «NADA se hace en esta laptop, todo en iangpu». Salidas en D:, nunca en el vhdx."
+  },
+  "capsula": {
+    "bins": [
+      "water-trimer.bin",
+      "water-trimer-efield.bin"
+    ],
+    "guion": "gotarey.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ],
+    "extra": "el gancho y el cierre de Blender: /mnt/d/reyes/blender/gota_gancho.py (iangpu)"
+  },
+  "fisica": {
+    "fuente": "videos/mol-h2o-el-anillo.json → fisica (el ganador padre, mismo bin water-trimer)",
+    "metodo": "RHF/cc-pVDZ, geometría optimizada con geomeTRIC (la encontró el optimizador, no se impuso)",
+    "cooperatividad": "−2.05 kcal/mol = 11.8 % del enlace total (−17.37 kcal/mol, anillo cerrado) → «casi el doce por ciento de su agarre sale de estar las tres juntas» (E_muchos_cuerpos / E_enlace, precompute-water-ring.py)",
+    "puentes": "O-O 2.888 / 2.880 / 2.874 Å (water-trimer-geom.json) · ∫Δρ>0 crece 0.0125 → 0.1876 (15×) al cerrarse el anillo = «carga eléctrica de verdad»",
+    "honestidad_de_la_gota": "La escena es UN anillo de tres aguas en el vacío, no la gota. Se dice: «en la superficie de tu gota las moléculas se agarran así entre ellas, y juntas jalan hacia el centro» = la tensión superficial. NUNCA «la gota es un anillo de tres». La gota real del gancho es Young-Laplace con el γ del agua (gota_gancho.py); lo evocativo (el temblor) está etiquetado ahí."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/gotarey.txt",
+    "lineas": 17,
+    "palabras": 176,
+    "portero": "scripts/guion-check.py: sin albures ni voseo; solo avisos de largo (video-subs.py parte en 2 renglones) y «:» (narracion-gen lo limpia)",
+    "voz": "XTTS Matilda TAKES=4; voz-check ✓ (whisper large-v3). l7 cambió «juntas jalan» → «juntas hacen más fuerza» (whisper oía «juntas y Alan»); l2 se acortó."
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-la-gota-que-no-cae.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-la-gota-que-no-cae-capsula.tar.gz",
+    "pieza": "mol-h2o la gota que no cae",
+    "nueva": true,
+    "copy": {
+      "titulo": "La gota de tu llave no cae… y nunca habías visto qué la sostiene",
+      "descripcion": "La gota de tu llave crece, tiembla y no cae, hasta que cae. Nunca habías visto qué la estaba sosteniendo. 💧 Lo que ves después de la llave no es una animación: son TRES moléculas de agua resueltas con física cuántica (ab initio, 9 átomos), y lo que se mueve es carga eléctrica calculada. Cada una le presta un hidrógeno a la vecina y las tres se agarran en un anillo. Lo raro: juntas jalan más fuerte que la suma de cada par por separado. Casi el 12 % de su agarre (11.8 %, −2.05 de −17.37 kcal/mol) sale de estar las tres juntas: a eso se le llama cooperatividad. En la superficie de tu gota las moléculas se agarran así entre ellas y juntas jalan hacia el centro, como una piel invisible: la tensión superficial. Por eso la gota crece colgando de la llave, cae justo cuando pesa más de lo que esa piel aguanta, y un mosquito camina sobre el agua sin hundirse. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#agua",
+        "#tensiónsuperficial",
+        "#gota",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#ciencia",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque enseña con la gota de la llave de tu cocina qué la sostiene (las moléculas de la superficie se agarran y juntas jalan más), y de ahí sale el mosquito que camina sobre el agua",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B): el sujeto es la llave de quien ve. Sin autorizado ni programar: nada sube sin las palabras de ian."
+    },
+    "nota_programar": "rey diario 3-nov-2026 a las 20:30 CDMX si todo pasa. Sin publicar.autorizado con las palabras de ian NADA sube."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "cortes_por_min": 7.68,
+    "tomas": 11,
+    "tomas_escena": 9,
+    "silabas_por_seg": 4.48,
+    "silabas_por_seg_del_video": 3.94,
+    "fuente_habla": "segs.json (REAL) vía scripts/ritmo-pieza.py",
+    "nota": "cortes DECLARADOS a mano (la escena wtribr aún no está en CAMERA_SHOTS): 11 tomas = gancho Blender + 9 del ganador wtrib + cierre Blender → 10 cortes en 78.1 s."
+  }
+}

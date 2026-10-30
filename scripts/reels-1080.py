@@ -48,9 +48,12 @@ if '--subir' in sys.argv:
     import hashlib, urllib.request
     h = hashlib.sha256(open(out, 'rb').read()).hexdigest()[:10]
     rel = f'moleculas/reels/{vid}.mp4'
-    for host, base in (('ian@100.110.244.20', '/mnt/hdd/biblioteca'), ('ian@100.97.118.117', '/mnt/hdd/forja-dist/biblioteca')):
+    # PRIME es copia de respaldo y NO bloquea: su disco (/mnt/hdd) se pasó a rhea (ian, 2026-10-30) y el rsync
+    # fallaba con check=True tumbando el programar. La URL pública la sirve ATLAS (university), esa sí es obligatoria.
+    for host, base, obligatorio in (('ian@100.110.244.20', '/mnt/hdd/biblioteca', False), ('ian@100.97.118.117', '/mnt/hdd/forja-dist/biblioteca', True)):
         subprocess.run(['ssh', '-o', 'BatchMode=yes', host, f'mkdir -p {base}/moleculas/reels'], check=False)
-        subprocess.run(['rsync', '-a', '--partial', out, f'{host}:{base}/{rel}'], check=True)
+        r = subprocess.run(['rsync', '-a', '--partial', out, f'{host}:{base}/{rel}'], check=obligatorio)
+        if r.returncode: print(f'   ⚠ copia de respaldo en {host} falló (código {r.returncode}); sigue con ATLAS')
     url = f'https://university.gaiaprime.com.mx/biblioteca/{rel}?v={h}'
     # VERIFICAR que la URL pública sirve ESTE archivo, no uno cacheado: si no coincide el tamaño,
     # Instagram bajaría el equivocado. Falla ruidoso antes de publicar.
