@@ -24,6 +24,8 @@
  *     node scripts/qa-huella.cjs ["test-parts/inyeccion-reales/1594C Box.stp"] [--n 3] [--out <dir>] [--control] [--volcado]
  *   --control: una corrida MÁS con la falla conocida (reloj virtual congelado antes de MOLDE): su huella DEBE salir distinta
  *   salida: <out>/corrida-<k>.json (huella + dorados medidos + tiempos) · <out>/huella.json (veredicto) · exit 0 VERDE / 1 ROJO / 2 no vale
+ *   VOLUMEN_GATE (orden J, 2026-10-29, en CADA corrida, fuera del hash): ningún cuerpo del molde con volumen con signo < 0, y su
+ *   PAR_DE_CONTROL_VOLUMEN en la misma página (un tornillo sano con los triángulos al revés → DEBE salir ROJO). Cualquiera rojo → exit 1.
  *
  * Lo usan también qa-dorados.cjs (los números de la MISMA corrida) y qa-banco.cjs (una pieza por navegador fresco).
  * Necesita `window.__qaForja` (ForgeBRepStudio.tsx, ENMIENDA de la orden D): referencias vivas al ciclo, al dictamen y a las mallas.
@@ -212,6 +214,28 @@ function huellaEnPagina() {
   } catch (e) { foco = { error: String(e).slice(0, 160) }; }
   return { pieza, leyenda, cuerpos, foco };
 }
+// ── EL VOLUMEN CON SIGNO (orden J, 2026-10-29): ningún cuerpo del molde con volumen NEGATIVO ─────────────────────────
+// Un cuerpo con volumen < 0 es una malla al revés o abierta: no se imprime, no se mide, y su «volumen» depende de dónde
+// esté. Así salieron los 4 tornillos del NÚCLEO (−12,175.78 mm³, orden D): las caras laterales de cabeza, caña y hilo miraban
+// al eje y ninguna pieza cerraba. La huella ya medía ese volumen POR CUERPO; esto lo JUZGA. NO entra al hash ni al control de
+// la huella (no los cambia): se reporta aparte y su ROJO sale en el código de salida.
+/** el juez: los cuerpos con volumen con signo < 0 (o no numérico) */
+function veredictoVolumen(cuerpos) {
+  const malos = (cuerpos || []).filter((c) => !(typeof c.vol === 'number' && c.vol >= 0)).map((c) => ({ rol: c.rol, nombre: String(c.nombre).slice(0, 80), vol: c.vol }));
+  return { verde: malos.length === 0 && (cuerpos || []).length > 0, n: (cuerpos || []).length, malos };
+}
+/** se evalúa DENTRO de la página — EL PAR DE CONTROL: el MISMO cuerpo con sus triángulos al revés (b↔c), medido con la MISMA
+ *  fórmula de `huellaEnPagina`. Un cuerpo sano invertido DEBE dar volumen < 0 y el juez DEBE salir ROJO; si no, no ve nada. */
+function volumenInvertidoEnPagina(rol) {
+  const pt = ((window.__qaForja && window.__qaForja.moldParts) || []).find((p) => p.role === rol);
+  if (!pt) return null;
+  const P = pt.positions, I = pt.indices; let v = 0;
+  const tri = (a, b, c) => P[a] * (P[b + 1] * P[c + 2] - P[b + 2] * P[c + 1]) - P[a + 1] * (P[b] * P[c + 2] - P[b + 2] * P[c]) + P[a + 2] * (P[b] * P[c + 1] - P[b + 1] * P[c]);
+  if (I && I.length) { for (let t = 0; t < I.length; t += 3) v += tri(3 * I[t], 3 * I[t + 2], 3 * I[t + 1]); }
+  else { for (let t = 0; t < P.length; t += 9) v += tri(t, t + 6, t + 3); }
+  return { rol: pt.role, nombre: pt.name, vol: Math.round((v / 6) * 100) / 100 };
+}
+
 /** JSON canónico (llaves ordenadas, recursivo) → lo que se firma */
 function canon(x) {
   if (Array.isArray(x)) return '[' + x.map(canon).join(',') + ']';
@@ -286,6 +310,14 @@ async function corrida(browser, url, archivo, { stillEn = null, hasta = 'molde',
       r.huella.dorados = Object.fromEntries(Object.entries(r.dorados || {}).map(([k, o]) => [k, o && typeof o === 'object' ? o.v : o]));
       r.hash = sha(r.huella);
       r.hashAcero = sha(r.huella.cuerpos || []);   // solo el acero (cuerpos): entre commits dice si la GEOMETRÍA cambió aunque cambie un rótulo
+      // el volumen con signo, JUZGADO (fuera del hash) + su par de control en la MISMA página: un tornillo (el que salió al revés
+      // el 2026-10-24) o, si no hay, el cuerpo más grande, invertido a propósito → el juez debe salir ROJO
+      r.volumen = veredictoVolumen(r.huella.cuerpos);
+      const cs = r.huella.cuerpos || [];
+      const rolControl = (cs.find((c) => c.rol === 'tornillos-core' && c.vol > 0) || cs.filter((c) => c.vol > 0).sort((a, b) => b.vol - a.vol)[0] || {}).rol;
+      const inv = rolControl ? await s.page.evaluate(volumenInvertidoEnPagina, rolControl) : null;
+      const vc = inv ? veredictoVolumen(cs.map((c) => (c.rol === inv.rol ? { ...c, vol: inv.vol } : c))) : null;
+      r.volumenControl = { invertido: inv, veredicto: vc, muerde: !!(vc && !vc.verde) };
     }
     if (volcado) fs.writeFileSync(volcado, JSON.stringify(await s.page.evaluate(volcadoEnPagina), null, 1));
     if (stillEn) r.still = await still(s.cdp, stillEn);
@@ -310,7 +342,7 @@ function volcadoEnPagina() {
   return { ciclo: poda(Q.ciclo, 0), intake: poda(Q.intake, 0), revision: poda(Q.revision, 0), lentes: poda(Q.lentes, 0) };
 }
 
-module.exports = { lanza, abre, corridaVale, suelta, clic, espera, still, textoVisible, camino, huellaEnPagina, doradosEnPagina, canon, sha, diffHuellas, corrida, W, H, DPR, REPO, log };
+module.exports = { lanza, abre, corridaVale, suelta, clic, espera, still, textoVisible, camino, huellaEnPagina, doradosEnPagina, canon, sha, diffHuellas, corrida, veredictoVolumen, volumenInvertidoEnPagina, W, H, DPR, REPO, log };
 
 // ── CLI: la huella ×N ────────────────────────────────────────────────────────
 if (require.main === module) (async () => {
@@ -360,7 +392,12 @@ if (require.main === module) (async () => {
   if (!iguales) for (let k = 1; k < corridas.length; k++) if (corridas[0].huella && corridas[k].huella && hashes[k] !== hashes[0]) diffs.push({ entre: `1↔${k + 1}`, cambios: diffHuellas(corridas[0].huella, corridas[k].huella) });
   // tres corridas IGUALES pero rotas (sin molde, o el molde sin pines) son deterministas… y malas: eso también es ROJO
   const veredicto = noVale.length ? 'NO VALE' : N === 0 ? (control && control.muerde ? 'SOLO CONTROL · MUERDE' : 'SOLO CONTROL · NO MUERDE') : iguales && !corridas.some((r) => r.rompe) ? 'VERDE' : 'ROJO';
-  const resumen = { veredicto, pieza: path.relative(REPO, PIEZA), url: URL, n: N, hashes, hashAcero: corridas.map((r) => r.hashAcero || null), diffs, control, rompe: corridas.map((r) => r.rompe || ''), noVale: noVale.map((r) => `${r.k}: ${r.noVale}`),
+  // EL VOLUMEN (orden J): VERDE si NINGUNA corrida trae un cuerpo con volumen < 0 Y el par de control muerde en todas
+  const volumen = { verde: corridas.length > 0 && corridas.every((r) => r.volumen && r.volumen.verde),
+    muerde: corridas.length > 0 && corridas.every((r) => r.volumenControl && r.volumenControl.muerde),
+    malos: corridas.flatMap((r) => ((r.volumen && r.volumen.malos) || []).map((m) => ({ k: r.k, ...m }))),
+    control: corridas.map((r) => r.volumenControl && r.volumenControl.invertido) };
+  const resumen = { veredicto, pieza: path.relative(REPO, PIEZA), url: URL, n: N, hashes, hashAcero: corridas.map((r) => r.hashAcero || null), diffs, control, volumen, rompe: corridas.map((r) => r.rompe || ''), noVale: noVale.map((r) => `${r.k}: ${r.noVale}`),
     ms: corridas.map((r) => r.ms), gpu: corridas[0] && corridas[0].gpu, fecha: new Date().toISOString() };
   fs.writeFileSync(path.join(OUT, 'huella.json'), JSON.stringify(resumen, null, 1));
   console.log(`\n${'─'.repeat(78)}\nHUELLA_GATE: ${veredicto} · ${hashes.map((h) => (h || '—').slice(0, 16)).join(' · ')}`);
@@ -372,6 +409,12 @@ if (require.main === module) (async () => {
     console.log(`REGRESION_CARRERA: ${control.congelado.regresion ? 'ROJO · la carrera del arranque regresó' : 'VERDE · el reloj congelado da el molde sano'} · ${(control.congelado.hash || '—').slice(0, 16)} ${control.congelado.rompe}`);
     for (const c of control.congelado.cambios.slice(0, 25)) console.log('    ' + c);
   }
-  // con --control, el control que NO muerde también es ROJO: el gate no vería la falla para la que existe
-  process.exit(veredicto === 'NO VALE' ? 2 : (veredicto === 'VERDE' || veredicto === 'SOLO CONTROL · MUERDE') && (!control || control.muerde) ? 0 : 1);
+  if (N > 0) {
+    console.log(`VOLUMEN_GATE: ${volumen.verde ? 'VERDE' : 'ROJO'} · ${volumen.malos.length ? volumen.malos.map((m) => `corrida ${m.k} ${m.rol} vol ${m.vol}`).join(' · ') : `0 cuerpos con volumen < 0 (${corridas.map((r) => (r.volumen ? r.volumen.n : 0)).join('/')} cuerpos)`}`);
+    const c0 = volumen.control.find(Boolean);
+    console.log(`PAR_DE_CONTROL_VOLUMEN: ${volumen.muerde ? 'MUERDE' : 'NO MUERDE'} · ${c0 ? `${c0.rol} invertido a propósito → vol ${c0.vol}` : 'sin cuerpo que invertir'}`);
+  }
+  // con --control, el control que NO muerde también es ROJO: el gate no vería la falla para la que existe; lo mismo el de volumen
+  const volOk = N === 0 || (volumen.verde && volumen.muerde);
+  process.exit(veredicto === 'NO VALE' ? 2 : (veredicto === 'VERDE' || veredicto === 'SOLO CONTROL · MUERDE') && (!control || control.muerde) && volOk ? 0 : 1);
 })().catch((e) => { console.error('FATAL', e); process.exit(2); });

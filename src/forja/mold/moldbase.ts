@@ -138,6 +138,14 @@ export function sizeInserts(part: { Lmm: number; Wmm: number; depthMm: number })
  *  y se declara pendiente en la hoja de cotización. Los espesores de placa ya salen de
  *  `snapToCommercialPlate` (serie comercial). */
 export const CATALOGO_BASES = 'retículo nominal HASCO/DME (métrico)';
+/** ⌀ NOMINAL DE LA GUÍA (poste + buje, Fig 1.5) que trae una base de ancho `baseWmm` — UNA fuente (orden J, 2026-10-29).
+ *  MEDIDO: la cotización decía «pilares ⌀16» (el ⌀ que `selectMoldBase` usaba para su reserva, envolvente/12) y las láminas,
+ *  el sólido y los bujes ⌀25 (esta tabla, que vivía tecleada en `standardHoles`) — dos números para la misma pieza de acero.
+ *  Se queda el que SE BARRENA (no mueve acero). Regla de Hefestos: el catálogo del proveedor de la base (§4.3.4) trae el ⌀
+ *  por tamaño y NO lo tenemos (arriba: «NÚMEROS DE PIEZA … PENDIENTES»); cuando llegue, se cambia AQUÍ y cambia todo. */
+export function guiaNominalMm(baseWmm: number): number {
+  return baseWmm > 300 ? 32 : baseWmm > 200 ? 25 : 20;
+}
 export const STANDARD_BASES: Array<{ wmm: number; lmm: number }> = [];
 {
   const sizes = [156, 196, 246, 296, 346, 396, 446, 496, 546, 596, 696, 796, 996];
@@ -167,6 +175,9 @@ export function selectMoldBase(
   const warnings: string[] = [];
   if (aspect > 2) warnings.push(`aspecto ${aspect.toFixed(2)}:1 > 2:1 (§4.3.1) — reacomodar la rejilla`);
   // reserva perimetral: pilares guía + retornos; holgura ≥ ½⌀ de cada componente (§4.3.2)
+  // (orden J: este «pin» es solo el TAMAÑO DE LA RESERVA — regla de Hefestos, envolvente/12 — y no el ⌀ de la guía. Antes se
+  // reportaba como `leaderPinDia` y la cotización imprimía «pilares ⌀16» mientras la base se barrenaba a ⌀25. La guía que la
+  // base trae la dice `guiaNominalMm`; la reserva no cambia, así que la base elegida tampoco.)
   const pin = Math.min(50, Math.max(16, Math.round(Math.max(envW, envL) / 12)));
   const reserve = pin * 2;                                // ⌀ del pilar + ½⌀ de holgura por lado (redondeado)
   const need = { w: envW + 2 * reserve, l: envL + 2 * reserve };
@@ -178,7 +189,8 @@ export function selectMoldBase(
   return {
     base: base ?? { wmm: NaN, lmm: NaN },
     envelope: { wmm: +envW.toFixed(1), lmm: +envL.toFixed(1) }, aspect: +aspect.toFixed(2),
-    reserveMm: reserve, leaderPinDia: pin,
+    // el ancho con que la base llega al molde es `lmm` (packageToAssemblySpec: widthMm = base.lmm || base.wmm) — el mismo que lee standardHoles
+    reserveMm: reserve, leaderPinDia: base ? guiaNominalMm(base.lmm || base.wmm) : pin,
     plateAmm: ins.insertHcavityMm, plateBmm: Math.max(ins.insertHcoreMm, 30),
     baseMaterial: 'P20' as BaseMaterial,
     ok: !!base && aspect <= 2, warnings,

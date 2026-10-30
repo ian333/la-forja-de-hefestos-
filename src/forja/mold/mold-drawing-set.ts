@@ -13,7 +13,7 @@ import { moldAssemblyDrawing, type MoldAssemblySpec } from './mold-assembly';
 import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
 import { ventMaxThickness } from './venting';
 import { sideActionDesign } from './sideactions';
-import { ejectorPinFit } from './fits';   // holgura pin↔barreno 0.13mm (Kazmer §8.3.2)
+import { ejectorPinFit, guideGeom, pillarClearanceFit } from './fits';   // holgura pin↔barreno 0.13mm (Kazmer §8.3.2); guía y pilar: las del sólido
 import { ejectorHeadGeom } from './eject-layout';   // cabeza + contrataladro (§11.2.6 Fig 11.15 Det. D) — 1 fuente con el sólido
 import { coolingDesign, PLASTICOS_A, ACEROS_MOLDE, PISO_MAQUINABLE_MM } from './cooling-design';   // el proceso §9.2 completo
 import { estPartVolumeCc } from './feed';
@@ -27,6 +27,48 @@ export interface AnalysisRow { grupo: string; param: string; valor: string; ref:
 
 const esc = (s: string) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
 
+/** Ancho de avance de Arial por carácter, en «em» (tabla de la fuente: dígitos 0.556, espacio 0.278, «i/l» 0.222, «m» 0.833,
+ *  mayúsculas ~0.67…). Lo usa la hoja de análisis para PARTIR celdas antes de que se encimen; el juez es el navegador
+ *  (getBBox), por eso se estima con 3 % de colchón y la negrita +7 %. */
+const ANCHO_ARIAL: Record<string, number> = {
+  ' ': 0.278, '.': 0.278, ',': 0.278, ':': 0.278, ';': 0.278, '·': 0.278, '|': 0.26, '/': 0.278, "'": 0.191, '’': 0.222, '"': 0.355,
+  '(': 0.333, ')': 0.333, '[': 0.278, ']': 0.278, '-': 0.333, '–': 0.556, '—': 1, '%': 0.889, '×': 0.584, '=': 0.584, '+': 0.584,
+  '<': 0.584, '>': 0.584, '≈': 0.584, '≤': 0.584, '≥': 0.584, '±': 0.584, '→': 1, '←': 1, '↔': 1, '✓': 0.8, '⚠': 1, '⌀': 0.7, 'ø': 0.611,
+  '½': 0.834, '¼': 0.834, '°': 0.4, '§': 0.556, '«': 0.556, '»': 0.556, '#': 0.556, '&': 0.667, '*': 0.389, '~': 0.584, '△': 0.8,
+  i: 0.222, l: 0.222, j: 0.222, í: 0.278, f: 0.278, t: 0.278, r: 0.333, m: 0.833, w: 0.722, k: 0.5, s: 0.5, c: 0.5, z: 0.5, v: 0.5, x: 0.5, y: 0.5,
+  I: 0.278, J: 0.5, M: 0.833, W: 0.944, L: 0.556, F: 0.611, T: 0.611, Z: 0.611, E: 0.667, P: 0.667, S: 0.667, K: 0.667, X: 0.667, Y: 0.667, V: 0.667,
+};
+function anchoTexto(t: string, fs: number, bold: boolean): number {
+  let w = 0;
+  for (const ch of t) {
+    const a = ANCHO_ARIAL[ch];
+    w += a != null ? a : /[0-9]/.test(ch) ? 0.556 : /[A-ZÁÉÍÓÚÑÜ]/.test(ch) ? 0.722 : /[a-záéóúñü]/.test(ch) ? 0.556 : 0.7;
+  }
+  return w * fs * (bold ? 1.07 : 1) * 1.03;
+}
+/** Parte un texto en renglones de ancho ≤ maxW (mm): primero en « · » (los datos de la hoja vienen separados así), luego en
+ *  espacios, y una palabra más ancha que la columna a corte duro. Nunca devuelve un renglón que se salga de su celda. */
+function partirTexto(t: string, maxW: number, fs: number, bold: boolean): string[] {
+  const s = String(t ?? '');
+  if (!s.trim()) return [];
+  if (anchoTexto(s, fs, bold) <= maxW) return [s];
+  const lineas: string[] = []; let cur = '';
+  const cierra = () => { if (cur.trim()) lineas.push(cur.trim()); cur = ''; };
+  const pon = (pz: string) => { if (cur && anchoTexto(cur + pz, fs, bold) > maxW) cierra(); cur += pz; };
+  for (const pieza of s.split(/(?<= · )/)) {
+    if (anchoTexto(pieza, fs, bold) <= maxW) { pon(pieza); continue; }
+    for (const palabra of pieza.split(/(?<= )/)) {
+      if (anchoTexto(palabra, fs, bold) <= maxW) { pon(palabra); continue; }
+      cierra();
+      let acc = '';
+      for (const ch of palabra) { if (acc && anchoTexto(acc + ch, fs, bold) > maxW) { lineas.push(acc); acc = ''; } acc += ch; }
+      cur = acc;
+    }
+  }
+  cierra();
+  return lineas;
+}
+
 /** LÁMINA DE ANÁLISIS — la ingeniería del molde en una hoja (A3), agrupada por
  *  subsistema con su referencia al libro y veredicto. */
 function analysisSheet(spec: MoldAssemblySpec, rows: AnalysisRow[]): string {
@@ -36,22 +78,35 @@ function analysisSheet(spec: MoldAssemblySpec, rows: AnalysisRow[]): string {
   p.push(`<rect width="${PW}" height="${PH}" fill="#fff"/><rect x="${M / 2}" y="${M / 2}" width="${PW - M}" height="${PH - M}" fill="none" stroke="#111" stroke-width="0.7"/>`);
   p.push(`<text x="${M + 4}" y="${M + 8}" font-size="5.5" font-weight="bold">HOJA DE ANÁLISIS DE INGENIERÍA</text>`);
   p.push(`<text x="${M + 4}" y="${M + 15}" font-size="3.2" fill="#555">${esc(spec.name)} · el molde como sistema de ecuaciones resuelto (Kazmer)</text>`);
-  const x0 = M + 4, cols = [46, 92, 60, 40], head = ['SUBSISTEMA', 'PARÁMETRO', 'VALOR', 'REF/§'];
-  let y = M + 24; const rowH = 6.4;
+  // LA HOJA SE LEE (orden J, 2026-10-29). Antes: 4 columnas de ancho fijo (46·92·60·40 = 238 mm de los 397 que tiene la A3)
+  // y cada celda en UNA línea: el valor largo de la máquina («FCS HT-150SV (taller) · clamp … · abierto 447 de 1010 mm ✓») se
+  // montaba sobre la columna REF/§ y la tabla de eyectores se salía por la derecha de la hoja (revisor Fable, G2; orden B).
+  // Ahora la tabla ocupa el ancho útil y cada celda se PARTE en renglones (en « · » primero, luego en espacios) con el ancho
+  // de Arial estimado por carácter; el renglón crece lo que pida su celda más alta. Si la tabla no cabe en la altura, el
+  // interlineado baja hasta 3.3 mm (texto de 2.6–2.9 mm sigue legible) — nunca se monta un texto sobre otro.
+  const x0 = M + 4, head = ['SUBSISTEMA', 'PARÁMETRO', 'VALOR', 'REF/§'];
+  const tW = PW - M / 2 - 4 - x0;                              // 397: de x0 (14) al marco derecho (415) con 4 mm de aire
+  const cols = [38, 104, tW - 38 - 104 - 46, 46];
+  const fs = [2.9, 2.8, 2.8, 2.6], bold = [true, false, true, false];
   const cx = (i: number) => x0 + cols.slice(0, i).reduce((a, b) => a + b, 0);
-  const tW = cols.reduce((a, b) => a + b, 0);
-  p.push(`<rect x="${x0}" y="${y}" width="${tW}" height="${rowH}" fill="#eef2f7" stroke="#111" stroke-width="0.3"/>`);
+  const celdas = rows.map((r, k) => [k === 0 || r.grupo !== rows[k - 1].grupo ? r.grupo : '', r.param,
+    `${r.valor}${r.ok != null ? (r.ok ? '  ✓' : '  ⚠') : ''}`, r.ref].map((t, i) => partirTexto(t, cols[i] - 3, fs[i], bold[i])));
+  const yTop = M + 24, yMax = PH - M - 9;                      // la leyenda del pie vive en PH − M − 4
+  const headH = 6.4, pad = 2.1;
+  let lineH = 3.6;
+  const altoDe = (L: number) => headH + celdas.reduce((a, c) => a + Math.max(1, ...c.map((x) => x.length)) * L + pad, 0);
+  while (altoDe(lineH) > yMax - yTop && lineH > 3.3) lineH = +(lineH - 0.1).toFixed(2);
+  let y = yTop;
+  p.push(`<rect x="${x0}" y="${y}" width="${tW}" height="${headH}" fill="#eef2f7" stroke="#111" stroke-width="0.3"/>`);
   head.forEach((h, i) => p.push(`<text x="${cx(i) + 1.5}" y="${y + 4.3}" font-size="3" font-weight="bold">${esc(h)}</text>`));
-  y += rowH;
-  let lastGroup = '';
-  for (const r of rows) {
-    p.push(`<rect x="${x0}" y="${y}" width="${tW}" height="${rowH}" fill="${r.ok === false ? '#fdecec' : 'none'}" stroke="#bbb" stroke-width="0.2"/>`);
-    if (r.grupo !== lastGroup) { p.push(`<text x="${cx(0) + 1.5}" y="${y + 4.3}" font-size="2.9" font-weight="bold" fill="#1a5fb4">${esc(r.grupo)}</text>`); lastGroup = r.grupo; }
-    p.push(`<text x="${cx(1) + 1.5}" y="${y + 4.3}" font-size="2.8">${esc(r.param)}</text>`);
-    p.push(`<text x="${cx(2) + 1.5}" y="${y + 4.3}" font-size="2.8" font-weight="bold">${esc(r.valor)}${r.ok != null ? (r.ok ? '  ✓' : '  ⚠') : ''}</text>`);
-    p.push(`<text x="${cx(3) + 1.5}" y="${y + 4.3}" font-size="2.6" fill="#666">${esc(r.ref)}</text>`);
-    y += rowH;
-  }
+  y += headH;
+  const color = ['#1a5fb4', '#111', '#111', '#666'];
+  rows.forEach((r, k) => {
+    const c = celdas[k], h = Math.max(1, ...c.map((x) => x.length)) * lineH + pad;
+    p.push(`<rect x="${x0}" y="${y}" width="${tW}" height="${h.toFixed(2)}" fill="${r.ok === false ? '#fdecec' : 'none'}" stroke="#bbb" stroke-width="0.2"/>`);
+    c.forEach((lineas, i) => lineas.forEach((t, j) => p.push(`<text x="${cx(i) + 1.5}" y="${(y + pad / 2 + lineH * (j + 0.78)).toFixed(2)}" font-size="${fs[i]}"${bold[i] ? ' font-weight="bold"' : ''}${color[i] !== '#111' ? ` fill="${color[i]}"` : ''}>${esc(t)}</text>`)));
+    y += h;
+  });
   p.push(`<text x="${x0}" y="${PH - M - 4}" font-size="2.6" fill="#888">Análisis reproducido del libro Kazmer «Injection Mold Design Engineering» · valores verificados contra los ejemplos resueltos · La Forja · GAIA</text>`);
   p.push(`</svg>`);
   return p.join('');
@@ -85,7 +140,7 @@ export function plateDefs(s: MoldAssemblySpec): PlateDef[] {
 export const plateDepth = (s: MoldAssemblySpec) => Math.round(s.depthMm ?? s.widthMm * 0.78);
 
 /** Huella de la cavidad en planta: X e Y (⌀ para redonda). */
-import { sizeInserts } from './moldbase';
+import { sizeInserts, guiaNominalMm } from './moldbase';
 import { sprueDesignFromCavity } from './feed';
 
 export function cavityFootprint(s: MoldAssemblySpec): { fx: number; fy: number; round: boolean } {
@@ -776,6 +831,95 @@ function ejectorCellPositions(s: MoldAssemblySpec, cell: { cx: number; cy: numbe
   return ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame, ejectorKeepOutMm(s.ejectors.diaMm));
 }
 
+/** ⌀ de los PILARES DE SOPORTE (Fig 1.6). Regla de Hefestos: el libro resuelve el bezel con ⌀37.5 y ⌀50 (§12.2.3 p.316-317)
+ *  y no da un ⌀ por tamaño de base; 40 es el que el molde arma desde siempre. Una constante: el sólido, sus holguras en las
+ *  placas expulsoras, las láminas y la BOM leen ESTE número. */
+export const PILAR_SOPORTE_DIA_MM = 40;
+// POSICIONES de los PILARES DE SOPORTE (Kazmer §12.2.3): reducen la deflexión de placa,
+// van DIRECTO bajo las zonas de fuerza de la cavidad PERO su ubicación CHOCA con los pines
+// eyectores y el vástago KO — el libro dice AJUSTAR EL LAYOUT para librarlos. Esta función
+// es la ÚNICA fuente: LEE los obstáculos (pines/return/KO/tornillos del housing) y coloca
+// los pilares en el HUECO más cercano al centro que los libra → "todo se habla con todo".
+// La usan el COMPONENTE (pilares-soporte), las holguras de las placas expulsoras y — desde la orden J (2026-10-29) — las
+// LÁMINAS y la BOM: vivía en mold-plano-set.ts (que la re-exporta) y el papel no la podía leer sin un import circular; por eso
+// los 3 pilares de la carcasa existían en el acero y en ninguna lámina.
+export function supportPillarPositions(spec: MoldAssemblySpec, D: number): Array<{ x: number; y: number }> {
+  // EL ESTUDIO MANDA: `optimizeSupportPlate` (§12.2, δ=F·L³/48EI) ya calculó CUÁNTOS pilares
+  // se necesitan según la deflexión de la placa vs el venteo — y puede ser CERO (molde chico
+  // y rígido NO los necesita). Antes la geometría clavaba 2 SIEMPRE, ignorando el cálculo
+  // (feedback del user: "no está calculado el estrés → está mal"). Aquí respetamos el número.
+  const nWanted = Math.max(0, Math.round(spec.supportPillars ?? 0));
+  if (nWanted === 0) return [];                                  // la placa aguanta sola: sin pilares
+  const W = spec.widthMm, pillarR = PILAR_SOPORTE_DIA_MM / 2;
+  const obstacles = standardHoles(spec, 'support').map((h) => ({ x: h.x, y: h.y, r: h.dia / 2 }));
+  const clears = (x: number, y: number) => obstacles.every((o) => Math.hypot(x - o.x, y - o.y) >= pillarR + o.r + 3);
+  const cx0 = W / 2, cy0 = D / 2;
+  const cands: Array<{ x: number; y: number; d: number }> = [];
+  for (let fx = 0.26; fx <= 0.74; fx += 0.02) for (const fy of [0.3, 0.42, 0.5, 0.58, 0.7]) {
+    const x = Math.round(W * fx), y = Math.round(D * fy);
+    if (x < 75 || x > W - 75) continue;                          // dentro de los rieles del housing
+    if (clears(x, y)) cands.push({ x, y, d: Math.hypot(x - cx0, y - cy0) });   // libra pines+KO
+  }
+  cands.sort((a, b) => a.d - b.d);                               // los más cerca del centro (bajo la fuerza, §12.2.3)
+  const chosen: Array<{ x: number; y: number }> = [];
+  for (const c of cands) { if (chosen.every((k) => Math.hypot(c.x - k.x, c.y - k.y) > 55)) chosen.push({ x: c.x, y: c.y }); if (chosen.length >= nWanted) break; }
+  return chosen;
+}
+
+/**
+ * DÓNDE VAN LOS BARRENOS KO — el vástago expulsor de la máquina pasa por la sujeción inferior y EMPUJA LA PLACA EXPULSORA.
+ * -------------------------------------------------------------------------------------------------------------------
+ * MEDIDO (revisor Fable, orden E, y de nuevo la orden J en la app, 2026-10-29): en la 1594C Box (base 246) los dos KO salían
+ * a x = 123 ± 60 = 63 y 183, pero la expulsora vive ENTRE los rieles, de x = 65 a 181 (116 mm): la lámina 12 los acotaba en
+ * X = −2.00 y X = 118.00, fuera de la placa. El vástago de la máquina habría empujado el aire junto al riel, no la placa.
+ * El PATRÓN es el de siempre (dos flanqueando el centro cuando la colada es central, uno al centro si no); lo nuevo es que
+ * cada KO cae DENTRO de la expulsora REAL (`expulsoraMargenes`, la misma placa que se barrena) y no pisa lo que ya vive ahí:
+ *   · su centro a ≥ 1·⌀ del canto de la expulsora (½⌀ de acero entre el barreno y el canto) — regla de Hefestos: el libro da
+ *     «½ del diámetro de cada componente» como holgura en la partición (§4.3.2); aquí se aplica igual contra el canto.
+ *   · ≥ 3 mm de acero contra cada contrataladro de cabeza de pin y cada retorno (la guarda de `supportPillarPositions`).
+ * El offset nominal (60) NO es del libro ni de la máquina: el patrón KO de la HT-150SV es «SIN DATO» (docs/MAQUINA-DEL-TALLER.md:
+ * se lee en la platina móvil) y Kazmer §11.3.8 manda "confirm the location(s), diameter, and thread of the knock-out rods with
+ * the molder". Por eso solo se ACORTA lo necesario (de 1 en 1 mm) y, si ningún par cabe, va uno al centro — el vástago central
+ * es "quite common" (§12.2.3). Fuente ÚNICA de las tres placas que lo barrenan (soporte, sujeción inferior, expulsora).
+ */
+export function koLayout(s: MoldAssemblySpec, D?: number): { diaMm: number; pts: Array<[number, number]>; offMm: number; notas: string[] } {
+  const W = s.widthMm, Dd = D ?? plateDepth(s);
+  const diaMm = Math.max(20, Math.round(W * 0.055)), r = diaMm / 2;
+  const cx = W / 2, cy = Dd / 2;
+  const mg = expulsoraMargenes(s, Dd);
+  const x0 = mg.mxMm, x1 = W - mg.mxMm, y0 = mg.myMm, y1 = Dd - mg.myMm;
+  // lo que ya vive en la expulsora: el contrataladro de la cabeza de cada pin (el más ancho de sus barrenos) y los retornos
+  const obst: Array<{ x: number; y: number; r: number }> = [];
+  const cells = cavityGrid(s, Dd);
+  if (s.ejectors.type !== 'stripper') {
+    const { fx, fy, round } = cavityFootprint(s);
+    const perCav = Math.max(1, Math.round(s.ejectors.count / Math.max(1, cells.length)));
+    const frame = s.cavity.frameMm ? { frameMm: s.cavity.frameMm, ribs: s.cavity.ribs ?? 0 } : undefined;
+    const tRet = plateDefs(s).find((p) => p.role === 'ejector-ret')?.thick ?? 12;
+    const rCabeza = ejectorHeadGeom(s.ejectors.diaMm, tRet).boreDiaMm / 2;
+    for (const cell of cells) for (const [x, y] of ejectorCellPositions(s, cell, fx, fy, round, perCav, frame)) obst.push({ x, y, r: rCabeza });
+  }
+  const rp = returnPinLayout(s, Dd);
+  for (const [x, y] of rp.pts) obst.push({ x, y, r: rp.diaMm / 2 });
+  const cabe = (x: number, y: number) => x - x0 >= diaMm && x1 - x >= diaMm && y - y0 >= diaMm && y1 - y >= diaMm;
+  const libre = (x: number, y: number) => obst.every((o) => Math.hypot(x - o.x, y - o.y) >= r + o.r + 3);
+  const notas: string[] = [];
+  if (s.feed === 'hot-runner' || cells.length === 1) {
+    const offNom = Math.max(60, diaMm);
+    for (let off = offNom; off >= diaMm; off -= 1) {
+      const pts: Array<[number, number]> = [[Math.round(cx - off), Math.round(cy)], [Math.round(cx + off), Math.round(cy)]];
+      if (pts.every(([x, y]) => cabe(x, y) && libre(x, y))) {
+        if (off < offNom) notas.push(`KO a ±${off} del centro (no ±${offNom}): la expulsora mide ${x1 - x0} mm entre los rieles y el KO ⌀${diaMm} debe caer dentro con ½⌀ de acero al canto (regla de Hefestos)`);
+        return { diaMm, pts, offMm: off, notas };
+      }
+    }
+    notas.push(`ningún par de KO ⌀${diaMm} cabe en la expulsora de ${x1 - x0} mm sin pisar pines ni retornos: va UNO al centro (§12.2.3, «quite common»)`);
+  }
+  const c: [number, number] = [Math.round(cx), Math.round(cy)];
+  if (!cabe(...c) || !libre(...c)) notas.push(`⚠ el KO central ⌀${diaMm} pisa un pin o un retorno, o no deja ½⌀ al canto: confirmar el patrón KO con el moldeador (§11.3.8)`);
+  return { diaMm, pts: [c], offMm: 0, notas };
+}
+
 /**
  * @param o.lamina  true SOLO desde el generador de LÁMINAS. Añade los rasgos que el
  *   plano debe COTAR pero que el sólido corta aparte: hoy, el contrataladro CIEGO de la
@@ -814,9 +958,23 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole, o?: { lamina
 
   // PILARES GUÍA en las 4 esquinas — SOLO placas que los cruzan (A y B). Asimétrico.
   if (role === 'A' || role === 'B') {
-    const gp = W > 300 ? 32 : W > 200 ? 25 : 20, gi = inset + Math.round(gp / 2) + 4;
-    for (const [dx, dy, t] of [[gi, gi, ''], [W - gi, gi, ''], [gi, D - gi, ''], [W - gi - 10, D - gi, ' (desplazado)']])
-      holes.push({ x: dx, y: dy, dia: gp, type: `pilar guía${t}` });
+    const gp = guiaNominalMm(W), gi = inset + Math.round(gp / 2) + 4, G = guideGeom(gp);
+    for (const [dx, dy, t] of [[gi, gi, ''], [W - gi, gi, ''], [gi, D - gi, ''], [W - gi - 10, D - gi, ' (desplazado)']] as Array<[number, number, string]>) {
+      // EN LA LÁMINA, LO QUE EL SÓLIDO BARRENA (orden J, 2026-10-29). La tabla decía «pilar guía ⌀25 PASANTE» en A y en B,
+      // pero `buildPlateSolid` corta en A el ASIENTO DEL BUJE (⌀ buje + 0.4) con el contrataladro de su brida, y en B el
+      // contrataladro del hombro del poste (Fig 1.5, `guideGeom`): quien barrenara A a ⌀25 no metería el buje de ⌀33.
+      // Las medidas salen de `guideGeom` — la misma fuente que el sólido y que la BOM. El 3D sigue leyendo «pilar guía».
+      // (rótulos CORTOS: la columna TIPO se corta en el canto de la hoja — medido: 8 textos fuera en A con el rótulo largo; el
+      //  ⌀ y la profundidad ya van en sus columnas, la medida del buje/brida/hombro en la BOM y en `guideGeom`)
+      const td = t ? ' despl.' : '';
+      if (o?.lamina && role === 'A') {
+        holes.push({ x: dx, y: dy, dia: G.boreA_bushingMm, type: `asiento buje guía ⌀${gp}${td}` });
+        holes.push({ x: dx, y: dy, dia: G.cboreA_flangeMm, depth: G.flangeHMm + 1, type: 'brida del buje · cara sup.' });
+      } else if (o?.lamina && role === 'B') {
+        holes.push({ x: dx, y: dy, dia: gp, type: `poste guía ⌀${gp}${td}` });
+        holes.push({ x: dx, y: dy, dia: G.cboreB_shoulderMm, depth: G.shoulderHMm + 0.5, type: 'hombro del poste · cara inf.' });
+      } else holes.push({ x: dx, y: dy, dia: gp, type: `pilar guía${t}` });
+    }
   }
 
   // EXPULSORES bajo CADA cavidad (placa B y soporte) — en la huella REAL, conteo
@@ -914,15 +1072,8 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole, o?: { lamina
   // embestiría. Si el centro está ocupado por alimentación → DOS KO simétricos
   // flanqueando el centro (patrón estándar de la inyectora), si no, 1 al centro.
   if (role === 'support' || role === 'bottom' || role === 'ejector') {
-    const koDia = Math.max(20, Math.round(W * 0.055));
-    const feedAtCenter = s.feed === 'hot-runner' || (cavityGrid(s, D).length === 1);
-    if (feedAtCenter) {
-      const off = Math.max(60, koDia);
-      holes.push({ x: Math.round(W / 2 - off), y: Math.round(D / 2), dia: koDia, type: 'barreno KO (vástago expulsor)' });
-      holes.push({ x: Math.round(W / 2 + off), y: Math.round(D / 2), dia: koDia, type: 'barreno KO (vástago expulsor)' });
-    } else {
-      holes.push({ x: Math.round(W / 2), y: Math.round(D / 2), dia: koDia, type: 'barreno KO (vástago expulsor)' });
-    }
+    const ko = koLayout(s, D);
+    for (const [x, y] of ko.pts) holes.push({ x, y, dia: ko.diaMm, type: 'barreno KO (vástago expulsor)' });
   }
 
   // La HEMBRA del interlock NO se coloca aquí: la coloca `planInterlocks` (fuente
@@ -941,8 +1092,30 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
   const D = plateDepth(s);
   const pages: DrawingPage[] = [];
 
+  // LO QUE EL CORTE A-A NO VE PERO EL ACERO SÍ TRAE (orden J, 2026-10-29). Medido en la 1594C Box: 3 pilares de soporte
+  // (orden B, z 36→132 bajo la cavidad) en el 3D y en NINGUNA lámina ni renglón de BOM; las placas expulsora y retenedora
+  // salían SIN el barreno de holgura por donde suben y bajan (el sólido sí lo corta: `buildPlateSolid`). Los postes y bujes
+  // guía tampoco tenían renglón. Todo sale de las MISMAS fuentes que el sólido: `supportPillarPositions` (colocadas, no las
+  // pedidas), `PILAR_SOPORTE_DIA_MM`, `pillarClearanceFit`, `guiaNominalMm` + `guideGeom`.
+  const pil = supportPillarPositions(s, D), Lpil = s.plates.ejectorHousing;
+  const pilHolgura = pillarClearanceFit(PILAR_SOPORTE_DIA_MM).holeDiaMm;
+  const gp = guiaNominalMm(s.widthMm), G = guideGeom(gp);
+  const piezas = [
+    ...(pil.length ? [{ nombre: `Pilar de soporte ⌀${PILAR_SOPORTE_DIA_MM} × ${Lpil}`, cant: pil.length, material: s.baseSteel ?? '1.1730' }] : []),
+    { nombre: `Poste guía ⌀${gp} × ${+((s.plates.A + s.plates.B) * 0.92).toFixed(1)}`, cant: 4, material: '1.2510 rectificado' },
+    { nombre: `Buje guía ⌀${gp} (OD ${G.bushingODMm})`, cant: 4, material: 'bronce/acero templ.' },
+  ];
+  const conPilares = (role: PlateDef['role']): PlateHole[] => {
+    if (role === 'ejector' || role === 'ejector-ret')
+      return pil.map((q) => ({ x: q.x, y: q.y, dia: pilHolgura, type: 'holgura del pilar de soporte' }));   // la placa corre por él (Fig 1.6)
+    // (la columna TIPO de la tabla se corta en el canto de la hoja: el ⌀ va en su columna y el texto corto)
+    if (role === 'support' || role === 'bottom')
+      return pil.map((q) => ({ x: q.x, y: q.y, dia: PILAR_SOPORTE_DIA_MM, apoyo: true, type: `pilar de soporte L${Lpil} §12.2.3` }));
+    return [];
+  };
+
   // 1) ENSAMBLE (sección A-A + BOM + notas de análisis)
-  pages.push({ name: 'Ensamble', svg: moldAssemblyDrawing(s).svg });
+  pages.push({ name: 'Ensamble', svg: moldAssemblyDrawing(s, { piezas }).svg });
 
   // 2) HOJA DE ANÁLISIS DE INGENIERÍA (§ + veredicto) + filas CALCULADAS
   //    (tornillería §12.4 + geometría de enfriamiento §9.2) anexadas siempre.
@@ -960,7 +1133,7 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
     const spec: PlateSpec = {
       code: p.code, name: p.name, material: p.mat,
       wmm: s.widthMm - 2 * ox, dmm: D - 2 * oy, thickMm: p.thick,
-      holes: standardHoles(s, p.role, { lamina: true }).map((h) => (exp ? { ...h, x: h.x - ox, y: h.y - oy } : h)),
+      holes: [...standardHoles(s, p.role, { lamina: true }), ...conPilares(p.role)].map((h) => (exp ? { ...h, x: h.x - ox, y: h.y - oy } : h)),
       openings: (p.role === 'A' || p.role === 'B') ? cavityOpenings(s, D) : undefined,
       cooling: (p.role === 'A' || p.role === 'B') ? coolingCircuit(s, D) : undefined,
     };

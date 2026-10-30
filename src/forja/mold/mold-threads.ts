@@ -135,18 +135,26 @@ export function threadSurfaceMesh(spec: ThreadSpec, length: number, o?: { nPhi?:
       pos.push(r * Math.cos(phi), r * Math.sin(phi), z);
     }
   }
+  // LAS CARAS MIRAN HACIA AFUERA (orden J, 2026-10-29). Antes el par era (a, c, b): la normal salía ẑ×φ̂ = −r̂, HACIA EL
+  // EJE, mientras las tapas miraban afuera — malla de sentido mezclado. Medido en node (M6, `mide-perno.cjs`): 374 caras
+  // laterales hacia adentro y 0 hacia afuera; con eso el «volumen» del perno dependía de DÓNDE estaba (el mismo perno daba
+  // +3,644.73 mm³ con la cabeza a z=292 y −3,043.94 a z=0: los −12,175.78 de los 4 tornillos del NÚCLEO que vio la orden D).
+  // (a, b, c) da φ̂×ẑ = +r̂: afuera, como las tapas.
   for (let j = 0; j < nz; j++) for (let i = 0; i < nPhi; i++) {
     const a = j * row + i, b = a + 1, c = a + row, d = c + 1;
-    idx.push(a, c, b, b, c, d);
+    idx.push(a, b, c, b, d, c);
   }
-  // tapas planas en los extremos (disco al menor) para que no se vea hueco
-  const capBottom = (zc: number, dir: number) => {
-    const rMin = R - h, base = pos.length / 3;
+  // TAPAS que CIERRAN el hilo: abanico del eje al anillo REAL del extremo (el perfil r(φ) a esa altura, recortado por el
+  // chaflán). Antes eran discos al Ø menor: entre el disco y el anillo del hilo (cresta a la medida mayor) quedaba una
+  // corona ABIERTA — 52 aristas sueltas — y una malla abierta no tiene volumen. Vértices propios (no compartidos con el
+  // flanco) para que la arista se vea viva al sombrear.
+  const capRing = (j: number, dir: number) => {
+    const base = pos.length / 3, zc = (length * j) / nz;
     pos.push(0, 0, zc);
-    for (let i = 0; i <= nPhi; i++) { const phi = (2 * Math.PI * i) / nPhi; pos.push(rMin * Math.cos(phi), rMin * Math.sin(phi), zc); }
+    for (let i = 0; i <= nPhi; i++) { const q = 3 * (j * row + i); pos.push(pos[q], pos[q + 1], zc); }
     for (let i = 0; i < nPhi; i++) { if (dir > 0) idx.push(base, base + 1 + i, base + 2 + i); else idx.push(base, base + 2 + i, base + 1 + i); }
   };
-  capBottom(0, -1); capBottom(length, 1);
+  capRing(0, -1); capRing(nz, 1);
   const positions = new Float32Array(pos), indices = new Uint32Array(idx);
   const normals = computeNormals(positions, indices);
   return { positions, normals, indices };
@@ -158,7 +166,16 @@ export function plainShaftMesh(r: number, z0: number, z1: number, nPhi = 24): Me
   const pos: number[] = [], idx: number[] = [];
   for (const z of [z0, z1]) for (let i = 0; i <= nPhi; i++) { const p = (2 * Math.PI * i) / nPhi; pos.push(r * Math.cos(p), r * Math.sin(p), z); }
   const row = nPhi + 1;
-  for (let i = 0; i < nPhi; i++) { const a = i, b = a + 1, c = a + row, d = c + 1; idx.push(a, c, b, b, c, d); }
+  // hacia AFUERA (+r̂) y CERRADO con sus dos tapas (orden J): antes era un tubo sin tapas con las caras al eje — 48 aristas
+  // sueltas y −931.75 mm³ para una caña M6 de 50 mm que mide +1,413.7 (π·3²·50).
+  for (let i = 0; i < nPhi; i++) { const a = i, b = a + 1, c = a + row, d = c + 1; idx.push(a, b, c, b, d, c); }
+  // tapas en abanico desde el primer vértice del borde, SIN vértice en el eje: así la caña no comparte un punto con la
+  // cabeza y el Foco (un cilindro por cuerpo conexo) no le pone el radio de la cabeza (ver `headMesh`, cara de apoyo)
+  for (const [z, dir] of [[z0, -1], [z1, 1]] as const) {
+    const base = pos.length / 3;
+    for (let i = 0; i <= nPhi; i++) { const p = (2 * Math.PI * i) / nPhi; pos.push(r * Math.cos(p), r * Math.sin(p), z); }
+    for (let i = 1; i < nPhi - 1; i++) { if (dir > 0) idx.push(base, base + i, base + i + 1); else idx.push(base, base + i + 1, base + i); }
+  }
   const positions = new Float32Array(pos), indices = new Uint32Array(idx);
   return { positions, normals: computeNormals(positions, indices), indices };
 }

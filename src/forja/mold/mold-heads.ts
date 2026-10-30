@@ -174,7 +174,9 @@ export function headMesh(hd: HeadSpec, z0: number, o?: { nPhi?: number }): Mesh 
   const push = (r: number, phi: number, z: number) => pos.push(r * Math.cos(phi), r * Math.sin(phi), z);
   // ── superficie exterior (niveles donde dobla, no uniformes) ──
   for (const z of lv) for (let i = 0; i <= nPhi; i++) { const phi = (2 * Math.PI * i) / nPhi; push(headRadius(hd, phi, z), phi, z0 + z); }
-  for (let j = 0; j < nz; j++) for (let i = 0; i < nPhi; i++) { const a = j * row + i, b = a + 1, c = a + row, d = c + 1; idx.push(a, c, b, b, c, d); }
+  // hacia AFUERA (orden J, 2026-10-29): el par (a, c, b) daba la normal −r̂ (al eje) — medido: 112 caras laterales hacia
+  // adentro, 0 hacia afuera — mientras la cara superior miraba afuera. (a, b, c) = φ̂×ẑ = +r̂.
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nPhi; i++) { const a = j * row + i, b = a + 1, c = a + row, d = c + 1; idx.push(a, b, c, b, d, c); }
   // ── cara superior: anillo del hueco Allen al borde (o disco si no hay hueco) ──
   const hasSocket = !!hd.sw && !hd.hexOuter;
   const top = z0 + hd.k, base0 = pos.length / 3;
@@ -193,10 +195,18 @@ export function headMesh(hd: HeadSpec, z0: number, o?: { nPhi?: number }): Mesh 
     for (let i = 0; i <= nPhi; i++) { const phi = (2 * Math.PI * i) / nPhi; push(hexRadius(phi, hd.sw!), phi, zf); }
     for (let i = 0; i < nPhi; i++) idx.push(bf, bf + 1 + i, bf + 2 + i);
   }
-  // ── cara de apoyo (anillo del vástago al borde) ──
+  // ── cara de apoyo: DISCO entero del eje al borde, mirando −ẑ (orden J) ──
+  // Antes era el anillo del vástago al borde con el par (a, c, b, b, d, c): la mitad de sus triángulos miraba abajo y la
+  // otra mitad ARRIBA (medido: 28 y 28), y el hueco del vástago dejaba la cabeza ABIERTA (28 aristas sueltas). Con el disco
+  // la cabeza es un sólido cerrado por sí misma; la caña (cerrada también) se apoya en él: dos cascarones que se tocan, y el
+  // volumen del perno es la suma exacta de los tres.
+  // SIN VÉRTICE AL CENTRO: el disco se teje en abanico desde su PRIMER vértice del borde (el contorno es convexo). Con un
+  // vértice en el eje, la cabeza y la tapa de la caña lo compartían y el perno entero quedaba como UN cuerpo conexo: el Foco
+  // ajusta un cilindro por cuerpo con su caja y le daba al perno entero el radio de la CABEZA (5 mm en un M6) — medido:
+  // «2.50 mm entre B-linea0 y el tornillo 1, FALLA», cuando la punta roscada (r 3) deja 4.50.
   const bb = pos.length / 3;
-  for (let i = 0; i <= nPhi; i++) { const phi = (2 * Math.PI * i) / nPhi; push(hd.major / 2, phi, z0); push(headRadius(hd, phi, 0), phi, z0); }
-  for (let i = 0; i < nPhi; i++) { const a = bb + i * 2, b = a + 1, c = a + 2, d = a + 3; idx.push(a, c, b, b, d, c); }
+  for (let i = 0; i <= nPhi; i++) { const phi = (2 * Math.PI * i) / nPhi; push(headRadius(hd, phi, 0), phi, z0); }
+  for (let i = 1; i < nPhi - 1; i++) idx.push(bb, bb + i + 1, bb + i);
   const positions = new Float32Array(pos), indices = new Uint32Array(idx);
   return { positions, normals: computeNormals(positions, indices), indices };
 }
