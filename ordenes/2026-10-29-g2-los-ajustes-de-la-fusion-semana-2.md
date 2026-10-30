@@ -3,7 +3,7 @@
 ESTADO: hoy
 PRIORIDAD: 1
 
-BASE: 955383b
+BASE: a1fe7f9 (el worktree nació en origin/main, divergente y sin trabajo propio: `git reset --hard main` antes de tocar nada)
 
 OBJETIVO: las cuatro órdenes de la semana 2 (H, J, I, G) ya están en main. Cada una pasó sola; juntas quedan cuatro costuras que
 ninguna podía cerrar desde su región. Al terminar: la inspección (paso 7) enseña los números del ACERO (columna ② de H), la apertura
@@ -70,8 +70,64 @@ camino de la carcasa vuelve a pasar en el MODO CAMINO. Todo medido sobre main fu
 - El banco: su acta (ruta) con CONFIABLE o con lo que no lo es; dorados que cambian, con razón.
 - tsc sin errores nuevos (base: 58 en main fusionado; guarda tu propia línea base antes del primer cambio); el cubo 270/270.
 
-## CIERRE (se llena al terminar)
-- orden vs entregado:
-- números:
-- evidencia:
-- preguntas abiertas:
+## CIERRE (2026-10-29 · MEDIDO, no contado)
+
+**Orden vs entregado.** Los cinco, un cambio a la vez, cada uno medido en la APP REAL (forja-dev4 :5195, GPU `ANGLE … D3D12
+(NVIDIA GeForce RTX 4070 Ti)`, 1594C Box por el camino hasta el portamoldes, 8 pines, capturas 3840×2160 juzgadas con Read) con
+el arnés `mira-g2.cjs` (reúsa insp-v2/sonda-i de la orden I y mira-h de la H: lee el DOM y `__qaForja`/`__forgeBrep`):
+ANTES (main a1fe7f9) → A (cambio 1) → B (+2) → C (+3, el código final).
+1. **La inspección lee el ②** (`ForgeBRepStudio.tsx`, el paso 7): el recorrido se arma con `rejuicio?.rev ?? revision` (contratos
+   Y pkg) leído del render vivo (`armarInspRef`; antes el efecto leía el `revision` del render en que se abrió, ~8 s antes) y se
+   RE-ARMA si cambia la firma del juicio con la inspección abierta (conserva el punto). `inspeccion-recorrido.ts`: el punto del
+   dictamen dice cuál juzga («re-juzgado con tu molde…» · «② en el acero»); «qué manda el ciclo» enseña `agua-ciclo` y
+   `agua-paso` con su número contra su límite (antes `agua-ciclo` salía como «rojo sin vista»); la nota de «dos bebederos» lee
+   el formato de H y sale sólo si el dictamen juzgó el del diseño (MEDIDO: tras la fusión de H el regex viejo ya no casaba y la
+   nota se había apagado sola, también cuando debía salir); el cierre trae la decisión del libro para PASO y CICLO y la de CLARO
+   ya no habla de «otra agua».
+2. **Una apertura** (`moldmachine.ts`): con `spec.bebederoCortado` la colada que sale con la pieza es su `largoMm` (medido SOBRE
+   la pieza; NO se le resta H — daría 119.2, la advertencia de I) → `seleccion.apertura.strokeMm` del ② = 2.5·33.3 + 69.2 = 152.5.
+   Sin molde (paso 4, E2) se queda el estimado y se rotula. La hoja de análisis toma la máquina del paquete ② y dice la CARRERA
+   («abre 152.5 mm») y el alto abierto con su cerrado ESTIMADO; la tarjeta TU PLANTA recibe `pkgMolde` (②) y dice «abre» = la
+   carrera (antes «abre 447» era el alto abierto), con «(estimada…)» sin molde; el expediente la lleva en su hoja.
+   Kazmer §6.3.1 p.123 + Tabla 6.1 p.129; los +10 mm, regla de Hefestos (sin cambio).
+3. **El signo del empaque** (`estudio-molde-datos.ts`, E8): compara de verdad (≥ ✓ / < ✗ VIOLA) y el freeze del bebedero
+   cortado se calcula con su ⌀ EXACTO (2·rBase), el mismo del ② (MEDIDO: mismas constantes del ABS en la E8 y en el motor;
+   19.99 contra 20.01 era sólo el ⌀ redondeado a 8.62).
+4. **El camino** (`caminos/la-carcasa-de-mitsubishi.md` + `scripts/camino-runner.cjs`): en el MODO CAMINO la navegación del
+   producto es el riel de 9 pasos; el runner pulsa `riel-paso-3/5/6/8/9` (idempotentes: un reintento no apaga nada) en vez de la
+   tira escondida (`parte-lente-*`, `pointer-events:none` a propósito). Y `--sin-tablero`: en las copias `forja-devN`
+   `public/temis.json` es un ENLACE al repo principal — correr el tablero desde una copia lo reescribiría (el tablero es del
+   coordinador). La app no se tocó para esto. `forja-drive.cjs`: en TOCA, sin tocar (no hizo falta).
+5. **El banco** sobre la fusión: ver abajo.
+
+**Números, 1594C Box, ANTES (main a1fe7f9) → DESPUÉS (esta rama).**
+| qué | ANTES | DESPUÉS |
+|---|---|---|
+| dictamen que lee la inspección | ① paso 4: **4 de 69** (DP, COLADA VS CICLO, CICLO, FREEZE) — y el ② de la lámina ya decía 5 | **② en el acero: 5 de 69** (DP, COLADA VS CICLO, PASO, CICLO, FREEZE), «re-juzgado con tu molde» |
+| colada (punto 2) | 8.7 MPa de 4.3 · 145 s contra 21.7 (bebedero ⌀11.94 × 85.4 del diseño) junto a la cota «bebedero sobre la pieza 69.20» del que se corta | **11.0 MPa de 9.3** (9.29) · **75.8 s** contra 21.7 — número y cota del MISMO bebedero; sin nota de «dos bebederos» |
+| compuerta | se congela a los 8.3 s (edge gate supuesto) · pide 21.7 | **20.0 s** (20.01, la base del bebedero) · pide 21.7 |
+| qué manda el ciclo | sin chips; `agua-ciclo` como punto «rojo sin vista» aparte (11 puntos) | ✗ PASO ✗ CICLO en su punto: «el ciclo con que se cotizó 41.0 s · lo más grueso pide 64.7» y «el paso real de la serpentina B 58.3 mm · 2.47·H · máx 2·H» (10 puntos) |
+| agua más justa | (①: CLARO ✓ 3.76/3.17 en otro par) | «3.49 mm · mínimo 3.17 · de panzazo · el dictamen mide lo mismo: 3.49 contra 3.17» |
+| el cierre | 4 rojos (la decisión de CICLO era el detalle crudo) | **5 rojos**, cada uno con su decisión del libro (PASO: Eq 9.24 p.214 · CICLO: §9.2.1 p.203 · §2.3.1) |
+| apertura — pantalla (punto «abre, sale y empuja») | abre 152.5 «(El selector de máquina usó 135.4 con un bebedero estimado…)» | **abre 152.5**, sin nota |
+| apertura — `animZ('clamp')` | 152.5 | **152.5** |
+| apertura — motor `seleccion.apertura.strokeMm` | ① 135.4 · E2 135.4 · ② 135.4 | ① 135.4 · E2 135.4 (estimadas) · **② 152.5** |
+| apertura — hoja de análisis | «abierto 447 de 1010 mm» | **«abre 152.5 mm · abierto 465 de 1010 mm (cerrado ≈ 312, estimado)»** |
+| apertura — expediente (HTML descargado) | «abierto 447 de 1010 mm» | **«abre 152.5 mm · abierto 465 de 1010 mm…»** |
+| apertura — tarjeta TU PLANTA | sin molde: «abre 447 de 1010» · con molde: «abre 447 de 1010» | sin molde: **«abre 135.4 mm (estimada: el bebedero se corta en el paso 6) · abierto 447»** (`data-apertura-fuente=estimada`) · con molde: **«abre 152.5 mm · abierto 465»** (`acero`) |
+| la máquina, disparo | 20 % (colada del diseño) | 19.2 % en hoja/tarjeta/inspección (la colada que se corta); dorados (E2) sin cambio |
+| E8, la cadena del bushing | «⌀8.62 → empaca 19.99s ≥ t_pack 21.70s ✓ pero ENFRÍA…» | **«⌀8.62 → empaca 20.01s < t_pack 21.70s ✗ VIOLA el empaque (rechupes): la base se congela antes de terminar de empacar y ENFRÍA en 75.7s…»** = FREEZE ② 20.01 de 21.70 |
+| tsc | base 58 | **58, cero nuevos** (`comm -13` vacío) |
+| el cubo | — | **270/270** (código final; sin ACTA: ningún literal se movió) |
+
+**El camino de la carcasa** (runner en el MODO CAMINO, `riel-paso-*`, `--sin-tablero`, forja-dev4): **8/9 pasos** · el único
+rojo es `p3-2`, el reloj del campo de enfriamiento (> 2.5 s), el MISMO rojo conocido desde el 2026-10-22 (8/9, 46/47); antes de
+este cambio el runner se rompía en el paso 3 por el clic a la tira escondida. `## MEDIDO` reescrito. Log: iangpu
+`/home/ian/el-plan-dev4/g2/camino.log`, cuadros en `g2/camino-evid/`.
+
+**El banco** (`qa-banco.cjs` sobre esta rama, build de producción en la copia): **CONFIABLE · VERDE** — huella ×3 VERDE (su
+control «pared 2.8» muerde; la carrera del reloj congelado no regresó), dorados VERDE (su control muerde), 0 de 5 piezas rotas
+pasaron la puerta y el sano pasó. Acta: iangpu `/home/ian/el-plan-dev4/qa/g2/acta.html`. **Dorados que cambian: ninguno** — el
+dorado `aperturaMm` lee la apertura de la E2 (135.4, estimada y así rotulada); la del acero (152.5) vive en el ②.
+
+(Cierre completado por el coordinador el 2026-10-30 con los logs del agente: la sesión terminó antes de su commit.)

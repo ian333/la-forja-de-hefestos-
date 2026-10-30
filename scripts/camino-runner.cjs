@@ -7,7 +7,7 @@
  * estados del `## PASOS` con lo MEDIDO — no con lo que alguien recordaba.
  *
  *   URL=https://university.gaiaprime.com.mx/forja-brep.html \
- *   node scripts/camino-runner.cjs caminos/la-carcasa-de-mitsubishi.md [--out <dir>] [--evidencia <dir>] [--dry] [--no-escribir]
+ *   node scripts/camino-runner.cjs caminos/la-carcasa-de-mitsubishi.md [--out <dir>] [--evidencia <dir>] [--dry] [--no-escribir] [--sin-tablero]
  *
  * El camino declara en `## RUNNER` una línea por paso:
  *   - n · <gestos: JSON array de acciones de forja-drive> · <check> · <check> …
@@ -46,6 +46,10 @@ const DRY = flag('--dry');
 // video (REC=<dir> del arnés). No reescribe el camino: es un paseo, no una medición.
 const PASEO = arg('--paseo');
 const ESCRIBIR = !flag('--no-escribir') && !PASEO;
+// --sin-tablero (orden G2, 2026-10-29): reescribe el camino pero NO corre temis-tablero.cjs. En las copias de iangpu
+// (`forja-devN`) `public/temis.json` es un ENLACE al repo principal: el tablero de una copia escribiría el del repo principal
+// (y sin `ordenes/` en la copia, uno incompleto). El tablero lo corre el coordinador tras la fusión.
+const SIN_TABLERO = flag('--sin-tablero');
 
 // ── leer el camino ────────────────────────────────────────────────────────────
 const mdPath = path.resolve(REPO, CAMINO);
@@ -190,7 +194,10 @@ if (ESCRIBIR) {
   } else nuevo += `\n## MEDIDO\n${lineaMedido}\n`;
   fs.writeFileSync(mdPath, nuevo);
   console.log(`\n→ ${CAMINO} reescrito (estados + MEDIDO)`);
-  const t = spawnSync(process.execPath, [path.join(__dirname, 'temis-tablero.cjs')], { cwd: REPO, encoding: 'utf8' });
-  console.log((t.stdout || '').split('\n').filter((l) => /CAMINO|TEMIS ·/.test(l)).join('\n'));
+  if (SIN_TABLERO) console.log('→ --sin-tablero: temis-tablero.cjs NO corre (lo corre el coordinador)');
+  else {
+    const t = spawnSync(process.execPath, [path.join(__dirname, 'temis-tablero.cjs')], { cwd: REPO, encoding: 'utf8' });
+    console.log((t.stdout || '').split('\n').filter((l) => /CAMINO|TEMIS ·/.test(l)).join('\n'));
+  }
 }
 process.exit(meta.fatal ? 1 : 0);

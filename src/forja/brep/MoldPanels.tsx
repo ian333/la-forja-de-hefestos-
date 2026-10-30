@@ -12,7 +12,7 @@ import { GOLD } from './ui-theme';
 import { Ic } from './icons';
 import { moldThermalResistanceStudy, heatToExtractW } from '../mold/thermal-resistance';
 import { estPartVolumeCc } from '../mold/feed';
-import { P_PACK_DEFECTO_MPA, moldMachine, type MachineSpec } from '../mold/moldmachine';
+import { P_PACK_DEFECTO_MPA, moldMachine, type MachineSpec, type MoldPackage } from '../mold/moldmachine';
 import { RESINAS_KAZMER, fichaResina, ResinaSinFicha } from '../mold/materials';
 import { FICHA_PLANTA_VACIA, inyectoraDelTaller, leeFichaDeLaPlanta, type FichaDeLaPlanta, type InyectoraDeLaPlanta, type TarifasDeLaPlanta } from '../mold/machinesizing';
 import { costoDeReferencia, costoReferenciaLinea } from '../mold/expediente';
@@ -1772,11 +1772,15 @@ function deBorrador(b: BorradorPlanta): FichaDeLaPlanta {
   }) ?? FICHA_PLANTA_VACIA;
 }
 
-export function TarjetaPlanta({ mold, spec, derecha = 18 }: {
+export function TarjetaPlanta({ mold, spec, derecha = 18, pkgMolde = null }: {
   mold: MoldBag;
   /** la spec de la pieza con la pared MEDIDA (la del dictamen): con ella se dice qué le hace la ficha a esta pieza */
   spec?: MachineSpec;
   derecha?: number;
+  /** UNA APERTURA (orden G2): con el molde hecho, el paquete re-juzgado con el acero (② de la orden H: el bebedero que corta la
+   *  E5). La máquina de la tarjeta sale de él — la MISMA que la hoja de análisis y la inspección —; sin él, la apertura es la
+   *  del bebedero estimado y se rotula «estimada». */
+  pkgMolde?: MoldPackage | null;
 }) {
   const { planta, setPlanta, resina, setIntake } = mold;
   const [abierta, setAbierta] = useState(false);
@@ -1800,7 +1804,8 @@ export function TarjetaPlanta({ mold, spec, derecha = 18 }: {
   const ficha = fichaResina(resina);
   const tarifasN = TARIFAS.filter(([k]) => planta.tarifas?.[k] != null);
   const faltaTarifa = TARIFAS.filter(([k]) => planta.tarifas?.[k] == null).map(([, t]) => t);
-  const sel = vista?.sel;
+  // la máquina: la del acero (②) cuando el molde existe; si no, la del diseño numérico (① — su apertura, ESTIMADA)
+  const sel = pkgMolde?.diseno.maquina.seleccion ?? vista?.sel;
   const descarga = () => {
     const blob = new Blob([JSON.stringify(planta, null, 1)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -1836,13 +1841,16 @@ export function TarjetaPlanta({ mold, spec, derecha = 18 }: {
   const etq = { font: `600 10.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.16em', color: PIEL.texto.secundario } as const;
   const boton = (primario: boolean) => ({ font: `600 11.5px ${PIEL.fuente.titulo}`, letterSpacing: '0.06em', padding: '5px 9px', borderRadius: 3, cursor: 'pointer',
     background: primario ? PIEL.operador : 'transparent', color: primario ? PIEL.texto.sobreAcento : PIEL.texto.primario, border: `1px solid ${primario ? PIEL.operador : PIEL.fondo.hiloFuerte}` });
+  // «abre» es la CARRERA de apertura (la que anima el molde, `animZ('clamp')`), no el alto abierto: antes decía «abre 447 de 700»
+  // con 447 = alto cerrado estimado + carrera estimada (orden G2: ahora la carrera y el alto, cada uno con su nombre)
   const maqTxt = !sel ? '' : sel.ok
-    ? `${sel.machine?.name ?? '—'} · cierre ${sel.clampUtilPct} % de ${sel.machine?.clampTons} t · disparo ${sel.shotPct} % · abre ${Math.round(sel.apertura.needMm)} de ${sel.machine?.maxDaylightMm} mm (§4.3.3)`
+    ? `${sel.machine?.name ?? '—'} · cierre ${sel.clampUtilPct} % de ${sel.machine?.clampTons} t · disparo ${sel.shotPct} % · abre ${sel.apertura.strokeMm.toFixed(1)} mm${pkgMolde ? '' : ' (estimada: el bebedero se corta en el paso 6)'} · abierto ${Math.round(sel.apertura.needMm)} de ${sel.machine?.maxDaylightMm} mm (§4.3.3)`
     : 'ninguna de tus inyectoras admite este molde (§4.3.3)';
   const conPlanta = planta.inyectoras.length > 0;
   return (
     <div data-testid="ficha-planta" data-inyectoras={planta.inyectoras.length} data-tarifas={tarifasN.length} data-resina={ficha?.clave ?? `sin-ficha:${resina}`}
       data-maquina={sel?.machine?.name ?? ''} data-maquina-ok={sel ? (sel.ok ? 1 : 0) : ''} data-clamp-pct={sel?.clampUtilPct ?? ''}
+      data-apertura={sel ? sel.apertura.strokeMm : ''} data-apertura-fuente={sel ? (pkgMolde ? 'acero' : 'estimada') : ''}
       data-costo-modo={vista?.costo?.modo ?? ''} data-costo-mxn={vista?.costo?.totalMXN != null ? Math.round(vista.costo.totalMXN) : ''}
       data-costo-usd={vista?.costo ? Math.round(vista.costo.referenciaUSD.moldeUSD) : ''} data-horas={vista?.costo ? Math.round(vista.costo.maquinadoH + vista.costo.acabadoH) : ''}
       data-error={vista?.error ? 1 : 0}
