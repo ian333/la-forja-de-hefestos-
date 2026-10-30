@@ -145,6 +145,13 @@ viejos de mold-drawing-set.ts desaparecen: el tipo de la tupla de las guías) ·
 mold-assembly en verde · `mold-assembly-test.cjs` trae 6 checks `J_*` nuevos (base 6655fdd: FATAL, no pasa; final: verdes).
 `node scripts/orden-gate.cjs` → VERDE.
 
+**ADENDA — la huella ×3 del src definitivo (`huella-J2/`, build de producción :4270).** `HUELLA_GATE: VERDE ·
+a6974b11bde767a5 ×3` · `VOLUMEN_GATE: VERDE · 0 de 75/75/75` · `PAR_DE_CONTROL_VOLUMEN: MUERDE (−18,899.37)` · exit 0.
+Contra main: **10 diferencias, todas del acero de la orden** (expulsora: tris y 647,951.8 → 637,362.86; los dos cuerpos de
+tornillería: tris 12,464 → 12,520 y vol +14,578.96 → +11,419.28 / −12,175.78 → +18,899.37; la leyenda: tris). **El Foco quedó
+idéntico a main** (78 cilindros, 945 pares, los mismos dos «de panzazo») y `qa-dorados --medido huella-J2` → **DORADOS_GATE:
+VERDE** (los 18, `holguraAguaMinMm` 3.49): no hay que re-grabar dorados por esta orden.
+
 **Visto, de otras órdenes o para después (no lo toqué).**
 - **Los pilares muerden el canto de la placa expulsora**: 2 de los 3 (⌀40 en x = 79 de la base) cortan una muesca de 6.5 mm
   en el canto de la expulsora y de la retenedora (el 3D ya la cortaba; ahora la lámina lo DICE: «holgura del pilar ⌀41» en
