@@ -18,6 +18,11 @@ del primer video (`Downloads/la-forja-video-1/debate/`).
 | K · el molde en STEP y con nombre ISO | STEP del ensamble (B-Rep por cuerpo), BOM con ISO 12165 y designaciones de norma, cajetín ISO 7200 | forja-dev7 · 5198 | occt.ts, mold-drawings.ts, mold-drawing-set.ts, mold-assembly.ts, expediente.ts (láminas/BOM/STEP), ForgeBRepStudio.tsx (descarga del STEP) |
 | L · el reporte de análisis | el volumen del sólido en la E5/E6; el reporte por secciones con imagen, número, límite y cita | forja-dev5 · 5196 | useMoldStudio.ts, estudio-molde-datos.ts, expediente.ts (reporte), ForgeBRepStudio.tsx (reporte) |
 
+| P · el modo película (video 1) | sin interfaz, cámara con fov, cortes térmicos por la raíz de los postes, acero opaco | forja-dev6 · 5197 | ForgeBRepStudio.tsx (modo película, cámara, material, cortes), piel-futuro.ts, FocoMolde3D.tsx, foco-lentes.ts (pintar el campo interior), filma-camino.cjs |
+
+**DECISIONES DE IAN sobre el video 1 (2026-10-30):** «va el mismo canal, de GAIA PRIME; no salgo a cuadro; sí la puerta; apruebo la
+política del archivo». Plan: `Downloads/la-forja-video-1/00-EL-VIDEO-1.md`.
+
 ## RIESGOS DE FUSIÓN (declarados)
 - expediente.ts y ForgeBRepStudio.tsx: K y L en regiones distintas.
 - L mueve números dorados y la huella A PROPÓSITO (el agua cambia con el volumen correcto): el banco sale ROJO justo ahí y el
@@ -29,6 +34,7 @@ del primer video (`Downloads/la-forja-video-1/debate/`).
 ## CREA
 - ordenes/2026-10-30-k-el-molde-en-step-y-con-nombre-iso.md
 - ordenes/2026-10-30-l-el-reporte-de-analisis.md
+- ordenes/2026-10-30-p-el-modo-pelicula.md
 
 ## BORRA
 - (nada)
