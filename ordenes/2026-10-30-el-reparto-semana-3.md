@@ -30,11 +30,19 @@ política del archivo». Plan: `Downloads/la-forja-video-1/00-EL-VIDEO-1.md`.
 
 ## TOCA
 (este superticket solo coordina; lo que entra aquí entra POR FUSIÓN de una rama cuyo gate salió VERDE en su worktree)
+- ordenes/2026-10-30-k-el-molde-en-step-y-con-nombre-iso.md
+- src/forja/brep/ForgeBRepStudio.tsx
+- src/forja/brep/occt.ts
+- src/forja/mold/mold-assembly.ts
+- src/forja/mold/mold-drawing-set.ts
+- src/forja/mold/mold-drawings.ts
+- src/forja/mold/mold-plano-set.ts
 
 ## CREA
 - ordenes/2026-10-30-k-el-molde-en-step-y-con-nombre-iso.md
 - ordenes/2026-10-30-l-el-reporte-de-analisis.md
 - ordenes/2026-10-30-p-el-modo-pelicula.md
+- src/forja/mold/molde-step.ts
 
 ## BORRA
 - (nada)
