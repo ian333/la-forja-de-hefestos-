@@ -109,8 +109,9 @@ y lee la E4/E5/E6 MIENTRAS se arman).
    contracción del proveedor). Falta: el lote real; el FAN usa η newtoniana efectiva (Eq 5.22); el ABS conserva los números de los
    ejemplos del libro. Sin lienzo (dicho).
 3. *Proceso* (§5.5 · §4.3.3): temperaturas de las ecuaciones del cap 9, t_llenado 1 s (convención del libro, dicho), p_fill 18.6
-   (FAN), p_pack 50 (por defecto §5.5.3), t de empaque 21.7 s, ciclo cotizado 41.0 s (Eq 3.23), la máquina (FCS HT-150SV, cierre,
-   disparo, abre 152.5), `llenado-tonelaje`, `layout-maquina`, `layout-shot-ventana`. Falta: perfil del husillo, V/P, empaque por
+   (FAN), p_pack 50 (por defecto §5.5.3), t de empaque 21.7 s, ciclo cotizado 41.0 s (Eq 3.23), la máquina (FCS HT-150SV, cierre
+   26.3 %, disparo 19.2 %, abre 152.5 — la corrida `despues3` imprimía «abre 153» porque el formato redondeaba a entero; ya va a 1
+   decimal, la MISMA apertura de G2; sólo texto, tsc verde), `llenado-tonelaje`, `layout-maquina`, `layout-shot-ventana`. Falta: perfil del husillo, V/P, empaque por
    etapas, ventana de proceso.
 4. *Llenado* (cap 5-6-8): FAN 18.6 MPa · 1.00 s · llena completo; lente LLENADO 108 mm · L/t 33.8:1; techo, cola baja ⚠, velocidad,
    convergencia, área proyectada, DP ✗ 11.0/9.30, shear, Re, volumen, boquilla, venteo. Imágenes: la lente LLENADO + la E5.
@@ -132,12 +133,18 @@ y lee la E4/E5/E6 MIENTRAS se arman).
 **Par de control.** (a) node, `mide-l.cjs`: **10/10** — sano (② re-juzgado): 8 secciones, sin aviso, cada ✗ del ② en Conclusiones,
 38 renglones con veredicto = su criterio del ② (0 distintos), sólo las imágenes del álbum; roto (sin molde, sin datos): juzga ①,
 «falta el molde: … arma el MOLDE (paso 6)», 0 secciones con imagen y cada una dice qué abrir, la E6 «no existe todavía» (3
-renglones, no se inventa), Conclusiones = los 4 ✗ de ①. (b) app: la misma pieza sin MOLDE → ver «Evidencia» (corrida
-`control-sin-molde`).
+renglones, no se inventa), Conclusiones = los 4 ✗ de ①. (b) app, la misma 1594C Box SIN pulsar MOLDE (`control-sin-molde/`,
+juzgada con Read): «juzga ① tu pieza sola · ✗ 4 · ⚠ 10 · 3 de 8 secciones con imagen»; el FAN «no existe todavía · falta el
+molde: arma el MOLDE (paso 6)»; DP con la p_fill ESTIMADA (8.71 de 4.30) y el bebedero del diseño numérico; cada sección sin lienzo
+dice qué abrir; el archivo trae 3 imágenes (contra 9 con molde). Una lente que se visita menos de ~2 s no entra al álbum (en el
+control la LLENADO no alcanzó): es a propósito — lo que no estuvo en pantalla no se finge.
 
-**Dorados y huella.** La geometría del molde NO cambió (hash de los 16 tramos del agua d3fef4d6 y de los 8 pines 2264153b
-iguales ANTES/DESPUÉS); los dorados leen E2/E8/E10/Foco/① (ninguno lee el calor, el caudal térmico ni el regrind de la E5).
-Esperado: **ninguno cambia**. El banco: ver «Evidencia».
+**Dorados y huella: NINGUNO cambia.** La geometría del molde no se movió (hash de los 16 tramos del agua d3fef4d6 y de los 8
+pines 2264153b iguales ANTES/DESPUÉS) y los dorados leen E2/E8/E10/Foco/① (ninguno lee el calor, el caudal térmico ni el regrind
+de la E5). MEDIDO: `qa-banco.cjs --lista box` sobre el build de producción de esta rama (:4250) → **BANCO VERDE** · huella ×3
+VERDE `a6974b11bde767a5…` (acero `d66f26f4e24aa7e8…`) = **la MISMA huella** que la corrida del banco de G2 (el `src/` de main 90ee856
+es idéntico al de la fusión de G2: `git diff --stat 69bf258 90ee856 -- src scripts` vacío) · dorados VERDE 18/18 (±5 %, su control
+muerde). Acta: iangpu `/home/ian/el-plan-dev5/qa/l/acta.html`. Nada que re-grabar.
 
 **ACTA: no aplica.** El cubo **270/270** sin tocar un literal (su E5 conserva la rejilla analítica). tsc: **58 = los 58 de la
 línea base** (`comm -13` vacío).
@@ -151,14 +158,17 @@ línea base** (`comm -13` vacío).
   (campo conjunto, volumen bien) y de la lente LLENADO.
 - La E6 calcula su potencia con t_c 145.1 s (la colada del diseño numérico — «dos coladas», visto por H): el reporte lo rotula.
 - La E6 bombea a Re 4000 aunque el calor real ahora pide 0.069 GPM: el ⌀6.35 sigue fuera de la ventana térmica (D_max 1.38).
+- Sin MOLDE, la tarjeta COSTO DE REFERENCIA del expediente dice «7974 h · US$ 1,563,029» (con molde: 61 h · US$ 11,827): cotiza
+  la pieza MACIZA porque la E1 todavía no trae la pared del Foco. No lo toqué (costo = orden G); el reporte no usa el costo.
 
 **Evidencia** (iangpu `/home/ian/el-plan-dev5/l/`): `antes/`, `antes2/` (ANTES: 02 molde, 03 dictamen ②, 04-agua-diametro y
 04-feed-dp abiertos, `numeros.json` con la E4/E5/E6 leídas mientras se arman) · `despues1/` (cambio 1: mismas capturas y
 números) · `despues3/` (cambio 2, el código final: 10 expediente, 11-reporte-seccion-<8 secciones> en la app, 20-archivo-<llenado ·
 enfriamiento · conclusiones> = el HTML DESCARGADO abierto como lo abre la planta, `expediente.html`, `numeros.json`) ·
 `despues2/` (la primera vuelta del reporte: la lente ENFRIAMIENTO salía crema — el defecto que corrigió el modo MAPA) ·
-`control-node.json` + `control-node.log` (10/10) · `control-sin-molde/` · `cubo.log` (270/270) · arneses `mira-l.cjs`, `mide-l.cjs` ·
-banco `/home/ian/el-plan-dev5/qa/l/`.
+`control-node.json` + `control-node.log` (10/10) · `control-sin-molde/` (par de control en la app: 10, 11-reporte-seccion-*,
+20-archivo-*, `expediente.html`) · `cubo.log` (270/270) · arneses `mira-l.cjs`, `mide-l.cjs` · banco `/home/ian/el-plan-dev5/qa/l/`
+(`banco.log`, `acta.html`, `corridas/`) · build de producción `/home/ian/el-plan/dist-dev5` servido en :4250.
 
 **Archivos tocados (para la fusión).**
 - `src/forja/brep/useMoldStudio.ts` — el tipo de `e5tuberia` (+2 campos), la E5 (`partVolCc` del sólido, testigo de la rejilla), el
