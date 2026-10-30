@@ -23,7 +23,9 @@ def main(ids):
     out = json.load(open(out_p)) if os.path.exists(out_p) else {}
     hoy = dt.date.today().isoformat()
     for mp in sorted(glob.glob(os.path.join(ROOT, 'videos', '*.json'))):
-        d = json.load(open(mp, encoding='utf-8')); vid = d.get('id')
+        d = json.load(open(mp, encoding='utf-8'))
+        if not isinstance(d, dict): continue                      # hay manifiestos que son listas (otras series)
+        vid = d.get('id')
         if ids and vid not in ids: continue
         y = ((d.get('publicar') or {}).get('subidas') or {}).get('yt')
         if not y: continue

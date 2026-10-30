@@ -55,6 +55,15 @@ case "$ODIR" in /*) ;; *) ODIR="$ROOT/$ODIR" ;; esac
 mkdir -p "$ODIR"
 OMASTER="$ODIR/$(basename "$(m salida.master)" .mp4)$SUF.mp4"; OH264="$ODIR/$(basename "$(m salida.h264)" .mp4)$SUF.mp4"
 NFRAMES=$(python3 -c "print(round($DUR*$FPS))")
+# PREROLL/POSTROLL (2026-10-24, «El hielo flota»): cuadros EXTERNOS (Blender) antes y después de la
+# escena. render.preroll = {dir, frames}, render.postroll = {dir, frames}. La escena rinde solo su
+# tramo (DURE = DUR − pre − post); el paso `montaje` arma la línea de tiempo completa en $FRAMES-montaje
+# (enlaces duros + PNG→jpg) y el ensamble lee de ahí. Sin declararlos, todo rinde igual que siempre.
+PRE_DIR=$(m render.preroll.dir); PRE_N=$(m render.preroll.frames); PRE_N="${PRE_N:-0}"
+POST_DIR=$(m render.postroll.dir); POST_N=$(m render.postroll.frames); POST_N="${POST_N:-0}"
+case "$PRE_DIR" in ""|/*) ;; *) PRE_DIR="$ROOT/$PRE_DIR" ;; esac; case "$POST_DIR" in ""|/*) ;; *) POST_DIR="$ROOT/$POST_DIR" ;; esac
+DURE=$(python3 -c "print(round($DUR - ($PRE_N + $POST_N) / $FPS, 3))"); NFRAMES_E=$((NFRAMES - PRE_N - POST_N))
+MONTAJE="$FRAMES-montaje"
 BASE_URL="${BASE_URL:-http://localhost:5178}"
 export DISPLAY=${DISPLAY:-:0} GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
 
@@ -76,8 +85,8 @@ paso_render() {
   # si la duración del video cambió: los frames viejos sobreviven y el resultado es un
   # Frankenstein que nadie nota hasta verlo. Pasó el 2026-07-28 al cortar de 92 a 74.3 s.
   local marca="$FRAMES/.dur"
-  if [ -f "$marca" ] && [ "$(cat "$marca")" != "$DUR" ]; then
-    echo "   duración cambió ($(cat "$marca")s → ${DUR}s): BORRANDO frames viejos para no mezclar"
+  if [ -f "$marca" ] && [ "$(cat "$marca")" != "$DURE" ]; then
+    echo "   duración cambió ($(cat "$marca")s → ${DURE}s): BORRANDO frames viejos para no mezclar"
     rm -f "$FRAMES"/*.png "$FRAMES"/*.jpg
   fi
   # HUELLA DE LA ESCENA: la guarda de arriba sólo caza cambios de DURACIÓN. Si cambió la ESCENA
@@ -101,30 +110,30 @@ paso_render() {
     echo "   FRESH=1: borrando $(ls "$FRAMES"/*.png "$FRAMES"/*.jpg 2>/dev/null | wc -l) frames para renderizar de cero"
     rm -f "$FRAMES"/*.png "$FRAMES"/*.jpg
   fi
-  echo "$DUR" > "$marca"
+  echo "$DURE" > "$marca"
   local t0=$SECONDS
   for try in 1 2 3 4 5 6; do
     if [ "$SHARDS" -gt 1 ]; then
       local pids=()
       for k in $(seq 0 $((SHARDS-1))); do
-        node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" --dur "$DUR" \
+        node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" --dur "$DURE" \
           --out "$FRAMES" --fps "$FPS" --w "$W" --h "$H" --batch "$BATCH" ${NEGRAS:+--negras "$NEGRAS"} \
           --nshards "$SHARDS" --shard "$k" > "/tmp/$ID-shard$k.log" 2>&1 &
         pids+=($!)
       done
       wait "${pids[@]}"
     else
-      node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" --dur "$DUR" \
+      node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" --dur "$DURE" \
         --out "$FRAMES" --fps "$FPS" --w "$W" --h "$H" --batch "$BATCH"
     fi
     local nf; nf=$(ls "$FRAMES"/*.$FEXT 2>/dev/null | wc -l)
-    echo "   intento $try: $nf/$NFRAMES ($((SECONDS-t0))s)"
-    [ "$nf" -ge $((NFRAMES-2)) ] && break
+    echo "   intento $try: $nf/$NFRAMES_E ($((SECONDS-t0))s)"
+    [ "$nf" -ge $((NFRAMES_E-2)) ] && break
     sleep 5
   done
   NF=$(ls "$FRAMES"/*.$FEXT 2>/dev/null | wc -l)
-  echo "   frames: $NF/$NFRAMES en $((SECONDS-t0))s"
-  [ "$NF" -ge $((NFRAMES-2)) ] || { echo "✗ RENDER INCOMPLETO"; return 1; }
+  echo "   frames: $NF/$NFRAMES_E en $((SECONDS-t0))s"
+  [ "$NF" -ge $((NFRAMES_E-2)) ] || { echo "✗ RENDER INCOMPLETO"; return 1; }
   # ── GATE DE CUADRO NEGRO, POR PÍXELES ────────────────────────────────────────────────
   # render-clip.cjs detecta "negro" por TAMAÑO del archivo, y a 4K ESO NO FUNCIONA: el grano
   # de película vuelve el PNG incompresible y un cuadro 100 % negro pesa 200 KB, muy por
@@ -156,9 +165,39 @@ PYNEG
   [ $? -eq 0 ] || { echo "✗ hay cuadros negros — NO ensamblar"; return 1; }
 }
 
+paso_montaje() {
+  # Arma la LÍNEA DE TIEMPO completa cuando hay preroll/postroll: [pre][escena][post] → $MONTAJE/%05d.$FEXT.
+  # Los cuadros externos son PNG de Blender (frame_%04d.png desde 1): se convierten a $FEXT (q=1) para que
+  # ffmpeg lea UNA sola secuencia; los de la escena se enlazan (ln) sin copiar. Verifica la cuenta total.
+  [ "$PRE_N" -gt 0 ] || [ "$POST_N" -gt 0 ] || { echo "   (sin preroll/postroll: el ensamble lee $FRAMES)"; return 0; }
+  echo "── MONTAJE (preroll $PRE_N + escena $NFRAMES_E + postroll $POST_N = $NFRAMES) ──"
+  rm -rf "$MONTAJE"; mkdir -p "$MONTAJE"
+  python3 - "$PRE_DIR" "$PRE_N" "$FRAMES" "$NFRAMES_E" "$POST_DIR" "$POST_N" "$MONTAJE" "$FEXT" <<'PYMON'
+import glob, os, subprocess, sys
+pre_d, pre_n, esc_d, esc_n, post_d, post_n, out, ext = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4]), sys.argv[5], int(sys.argv[6]), sys.argv[7], sys.argv[8]
+def externos(d, n):
+    fs = sorted(glob.glob(os.path.join(d, '*.png')))
+    assert len(fs) >= n, f'{d}: hay {len(fs)} cuadros, se piden {n}'
+    return fs[:n]
+def pon(src, i):
+    dst = os.path.join(out, f'{i:05d}.{ext}')
+    if src.endswith('.' + ext): os.link(src, dst)
+    else: subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-q:v', '1', dst], check=True)
+i = 0
+for f in (externos(pre_d, pre_n) if pre_n else []): pon(f, i); i += 1
+esc = sorted(glob.glob(os.path.join(esc_d, f'*.{ext}')))
+assert len(esc) >= esc_n - 2, f'escena: {len(esc)} de {esc_n}'
+for f in esc[:esc_n]: pon(f, i); i += 1
+for f in (externos(post_d, post_n) if post_n else []): pon(f, i); i += 1
+print(f'   montaje: {i} cuadros en {out}')
+PYMON
+  [ $? -eq 0 ] || { echo "✗ montaje incompleto"; return 1; }
+}
+
 paso_ensamble() {
   echo "── ENSAMBLE (audio + subs + NVENC 10-bit) ──"
   mkdir -p "$ODIR"
+  local FIN="$FRAMES"; if [ "$PRE_N" -gt 0 ] || [ "$POST_N" -gt 0 ]; then FIN="$MONTAJE"; fi
   local mix=/tmp/$ID-mix.wav
   if [ -f "$ADIR/$MUS" ]; then
     ffmpeg -y -v error -i "$ADIR/$NARR" -i "$ADIR/$MUS" \
@@ -175,11 +214,11 @@ paso_ensamble() {
   # 2331 frames (75.1 s de 77.7) y el corte se comía justo la separación final. El pad deja
   # que -shortest recorte al VIDEO, que es la duración del manifiesto.
   echo "   master 4K 10-bit HEVC"
-  ffmpeg -y -v error -framerate "$FPS" -i "$FRAMES/%05d.$FEXT" -i "$mix" -vf "ass=$ASS" \
+  ffmpeg -y -v error -framerate "$FPS" -i "$FIN/%05d.$FEXT" -i "$mix" -vf "ass=$ASS" \
     -c:v hevc_nvenc -preset p5 -rc vbr -cq 21 -b:v 55M -maxrate 90M -pix_fmt yuv420p10le \
     -c:a aac -b:a 224k -shortest "$OMASTER" || return 1
   echo "   entrega h264"
-  ffmpeg -y -v error -framerate "$FPS" -i "$FRAMES/%05d.$FEXT" -i "$mix" -vf "ass=$ASS" \
+  ffmpeg -y -v error -framerate "$FPS" -i "$FIN/%05d.$FEXT" -i "$mix" -vf "ass=$ASS" \
     -c:v h264_nvenc -preset p5 -rc vbr -cq 23 -b:v 40M -maxrate 60M -pix_fmt yuv420p \
     -c:a aac -b:a 192k -shortest "$OH264" || return 1
   ls -la "$OMASTER" "$OH264" | awk '{print "   ",$5,$NF}'
@@ -450,6 +489,7 @@ case "$PASO" in
   entrega)   paso_entrega ;;
   subs)      paso_subs ;;
   render)    paso_render ;;
+  montaje)   paso_montaje ;;
   ensamble)  paso_ensamble ;;
   capsula)   paso_capsula ;;
   campo)     paso_campo ;;
@@ -458,6 +498,6 @@ case "$PASO" in
   subir)     paso_subir "$@" ;;
   programar) paso_programar ;;
   cosechar)  paso_cosechar ;;
-  todo)      paso_salud && paso_ritmo && paso_voz && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
+  todo)      paso_salud && paso_ritmo && paso_voz && paso_campo && paso_subs && paso_render && paso_montaje && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
   *) echo "paso inválido: $PASO (salud|ritmo|voz|subs|render|ensamble|verificar|capsula|publicar|subir|programar|cosechar|todo)"; exit 2 ;;
 esac

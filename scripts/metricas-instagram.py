@@ -20,7 +20,9 @@ def main(ids):
     out['_cuenta_ig'] = {**cuenta, 'fecha': hoy}; print(f'@{cuenta.get("username")}: {cuenta.get("followers_count")} seguidores')
     os.makedirs(os.path.join(ROOT, 'dist-video', 'comentarios'), exist_ok=True)
     for mp in sorted(glob.glob(os.path.join(ROOT, 'videos', '*.json'))):
-        d = json.load(open(mp, encoding='utf-8')); vid = d.get('id')
+        d = json.load(open(mp, encoding='utf-8'))
+        if not isinstance(d, dict): continue                      # manifiestos que son listas (otras series)
+        vid = d.get('id')
         if ids and vid not in ids: continue
         ig = ((d.get('publicar') or {}).get('subidas') or {}).get('ig')
         # Un Reel BORRADO deja `{borrado, id_borrado}` sin `id` — pedirle insights truena con

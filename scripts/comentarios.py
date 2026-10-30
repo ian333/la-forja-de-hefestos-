@@ -34,6 +34,7 @@ def manifiestos():
     for mp in glob.glob(os.path.join(ROOT, 'videos', '*.json')):
         try: d = json.load(open(mp, encoding='utf-8'))
         except Exception: continue
+        if not isinstance(d, dict): continue                      # manifiestos que son listas (otras series)
         s = (d.get('publicar') or {}).get('subidas') or {}
         for k, tabla in (('ig', ig), ('yt', yt), ('yt16x9', yt)):
             i = (s.get(k) or {}).get('id')

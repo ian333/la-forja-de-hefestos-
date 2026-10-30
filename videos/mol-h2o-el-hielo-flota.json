@@ -1,0 +1,106 @@
+{
+  "id": "mol-h2o-el-hielo-flota",
+  "titulo": "El hielo flota — de lo real a lo invisible (H₂O)₆",
+  "nota": "REY #1 del plan 2026-10-23 (ian: «quiero el primer video»). Misma física y mismo bin del hexágono (ganador 09-09: 9,869 vistas, skip 37.6) con DOS cosas nuevas: (1) el GANCHO es REAL — un cubo de hielo flotando en un vaso, fotorreal en Blender (Cycles, iangpu), 5 s, y CORTE SECO por escala al mundo molecular (render.preroll); (2) el CIERRE vuelve al vaso real sobre «y tú» + sello (render.postroll). Guion nuevo en 2ª persona, brazo A. Honestidad del copo: se dice «al congelarse se ordenan en esta forma de seis», NUNCA «esto es hielo» (ver mol-h2o-el-hielo.json → fisica.honestidad_del_copo).",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=whex6h",
+    "hook": "__cinematicAtom",
+    "nota_molkey": "molKey propio (whex6h): render-clip exige formato.dur − preroll − postroll == duración de la escena (WHEX6H_DURATION). Tomas y capas CALIBRADAS a segs.json (arranques reales de l3…l18)."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 84.9,
+    "nota_dur": "REAL: voz 82.349 s (segs.json, 20 líneas) + cola 2.5 → 84.9 s = 2547 cuadros = preroll 151 + escena 2020 (67.333 s) + postroll 376."
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.hielofframes",
+    "preroll": {
+      "dir": "dist-video/.hielof-pre",
+      "frames": 151,
+      "nota": "cuadros del gancho de Blender: 1440×2560 ×64 muestras en impares (laptop) → scripts/blender-a-cuadros.sh (minterpolate 15→30 fps + 4K lanczos). Origen /home/ian/ai/hielo/gancho-1440/. frames = arranque REAL de l3 × fps."
+    },
+    "postroll": {
+      "dir": "dist-video/.hielof-post",
+      "frames": 376,
+      "nota": "el vaso real desde l19 («Y tú…») hasta el final: UN still 4K de Blender (/home/ian/ai/hielo/cierre-4k/frame_0200.png) + paneo suave de zoompan (blender-a-cuadros.sh cierre). frames = (formato.dur − t(l19)) × fps."
+    }
+  },
+  "audio": {
+    "dir": "dist-video/hielof-narracion",
+    "narracion": "hielof-narracion.mp3",
+    "musica": "whex6-music.wav",
+    "musicaFuente": "la cama del hexágono (dist-video/whex6-narracion/whex6-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 81.4,
+    "segs": "segs.json",
+    "ass": "hielof.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-el-hielo-flota-4k-master.mp4",
+    "h264": "agua-el-hielo-flota-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-hexamer.bin",
+      "water-hexamer-efield.bin"
+    ],
+    "guion": "hielof.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ],
+    "extra": "el gancho y el cierre de Blender: /home/ian/Gaia/lia-conos/render/conos/blender/hielo_gancho.py + /mnt/d/hielo/hielo.blend (iangpu)"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/hielof.txt",
+    "lineas": 20,
+    "palabras": 177
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-el-hielo-flota.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-el-hielo-flota-capsula.tar.gz",
+    "pieza": "mol-h2o el hielo flota",
+    "nueva": true,
+    "copy": {
+      "titulo": "Por esto el hielo flota en tu vaso (y por eso hay peces vivos en invierno)",
+      "descripcion": "Un hielo flota en tu vaso. Casi todo lo sólido se hunde en su propio líquido; el hielo no, y nunca habías visto por qué. 🧊 Lo que ves después del vaso no es una animación: son SEIS moléculas de agua resueltas con física cuántica (ab initio, 18 átomos), y lo que se mueve es carga eléctrica calculada. Al enfriarse, cada agua le presta un hidrógeno a la vecina y recibe uno de la otra: seis puentes encendiendo a la vez, los seis idénticos (2.82 Å). Míralo de canto: el anillo es plano. Y mira el centro: está vacío. En el agua líquida las moléculas se amontonan; al congelarse se ordenan en esta forma de seis, con hueco, millones de veces. Mismo peso, más lugar: menos denso. El hielo pesa 0.917 de lo que pesa el agua, y ese 8 % de menos es el espacio que deja esta forma al repetirse. Por eso flota, por eso un lago se congela por arriba y abajo sigue líquido, y por eso hay peces vivos en invierno. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#hielo",
+        "#agua",
+        "#química",
+        "#física",
+        "#cuántica",
+        "#ciencia",
+        "#invierno",
+        "#4k",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ],
+      "marco": "revelacion",
+      "activacion": "alta",
+      "valor_propio": "porque enseña con un vaso de la cocina que el hielo flota por un HUECO que se ve, y de ahí salen los peces del invierno",
+      "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B): el sujeto es el vaso de quien ve."
+    },
+    "nota_programar": "hora canon 18:45 CDMX o la nueva de ciencia 20:30 (plan 2026-10-23). Sin publicar.autorizado con las palabras de ian NADA sube."
+  },
+  "ritmo": {
+    "brazo": "A",
+    "nota": "se mide con scripts/ritmo-pieza.py cuando exista segs.json"
+  }
+}

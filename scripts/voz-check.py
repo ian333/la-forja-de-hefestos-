@@ -103,7 +103,9 @@ def norm(s):
     # B = V. En español son EL MISMO sonido (/b/), así que ningún transcriptor puede
     # distinguirlos: «Beto» salió como «veto» en el guardadito (2026-09-17) y el gate
     # reprobó una voz correcta. Como aquí se compara FONÉTICA, las canonizamos a 'b'.
-    s = s.replace('v', 'b')
+    # (la canonización v→b se aplica AL FINAL, sobre las palabras ya expandidas: si se hace antes,
+    # «nueve» del guion queda «nuebe» y el «0.917» que Whisper escribe se expande a «nueve» → falso
+    # DIFIERE. Cazado con «El hielo flota» l14, 2026-10-24.)
     out = []
     for t in s.split():
         t = t.strip('.,')
@@ -115,6 +117,7 @@ def norm(s):
     # repite de toda la serie.
     CANON = {'praim': 'prime', 'preime': 'prime', 'prim': 'prime',
              'gaya': 'gaia', 'daya': 'gaia', 'gaia': 'gaia'}
+    out = [w.replace('v', 'b') for w in out]
     return [CANON.get(t, t) for t in out]
 
 

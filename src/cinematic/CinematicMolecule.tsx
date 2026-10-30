@@ -325,6 +325,27 @@ const WHEX6B_CAPAS: CapasSpec = {
   ceros:    { base: 0,    mods: [] },
   apertura: { base: 0.10, mods: [] },
 };
+// EL HIELO FLOTA (rey #1, 2026-10-24): la ESCENA es solo el tramo molecular (l3…l18); el gancho
+// (vaso real, Blender) y el cierre van como preroll/postroll del manifiesto. t = 0 es el arranque
+// de l3 en segs.json. PROVISIONAL (0.455 s/palabra) hasta segs.json; recalibrar SIEMPRE.
+const WHEX6H_DURATION = 67.333;
+const WHEX6H_CAPAS: CapasSpec = {
+  campo:    { base: 0.18, mods: [{ wins: [[12.605, 24.575]], a: 0.62, label: 'LA TRANSICIÓN: seis puentes encendiendo a la vez (l6-8)' }] },
+  nubes:    { base: 1,    mods: [
+    { wins: [[24.975, 28.576]], a: -0.35, label: 'de canto: menos nube para que la banda no reviente (l9)' },
+    { wins: [[28.576, 36.193]], a: -0.30, label: 'deja LEER el hueco del centro (l10-11)' },
+    { wins: [[36.193, 44.52]], a: -0.15, label: 'el hueco sigue a la vista mientras se ordenan (l12-13)' },
+  ] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[5.457, 12.205]], a: 0.42, label: 'los electrones cuando se nombra el préstamo (l4-5)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[36.193, 44.52]], a: 0.30, label: 'arde al ordenarse (l12-13); a 0.85 y 20 s reventaba los centros a blanco (QA 10-24)' }] },
+  acc:      { base: 1.45, mods: [] },
+  enlaces:  { base: 0,    mods: [{ wins: [[0.0, 5.457]], a: 1.0, label: 'seis moléculas, dieciocho átomos: contables (l3)' }] },
+  dipolo:   { base: 0,    mods: [] },
+  ceros:    { base: 0,    mods: [] },
+  // EL EVENTO: el anillo se ABRE con «en el agua líquida se amontonan» (l11) y se CIERRA solo con «al congelarse se
+  // ordenan en esta forma de seis» (l12) — prender/apagar es la demostración (canon §LA MECÁNICA DEL O₂).
+  apertura: { base: 0.10, mods: [{ wins: [[32.219, 36.193]], a: 0.42, label: 'sueltas: en el líquido se amontonan (l11) → se ordenan (l12)' }] },
+};
 const WTRIB_DURATION = 55;
 // ANILLO IDENTIDAD — el evento es l7 (cooperatividad) y el payoff l9-l11 (tu dedo, el árbol,
 // el mosquito). PROVISIONAL hasta segs.json.
@@ -1385,6 +1406,21 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: loomPush({ rFrom: 2.45, rTo: 1.30, elev: 0.34, azim: 0.85, fov: 33 }), dur: 8.86, label: 'SE VIENE ENCIMA: tú también eres agua / crecería en tus células (l9-10)' },
     { shot: pullOut({ azim0: 1.57, span: 0.50, rFromMul: 2.60, rTdMul: 3.30 }), dur: 13.85, label: 'payoff: lo bonito es lo que te mataría + GAIA + cola (l11-12)' },
   ],
+  whex6h: [
+    // EL HIELO FLOTA (rey #1, 2026-10-24): tomas del ganador whex6b/whex6 sin inventar cámara; 10 en
+    // ~70 s (8.6 cortes/min = brazo A). t=0 = arranque de l3 (el corte desde el vaso real). CALIBRADAS a segs.json (2026-10-24, 20 líneas, voz 82.35 s): cada corte cae en el
+    // ARRANQUE de su línea: l4 5.457 · l5 10.124 · l6 12.605 · l8 20.126 · l9 24.975 · l10 28.576 · l12 36.193 · l14 44.920 · l16 56.334.
+    { shot: ringFaceOn({ rMul: 2.70, azim0: 1.50, span: 0.22, elev: 0.06 }), dur: 5.457, label: 'esto es agua de cerca: seis moléculas, dieciocho átomos (l3)' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.80, rTo: 1.45, azim: 1.20, fov: 34 }), dur: 4.667, label: 'le presta un hidrógeno a la vecina (l4) — más lejos que el ganador: a 1.30 el anillo salía descentrado y recortado (QA 10-24)' },
+    { shot: ringToBridge({ a: 2, b: 3, rFrom: 1.90, rTo: 1.55, azim: 2.60, fov: 32 }), dur: 2.481, label: 'y recibe uno de la otra (l5)' },
+    { shot: ringFaceOn({ rMul: 2.70, azim0: 1.50, span: 0.22, elev: 0.06 }), dur: 7.521, label: 'LA TRANSICIÓN: seis puentes encendiendo a la vez / carga de verdad (l6-7)' },
+    { shot: ringFaceOn({ rMul: 2.40, azim0: 4.60, span: 0.30, elev: 0.10 }), dur: 4.849, label: 'los seis miden lo mismo: 2.82 Å — la otra cara (l8)' },
+    { shot: ringEdgeToFace({ rMul: 2.50, elev: 0.10, span: 0.20 }), dur: 3.601, label: 'DE CANTO: el anillo es plano (l9) — alejado y con 0.10 de elevación: a 1.95/0.03 la banda revienta a blanco y no cabe (QA 10-24)' },
+    { shot: ringFaceOn({ rMul: 2.80, azim0: 1.57, span: 0.18, elev: 0.04 }), dur: 7.617, label: 'el centro está vacío / en el líquido se amontonan (l10-11)' },
+    { shot: ringFaceOn({ rMul: 3.00, azim0: 1.20, span: 0.46, elev: 0.18 }), dur: 8.727, label: 'al congelarse se ordenan, mismo peso más lugar (l12-13): órbita que deja el HUECO a la vista (el loomPush lo enterraba en magenta y se quedaba 5 s quieto, QA 10-24)' },
+    { shot: ringFaceOn({ rMul: 2.75, azim0: 1.45, span: 0.20, elev: 0.05 }), dur: 11.414, label: 'los números: 0.917 y el 8 % (l14-15)' },
+    { shot: pullOut({ azim0: 1.57, span: 0.50, rFromMul: 2.60, rTdMul: 3.50 }), dur: 10.999, label: 'por eso flota / el lago / los peces (l16-18) → corte al vaso real (termina un poco más chico: el último cuadro no recorta los lados)' },
+  ],
   whex6: [
     { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.30, rTo: 1.05, azim: 1.20, fov: 34 }), dur: 4.04, label: 'EL DESTELLO — el campo ENCIENDE sobre "mira cómo se agarran"' },
     { shot: ringToBridge({ a: 2, b: 3, rFrom: 1.45, rTo: 1.10, azim: 2.60, fov: 32 }), dur: 6.03, label: 'presta y recibe — otro puente, el Δρ ardiendo' },
@@ -1868,6 +1904,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   ecolchon: { name: 'El guardadito', formula: 'capítulo 1 · la economía de tu negocio', fact: 'Con exactamente la misma suerte, el negocio con un mes de caja muere casi al triple que el que guardó tres.' },
   egrupos: { name: 'Grupos separados', formula: 'Bouchaud-Mézard + Schelling', fact: 'Sin trampa ni maldad, la riqueza forma una cola y la gente se separa en grupos.' },
   whex6b: { name: 'No te pueden congelar', formula: '(H₂O)₆', fact: 'El hexágono que hace bonito a un copo de nieve es el que te reventaría las células.' },
+  whex6h: { name: 'El hielo flota', formula: '(H₂O)₆', fact: 'Al congelarse, el agua se ordena en esta forma de seis, con hueco: por eso el hielo flota.' },
   wtrib: { name: 'La gota que no cae', formula: '(H₂O)₃', fact: 'Tres aguas juntas jalan 12 % más que por separado: esa es la piel del agua.' },
   wroba: { name: 'Te roba el agua', formula: 'C₂H₅OH···H₂O', fact: 'La punta del alcohol es la del agua: por eso el gel te reseca las manos.' },
   weres: { name: 'Eres tú', formula: 'H₂O···H₂O', fact: 'Seis de cada diez partes de tu cuerpo son exactamente esto.' },
@@ -3525,6 +3562,8 @@ const WATER_BINS: Record<string, WaterEntry> = {
              capas: EGRUPOS_CAPAS, dur: EGRUPOS_DURATION, sizeMul: 1.1, binColors: true },
   whex6b: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
             capas: WHEX6B_CAPAS, dur: WHEX6B_DURATION },
+  whex6h: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
+            capas: WHEX6H_CAPAS, dur: WHEX6H_DURATION },
   wtrib: { bin: 'water-trimer', ef: 'water-trimer-efield', ex: 10, anillo: true,
            ceros: 'water-trimer-ceros', capas: WTRIB_CAPAS, dur: WTRIB_DURATION },
   wtri:  { bin: 'water-trimer',   ef: 'water-trimer-efield',   ex: 10, anillo: true,
