@@ -5615,7 +5615,7 @@ export default function ForgeBRepStudio() {
         laMaquina(moldParts, maquina, aperturaReal, C),
       ];
       const P = armarRecorrido(base, moldParts, rojos);
-      P.push(cierreDeLaInspeccion(moldParts, rojos, P.map((q) => q.id)));
+      P.push(cierreDeLaInspeccion(moldParts, rojos, P.map((q) => q.id), !C));
       recEtiquetas.current = [];
       setRecorrido(P); setRecIdx(0); setRecAuto(true);
     })();

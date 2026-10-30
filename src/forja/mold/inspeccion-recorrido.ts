@@ -694,16 +694,18 @@ const DECISION: Record<string, string> = {
   'gate-freeze': 'en este orden: subir el empaque, engrosar la compuerta, adelgazar la pieza (§7.3.5)',
   'agua-claro': 'aclarar qué agua juzga el dictamen contra la que se barrena; con la que se barrena el peor acero sale arriba',
 };
-export function cierreDeLaInspeccion(piezas: PiezaMolde[], rojos: RojoDictamen[], vistos: string[]): PuntoRecorrido {
+export function cierreDeLaInspeccion(piezas: PiezaMolde[], rojos: RojoDictamen[], vistos: string[], sinDictamen = false): PuntoRecorrido {
   const cam = camaraDeContexto(piezas);
   const decs = rojos.map((r) => `${r.titulo}: ${DECISION[r.id] ?? r.detalle.split(/ — | · /)[0]}`);
   // los rayos del techo del macho: coherencia del CAD, no regla del libro (Kazmer §4) — una línea aquí, no un punto propio
   const ry = rejillaDelMacho(piezas);
   const rayos = ry && ry.total ? ` Coherencia del CAD (no es regla del libro): el techo del macho toca tu pieza en ${ry.tocan} de ${ry.total} rayos, uno cada ${f1(ry.pasoX)} × ${f1(ry.pasoY)} mm.` : '';
   return {
-    id: 'cierre', capitulo: 'El cierre', pregunta: rojos.length ? `${rojos.length} ${rojos.length === 1 ? 'rojo pide' : 'rojos piden'} una decisión` : 'Ningún rojo',
-    numero: `${rojos.length} por decidir`, limite: `${vistos.filter((v) => v !== 'dictamen').length} puntos revisados`, veredicto: rojos.length ? 'falla' : 'ok',
-    frase: (decs.length ? decs.join(' · ') + '.' : 'El dictamen no tiene rojos: lo de panzazo quedó en su capítulo.') + rayos,
+    // SIN DICTAMEN no hay «ningún rojo»: no se juzgó (el paso 4 no se abrió). Decir «0 rojos» sería el apagón de siempre.
+    id: 'cierre', capitulo: 'El cierre', pregunta: sinDictamen ? 'Sin dictamen: los rojos no se juzgaron' : rojos.length ? `${rojos.length} ${rojos.length === 1 ? 'rojo pide' : 'rojos piden'} una decisión` : 'Ningún rojo',
+    numero: sinDictamen ? 'sin dictamen' : `${rojos.length} por decidir`, limite: `${vistos.filter((v) => v !== 'dictamen').length} puntos revisados`, veredicto: sinDictamen ? 'aviso' : rojos.length ? 'falla' : 'ok',
+    frase: (sinDictamen ? 'No se abrió EL DICTAMEN (paso 4, tecla D): esta inspección no sabe qué reglas del libro no cumple tu molde. Ábrelo y vuelve a inspeccionar.'
+      : decs.length ? decs.join(' · ') + '.' : 'El dictamen no tiene rojos: lo de panzazo quedó en su capítulo.') + rayos,
     regla: 'NO se revisó aquí: el llenado animado y el último punto en llenar · el venteo en el acero · la compuerta como sólido · la contracción con que se corta el acero · la máquina en 3D · agua contra agua y pines contra guías',
     rojos: rojos.map((r) => r.titulo),
     marcas: [], cotas: [], contexto: cam.objetivo, dur: 12,

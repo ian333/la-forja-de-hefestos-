@@ -138,7 +138,10 @@ fantasma, el llenado animado, la máquina en 3D. Lista en el CIERRE qué haría 
   desde abajo, con la pieza en fantasma. El paso 7 arranca con el molde completo (la cámara pegada a la sujeción tras la E8).
 - 4 · **el cierre**: cada ✗ con su decisión (DP y COLADA VS CICLO: el mismo diámetro; FREEZE: empaque → compuerta → pieza, §7.3.5;
   CLARO: qué agua juzga el dictamen) y lo NO revisado.
-- 5 · **el guion**: el tramo 07 pasa de 9 a 14 frases, una por punto (y dos donde el punto tiene dos encuadres), sin siglas.
+- 5 · **el guion**: el tramo 07 pasa de 9 a 14 frases, una por punto (y dos donde el punto tiene dos encuadres), sin siglas; los «en»
+  salen de los arranques MEDIDOS por la filmadora. El guion pasa de 19 a 25 líneas: las voces `peli_lNN.wav` se regeneran
+  (`monta-pelicula.py` las toma por índice). Tras fusionar H, si el dictamen cambia sus rojos, cambian los puntos: re-leer
+  `inspeccion-puntos.json` de la filmación nueva y ajustar los «en» (y las frases de colada/compuerta si esos rojos se van).
 
 **números** (1594C Box, main 6655fdd + esta rama, copia dev4; pantalla = DOM `insp-*`/`cota-insp-*` leído por el arnés; motor = la
 sonda sobre `__qaForja`/`__forgeBrep` en la MISMA app)
@@ -172,7 +175,8 @@ sonda sobre `__qaForja`/`__forgeBrep` en la MISMA app)
 - **control lógico (CPU, `control-rojos.ts` sobre el módulo real en dev4)**: con el dictamen de la Box (DP, COLADA VS CICLO, FREEZE,
   CLARO) salen sus chips en colada · compuerta · enfriamiento → PASA; con un dictamen de OTRA pieza (rojos: DEFLEXION VS VENTEO, ANCHO
   CON PLUGS; la colada y la compuerta cumplen) NO sale la compuerta, la colada va sin chips y los dos rojos entran en Estructura y en
-  La máquina → PASA. Un recorrido con los cuatro fijos fallaría el segundo caso.
+  La máquina → PASA. Un recorrido con los cuatro fijos fallaría el segundo caso. Y **sin dictamen** (no se abrió el paso 4) el cierre
+  NO dice «ningún rojo»: dice «Sin dictamen: los rojos no se juzgaron» (`control-sin.ts`, rc 0).
 - **control en la app (1598B Bottom, del banco Hammond)**: encolado en el turno de GPU (`/home/ian/el-plan-dev4/v3-1598/`); al cerrar
   esta orden el turno lo tenía un render de Blender de otra sesión (`flock -w 14400 … rinde_p5_iangpu.sh`). La 1599HBK no llegó al
   enfriamiento en 180 s (dos mitades; se descartó).
