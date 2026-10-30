@@ -60,8 +60,10 @@ import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, PAL
 import { medidasDeLaPieza } from '../mold/foco-medidas';   // U3 · EL FOCO: el plano, encima de la pieza
 import { lentesDelFoco, type LentesFoco, type LenteId, type CampoGPU } from '../mold/foco-lentes';   // U10 · EL FOCO: el ANÁLISIS, encima de la pieza
 import { escanearMolde, type ResultadoFoco } from '../mold/foco-molde';   // EL FOCO DEL MOLDE: los hallazgos por CUERPO, con lugar 3D (orden 2026-10-06)
-import { FocoMoldeEscena, FocoMoldeHUD, RecorridoEscena, RecorridoHUD } from './FocoMolde3D';   // EL FOCO DEL MOLDE: el pulso, los puntos débiles y las fichas
-import { rejillaDelMacho, equilibrioDeBotadores, aguaMasJusta, abreSaleEmpuja, type PuntoRecorrido } from '../mold/inspeccion-recorrido';   // LA INSPECCIÓN: paso 7 del pipeline
+import { FocoMoldeEscena, FocoMoldeHUD, RecorridoEscena, RecorridoHUD, CONTEXTO_S } from './FocoMolde3D';   // EL FOCO DEL MOLDE: el pulso, los puntos débiles y las fichas
+// LA INSPECCIÓN: paso 7 del pipeline — según Kazmer (orden I, 2026-10-29): los rojos del dictamen VIVO, 2 s de contexto + el macro, un corte por lo medido
+import { puntoDelDictamen, laColada, laCompuerta, queMandaElCiclo, aguaMasJusta, botadoresEnSuAgarre, abreSaleEmpuja, placaDeSoporte, laMaquina,
+  cierreDeLaInspeccion, armarRecorrido, rojosDelDictamen, camaraDeContexto, transformadaPieza, pintaDesdeLente, type PuntoRecorrido } from '../mold/inspeccion-recorrido';
 import { TransicionPaso, RielDePasos, PASOS_DEL_CAMINO, DURACION_TRANSICION_S, type PasoDelCamino } from './TransicionPaso';   // «de esta parte, ahora pasamos a esto» (2026-10-22)
 /** el encabezado del modo camino: «1594C Box · Inspección» en vez de «estación 8 — EL PORTAMOLDES: el molde ENTERO (14 componentes…)» */
 const tituloDelPaso = (n: number) => { const t = (PASOS_DEL_CAMINO[n - 1]?.titulo ?? '').replace(/^(EL|LA|LOS|TU) /, '').toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -5549,14 +5551,35 @@ export default function ForgeBRepStudio() {
   const [recIdx, setRecIdx] = useState(0);
   const [recAuto, setRecAuto] = useState(true);
   const [recT0, setRecT0] = useState(0);
+  /** el recorrido terminó: el último punto cumplió su tiempo (la filmadora lo lee en `data-fin`) */
+  const [recFin, setRecFin] = useState(false);
+  /** la pieza del molde pintada con la lente de ENFRIAMIENTO (el punto «qué manda el ciclo»): colores por vértice en el marco del molde */
+  const [recPinta, setRecPinta] = useState<Float32Array | null>(null);
+  const recEtiquetas = useRef<Array<HTMLDivElement | null>>([]);
   const apiInsp = () => (window as unknown as { __forgeBrep?: { inspeccion: { aislar: (r: string[] | null, o?: unknown) => unknown; corte: (e: 'x' | 'y' | 'z' | null, mm?: number, v?: boolean) => unknown; cotas: (l: unknown[]) => unknown; estado: (a: number | null, e?: number) => unknown }; animZ: (r: string) => number | null } }).__forgeBrep;
   const cotasAntesInsp = useRef<boolean | null>(null);
+  /** EL ENCUADRE QUE RESPETA LA TARJETA (captura 2026-10-29): la tarjeta del punto ocupa la columna izquierda (≈ 38 % del ancho) y lo
+   *  medido caía debajo de ella. Se corre el objetivo hacia la izquierda de la pantalla para que lo que se mira quede en el centro de
+   *  lo LIBRE (≈ 69 % del ancho). El ancho visible a la distancia r se MIDIÓ en la captura: 377 mm a r = 300 (≈ 1.26·r); el corrimiento
+   *  es 0.19 de ese ancho. La derecha de la pantalla es (cos az, sin az, 0) en el marco del molde (la órbita pone az 0 en −Y). */
+  const orbitaLibre = useCallback((c: { az: number; el: number; r: number; objetivo: [number, number, number] }, dur: number) => {
+    const a = (c.az * Math.PI) / 180, k = 0.19 * 1.26 * c.r;
+    orbitTo(c.az, c.el, c.r, c.objetivo[0] - k * Math.cos(a), c.objetivo[1] - k * Math.sin(a), c.objetivo[2] + 8, dur);   // +8: el grupo del molde
+  }, [orbitTo]);
   useEffect(() => {
     if (!inspeccionOn) return;
     // EL MOLDE SE DETIENE: su ciclo animado (el llenado recalcula la superficie por cuadro) bajaba la página a 5–8 fps,
     // medido 2026-10-22 — la cortina del paso y el pulso se veían a saltos. Las cotas de auditoría se apartan como en el Foco.
     apiInsp()?.inspeccion.estado(0, 0);
+    // LA PIEZA LLENA (medido 2026-10-29, punto del agua sin pieza): el ciclo se detuvo a media inyección (tFill < 1) y mientras el frente
+    // «se anima» la malla de la pieza no se dibuja; su pintura solo aparece con la pieza ≥ 50 % opaca. Con la pieza en FANTASMA no quedaba
+    // nada en pantalla. En la inspección la pieza está llena: t = 1.
+    setTFill(1); tFillRef.current = 1;
     if (cotasAntesInsp.current == null) { cotasAntesInsp.current = cotasOn; setCotasOn(false); }
+    // LA CÁMARA ARRANCA EN EL MOLDE COMPLETO (orden I): al terminar la E8 se quedaba pegada a la sujeción superior (solo se veía
+    // el anillo centrador, orden B) y el pulso del Foco barría algo que no se veía. El paso 7 abre con el contexto de Kazmer.
+    orbitaLibre(camaraDeContexto(moldParts), 0);
+    setRecFin(false);
     let vivo = true; const timers: number[] = [];
     const espera = (ms: number) => new Promise<void>((r) => { timers.push(window.setTimeout(r, ms)); });
     (async () => {
@@ -5580,42 +5603,92 @@ export default function ForgeBRepStudio() {
       api?.inspeccion.estado(0, 0);
       if (!vivo) return;
       cerrarFocoMolde();
+      // ── LO QUE YA CALCULÓ EL ESTUDIO (nada se recalcula aquí: se LEE) ──
+      // EL DICTAMEN VIVO: los ✗ salen de aquí en tiempo de ejecución (la orden H re-juzga en paralelo y cambia cuáles salen)
+      const C = revision?.contratos ?? null;
+      const rojos = rojosDelDictamen(C);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dz = ((revision?.pkg ?? mold.ciclo?.e2?.pkg) as unknown as { diseno?: any } | undefined)?.diseno;
       const pm = mold.ciclo?.portamoldes as { carreraLibreMm?: number; carreraPedidaMm?: number } | undefined;
-      // la báscula del acero de ESTA pieza (verificacionE3, estación 3): Σ cavidad + macho + pieza contra el bloque — LOS APAGONES
-      const basE3 = mold.ciclo?.e3v?.medidas.find((m) => m.cota.startsWith('Σ cavidad+macho+pieza'));
-      const P = [rejillaDelMacho(moldParts, 10, 5, basE3 ? { errPct: Math.abs(basE3.medido - 100) } : null), equilibrioDeBotadores(moldParts), aguaMasJusta(foco),
-        abreSaleEmpuja(moldParts, { aperturaReal: Number.isFinite(ab as number) ? (ab as number) : null, carreraLibre: pm?.carreraLibreMm ?? null, carreraPedida: pm?.carreraPedidaMm ?? null })]
-        .filter((x): x is PuntoRecorrido => !!x);
+      // la lente de ENFRIAMIENTO (paso 3) llevada al marco del molde: el poste más lento y la pintura de la pieza
+      const lente = lentes?.lentes.find((l) => l.id === 'enfriamiento') ?? null;
+      const pzM = moldParts.find((p) => p.role === 'pieza');
+      const stepP = (piezaMalla?.mesh as { positions?: ArrayLike<number> } | undefined)?.positions;
+      const T = stepP && pzM ? transformadaPieza(stepP, pzM.positions) : null;
+      const posteMolde = T && lente?.peor ? T.aMolde(lente.peor.punto) : null;
+      setRecPinta(T && lente && pzM && stepP ? pintaDesdeLente(pzM.positions, stepP, lente.colores, T.aStep) : null);
+      const crit = (id: string) => C?.subsistemas.flatMap((x) => x.criterios).find((k) => k.id === id);
+      // los pines de la E7/E10 con su fuerza (la estación que los colocó por agarre)
+      const e10 = mold.ciclo?.e10;
+      const pines = e10 ? { n: e10.pines.n, fPorPinN: e10.pines.fPorPinN, fEjectN: e10.fuerza.fEjectN,
+        filas: (e10.pines.tabla?.filas ?? e10.pines.posiciones.map((q, k) => ({ id: `EP-${String(k + 1).padStart(2, '0')}`, x: q.x, y: q.y, zPisoMm: q.zPisoMm ?? 0 }))).map((f) => ({ id: f.id, x: f.x, y: f.y, zPisoMm: f.zPisoMm })),
+        equilibrio: e10.pines.equilibrio ? { desvioMm: e10.pines.equilibrio.desvioMm, topeMm: e10.pines.equilibrio.topeMm, ok: e10.pines.equilibrio.ok } : undefined } : null;
+      const sel = dz?.maquina?.seleccion, req = dz?.maquina?.requerimientos, mq = sel?.machine;
+      const maquina = mq && req ? { nombre: String(mq.name), cierreT: +mq.clampTons, cierreNecT: +req.clampNeedTons, tieH: +mq.tieHmm, tieV: +mq.tieVmm,
+        dayMin: +mq.minDaylightMm, dayMax: +mq.maxDaylightMm, shotCc: +mq.shotCc, shotNecCc: +req.shotNeedCc, expulsionKN: +mq.ejectionForceKN } : null;
+      const so = dz?.placas?.soporte;
+      const soporte = so ? { deltaMm: +so.deflectionAtPlateMm, venteoMm: +so.ventGapMm, nPilares: +so.nPillars, espesorMm: +so.plateThkMm,
+        usoPct: so.hefestos?.usoPct, topePct: so.hefestos ? (100 * so.hefestos.defectoMm) / so.hefestos.venteoMm : undefined } : null;
+      const aperturaReal = Number.isFinite(ab as number) ? (ab as number) : null;
+      // EL RECORRIDO, en el orden de los capítulos del libro (Kazmer §2): colada → compuerta → enfriamiento → expulsión → estructura → máquina
+      const base = [
+        puntoDelDictamen(moldParts, C),
+        laColada(moldParts, C),
+        laCompuerta(moldParts, C),
+        queMandaElCiclo(moldParts, { lente: lente?.ciclo ?? null, posteMolde, colada: crit('feed-ciclo'), aguaProf: crit('agua-profundidad'), aguaPaso: crit('agua-paso'), aguaClaro: crit('agua-claro') }),
+        aguaMasJusta(foco, C, moldParts),
+        botadoresEnSuAgarre(moldParts, pines, maquina ? { nombre: maquina.nombre, expulsionKN: maquina.expulsionKN, cierreT: maquina.cierreT } : null, C),
+        abreSaleEmpuja(moldParts, { aperturaReal, carreraLibre: pm?.carreraLibreMm ?? null, carreraPedida: pm?.carreraPedidaMm ?? null, aperturaMotor: sel?.apertura?.strokeMm ?? null }),
+        placaDeSoporte(moldParts, soporte, C),
+        laMaquina(moldParts, maquina, aperturaReal, C),
+      ];
+      const P = armarRecorrido(base, moldParts, rojos);
+      P.push(cierreDeLaInspeccion(moldParts, rojos, P.map((q) => q.id), !C));
+      recEtiquetas.current = [];
       setRecorrido(P); setRecIdx(0); setRecAuto(true);
     })();
     return () => { vivo = false; timers.forEach((t) => clearTimeout(t)); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inspeccionOn]);
-  // aplicar la VISTA del punto (y la pose animada de abre-sale-empuja)
+  // aplicar la VISTA del punto — LA REGLA DE CÁMARA DE KAZMER: 2 s de CONTEXTO (el molde completo, sin corte, el lugar marcado) y
+  // luego el MACRO (lo aislado, el corte por lo medido, la cota, la cámara cerca; la pieza SIEMPRE presente). Y la pose animada.
   useEffect(() => {
     const p = recorrido?.[recIdx]; const api = apiInsp(); if (!p || !api) return;
     const I = api.inspeccion;
-    if (p.vista.roles.includes('*')) I.aislar(null); else I.aislar(p.vista.roles, { tenues: p.vista.tenues, opacs: p.vista.opacs });
-    I.corte(p.vista.corte ? p.vista.corte.eje : null, p.vista.corte?.mm ?? 0, p.vista.corte?.voltea ?? false);
-    I.cotas(p.cotas);
-    I.estado(0, 0);
-    const c = p.vista.camara; orbitTo(c.az, c.el, c.r, c.objetivo[0], c.objetivo[1], c.objetivo[2] + 8, 1100);   // +8: el grupo del molde
+    const timers: number[] = []; let raf = 0;
+    const ctx = camaraDeContexto(moldParts);
+    I.aislar(null); I.corte(null); I.cotas([]); I.estado(0, 0);
+    // CORTE SECO al contexto (dur 0): volando desde el macro anterior la cámara atravesaba el acero (captura 2026-10-29, botadores a 1.1 s)
+    orbitaLibre(ctx, 0);
     setRecT0(performance.now());
-    let raf = 0;
-    if (p.vista.anima === 'abre-expulsa') {
-      const t0 = performance.now(), e = (x: number) => { const k = Math.max(0, Math.min(1, x)); return k * k * (3 - 2 * k); };
-      const lazo = () => { const t = (performance.now() - t0) / 1000; I.estado(e((t - 1.2) / 2.2), e((t - 3.8) / 1.8)); if (t < 7.5) raf = requestAnimationFrame(lazo); };
-      raf = requestAnimationFrame(lazo);
-    }
-    return () => cancelAnimationFrame(raf);
+    timers.push(window.setTimeout(() => {
+      // LA PIEZA SIEMPRE PRESENTE (Kazmer): si la vista no la trae, entra en fantasma
+      const todo = p.vista.roles.includes('*'), trae = todo || p.vista.roles.includes('pieza');
+      const roles = trae ? p.vista.roles : [...p.vista.roles, 'pieza'];
+      const opacs = trae ? p.vista.opacs : { pieza: 0.2, ...(p.vista.opacs ?? {}) };
+      // la pieza pintada con la lente: la pieza del molde se apaga para que no pelee con su pintura (y las pinturas de estación se van)
+      const opacsPinta = p.pinta && recPinta ? { ...(opacs ?? {}), pieza: 0.04 } : opacs;
+      if (todo) I.aislar(null); else I.aislar(roles, { tenues: p.vista.tenues, opacs: opacsPinta });
+      I.corte(p.vista.corte ? p.vista.corte.eje : null, p.vista.corte?.mm ?? 0, p.vista.corte?.voltea ?? false);
+      I.cotas(p.cotas);
+      orbitaLibre(p.vista.camara, 1100);
+      if (p.vista.anima === 'abre-expulsa') {
+        const t0 = performance.now(), e = (x: number) => { const k = Math.max(0, Math.min(1, x)); return k * k * (3 - 2 * k); };
+        const lazo = () => { const t = (performance.now() - t0) / 1000; I.estado(e((t - 1.2) / 2.2), e((t - 3.8) / 1.8)); if (t < 7.5) raf = requestAnimationFrame(lazo); };
+        raf = requestAnimationFrame(lazo);
+      }
+    }, CONTEXTO_S * 1000));
+    const c2 = p.vista.camara2;
+    if (c2) timers.push(window.setTimeout(() => orbitaLibre(c2, 1100), (CONTEXTO_S + c2.en) * 1000));
+    return () => { timers.forEach((t) => clearTimeout(t)); cancelAnimationFrame(raf); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recorrido, recIdx]);
-  // avanza solo: 11 s por punto (12.5 el que anima) — lo que tarda LEER la tarjeta (pregunta, número, tope, explicación y
-  // regla). Medido 2026-10-23 con la voz de la película: a 7.5 s la narración (dos frases por punto, ≈10 s) acababa 8 s atrás
-  // de la pantalla — «Abre 152.5» caía sobre los planos. El ritmo lo marca la lectura, no la máquina.
+  // avanza solo: cada punto dura lo que tarda LEER su tarjeta (`dur`, 6–18 s; medido 2026-10-23 con la voz: a 7.5 s la narración
+  // acababa 8 s atrás de la pantalla). Al terminar el último, el recorrido avisa que acabó (`data-fin`): la filmadora corta ahí.
   useEffect(() => {
-    if (!recorrido || !recAuto || recIdx >= recorrido.length - 1) return;
-    const id = window.setTimeout(() => setRecIdx((i) => i + 1), recorrido[recIdx]?.vista.anima ? 12500 : 11000);
+    if (!recorrido || !recAuto) return;
+    const dur = (recorrido[recIdx]?.dur ?? 11) * 1000;
+    const id = window.setTimeout(() => { if (recIdx >= recorrido.length - 1) setRecFin(true); else setRecIdx((i) => i + 1); }, dur);
     return () => clearTimeout(id);
   }, [recorrido, recIdx, recAuto]);
   // al cerrar la inspección (o al pasar a planos/expediente) todo vuelve a su reposo
@@ -7594,7 +7667,8 @@ export default function ForgeBRepStudio() {
                   </>
                 )}
                 {/* LA INSPECCIÓN: las marcas del punto del recorrido (rejilla, centros, círculo del tope) */}
-                {recorrido && recorrido[recIdx] && <RecorridoEscena punto={recorrido[recIdx]} t0={recT0} />}
+                {recorrido && recorrido[recIdx] && <RecorridoEscena punto={recorrido[recIdx]} t0={recT0} etiquetas={recEtiquetas}
+                  pieza={moldParts.find((p) => p.role === 'pieza') ?? null} pinta={recorrido[recIdx].pinta ? recPinta : null} clip={sectionPlanes} />}
                 {/* EL FOCO DEL MOLDE: el pulso, los puntos débiles y la proyección de sus fichas (cuelga del grupo del molde) */}
                 {focoMolde && (
                   <FocoMoldeEscena foco={focoMolde} t0={focoMoldeT0} sel={focoMoldeSel} centro={focoMoldeCaja.c} radio={focoMoldeCaja.r}
@@ -7862,7 +7936,8 @@ export default function ForgeBRepStudio() {
         {!focoMolde && !inspeccionOn && cotaPines.length > 0 && <CotaInspLabels sets={cotaPines} refs={cotaPinesRefs} testId="rotulo-pines" />}
         {/* LA INSPECCIÓN · la tarjeta del punto del recorrido */}
         {recorrido && recorrido.length > 0 && (
-          <RecorridoHUD puntos={recorrido} idx={recIdx} onIdx={(i) => { setRecAuto(false); setRecIdx(i); }} auto={recAuto} onAuto={setRecAuto} onCerrar={() => setInspeccionOn(false)} />
+          <RecorridoHUD puntos={recorrido} idx={recIdx} onIdx={(i) => { setRecAuto(false); setRecIdx(i); }} auto={recAuto} onAuto={setRecAuto} onCerrar={() => setInspeccionOn(false)}
+            etiquetas={recEtiquetas} fin={recFin} />
         )}
         {/* EL RIEL DE LOS 9 PASOS: siempre visible con la pieza en pantalla */}
         {piezaMalla && <RielDePasos actual={pasoActual} maximo={Math.max(pasoMaxRef.current, pasoActual)} ancho={modoCamino || focoMolde || recorrido ? 'completo' : 'centro'}
