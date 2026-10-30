@@ -43,6 +43,9 @@ import { buildMoldParts, packageToAssemblySpec, plateStackZ, buildMoldLaminas, l
 import { carreraDeApertura } from '../mold/threeplate';
 import { carreraDeExpulsionMm } from '../mold/platesizing';
 import { piezaDesdeArbol } from '../mold/estudio-molde-datos';
+import { colocacionEnLaBase } from '../mold/estudio-molde-datos';   // EL MOLDE EN STEP (orden K): la pieza colocada como la E3
+import { cuerposDelMolde, idaYVuelta } from '../mold/molde-step';
+import { numerarHojas } from '../mold/mold-drawings';   // EL CAJETÍN ISO 7200 (orden K): hoja n de N del juego terminado   // EL MOLDE EN STEP (orden K): el ensamble B-Rep con nombre ISO
 import { costoDeReferencia, costoReferenciaLinea, costoReferenciaHTML, type CostoDeReferencia } from '../mold/expediente';   // PASO 9 · LOS DATOS DE TU PLANTA (orden G): tu tarifa en MXN o la referencia del libro, rotulada
 import { plantaConDatos } from '../mold/machinesizing';   // orden G: ¿la ficha de la planta trae tarifas o inyectoras?
 import { tituloCorto, type Criterio as CriterioContrato, type ContratoEstado } from '../mold/mold-contratos';   // UN VEREDICTO (orden H): los renglones de las dos columnas
@@ -4126,32 +4129,45 @@ export default function ForgeBRepStudio() {
   // PASO 7 · el juego de planos del molde de ESTA pieza: mismo motor que el PDF de la Máquina
   // (`buildMoldLaminas`), con el paquete E2 de la pieza y su sólido del kernel (4 vistas de la
   // pieza moldeada). Corre en un tick aparte para que se pinte «generando…» antes de bloquear.
+  // EL MOLDE EN STEP (orden K, 2026-10-30): el spec del molde de ESTA pieza salía armado DENTRO de los planos; el STEP
+  // necesita el MISMO (bebedero de la E5, agua de la E6, pines de la E7) para que sus placas sean las de las láminas.
+  // Una función, dos clientes: la lámina y el archivo 3D no pueden barrenar placas distintas.
+  const aspecDelMolde = useCallback((): MoldAssemblySpec | null => {
+    const pkg = mold.ciclo?.e2?.pkg;
+    if (!pkg) return null;
+    const aspec = packageToAssemblySpec(pkg);
+    // UN VEREDICTO (orden H): UN bebedero — el que corta la E5 — en dictamen, hoja, lámina y expediente
+    const d5b = mold.ciclo?.e5datums;
+    if (d5b) aspec.bebedero = { diaTopMm: 2 * d5b.rTopMm, diaBaseMm: 2 * d5b.rBaseMm, largoMm: d5b.LsprueMm };
+    // … y UN agua: la hoja juzga H y W con lo que barrena la E6 (la misma fuente que la columna ② del dictamen)
+    const aE6 = moldeRealDelCiclo(mold.ciclo, [])?.agua;
+    if (aE6) aspec.aguaE6 = { profundidades: aE6.profundidades, pasoMm: aE6.pasoMm, pasoDe: aE6.pasoDe };
+    // LOS BOTADORES DE TU PIEZA: si la E7 ya colocó los pines por agarre, la lámina «Placa expulsora»
+    // dibuja ESOS (misma fuente que el 3D), no la rejilla genérica del paquete (19 × ⌀10 para la carcasa).
+    const e10 = mold.ciclo?.e10, d5 = mold.ciclo?.e5datums;
+    if (e10 && d5 && mold.ciclo?.pieza) {
+      // EL MISMO ⌀ QUE EL 3D (2026-09-21): la hoja barrenaba con el ⌀ de la PUNTA (2.381) mientras el
+      // acero pasa el CUERPO (4.763) — «el escalonado no llega a los barrenos», causa 3 de LAS 20 PIEZAS.
+      // `cicloPortamoldesPieza` ya le pasa `cuerpoDiaMm` al sólido; la lámina va con el MISMO número.
+      aspec.ejectors = { ...aspec.ejectors, type: 'pin', count: e10.pines.n, diaMm: e10.pines.escalonado.cuerpoDiaMm,
+        positions: e10.pines.posiciones.map((pp) => ({ x: pp.x - d5.ejeX, y: pp.y - d5.ejeY })),
+        // LOS BOTADORES CON NOMBRE (2026-09-22): la tabla de eyectores baja a la BOM y a la retenedora (§11.2.6)
+        tabla: e10.pines.tabla?.filas.map((f) => ({ id: f.id, largoMm: f.largoMm, puntaDiaMm: e10.pines.escalonado.puntaDiaMm, puntaMm: f.puntaMm })),
+        llave: e10.pines.tabla?.llave.requerida ? { planoAlEjeMm: e10.pines.tabla.llave.planoAlEjeMm } : undefined };
+    }
+    return aspec;
+  }, [mold.ciclo]);
   const generarPlanosMolde = useCallback(() => {
     const pkg = mold.ciclo?.e2?.pkg; const shape = arbolRef.current?.shape;
     if (!oc || !pkg) return false;
     setPlanosBusy(true);
     setTimeout(() => {
       try {
-        const aspec = packageToAssemblySpec(pkg);
-        // UN VEREDICTO (orden H): UN bebedero — el que corta la E5 — en dictamen, hoja, lámina y expediente
-        const d5b = mold.ciclo?.e5datums;
-        if (d5b) aspec.bebedero = { diaTopMm: 2 * d5b.rTopMm, diaBaseMm: 2 * d5b.rBaseMm, largoMm: d5b.LsprueMm };
-        // … y UN agua: la hoja juzga H y W con lo que barrena la E6 (la misma fuente que la columna ② del dictamen)
-        const aE6 = moldeRealDelCiclo(mold.ciclo, [])?.agua;
-        if (aE6) aspec.aguaE6 = { profundidades: aE6.profundidades, pasoMm: aE6.pasoMm, pasoDe: aE6.pasoDe };
-        // LOS BOTADORES DE TU PIEZA: si la E7 ya colocó los pines por agarre, la lámina «Placa expulsora»
-        // dibuja ESOS (misma fuente que el 3D), no la rejilla genérica del paquete (19 × ⌀10 para la carcasa).
-        const e10 = mold.ciclo?.e10, d5 = mold.ciclo?.e5datums;
-        if (e10 && d5 && mold.ciclo?.pieza) {
-          // EL MISMO ⌀ QUE EL 3D (2026-09-21): la hoja barrenaba con el ⌀ de la PUNTA (2.381) mientras el
-          // acero pasa el CUERPO (4.763) — «el escalonado no llega a los barrenos», causa 3 de LAS 20 PIEZAS.
-          // `cicloPortamoldesPieza` ya le pasa `cuerpoDiaMm` al sólido; la lámina va con el MISMO número.
-          aspec.ejectors = { ...aspec.ejectors, type: 'pin', count: e10.pines.n, diaMm: e10.pines.escalonado.cuerpoDiaMm,
-            positions: e10.pines.posiciones.map((pp) => ({ x: pp.x - d5.ejeX, y: pp.y - d5.ejeY })),
-            // LOS BOTADORES CON NOMBRE (2026-09-22): la tabla de eyectores baja a la BOM y a la retenedora (§11.2.6)
-            tabla: e10.pines.tabla?.filas.map((f) => ({ id: f.id, largoMm: f.largoMm, puntaDiaMm: e10.pines.escalonado.puntaDiaMm, puntaMm: f.puntaMm })),
-            llave: e10.pines.tabla?.llave.requerida ? { planoAlEjeMm: e10.pines.tabla.llave.planoAlEjeMm } : undefined };
-        }
+        const aspec = aspecDelMolde()!;
+        // EL CAJETÍN ISO 7200 (orden K): lo que la app sabe — el día en que se GENERÓ y la pieza. El propietario legal, la fecha
+        // de EMISIÓN y las firmas NO se saben: quedan con su línea vacía (la fecha de emisión es la del día en que se libera).
+        aspec.cajetin = { generado: new Date().toISOString().slice(0, 10), pieza: mold.ciclo?.pieza?.nombre ?? piezaMalla?.nombre };
+        const e10 = mold.ciclo?.e10;
         const r = pkg.recomendacion;
         // UNA SOLA VERDAD: la hoja dice lo MISMO que el dictamen (mismo pkg) y lo comprueba a la vista;
         // la máquina trae números, no palomitas; cada puntaje lleva su nombre (contratos = el juez;
@@ -4194,13 +4210,67 @@ export default function ForgeBRepStudio() {
             { grupo: 'Expulsión §11.2.5', param: 'juez pines ↔ agua (LISTA completa, no el mínimo)', valor: e10.juez.conflictos.length === 0 ? `${e10.juez.paresExaminados} pares examinados · 0 bajo ½⌀` : `${e10.juez.conflictos.length} de ${e10.juez.paresExaminados} pares bajo ½⌀: ${e10.juez.conflictos.slice(0, 3).map((c) => `${c.pin}↔${c.segmento} ${c.claroMm}`).join(' · ')}`, ref: 'A-239 · §9.2.7', ok: e10.juez.conflictos.length === 0 },
           );
         }
-        const pages = buildMoldLaminas(OCC, oc, aspec, rows, shape);
+        const pages = numerarHojas(buildMoldLaminas(OCC, oc, aspec, rows, shape));
         setPlanosMolde(pages); setPlanosIdx(0); setPlanosOn(true);
       } catch (e) { console.warn('PLANOS_MOLDE_ERR', e); setPlanosMolde([]); }
       finally { setPlanosBusy(false); }
     }, 30);
     return true;
-  }, [oc, mold.ciclo, revision, rejuicio]);
+  }, [oc, mold.ciclo, revision, rejuicio, aspecDelMolde, piezaMalla]);
+  // ── EL MOLDE EN STEP (orden K, 2026-10-30) ─────────────────────────────────────────────────────────────────────
+  // El expediente se llevaba 17 láminas y NINGÚN 3D del molde. Aquí se arma el ENSAMBLE B-Rep del molde que está en
+  // pantalla (molde-step.ts: un cuerpo por pieza física, con el nombre de ISO 12165) y se escribe en STEP AP214 con un
+  // PRODUCT por cuerpo (occt.ts `exportSTEPEnsamble`). Pide el portamoldes (paso 6): antes no hay molde entero que dar.
+  // `alterar` = el PAR DE CONTROL de la ida y vuelta: corre el inserto de cavidad 0.5 mm en X ANTES de escribir, y la
+  // comparación contra lo enviado tiene que salir ROJA en ese cuerpo y solo en ese.
+  const [moldeSTEPBusy, setMoldeSTEPBusy] = useState(false);
+  const moldeEnSTEP = useCallback((o?: { alterar?: boolean }) => {
+    const aspec = aspecDelMolde(); const c = mold.ciclo;
+    if (!oc || !aspec || !c?.portamoldes) return null;
+    const t0 = performance.now();
+    // la pieza moldeada en la base: el sólido del árbol con la MISMA colocación que la E3 (volteo 180° en X + traslado)
+    let pieza: unknown = null;
+    try {
+      const mk = c.pieza?.solidDraft ?? c.pieza?.solidRecto;
+      if (mk && c.e2?.pkg) {
+        const col = colocacionEnLaBase(c.e2.pkg, c.pieza?.local);
+        pieza = OCC.transformShape(oc, mk(oc), { rotateAngle: Math.PI, rotateAxis: { origin: [0, 0, 0], dir: [1, 0, 0] }, translate: [col.tx, col.ty, col.tz] });
+      }
+    } catch (e) { console.warn('STEP_PIEZA_ERR', e); }
+    const { cuerpos, inventario } = cuerposDelMolde(OCC, oc, { spec: aspec, partes: mold.moldParts, pieza, botadores: aspec.ejectors.tabla });
+    const tArmar = performance.now() - t0;
+    const enviar = o?.alterar ? cuerpos.map((b) => (b.rol === 'cavidad' ? { ...b, forma: OCC.transformShape(oc, b.forma, { translate: [0.5, 0, 0] }) } : b)) : cuerpos;
+    const nombre = `Molde ${c.pieza?.nombre ?? piezaMalla?.nombre ?? ''}`.trim();
+    const { texto, nombres, ensamble } = OCC.exportSTEPEnsamble(oc, nombre, enviar);
+    const ms = { armar: Math.round(tArmar), escribir: Math.round(performance.now() - t0 - tArmar) };
+    console.log('MOLDE_STEP', JSON.stringify({ cuerpos: cuerpos.length, bytes: texto.length, ms, alterado: !!o?.alterar }));
+    return { texto, nombres, ensamble, cuerpos, inventario, ms, alterado: !!o?.alterar };
+  }, [oc, aspecDelMolde, mold.ciclo, mold.moldParts, piezaMalla]);
+  const descargarMoldeSTEP = useCallback(() => {
+    if (moldeSTEPBusy) return;
+    setMoldeSTEPBusy(true);
+    setTimeout(() => {   // un tick: que se pinte «armando…» antes de los segundos de kernel
+      try {
+        const r = moldeEnSTEP();
+        if (r) triggerDownload(new Blob([r.texto], { type: 'model/step' }), `molde-${(mold.ciclo?.pieza?.nombre ?? piezaMalla?.nombre ?? 'pieza').toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.step`);
+      } catch (e) { console.warn('MOLDE_STEP_ERR', e); }
+      finally { setMoldeSTEPBusy(false); }
+    }, 30);
+  }, [moldeSTEPBusy, moldeEnSTEP, mold.ciclo, piezaMalla]);
+  // el arnés (y quien quiera medir) llega por aquí: generar, y LEER DE VUELTA el archivo contra lo enviado y contra la app
+  (window as unknown as { __moldeSTEP?: unknown }).__moldeSTEP = {
+    listo: () => !!(oc && mold.ciclo?.portamoldes),
+    generar: (o?: { alterar?: boolean }) => moldeEnSTEP(o),
+    idaYVuelta: (o?: { alterar?: boolean }) => {
+      const r = moldeEnSTEP(o);
+      if (!r) return null;
+      const t0 = performance.now();
+      const iv = idaYVuelta(OCC, oc, r.texto, r.cuerpos, r.nombres, mold.moldParts);
+      return { ...iv, bytes: r.texto.length, ms: { ...r.ms, leer: Math.round(performance.now() - t0) }, inventario: r.inventario, alterado: r.alterado,
+        cuerpos: r.cuerpos.map((b, i) => ({ nombre: r.nombres[i], rol: b.rol, fuente: b.fuente })),
+        triangulado: /TRIANGULATED_FACE|TESSELLATED_SHELL|TRIANGULATED_SURFACE_SET/.test(r.texto), texto: r.texto };
+    },
+  };
   // si pidieron PLANOS antes de que exista E2, MOLDE arma el ciclo y esto los genera al llegar
   useEffect(() => {
     if (planosPend && mold.ciclo?.e2?.pkg && !planosBusy) { setPlanosPend(false); generarPlanosMolde(); }
@@ -10338,6 +10408,8 @@ export default function ForgeBRepStudio() {
               <span data-testid="expediente-titulo">📁 {expediente.borrador && <b style={{ color: PIEL.aviso, letterSpacing: '0.08em' }}>BORRADOR · </b>}Expediente · {piezaMalla.nombre} · §13.10</span>
               <div className="fb-plano-actions">
                 <button data-testid="btn-expediente-descargar" onClick={() => triggerDownload(new Blob([expediente.html], { type: 'text/html' }), `expediente-${piezaMalla.nombre.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.html`)}>⬇ Descargar (HTML)</button>
+                {/* EL MOLDE EN STEP (orden K): el molde entero en 3D, un cuerpo por pieza con su nombre ISO — se abre en Fusion/SolidWorks/FreeCAD */}
+                <button data-testid="btn-expediente-step" disabled={!mold.ciclo?.portamoldes || moldeSTEPBusy} title={mold.ciclo?.portamoldes ? 'el molde en STEP AP214: un cuerpo B-Rep por pieza, con su nombre de ISO 12165' : 'arma el portamoldes (paso 6) para tener el molde entero'} onClick={descargarMoldeSTEP}>{moldeSTEPBusy ? '⏳ armando el STEP…' : '⬇ Molde 3D (STEP)'}</button>
                 <button data-testid="btn-expediente-imprimir" onClick={() => { const w = window.open('', '_blank'); if (w) { w.document.write(expediente.html); w.document.close(); } }}>🖨 Imprimir / PDF</button>
                 <button data-testid="btn-expediente-close" onClick={() => setExpedienteOn(false)}>✕ Cerrar</button>
               </div>
@@ -10364,6 +10436,12 @@ export default function ForgeBRepStudio() {
               </div>
               <div style={{ fontSize: 11.5, color: '#9fb0c4' }}>
                 Tu expediente: el dictamen, las decisiones por firmar, el costo de referencia ({expediente.costo?.modo === 'tu-tarifa' ? 'en pesos, con tu tarifa' : 'horas y la referencia del libro: falta tu tarifa'}) y los planos, y al final la primera prueba en máquina. Lo que falta viene marcado como pendiente, no inventado.{expediente.borrador ? ' Es un BORRADOR hasta que firmen todas las decisiones.' : ''}
+              </div>
+              {/* EL MOLDE EN STEP (orden K): qué trae el archivo 3D, en una línea */}
+              <div data-testid="expediente-step-linea" style={{ fontSize: 11.5, color: '#9fb0c4', marginTop: 6 }}>
+                {mold.ciclo?.portamoldes
+                  ? 'Molde 3D (STEP): el molde entero, un sólido por pieza con su nombre de la norma ISO 12165 (placas, insertos, botadores, guías, pilares, pernos) — se abre en Fusion, SolidWorks o FreeCAD.'
+                  : 'Molde 3D (STEP): sale cuando el molde está entero (el portamoldes del paso 6).'}
               </div>
             </div>
           </div>

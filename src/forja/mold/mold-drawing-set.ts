@@ -9,7 +9,13 @@
  */
 
 import { renderPlateDrawing, type PlateSpec, type PlateHole, type PlateOpening, type CoolingCircuit } from './mold-drawings';
-import { moldAssemblyDrawing, type MoldAssemblySpec } from './mold-assembly';
+import { moldAssemblyDrawing, renglonISO, TERMINOS_ISO, type MoldAssemblySpec, type ClaveTermino } from './mold-assembly';
+// LOS PERNOS Y LOS INTERLOCKS EN LA BOM (orden K): mold-fasteners y mold-interlocks importan este módulo — el ciclo es SOLO
+// de funciones (ninguno de los tres llama al otro al cargarse), así que ESM lo resuelve; medido en node (tsx) y en vite.
+import { fastenerPlan, engagementLengthMm, plateYieldMPa } from './mold-fasteners';
+import { resolveThread } from './mold-threads';
+import { resolveHead } from './mold-heads';
+import { planInterlocks } from './mold-interlocks';
 import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
 import { ventMaxThickness } from './venting';
 import { sideActionDesign } from './sideactions';
@@ -1096,6 +1102,26 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole, o?: { lamina
 }
 
 
+/** LOS PERNOS DEL MOLDE (orden K, 2026-10-30): rosca, cabeza y largo BAJO LA CABEZA (el nominal de ISO 4762) de cada mitad
+ *  — la MISMA cuenta con que `buildFunctionalParts` arma el perno (malla y B-Rep) y con la que la BOM lo pide. Antes la
+ *  cuenta vivía solo dentro del armador del 3D: la lámina no tenía cómo decir el largo. Una fuente, dos clientes.
+ *  (La rosca de las DOS mitades es la de la mitad cavidad: así la arma el 3D — `fastenerPlan(spec, { half: 'cavity' })`.) */
+export function pernosDelMolde(s: MoldAssemblySpec) {
+  const defs = plateDefs(s), thick = (r: string) => defs.find((d) => d.role === r)?.thick ?? 20;
+  const ts = resolveThread(fastenerPlan(s, { half: 'cavity' }).majorMm);
+  const hd = resolveHead('DIN912', ts.major);
+  const engage = engagementLengthMm(ts, plateYieldMPa(s));
+  return {
+    ts, hd, engage,
+    // cavidad: desde ARRIBA, de la cara de la sujeción superior a 6 mm antes de la partición (no la cruza)
+    cavidad: { largoMm: Math.max(10, thick('clamp') + thick('A') - 6 - hd.k), cant: standardHoles(s, 'clamp').filter((h) => /tornillo/.test(h.type)).length },
+    // núcleo: desde ABAJO de la sujeción inferior, por los rieles y el soporte, y rosca en B lo que pide el engrane (§12.2.3)
+    nucleo: { largoMm: Math.max(10, s.plates.bottomClamp + s.plates.ejectorHousing + thick('support') + engage - hd.k), cant: standardHoles(s, 'bottom').filter((h) => /tornillo/.test(h.type)).length },
+  };
+}
+/** el término ISO 12165 de cada placa (para el título suplementario de su lámina) */
+const TERMINO_DE_PLACA: Record<PlateRole, ClaveTermino> = { clamp: 'sujecion', A: 'placaA', B: 'placaB', support: 'soporte', 'ejector-ret': 'retenedora', ejector: 'expulsora', bottom: 'sujecion' };
+
 /** Genera el SET completo de planos del molde (ensamble + análisis + placas). */
 export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]): MoldDrawingSet {
   const D = plateDepth(s);
@@ -1109,10 +1135,22 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
   const pil = supportPillarPositions(s, D), Lpil = s.plates.ejectorHousing;
   const pilHolgura = pillarClearanceFit(PILAR_SOPORTE_DIA_MM).holeDiaMm;
   const gp = guiaNominalMm(s.widthMm), G = guideGeom(gp);
+  // CON NOMBRE ISO (orden K): cada renglón lleva el término de ISO 12165 (español + inglés) y la norma del tipo. Y entran las
+  // piezas que el STEP ya trae y la BOM no: retornos, pernos (largo de `pernosDelMolde`), interlocks y el anillo de centrado.
+  const iso = (k: ClaveTermino, detalle: string, cant: number, material: string) => { const r = renglonISO(k, detalle); return { nombre: r.es, cant, material, en: r.en, norma: r.norma }; };
+  const rp = returnPinLayout(s, D), pz = pernosDelMolde(s);
+  let il: ReturnType<typeof planInterlocks> | null = null;
+  try { il = planInterlocks(s); } catch { il = null; }
   const piezas = [
-    ...(pil.length ? [{ nombre: `Pilar de soporte ⌀${PILAR_SOPORTE_DIA_MM} × ${Lpil}`, cant: pil.length, material: s.baseSteel ?? '1.1730' }] : []),
-    { nombre: `Poste guía ⌀${gp} × ${+((s.plates.A + s.plates.B) * 0.92).toFixed(1)}`, cant: 4, material: '1.2510 rectificado' },
-    { nombre: `Buje guía ⌀${gp} (OD ${G.bushingODMm})`, cant: 4, material: 'bronce/acero templ.' },
+    ...(pil.length ? [iso('pilar', `⌀${PILAR_SOPORTE_DIA_MM} × ${Lpil}`, pil.length, s.baseSteel ?? '1.1730')] : []),
+    iso('poste', `⌀${gp} × ${+((s.plates.A + s.plates.B) * 0.92).toFixed(1)}`, 4, '1.2510 rectificado'),
+    iso('buje', `⌀${gp} (OD ${G.bushingODMm})`, 4, 'bronce/acero templ.'),
+    iso('retorno', `⌀${rp.diaMm}`, rp.pts.length, '1.2842 templado'),
+    ...(pz.cavidad.cant ? [iso('tornillo', `M${pz.ts.major} × ${+pz.cavidad.largoMm.toFixed(1)} · lado fijo`, pz.cavidad.cant, 'clase 12.9')] : []),
+    ...(pz.nucleo.cant ? [iso('tornillo', `M${pz.ts.major} × ${+pz.nucleo.largoMm.toFixed(1)} · lado móvil`, pz.nucleo.cant, 'clase 12.9')] : []),
+    ...(il && il.positions.length ? [iso('interlock', `⌀${il.diaMm ?? '—'}`, il.positions.length, 'S7 templado')] : []),
+    // el ⌀100 del anillo es el del libro (§1.3.1) — el MISMO literal con que `buildFunctionalParts` lo arma
+    iso('anillo', '⌀100', 1, '1.7131'),
   ];
   const conPilares = (role: PlateDef['role']): PlateHole[] => {
     if (role === 'ejector' || role === 'ejector-ret')
@@ -1140,7 +1178,7 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
     const exp = p.role === 'ejector' || p.role === 'ejector-ret';
     const ox = exp ? mgE.mxMm : 0, oy = exp ? mgE.myMm : 0;
     const spec: PlateSpec = {
-      code: p.code, name: p.name, material: p.mat,
+      code: p.code, name: p.name, material: p.mat, en: TERMINOS_ISO[TERMINO_DE_PLACA[p.role]].en, cajetin: s.cajetin,
       wmm: s.widthMm - 2 * ox, dmm: D - 2 * oy, thickMm: p.thick,
       holes: [...standardHoles(s, p.role, { lamina: true }), ...conPilares(p.role)].map((h) => (exp ? { ...h, x: h.x - ox, y: h.y - oy } : h)),
       openings: (p.role === 'A' || p.role === 'B') ? cavityOpenings(s, D) : undefined,

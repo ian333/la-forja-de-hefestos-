@@ -20,7 +20,7 @@ import {
   coolingCircuitDesign,
   cavityFootprint, moldBoltSizing,
   insertDims, returnPinLayout, expulsoraMargenes, EXPULSORA_MARGEN_X_MM, EXPULSORA_MARGEN_Y_MM,
-  supportPillarPositions, PILAR_SOPORTE_DIA_MM,
+  supportPillarPositions, PILAR_SOPORTE_DIA_MM, pernosDelMolde,
   type DrawingPage, type AnalysisRow, type PlateDef } from './mold-drawing-set';
 import { PISO_MAQUINABLE_MM } from './cooling-design';   // el piso del taller, UNA definición
 import { resolveThread, threadSurfaceMesh, plainShaftMesh, type Mesh as ThreadMesh } from './mold-threads';
@@ -328,6 +328,10 @@ export interface MoldPart {
   /** EL CÁLCULO NARRADO del componente (fórmula + sustitución + resultado por
    *  paso) — la pantalla de fórmulas: el árbol lo muestra al expandir. */
   calc?: import('./cooling-design').CalcPaso[];
+  /** EL MOLDE EN STEP (orden K, 2026-10-30): el sólido B-Rep del componente, armado A PEDIDO con las MISMAS variables que
+   *  su malla. Solo lo traen los componentes que nacen como malla pura (tornillos, interlocks); los demás salen de
+   *  `tessellate` y su B-Rep lo da `formaDeLaMalla` (occt.ts). Lo consume `molde-step.ts`. */
+  brep?: () => any;
 }
 
 /** LARGO DE COLADA QUE SALE SOBRE LA PIEZA (mm) — el sumando del feed system de
@@ -700,7 +704,9 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     // ESPACIO que ocupa es cabeza + caña: hay que descontar headH o el perno se pasa de
     // largo. Sin descontarlo cruzaba la partición 14 mm — lo cazó el gate midiendo la
     // MALLA, no la intención del código.
-    const cavLen = Math.max(10, thick('clamp') + tA - 6 - headH);
+    // (orden K) la cuenta vive en `pernosDelMolde` (mold-drawing-set.ts): la BOM pide el MISMO largo que se arma aquí
+    const largos = pernosDelMolde(spec);
+    const cavLen = largos.cavidad.largoMm;
     // NÚCLEO — Kazmer §12.2.3 LITERAL: "the support plate is secured to the REAR CLAMP
     // PLATE with socket head cap screws". El tornillo largo entra desde ABAJO de la
     // sujeción inferior (cabeza en contrataladro de su cara de abajo), sube POR DENTRO
@@ -708,7 +714,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     // el soporte y ROSCA en B por `engage`. Antes la cabeza quedaba ENTERRADA en la cara
     // inferior del soporte, flotando en el hueco donde VIAJA la expulsora ("esos
     // tornillos están dentro del metal, no veo por dónde meterlos" — user, con razón).
-    const corLen = Math.max(10, spec.plates.bottomClamp + spec.plates.ejectorHousing + thick('support') + engage - headH);
+    const corLen = largos.nucleo.largoMm;
     // cabezas AVELLANADAS a ras: cavidad desde ARRIBA (rot 180°, cabeza en el clamp);
     // núcleo desde ABAJO de la sujeción. Ninguno cruza la partición: A y B se separan
     // CADA ciclo — un tornillo entre ellas impediría abrir el molde.
@@ -731,6 +737,25 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       `cabeza ${hd.desig}: ⌀${hd.dk}×${hd.k} · Allen s${hd.sw} · asiento ${seatSpec(hd).kind} ⌀${seatSpec(hd).dia} (${hd.rule})`,
       `chaflán de punta ISO 4753: ${tipChamfer(ts.major, ts.pitch).kind} hasta ⌀${tipChamfer(ts.major, ts.pitch).toDia} (entra al barreno)`,
     ];
+    // EL PERNO EN B-REP (orden K · EL MOLDE EN STEP, 2026-10-30): la malla de arriba lleva la hélice REAL (ISO 68-1) y
+    // no tiene sólido. Para el STEP se arma el perno como lo dibuja cualquier CAD: cabeza ⌀dk × k con su hexágono
+    // interior (sw × socketDepth, de `resolveHead`) y la caña al Ø MAYOR por todo el largo — la cuerda va COSMÉTICA (el
+    // taller la hace de la designación, no del modelo; una hélice B-Rep pesaría MB por perno). MISMAS posiciones, MISMO
+    // largo (cavLen / corLen) y MISMA cabeza que la malla: se arma a pedido, aquí, con estas variables.
+    const pernoBRep = (x: number, y: number, L: number, cabezaArriba: boolean, zCara: number): any => {
+      // cabezaArriba (lado cavidad): cara de la cabeza en zCara, cabeza [zCara−k, zCara], caña hacia ABAJO.
+      // si no (lado núcleo): cara en zCara (=0), cabeza [zCara, zCara+k], caña hacia ARRIBA.
+      const z0Cab = cabezaArriba ? zCara - headH : zCara;
+      let cab = K.makeCylinder(oc, hd.dk / 2, headH, { origin: [x, y, z0Cab], dir: [0, 0, 1] });
+      if (hd.sw && hd.socketDepth) {
+        const R = hd.sw / Math.sqrt(3);                       // circunradio del hexágono de entre-caras sw
+        const hex = Array.from({ length: 6 }, (_, i) => ({ x: x + R * Math.cos((i * Math.PI) / 3), y: y + R * Math.sin((i * Math.PI) / 3) }));
+        const zHex = cabezaArriba ? zCara - hd.socketDepth : zCara - 0.5;   // el hueco abre por la cara de la cabeza (+0.5 de aire)
+        cab = K.cut(oc, cab, K.extrudePolygon(oc, hex, hd.socketDepth + 0.5, K.offsetPlane(K.PLANE_XY, zHex)));
+      }
+      const cana = K.makeCylinder(oc, ts.major / 2, L, { origin: [x, y, cabezaArriba ? z0Cab - L : zCara + headH], dir: [0, 0, 1] });
+      return K.fuse(oc, cab, cana);
+    };
     // 'tornillos-cav' lleva el sufijo que la animación reconoce como lado A: al abrir,
     // suben CON su placa (van atornillados a ella). Los del núcleo se quedan con B.
     if (accCav.idx.length) out.push({
@@ -740,6 +765,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       color: '#5b6472', opacity: 1, bodies: cavPos.length,
       features: [...comunes, ...planOf('cavity'),
         `sujeción superior → placa A: z[${(zTopMold - cavLen).toFixed(0)}..${zTopMold.toFixed(0)}] · NO cruza la partición (z=${z.A})`],
+      brep: () => K.makeCompound(oc, cavPos.map((p) => pernoBRep(p.x, p.y, cavLen, true, zTopMold))),
     });
     if (accCore.idx.length) out.push({
       role: 'tornillos-core', name: `Tornillos ${ts.desig} · lado NÚCLEO (${corPos.length}) · cuerda REAL`,
@@ -748,6 +774,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       color: '#5b6472', opacity: 1, bodies: corPos.length,
       features: [...comunes, ...planOf('core'),
         `soporte → placa B: z[${z.support.toFixed(0)}..${(z.support + corLen).toFixed(0)}] · libra el hueco del expulsor (z<${z.support}) y NO cruza la partición (z=${z.A})`],
+      brep: () => K.makeCompound(oc, corPos.map((p) => pernoBRep(p.x, p.y, corLen, false, 0))),
     });
   } catch { /* tornillos opcionales (no rompen el molde) */ }
 
@@ -805,6 +832,9 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
         il.benefit,
         `posiciones (corridas para librar la tornillería): ${il.positions.map((q) => `(${q.x},${q.y})`).join(' ')}`,
       ],
+      // EL MOLDE EN STEP (orden K): la malla de arriba se corre por VÉRTICE y pierde su sólido; el B-Rep es el MISMO perfil
+      // de revolución, colocado con transformShape en las MISMAS posiciones del plan.
+      brep: () => K.makeCompound(oc, il.positions.map((q) => K.transformShape(oc, K.revolvePolygon(oc, prof, 360, K.PLANE_XZ), { translate: [q.x, q.y, 0] }))),
     });
   } catch { /* sin datos de cavidad el interlock no aplica */ }
 
