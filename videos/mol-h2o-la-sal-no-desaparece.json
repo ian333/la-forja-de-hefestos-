@@ -122,7 +122,20 @@
       "valor_propio": "porque con la sal y el vaso de su cocina enseña que la sal no se va: se viste de agua, y de ahí sale la sed después de comer salado",
       "nota_declaracion": "IDENTIDAD EN 2ª PERSONA declarada (canon §EL VEREDICTO A/B): el sujeto es el vaso y la sangre de quien ve."
     },
-    "nota_programar": "rey diario a las 20:30 CDMX (salida prevista 2026-10-31 si todo pasa). Sin publicar.autorizado con las palabras de ian NADA sube; ni autorizado ni programar se escriben aquí."
+    "nota_programar": "rey diario a las 20:30 CDMX. Salía el 31-oct; iangpu se cayó a media noche (el montaje falló por 175/177 cuadros del gancho) → sale el 3-nov.",
+    "autorizado": "2026-11-03 ig,yt — dicho por ian en sesión al ver el video: «esta verguisima hoy se sube :D … ESTE QUEDA PARA HOY»",
+    "programar": "2026-11-03T20:30:00-06:00",
+    "subidas": {
+      "yt": {
+        "id": "m6tiuhYa6Pg",
+        "url": "https://youtu.be/m6tiuhYa6Pg",
+        "privacidad": "private",
+        "publishAt": "2026-11-03T20:30:00-06:00",
+        "captions": "AUieDab82RgZM1Kk7ht1IFGIokq641vCzUsJe7GddXL2O1ysGQXp95kl4w",
+        "fecha": "2026-11-03T12:06"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-la-sal-no-desaparece.mp4?v=0f92a9c8d0"
   },
   "ritmo": {
     "brazo": "A",
