@@ -7,8 +7,9 @@
 #
 #   bash scripts/blender-a-cuadros.sh gancho <dir_1440_impares> <dir_salida> [n_cuadros=165]
 #   bash scripts/blender-a-cuadros.sh cierre <still_4k.png> <dir_salida> [n_cuadros=376]
+#   bash scripts/blender-a-cuadros.sh escala <dir_1440_todos> <dir_salida> [n_cuadros]   (Blender rindió todos los cuadros)
 set -euo pipefail
-MODO="${1:?gancho|cierre}"; IN="${2:?entrada}"; OUT="${3:?salida}"; N="${4:-}"
+MODO="${1:?gancho|cierre|escala}"; IN="${2:?entrada}"; OUT="${3:?salida}"; N="${4:-}"
 mkdir -p "$OUT"
 case "$MODO" in
   gancho)
@@ -21,6 +22,23 @@ case "$MODO" in
       -vf "minterpolate=fps=30:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,scale=2160:3840:flags=lanczos" \
       -frames:v "$N" -pix_fmt rgb24 "$OUT/frame_%04d.png"
     rm -rf "$SEQ"
+    # RELLENO (la sal, 31-oct): minterpolate se come 1-2 cuadros del final (89 impares → 175, no 177) y el montaje
+    # se cayó. Lo que falte se completa: si Blender rindió ese cuadro (el ÚLTIMO es el del corte) se escala el real;
+    # si no, se repite el anterior (1 cuadro quieto no se nota; un cuadro que falta tumba el video).
+    for k in $(seq 1 "$N"); do
+      o="$OUT/$(printf 'frame_%04d.png' "$k")"; [ -s "$o" ] && continue
+      r="$IN/$(printf 'frame_%04d.png' "$k")"
+      if [ -s "$r" ]; then ffmpeg -v error -y -i "$r" -vf scale=2160:3840:flags=lanczos -pix_fmt rgb24 "$o"
+      else cp "$OUT/$(printf 'frame_%04d.png' $((k-1)))" "$o"; fi
+      echo "   relleno: cuadro $k ($([ -s "$r" ] && echo 'el real de Blender' || echo 'repite el anterior'))"
+    done
+    ;;
+  escala)
+    # Blender rindió TODOS los cuadros (p.ej. la gota: la caída dura 2 cuadros, no se puede interpolar) → solo 4K.
+    N="${N:-$(ls "$IN"/frame_*.png | wc -l)}"; k=1
+    for f in $(ls "$IN"/frame_*.png | sort | head -n "$N"); do
+      ffmpeg -v error -y -i "$f" -vf scale=2160:3840:flags=lanczos -pix_fmt rgb24 "$OUT/$(printf 'frame_%04d.png' $k)"; k=$((k+1))
+    done
     ;;
   cierre)
     N="${N:-376}"

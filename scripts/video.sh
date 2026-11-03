@@ -3,7 +3,7 @@
 # no un script propio. Reemplaza a wpair-full-pipeline.sh / wpairB-* / wpair-assemble.sh /
 # wpair-capsula.sh / render-li2*.sh. Ver docs/CANON-VIDEO.md.
 #
-#   bash scripts/video.sh <id> [paso]      paso = salud|voz|campo|subs|render|ensamble|verificar|capsula|entrega|publicar|subir|todo
+#   bash scripts/video.sh <id> [paso]      paso = salud|voz|campo|subs|stills|render|gancho|montaje|ensamble|verificar|capsula|entrega|publicar|subir|todo
 #   bash scripts/video.sh mol-h2o-el-puente todo
 #   SHARDS=3 bash scripts/video.sh mol-h2o-el-puente render     # override puntual
 #
@@ -79,6 +79,7 @@ paso_subs() {
 
 paso_render() {
   echo "── RENDER 4K (paralelo, resumible) ──"
+  asegura_vite || return 1
   mkdir -p "$FRAMES"
   # GUARDA DE DURACIÓN: render-clip.cjs es RESUMIBLE — salta todo frame que ya exista y no
   # sea negro (línea 100). Eso es lo que hace barato reintentar… y lo que MEZCLA dos versiones
@@ -194,6 +195,74 @@ for f in (externos(post_d, post_n) if post_n else []): pon(f, i); i += 1
 print(f'   montaje: {i} cuadros en {out}')
 PYMON
   [ $? -eq 0 ] || { echo "✗ montaje incompleto"; return 1; }
+}
+
+# ── LA LUPA (ian 2026-11-03: «pasos mínimos, el pipeline mínimo»): un objeto REAL de tu cocina (Blender) → la escena
+# CALCULADA (La Forja) → el mismo objeto. Se declara en el manifiesto y no crea scripts por video:
+#   render.blender = { script: <x>_gancho.py, salida: /mnt/d/…, args: "var=150", gancho: impares|todos,
+#                      cierre: <still del cierre relativo a salida, def. cierre-still-4k/frame_0200.png> }
+# Pasos: stills (hoja de contacto ANTES del video) → voz → render → gancho → montaje → ensamble. Sin render.blender,
+# `stills` solo saca la escena y `gancho` no hace nada: todo video viejo rinde igual que siempre.
+GPU_LOCK="${GPU_LOCK:-/home/ian/el-plan/gpu.lock}"; BLENDER="${BLENDER:-$HOME/ai/blender/run}"
+
+asegura_vite() {
+  # 30-oct: el render dio 0/2020 cuatro veces seguidas porque vite (:5178) no estaba arriba en iangpu. Se levanta solo.
+  curl -s -o /dev/null --max-time 5 "$BASE_URL/$HTML" && return 0
+  case "$BASE_URL" in *localhost:5178*) ;; *) echo "   ✗ $BASE_URL no responde"; return 1 ;; esac
+  echo "   (vite :5178 no responde: lo levanto)"
+  setsid nohup "$ROOT/node_modules/.bin/vite" --host --port 5178 --strictPort > "$ROOT/dist-video/vite.log" 2>&1 < /dev/null &
+  for _ in $(seq 1 40); do sleep 1; curl -s -o /dev/null --max-time 3 "$BASE_URL/$HTML" && return 0; done
+  echo "   ✗ vite no levantó (ver dist-video/vite.log)"; return 1
+}
+
+paso_stills() {
+  # Antes de invertir horas en el video: Blender (gancho f1, EL CORTE, cierre) + la escena en 8 tiempos, en UNA hoja.
+  # ian 11-03: «sé que puedes sacar stills antes de probar el video». Si los stills están bien, el video sale bien.
+  local SD="$ODIR/stills"; mkdir -p "$SD"
+  local BS BO BA; BS=$(m render.blender.script); BO=$(m render.blender.salida); BA=$(m render.blender.args)
+  echo "── STILLS (hoja de contacto antes del video) ──"
+  if [ -n "$BS" ]; then
+    mkdir -p "$BO"
+    flock "$GPU_LOCK" "$BLENDER" -b --python "$BS" -- modo=still plano=gancho frames=1,$PRE_N res=1080 muestras=64 \
+        ngancho="$PRE_N" salida="$BO" $BA > "$SD/blender.log" 2>&1 \
+      && flock "$GPU_LOCK" "$BLENDER" -b --python "$BS" -- modo=still plano=cierre frame=200 res=1080 muestras=64 \
+        ngancho="$PRE_N" salida="$BO" $BA >> "$SD/blender.log" 2>&1 \
+      || { echo "   ✗ stills de Blender (ver $SD/blender.log)"; return 1; }
+  fi
+  asegura_vite || return 1
+  local TS; TS=$(python3 -c "print(','.join(f'{$DURE*(i+0.5)/8:.2f}' for i in range(8)))")
+  flock "$GPU_LOCK" node "$ROOT/scripts/grab-stills.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --w 1080 --h 1920 \
+      --super 1 --out "$SD/escena" --t "$TS" > "$SD/escena.log" 2>&1 || { echo "   ✗ stills de la escena (ver $SD/escena.log)"; return 1; }
+  python3 - "$SD" "${BO:-}" "$PRE_N" "$TS" <<'PYHOJA'
+import glob, os, sys
+from PIL import Image, ImageDraw
+sd, bo, pre, ts = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4].split(',')
+def blender(plano, f):
+    hits = sorted(glob.glob(os.path.join(bo, 'stills', f'*-{plano}-f{f:03d}-1080.png')), key=os.path.getmtime) if bo else []
+    return hits[-1] if hits else None
+cuadros = [(blender('gancho', 1), 'gancho f1'), (blender('gancho', pre), f'EL CORTE f{pre}')]
+cuadros += [(os.path.join(sd, f'escena_t{t.rjust(2, "0")}.png'), f'escena {t} s') for t in ts]
+cuadros += [(blender('cierre', 200), 'cierre f200')]
+cuadros = [(p, et) for p, et in cuadros if p and os.path.exists(p)]
+W, H, cols = 300, 533, 6; filas = (len(cuadros) + cols - 1) // cols
+hoja = Image.new('RGB', (cols * W, filas * (H + 26)), (12, 12, 12)); d = ImageDraw.Draw(hoja)
+for i, (p, et) in enumerate(cuadros):
+    x, y = (i % cols) * W, (i // cols) * (H + 26)
+    hoja.paste(Image.open(p).convert('RGB').resize((W, H)), (x, y + 26)); d.text((x + 6, y + 6), et, fill=(235, 210, 160))
+hoja.save(os.path.join(sd, 'hoja.jpg'), quality=88)
+print(f'   hoja: {len(cuadros)} cuadros → {os.path.join(sd, "hoja.jpg")}')
+PYHOJA
+}
+
+paso_gancho() {
+  # El gancho y el cierre de Blender ya convertidos a los cuadros 4K que espera `montaje` (render.preroll/postroll.dir).
+  local BS; BS=$(m render.blender.script); [ -n "$BS" ] || { echo "   (sin render.blender: gancho/cierre a mano)"; return 0; }
+  local BO BA BG BC; BO=$(m render.blender.salida); BA=$(m render.blender.args); BG=$(m render.blender.gancho); BC=$(m render.blender.cierre)
+  echo "── GANCHO Y CIERRE (Blender · LA LUPA) ──"; mkdir -p "$BO"
+  flock "$GPU_LOCK" "$BLENDER" -b --python "$BS" -- modo=plan ngancho="$PRE_N" salida="$BO" $BA > "$BO/blender-plan.log" 2>&1 \
+    || { echo "   ✗ Blender (ver $BO/blender-plan.log)"; return 1; }
+  bash "$ROOT/scripts/blender-a-cuadros.sh" "$([ "${BG:-impares}" = todos ] && echo escala || echo gancho)" "$BO/gancho-1440" "$PRE_DIR" "$PRE_N" || return 1
+  bash "$ROOT/scripts/blender-a-cuadros.sh" cierre "$BO/${BC:-cierre-still-4k/frame_0200.png}" "$POST_DIR" "$POST_N" || return 1
 }
 
 paso_ensamble() {
@@ -492,6 +561,8 @@ case "$PASO" in
   subs)      paso_subs ;;
   render)    paso_render ;;
   montaje)   paso_montaje ;;
+  stills)    paso_stills ;;
+  gancho)    paso_gancho ;;
   ensamble)  paso_ensamble ;;
   capsula)   paso_capsula ;;
   campo)     paso_campo ;;
@@ -500,6 +571,6 @@ case "$PASO" in
   subir)     paso_subir "$@" ;;
   programar) paso_programar ;;
   cosechar)  paso_cosechar ;;
-  todo)      paso_salud && paso_ritmo && paso_voz && paso_campo && paso_subs && paso_render && paso_montaje && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
-  *) echo "paso inválido: $PASO (salud|ritmo|voz|subs|render|ensamble|verificar|capsula|publicar|subir|programar|cosechar|todo)"; exit 2 ;;
+  todo)      paso_salud && paso_ritmo && paso_voz && paso_campo && paso_subs && paso_render && paso_gancho && paso_montaje && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
+  *) echo "paso inválido: $PASO (salud|ritmo|voz|subs|stills|render|gancho|montaje|ensamble|verificar|capsula|publicar|subir|programar|cosechar|todo)"; exit 2 ;;
 esac
