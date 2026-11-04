@@ -210,7 +210,10 @@ asegura_vite() {
   curl -s -o /dev/null --max-time 5 "$BASE_URL/$HTML" && return 0
   case "$BASE_URL" in *localhost:5178*) ;; *) echo "   ✗ $BASE_URL no responde"; return 1 ;; esac
   echo "   (vite :5178 no responde: lo levanto)"
-  setsid nohup "$ROOT/node_modules/.bin/vite" --host --port 5178 --strictPort > "$ROOT/dist-video/vite.log" 2>&1 < /dev/null &
+  # close_fds: si video.sh corre bajo `flock gpu.lock`, un `nohup … &` HEREDA el candado y vite lo retiene para siempre.
+  # Pasó el 3-nov: 5 h con la GPU «ocupada» por vite y toda la fila (piloto, comercial, otras sesiones) parada.
+  python3 -c "import subprocess,sys; subprocess.Popen(sys.argv[1:], stdout=open('$ROOT/dist-video/vite.log','w'), stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, close_fds=True, start_new_session=True)" \
+    "$ROOT/node_modules/.bin/vite" --host --port 5178 --strictPort
   for _ in $(seq 1 40); do sleep 1; curl -s -o /dev/null --max-time 3 "$BASE_URL/$HTML" && return 0; done
   echo "   ✗ vite no levantó (ver dist-video/vite.log)"; return 1
 }
