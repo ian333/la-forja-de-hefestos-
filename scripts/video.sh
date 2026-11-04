@@ -244,7 +244,7 @@ def blender(plano, f):
     hits = sorted(glob.glob(os.path.join(bo, 'stills', f'*-{plano}-f{f:03d}-1080.png')), key=os.path.getmtime) if bo else []
     return hits[-1] if hits else None
 cuadros = [(blender('gancho', 1), 'gancho f1'), (blender('gancho', pre), f'EL CORTE f{pre}')]
-cuadros += [(os.path.join(sd, f'escena_t{t.rjust(2, "0")}.png'), f'escena {t} s') for t in ts]
+cuadros += [(os.path.join(sd, f'escena_t{format(float(t), "g").rjust(2, "0")}.png'), f'escena {t} s') for t in ts]
 cuadros += [(blender('cierre', 200), 'cierre f200')]
 cuadros = [(p, et) for p, et in cuadros if p and os.path.exists(p)]
 W, H, cols = 300, 533, 6; filas = (len(cuadros) + cols - 1) // cols

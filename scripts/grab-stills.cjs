@@ -65,7 +65,7 @@ function arg(name, def) {
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))));
     await page.waitForTimeout(150);
     const f = `${out}_t${String(t).padStart(2, '0')}.png`;
-    await page.screenshot({ path: f, type: 'png', animations: 'disabled', timeout: 0 });
+    await page.screenshot({ path: f, type: 'png', animations: 'disabled', timeout: 30000 });   // CLAUDE.md: timeout FINITO, nunca 0
     console.log('[still]', f);
   }
   await browser.close();
