@@ -1,0 +1,52 @@
+LA PLACA DE LA PLUMA · revisión (2026-11-07)
+piezas 50 (SMD 10, 9 abajo) · islas 23 · barrenos 1 · juntas 227 · conectores 0 · PCB 1 (en L) · fuera de la placa 3
+banco v3: 29 piezas dibujadas + 75 pasivos que sus chips piden = 104 · 13 conectores/bornes · 2 PCB
+errores 0 · avisos 4
+  aviso P1 SW: SW: 40 A por capa está fuera de la tabla de IPC-2221 (≤ 35 A): extrapolado
+  aviso P1 OUT+: OUT+: 40 A por capa está fuera de la tabla de IPC-2221 (≤ 35 A): extrapolado
+  aviso P1 OUT-: OUT-: 40 A por capa está fuera de la tabla de IPC-2221 (≤ 35 A): extrapolado
+  aviso P1 GND: GND: 40 A por capa está fuera de la tabla de IPC-2221 (≤ 35 A): extrapolado
+térmica (peor caso):
+  disipador: 53.9 W → 79 °C (ok) · θSA 0.91 K/W (109 de 125 mm en el chorro del difusor); el termostato corta a 90 °C
+  Q1 (unión): 39.2 W → 116 °C (ok)
+  D1 (unión): 14.7 W → 101 °C (ok)
+  L1 choque: 18.3 W → 89 °C (ok)
+  C10–C12 (núcleo): 0.7 W → 44 °C (ok) · vida 352 kh
+  R30 shunt: 0.8 W → 61 °C (ok)
+  U4 TMC2209: 1.3 W → 90 °C (ok) · pre-aviso del chip a 120 °C
+  PS1 TEN 40: 2.8 W → 59 °C (ok)
+  U2 IR2110: 0.1 W → 69 °C (ok) · abajo, bajo Q1
+  junta J3/J4 (cal 8): 0.1 W → 58 °C (ok) · estaño: T/Tf < 0.75 con la junta sin carga
+  junta de la pata del choque: 0.0 W → 83 °C (ok) · la junta más caliente de la placa
+  junta de las patas de Q1/D1: 0.0 W → 73 °C (ok)
+disipador: 108.5 de 125 mm en el chorro del difusor → θSA 0.912 K/W (sin difusor 0.953)
+motor (K07, 12 V): vsense 1 · IRUN 27 → 0.857 A rms · IHOLD 13 → 0.428 A · máximo físico 0.979 A (tope 1.4) · VREF de respaldo 1.2 V
+cadena SD: SD —K10→ PARO_R · PARO_R —K13→ TM_R · TM_R —K14→ TC_R · TC_R —TS1→ TS_R · TS_R —Q2→ GND
+  abre contacto auxiliar NC del PARO (J14–J15) → SD sube por R8: el arco se apaga sin el micro
+  abre termostato KSD9700 70 °C NC de la mesa (J20–J21) → SD sube por R8: el arco se apaga sin el micro
+  abre termostato KSD301 70 °C ±3 NC del zócalo del cuello (J22–J23) → SD sube por R8: el arco se apaga sin el micro
+  abre KSD301 NC 90 °C del disipador → SD sube por R8: el arco se apaga sin el micro
+subidas de cable a los puertos:
+  J1 → C.BUS: retiro 30.0 mm (R 25.8), sube 19.9 mm antes de doblar, 1.5 mm del puerto (tol 6)
+  J2 → C.BUS: retiro 30.0 mm (R 25.8), sube 19.9 mm antes de doblar, 5.5 mm del puerto (tol 6)
+  J3 → C.OUTP: retiro 39.0 mm (R 34.8), sube 10.9 mm antes de doblar, 0.0 mm del puerto (tol 3)
+  J4 → C.OUTN: retiro 39.0 mm (R 34.8), sube 10.9 mm antes de doblar, 0.0 mm del puerto (tol 3)
+  J5 → C.SEN: retiro 12.0 mm (R 8.4), sube 57.3 mm antes de doblar, 11.4 mm del puerto (tol 12)
+  J6 → C.SEN: retiro 12.0 mm (R 8.4), sube 57.3 mm antes de doblar, 8.9 mm del puerto (tol 12)
+  J7 → C.SEN: retiro 12.0 mm (R 8.4), sube 57.3 mm antes de doblar, 6.4 mm del puerto (tol 12)
+  J8 → C.SEN: retiro 12.0 mm (R 8.4), sube 57.3 mm antes de doblar, 3.8 mm del puerto (tol 12)
+  J9 → C.SEN: retiro 12.0 mm (R 6.0), sube 59.7 mm antes de doblar, 1.3 mm del puerto (tol 12)
+  J10 → C.SEN: retiro 12.0 mm (R 6.0), sube 59.7 mm antes de doblar, 3.8 mm del puerto (tol 12)
+  J11 → C.SEN: retiro 12.0 mm (R 6.0), sube 59.7 mm antes de doblar, 6.4 mm del puerto (tol 12)
+  J22 → C.SEN: retiro 12.0 mm (R 7.2), sube 58.5 mm antes de doblar, 8.9 mm del puerto (tol 12)
+  J23 → C.SEN: retiro 12.0 mm (R 7.2), sube 58.5 mm antes de doblar, 11.4 mm del puerto (tol 12)
+  J12 → C.FAN: retiro 7.5 mm (R 7.2), sube 48.5 mm antes de doblar, 5.0 mm del puerto (tol 6)
+  J13 → C.FAN: retiro 7.5 mm (R 7.2), sube 48.5 mm antes de doblar, 5.0 mm del puerto (tol 6)
+  J14 → C.PARO: retiro 9.0 mm (R 7.2), sube 48.5 mm antes de doblar, 1.7 mm del puerto (tol 6)
+  J15 → C.PARO: retiro 9.0 mm (R 7.2), sube 48.5 mm antes de doblar, 1.7 mm del puerto (tol 6)
+  J20 → C.MESA: sube 80 mm derecho, 8.5 mm del eje (tol 12)
+  J21 → C.MESA: sube 80 mm derecho, 5.3 mm del eje (tol 12)
+  J16 → C.MESA: sube 80 mm derecho, 2.6 mm del eje (tol 12)
+  J17 → C.MESA: sube 80 mm derecho, 2.6 mm del eje (tol 12)
+  J18 → C.MESA: sube 80 mm derecho, 5.3 mm del eje (tol 12)
+  J19 → C.MESA: sube 80 mm derecho, 8.5 mm del eje (tol 12)

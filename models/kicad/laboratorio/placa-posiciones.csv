@@ -1,0 +1,75 @@
+ref,valor,huella,x_mm,y_mm_kicad,giro,cara
+Q1,IRFB4227,Package_TO_SOT_THT:TO-220-3_Vertical,-56.55,42.34,90,top
+D1,V40200C,Package_TO_SOT_THT:TO-220-3_Vertical,-56.55,28.34,90,top
+D2,SB5100,Diode_THT:D_DO-201AD_P15.24mm_Horizontal,45.00,50.00,90,top
+L1,15 µH aire,forja_lab:Choque_Aire_D60_L50,-1.00,27.00,0,top
+C10,2200 µF 100 V,Capacitor_THT:CP_Radial_D30.0mm_P10.00mm_SnapIn,-49.50,83.75,0,top
+C11,2200 µF 100 V,Capacitor_THT:CP_Radial_D30.0mm_P10.00mm_SnapIn,-16.00,83.75,0,top
+C12,2200 µF 100 V,Capacitor_THT:CP_Radial_D30.0mm_P10.00mm_SnapIn,-32.75,57.60,0,top
+C13,10 µF 100 V,Capacitor_THT:C_Rect_L31.5mm_W17.0mm_P27.50mm_MKS4,-46.05,39.80,90,top
+C14,10 µF 100 V,Capacitor_THT:C_Rect_L31.5mm_W17.0mm_P27.50mm_MKS4,-28.85,39.80,90,top
+C15,10 µF 100 V,Capacitor_THT:C_Rect_L31.5mm_W17.0mm_P27.50mm_MKS4,-11.65,39.80,90,top
+C16,1 µF 100 V,Capacitor_THT:C_Rect_L18.0mm_W8.0mm_P15.00mm_FKS3_FKP3,-54.00,-22.00,0,top
+R30,0.5 mΩ,forja_lab:Shunt_4T_THT_16mm,-14.00,-0.50,0,top
+U3,INA240A2,Package_SO:SOIC-8_3.9x4.9mm_P1.27mm,-22.00,6.30,0,top
+C1,100 nF,Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm,-14.00,6.30,0,top
+R1,18 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,38.00,33.00,90,top
+R2,1 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,38.00,40.00,90,top
+R3,18 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,2.00,63.50,90,top
+R4,1 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,5.50,63.50,90,top
+U2,IR2110S,Package_SO:SOIC-16W_7.5x10.3mm_P1.27mm,-46.50,50.00,90,bottom
+R5,22 Ω,Resistor_SMD:R_1206_3216Metric,-54.00,47.50,90,bottom
+R6,10 kΩ,Resistor_SMD:R_1206_3216Metric,-54.00,52.00,90,bottom
+R7,4.7 Ω,Resistor_SMD:R_1206_3216Metric,-30.50,47.50,90,bottom
+D3,ES1D,Diode_SMD:D_SMA,-34.50,47.50,90,bottom
+C2,1 µF,Capacitor_SMD:C_1206_3216Metric,-34.50,53.00,90,bottom
+C3,10 µF,Capacitor_SMD:C_1206_3216Metric,-38.00,46.50,90,bottom
+C4,100 nF,Capacitor_SMD:C_1206_3216Metric,-38.00,51.50,90,bottom
+R8,10 kΩ,Resistor_SMD:R_1206_3216Metric,-38.00,56.50,90,bottom
+Q2,2N7000,Package_TO_SOT_THT:TO-92_Inline,-59.00,-4.00,0,top
+R9,100 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,-51.00,-3.00,90,top
+TS1,KSD301 90 °C NC,forja_lab:Hilos_2_P3.0mm,-59.00,7.50,0,top
+TH1,NTC 10 k,forja_lab:Hilos_2_P3.0mm,-59.00,2.50,0,top
+TH2,NTC 10 k,forja_lab:Hilos_2_P3.0mm,-8.00,-9.00,0,top
+R10,10 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,15.50,97.50,90,top
+R11,10 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,15.50,91.50,90,top
+R12,10 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,15.50,85.50,90,top
+R13,1 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,15.50,79.50,90,top
+C5,10 nF,Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm,7.50,96.00,0,top
+U1,WeAct RP2350B Core,forja_lab:WeAct_RP2350B_Core,40.00,78.80,90,top
+U4,TMC2209 StepStick,forja_lab:StepStick_TMC2209_DIAG,66.00,28.00,0,top
+C6,100 µF 35 V,Capacitor_THT:CP_Radial_D8.0mm_P3.50mm,77.00,22.00,0,top
+R14,1 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,76.00,33.50,90,top
+R15,10 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,80.00,33.50,90,top
+F1,2 A T,forja_lab:Fusible_TR5_P5.08,11.00,68.50,0,top
+PS1,TEN 40-4812,forja_lab:TRACO_TEN40_2x1in,71.00,-21.40,0,top
+C7,47 µF 100 V,Capacitor_THT:CP_Radial_D10.0mm_P5.00mm,61.00,10.00,0,top
+PS2,R-78E5.0-0.5,forja_lab:SIP3_R78_P2.54,64.50,94.00,0,top
+C8,10 µF,Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm,62.50,87.50,0,top
+Q3,IRLB8721,Package_TO_SOT_THT:TO-220-3_Vertical,63.50,82.00,0,top
+R16,100 kΩ,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical,63.00,69.00,90,top
+D4,1N5822,Diode_THT:D_DO-201AD_P15.24mm_Horizontal,63.50,74.50,0,top
+J1,isla V+,MountingHole:MountingHole_3.2mm_M3_Pad_Via,-98.50,-18.00,0,top
+J2,isla V−,MountingHole:MountingHole_3.2mm_M3_Pad_Via,-105.50,-18.00,0,top
+J3,isla OUT+,MountingHole:MountingHole_4.3mm_M4_Pad_Via,-40.00,-9.00,0,top
+J4,isla OUT−,MountingHole:MountingHole_4.3mm_M4_Pad_Via,-20.00,-9.00,0,top
+J5,isla A+,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,28.57,-36.00,0,top
+J6,isla A−,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,31.11,-36.00,0,top
+J7,isla B+,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,33.65,-36.00,0,top
+J8,isla B−,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,36.19,-36.00,0,top
+J9,isla 3V3,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,41.27,-36.00,0,top
+J10,isla GND,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,43.81,-36.00,0,top
+J11,isla ENC,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,46.35,-36.00,0,top
+J22,isla T1,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,48.89,-36.00,0,top
+J23,isla T2,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,51.43,-36.00,0,top
+J12,isla +12,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,-111.50,-15.00,0,top
+J13,isla −,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,-111.50,-25.00,0,top
+J14,isla AUX1,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,76.00,86.65,0,top
+J15,isla AUX2,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,76.00,83.35,0,top
+J20,isla T1,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,82.50,77.25,0,top
+J21,isla T2,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,82.50,73.95,0,top
+J16,isla NTC,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,82.50,70.65,0,top
+J17,isla GND,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,82.50,67.35,0,top
+J18,isla +12,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,82.50,64.05,0,top
+J19,isla −,TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm,82.50,60.75,0,top
+H1,barreno Ø3.2,MountingHole:MountingHole_3.2mm_M3,-115.00,-20.00,0,top

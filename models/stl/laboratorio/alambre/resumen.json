@@ -1,0 +1,269 @@
+[
+ {
+  "pieza": "pie-carrete",
+  "tris": 520,
+  "solidos": 1,
+  "vol_cm3": 173.1,
+  "masa_g": 220,
+  "cajaImpresion": [
+   100,
+   81.58,
+   150
+  ],
+  "cabe": true,
+  "cabeK1": [
+   100,
+   81.58,
+   150
+  ],
+  "soporte_tris": 6,
+  "soporte_mm2": 163.5,
+  "voladizo_pct": 1.2,
+  "aviso_tris": 11,
+  "cajaDoc": [
+   [
+    -50,
+    -40.8,
+    0
+   ],
+   [
+    50,
+    40.8,
+    150
+   ]
+  ],
+  "ms": 1962,
+  "soporte_por_altura": [
+   {
+    "z": 82,
+    "tris": 2,
+    "luzX": 50.5,
+    "luzY": 3
+   },
+   {
+    "z": 3,
+    "tris": 4,
+    "luzX": 98,
+    "luzY": 6
+   }
+  ]
+ },
+ {
+  "pieza": "espina-empuje",
+  "tris": 4362,
+  "solidos": 1,
+  "vol_cm3": 582.9,
+  "masa_g": 740,
+  "cajaImpresion": [
+   100,
+   183.78,
+   155
+  ],
+  "cabe": true,
+  "cabeK1": [
+   100,
+   183.78,
+   155
+  ],
+  "soporte_tris": 167,
+  "soporte_mm2": 2512.6,
+  "voladizo_pct": 3.8,
+  "aviso_tris": 106,
+  "cajaDoc": [
+   [
+    -50,
+    -91.9,
+    0
+   ],
+   [
+    50,
+    91.9,
+    155
+   ]
+  ],
+  "ms": 13654,
+  "soporte_por_altura": [
+   {
+    "z": 152,
+    "tris": 2,
+    "luzX": 11,
+    "luzY": 7.6
+   },
+   {
+    "z": 134.5,
+    "tris": 4,
+    "luzX": 9.2,
+    "luzY": 3
+   },
+   {
+    "z": 3,
+    "tris": 4,
+    "luzX": 68,
+    "luzY": 70.8
+   },
+   {
+    "z": 129.5,
+    "tris": 2,
+    "luzX": 1,
+    "luzY": 2
+   },
+   {
+    "z": 126.5,
+    "tris": 17,
+    "luzX": 46.1,
+    "luzY": 40.8
+   },
+   {
+    "z": 116.5,
+    "tris": 3,
+    "luzX": 35.9,
+    "luzY": 1.6
+   },
+   {
+    "z": 120.5,
+    "tris": 2,
+    "luzX": 17.8,
+    "luzY": 12
+   },
+   {
+    "z": 112,
+    "tris": 1,
+    "luzX": 4.2,
+    "luzY": 13.4
+   },
+   {
+    "z": 82.5,
+    "tris": 77,
+    "luzX": 16,
+    "luzY": 16
+   },
+   {
+    "z": 101.5,
+    "tris": 13,
+    "luzX": 64.2,
+    "luzY": 2.1
+   },
+   {
+    "z": 95,
+    "tris": 42,
+    "luzX": 2.2,
+    "luzY": 4.1
+   }
+  ]
+ },
+ {
+  "pieza": "carro-loca",
+  "tris": 192,
+  "solidos": 1,
+  "vol_cm3": 1.9,
+  "masa_g": 2,
+  "cajaImpresion": [
+   20,
+   17.56,
+   10.66
+  ],
+  "cabe": true,
+  "cabeK1": [
+   20,
+   17.56,
+   10.66
+  ],
+  "soporte_tris": 0,
+  "soporte_mm2": 0,
+  "voladizo_pct": 0,
+  "aviso_tris": 0,
+  "cajaDoc": [
+   [
+    -22,
+    -4.6,
+    286.2
+   ],
+   [
+    -2,
+    6.1,
+    303.8
+   ]
+  ],
+  "ms": 62,
+  "soporte_por_altura": []
+ },
+ {
+  "pieza": "eje-carrete",
+  "tris": 522,
+  "solidos": 1,
+  "vol_cm3": 11,
+  "masa_g": 14,
+  "cajaImpresion": [
+   20,
+   19.94,
+   57.3
+  ],
+  "cabe": true,
+  "cabeK1": [
+   20,
+   20,
+   57.3
+  ],
+  "soporte_tris": 80,
+  "soporte_mm2": 30.3,
+  "voladizo_pct": 15.3,
+  "aviso_tris": 0,
+  "cajaDoc": [
+   [
+    -33,
+    80,
+    153
+   ],
+   [
+    24.3,
+    100,
+    173
+   ]
+  ],
+  "ms": 120,
+  "soporte_por_altura": [
+   {
+    "z": 56,
+    "tris": 80,
+    "luzX": 16.7,
+    "luzY": 16.8
+   }
+  ]
+ },
+ {
+  "pieza": "tapa-iman",
+  "tris": 500,
+  "solidos": 1,
+  "vol_cm3": 0.6,
+  "masa_g": 1,
+  "cajaImpresion": [
+   15.16,
+   15.2,
+   3.9
+  ],
+  "cabe": true,
+  "cabeK1": [
+   15.2,
+   15.2,
+   3.9
+  ],
+  "soporte_tris": 0,
+  "soporte_mm2": 0,
+  "voladizo_pct": 0,
+  "aviso_tris": 0,
+  "cajaDoc": [
+   [
+    -16,
+    -6.4,
+    287.4
+   ],
+   [
+    -0.8,
+    -2.5,
+    302.6
+   ]
+  ],
+  "ms": 58,
+  "soporte_por_altura": []
+ }
+]

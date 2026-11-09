@@ -1,0 +1,113 @@
+==============================================================================
+10 · ESTADO DEL ARTE + SEGURIDAD — números
+==============================================================================
+
+[1] Fusión de alambre a 3 m/min
+  área alambre           = 0.5027 mm²
+  volumen                = 25.13 mm³/s
+  masa                   = 0.176 g/s = 0.633 kg/h (arco encendido continuo)
+  gota canon a=0.4526 mm: V = 0.3884 mm³; 75 gotas/s = 29.13 mm³/s (cuadra con el alambre ±16 %)
+
+[2] Humo y caudal de DILUCIÓN necesario para estar en el límite (arco continuo, todo el humo al cuarto)
+  FFR  Mn%  fume mg/s  Mn mg/h | Q (m³/h) para: ACGIH TLV resp 0.02 | ACGIH TLV inhal 0.1 | NOM-010 VLE-PPT 0.2 | NIOSH REL 1.0 | OSHA PEL techo 5
+  0.5%  2.0      0.88      63.3 |       3167 |        633 |        317 |         63 |         13
+  0.5%  5.0      0.88     158.3 |       7917 |       1583 |        792 |        158 |         32
+  0.5% 10.0      0.88     316.7 |      15834 |       3167 |       1583 |        317 |         63
+  1.0%  2.0      1.76     126.7 |       6333 |       1267 |        633 |        127 |         25
+  1.0%  5.0      1.76     316.7 |      15834 |       3167 |       1583 |        317 |         63
+  1.0% 10.0      1.76     633.3 |      31667 |       6333 |       3167 |        633 |        127
+  2.0%  2.0      3.52     253.3 |      12667 |       2533 |       1267 |        253 |         51
+  2.0%  5.0      3.52     633.3 |      31667 |       6333 |       3167 |        633 |        127
+  2.0% 10.0      3.52    1266.7 |      63335 |      12667 |       6333 |       1267 |        253
+  3.0%  2.0      5.28     380.0 |      19000 |       3800 |       1900 |        380 |         76
+  3.0%  5.0      5.28     950.0 |      47501 |       9500 |       4750 |        950 |        190
+  3.0% 10.0      5.28    1900.0 |      95002 |      19000 |       9500 |       1900 |        380
+  Fluoruros (como F), límite 2.5 mg/m³:
+   FFR 1%  F  5.0% ->   316.7 mg/h -> Q =   126.7 m³/h
+   FFR 1%  F 10.0% ->   633.3 mg/h -> Q =   253.3 m³/h
+   FFR 1%  F 15.0% ->   950.0 mg/h -> Q =   380.0 m³/h
+   FFR 3%  F  5.0% ->   950.0 mg/h -> Q =   380.0 m³/h
+   FFR 3%  F 10.0% ->  1900.0 mg/h -> Q =   760.0 m³/h
+   FFR 3%  F 15.0% ->  2850.1 mg/h -> Q =  1140.0 m³/h
+
+  ESCENARIO CENTRAL: FFR 1 %, Mn 5 % -> humo 1.76 mg/s (6.3 g/h), Mn 317 mg/h
+   dilución para ACGIH resp 0.02: 15,834 m³/h ; para NOM 0.2: 1,583 m³/h
+
+[3] Cuarto de 3×3×2.5 m = 22.5 m³, solo ventilación general (escenario central)
+   0.5 renov/h (Q=   11 m³/h): C_Mn estacionaria =  28.149 mg/m³ = 1407.4× ACGIH, 140.74× NOM ; τ = 120.0 min
+   2.0 renov/h (Q=   45 m³/h): C_Mn estacionaria =   7.037 mg/m³ =  351.9× ACGIH, 35.19× NOM ; τ =  30.0 min
+  10.0 renov/h (Q=  225 m³/h): C_Mn estacionaria =   1.407 mg/m³ =   70.4× ACGIH,  7.04× NOM ; τ =   6.0 min
+  20.0 renov/h (Q=  450 m³/h): C_Mn estacionaria =   0.704 mg/m³ =   35.2× ACGIH,  3.52× NOM ; τ =   3.0 min
+  TWA 8 h si el arco está encendido solo t_on min/día (C·t_on/480), con 2 renov/h:
+   t_on   5 min -> TWA =  0.073 mg/m³ =   3.7× ACGIH resp
+   t_on  15 min -> TWA =  0.220 mg/m³ =  11.0× ACGIH resp
+   t_on  30 min -> TWA =  0.440 mg/m³ =  22.0× ACGIH resp
+   t_on  60 min -> TWA =  0.880 mg/m³ =  44.0× ACGIH resp
+
+[4] Captura en la fuente: fracción que escapa (1-η) que el cuarto aguanta
+  cuarto Q= 45 m³/h, límite ACGIH 0.02: escape permitido =   0.28 % -> η ≥  99.72 %
+  cuarto Q= 45 m³/h, límite NOM 0.2: escape permitido =   2.84 % -> η ≥  97.16 %
+  cuarto Q=300 m³/h, límite ACGIH 0.02: escape permitido =   1.89 % -> η ≥  98.11 %
+  cuarto Q=300 m³/h, límite NOM 0.2: escape permitido =  18.95 % -> η ≥  81.05 %
+
+[5] Campana redonda Ø100 mm, Q = V·(10X²+A) (plana); con brida ×0.75
+  V=0.5 m/s X=   5 cm: Q =     59 m³/h (plana) /     44 m³/h (con brida)
+  V=0.5 m/s X=  10 cm: Q =    194 m³/h (plana) /    146 m³/h (con brida)
+  V=0.5 m/s X=  15 cm: Q =    419 m³/h (plana) /    314 m³/h (con brida)
+  V=0.5 m/s X=  20 cm: Q =    734 m³/h (plana) /    551 m³/h (con brida)
+  V=1.0 m/s X=   5 cm: Q =    118 m³/h (plana) /     89 m³/h (con brida)
+  V=1.0 m/s X=  10 cm: Q =    388 m³/h (plana) /    291 m³/h (con brida)
+  V=1.0 m/s X=  15 cm: Q =    838 m³/h (plana) /    629 m³/h (con brida)
+  V=1.0 m/s X=  20 cm: Q =   1468 m³/h (plana) /   1101 m³/h (con brida)
+  -> la captura cae con X²: a 20 cm hace falta 10× el caudal que a 5 cm; y una campana abierta captura ~50-90 %, no 99 %.
+
+[6] CAJA cerrada sobre el banco (60×40×40 cm) con entradas de aire pequeñas
+  entradas 100 cm² a 1.0 m/s -> Q =    36 m³/h ; recambio de la caja cada  9.6 s
+  entradas 150 cm² a 1.0 m/s -> Q =    54 m³/h ; recambio de la caja cada  6.4 s
+  entradas 300 cm² a 0.5 m/s -> Q =    54 m³/h ; recambio de la caja cada  6.4 s
+  ventilador 150 m³/h: recambio de la caja cada  2.3 s
+  E2: 150 m³/h por 100 cm² de entradas -> v =  4.2 m/s (predicción de la prueba de humo)
+  E2: 150 m³/h por 150 cm² de entradas -> v =  2.8 m/s (predicción de la prueba de humo)
+  ventilador 150 m³/h: ΔT aire de salida con 800 W = 15.9 K
+  ducto Ø75 mm a 150 m³/h:  9.4 m/s (ACGIH sugiere ~10 m/s para humo de soldadura)
+  ducto Ø100 mm a 150 m³/h:  5.3 m/s (ACGIH sugiere ~10 m/s para humo de soldadura)
+
+[7] Eléctrico
+  48 V DC, mano mojada ~1 kΩ : I =  48.0 mA
+  48 V DC, seco ~2.6 kΩ      : I =  18.3 mA
+  56 V DC, mano mojada ~1 kΩ : I =  56.0 mA
+  56 V DC, seco ~2.6 kΩ      : I =  21.3 mA
+  67 V DC, mano mojada ~1 kΩ : I =  67.0 mA
+  67 V DC, seco ~2.6 kΩ      : I =  25.5 mA
+  (48-56 V = rango de ajuste LRS-1200-48; 57-67 V = disparo de su OVP: una falla PUEDE pasar de 60 V)
+  banco de capacitores  1.0 mF a 56 V: E =    1.6 J
+  banco de capacitores  4.7 mF a 56 V: E =    7.4 J
+  banco de capacitores 10.0 mF a 56 V: E =   15.7 J
+  choque 41 µH a 40 A: E =   32.8 mJ
+  choque 41 µH a 70 A: E =  100.5 mJ
+  entrada LRS a 220 VAC, 1200 W, η 94 %, FP 0.95: I_AC ≈ 6.11 A (datasheet: 7 A típ. a 230 V); arranque 60 A
+  entrada LRS a 230 VAC, 1200 W, η 94 %, FP 0.95: I_AC ≈ 5.84 A (datasheet: 7 A típ. a 230 V); arranque 60 A
+  corto en la salida: la LRS limita a 150 % = 37.5 A y se apaga a los 5 s (re-encender para recuperar)
+
+[8] UV: tiempo permitido por día (Nakashima 2016: 0.23-5.9 s/día a 0.5 m, GMAW acero) escalado con 1/r²
+  a 0.5 m:    0.2 -    5.9 s/día de mirar el arco SIN protección
+  a 1.0 m:    0.9 -   23.6 s/día de mirar el arco SIN protección
+  a 2.0 m:    3.7 -   94.4 s/día de mirar el arco SIN protección
+  a 3.0 m:    8.3 -  212.4 s/día de mirar el arco SIN protección
+  corriente pico del campanazo = 70 A -> fila AWS F2.2 '60-160 A': sombra mínima 10, sugerida 11
+
+[9] Rayleigh l=2 de gota LIBRE (canon) vs frecuencias usadas en la literatura
+  a = 0.30 mm -> f2 =   1268 Hz
+  a = 0.46 mm -> f2 =    668 Hz
+  a = 0.60 mm -> f2 =    448 Hz
+  a = 0.80 mm -> f2 =    291 Hz
+  a = 1.00 mm -> f2 =    208 Hz
+  a = 1.50 mm -> f2 =    113 Hz
+  a = 2.00 mm -> f2 =     74 Hz
+    60 Hz (Harbin 2020 (vibración mecánica)): radio de gota libre que resuena =  2.29 mm (D = 4.59 mm)
+    85 Hz (Wu & Kovacevic 2002 (mejor)): radio de gota libre que resuena =  1.82 mm (D = 3.64 mm)
+   668 Hz (canon La Pluma): radio de gota libre que resuena =  0.46 mm (D = 0.92 mm)
+  -> si 60 Hz resonara en una gota de ~2.5-4 mm de diámetro (globular a 33 A) cuadra; pero NO está probado que el
+     modo que ve el voltaje sea el l=2 libre: la literatura usa un rebote axial masa-resorte de gota COLGADA.
+
+FIN

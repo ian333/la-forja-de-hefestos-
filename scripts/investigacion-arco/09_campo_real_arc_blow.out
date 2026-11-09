@@ -1,0 +1,343 @@
+
+====================================================================================================
+1. PUERTO DE em.ts A PYTHON: validacion contra formulas cerradas (I = 40 A)
+====================================================================================================
+  alambre recto de 20 m a d = 10 mm      : 0.800000 mT   (mu0 I/2pi d = 0.800000 mT)
+  alambre que termina al pie, d = 10 mm  : 0.400000 mT   (mu0 I/4pi d = 0.400000 mT)
+  espira cuadrada 100 mm, centro         : 0.452548 mT   (2 sqrt2 mu0 I/(pi s) = 0.452548 mT)
+  espira R = 10 mm (360 lados), eje z=5mm : 1.798371 mT   (mu0 I R^2/2(R^2+z^2)^1.5 = 1.798353 mT)
+  punto SOBRE el eje del segmento (arco)  : 0.000e+00 T  (em.ts da 0: el campo propio del arco no empuja su eje)
+
+====================================================================================================
+2. LAS CONFIGURACIONES (arco en el centro de la placa 100x50x3, malla 2.5 mm, DC, vacio mu_r = 1)
+====================================================================================================
+  DCEN: + -> pieza -> placa -> arco (sube) -> gota -> alambre (stick-out 10 mm) -> antorcha -> -.
+  arco L = 2.0 mm, gota a = 0.46 mm (masa 2.854 mg, peso 28.0 uN), columna evaluada en 10 alturas 0.1-1.9 mm.
+  B_propio del arco a r = L: mu0 I/(2 pi L) = 4.00 mT a 40 A ; Pi = B_ext/B_propio(L) (adimensional, NO depende de I si B_ext viene del mismo circuito)
+  deflexion: chorro con T = kappa mu0 I^2/4pi, kappa = 1.5 (rango 1-2.5) -> y(L)/L ~ Pi/kappa para B uniforme
+  RIGIDEZ DEL CHORRO (empuje de Maecker ~ (mu0 I^2/4pi)(ln(R/rc) + 1/2), kappa = ln(R/rc)+1/2 = 1.2-2.1 para R/rc = 2-5):
+    I =  10 A: T =     15 uN  (velocidad implicita con rho 0.03 kg/m3 y columna de 1 mm de radio:   13 m/s)
+    I =  40 A: T =    240 uN  (velocidad implicita con rho 0.03 kg/m3 y columna de 1 mm de radio:   50 m/s)
+    I =  60 A: T =    540 uN  (velocidad implicita con rho 0.03 kg/m3 y columna de 1 mm de radio:   76 m/s)
+    I =  70 A: T =    735 uN  (velocidad implicita con rho 0.03 kg/m3 y columna de 1 mm de radio:   88 m/s)
+  CALIBRACION con la literatura (Pi = B L 2pi/(mu0 I)):
+    Belous 2011 (Paton), TIG Ti, 'B >= 8 mT' para llevar el anodo a la pared      : Pi =  0.40  [deflexion grande ~ pared]
+    Rolls-Royce EP0827801, TIG 120 A, 17 G -> 10 mm (L ~10 mm)                    : Pi =  0.71  [y = 10 mm] -> kappa implicito = Pi L / y = 0.71
+    Rolls-Royce idem con L ~15 mm                                                 : Pi =  1.06  [y = 10 mm] -> kappa implicito = Pi L / y = 1.59
+    tabla diverse-tech/Wikipedia: TIG inestable 10-20 G (~150 A, L 3 mm)          : Pi =  0.10  [inicio]
+    idem 20 G                                                                     : Pi =  0.20  [inestable]
+    idem: arc blow severo >= 40 G (MMA ~150 A, L 4 mm)                            : Pi =  0.53  [severo]
+  -> umbral de inestabilidad Pi* ~ 0.1-0.3, severo ~0.4-0.5. En NUESTRO arco (40 A, 2 mm, B_propio(L) = 4 mT): inicio 0.4-1.2 mT, severo ~1.6-2 mT.
+     En el valle de la onda (10 A): B_propio(L) = 1 mT -> un campo que NO escala con I (iman, magnetismo residual) empieza a molestar en 0.1-0.3 mT.
+  CAMPOS QUE NO ESCALAN CON I (Pi ~ 1/I: el arco se MECE con la onda a 668 Hz):
+    campo terrestre horizontal (~27 uT en el centro de Mexico, de memoria)   0.027 mT -> 10 A: Pi 0.027 y    36 um  40 A: Pi 0.007 y     9 um  70 A: Pi 0.004 y     5 um
+    magnetismo residual leve de una placa cortada (supuesto)                 0.300 mT -> 10 A: Pi 0.300 y   400 um  40 A: Pi 0.075 y   100 um  70 A: Pi 0.043 y    57 um
+    residual fuerte (tubos: 3-5 mT tipico en obra)                           3.000 mT -> 10 A: Pi 3.000 y  4000 um  40 A: Pi 0.750 y  1000 um  70 A: Pi 0.429 y   571 um
+
+  conf descripcion                                          |  B_col B_gota |    Pi |  f col F gota F/peso | y(L) arco dir. fuerza | partes: placa / pieza / antorcha (mT)
+                                                            |     mT     mT |       |  uN/mm     uN        |        um       (x,y) |
+  A1   sueltos: pinza extremo lejano (x=+50), cable rodea   |  0.208  0.194 | 0.052 |   8.31   7.13   0.25 |        68 (-1.00,-0.01) |     0.238 /  0.003 /  0.033
+  A2   sueltos: pinza extremo cercano (x=-50), plano comun  |  0.276  0.265 | 0.069 |  11.03   9.74   0.35 |        91 (+1.00,-0.01) |     0.238 /  0.006 /  0.033
+  A3   sueltos: pinza al costado (y=+25)                    |  0.253  0.241 | 0.063 |  10.14   8.88   0.32 |        83 (+0.13,-0.99) |     0.233 /  0.017 /  0.033
+  A4   sueltos: pinza encima (x=+50), cable SUBE 150 mm     |  0.319  0.309 | 0.080 |  12.78  11.37   0.41 |       105 (-1.00,+0.00) |     0.238 /  0.114 /  0.033
+  B1   base: contacto bajo el centro, barra a 22 mm         |  0.255  0.250 | 0.064 |  10.18   9.21   0.33 |        84 (+0.98,+0.18) |     0.000 /  0.143 /  0.115
+  B2   base: contacto bajo el centro, barra baja 80 mm      |  0.168  0.170 | 0.042 |   6.72   6.24   0.22 |        56 (+1.00,+0.04) |     0.000 /  0.053 /  0.115
+  B3   base: contacto bajo un extremo (x=-45)               |  0.328  0.320 | 0.082 |  13.13  11.77   0.42 |       108 (+1.00,+0.02) |     0.238 /  0.025 /  0.115
+  C1   coaxial en C: escobilla bajo el arco, 1 lomo         |  0.175  0.177 | 0.044 |   7.00   6.50   0.23 |        58 (+1.00,+0.02) |     0.000 /  0.032 /  0.143
+  C2   coaxial: escobilla bajo el arco, 2 lomos simetricos  |  0.000  0.000 | 0.000 |   0.00   0.00   0.00 |         0 (+0.98,+0.19) |     0.000 /  0.000 /  0.000
+  C3   anillo de 8 contactos bajo la placa                  |  0.111  0.111 | 0.028 |   4.46   4.08   0.15 |        37 (+1.00,+0.04) |     0.000 /  0.038 /  0.073
+  C4   marco perimetral bajo el borde                       |  0.123  0.126 | 0.031 |   4.93   4.64   0.17 |        41 (+1.00,-0.02) |     0.036 /  0.031 /  0.073
+  (las partes son vectores; su suma vectorial da B_col. f col = I*B por mm de columna. A 60 A: B x1.5, fuerzas x2.25, Pi y y(L) iguales.)
+
+  QUE LE PASA A LA GOTA cuando el arco se ladea (estimados de orden de magnitud, INCIERTOS):
+   - directo: F = I*2a*B (tabla).  - indirecto: la raiz del arco se corre sobre la gota -> fuerza propia ladeada ~ (mu0 I^2/4pi)*theta.
+   - en vuelo: el chorro ladeado arrastra la gota: F_arrastre = 1/2 Cd rho v^2 pi a^2 (Cd 1, rho 0.03 kg/m3, v 100 m/s) * pendiente media.
+  conf | theta raiz | F directa F indirecta (uN, a 40 A) |  deriva de la gota en vuelo | corrimiento del ANODO (calor)
+  A1   |      3.9 deg |       7.1        10.9              |                      4.8 um |                         68 um
+  A2   |      5.2 deg |       9.7        14.5              |                      6.5 um |                         91 um
+  A3   |      4.8 deg |       8.9        13.3              |                      5.9 um |                         83 um
+  A4   |      6.0 deg |      11.4        16.9              |                      7.5 um |                        105 um
+  B1   |      4.8 deg |       9.2        13.5              |                      6.0 um |                         84 um
+  B2   |      3.2 deg |       6.2         9.0              |                      4.0 um |                         56 um
+  B3   |      6.2 deg |      11.8        17.4              |                      7.7 um |                        108 um
+  C1   |      3.4 deg |       6.5         9.4              |                      4.2 um |                         58 um
+  C2   |      0.0 deg |       0.0         0.0              |                      0.0 um |                          0 um
+  C3   |      2.1 deg |       4.1         5.9              |                      2.6 um |                         37 um
+  C4   |      2.4 deg |       4.6         6.6              |                      2.9 um |                         41 um
+   (arrastre axial supuesto 100 uN = 3.6 pesos; vuelo 2.9 ms como en el canon)
+   -> el banco NO mueve casi la gota; mueve el ARCO (el calor). La gota cae donde apunta el alambre; el charco se corre y(L).
+
+  regla de taller (Lincoln/TWI: el arco 'sopla' alejandose de la conexion de pieza):
+   A1: fuerza hacia (-1.00,-0.01); pinza/contacto hacia (1, 0); cos = -1.00 -> SE ALEJA de la pinza
+   A2: fuerza hacia (+1.00,-0.01); pinza/contacto hacia (-1, 0); cos = -1.00 -> SE ALEJA de la pinza
+   A3: fuerza hacia (+0.13,-0.99); pinza/contacto hacia (0, 1); cos = -0.99 -> SE ALEJA de la pinza
+   A4: fuerza hacia (-1.00,+0.00); pinza/contacto hacia (1, 0); cos = -1.00 -> SE ALEJA de la pinza
+   B3: fuerza hacia (+1.00,+0.02); pinza/contacto hacia (-1, 0); cos = -1.00 -> SE ALEJA de la pinza
+
+  convergencia de malla (DC): B_col en mT a 40 A
+   A1: h = 5 / 2.5 / 1.25 mm -> 0.2362 / 0.2077 / 0.2054 mT
+   B3: h = 5 / 2.5 / 1.25 mm -> 0.3569 / 0.3283 / 0.3260 mT
+
+====================================================================================================
+3. LA REGLA DE AMPERE (placa grande 400x400 mm, arco al centro, contacto a s = 50 mm)
+====================================================================================================
+  Ampere con una semiesfera: si el cable de pieza se va hacia ABAJO, la placa + ese cable no ponen campo arriba;
+  si se va hacia ARRIBA (pinza encima y cable que sube), arriba aparece mu0 I/(2 pi s) como de un alambre vertical en la pinza.
+   placa 400x400 mm, cable de pieza hacia abajo  (s = 50 mm): |B_t| columna = 0.0148 mT   (Ampere: 0 mT en placa infinita)
+   placa 400x400 mm, cable de pieza hacia arriba (s = 50 mm): |B_t| columna = 0.1746 mT   (Ampere: 0.1600 mT en placa infinita)
+   placa 100x100 mm, cable de pieza hacia abajo  (s = 45 mm): |B_t| columna = 0.0595 mT   (Ampere: 0 mT en placa infinita)
+   placa 100x100 mm, cable de pieza hacia arriba (s = 45 mm): |B_t| columna = 0.2371 mT   (Ampere: 0.1778 mT en placa infinita)
+  -> PRUEBA de la regla: un contacto bajo la placa cuyo cable BAJA vertical no se ve desde el arco (placa infinita, mu_r = 1).
+
+  PERO la placa del banco es una TIRA de 50 mm: si la corriente corre de UN solo lado del arco, la tira pone ~mu0 I/(4w) encima
+  (medio plano de corriente K = I/w) -> Pi_tira ~ pi L/(2w), sin importar por donde salga el cable. Comprobacion (placa 2w x w,
+  contacto BAJO un extremo con cable bajando 1 m, arco al centro; solo placa + cable de pieza):
+    w =  50 mm: Pi = 0.0384   (pi L/2w = 0.0628)
+    w = 100 mm: Pi = 0.0242   (pi L/2w = 0.0314)
+    w = 200 mm: Pi = 0.0125   (pi L/2w = 0.0157)
+
+====================================================================================================
+4. LA ONDA (I = 40 + 30 cos 2pi 668 t): como se reparte la AC en la placa y que hace al campo
+====================================================================================================
+  PEEC: Z = R + jw L_parcial (Neumann). Placa de acero mu_r = 1 en el modelo; ks = factor de piel (delta < t con mu_r 100-500 -> ks 2-4).
+  b0 = B por ampere en DC; b1 = B por ampere a 668 Hz (complejo). Pi(t) = |B(t)|/(mu0 I(t)/2piL).
+  conf   rho  ks | |b0| uT/A |b1| uT/A ang(b1,b0)   fase |  Pi DC Pi min Pi max |  F gota: DC  668Hz  1336Hz (uN) | L lazo uH
+  A1    frio   1 |     5.193     4.934       -0.6  -10.3 |  0.052  0.045  0.068 |      9.02  10.42    1.91      |     1.456
+  A1    frio   3 |     5.193     5.029       -0.2   -1.7 |  0.052  0.051  0.057 |      9.08  10.54    1.95      |     1.539
+  A1     cal   1 |     5.193     5.168       -0.1   -3.3 |  0.052  0.049  0.056 |      9.13  10.67    2.00      |     1.456
+  A2    frio   1 |     6.891     6.660       -0.0   -6.0 |  0.069  0.063  0.081 |     12.38  14.37    2.66      |     1.198
+  A2    frio   3 |     6.891     6.761       -0.0   -1.0 |  0.069  0.068  0.073 |     12.43  14.48    2.69      |     1.281
+  A2     cal   1 |     6.891     6.868       -0.0   -2.0 |  0.069  0.067  0.072 |     12.47  14.58    2.73      |     1.198
+  A4    frio   1 |     7.986     7.768       -0.0   -4.7 |  0.080  0.075  0.091 |     14.49  16.84    3.12      |     0.983
+  A4    frio   3 |     7.986     7.867       -0.0   -0.8 |  0.080  0.079  0.084 |     14.53  16.95    3.16      |     1.066
+  A4     cal   1 |     7.986     7.964       -0.0   -1.5 |  0.080  0.078  0.083 |     14.56  17.04    3.19      |     0.983
+  B1    frio   1 |     6.365     6.246       -1.6   -3.2 |  0.064  0.061  0.070 |     11.75  13.69    2.54      |     0.153
+  B1    frio   3 |     6.365     6.299       -0.6   -0.5 |  0.064  0.063  0.066 |     11.77  13.75    2.57      |     0.153
+  B1     cal   1 |     6.365     6.353       -0.2   -1.1 |  0.064  0.062  0.065 |     11.79  13.80    2.58      |     0.153
+  B3    frio   1 |     8.208     8.015        0.0   -3.9 |  0.082  0.078  0.092 |     15.00  17.46    3.24      |     0.130
+  B3    frio   3 |     8.208     8.105        0.0   -0.6 |  0.082  0.081  0.085 |     15.04  17.55    3.27      |     0.195
+  B3     cal   1 |     8.208     8.189        0.0   -1.3 |  0.082  0.080  0.084 |     15.07  17.63    3.30      |     0.130
+  C1    frio   1 |     4.378     4.403       -0.1    0.9 |  0.044  0.043  0.044 |      8.34   9.77    1.84      |     0.213
+  C1    frio   3 |     4.378     4.390       -0.0    0.1 |  0.044  0.043  0.044 |      8.33   9.76    1.83      |     0.213
+  C1     cal   1 |     4.378     4.380       -0.0    0.3 |  0.044  0.043  0.044 |      8.33   9.75    1.83      |     0.213
+  C3    frio   1 |     2.785     2.815       -0.2   -0.6 |  0.028  0.027  0.028 |      5.24   6.15    1.16      |     0.397
+  C3    frio   3 |     2.785     2.809       -0.1    0.1 |  0.028  0.027  0.028 |      5.24   6.15    1.16      |     0.421
+  C3     cal   1 |     2.785     2.821       -0.1    0.1 |  0.028  0.027  0.028 |      5.24   6.16    1.16      |     0.398
+  lectura: si |b1| = |b0| y angulo 0, el campo solo escala con I y Pi no cambia en el ciclo (el arco no se mece).
+  F gota: I^2 mezcla canales: con 40+30 A la fuerza lateral tiene DC, 668 Hz y 1336 Hz (2400:450 en A^2 si b1 = b0).
+  l=1 de la gota (SUPUESTO f1 = 334 Hz, Q = 30): la componente a 668 Hz cae a 2 f1 -> respuesta 1/|1-4| = 0.33 de la estatica;
+  si f1 real estuviera en 650-690 Hz (no medido), esa componente seria RESONANTE (x30): el banco mece la gota solo.
+   A1: fuerza en la gota a 668 Hz ~11.5 uN -> si f1 = 668 Hz y Q = 30: 6.8 um de meneo; con f1 = 334 Hz: 0.30 um
+   A4: fuerza en la gota a 668 Hz ~17.6 uN -> si f1 = 668 Hz y Q = 30: 10.5 um de meneo; con f1 = 334 Hz: 0.47 um
+   B3: fuerza en la gota a 668 Hz ~18.1 uN -> si f1 = 668 Hz y Q = 30: 10.8 um de meneo; con f1 = 334 Hz: 0.48 um
+
+====================================================================================================
+5. MAPAS (DC): Pi de la parte PLACA + CONDUCTOR DE PIEZA segun donde este el arco; la cabeza aparte
+====================================================================================================
+  La cabeza (antorcha + brazo + bajante) se mueve con el arco y aporta un vector CONSTANTE (se mide y se resta una vez).
+  Abajo: Pi (adimensional, igual a 40 o 60 A) en una rejilla x = -40..40, y = -20..20 mm. Pi < 0.03 ~ despreciable; >0.15 problema.
+  --- A1 ---   (filas y = +20, +10, +0, -10, -20 mm; columnas x = -40, -30, -20, -10, +0, +10, +20, +30, +40 mm)
+      0.123  0.101  0.096  0.094  0.094  0.094  0.095  0.099  0.120
+      0.079  0.066  0.063  0.063  0.063  0.064  0.066  0.076  0.110
+      0.068  0.060  0.059  0.060  0.060  0.061  0.066  0.081  0.144
+      0.079  0.067  0.064  0.063  0.063  0.064  0.067  0.076  0.110
+      0.124  0.101  0.096  0.095  0.094  0.095  0.096  0.099  0.121
+     max 0.144  mediana 0.079
+  --- B1 ---   (filas y = +20, +10, +0, -10, -20 mm; columnas x = -40, -30, -20, -10, +0, +10, +20, +30, +40 mm)
+      0.100  0.079  0.072  0.069  0.070  0.075  0.083  0.093  0.118
+      0.036  0.025  0.023  0.027  0.035  0.043  0.050  0.058  0.073
+      0.005  0.017  0.022  0.027  0.036  0.043  0.047  0.051  0.062
+      0.028  0.027  0.029  0.032  0.038  0.043  0.049  0.057  0.072
+      0.088  0.072  0.066  0.062  0.063  0.070  0.079  0.090  0.116
+     max 0.118  mediana 0.057
+  --- B3 ---   (filas y = +20, +10, +0, -10, -20 mm; columnas x = -40, -30, -20, -10, +0, +10, +20, +30, +40 mm)
+      0.091  0.079  0.083  0.087  0.089  0.091  0.093  0.099  0.122
+      0.052  0.048  0.051  0.054  0.057  0.058  0.060  0.064  0.077
+      0.051  0.048  0.049  0.051  0.053  0.055  0.056  0.057  0.066
+      0.041  0.045  0.050  0.053  0.056  0.058  0.060  0.064  0.077
+      0.077  0.073  0.079  0.084  0.088  0.090  0.092  0.098  0.121
+     max 0.122  mediana 0.064
+  --- C3 ---   (filas y = +20, +10, +0, -10, -20 mm; columnas x = -40, -30, -20, -10, +0, +10, +20, +30, +40 mm)
+      0.099  0.073  0.060  0.053  0.038  0.057  0.066  0.080  0.108
+      0.048  0.029  0.018  0.011  0.013  0.022  0.032  0.044  0.062
+      0.033  0.019  0.008  0.001  0.010  0.019  0.026  0.037  0.051
+      0.046  0.027  0.016  0.008  0.012  0.021  0.031  0.043  0.062
+      0.097  0.071  0.058  0.051  0.036  0.055  0.064  0.079  0.107
+     max 0.108  mediana 0.043
+  --- C4 ---   (filas y = +20, +10, +0, -10, -20 mm; columnas x = -40, -30, -20, -10, +0, +10, +20, +30, +40 mm)
+      0.030  0.023  0.023  0.023  0.024  0.024  0.025  0.027  0.035
+      0.022  0.012  0.012  0.013  0.015  0.015  0.016  0.016  0.019
+      0.019  0.010  0.010  0.011  0.013  0.014  0.014  0.014  0.014
+      0.016  0.014  0.016  0.018  0.019  0.021  0.021  0.021  0.021
+      0.024  0.033  0.037  0.038  0.039  0.039  0.038  0.038  0.041
+     max 0.041  mediana 0.021
+  cabeza de B (antorcha 50 mm + brazo 70 mm + bajante): Pi = 0.029 constante (se mueve con el arco)
+
+====================================================================================================
+6. MONTE CARLO: 400 ruteos sueltos al azar (banco v1), arco en el centro y en posiciones al azar
+====================================================================================================
+  arco en el centro         : Pi mediana 0.062  p10 0.054  p90 0.068  max 0.078 | B_col a 40 A: mediana 0.25 mT, p90 0.27 mT | y(L) mediana 80 um, p90 90 um
+                              parte placa+pinza mediana 0.237 mT ; parte cables mediana 0.028 mT ; fraccion con Pi > 0.15: 0 %
+  arco al azar en la placa  : Pi mediana 0.070  p10 0.057  p90 0.099  max 0.142 | B_col a 40 A: mediana 0.28 mT, p90 0.40 mT | y(L) mediana 91 um, p90 129 um
+                              parte placa+pinza mediana 0.262 mT ; parte cables mediana 0.030 mT ; fraccion con Pi > 0.15: 0 %
+   pinza a   0- 30 mm del arco: n =  42, Pi mediana 0.084, p90 0.123
+   pinza a  30- 60 mm del arco: n = 106, Pi mediana 0.067, p90 0.085
+   pinza a  60-120 mm del arco: n =  52, Pi mediana 0.069, p90 0.094
+
+====================================================================================================
+7. LA PLACA ES DE ACERO (ferromagnetica): cuanto cambia el campo de vacio en el arco
+====================================================================================================
+  Metodo: placa en celdas 2.5x2.5x3 mm con magnetizacion uniforme M_j; cada celda = 6 caras con carga sigma = M.n (formula cerrada
+  de rectangulo cargado). M = chi (H_ext + H_M). H_ext = campo de vacio de los conductores (sin las corrientes dentro de la placa:
+  su campo propio promedia cero en el espesor). Lineal (1 mT << saturacion). Hoyo caliente: celdas a < 4 mm del arco con chi = 0 (Curie).
+  800 celdas, matriz 2400x2400 en 0.7 s
+  validacion mu_r=100: campo uniforme horizontal sobre la placa -> en el centro, 0.5 mm arriba: Hx/H0 = 0.409 (a 2.46 mm: 0.436); en y: Hy/H0 = 0.217   (elipsoide: 1/(1+N(mu-1)) con N~0.03-0.06 -> 0.14-0.25)
+  validacion mu_r=300: campo uniforme horizontal sobre la placa -> en el centro, 0.5 mm arriba: Hx/H0 = 0.202 (a 2.46 mm: 0.241); en y: Hy/H0 = 0.120   (elipsoide: 1/(1+N(mu-1)) con N~0.03-0.06 -> 0.05-0.10)
+
+  conf | Pi vacio | Pi mu=100 mu=100 hoyo | Pi mu=300 mu=300 hoyo |  (arco en el centro, 40 A; Pi = B_col/4.0 mT)
+  A1   |    0.052 |     0.059       0.057 |     0.061       0.058 |
+  A2   |    0.069 |     0.063       0.065 |     0.064       0.063 |
+  A3   |    0.063 |     0.068       0.065 |     0.072       0.064 |
+  A4   |    0.080 |     0.066       0.071 |     0.066       0.068 |
+  B1   |    0.064 |     0.015       0.030 |     0.009       0.019 |
+  B3   |    0.082 |     0.059       0.062 |     0.043       0.052 |
+  C1   |    0.044 |     0.011       0.021 |     0.007       0.014 |
+  C3   |    0.028 |     0.007       0.013 |     0.004       0.008 |
+  A1 con el arco en x = -40 mm (a 10 mm del extremo): Pi vacio 0.060 -> mu=300 con hoyo 0.041
+  A1 con el arco en x = +40 mm (a 10 mm del extremo): Pi vacio 0.136 -> mu=300 con hoyo 0.248
+
+====================================================================================================
+8. APUNTAR LA GOTA (l = 1) CON CAMPO: el canon pide 3.19 mT (patada) / 1.12 mT (giro) a 40 A
+====================================================================================================
+  gota: fuerza por mT a 40 A = I*2a*B = 36.8 uN (peso 28.0 uN). l=1: k1 = m w1^2 = 12.57 N/m (f1 = 334 Hz SUPUESTO)
+  desplazamiento de la gota por mT: estatico 2.93 um/mT ; en resonancia (Q=30, ya cargada ~29 ms) 88 um/mT
+  el MISMO campo empuja la columna del arco (2 mm, mucho mas blanda):
+   B (mT) I (A) |    Pi |   arco y(L) um (kappa 1 / 1.5 / 2.5) | gota estatica um gota resonante um | veredicto de estabilidad (Pi* 0.15-0.4)
+     1.12    40 |  0.28 |   560 /  373 /  224            |              3.3                98 | zona de inestabilidad
+     3.19    40 |  0.80 |  1595 / 1063 /  638            |              9.3               280 | INESTABLE / se apaga (literatura TIG/MMA)
+     3.19    70 |  0.46 |   911 /  608 /  365            |             16.3               490 | INESTABLE / se apaga (literatura TIG/MMA)
+     3.19    10 |  3.19 |  6380 / 4253 / 2552            |              2.3                70 | INESTABLE / se apaga (literatura TIG/MMA)
+     0.30    40 |  0.07 |   150 /  100 /   60            |              0.9                26 | estable
+     0.75    40 |  0.19 |   375 /  250 /  150            |              2.2                66 | zona de inestabilidad
+  -> el arco se mueve 333 um/mT (kappa 1.5, 40 A, cuasi-estatico hasta ~kHz) contra 88 um/mT de la gota en resonancia.
+
+  BOBINAS (dos pares en cuadratura, eje horizontal). No caben a la altura de la gota: la placa esta 2.5 mm abajo;
+  el centro de cada bobina va a z = radio exterior + 1 mm (la bobina libra la placa por 1 mm). 80 vueltas AWG21, 8 mm de largo, 7 mm de fondo.
+   [centro de bobinas a z = 12.0 mm]
+   par a D = 18 mm, radio medio 7.5 mm: B gota 5.69 uT/(A-v), columna 4.73 uT/(A-v)  (columna/gota = 0.83: NO se puede mover la gota sin mover el arco)
+      con placa mu_r=300: gota 3.42, columna 2.07 uT/(A-v)  (factor placa 0.60 / 0.44)
+      B = 3.19 mT (vacio): NI =    560 A-v por bobina -> 80 vueltas AWG21: I =  7.00 A, R = 0.158 ohm, L = 61 uH, V(334 Hz) =   1.4 V, P media (giro) =   15.5 W
+      B = 3.19 mT (placa): NI =    932 A-v por bobina -> 80 vueltas AWG21: I = 11.64 A, R = 0.158 ohm, L = 61 uH, V(334 Hz) =   2.4 V, P media (giro) =   42.9 W
+      B = 1.12 mT (vacio): NI =    197 A-v por bobina -> 80 vueltas AWG21: I =  2.46 A, R = 0.158 ohm, L = 61 uH, V(334 Hz) =   0.5 V, P media (giro) =    1.9 W
+      B = 1.12 mT (placa): NI =    327 A-v por bobina -> 80 vueltas AWG21: I =  4.09 A, R = 0.158 ohm, L = 61 uH, V(334 Hz) =   0.8 V, P media (giro) =    5.3 W
+      B = 0.30 mT (vacio): NI =     53 A-v por bobina -> 80 vueltas AWG21: I =  0.66 A, R = 0.158 ohm, L = 61 uH, V(334 Hz) =   0.1 V, P media (giro) =    0.1 W
+      B = 0.30 mT (placa): NI =     88 A-v por bobina -> 80 vueltas AWG21: I =  1.10 A, R = 0.158 ohm, L = 61 uH, V(334 Hz) =   0.2 V, P media (giro) =    0.4 W
+   [centro de bobinas a z = 14.5 mm]
+   par a D = 25 mm, radio medio 10.0 mm: B gota 4.08 uT/(A-v), columna 3.61 uT/(A-v)  (columna/gota = 0.88: NO se puede mover la gota sin mover el arco)
+      con placa mu_r=300: gota 1.79, columna 1.08 uT/(A-v)  (factor placa 0.44 / 0.30)
+      B = 3.19 mT (vacio): NI =    781 A-v por bobina -> 80 vueltas AWG21: I =  9.76 A, R = 0.211 ohm, L = 100 uH, V(334 Hz) =   2.9 V, P media (giro) =   40.2 W
+      B = 3.19 mT (placa): NI =   1779 A-v por bobina -> 80 vueltas AWG21: I = 22.23 A, R = 0.211 ohm, L = 100 uH, V(334 Hz) =   6.6 V, P media (giro) =  208.4 W
+      B = 1.12 mT (vacio): NI =    274 A-v por bobina -> 80 vueltas AWG21: I =  3.43 A, R = 0.211 ohm, L = 100 uH, V(334 Hz) =   1.0 V, P media (giro) =    5.0 W
+      B = 1.12 mT (placa): NI =    624 A-v por bobina -> 80 vueltas AWG21: I =  7.81 A, R = 0.211 ohm, L = 100 uH, V(334 Hz) =   2.3 V, P media (giro) =   25.7 W
+      B = 0.30 mT (vacio): NI =     73 A-v por bobina -> 80 vueltas AWG21: I =  0.92 A, R = 0.211 ohm, L = 100 uH, V(334 Hz) =   0.3 V, P media (giro) =    0.4 W
+      B = 0.30 mT (placa): NI =    167 A-v por bobina -> 80 vueltas AWG21: I =  2.09 A, R = 0.211 ohm, L = 100 uH, V(334 Hz) =   0.6 V, P media (giro) =    1.8 W
+
+  BOBINAS EN SERIE con la corriente del arco (la propia corriente del banco hace el campo; B ~ I -> Pi constante en la onda):
+   par a D = 18 mm, z = 12 mm: columna 4.73 uT/(A-v) en vacio, 2.07 con placa mu_r=300 (se usa el de vacio; la placa cambia el factor)
+   Pi = 0.05 (arco +67 um):  1.1 vueltas por bobina del par (cobre 16 mm2) -> R = 0.11 mOhm, P = 0.22 W, L extra ~0.02 uH (vs 41 uH del choque)
+   Pi = 0.10 (arco +133 um):  2.1 vueltas por bobina del par (cobre 16 mm2) -> R = 0.21 mOhm, P = 0.44 W, L extra ~0.09 uH (vs 41 uH del choque)
+   Pi = 0.20 (arco +267 um):  4.2 vueltas por bobina del par (cobre 16 mm2) -> R = 0.43 mOhm, P = 0.88 W, L extra ~0.34 uH (vs 41 uH del choque)
+   la direccion se elige con MOSFETs que mandan la corriente de retorno por la bobina +x, -x, +y, -y o por el puente directo.
+
+====================================================================================================
+9. REJILLA DE VALIDACION PARA EL VISUALIZADOR: configuracion B1, 40 A, eps = 1e-6 (igual a em.ts)
+====================================================================================================
+  con el arco sobre el contacto, la placa no lleva corriente horizontal (max rama de placa: 4.51e-12 A): el circuito B1 son SOLO estos segmentos.
+  SEGMENTOS (CurrentSegment de em.ts; metros; I en A de r1 a r2):
+   { id: 'b1_00', I:  40.000, r1: [-0.10000, -0.00800, -0.02500], r2: [+0.00000, -0.00800, -0.02500] },
+   { id: 'b1_01', I:  40.000, r1: [+0.00000, -0.00800, -0.02500], r2: [+0.00000, +0.00000, -0.02500] },
+   { id: 'b1_02', I:  40.000, r1: [+0.00000, +0.00000, -0.02500], r2: [+0.00000, +0.00000, +0.05000] },
+   { id: 'b1_03', I:  40.000, r1: [+0.00000, +0.00000, +0.05000], r2: [-0.07000, +0.00000, +0.05000] },
+   { id: 'b1_04', I:  40.000, r1: [-0.07000, +0.00000, +0.05000], r2: [-0.07000, +0.00000, -0.02500] },
+   { id: 'b1_05', I:  40.000, r1: [-0.07000, +0.00000, -0.02500], r2: [-0.10000, +0.00000, -0.02500] },
+   { id: 'b1_06', I:  40.000, r1: [-0.10000, +0.00000, -0.02500], r2: [-0.10000, -0.00800, -0.02500] },
+
+    x mm   y mm   z mm |      Bx uT      By uT      Bz uT     |B| uT
+   -10.0   -5.0   1.00 |    334.324   -945.892     50.480   1004.506
+    -5.0   -5.0   1.00 |    820.673  -1083.197     40.325   1359.575
+     0.0   -5.0   1.00 |   1623.671   -260.597     27.483   1644.681
+     5.0   -5.0   1.00 |    822.366    561.285     14.676    995.762
+    10.0   -5.0   1.00 |    337.845    421.769      4.632    540.416
+   -10.0    0.0   1.00 |     35.985  -1089.867     74.033   1092.971
+    -5.0    0.0   1.00 |     42.044  -1869.814     60.813   1871.275
+     0.0    0.0   1.00 |     44.492   -250.478     44.619    258.282
+     5.0    0.0   1.00 |     42.256   1368.114     28.439   1369.061
+    10.0    0.0   1.00 |     36.418    585.869     15.262    587.198
+   -10.0    5.0   1.00 |   -265.306   -903.074     85.441    945.108
+    -5.0    5.0   1.00 |   -740.310  -1046.890     71.233   1284.178
+     0.0    5.0   1.00 |  -1538.733   -231.905     54.322   1557.058
+     5.0    5.0   1.00 |   -741.582    582.361     37.402    943.656
+    10.0    5.0   1.00 |   -267.965    436.326     23.166    512.565
+   -10.0   -5.0   2.46 |    331.999   -938.291     46.403    996.377
+    -5.0   -5.0   2.46 |    817.432  -1076.644     37.316   1352.313
+     0.0   -5.0   2.46 |   1620.041   -255.241     26.134   1640.232
+     5.0   -5.0   2.46 |    819.146    565.438     14.984    995.462
+    10.0   -5.0   2.46 |    335.562    424.857      5.998    541.425
+   -10.0    0.0   2.46 |     32.906  -1085.107     66.001   1087.610
+    -5.0    0.0   2.46 |     37.941  -1865.600     54.399   1866.778
+     0.0    0.0   2.46 |     39.958   -246.810     40.470    253.278
+     5.0    0.0   2.46 |     38.161   1371.228     26.554   1372.016
+    10.0    0.0   2.46 |     33.356    588.418     14.992    589.553
+   -10.0    5.0   2.46 |   -268.687   -901.629     75.652    943.849
+    -5.0    5.0   2.46 |   -744.641  -1045.447     63.217   1285.086
+     0.0    5.0   2.46 |  -1543.458   -230.347     48.629   1561.309
+     5.0    5.0   2.46 |   -745.917    584.027     34.034    947.965
+    10.0    5.0   2.46 |   -271.356    437.973     21.577    515.674
+   -10.0   -5.0   5.00 |    328.393   -928.146     41.158    985.389
+    -5.0   -5.0   5.00 |    812.652  -1067.873     33.529   1342.341
+     0.0   -5.0   5.00 |   1614.778   -248.024     24.496   1633.898
+     5.0   -5.0   5.00 |    814.395    571.094     15.489    994.800
+    10.0   -5.0   5.00 |    332.018    429.112      7.940    542.620
+   -10.0    0.0   5.00 |     28.310  -1078.760     54.728   1080.518
+    -5.0    0.0   5.00 |     32.034  -1859.969     45.395   1860.799
+     0.0    0.0   5.00 |     33.514   -241.907     34.506    246.643
+     5.0    0.0   5.00 |     32.266   1375.395     23.628   1375.976
+    10.0    0.0   5.00 |     28.785    591.841     14.329    592.714
+   -10.0    5.0   5.00 |   -273.665   -899.750     61.145    942.434
+    -5.0    5.0   5.00 |   -750.857  -1043.560     51.290   1286.637
+     0.0    5.0   5.00 |  -1550.173   -228.326     39.967   1567.408
+     5.0    5.0   5.00 |   -752.138    586.173     28.640    954.007
+    10.0    5.0   5.00 |   -276.347    440.100     18.774    520.007
+   -10.0   -5.0  10.00 |    322.495   -917.357     35.791    973.051
+    -5.0   -5.0  10.00 |    805.359  -1058.517     29.926   1330.397
+     0.0   -5.0  10.00 |   1606.940   -240.268     23.332   1624.971
+     5.0   -5.0  10.00 |    807.141    577.239     16.752    992.453
+    10.0   -5.0  10.00 |    326.201    433.795     10.926    542.866
+   -10.0    0.0  10.00 |     21.441  -1072.922     39.387   1073.859
+    -5.0    0.0  10.00 |     23.642  -1854.744     33.098   1855.190
+     0.0    0.0  10.00 |     24.527   -237.304     26.048    239.986
+     5.0    0.0  10.00 |     23.894   1379.367     19.007   1379.705
+    10.0    0.0  10.00 |     21.954    595.169     12.742    595.710
+   -10.0    5.0  10.00 |   -280.749   -899.356     39.019    942.965
+    -5.0    5.0  10.00 |   -759.381  -1042.921     32.929   1290.514
+     0.0    5.0  10.00 |  -1559.259   -227.315     26.138   1575.958
+     5.0    5.0  10.00 |   -760.663    587.547     19.350    961.350
+    10.0    5.0  10.00 |   -283.434    441.689     13.268    524.976
+   -10.0   -5.0  20.00 |    312.665   -925.733     39.595    977.911
+    -5.0   -5.0  20.00 |    794.047  -1065.839     34.203   1329.546
+     0.0   -5.0  20.00 |   1595.072   -246.429     28.329   1614.244
+     5.0   -5.0  20.00 |    795.830    572.249     22.443    980.468
+    10.0   -5.0  20.00 |    316.369    429.888     17.013    534.024
+   -10.0    0.0  20.00 |     13.075  -1088.033     22.969   1088.354
+    -5.0    0.0  20.00 |     14.042  -1867.788     19.777   1867.946
+     0.0    0.0  20.00 |     14.469   -248.043     16.352    249.002
+     5.0    0.0  20.00 |     14.314   1370.943     12.930   1371.079
+    10.0    0.0  20.00 |     13.628    588.843      9.745    589.081
+   -10.0    5.0  20.00 |   -286.981   -917.363      4.876    961.217
+    -5.0    5.0  20.00 |   -766.474  -1058.435      4.089   1306.822
+     0.0    5.0  20.00 |  -1566.660   -240.054      3.338   1584.948
+     5.0    5.0  20.00 |   -767.715    577.593      2.604    960.732
+    10.0    5.0  20.00 |   -289.584    434.257      1.868    521.959
+  (el arco esta en x=y=0 de z=0 a 2 mm: a 5 mm de el su propio campo es mu0 I/2pi r = 1600 uT; en x=y=0 em.ts da su aporte = 0)
+
+tiempo total 470.2 s

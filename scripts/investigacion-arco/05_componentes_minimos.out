@@ -1,0 +1,455 @@
+
+==============================================================================================================
+1. LISTA DE MATERIALES ACTUAL: La Pluma (contexto par.2, la_pluma.py) + banco (plan par.10-14)
+==============================================================================================================
+
+  ANTES
+   bloque    pieza                                                                      n  canal
+   potencia  LRS-1200-48                                                                1  energia
+   potencia  F1 fusible + portafusible                                                  2  seguridad
+   potencia  Ce electroliticos 2200 uF 63 V                                             2  bus
+   potencia  Cf pelicula 4.7 uF                                                         1  bus HF
+   potencia  Q1 IRFB4227                                                                1  actuador de corriente
+   potencia  D1 MBR40100CT                                                              1  rueda libre
+   potencia  choque 41 uH aire cal 10 (40 vueltas)                                      1  almacen
+   potencia  Hall ACS758                                                                1  sensor I
+   potencia  Cout pelicula 10 uF                                                        1  salida
+   potencia  Rbl 1 k sangrado                                                           1  descarga
+   potencia  Q3 IRFB4227 atajo (crowbar)                                                1  matar chispa
+   potencia  snubber 3.3 ohm + 10 nF                                                    2  amortiguar SW
+   potencia  TVS 1.5KE68A (->100 V)                                                     1  pinza Vds
+   potencia  disipador + 3 micas (Q1, D1, Q3)                                           4  termico
+   potencia  P1/P2 LRS->caja cal 10, 15 cm                                              2  cable
+   potencia  P3/P4 salida->antorcha / pinza cal 8, 2 m                                  2  cable
+   potencia  P5-P8 tramos internos                                                      4  cable
+   potencia  pinza de tierra                                                            1  contacto pieza
+   manejo    IR2110                                                                     1  manejo Q1 (HO) + Q3 (LO)
+   manejo    bootstrap: Rbs 4.7, Dbs, Cbs 1 uF, zener 15 V                              4  flotante HO
+   manejo    compuerta Q1: Rg_on 10, Rg_off 33 + diodo, Rgs 10 k, zener 15 V            5  compuerta
+   manejo    compuerta Q3: Rg 4.7, Rgs 10 k                                             2  compuerta
+   manejo    desacoplo VCC/VDD                                                          2  desacoplo
+   medicion  Pico 2                                                                     1  cerebro
+   medicion  divisor V_salida /16 + C                                                   3  sensor V
+   medicion  divisor V_bus /21 + C                                                      3  sensor V_bus
+   medicion  NTC de D1 + R (en GP29 = VSYS/3 en la tarjeta!)                            2  sensor T
+   medicion  salida Hall: divisor 5->3.3 V + desacoplo                                  3  adaptar
+   medicion  riel 5 V del Hall                                                          1  riel
+   auxiliar  DC-DC 48->12 V                                                             1  riel 12 V
+   auxiliar  ventilador 12 V                                                            1  termico
+   auxiliar  driver del motor (A3)                                                      1  motor
+   auxiliar  GX12 macho+hembra (gatillo, motor)                                         2  conector
+   auxiliar  PARO (S2 -> SD)                                                            1  seguridad
+   auxiliar  zumbador                                                                   1  aviso
+   TOTAL                                                                               63   potencia=29  manejo=14  medicion=13  auxiliar=7
+   mecanica: torre (1a caja, 1b tapa, 1c falda), garra, mesa (azulejo + clips), ojo, calibre, clips = 6 piezas impresas + alimentador SOMI
+   OJO: en la tarjeta Pico 2 GP29 = ADC3 esta cableado a VSYS/3 (y GP24/25/23 internos): solo GP26-28 son ADC libres.
+        El plan (par.10) pone la NTC en GP29: no hay 4o canal analogico sin modificar la tarjeta.
+
+==============================================================================================================
+2. CUENTAS DE QUITAR / FUSIONAR (antes de simular)
+==============================================================================================================
+
+  2a. EL CHOQUE: ¿basta la inductancia de los cables o barras?  rizo pp = Vbus*D*(1-D)/(f*L), D = 0.5
+   trayecto                                                          L uH  E@40A mJ   pp@20k  pp@100k  pp@300k
+   2 cables cal 8 de 2 m, separados 10 cm (hoy)                     3.493     2.795      172     34.4     11.5
+   2 cables cal 8 de 2 m, juntos (2 cm)                             2.206     1.765      272     54.4     18.1
+   antorcha SOMI 2 m sobre la barra (h=15 mm, r=6 mm)               0.744     0.595      807    161.3     53.8
+   antorcha recortada a 0.4 m sobre la barra                        0.149     0.119     4033    806.7    268.9
+   par de barras laminadas 25.4x3.2 mm, 0.5 mm aislante, 0.35 m     0.064     0.051     9365   1873.0    624.3
+   choque de hoy, 40 vueltas (Wheeler)                             40.786    32.629       15      2.9      1.0
+   choque propuesto, 18 vueltas (Wheeler)                          14.832    11.866       40      8.1      2.7
+   L minima para 10 A pp a 100 kHz = 12.0 uH;  para 10 A pp a 300 kHz = 4.0 uH
+   bobina de aire D=60 mm, paso 2.8 mm (cal 10): vueltas -> L, R, perdida a 40 A, energia, pendiente (48-24)/L
+     N=40  L= 40.8 uH  R= 24.7 mOhm  P= 39.6 W  E= 32.6 mJ  pendiente=0.59 A/us  rizo@100k= 2.9 A pp
+     N=30  L= 28.7 uH  R= 18.5 mOhm  P= 29.7 W  E= 23.0 mJ  pendiente=0.84 A/us  rizo@100k= 4.2 A pp
+     N=24  L= 21.7 uH  R= 14.8 mOhm  P= 23.7 W  E= 17.3 mJ  pendiente=1.11 A/us  rizo@100k= 5.5 A pp
+     N=18  L= 14.8 uH  R= 11.1 mOhm  P= 17.8 W  E= 11.9 mJ  pendiente=1.62 A/us  rizo@100k= 8.1 A pp
+     N=14  L= 10.5 uH  R=  8.7 mOhm  P= 13.8 W  E=  8.4 mJ  pendiente=2.29 A/us  rizo@100k=11.4 A pp
+   campo dipolar del choque en su eje a 40 A (18 vueltas): 15 cm 0.121 mT, 25 cm 0.026 mT, 40 cm 0.0064 mT
+
+  2b. OBSERVADOR DE CORRIENTE por volt-segundo (L conocida) en vez de sensor:
+      dI/dt = (D*Vbus - (1-D)*Vf - V_salida - I*R)/L  ->  error en regimen = error_de_voltaje / R_lazo (no se cancela)
+      Vf de D1 con 60 K de calentamiento (-1.5 mV/K)                 dV=  90.0 mV  ->  error de I =   2.7 A   (R_lazo = 33.0 mOhm)
+      borde de PWM 20 ns a 100 kHz (0.2 % de 48 V)                   dV=  96.0 mV  ->  error de I =   2.9 A   (R_lazo = 33.0 mOhm)
+      divisor de V_salida 0.5 %                                      dV= 120.0 mV  ->  error de I =   3.6 A   (R_lazo = 33.0 mOhm)
+      Rds(on) de Q1 sube 60 % en caliente (22->35 mOhm, D=0.5, 40 A) dV= 260.0 mV  ->  error de I =   7.9 A   (R_lazo = 33.0 mOhm)
+      tiempo de olvido del observador L/R = 455 us: sirve para PREDECIR dentro de un periodo, no como medida absoluta
+
+  2c. HALL ACS758 contra SHUNT + INA240 (hojas de datos)
+      ACS758: respuesta 4 us (1 us propagacion + 3 us subida), 120 kHz, 5 V, ruido 10.03 mVpp/40 mV/A = 0.25 App (050B),
+              3.84 mVpp/10 mV/A = 0.38 App (200B); salida 0.5*Vcc -> divisor a 3.3 V; aislado (no le importa el modo comun)
+      INA240A2: 400 kHz, ganancia 50, offset max 25 uV (= 50 mA con 0.5 mOhm), error de ganancia 0.2 %, 2.7-5.5 V (corre con 3.3 V del Pico),
+              modo comun -4..80 V; shunt 0.5 mOhm: 25 mV/A -> 40 A = 1.0 V en el ADC; perdida 0.8 W a 40 A, 4 W a 90 A
+      retraso de fase a     668 Hz: Hall  0.56 grados, INA240  0.10 grados (filtro del firmware 25 kHz:  1.53)
+      retraso de fase a    1268 Hz: Hall  1.06 grados, INA240  0.18 grados (filtro del firmware 25 kHz:  2.90)
+      retraso de fase a   10000 Hz: Hall  8.36 grados, INA240  1.43 grados (filtro del firmware 25 kHz: 21.80)
+
+==============================================================================================================
+3. NGSPICE: BASE (La Pluma de hoy) contra MIN (circuito minimo)
+==============================================================================================================
+   BASE20 = la_pluma.py: 20 kHz, 41 uH, Hall, TVS, snubber, 2 zeners, Rg_off 33, lazo caliente 30 nH, Cout 10 uF + 1 k, cable 0.5 uH/4 mOhm
+   MIN    = 100 kHz, 15 uH (18 vueltas, 11 mOhm), shunt 0.5 mOhm + INA240 en el retorno, SIN TVS/snubber/zeners/Q3, UNA Rg de 22 ohm,
+            lazo caliente 15 nH (Q1-D1-Cf en un disipador), electroliticos a 30 nH (sobre el disipador; BASE: 150 nH),
+            Cout 1 uF + D2 salida->bus, barras 0.15 uH/1.5 mOhm, V_bus constante 48 V en la alimentacion anticipada (sin canal)
+   arco: V = 14 + 10*gap[mm] + 0.02*I (medido por ian + 20 mOhm); muere si I < 1 A pasados 50 us; renace en cada contacto
+   BASE20        FSW=20000.0 LCH=4.1e-05 RCH=0.022 COUT=1e-05 LLOOP=3e-08 RGON=10 RGOFF=33 SENSOR=hall TVS=1 SNUB=1 ZBS=1 KP=0.005 KI=9.0 LBC=1.5e-07
+   BASE100       FSW=100000.0 LCH=4.1e-05 RCH=0.022 COUT=1e-05 LLOOP=3e-08 RGON=10 RGOFF=33 SENSOR=hall TVS=1 SNUB=1 ZBS=1 KP=0.05 KI=600.0 LBC=1.5e-07
+   MIN           FSW=100000.0 LCH=1.5e-05 RCH=0.011 COUT=1e-06 LLOOP=1.5e-08 RGON=22 RGOFF=22 SENSOR=shunt TVS=0 SNUB=0 ZBS=0 KP=0.018292682926829267 KI=219.5121951219512 LBC=3e-08
+   MIN_rg10      FSW=100000.0 LCH=1.5e-05 RCH=0.011 COUT=1e-06 LLOOP=1.5e-08 RGON=10 RGOFF=10 SENSOR=shunt TVS=0 SNUB=0 ZBS=0 KP=0.018292682926829267 KI=219.5121951219512 LBC=3e-08
+   MIN_rg10_snub FSW=100000.0 LCH=1.5e-05 RCH=0.011 COUT=1e-06 LLOOP=1.5e-08 RGON=10 RGOFF=10 SENSOR=shunt TVS=0 SNUB=1 ZBS=0 KP=0.018292682926829267 KI=219.5121951219512 LBC=3e-08
+   MIN_bus150    FSW=100000.0 LCH=1.5e-05 RCH=0.011 COUT=1e-06 LLOOP=1.5e-08 RGON=22 RGOFF=22 SENSOR=shunt TVS=0 SNUB=0 ZBS=0 KP=0.018292682926829267 KI=219.5121951219512 LBC=1.5e-07
+   MIN_lazo30    FSW=100000.0 LCH=1.5e-05 RCH=0.011 COUT=1e-06 LLOOP=3e-08 RGON=22 RGOFF=22 SENSOR=shunt TVS=0 SNUB=0 ZBS=0 KP=0.018292682926829267 KI=219.5121951219512 LBC=3e-08
+   MIN_lazo60    FSW=100000.0 LCH=1.5e-05 RCH=0.011 COUT=1e-06 LLOOP=6e-08 RGON=22 RGOFF=22 SENSOR=shunt TVS=0 SNUB=0 ZBS=0 KP=0.018292682926829267 KI=219.5121951219512 LBC=3e-08
+   MIN_L41       FSW=100000.0 LCH=4.1e-05 RCH=0.022 COUT=1e-06 LLOOP=1.5e-08 RGON=22 RGOFF=22 SENSOR=shunt TVS=0 SNUB=0 ZBS=0 KP=0.05 KI=600.0 LBC=3e-08
+   MIN_C10sinD2  FSW=100000.0 LCH=1.5e-05 RCH=0.011 COUT=1e-05 LLOOP=1.5e-08 RGON=22 RGOFF=22 SENSOR=shunt TVS=0 SNUB=0 ZBS=0 KP=0.018292682926829267 KI=219.5121951219512 LBC=3e-08
+   MIN_hall      FSW=100000.0 LCH=1.5e-05 RCH=0.011 COUT=1e-06 LLOOP=1.5e-08 RGON=22 RGOFF=22 SENSOR=hall TVS=0 SNUB=0 ZBS=0 KP=0.018292682926829267 KI=219.5121951219512 LBC=3e-08
+   ok BASE20__reg                                   346897 puntos  (llega a 3.400 ms de 3.400)
+   ok BASE100__reg                                  376501 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN__reg                                      402381 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN_rg10__reg                                 416199 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN_rg10_snub__reg                            375505 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN_bus150__reg                               400527 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN_lazo30__reg                               422976 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN_lazo60__reg                               432530 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN_L41__reg                                  402320 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN_C10sinD2__reg                             401573 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN_hall__reg                                 405846 puntos  (llega a 3.400 ms de 3.400)
+   ok MIN__onda668                                  767958 puntos  (llega a 6.488 ms de 6.488)
+   ok MIN_hall__onda668                             775259 puntos  (llega a 6.488 ms de 6.488)
+   ok MIN__arranque_retraccion                      484319 puntos  (llega a 4.200 ms de 4.200)
+   ok MIN__arranque_clasico                         485307 puntos  (llega a 4.200 ms de 4.200)
+   ok MIN_C10sinD2__arranque_retraccion             489834 puntos  (llega a 4.200 ms de 4.200)
+   ok MIN__corto_CC40A                              418856 puntos  (llega a 3.600 ms de 3.600)
+   ok MIN__corto_bajar10A                           410941 puntos  (llega a 3.600 ms de 3.600)
+   ok MIN_L41__corto_bajar10A                       404969 puntos  (llega a 3.600 ms de 3.600)
+   ok MIN__apagado_PARO                             142197 puntos  (llega a 1.300 ms de 1.300)
+   ok MIN__arco_se_apaga_40A                        142647 puntos  (llega a 1.300 ms de 1.300)
+   ok MIN_C10sinD2__arco_se_apaga_40A               142205 puntos  (llega a 1.300 ms de 1.300)
+   ok BASE20__arco_se_apaga_40A                     305760 puntos  (llega a 3.000 ms de 3.000)
+   ok INV_lado_bajo__reg40                          111525 puntos  (llega a 1.000 ms de 1.000)
+
+  3.1 REGULACION: arco 1 mm, 20 A -> escalon a 40 A en 1.0 ms; ventana de regimen 2.6-3.4 ms; esfuerzos despues de 0.3 ms
+         caso     I prom      IL pp   Iarco pp       duty    Vout pp     bus pp     Ce rms     Cf rms  t10-90 us  sobrepaso asienta us    Vds max    VD1 max  SW min(0)  SW-D1 min    VBS max    Vgs max
+          BASE20     39.98      13.82      15.27       0.56       1.36      13.95       7.85      14.08     307.49      -0.01     422.81      75.58      66.06     -13.75      -0.79      12.15      12.03
+         BASE100     39.98       2.77       2.38       0.55       0.74      16.91      10.05      28.13      68.15       4.43     207.85      75.39      77.75     -14.59      -0.78      12.51      12.37
+             MIN     40.00       7.62       9.67       0.54       1.47      11.55       7.20      15.51      23.38       8.21     118.70      78.46      63.00     -12.64      -0.81      12.00      11.86
+        MIN_rg10     40.00       7.94       9.68       0.55       1.47      16.94       7.19      15.32      24.14       8.36     122.40      93.17     100.16     -18.14      -0.81      11.99      11.88
+   MIN_rg10_snub     40.00       7.65       9.68       0.55       1.47      15.14       7.19      15.37      24.09       8.35     122.36      88.46      61.66     -17.25      -0.80      11.99      11.88
+      MIN_bus150     40.00       7.56       9.74       0.55       1.61      15.95       9.75      26.33      26.30       8.25     128.14      78.85      84.08     -12.41      -0.81      12.00      11.87
+      MIN_lazo30     40.00       7.75       9.68       0.54       1.47       9.79       7.21      15.53      23.43       8.19     119.70      94.45      98.88     -20.90      -0.81      12.73      12.57
+      MIN_lazo60     40.00       7.79       9.69       0.53       1.47       7.19       7.21      15.59      23.32       8.13     120.51     119.73     100.39     -33.67      -0.81      17.56      17.33
+         MIN_L41     40.00       2.90       3.70       0.55       0.60      11.92       7.20      16.13      65.49       5.02     176.98      76.82      64.02     -11.80      -0.78      11.99      11.86
+    MIN_C10sinD2     40.00       7.57      13.83       0.54       1.35      11.46       7.20      15.49      23.01       8.33     118.33      78.31      62.94     -12.45      -0.81      12.00      11.86
+        MIN_hall     40.00       7.61       9.67       0.54       1.47      11.47       7.20      15.51      23.41       5.46     155.75      76.98      63.23     -11.94      -0.80      11.98      11.85
+   (VD1 = inversa en D1, MBR40100CT de 100 V; SW-D1 = VS medido contra el anodo de D1 = COM Kelvin del IR2110; SW min(0) = contra la estrella)
+
+   perdidas en regimen (W): Q1, D1, choque, shunt, cable/barra -> arco, entrada, eficiencia
+   BASE20        Q1  29.4  D1  12.9  L  35.6  shunt 0.00  cable  6.5  arco  991.9  entrada 1095.5  eta  90.5 %  perdidas 103.6
+   BASE100       Q1  39.3  D1  12.6  L  35.2  shunt 0.00  cable  6.4  arco  991.4  entrada 1115.4  eta  88.9 %  perdidas 124.1
+   MIN           Q1  39.2  D1  13.1  L  17.7  shunt 0.80  cable  2.4  arco  992.1  entrada 1084.6  eta  91.5 %  perdidas  92.5
+   MIN_rg10      Q1  34.1  D1  13.1  L  17.7  shunt 0.80  cable  2.4  arco  992.1  entrada 1079.6  eta  91.9 %  perdidas  87.5
+   MIN_rg10_snub Q1  33.0  D1  13.1  L  17.7  shunt 0.80  cable  2.4  arco  992.1  entrada 1080.2  eta  91.8 %  perdidas  88.1
+   MIN_bus150    Q1  38.5  D1  13.0  L  17.7  shunt 0.80  cable  2.4  arco  992.2  entrada 1091.2  eta  90.9 %  perdidas  99.0
+   MIN_lazo30    Q1  40.1  D1  13.0  L  17.7  shunt 0.80  cable  2.4  arco  992.1  entrada 1085.8  eta  91.4 %  perdidas  93.7
+   MIN_lazo60    Q1  42.0  D1  13.0  L  17.7  shunt 0.80  cable  2.4  arco  992.2  entrada 1087.9  eta  91.2 %  perdidas  95.8
+   MIN_L41       Q1  38.9  D1  12.8  L  35.2  shunt 0.80  cable  2.4  arco  992.0  entrada 1102.1  eta  90.0 %  perdidas 110.1
+   MIN_C10sinD2  Q1  39.2  D1  13.1  L  17.7  shunt 0.81  cable  2.4  arco  992.5  entrada 1085.1  eta  91.5 %  perdidas  92.6
+   MIN_hall      Q1  39.1  D1  13.1  L  17.7  shunt 0.80  cable  2.4  arco  992.1  entrada 1084.6  eta  91.5 %  perdidas  92.5
+
+  3.2 ONDA 40 A + 30 A a 668 Hz sobre el arco (canal l=2), 100 kHz, MIN: shunt contra Hall
+   MIN        DC  39.7 A (40) | onda  30.7 A (30) | retraso  -2.03 grados | rizo95 +- 4.9 A | Vds max  89.1 V | VD1 max  93.9 V
+   MIN_hall   DC  39.7 A (40) | onda  30.6 A (30) | retraso  -0.95 grados | rizo95 +- 4.9 A | Vds max  87.9 V | VD1 max  93.9 V
+
+  3.3 ARRANQUE: OCV 30 V; toque a 0.5 ms (pelicula de fundente 30 ohm), se perfora a 0.6 ms (20 mOhm);
+      la punta se separa 1.50-1.65 ms (cuello 20->50 mOhm) y abre; gap 0->1 mm en 2 ms (tiempo mecanico COMPRIMIDO 10x; el lazo
+      electrico es >100x mas rapido, no cambia los picos). retraccion: 15 A en el toque y la separacion, rampa a 40 A en 2.65 ms.
+      clasico: 40 A desde el toque (la separacion la hace la fusion). MIN_C10sinD2: Cout 10 uF sin D2.
+   medida                            MIN__arranque_retraccion               MIN__arranque_clasico   MIN_C10sinD2__arranque_retraccion
+   OCV                                               30.28  V                            30.28  V                            27.50  V
+   t_detect                                         100.43 us                           100.43 us                           100.43 us
+   V_ruptura_pelicula                                30.31  V                            30.31  V                            30.17  V
+   E_cap_teoria                                      0.459 mJ                            0.459 mJ                            4.551 mJ
+   I_pico_pelicula                                   73.98  A                            73.98  A                           209.81  A
+   E_pelicula_30us                                   0.389 mJ                            0.389 mJ                            3.260 mJ
+   I_max_toque                                       73.98  A                            73.98  A                           209.81  A
+   I_ruptura                                         14.48  A                            38.92  A                            14.62  A
+   E_cuello_50us                                     0.449 mJ                            3.161 mJ                            0.448 mJ
+   arco_prende                                           True                                True                                True
+   V_pico_ruptura                                    14.68  V                            15.43  V                            14.75  V
+   I_2_5ms                                           15.01  A                            39.97  A                            14.99  A
+   I_4ms                                             40.00  A                            40.00  A                            40.00  A
+   E_arco_1er_ms                                   253.394 mJ                          692.152 mJ                          254.191 mJ
+   vds                                               76.79  V                            76.44  V                            76.82  V
+   vd1                                               62.92  V                            63.80  V                            63.11  V
+
+  traza cruda: MIN__arranque_retraccion (toque y perforacion)  (0.490-0.660 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    0.4900     0.00     0.00    30.11    30.11   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5055    -0.00     0.00    30.08    30.08   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5209     0.00     0.00    30.05    30.05   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5364    -0.00     0.00    30.02    30.02   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5518     0.00     0.00    29.99    29.99   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5673    -0.03     0.00    30.39    30.39   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5827    -0.12     0.00    30.33    30.33   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5982    -0.05     0.00    30.32    30.32   abierto    0.00  0.000   0.00     0.00   OCV
+    0.6136    12.22    -4.83    -4.63    -0.10     20.0m    0.00  0.000   7.84     1.06     I
+    0.6291    11.05    11.93     2.23     0.24     20.0m    0.00  0.000  10.08     2.29     I
+    0.6446    10.09    10.81    -0.20     0.22     20.0m    0.00  0.000  10.43     3.53     I
+    0.6600     9.18     8.86     0.21     0.18     20.0m    0.00  0.000   9.82     4.77     I
+
+  traza cruda: MIN__arranque_retraccion (separacion)  (1.600-1.750 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    1.6000    14.68    14.41     0.53     0.46     32.0m    0.00  0.023  15.02    15.00     I
+    1.6167    14.93    15.09     0.42     0.55     36.4m    0.00  0.023  15.09    15.00     I
+    1.6333    15.27    15.46     0.90     0.64     41.7m    0.00  0.025  15.07    15.00     I
+    1.6500    14.62    14.43     0.75     0.72     50.0m    0.00  0.027  15.04    15.00     I
+    1.6667    11.00    16.18    14.42    14.41   abierto   16.18  0.358  11.76    15.00     I
+    1.6833    17.57    16.89    15.56    14.50   abierto   16.89  0.379  12.48    15.00     I
+    1.7000    14.34    13.27    13.98    14.51   abierto   13.27  0.323  15.74    15.00     I
+    1.7167    17.83    19.35    14.05    14.72   abierto   19.35  0.286  17.67    15.00     I
+    1.7333    20.04    20.61    15.50    14.83   abierto   20.61  0.290  17.13    15.00     I
+    1.7500    12.65    11.57    14.70    14.73   abierto   11.57  0.292  16.46    15.00     I
+
+  traza cruda: MIN__arranque_retraccion (arco)  (2.500-4.100 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    2.5000    11.33    10.99    17.81    18.47   abierto   10.99  0.380  14.99    15.00     I
+    2.7667    26.11    25.80    20.14    20.10   abierto   25.80  0.445  24.22    24.33     I
+    3.0333    41.73    40.96    22.10    21.74   abierto   40.96  0.477  40.35    40.00     I
+    3.3000    36.30    35.90    23.07    22.97   abierto   35.90  0.501  40.05    40.00     I
+    3.5667    41.96    42.62    23.69    24.44   abierto   42.62  0.530  40.30    40.00     I
+    3.8333    40.62    40.78    25.44    24.82   abierto   40.78  0.551  39.62    40.00     I
+    4.1000    36.39    35.14    24.64    24.70   abierto   35.14  0.539  40.12    40.00     I
+
+  traza cruda: MIN__arranque_clasico (toque y perforacion)  (0.490-0.660 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    0.4900     0.00     0.00    30.11    30.11   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5055    -0.00     0.00    30.08    30.08   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5209     0.00     0.00    30.05    30.05   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5364    -0.00     0.00    30.02    30.02   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5518     0.00     0.00    29.99    29.99   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5673    -0.03     0.00    30.39    30.39   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5827    -0.12     0.00    30.33    30.33   abierto    0.00  0.000   0.00     0.00   OCV
+    0.5982    -0.05     0.00    30.32    30.32   abierto    0.00  0.000   0.00     0.00   OCV
+    0.6136    12.22    -4.83    -4.63    -0.10     20.0m    0.00  0.000   7.84     1.06     I
+    0.6291    11.05    11.93     2.23     0.24     20.0m    0.00  0.000  10.08     2.29     I
+    0.6446    10.09    10.81    -0.20     0.22     20.0m    0.00  0.000  10.43     3.53     I
+    0.6600     9.18     8.86     0.21     0.18     20.0m    0.00  0.000   9.82     4.77     I
+
+  traza cruda: MIN__arranque_clasico (separacion)  (1.600-1.750 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    1.6000    39.26    38.72     1.31     1.24     32.0m    0.00  0.046  39.95    40.00     I
+    1.6167    39.80    40.37     1.31     1.47     36.4m    0.00  0.048  40.08    40.00     I
+    1.6333    40.44    40.24     2.20     1.68     41.7m    0.00  0.052  40.04    40.00     I
+    1.6500    39.05    38.70     1.95     1.94     50.0m    0.00  0.059  39.93    40.00     I
+    1.6667    37.52    44.44    12.81    14.97   abierto   44.44  0.345  38.44    40.00     I
+    1.6833    41.88    42.60    15.88    15.02   abierto   42.60  0.378  38.06    40.00     I
+    1.7000    37.57    37.02    14.55    14.99   abierto   37.02  0.348  39.85    40.00     I
+    1.7167    41.50    43.53    14.94    15.20   abierto   43.53  0.327  41.18    40.00     I
+    1.7333    44.01    43.71    16.22    15.29   abierto   43.71  0.333  40.80    40.00     I
+    1.7500    37.11    35.85    14.95    15.22   abierto   35.85  0.329  40.70    40.00     I
+
+  traza cruda: MIN__arranque_clasico (arco)  (2.500-4.100 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    2.5000    36.33    36.64    18.52    18.98   abierto   36.64  0.415  39.98    40.00     I
+    2.7667    41.04    40.81    20.53    20.40   abierto   40.81  0.440  40.32    40.00     I
+    3.0333    41.22    40.58    22.08    21.73   abierto   40.58  0.482  39.62    40.00     I
+    3.3000    36.30    35.89    23.07    22.97   abierto   35.89  0.501  40.04    40.00     I
+    3.5667    41.95    42.62    23.69    24.44   abierto   42.62  0.530  40.30    40.00     I
+    3.8333    40.62    40.78    25.44    24.82   abierto   40.78  0.551  39.63    40.00     I
+    4.1000    36.39    35.14    24.64    24.70   abierto   35.14  0.539  40.12    40.00     I
+
+  3.4 CORTO DURANTE EL ARCO: arco 1 mm a 40 A; una gota toca a 0.8 ms (10 mOhm); cuello 1.6-1.9 ms (10->50 mOhm); abre 1.9 ms
+      CC40A: el lazo sostiene 40 A.  bajar10A: si V < 8 V pide 10 A hasta que V > 13 V (arco de vuelta), luego rampa 0.375 ms
+                                     MIN__corto_CC40A           MIN__corto_bajar10A       MIN_L41__corto_bajar10A
+   I_pico_puente                                96.86                         96.87                         99.30
+   I_200us                                      39.21                         26.32                         32.65
+   I_ruptura                                    39.00                          9.58                          8.56
+   E_puente                                  25.92 mJ                       4.57 mJ                       6.57 mJ
+   E_cuello_50us                              3.68 mJ                       0.23 mJ                       0.14 mJ
+   reenciende                                    True                          True                          True
+   V_pico_reencendido                           17.52                         16.74                         16.65
+   recupera_us                                  25.05                        350.57                        349.57
+   vds                                          76.56                         79.70                         76.81
+   vd1                                          63.66                         63.58                         64.52
+
+  traza cruda: MIN__corto_CC40A (la gota toca)  (0.780-1.100 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    0.7800    36.40    35.14    24.63    24.70   abierto   35.14  0.539  40.12    40.00     I
+    0.8200    46.48    64.84     0.19     0.65     10.0m    0.00  0.000  45.21    40.00     I
+    0.8600    41.96    40.09     0.57     0.40     10.0m    0.00  0.000  43.36    40.00     I
+    0.9000    37.55    37.74     0.42     0.38     10.0m    0.00  0.000  38.98    40.00     I
+    0.9400    36.35    35.19     0.46     0.35     10.0m    0.00  0.051  36.61    40.00     I
+    0.9800    38.66    37.72     0.72     0.38     10.0m    0.00  0.032  38.74    40.00     I
+    1.0200    38.73    38.10     0.63     0.38     10.0m    0.00  0.033  39.15    40.00     I
+    1.0600    39.10    38.37     0.66     0.38     10.0m    0.00  0.032  39.47    40.00     I
+    1.1000    39.27    38.61     0.66     0.39     10.0m    0.00  0.031  39.69    40.00     I
+
+  traza cruda: MIN__corto_CC40A (ruptura y reencendido)  (1.800-2.400 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    1.8000    39.29    38.76     1.34     1.28     33.0m    0.00  0.047  40.00    40.00     I
+    1.8667    39.80    40.40     1.70     1.80     44.7m    0.00  0.054  40.12    40.00     I
+    1.9333    40.98    41.62    17.74    17.10   abierto   41.62  0.428  37.70    40.00     I
+    2.0000    36.99    36.45    16.96    17.53   abierto   36.45  0.376  40.83    40.00     I
+    2.0667    40.77    41.91    18.43    18.17   abierto   41.91  0.393  40.43    40.00     I
+    2.1333    42.05    40.75    19.39    18.68   abierto   40.75  0.415  39.73    40.00     I
+    2.2000    36.36    36.70    18.69    19.13   abierto   36.70  0.418  40.02    40.00     I
+    2.2667    40.91    41.03    19.99    19.75   abierto   41.03  0.426  40.30    40.00     I
+    2.3333    41.59    40.44    20.75    20.27   abierto   40.44  0.450  39.64    40.00     I
+    2.4000    36.26    36.72    20.58    20.73   abierto   36.72  0.453  39.97    40.00     I
+
+  traza cruda: MIN__corto_bajar10A (la gota toca)  (0.780-1.100 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    0.7800    36.40    35.15    24.63    24.70   abierto   35.15  0.539  40.12    40.00     I
+    0.8200    44.26    63.62     0.40     0.64     10.0m    0.00  0.000  44.05    10.00  CORT
+    0.8600    39.91    37.93     0.53     0.38     10.0m    0.00  0.000  41.31    10.00  CORT
+    0.9000    35.64    35.85     0.40     0.36     10.0m    0.00  0.000  37.02    10.00  CORT
+    0.9400    31.71    31.69     0.37     0.32     10.0m    0.00  0.000  32.99    10.00  CORT
+    0.9800    28.04    28.05     0.32     0.28     10.0m    0.00  0.000  29.24    10.00  CORT
+    1.0200    24.64    24.64     0.28     0.25     10.0m    0.00  0.000  25.75    10.00  CORT
+    1.0600    21.49    21.49     0.25     0.21     10.0m    0.00  0.000  22.52    10.00  CORT
+    1.1000    18.56    18.56     0.21     0.19     10.0m    0.00  0.000  19.51    10.00  CORT
+
+  traza cruda: MIN__corto_bajar10A (ruptura y reencendido)  (1.800-2.400 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    1.8000     9.71     9.49     0.37     0.31     33.0m    0.00  0.020   9.97    10.00  CORT
+    1.8667     9.96    10.08     0.36     0.45     44.7m    0.00  0.020  10.09    10.00  CORT
+    1.9333    12.63    11.54    17.04    16.50   abierto   11.54  0.457   7.50    11.76     I
+    2.0000    15.25    14.42    16.49    17.09   abierto   14.42  0.366  18.39    17.09     I
+    2.0667    24.23    25.31    18.10    17.84   abierto   25.31  0.396  22.80    22.43     I
+    2.1333    30.61    29.25    19.10    18.45   abierto   29.25  0.425  27.36    27.76     I
+    2.2000    30.27    30.74    18.70    19.01   abierto   30.74  0.436  32.94    33.09     I
+    2.2667    40.45    40.05    19.76    19.73   abierto   40.05  0.451  38.56    38.42     I
+    2.3333    42.67    41.39    20.80    20.29   abierto   41.39  0.441  40.90    40.00     I
+    2.4000    36.49    36.95    20.58    20.74   abierto   36.95  0.453  40.24    40.00     I
+
+  3.5 APAGADO a 0.8 ms con arco de 1 mm a 40 A. PARO = SD (duty 0). arco_se_apaga = el gap salta a 10 mm (V_arco 114 V),
+      el firmware mata cuando V_salida > 40 V
+   MIN__apagado_PARO                    I antes  40.0 | kill +   0.1 us | I_bobina<1A en   21.2 us | E al arco despues   9.66 mJ | V_salida max   25.0 V | V_pluma max   50.4 | I_D2 max   1.5 A | Vds max  75.4 | VD1 max  62.9
+   MIN__arco_se_apaga_40A               I antes  40.0 | kill +   7.0 us | I_bobina<1A en   17.7 us | E al arco despues   0.86 mJ | V_salida max   53.0 V | V_pluma max   56.7 | I_D2 max  46.6 A | Vds max  75.4 | VD1 max  62.9
+   MIN_C10sinD2__arco_se_apaga_40A      I antes  40.0 | kill +   9.2 us | I_bobina<1A en   16.6 us | E al arco despues   0.51 mJ | V_salida max   72.0 V | V_pluma max   72.0 | I_D2 max   0.0 A | Vds max  75.5 | VD1 max  62.3
+   BASE20__arco_se_apaga_40A            I antes  39.3 | kill +  19.7 us | I_bobina<1A en   31.2 us | E al arco despues   0.98 mJ | V_salida max  103.2 V | V_pluma max  103.2 | I_D2 max   0.0 A | Vds max  78.9 | VD1 max  68.0
+
+  traza cruda: MIN__arco_se_apaga_40A  (0.795-0.920 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    0.7950    42.92    42.10    25.10    24.84   abierto   42.10  0.547  39.88    40.00     I
+    0.8089    30.25     0.00    49.09    49.09   abierto    0.00  0.000  21.57    40.00  KILL
+    0.8228    -0.09     0.00    47.12    47.12   abierto    0.00  0.000   7.41    40.00  KILL
+    0.8367    -0.01     0.00    47.05    47.05   abierto    0.00  0.000   2.55    40.00  KILL
+    0.8506    -0.00     0.00    47.01    47.01   abierto    0.00  0.000   0.88    40.00  KILL
+    0.8645     0.00     0.00    46.97    46.97   abierto    0.00  0.000   0.30    40.00  KILL
+    0.8783    -0.00     0.00    46.93    46.93   abierto    0.00  0.000   0.10    40.00  KILL
+    0.8922    -0.00     0.00    46.89    46.89   abierto    0.00  0.000   0.04    40.00  KILL
+    0.9061    -0.00     0.00    46.85    46.85   abierto    0.00  0.000   0.01    40.00  KILL
+    0.9200    -0.00     0.00    46.81    46.81   abierto    0.00  0.000   0.00    40.00  KILL
+
+  traza cruda: MIN_C10sinD2__arco_se_apaga_40A  (0.795-0.920 ms)
+      t ms I_choque  I_carga V_salida  V_pluma    R_cont  I_arco   duty  I_med I_pedida  modo
+    0.7950    42.89    45.71    25.32    24.91   abierto   45.71  0.549  39.54    40.00     I
+    0.8089    35.69     0.00    57.64    57.64   abierto    0.00  0.750  21.39    40.00     I
+    0.8228    -9.17     0.00    69.01    69.01   abierto    0.00  0.000   7.35    40.00  KILL
+    0.8367   -18.50     0.00    47.35    47.35   abierto    0.00  0.000   2.52    40.00  KILL
+    0.8506    -6.56     0.00    27.93    27.93   abierto    0.00  0.000   0.87    40.00  KILL
+    0.8645     0.01     0.00    26.48    26.48   abierto    0.00  0.000   0.30    40.00  KILL
+    0.8783    -0.14     0.00    26.47    26.47   abierto    0.00  0.000   0.10    40.00  KILL
+    0.8922     0.01     0.00    26.47    26.47   abierto    0.00  0.000   0.04    40.00  KILL
+    0.9061     0.04     0.00    26.47    26.47   abierto    0.00  0.000   0.01    40.00  KILL
+    0.9200    -0.03     0.00    26.47    26.47   abierto    0.00  0.000   0.00    40.00  KILL
+
+  3.6 REDUCTOR LADO BAJO (sin IR2110 ni bootstrap): pieza en el +48 del bus, Q1 con fuente a tierra, D1 de SW al bus
+   I  40.0 A | Vds max   58.0 V | D1 inversa max   48.0 V | rebote de la fuente de Q1  -4.11/  4.78 V | P_Q1  48.0 W | P_D1  12.9 W
+   potenciales contra la tierra del Pico/USB: pieza (mesa)  47.6 V, antorcha/alimentador  22.8 V
+   V_arco = V(pieza) - V(antorcha) muestreados con 2 us de diferencia: error crudo rms 1708.1 mV, pico 3641.0 mV
+   ruido crudo por muestra de V(pieza) sola (rizo del bus) rms 1328.1 mV
+   MIN (lado alto, carga a tierra): V_salida en UN canal, ruido crudo por muestra rms  436.9 mV; pieza  24.8 V, antorcha 0 V
+
+==============================================================================================================
+4. MOTOR DEL ALIMENTADOR (parametros SUPUESTOS, motor SOMI sin medir): V=12.0, R=1.2, L=0.0012, K=0.021, J=8e-06, Tf=0.004, N=40, r=0.015, eta=0.6, F=6.0
+==============================================================================================================
+   sin carga   5457 rpm -> alambre  12.9 m/min; tau mecanica  21.8 ms; tau electrica 1.00 ms; par de carga  7.8 mN m = 0.37 A
+   1 m/min necesita  1.38 V (duty 0.11 de 12 V)
+   3 m/min necesita  3.24 V (duty 0.27 de 12 V)
+   5 m/min necesita  5.11 V (duty 0.43 de 12 V)
+   (a) escalon a 3 m/min: llega al 90 % en  48.9 ms  -> ancho de banda util del avance ~ 7.3 Hz (lazo abierto)
+   (b) toque a 1 m/min, lazo PD (Kp 40000 V/m, Kd 240 V/(m/s)) a -1.5 mm, sin limite (BTS7960): el rodillo avanza 0.025 mm mas, llega a -1.5+-0.05 mm en  25.2 ms, minimo -1.559 mm, final -1.508 mm, I pico  9.9 A
+   (b) toque a 1 m/min, lazo PD (Kp 40000 V/m, Kd 240 V/(m/s)) a -1.5 mm, limite 3.6 A (DRV8871): el rodillo avanza 0.039 mm mas, llega a -1.5+-0.05 mm en  36.7 ms, minimo -1.826 mm, final -1.492 mm, I pico  3.7 A
+       (con reversa a -12 V y freno pasivo el rodillo se pasa a ~-3.9 mm: hace falta el lazo de posicion, y la posicion sale de integrar la fcem)
+       holgura del forro (alambre 0.8 en forro de 1.5 mm, SUPUESTO): juego = (1.5-0.8) mm x angulo total de curvas
+       antorcha recortada 0.4 m casi recta (0.5 rad)    juego 0.35 mm -> el rodillo recoge 1.35 mm para levantar la PUNTA 1.0 mm:  24.1 ms
+       antorcha 2 m en una U amplia (pi+0.5)            juego 2.55 mm -> el rodillo recoge 3.55 mm para levantar la PUNTA 1.0 mm:  38.8 ms
+       antorcha 2 m con una vuelta completa (2pi+0.5)   juego 4.75 mm -> el rodillo recoge 5.75 mm para levantar la PUNTA 1.0 mm:  51.1 ms
+   (c) fcem: a 3 m/min se abre el puente 0.5 ms: la corriente (0.37 A) se descarga por los diodos en    20 us; a 0.3 ms la terminal marca 2.794 V = K*w 2.794 V; la velocidad cae 0.22 %
+       ADC (ENOB ~9, divisor /5): 32.2 mV por paso -> 0.58 mm/s de alambre por muestra (1.15 % a 3 m/min); deriva del iman de ferrita ~-0.2 %/K -> -4 % con 20 K: calibrar con 1 m de alambre medido
+   (d) sincronia con las gotas: gotas/s = v_f * pi r_w^2 / (4/3 pi a^3), r_w = 0.4 mm
+       v_f 2 m/min, gota radio 0.453 mm ->    43.1 gotas/s  (avance por gota  0.77 mm)
+       v_f 2 m/min, gota radio 0.815 mm ->     7.4 gotas/s  (avance por gota  4.51 mm)
+       v_f 2 m/min, gota radio 1.630 mm ->     0.9 gotas/s  (avance por gota 36.09 mm)
+       v_f 3 m/min, gota radio 0.453 mm ->    64.7 gotas/s  (avance por gota  0.77 mm)
+       v_f 3 m/min, gota radio 0.815 mm ->    11.1 gotas/s  (avance por gota  4.51 mm)
+       v_f 3 m/min, gota radio 1.630 mm ->     1.4 gotas/s  (avance por gota 36.09 mm)
+       v_f 5 m/min, gota radio 0.453 mm ->   107.9 gotas/s  (avance por gota  0.77 mm)
+       v_f 5 m/min, gota radio 0.815 mm ->    18.5 gotas/s  (avance por gota  4.51 mm)
+       v_f 5 m/min, gota radio 1.630 mm ->     2.3 gotas/s  (avance por gota 36.09 mm)
+       ancho de banda del motor ~ 7.3 Hz vs gotas 10-90 /s: el motor NO puede seguir gota a gota; sincroniza el PROMEDIO (volumen) y el arco pone el reloj de la gota
+
+==============================================================================================================
+5. BASE: campo B en el arco por trazado (placa 100x50x3 resuelta por Laplace + Biot-Savart), I = 40 A, DCEN
+==============================================================================================================
+   arco en el centro de la placa; antorcha vertical hasta 150 mm y luego horizontal hacia el alimentador (x = -300 mm);
+   retorno del alimentador a la caja bajo la base, 150 mm atras (y = -150, z = -45); caja en x = +300 mm. SUPUESTOS de geometria.
+   trazado                                                                     pie |B| 0.5mm  |B| 1mm  |B| 2mm   (mT)  partes a 1 mm: placa / ida / antorcha+retorno
+   A pinza en un extremo + cable a nivel de mesa                               0mm     0.196    0.192    0.186         0.231 /  0.001 /  0.071
+   A pinza en un extremo + cable a nivel de mesa                              25mm     0.225    0.221    0.213         0.258 /  0.001 /  0.071
+   B barra integrada en un extremo, barra bajo la mesa (-30 mm)                0mm     0.173    0.170    0.164         0.229 /  0.023 /  0.071
+   B barra integrada en un extremo, barra bajo la mesa (-30 mm)               25mm     0.124    0.122    0.118         0.225 /  0.072 /  0.071
+   C dos mordazas simetricas, barra partida alimentada al centro (-60 mm)      0mm     0.059    0.058    0.057         0.000 /  0.065 /  0.071
+   C dos mordazas simetricas, barra partida alimentada al centro (-60 mm)     25mm     0.089    0.088    0.087         0.112 /  0.002 /  0.071
+   E como C, alimentacion a -150 mm (simetria de punto con la antorcha)        0mm     0.057    0.058    0.058         0.000 /  0.028 /  0.071
+   E como C, alimentacion a -150 mm (simetria de punto con la antorcha)       25mm     0.059    0.059    0.058         0.112 /  0.046 /  0.071
+   F compacto: mango horizontal a +60 mm, alimentacion a -60 mm (simetria)     0mm     0.058    0.058    0.059         0.000 /  0.065 /  0.101
+   F compacto: mango horizontal a +60 mm, alimentacion a -60 mm (simetria)    25mm     0.063    0.062    0.061         0.112 /  0.002 /  0.100
+   referencias: patada de apuntar del canon 3 mT; plan par.11: pinza como bobina gratis 0.8 mT a 1 cm del arco
+
+==============================================================================================================
+6. ANTES -> DESPUES
+==============================================================================================================
+
+  DESPUES (circuito minimo validado arriba)
+   bloque    pieza                                                                      n  canal
+   potencia  LRS-1200-48 (+RS/-RS a los capacitores)                                    1  energia; bus regulado en el punto de uso
+   potencia  F1 fusible + portafusible                                                  2  seguridad (se queda)
+   potencia  Ce electroliticos 2200 uF 63 V                                             2  bus
+   potencia  Cf pelicula 4.7 uF x2 (llevan ~15 A rms a 100 kHz)                         2  bus HF
+   potencia  Q1 IRFB4227                                                                1  ACTUADOR 1: corriente (l=0 volumen + l=2 soltar)
+   potencia  D1 MBR40100CT                                                              1  rueda libre
+   potencia  choque 15 uH (el mismo, 18 vueltas)                                        1  almacen
+   potencia  shunt 0.5 mOhm en el retorno                                               1  SENSOR 1: corriente
+   potencia  Cout pelicula 1 uF                                                         1  salida HF
+   potencia  D2 pinza salida->bus (p.ej. 1N5408)                                        1  a donde va la bobina si el arco muere
+   potencia  disipador + 2 micas (Q1, D1)                                               3  termico
+   potencia  P1/P2 LRS->caja cal 10, 15 cm                                              2  cable
+   potencia  par de barras laminadas (ida a la mesa / vuelta del alimentador)           2  barra
+   potencia  tramos internos                                                            4  barra
+   manejo    IR2110 (HO = Q1; LO libre)                                                 1  manejo Q1
+   manejo    bootstrap: Rbs, Dbs, Cbs                                                   3  flotante HO
+   manejo    compuerta Q1: UNA Rg 22, Rgs 10 k                                          2  compuerta
+   manejo    pull-up del lazo SD (falla segura)                                         1  seguridad
+   manejo    desacoplo VCC/VDD                                                          2  desacoplo
+   medicion  Pico 2                                                                     1  cerebro
+   medicion  INA240A2 + desacoplo                                                       2  SENSOR 1: corriente (GP26)
+   medicion  divisor V_salida /16 + C (es tambien el sangrado; mide V_bus en reposo)    3  SENSOR 2: voltaje (GP27)
+   medicion  termostato KSD301 NC 80 C en el lazo SD/PARO                               1  proteccion termica en hardware
+   auxiliar  DC-DC 48->12 V                                                             1  riel 12 V (IR2110, motor, ventilador)
+   auxiliar  ventilador 12 V                                                            1  termico (INCIERTO quitar)
+   auxiliar  puente H del motor (DRV8871 o BTS7960)                                     1  ACTUADOR 2: alambre (adelante/atras)
+   auxiliar  divisor de la terminal B + pull-down en A                                  3  SENSOR 3: velocidad por fcem (GP28)
+   auxiliar  PARO de 2 contactos (corta AC de la LRS + SD)                              1  seguridad (se queda)
+   TOTAL                                                                               47   potencia=24  manejo=9  medicion=7  auxiliar=7
+
+   piezas electricas: 63 -> 47  (-16, -25 %)
+     potencia   29 ->  24
+     manejo     14 ->   9
+     medicion   13 ->   7
+     auxiliar    7 ->   7
+   canales que quedan (ADC de la tarjeta = 3):  GP26 corriente (INA240) | GP27 V_salida (+V_bus en reposo) | GP28 fcem del motor
+   actuadores: Q1 (PWM 100 kHz: corriente, 0-10 kHz) | puente H del motor (0-7 Hz: volumen y retraccion) ; sin Q3
+   seguridad en hardware: PARO (AC de la LRS + SD) | termostato en SD | fusible | LRS: sobrecarga >105 % 5 s -> se apaga

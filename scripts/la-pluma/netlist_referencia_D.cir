@@ -1,0 +1,122 @@
+* LA PLUMA buck 48V lado alto
+.param VBUS=48 FSW=20000.0 DMAX=0.22 DOCV=0.04 ISET=40.0
+.param VOCV=5.0 TRAMP=0.0004
+.param KP=0.005 KI=9.0 DRKILL=0.008 VKILL=8.0 USEQ3=1 DETECT=1
+.param TR=0.0044
+* ---- fuente LRS-1200-48 + bus ----
+Vsup s0 0 DC {VBUS}
+Rsup s0 sup 15m
+Ce1 sup ce1 4400u IC={VBUS}
+Rce1 ce1 ce1b 30m
+Lce1 ce1b 0 20n
+Lbc sup busp 150n
+Rbc busp busp2 3m
+Cf busp2 cf1 4.7u IC={VBUS}
+Rcf cf1 cf2 5m
+Lcf cf2 0 5n
+* ---- lazo caliente: pelicula -> Q1 -> SW -> D1 -> tierra ----
+Lh1 busp2 dq 1.5e-08
+Vq1 dq dr 0
+M1 dr gq sw IRFB4227
+D1 da sw MBR40
+Lh2 0 da0 1.5e-08
+Vd1 da0 da 0
+* ---- IR2110 lado alto con bootstrap (VCC 12V de la fuente de PC) ----
+V12 v12 0 DC 12
+Rbs v12 v12b 4.7
+Dbs v12b vb DBS
+Cbs vb sw 1u IC=11.3
+Dzbs sw vb DZ15
+Sup vb gq pwm 0 SWU
+Sdn gq sw pwmn 0 SWD
+Rgs gq sw 10k
+Dz sw gq DZ15
+* snubber RC sobre D1 y TVS 1.5KE68A sobre Q1
+Rsn sw sn1 3.3
+Csn sn1 0 1e-08
+Dtvs sw dtv DTVS
+Rtvsx dtv dr 1m
+* ---- choke + sensor + salida ----
+Lch sw n1 4.1e-05
+Rch n1 n2 0.022
+Cpar sw n2 50p
+Vsns n2 out 0
+Cout out co1 10u
+Rco co1 0 5m
+Rbl out 0 1k
+* ---- Q3 crowbar (opcional) manejado por IR2110 LO ----
+Vq3 out dq3 0
+M3 dq3 gq3 0 IRFB4227
+Blo loi 0 V = 12 * v(cb)
+Rg3 loi gq3 4.7
+Rgs3 gq3 0 10k
+* ---- cable a la pluma ----
+Lcab out pen1 0.5u
+Rcab pen1 pen 4m
+* ---- carga: contacto/stickout/puente (escenario) + arco ----
+Vrs rsc 0 PWL(0 1e+06 0.000999 1e+06 0.001 0.017 0.0012 0.01 0.0016 0.0045 0.003 0.006 0.004 0.0075 0.0041 0.009 0.0042 0.0135 0.0043 0.021 0.0044 0.0315 0.004402 1e+06 1 1e+06)
+Bload pen 0 I = v(pen) * ((v(rsc) < 10) ? 1/v(rsc) : 0)
+Bvarc varc 0 V = 13 + 500*max(0, time - TR)
+Biarcv iarcv 0 V = v(alive) * max(0, (v(pen) - v(varc)) / 0.02)
+Barc pen 0 I = v(iarcv)
+Rdum1 varc 0 1meg
+Rdum2 iarcv 0 1meg
+* vivo = despues de la ruptura y no muerto; muere si I_arco < 0.3A pasados 10us (no reenciende)
+Bdead 0 dead I = (((time > TR + 10u) && (v(iarcv) < 0.3)) || (v(dead) > 0.5)) ? (1 - v(dead))*1e-2 : -v(dead)*1e-2
+Cdead dead 0 1n IC=0
+Balive alive 0 V = ((time > TR) && (v(dead) < 0.5)) ? 1 : 0
+Rdum3 alive 0 1meg
+* ---- sensor ACS: 120kHz + 2us de retardo; promedio del firmware 5kHz ----
+Bacs acs0 0 V = i(Vsns)
+Racs acs0 acs1 1k
+Cacs acs1 0 1.33n
+Bt1 t1in 0 V = 2*v(acs1)
+Rt1 t1in t1a 50
+T1 t1a 0 t1b 0 Z0=50 TD=2u
+Rt2 t1b 0 50
+Rim t1b im 1k
+Cim im 0 31.8n
+Rvm out vm 1k
+Cvm vm 0 31.8n
+* ---- logica del firmware ----
+Brest rest 0 V = v(vm) / max(v(im), 1)
+Btouch 0 touch I = (((time > 0.1m) && (v(im) > 3)) || (v(touch) > 0.5)) ? (1 - v(touch))*1e-2 : -v(touch)*1e-2
+Ctouch touch 0 1n IC=0
+Btt 0 tt I = v(touch) * 1e-6
+Ctt tt 0 1u IC=0
+Brmin 0 rmin I = (v(touch) < 0.5 || v(tt) < 0.3m) ? (v(rest) - v(rmin))*0.05 : ((v(rest) < v(rmin)) ? (v(rest) - v(rmin))*0.05 : (v(rest) - v(rmin))*2e-4)
+Crmin rmin 0 1u IC=1
+Bkill 0 kill I = (((DETECT > 0.5) && (v(touch) > 0.5) && (v(tt) > 0.5m) && (((v(rest) - v(rmin)) > DRKILL) || (v(vm) > VKILL))) || (v(kill) > 0.5)) ? (1 - v(kill))*1e-2 : -v(kill)*1e-2
+Ckill kill 0 1n IC=0
+Bcb cb 0 V = ((USEQ3 > 0.5) && (v(kill) > 0.5)) ? 1 : 0
+Rdum4 cb 0 1meg
+* PI con anti-windup; antes del toque sigue a DOCV; despues del KILL va a 0
+Be e 0 V = ISET*min(1, v(tt)/TRAMP) - v(im)
+Rdum5 e 0 1meg
+Bxi 0 xi I = (v(kill) > 0.5) ? -v(xi)*1e4 : ((v(touch) < 0.5) ? (((v(vm) < VOCV) ? DOCV : 0) - v(xi))*1e5 : (((v(xi) >= DMAX) && (v(e) > 0)) || ((v(xi) <= 0) && (v(e) < 0)) ? 0 : KI*v(e)))
+Cxi xi 0 1 IC=0.04
+Bu u 0 V = (v(kill) > 0.5) ? 0 : ((v(touch) < 0.5) ? (((v(vm) < VOCV) && (time > 0.1m)) ? DOCV : 0) : max(0, min(DMAX, v(xi) + KP*v(e))))
+Rdum6 u 0 1meg
+Vsaw saw 0 PULSE(0 1 0 {1/FSW - 20n} 20n 0 {1/FSW})
+Bpwm pwm 0 V = 0.5*(1 + tanh((v(u) - v(saw) - 0.002)*400))
+Bpwmn pwmn 0 V = 1 - v(pwm)
+Rdum7 pwm 0 1meg
+Rdum8 pwmn 0 1meg
+* ---- modelos ----
+.model IRFB4227 VDMOS(Vto=4.0 Kp=40 Rd=22m Rs=3m Rg=1.2 Cgdmax=3n Cgdmin=70p A=1 Cgs=4.5n Cjo=1.6n M=0.5 Vj=0.8 Is=5p N=1.1 Rb=5m Tt=150n)
+.model MBR40 D(Is=4e-8 N=1.1 Rs=4m Cjo=2n M=0.5 Vj=0.6 BV=100 Ibv=1m)
+.model DBS D(Is=1e-9 N=1.8 Rs=0.1 Cjo=10p Tt=30n BV=200)
+.model DZ15 D(Is=1e-12 N=1 Rs=5 BV=15 Ibv=10m Cjo=50p)
+.model SWU SW(Ron=17 Roff=1e9 Vt=0.5 Vh=0)
+.model SWD SW(Ron=38 Roff=1e9 Vt=0.5 Vh=0)
+.model DTVS D(Is=1e-12 N=1 Rs=1.5 BV=68 Ibv=1m Cjo=1n)
+.options method=gear reltol=2e-3 abstol=1e-6 vntol=1e-4 itl4=200
+.tran 10n 0.006 0 20n uic
+.control
+set wr_singlescale
+set wr_vecnames
+run
+wrdata D_tope_det_Q3.dat i(Vsns) v(pen) v(out) v(sw) v(dr) v(gq) i(Vq1) i(Vd1) i(Vq3) v(rsc) v(iarcv) v(u) v(im) v(rest) v(rmin) v(touch) v(kill) v(vb) i(Vsup) v(busp2)
+quit
+.endc
+.end

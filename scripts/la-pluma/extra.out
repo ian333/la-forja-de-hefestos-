@@ -1,0 +1,34 @@
+A2_lazo_rapido_sin_tope      Iprom= 40.0 Ipico_toque= 47.4 duty=0.041 Vds_max= 79.0 SWmin= -14.5 kill=nanms I_puente@rupt= 38.1 E_gota=  35.2mJ E_arco= 873.7mJ arco= 1600us P_D1= 28.5W P_pluma=  9.7W P_in=  94.5W I_Q3max= 23.9
+B2_lazo_rapido_tope_0.22     Iprom= 40.0 Ipico_toque= 47.4 duty=0.041 Vds_max= 79.0 SWmin= -14.5 kill=nanms I_puente@rupt= 38.1 E_gota=  35.2mJ E_arco=  70.0mJ arco=  296us P_D1= 28.5W P_pluma=  9.7W P_in=  94.5W I_Q3max= 23.9
+G_pluma_90A_det_Q3           Iprom= 91.4 Ipico_toque=100.8 duty=0.083 Vds_max=102.0 SWmin= -21.8 kill=4.208ms I_puente@rupt= 33.3 E_gota= 150.5mJ E_arco=   0.3mJ arco=    1us P_D1= 81.3W P_pluma= 50.4W P_in= 396.7W I_Q3max= 73.1
+G0_pluma_90A_sin_Q3          Iprom= 91.4 Ipico_toque=100.8 duty=0.083 Vds_max=102.0 SWmin=-1416686.0 kill=4.208ms I_puente@rupt= 69.1 E_gota= 168.2mJ E_arco=  40.2mJ arco=   50us P_D1= 81.3W P_pluma= 50.4W P_in= 396.7W I_Q3max=334028926.0
+
+  traza cruda A2_lazo_rapido_sin_tope  (4.35-6.00 ms)
+      t ms  I_choke  V_pluma R_contacto  I_arco   duty   R_est   R_min  kill
+     4.350    37.95    1.008      26.3m    0.00  0.057   26.7m    9.3m   0.0
+     4.500    16.24   13.333    abierto   14.13  0.308  510.3m   15.4m   0.0
+     4.650    32.75   13.778    abierto   32.67  0.410  394.5m   29.8m   0.0
+     4.800    36.66   13.947    abierto   37.33  0.302  329.5m   39.1m   0.0
+     4.950    32.83   13.947    abierto   33.60  0.320  358.9m   48.1m   0.0
+     5.100    33.42   14.037    abierto   34.37  0.334  361.2m   57.4m   0.0
+     5.250    33.83   14.120    abierto   34.74  0.329  357.9m   66.4m   0.0
+     5.400    33.55   14.189    abierto   34.46  0.331  361.6m   75.0m   0.0
+     5.550    33.56   14.265    abierto   34.50  0.333  363.7m   83.6m   0.0
+     5.700    33.58   14.341    abierto   34.53  0.335  365.1m   91.9m   0.0
+     5.850    33.55   14.415    abierto   34.51  0.336  367.1m  100.0m   0.0
+     6.000    33.53   14.490    abierto   34.50  0.338  369.0m  107.9m   0.0
+
+  traza cruda B2_lazo_rapido_tope_0.22  (4.35-6.00 ms)
+      t ms  I_choke  V_pluma R_contacto  I_arco   duty   R_est   R_min  kill
+     4.350    37.95    1.008      26.3m    0.00  0.057   26.7m    9.3m   0.0
+     4.500    16.24   13.333    abierto   14.13  0.220  510.3m   15.4m   0.0
+     4.650     3.12   13.177    abierto    2.62  0.220 1243.2m   38.3m   0.0
+     4.800    -0.12   30.731    abierto    0.00  0.220 24404.8m  213.9m   0.0
+     4.950     0.02   38.653    abierto    0.00  0.220 37987.6m 1180.6m   0.0
+     5.100     0.04   41.962    abierto    0.00  0.220 41729.0m 2332.9m   0.0
+     5.250    -0.01   43.504    abierto    0.00  0.220 43453.6m 3527.5m   0.0
+     5.400    -0.03   44.100    abierto    0.00  0.220 44137.8m 4720.2m   0.0
+     5.550    -0.03   44.343    abierto    0.00  0.220 44411.8m 5890.6m   0.0
+     5.700    -0.02   44.464    abierto    0.00  0.220 44543.9m 7032.1m   0.0
+     5.850    -0.02   44.532    abierto    0.00  0.220 44617.2m 8142.8m   0.0
+     6.000    -0.02   44.575    abierto    0.00  0.220 44662.8m 9222.3m   0.0

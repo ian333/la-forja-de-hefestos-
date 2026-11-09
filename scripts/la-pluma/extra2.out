@@ -1,0 +1,5 @@
+E_continuo_46A       I= 46.0A Vds_max=  79.4 SWmin= -13.8 P_TVS= 0.45W I_TVS_pico=  7.5A P_snubber=0.33W P_Q1=  9.6W P_D1= 32.4W E_arco=  0.0mJ I_puente@rupt= 43.9 I_Q3max= 23.4 Vbs_max=13.00
+E_sinTVS_46A         I= 46.0A Vds_max=  93.7 SWmin= -16.2 P_TVS= 0.00W I_TVS_pico=  0.0A P_snubber=0.34W P_Q1=  9.4W P_D1= 32.4W E_arco=  0.0mJ I_puente@rupt= 43.9 I_Q3max= 23.5 Vbs_max=13.03
+G_pluma_90A_Q3       I= 91.4A Vds_max= 101.9 SWmin= -21.7 P_TVS= 2.56W I_TVS_pico= 21.0A P_snubber=0.37W P_Q1= 32.0W P_D1= 81.3W E_arco=  0.3mJ I_puente@rupt= 33.3 I_Q3max= 73.1 Vbs_max=15.03
+G0_pluma_90A_sinQ3   I= 91.4A Vds_max= 101.9 SWmin=-1342018.5 P_TVS= 2.56W I_TVS_pico= 21.0A P_snubber=0.37W P_Q1= 32.0W P_D1= 81.3W E_arco= 41.9mJ I_puente@rupt= 69.1 I_Q3max=316259228.0 Vbs_max=15.03
+G_RGOFF68_90A        I= 91.3A Vds_max=  89.1 SWmin= -15.2 P_TVS= 1.87W I_TVS_pico= 12.6A P_snubber=0.28W P_Q1= 37.2W P_D1= 81.2W E_arco=  0.3mJ I_puente@rupt= 33.3 I_Q3max= 73.1 Vbs_max=15.00

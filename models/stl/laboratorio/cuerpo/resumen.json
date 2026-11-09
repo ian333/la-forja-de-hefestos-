@@ -1,0 +1,587 @@
+[
+ {
+  "teja": "tapas-K01",
+  "tipo": "cama",
+  "piezas": 7,
+  "caja": [
+   184.6,
+   119.4,
+   3.5
+  ],
+  "cabe": true,
+  "vol_cm3": 2.7,
+  "extruido_cm3": 2.7,
+  "masa_g": 3,
+  "horas": 0.1,
+  "tris": 876,
+  "soporte_mm2": 40.6,
+  "soporte_pct": 4.6,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 1.3
+ },
+ {
+  "teja": "tapas-K02",
+  "tipo": "cama",
+  "piezas": 11,
+  "caja": [
+   198,
+   119.4,
+   3.5
+  ],
+  "cabe": true,
+  "vol_cm3": 5.3,
+  "extruido_cm3": 5.3,
+  "masa_g": 7,
+  "horas": 0.2,
+  "tris": 1188,
+  "soporte_mm2": 39.4,
+  "soporte_pct": 3.2,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 1.7
+ },
+ {
+  "teja": "tapas-K03",
+  "tipo": "cama",
+  "piezas": 2,
+  "caja": [
+   13.2,
+   77.1,
+   3.5
+  ],
+  "cabe": true,
+  "vol_cm3": 0.7,
+  "extruido_cm3": 0.7,
+  "masa_g": 1,
+  "horas": 0,
+  "tris": 200,
+  "soporte_mm2": 4,
+  "soporte_pct": 3,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 0.3
+ },
+ {
+  "teja": "tapas-K04",
+  "tipo": "cama",
+  "piezas": 6,
+  "caja": [
+   121,
+   57.2,
+   3.5
+  ],
+  "cabe": true,
+  "vol_cm3": 6.8,
+  "extruido_cm3": 6.8,
+  "masa_g": 9,
+  "horas": 0.2,
+  "tris": 600,
+  "soporte_mm2": 18.9,
+  "soporte_pct": 3,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 0.8
+ },
+ {
+  "teja": "tapas-K05",
+  "tipo": "cama",
+  "piezas": 4,
+  "caja": [
+   62.4,
+   48,
+   3.5
+  ],
+  "cabe": true,
+  "vol_cm3": 3.8,
+  "extruido_cm3": 3.8,
+  "masa_g": 5,
+  "horas": 0.1,
+  "tris": 400,
+  "soporte_mm2": 17.7,
+  "soporte_pct": 4,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 0.6
+ },
+ {
+  "teja": "tapas-K06",
+  "tipo": "cama",
+  "piezas": 8,
+  "caja": [
+   158.4,
+   81.8,
+   11.3
+  ],
+  "cabe": true,
+  "vol_cm3": 17.6,
+  "extruido_cm3": 17.4,
+  "masa_g": 22,
+  "horas": 0.6,
+  "tris": 800,
+  "soporte_mm2": 36.6,
+  "soporte_pct": 4.3,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 1.1
+ },
+ {
+  "teja": "tapas-K07",
+  "tipo": "cama",
+  "piezas": 6,
+  "caja": [
+   185.8,
+   111.6,
+   9
+  ],
+  "cabe": true,
+  "vol_cm3": 5.6,
+  "extruido_cm3": 5.6,
+  "masa_g": 7,
+  "horas": 0.2,
+  "tris": 688,
+  "soporte_mm2": 30.6,
+  "soporte_pct": 4.4,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 1
+ },
+ {
+  "teja": "tapas-K08",
+  "tipo": "cama",
+  "piezas": 6,
+  "caja": [
+   126.8,
+   68.5,
+   9
+  ],
+  "cabe": true,
+  "vol_cm3": 6.6,
+  "extruido_cm3": 6.6,
+  "masa_g": 8,
+  "horas": 0.2,
+  "tris": 776,
+  "soporte_mm2": 50.2,
+  "soporte_pct": 5.7,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 1.1
+ },
+ {
+  "teja": "broches",
+  "tipo": "cama",
+  "piezas": 12,
+  "caja": [
+   206.2,
+   53.8,
+   8
+  ],
+  "cabe": true,
+  "vol_cm3": 7,
+  "extruido_cm3": 7,
+  "masa_g": 9,
+  "horas": 0.2,
+  "tris": 880,
+  "soporte_mm2": 0,
+  "soporte_pct": 0,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 1.3
+ },
+ {
+  "teja": "tapa-columna",
+  "tipo": "cama",
+  "piezas": 1,
+  "caja": [
+   110,
+   80,
+   17
+  ],
+  "cabe": true,
+  "vol_cm3": 29.8,
+  "extruido_cm3": 29.8,
+  "masa_g": 38,
+  "horas": 1,
+  "tris": 132,
+  "soporte_mm2": 148.1,
+  "soporte_pct": 10.6,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 0.3
+ },
+ {
+  "teja": "difusor",
+  "tipo": "cama",
+  "piezas": 1,
+  "caja": [
+   96.8,
+   110,
+   25
+  ],
+  "cabe": true,
+  "vol_cm3": 25.1,
+  "extruido_cm3": 25.1,
+  "masa_g": 32,
+  "horas": 0.9,
+  "tris": 124,
+  "soporte_mm2": 2172,
+  "soporte_pct": 6.5,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 0.2
+ },
+ {
+  "teja": "campana",
+  "tipo": "cama",
+  "piezas": 1,
+  "caja": [
+   90,
+   39,
+   32
+  ],
+  "cabe": true,
+  "vol_cm3": 22,
+  "extruido_cm3": 15.4,
+  "masa_g": 20,
+  "horas": 0.5,
+  "tris": 130,
+  "soporte_mm2": 12,
+  "soporte_pct": 3.8,
+  "malla": "0.3",
+  "cortes": "0 sin entrar",
+  "malas": 0,
+  "s": 0.4
+ },
+ {
+  "teja": "base-fi",
+  "caja": [
+   156,
+   156,
+   105
+  ],
+  "cabe": true,
+  "vol_cm3": 224.3,
+  "extruido_cm3": 163.6,
+  "masa_g": 208,
+  "horas": 5.7,
+  "soporte_donde": [
+   "(-140,-20,-40) 48 mm²",
+   "(-140,-40,-40) 48 mm²",
+   "(-140,-60,-40) 48 mm²"
+  ],
+  "tris": 1174,
+  "soporte_mm2": 303.6,
+  "soporte_pct": 3.2,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 7
+ },
+ {
+  "teja": "base-fd",
+  "caja": [
+   150,
+   156,
+   105
+  ],
+  "cabe": true,
+  "vol_cm3": 347,
+  "extruido_cm3": 228.3,
+  "masa_g": 290,
+  "horas": 7.9,
+  "soporte_donde": [
+   "(100,-100,-60) 207 mm²",
+   "(140,-80,-100) 149 mm²",
+   "(120,0,-120) 133 mm²"
+  ],
+  "tris": 3038,
+  "soporte_mm2": 1533.4,
+  "soporte_pct": 4.2,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 12.5
+ },
+ {
+  "teja": "base-ti",
+  "caja": [
+   156,
+   190,
+   105
+  ],
+  "cabe": true,
+  "vol_cm3": 380.5,
+  "extruido_cm3": 240.5,
+  "masa_g": 305,
+  "horas": 8.4,
+  "soporte_donde": [
+   "(-60,200,-80) 450 mm²",
+   "(-120,140,-80) 271 mm²",
+   "(-60,180,-80) 220 mm²"
+  ],
+  "tris": 3116,
+  "soporte_mm2": 3179,
+  "soporte_pct": 3.8,
+  "malla": "0.15",
+  "cortes": "ok (racimos, 0 sin entrar)",
+  "malas": 0,
+  "s": 33.8
+ },
+ {
+  "teja": "base-td",
+  "caja": [
+   150,
+   190,
+   105
+  ],
+  "cabe": true,
+  "vol_cm3": 326.7,
+  "extruido_cm3": 227.8,
+  "masa_g": 289,
+  "horas": 7.9,
+  "soporte_donde": [
+   "(60,200,-80) 450 mm²",
+   "(60,180,-80) 220 mm²",
+   "(60,160,-80) 164 mm²"
+  ],
+  "tris": 2652,
+  "soporte_mm2": 1680.1,
+  "soporte_pct": 4.4,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 7.9
+ },
+ {
+  "teja": "cub-fi",
+  "caja": [
+   136,
+   150,
+   22
+  ],
+  "cabe": true,
+  "vol_cm3": 25.8,
+  "extruido_cm3": 25.8,
+  "masa_g": 33,
+  "horas": 0.9,
+  "soporte_donde": [
+   "(-100,-100,-20) 160 mm²",
+   "(-100,-100,-40) 7 mm²",
+   "(-140,-100,-40) 4 mm²"
+  ],
+  "tris": 1156,
+  "soporte_mm2": 181.6,
+  "soporte_pct": 0.7,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 6
+ },
+ {
+  "teja": "cub-fd",
+  "caja": [
+   170,
+   156,
+   22
+  ],
+  "cabe": true,
+  "vol_cm3": 66.2,
+  "extruido_cm3": 41.1,
+  "masa_g": 52,
+  "horas": 1.4,
+  "soporte_donde": [
+   "(100,-100,-20) 148 mm²",
+   "(120,-100,-20) 28 mm²",
+   "(80,-100,-40) 7 mm²"
+  ],
+  "tris": 240,
+  "soporte_mm2": 189.4,
+  "soporte_pct": 3.3,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 4.9
+ },
+ {
+  "teja": "cub-ti",
+  "caja": [
+   136,
+   190,
+   33
+  ],
+  "cabe": true,
+  "vol_cm3": 205.3,
+  "extruido_cm3": 127.6,
+  "masa_g": 162,
+  "horas": 4.4,
+  "soporte_donde": [
+   "(-80,160,-20) 544 mm²",
+   "(-80,80,-40) 479 mm²",
+   "(-100,100,-20) 432 mm²"
+  ],
+  "tris": 1864,
+  "soporte_mm2": 7698.1,
+  "soporte_pct": 11.5,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 9.4
+ },
+ {
+  "teja": "cub-td",
+  "caja": [
+   170,
+   190,
+   33
+  ],
+  "cabe": true,
+  "vol_cm3": 222.3,
+  "extruido_cm3": 118.9,
+  "masa_g": 151,
+  "horas": 4.1,
+  "soporte_donde": [
+   "(-20,80,-20) 319 mm²",
+   "(40,160,-20) 310 mm²",
+   "(100,100,-20) 266 mm²"
+  ],
+  "tris": 1104,
+  "soporte_mm2": 2631,
+  "soporte_pct": 12.2,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 6.6
+ },
+ {
+  "teja": "ducto-i",
+  "caja": [
+   138,
+   200,
+   10
+  ],
+  "cabe": true,
+  "vol_cm3": 66.6,
+  "extruido_cm3": 66.6,
+  "masa_g": 85,
+  "horas": 2.3,
+  "soporte_donde": [
+   "(-80,100,-20) 8 mm²",
+   "(-80,-100,-20) 8 mm²",
+   "(-140,100,-20) 6 mm²"
+  ],
+  "tris": 292,
+  "soporte_mm2": 45.1,
+  "soporte_pct": 5.5,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 0.7
+ },
+ {
+  "teja": "col-1",
+  "caja": [
+   122,
+   105,
+   240
+  ],
+  "cabe": true,
+  "vol_cm3": 1499.9,
+  "extruido_cm3": 458.7,
+  "masa_g": 583,
+  "horas": 15.9,
+  "soporte_donde": [
+   "(0,160,20) 645 mm²",
+   "(0,240,-40) 589 mm²",
+   "(-20,240,-40) 442 mm²"
+  ],
+  "tris": 2118,
+  "soporte_mm2": 4603,
+  "soporte_pct": 5.3,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 14.6
+ },
+ {
+  "teja": "col-2",
+  "caja": [
+   110,
+   80,
+   217
+  ],
+  "cabe": true,
+  "vol_cm3": 1814.6,
+  "extruido_cm3": 472.8,
+  "masa_g": 600,
+  "horas": 16.4,
+  "soporte_donde": [
+   "(60,180,140) 230 mm²",
+   "(-40,160,220) 104 mm²",
+   "(-20,160,160) 88 mm²"
+  ],
+  "tris": 596,
+  "soporte_mm2": 956.6,
+  "soporte_pct": 8.2,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 13
+ },
+ {
+  "teja": "mordazas",
+  "caja": [
+   104,
+   104,
+   34
+  ],
+  "cabe": true,
+  "vol_cm3": 37.7,
+  "extruido_cm3": 20.5,
+  "masa_g": 26,
+  "horas": 0.7,
+  "soporte_donde": [],
+  "tris": 152,
+  "soporte_mm2": 0,
+  "soporte_pct": 0,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 0.3
+ },
+ {
+  "teja": "ducto-d",
+  "caja": [
+   122,
+   200,
+   10
+  ],
+  "cabe": true,
+  "vol_cm3": 59.5,
+  "extruido_cm3": 59.5,
+  "masa_g": 76,
+  "horas": 2.1,
+  "soporte_donde": [
+   "(60,-100,-20) 11 mm²",
+   "(60,100,-20) 11 mm²",
+   "(80,-100,-20) 8 mm²"
+  ],
+  "tris": 424,
+  "soporte_mm2": 45.1,
+  "soporte_pct": 3.8,
+  "malla": "0.15",
+  "cortes": "ok (lista, 0 sin entrar)",
+  "malas": 0,
+  "s": 1.1
+ }
+]

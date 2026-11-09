@@ -25,6 +25,11 @@ import { ACESFilmicToneMapping } from 'three';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { estudioVientoSupersonico, type VientoSuperResultado } from '../sim/viento'; // Escuela AERO — Estudio Viento
 import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube, TransformControls } from '@react-three/drei';
+import { RoundedBoxGeometry } from 'three-stdlib';   // la misma copia de three que drei (sin «dos instancias»)
+import { ArcoVivoEscena, ArcoVivoHUD, crearArcoSim, type ArcoConfig, type ArcoSim, type ArcoTrazas, type V3 } from './ArcoVivo';   // EL ARCO EN VIVO (orden 2026-11-04-banco-arco-vivo)
+import { PlumaPanel } from './PlumaCircuito';
+import { BrazoVivoEscena, BrazoVivoHUD, crearBrazoSim, piezasBancoBrazo, BRAZO_CFG, type BrazoSim, type BrazoConfig } from './BrazoVivo';   // EL BRAZO VIVO (órdenes 2026-11-05 H + J)   // LA PLUMA REAL: circuito vivo, cableado, temperatura (orden 2026-11-05-la-pluma-circuito-cableado)
+import { BASE, PB, CB, LUGAR, CABLES, CALIBRES, CONECTORES, Z0_BANCO } from './plumaSistema';
 import ShortcutOverlay from '../../components/ShortcutOverlay';
 const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación del ciclo de inyección (chunk aparte)
 const MoldThreePlateSim = lazy(() => import('../sim/MoldThreePlateSim'));  // 3 placas: construcción + doble apertura
@@ -1955,6 +1960,193 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1,
   );
 }
 
+// ── PIEZAS DE REFERENCIA (órdenes 2026-11-04-banco-arco-ensamble y -vivo) ──
+// Lo que NO se diseña aquí pero tiene que verse en su sitio: la fuente de fabricante, el disipador, los
+// capacitores, la soldadora… Medido en B1: un STEP de fabricante DENTRO del rebuild costaba ~33 s POR
+// rebuild (leer, mallar, topología, caras, exportar), aunque no cambiara. Por eso viven FUERA del kernel:
+//   · 'malla'    → malla FMSH teselada UNA vez por scripts/precompute-banco-arco.cjs (servida de public/)
+//   · 'caja'     → w×d×h centrada en (x,y,z); `rad` = cantos redondeados (RoundedBoxGeometry)
+//   · 'cilindro' → radio r, alto h sobre Z, centrado; `lados` = prisma (6 = tuerca hexagonal, 24 = moleteado)
+//   · 'torno'    → perfil [r, z] girado sobre Z (boquilla, carrete, perillas, terminales); cada tramo del
+//                  perfil es su propia banda → los cantos salen NÍTIDOS, como en un sólido torneado
+//   · 'tubo'     → trayectoria [x, y, z] con radio r (cables, cuello de ganso, la bobina en hélice)
+//   · 'placa'    → perfil [x, y] extruido h sobre Z (el brazo de presión del alimentador)
+//   · 'grupo'    → `hijos` en SU marco: un ensamble se arma en sus coordenadas y se coloca entero
+// Se colocan con x/y/z y giro en grados (rx, ry, rz; `orden` de Euler, XYZ por omisión); material PBR por
+// `mat` (la receta de SolidMesh: MATERIAL_PBR + aristas EdgesGeometry 25° en CAD_EDGE). No entran a masa,
+// STEP ni FEA.
+type RefKind = 'malla' | 'caja' | 'cilindro' | 'torno' | 'tubo' | 'placa' | 'grupo';
+type RefMat = 'acero' | 'aluminio' | 'cromo' | 'cobre' | 'laton' | 'plastico' | 'goma' | 'pintura' | 'ceramica' | 'pcb' | 'filamento';
+interface RefPart {
+  id: string; name: string; kind: RefKind;
+  url?: string;                     // 'malla': ruta del .bin (FMSH)
+  w?: number; d?: number; h?: number; r?: number;
+  rad?: number;                     // 'caja': radio de los cantos
+  lados?: number;                   // 'cilindro': número de lados (prisma)
+  perfil?: [number, number][];      // 'torno': [r, z] · 'placa': [x, y]
+  path?: [number, number, number][];// 'tubo'
+  hijos?: RefPart[];                // 'grupo'
+  x: number; y: number; z: number; rx?: number; ry?: number; rz?: number; orden?: THREE.EulerOrder;
+  color: string; opacity?: number; metalness?: number; mat?: RefMat;
+  aristas?: boolean;                // aristas CAD (por omisión: sí, menos en tubos)
+  encima?: boolean;                 // lámina pegada a otra cara (pared, etiqueta): gana el empate de profundidad
+  rayos?: number;                   // opacidad en RAYOS X (cubierta y paredes se vuelven fantasma: se ve el circuito)
+}
+const REF_MAT: Record<RefMat, { metalness: number; roughness: number; clearcoat: number; env: number }> = {
+  acero:     { metalness: 0.92, roughness: 0.34, clearcoat: 0.08, env: 1.25 },
+  aluminio:  { metalness: 0.9,  roughness: 0.38, clearcoat: 0.05, env: 1.2 },
+  cromo:     { metalness: 0.85, roughness: 0.22, clearcoat: 0.3,  env: 1.7 },   // espejo perfecto = negro en estudio oscuro
+  cobre:     { metalness: 0.95, roughness: 0.28, clearcoat: 0.15, env: 1.3 },
+  laton:     { metalness: 0.92, roughness: 0.3,  clearcoat: 0.12, env: 1.3 },
+  plastico:  { metalness: 0.02, roughness: 0.5,  clearcoat: 0.3,  env: 0.9 },
+  goma:      { metalness: 0.0,  roughness: 0.85, clearcoat: 0.0,  env: 0.6 },
+  pintura:   { metalness: 0.15, roughness: 0.42, clearcoat: 0.55, env: 1.0 },
+  ceramica:  { metalness: 0.0,  roughness: 0.3,  clearcoat: 0.6,  env: 0.9 },
+  pcb:       { metalness: 0.1,  roughness: 0.5,  clearcoat: 0.4,  env: 0.9 },
+  filamento: { metalness: 0.0,  roughness: 0.72, clearcoat: 0.0,  env: 0.5 },    // PETG/PLA impreso es MATE: con barniz reflejaba las tiras del estudio como rayas
+};
+const refMeshCache = new Map<string, Promise<PartGeo>>();
+/** FMSH: Uint32[4] = ['FMSH', versión, nV, nI] · Float32 pos[3nV] · Float32 normales[3nV] · Uint32 índices[nI]. */
+function parseFmsh(buf: ArrayBuffer): PartGeo {
+  const h = new Uint32Array(buf, 0, 4);
+  if (h[0] !== 0x48534d46) throw new Error('malla de referencia: formato desconocido (no es FMSH)');
+  const nv = h[2], ni = h[3];
+  let off = 16;
+  const positions = new Float32Array(buf, off, nv * 3); off += nv * 12;
+  const normals = new Float32Array(buf, off, nv * 3); off += nv * 12;
+  return { positions, normals, indices: new Uint32Array(buf, off, ni) };
+}
+function loadRefMesh(url: string): Promise<PartGeo> {
+  let p = refMeshCache.get(url);
+  if (!p) {
+    p = fetch(url).then((r) => { if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`); return r.arrayBuffer(); }).then(parseFmsh);
+    p.catch(() => refMeshCache.delete(url));   // un fallo de red no queda cacheado
+    refMeshCache.set(url, p);
+  }
+  return p;
+}
+/** Torno con cantos nítidos: cada tramo del perfil [r, z] es una banda con su normal (lisa alrededor del eje). */
+function tornoGeo(perfil: [number, number][], seg = 64): THREE.BufferGeometry {
+  const pos: number[] = [], nor: number[] = [], idx: number[] = [];
+  for (let k = 0; k < perfil.length - 1; k++) {
+    const [r0, z0] = perfil[k], [r1, z1] = perfil[k + 1];
+    const dr = r1 - r0, dz = z1 - z0, L = Math.hypot(dr, dz);
+    if (L < 1e-9) continue;
+    const nr = dz / L, nz = -dr / L;   // normal del tramo en el plano (r, z), hacia afuera si el perfil va de abajo a arriba
+    const base = pos.length / 3;
+    for (let i = 0; i <= seg; i++) {
+      const a = (i / seg) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+      pos.push(r0 * c, r0 * s, z0, r1 * c, r1 * s, z1);
+      nor.push(nr * c, nr * s, nz, nr * c, nr * s, nz);
+    }
+    for (let i = 0; i < seg; i++) {
+      const a = base + 2 * i, b = a + 1, c2 = a + 2, d = a + 3;
+      idx.push(a, c2, b, b, c2, d);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setIndex(idx);
+  return g;
+}
+/** Hélice sobre Z (bobinas): radio r, paso p, n vueltas, desde z = 0. */
+function helice(r: number, paso: number, vueltas: number, porVuelta = 28): [number, number, number][] {
+  const out: [number, number, number][] = [];
+  const n = Math.round(vueltas * porVuelta);
+  for (let i = 0; i <= n; i++) { const a = (i / porVuelta) * Math.PI * 2; out.push([r * Math.cos(a), r * Math.sin(a), (i / porVuelta) * paso]); }
+  return out;
+}
+function primRefGeo(r: RefPart): PartGeo {
+  let g: THREE.BufferGeometry;
+  if (r.kind === 'caja') {
+    const w = r.w ?? 10, d = r.d ?? 10, h = r.h ?? 10;
+    g = r.rad ? new RoundedBoxGeometry(w, d, h, 3, Math.min(r.rad, Math.min(w, d, h) / 2 - 0.01)) : new THREE.BoxGeometry(w, d, h);
+  } else if (r.kind === 'cilindro') {
+    g = new THREE.CylinderGeometry(r.r ?? 5, r.r ?? 5, r.h ?? 10, r.lados ?? 48).rotateX(Math.PI / 2);   // eje Y → Z
+    if (r.lados) g = g.toNonIndexed();   // prisma: caras planas (normales por cara)
+    if (r.lados) g.computeVertexNormals();
+  } else if (r.kind === 'torno') {
+    g = tornoGeo(r.perfil ?? [[0, 0], [5, 0], [5, 10], [0, 10]]);
+  } else if (r.kind === 'tubo') {
+    const pts = (r.path ?? [[0, 0, 0], [0, 0, 10]]).map((p) => new THREE.Vector3(p[0], p[1], p[2]));
+    const curva = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    const largo = curva.getLength();
+    g = new THREE.TubeGeometry(curva, Math.min(2400, Math.max(16, Math.round(largo / 2))), r.r ?? 3, 14, false);
+  } else if (r.kind === 'placa') {
+    const s = new THREE.Shape((r.perfil ?? [[0, 0], [10, 0], [10, 10], [0, 10]]).map(([x, y]) => new THREE.Vector2(x, y)));
+    g = new THREE.ExtrudeGeometry(s, { depth: r.h ?? 2, bevelEnabled: false, curveSegments: 16 });
+  } else g = new THREE.BoxGeometry(1, 1, 1);
+  const n = g.getAttribute('position').count;
+  const geo: PartGeo = {
+    positions: new Float32Array(g.getAttribute('position').array),
+    normals: new Float32Array(g.getAttribute('normal').array),
+    indices: g.getIndex() ? new Uint32Array(g.getIndex()!.array) : Uint32Array.from({ length: n }, (_, i) => i),
+  };
+  g.dispose();
+  return geo;
+}
+const refPartMatrix = (r: RefPart) => new THREE.Matrix4().compose(
+  new THREE.Vector3(r.x, r.y, r.z),
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(r.rx ?? 0), THREE.MathUtils.degToRad(r.ry ?? 0), THREE.MathUtils.degToRad(r.rz ?? 0), r.orden ?? 'XYZ')),
+  new THREE.Vector3(1, 1, 1));
+/** Una hoja dibujable del árbol: la pieza, su matriz en el doc y la pieza de arriba (la que oculta la lista). */
+interface RefHoja { r: RefPart; m: THREE.Matrix4; top: string; key: string }
+function aplanarRefs(parts: RefPart[], padre?: THREE.Matrix4, top?: string, pre = ''): RefHoja[] {
+  const out: RefHoja[] = [];
+  for (const r of parts) {
+    const m = padre ? padre.clone().multiply(refPartMatrix(r)) : refPartMatrix(r);
+    const t = top ?? r.id, key = pre + r.id;
+    if (r.kind === 'grupo') out.push(...aplanarRefs(r.hijos ?? [], m, t, key + '/'));
+    else out.push({ r, m, top: t, key });
+  }
+  return out;
+}
+const contarHojas = (r: RefPart): number => r.kind === 'grupo' ? (r.hijos ?? []).reduce((a, h) => a + contarHojas(h), 0) : 1;
+/** Caja en el marco del doc (Z arriba) de una hoja ya cargada. */
+function refPartBox(geo: PartGeo, m: THREE.Matrix4): THREE.Box3 {
+  const p = geo.positions, b = new THREE.Box3(), v = new THREE.Vector3();
+  for (let i = 0; i < p.length; i += 3) b.expandByPoint(v.set(p[i], p[i + 1], p[i + 2]));
+  return b.applyMatrix4(m);
+}
+/** Una pieza de referencia con la receta de calidad del kernel sólido: PBR físico + aristas CAD nítidas. */
+function RefMesh({ geo, r, clip, rayos }: { geo: PartGeo; r: RefPart; clip?: THREE.Plane[] | null; rayos?: boolean }) {
+  const g = useMemo(() => {
+    const b = new THREE.BufferGeometry();
+    b.setAttribute('position', new THREE.BufferAttribute(geo.positions, 3));
+    b.setAttribute('normal', new THREE.BufferAttribute(geo.normals, 3));
+    b.setIndex(new THREE.BufferAttribute(geo.indices, 1));
+    b.computeBoundingSphere();
+    return b;
+  }, [geo]);
+  const conAristas = r.aristas ?? (r.kind !== 'tubo');
+  const aristas = useMemo(() => (conAristas ? new THREE.EdgesGeometry(g, 25) : null), [g, conAristas]);
+  useEffect(() => () => { g.dispose(); aristas?.dispose(); }, [g, aristas]);
+  const m = REF_MAT[r.mat ?? 'pintura'];
+  const op = rayos && r.rayos !== undefined ? r.rayos : (r.opacity ?? 1), transp = op < 1;
+  return (
+    <>
+      {/* sin sombras direccionales: el mapa del CAD está hecho para piezas de 100 mm; en un banco de 1.4 m las caras
+          grandes salían con «acné» a rayas (cazado en la SOMI). El piso conserva su sombra de contacto. */}
+      <mesh geometry={g} renderOrder={transp ? 3 : 0}>
+        <meshPhysicalMaterial color={r.color} metalness={r.metalness ?? m.metalness} roughness={m.roughness}
+          clearcoat={m.clearcoat} clearcoatRoughness={0.35} envMapIntensity={m.env}
+          transparent={transp} opacity={op} depthWrite={!transp} side={THREE.DoubleSide}
+          /* encima: a 2 m de la cámara el buffer de profundidad no separa ~5 mm → la lámina pegada a otra cara
+             (la pared negra del compartimento sobre el gabinete) gana el empate con polygonOffset, como winDepth */
+          polygonOffset={!!r.encima} polygonOffsetFactor={r.encima ? -4 : 0} polygonOffsetUnits={r.encima ? -4 : 0}
+          clippingPlanes={clip ?? undefined} />
+      </mesh>
+      {aristas && (
+        <lineSegments geometry={aristas} renderOrder={transp ? 3 : 1}>
+          <lineBasicMaterial color={CAD_EDGE} transparent opacity={transp ? 0.35 : 0.8} depthWrite={false}
+            polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} clippingPlanes={clip ?? undefined} />
+        </lineSegments>
+      )}
+    </>
+  );
+}
+
 /**
  * ErrorBoundary MINÚSCULO para el HDRI del entorno. Es lo único que separa
  * "se ven menos bonitos los reflejos" de "La Forja no abre": sin él, un fallo
@@ -3113,6 +3305,23 @@ function SketchPlane({ plane }: { plane: SketchPlane3D }) {
 }
 
 /**
+ * PLANO CERCANO DINÁMICO (orden 2026-11-05-campos-reales-banco-v2). Con near fijo de 0.01 mm y far de 20 m, la
+ * precisión del buffer de profundidad a la distancia d es ≈ d²/(near·2²⁴): a 0.5 m (un molde) ~1.5 mm, pero a 1.9 m
+ * (el banco del arco entero) ~21 mm → todo lo que está a menos de 2 cm se PELEA (rayas, piezas de abajo que se cuelan).
+ * near = d/2000 lo deja en ~0.1 mm a cualquier distancia, y a 20 mm de una pieza chica sigue siendo 0.01 mm.
+ */
+function PlanoCercanoDinamico() {
+  const { camera, controls } = useThree() as unknown as { camera: THREE.PerspectiveCamera; controls?: { target?: THREE.Vector3 } };
+  useFrame(() => {
+    const t = controls?.target;
+    const d = t ? camera.position.distanceTo(t) : camera.position.length();
+    const near = Math.min(50, Math.max(0.01, d / 2000));
+    if (Math.abs(near - camera.near) > camera.near * 0.15) { camera.near = near; camera.updateProjectionMatrix(); }
+  });
+  return null;
+}
+
+/**
  * CadViewport — viewport LIMPIO de CAD de precisión (Onshape/Plasticity/Fusion).
  * NO usa el Stage cinematográfico de los labs (ese se queda con su bloom/grade);
  * este es su propio <Canvas> diseñado para LEER geometría, no para wow:
@@ -3353,6 +3562,7 @@ function CadViewport({
         </GizmoHelper>}
 
         {children}
+        <PlanoCercanoDinamico />
 
         {/* PISO de referencia espacial — grid infinito sutil + sombra de contacto
             suave bajo la pieza. Anclan la geometría en el espacio (como Onshape)
@@ -3552,6 +3762,19 @@ interface DocState {
   sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS;
   assembly: AssemblyState; params: Param[]; bindings: Record<string, string>; components: Component[];
   importedStep?: string | null;   // STEP importado (reemplaza la pieza principal)
+  refParts?: RefPart[];           // piezas de referencia (fuera del kernel): fuente, soldadora, capacitores…
+  arco?: ArcoDoc;                 // EL ARCO EN VIVO: dónde está el arco, el detalle y el lazo de la corriente
+  brazo?: BrazoConfig;            // EL BRAZO VIVO: dónde va su base (mm del doc); lo que se mueve lo dibuja <BrazoVivoEscena>
+  vista?: [number, number, number, number, number, number];   // vista al abrir [az, el, r, x, y, z] (doc ya subido)
+  lab?: LabJueces;                // EL LABORATORIO GENERADO: lo que dicen sus jueces (cuerpo B · placa C · alambre A)
+}
+/** El lazo se describe con los ids de los TUBOS de las piezas de referencia (cables, cuello) o con puntos sueltos,
+ *  en el sentido CONVENCIONAL de la corriente; `invertir` cuando el tubo se dibujó al revés. */
+interface ArcoTramo { id?: string; puntos?: V3[]; invertir?: boolean }
+interface ArcoDoc extends ArcoConfig {
+  lazo: ArcoTramo[]; anillos: ArcoTramo[];
+  /** vista al abrir [az, el, r, x, y, z] (doc ya subido): el dock del circuito tapa el cuarto de abajo → el banco va arriba */
+  vista?: [number, number, number, number, number, number];
 }
 const DEFAULT_SKETCH: SketchFeature = {
   id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
@@ -3630,6 +3853,323 @@ function jaboneraDoc(): DocState {
       { id: newId('shell'), type: 'shell', thickness: 2, faces: [TOP_FACE_JABONERA] },
     ],
   };
+}
+
+// ── EL BANCO DEL ARCO (docs/PLAN-MVP-LA-PLUMA.md §11–14; órdenes -ensamble, -vivo y -campos-reales-banco-v2) — el banco
+// MÍNIMO de la impresora de metal. La pieza DISEÑADA (kernel) es la placa de prueba 100×50×3 de acero; lo demás son
+// PIEZAS DE REFERENCIA (mallas de fabricante medidas con el kernel: models/step/banco-arco/LEEME.md). Lo que aún es
+// MARCADOR lo dice su nombre y se reemplaza cuando ian mida. mm, Z arriba, la placa en el origen.
+const BANCO = '/modelos/banco-arco/';
+
+/** Lo que el laboratorio dice de sí mismo: los tres jueces (cuerpo B · placa C · alambre A), sus errores y avisos. */
+function LabJuecesPanel({ j, onCerrar }: { j: LabJueces; onCerrar: () => void }) {
+  const [abierto, setAbierto] = useState<'cuerpo' | 'placa' | 'alambre' | 'contrato' | null>(null);
+  const fila = (k: 'cuerpo' | 'placa' | 'alambre', n: string, quien: string) => {
+    const x = j[k];
+    return (
+      <button key={k} className={`lj-fila ${abierto === k ? 'on' : ''}`} onClick={() => setAbierto((a) => (a === k ? null : k))} data-testid={`lab-juez-${k}`}>
+        <b>{n}</b><span className="lj-q">{quien}</span>
+        <span className={`lj-chip ${x.errores ? 'mal' : 'ok'}`}>{x.errores ? `${x.errores} error${x.errores > 1 ? 'es' : ''}` : '0 errores'}</span>
+        <span className={`lj-chip ${x.avisos ? 'w' : 'ok'}`}>{x.avisos} aviso{x.avisos === 1 ? '' : 's'}</span>
+      </button>
+    );
+  };
+  const lista = abierto && abierto !== 'contrato' ? j[abierto].hallazgos : [];
+  const cambios = j.cambios ?? [], decisiones = j.decisiones ?? [];
+  return (
+    <div className="lj-panel" data-testid="lab-jueces">
+      <style>{`.lj-panel{position:absolute;left:258px;bottom:92px;z-index:7;width:min(560px,calc(100% - 650px));min-width:380px;max-height:46%;overflow:auto;
+        background:rgba(13,18,28,.93);border:1px solid rgba(232,163,61,.35);border-radius:10px;padding:10px 12px;font:12px 'JetBrains Mono',monospace;color:#dfe6ee;box-shadow:0 8px 28px rgba(2,8,18,.45);}
+        .lj-cab{display:flex;align-items:center;gap:8px;margin-bottom:6px;} .lj-cab b{color:#e8a33d;letter-spacing:.06em;} .lj-cab .lj-x{margin-left:auto;background:none;border:0;color:#8a96a6;cursor:pointer;font-size:13px;}
+        .lj-sub{color:#8a96a6;font-size:10.5px;margin-bottom:8px;}
+        .lj-fila{display:flex;align-items:center;gap:8px;width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:7px;padding:6px 8px;margin:3px 0;color:inherit;font:inherit;cursor:pointer;text-align:left;}
+        .lj-fila.on{border-color:rgba(232,163,61,.5);} .lj-fila b{min-width:62px;} .lj-q{color:#8a96a6;flex:1;font-size:10.5px;}
+        .lj-chip{border-radius:9px;padding:1px 7px;font-size:10.5px;} .lj-chip.ok{background:rgba(70,200,120,.15);color:#8fe0a5;} .lj-chip.w{background:rgba(244,210,122,.14);color:#f4d27a;} .lj-chip.mal{background:rgba(255,120,120,.16);color:#ff9a9a;}
+        .lj-h{padding:3px 2px 3px 8px;border-left:2px solid #3a4656;margin:3px 0 3px 6px;font-size:11px;line-height:1.35;} .lj-h.error{border-color:#ff8080;} .lj-h.aviso{border-color:#f4d27a;} .lj-h i{color:#8a96a6;font-style:normal;}
+        @media (max-width:1100px){.lj-panel{left:8px;right:8px;width:auto;min-width:0;}}`}</style>
+      <div className="lj-cab"><b>LABORATORIO · SUS JUECES</b><button className="lj-x" onClick={onCerrar}>✕</button></div>
+      <div className="lj-sub">tres agentes, un contrato · cada pieza sale de un generador y la física la juzga · generado {j.generado.slice(0, 16).replace('T', ' ')}</div>
+      {fila('cuerpo', 'cuerpo', 'tejas, canales, mesa, aire (agente B)')}
+      {fila('placa', 'placa', 'La Pluma soldada, RP2350B, TMC2209 (agente C)')}
+      {fila('alambre', 'alambre', 'NEMA directo, guía, punta, carrete (agente A)')}
+      {(cambios.length > 0 || decisiones.length > 0) && (
+        <button className={`lj-fila ${abierto === 'contrato' ? 'on' : ''}`} onClick={() => setAbierto((a) => (a === 'contrato' ? null : 'contrato'))} data-testid="lab-juez-contrato">
+          <b>contrato</b><span className="lj-q">lo que ellos pidieron y lo que decidí sin ti</span>
+          <span className="lj-chip ok">ronda {j.ronda ?? 1}</span>
+          <span className="lj-chip w">{cambios.length} cambios · {decisiones.length} decisiones</span>
+        </button>
+      )}
+      {abierto === 'contrato' && decisiones.map((d) => <div key={d.id} className="lj-h aviso"><i>{d.id} · {d.tema}</i> {d.decision}. <i>{d.porque}</i></div>)}
+      {abierto === 'contrato' && cambios.map((c) => <div key={c.id} className="lj-h"><i>{c.id} ({c.pidio})</i> {c.que}. <i>{c.porque}</i></div>)}
+      {lista.map((h, i) => <div key={i} className={`lj-h ${h.nivel === 'error' ? 'error' : 'aviso'}`}><i>{h.regla}</i> {h.texto}</div>)}
+    </div>
+  );
+}
+// BANCO v3 (orden 2026-11-05-la-pluma-circuito-cableado) — ian: «ARMA LOS CABLES DEL SISTEMA, PARA QUE NO HAYA ERRORES…
+// CUIDA TEMPERATURA, CUIDA TAMAÑO, REDUCE, ACOMODA LA PLACA DE COMPONENTES, PON UNA PCB DE CONTROL». Todo sale de
+// plumaSistema.ts (UNA fuente de verdad): la base reducida (380 × 280 × 100, −32 % de volumen), la placa de potencia con
+// el lazo Q1–D1–película apretado, la PCB de control (convenciones NOVA OMNI), el choque de 15 µH (18 vueltas), y los 23
+// cables con su ruta, calibre y color (los mismos que revisa el revisor y que salen en la lista de corte).
+function bancoArcoDoc(): DocState {
+  const base = makeDefaultDoc('BANCO DEL ARCO v3 · La Pluma real');
+  type O = Omit<RefPart, 'id' | 'name' | 'kind'>;
+  const ref = (name: string, kind: RefPart['kind'], o: O, id?: string): RefPart => ({ id: id ?? newId('ref'), name, kind, ...o });
+  const grupo = (name: string, o: Partial<O>, hijos: RefPart[], id?: string): RefPart =>
+    ({ id: id ?? newId('ref'), name, kind: 'grupo', x: 0, y: 0, z: 0, color: hijos[0]?.color ?? '#888', ...o, hijos });
+  const AMBAR = '#e8a33d', COBRE = '#b87333', GRAFITO = '#23272e', LATON = '#c9a227';
+  const P = { x: 0, y: 0, z: 0 };
+  const m8 = (x: number, y: number, z: number, rx = 0, ry = 0): RefPart[] => [
+    ref('Tornillo M8 · cabeza', 'cilindro', { r: 6.5, h: 5.5, lados: 6, x, y, z, rx, ry, color: '#9aa0a8', mat: 'acero' }),
+    ref('Tornillo M8 · rondana', 'torno', { x, y, z, rx, ry, perfil: [[4.3, -3.6], [8.5, -3.6], [8.5, -2.8], [4.3, -2.8], [4.3, -3.6]], color: '#b8bec6', mat: 'acero', aristas: false }),
+  ];
+  const borne = (name: string, pos: V3, r: number, color = LATON): RefPart[] => [
+    ref(name, 'cilindro', { r, h: 12, x: pos[0], y: pos[1], z: pos[2] + 4, color, mat: 'laton' }),
+    ref(name + ' · tuerca', 'cilindro', { r: r * 1.75, h: r * 0.8, lados: 6, x: pos[0], y: pos[1], z: pos[2] + 1.5, color, mat: 'laton' }),
+  ];
+  const pinPos = (ref2: string): V3 => { const [c, p] = ref2.split('.'); return CONECTORES.find((x) => x.id === c)!.pines.find((x) => x.id === p)!.pos; };
+
+  // ── LA MESA: loseta + MARCO DE COBRE que muerde los cuatro bordes de la placa (agente 09: retorno simétrico, campo en
+  //    el arco 0.19 → 0.06 mT) + la cinta que lo lleva al borne + (lado del alimentador: el lazo queda chico)
+  const mesa = grupo('Mesa · loseta + marco de cobre (contacto +)', {}, [
+    ref('Loseta cerámica 200×200', 'caja', { w: 200, d: 200, h: 7.6, rad: 1.5, x: 0, y: 0, z: -3.8, color: '#d8ccb4', mat: 'ceramica' }),
+    ref('Marco · barra norte', 'caja', { w: 112, d: 6, h: 3, rad: 0.6, x: 0, y: 25, z: 4.5, color: COBRE, mat: 'cobre' }),
+    ref('Marco · barra sur', 'caja', { w: 112, d: 6, h: 3, rad: 0.6, x: 0, y: -25, z: 4.5, color: COBRE, mat: 'cobre' }),
+    ref('Marco · barra oeste', 'caja', { w: 6, d: 44, h: 3, rad: 0.6, x: -50.5, y: 0, z: 4.5, color: COBRE, mat: 'cobre' }),
+    ref('Marco · barra este', 'caja', { w: 6, d: 44, h: 3, rad: 0.6, x: 50.5, y: 0, z: 4.5, color: COBRE, mat: 'cobre' }),
+    ...[[-40, 25], [0, 25], [40, 25], [-40, -25], [0, -25], [40, -25], [-50.5, 12], [-50.5, -12], [50.5, 12], [50.5, -12]].map(([x, y]) =>
+      ref('Marco · tornillo M4', 'cilindro', { r: 3.2, h: 2.5, lados: 6, x, y, z: 7.2, color: '#9aa0a8', mat: 'acero' })),
+    ref('Cinta del marco (al borne +)', 'tubo', { ...P, r: 2.2, path: [[-53.5, 0, 4.5], [-80, 0, 3], [-104, 0, 1.5]], color: COBRE, mat: 'cobre' }),
+  ]);
+  // ── LA ANTORCHA (sale del alimentador)
+  const antorcha = grupo('Antorcha (del alimentador)', {}, [
+    ref('Boquilla', 'torno', { ...P, perfil: [[6.2, 17], [7.6, 17], [9.6, 31], [9.6, 40], [7.2, 40], [6.2, 31], [6.2, 17]], color: '#c8924a', mat: 'laton' }),
+    ref('Punta de contacto', 'torno', { ...P, perfil: [[0, 14], [1.3, 14], [2.4, 16.5], [2.4, 30], [0, 30]], color: COBRE, mat: 'cobre' }),
+    ref('Alambre 0.8 mm (libre)', 'cilindro', { r: 0.4, h: 5.9, x: 0, y: 0, z: 11.05, color: '#9aa1aa', mat: 'acero', aristas: false }),
+    ref('Difusor', 'torno', { ...P, perfil: [[0, 40], [7.2, 40], [7.2, 44], [8.6, 46], [8.6, 52], [0, 52]], color: '#1b1b1b', mat: 'goma' }),
+    ref('Cuello de ganso', 'tubo', { ...P, r: 7.5, path: [[0, 0, 50], [0, 0, 72], [-3, 0, 92], [-17, 0, 112], [-40, 0, 127], [-62, 0, 133]], color: '#151515', mat: 'goma' }, 'cuello'),
+    grupo('Mango', { x: -62, y: 0, z: 133, ry: -64 }, [
+      ref('Mango', 'torno', { ...P, perfil: [[0, 0], [10, 0], [13.5, 10], [15.5, 40], [16, 105], [15, 148], [12, 164], [8.5, 172], [0, 172]], color: '#1f1f1f', mat: 'plastico' }),
+      ref('Gatillo', 'caja', { w: 9, d: 8, h: 30, rad: 2.5, x: -15.5, y: 0, z: 62, color: '#2a2a2a', mat: 'plastico' }),
+      ref('Bota del cable', 'torno', { ...P, perfil: [[0, 172], [9, 172], [9.5, 185], [7.5, 212], [0, 212]], color: '#121212', mat: 'goma' }),
+    ]),
+    ref('Cable de la antorcha', 'tubo', { ...P, r: 6.5, color: '#151515', mat: 'goma',
+      path: [[-100, 38, 64], [-78, 30, 72], [-62, 12, 100], [-92, -8, 158], [-168, -10, 212], [-230, -5, 228], [-252.6, 0, 225.9]] }, 'cable-antorcha'),
+  ]);
+  const garra = grupo('Garra (impresa)', {}, [
+    ref('Garra · pie', 'caja', { w: 50, d: 40, h: 6, rad: 3, x: 0, y: 118, z: -5, color: AMBAR, mat: 'filamento' }),
+    ...m8(-15, 118, -1.8), ...m8(15, 118, -1.8),
+    ref('Garra · poste', 'caja', { w: 20, d: 20, h: 76, rad: 2, x: 0, y: 118, z: 36, color: AMBAR, mat: 'filamento' }),
+    ref('Garra · brazo', 'caja', { w: 14, d: 94, h: 14, rad: 2, x: 0, y: 65, z: 62, color: AMBAR, mat: 'filamento' }),
+    ref('Garra · anillo', 'torno', { x: 0, y: 0, z: 55, perfil: [[8, 0], [16, 0], [16, 14], [8, 14], [8, 0]], color: AMBAR, mat: 'filamento' }),
+    ref('Garra · tornillo', 'cilindro', { r: 4.2, h: 6, lados: 6, x: 19, y: 0, z: 62, ry: 90, color: '#8d939b', mat: 'acero' }),
+  ]);
+  // ── EL ALIMENTADOR (de la SOMI), atornillado con 4 M8 a su soporte; su terminal − y su motor salen en el arnés
+  const alimentador = grupo('Alimentador (de la SOMI) · 4 × M8', { x: -160, y: 62, z: 64 }, [
+    ref('Placa del alimentador (medir)', 'caja', { w: 130, d: 3, h: 110, rad: 3, x: -10, y: 1.5, z: -12, color: '#3a3d42', mat: 'acero' }),
+    ref('Motor del alimentador (medir V)', 'cilindro', { r: 24, h: 46, x: 0, y: 26, z: -15, rx: 90, color: '#2b2e33', mat: 'pintura' }),
+    ref('Base fundida', 'caja', { w: 92, d: 16, h: 50, rad: 3, x: 0, y: -8, z: -6, color: '#b9bdc2', mat: 'aluminio' }),
+    ref('Guía de entrada', 'torno', { x: -78, y: -24, z: 0, ry: 90, perfil: [[0, 0], [4.5, 0], [5.5, 6], [5.5, 24], [3, 30], [0, 30]], color: '#b9bdc2', mat: 'aluminio' }),
+    ref('Rodillo moleteado', 'cilindro', { r: 15, h: 10, lados: 30, x: 0, y: -24, z: -15, rx: 90, color: '#8a9097', mat: 'acero' }),
+    ref('Tapa del rodillo', 'cilindro', { r: 11, h: 8, lados: 18, x: 0, y: -33, z: -15, rx: 90, color: '#2a2a2a', mat: 'goma' }),
+    ref('Balero (rodillo loco)', 'torno', { x: 0, y: -20, z: 11, rx: 90, perfil: [[4, 0], [11, 0], [11, 8], [4, 8], [4, 0]], color: '#202020', mat: 'goma' }),
+    ref('Brazo de presión', 'placa', { x: 0, y: -28, z: 0, rx: 90, h: 3, color: '#d9dcdf', mat: 'cromo',
+      perfil: [[-30, -12], [-18, -14], [14, -6], [24, 6], [30, 30], [30, 46], [22, 54], [12, 54], [12, 46], [20, 42], [20, 30], [14, 12], [4, 4], [-24, 2]] }),
+    ref('Perilla de tensión', 'cilindro', { r: 10, h: 22, lados: 16, x: -62, y: -34, z: 43.9, ry: -50, color: '#151515', mat: 'goma' }),
+    ref('Varilla de tensión', 'cilindro', { r: 2.4, h: 46, x: -36, y: -34, z: 22, ry: -50, color: '#a7adb5', mat: 'acero' }),
+    ref('Guía de salida', 'torno', { x: 20, y: -24, z: 0, ry: 90, perfil: [[0, 0], [3.5, 0], [3.5, 40], [0, 40]], color: LATON, mat: 'laton' }),
+    ref('Terminal (−) del alimentador', 'cilindro', { r: 4, h: 14, lados: 6, x: 40, y: -10, z: -30, rx: 90, color: LATON, mat: 'laton' }),
+  ]);
+  const soporte = grupo('Soporte del alimentador (impreso) · 4 × M8', {}, [
+    ref('Soporte · pared', 'caja', { w: 150, d: 10, h: 130, rad: 3, x: -170, y: 70, z: 57, color: AMBAR, mat: 'filamento' }),
+    ref('Soporte · pie', 'caja', { w: 150, d: 50, h: 8, rad: 3, x: -170, y: 90, z: -4, color: AMBAR, mat: 'filamento' }),
+    ref('Soporte · cartela', 'caja', { w: 10, d: 44, h: 60, rad: 2, x: -238, y: 92, z: 26, color: AMBAR, mat: 'filamento' }),
+    ref('Soporte · cartela', 'caja', { w: 10, d: 44, h: 60, rad: 2, x: -102, y: 92, z: 26, color: AMBAR, mat: 'filamento' }),
+    ...m8(-220, 64.5, 105, 90), ...m8(-120, 64.5, 105, 90), ...m8(-220, 64.5, 9, 90), ...m8(-120, 64.5, 9, 90),
+  ]);
+  const carrete = grupo('Carrete MICRO-1 · 1 kg (D100) en su portacarrete', {}, [
+    ref('Portacarrete (impreso)', 'caja', { w: 18, d: 18, h: 154, rad: 2, x: -230, y: 150, z: 69, color: AMBAR, mat: 'filamento' }),
+    grupo('Carrete', { x: -230, y: 140, z: 150, rx: 90 }, [
+      ref('Eje', 'torno', { ...P, perfil: [[0, 0], [7.5, 0], [7.5, 54], [0, 54]], color: '#8d939b', mat: 'acero' }),
+      ref('Carrete', 'torno', { ...P, perfil: [[8, 2], [50, 2], [50, 4.5], [26, 4.5], [26, 44.5], [50, 44.5], [50, 47], [8, 47], [8, 2]], color: '#1c1c1c', mat: 'plastico' }),
+      ref('Alambre E71T-GS enrollado', 'torno', { ...P, perfil: [[26, 4.6], [43, 4.6], [43, 44.4], [26, 44.4], [26, 4.6]], color: '#6d737b', mat: 'acero' }),
+      ref('Perilla del carrete', 'torno', { ...P, perfil: [[0, 54], [13, 54], [13, 57], [11, 66], [0, 66]], color: '#b3261e', mat: 'plastico' }),
+    ]),
+    ref('Alambre del carrete al rodillo', 'tubo', { ...P, r: 0.55, color: '#a0a6ae', mat: 'acero', path: [[-230, 100, 107], [-234, 70, 82], [-238, 44, 66], [-238, 38, 64]] }),
+  ]);
+
+  // ── LA BASE v3 (380 × 280 × 100): cubierta −14…−8, piso −108…−104, ventana de acrílico al frente
+  const bx = (BASE.x0 + BASE.x1) / 2, bw = BASE.x1 - BASE.x0, bd = BASE.y1 - BASE.y0;
+  const carcasa = grupo('Base del banco (impresa) · 380×280×100', {}, [
+    ref('Piso', 'caja', { w: bw, d: bd, h: 4, rad: 3, x: bx, y: 0, z: -106, color: GRAFITO, mat: 'filamento' }),
+    // RAYOS X (`rayos`): cubierta y paredes se vuelven fantasma para VER el circuito; el piso y lo de adentro, no
+    ref('Pared trasera', 'caja', { w: bw, d: 4, h: 90, rad: 1.5, x: bx, y: BASE.y1 - 2, z: -59, color: GRAFITO, mat: 'filamento', rayos: 0.1 }),
+    ref('Pared izquierda (entrada de AC, gatillo)', 'caja', { w: 4, d: bd - 8, h: 90, rad: 1.5, x: BASE.x0 + 2, y: 0, z: -59, color: GRAFITO, mat: 'filamento', rayos: 0.1 }),
+    ref('Pared derecha (ventilador, USB)', 'caja', { w: 4, d: bd - 8, h: 90, rad: 1.5, x: BASE.x1 - 2, y: 0, z: -59, color: GRAFITO, mat: 'filamento', rayos: 0.1 }),
+    ref('Frente · franja baja', 'caja', { w: bw, d: 4, h: 16, rad: 1.5, x: bx, y: BASE.y0 + 2, z: -96, color: GRAFITO, mat: 'filamento', rayos: 0.1 }),
+    ref('Frente · franja alta', 'caja', { w: bw, d: 4, h: 16, rad: 1.5, x: bx, y: BASE.y0 + 2, z: -22, color: GRAFITO, mat: 'filamento', rayos: 0.1 }),
+    ref('Ventana de acrílico ahumado', 'caja', { w: bw - 20, d: 3, h: 58, rad: 1, x: bx, y: BASE.y0 + 1.5, z: -59, color: '#1b2430', opacity: 0.2, mat: 'plastico', rayos: 0.06 }),
+    ref('Cubierta', 'caja', { w: bw, d: bd, h: 6, rad: 3, x: bx, y: 0, z: -11, color: '#2a2f37', mat: 'filamento', rayos: 0.08 }),
+    ref('Ribete ámbar', 'caja', { w: bw + 4, d: bd + 4, h: 2.6, rad: 3, x: bx, y: 0, z: -15.6, color: AMBAR, mat: 'filamento', aristas: false, rayos: 0.35 }),
+    ref('Entrada IEC C14 + interruptor + fusible', 'caja', { w: 6, d: 30, h: 24, rad: 1, x: BASE.x0 - 1, y: -100, z: -58, color: '#151515', mat: 'plastico' }),
+    ref('Interruptor (I/O)', 'caja', { w: 4, d: 9, h: 13, rad: 1, x: BASE.x0 - 3, y: -120, z: -58, color: '#c62828', mat: 'plastico' }),
+    ref('GX12 del gatillo', 'torno', { x: BASE.x0, y: -37, z: -60, ry: -90, perfil: [[0, 0], [8, 0], [8, 10], [6, 14], [0, 14]], color: '#9aa0a8', mat: 'acero' }),
+    ref('USB-C del RP2350', 'caja', { w: 3, d: 10, h: 4, rad: 1, x: BASE.x1 + 0.5, y: 60, z: -88, color: '#c0c4ca', mat: 'acero' }),
+    ...[14, 24, 34].map((r) => ref('Rejilla del ventilador', 'torno', { x: BASE.x1 + 0.5, y: -80, z: -62, ry: 90, perfil: [[r - 0.8, 0], [r + 0.8, 0], [r + 0.8, 1.6], [r - 0.8, 1.6], [r - 0.8, 0]], color: '#9aa0a8', mat: 'acero', aristas: false })),
+    grupo('PARO de emergencia (corta fase y neutro)', { x: 100, y: -115, z: -8 }, [
+      ref('Base', 'torno', { ...P, perfil: [[0, 0], [26, 0], [26, 4], [0, 4]], color: '#f2c94c', mat: 'plastico' }),
+      ref('Hongo', 'torno', { ...P, perfil: [[0, 4], [12, 4], [12, 14], [20, 16], [20, 24], [16, 28], [0, 28]], color: '#d32f2f', mat: 'plastico' }),
+    ]),
+  ]);
+
+  // ── LA PLACA DE POTENCIA (150 × 92, FR4 de 2 oz): el lazo Q1–D1–película apretado (≤ 15–20 nH, agente 05)
+  const zP = PB.z;
+  const potencia = grupo('Placa de potencia · Q1 + D1 + bus + shunt', {}, [
+    ref('PCB de potencia (FR4 2 oz)', 'caja', { w: PB.w, d: PB.d, h: 1.6, rad: 1.5, x: PB.x0 + PB.w / 2, y: PB.y0 + PB.d / 2, z: zP - 0.8, color: '#1d4d2c', mat: 'pcb' }),
+    ...[[5, 5], [PB.w - 5, 5], [5, PB.d - 5], [PB.w - 5, PB.d - 5]].map(([dx, dy]) =>
+      ref('Separador M3', 'cilindro', { r: 3, h: 8, lados: 6, x: PB.x0 + dx, y: PB.y0 + dy, z: zP - 5.6, color: LATON, mat: 'laton' })),
+    ref('Disipador 125×35', 'malla', { url: BANCO + 'disipador-125.bin', x: LUGAR.disipador[0], y: LUGAR.disipador[1], z: LUGAR.disipador[2], color: '#9aa3ad', mat: 'aluminio' }),
+    ref('Q1 · IRFB4227', 'malla', { url: BANCO + 'to220.bin', x: LUGAR.Q1[0], y: LUGAR.Q1[1], z: LUGAR.Q1[2], color: '#2a2a2a', mat: 'plastico' }),
+    ref('D1 · Schottky 150–200 V / 40 A', 'malla', { url: BANCO + 'to220.bin', x: LUGAR.D1[0], y: LUGAR.D1[1], z: LUGAR.D1[2], color: '#2a2a2a', mat: 'plastico' }),
+    ref('D2 · salida → bus', 'malla', { url: BANCO + 'to220.bin', x: LUGAR.D2[0], y: LUGAR.D2[1], z: LUGAR.D2[2], color: '#2a2a2a', mat: 'plastico' }),
+    ref('C bus 2200 µF · 1', 'malla', { url: BANCO + 'cap-35.bin', x: LUGAR.bus1[0], y: LUGAR.bus1[1], z: LUGAR.bus1[2], color: '#1d3f8a', mat: 'plastico' }),
+    ref('C bus 2200 µF · 2', 'malla', { url: BANCO + 'cap-35.bin', x: LUGAR.bus2[0], y: LUGAR.bus2[1], z: LUGAR.bus2[2], color: '#1d3f8a', mat: 'plastico' }),
+    ...LUGAR.pelicula.map(([x, y], i) => ref(`C película 10 µF · ${i + 1}`, 'malla', { url: BANCO + 'pelicula-mks4.bin', x: x - 13.75, y, z: zP + 1.9, color: '#c43c3c', mat: 'plastico' })),
+    ref('IR2110 (SOIC-16)', 'caja', { w: 10.3, d: 7.5, h: 2.5, rad: 0.3, x: LUGAR.ir2110[0], y: LUGAR.ir2110[1], z: LUGAR.ir2110[2], color: '#151515', mat: 'plastico' }),
+    ref('Shunt 0.5 mΩ (manganina)', 'caja', { w: 40, d: 12, h: 3, rad: 0.5, x: LUGAR.shunt[0], y: LUGAR.shunt[1], z: LUGAR.shunt[2], color: '#c9a76a', mat: 'laton' }),
+    ref('INA240 (SOIC-8)', 'caja', { w: 5, d: 4, h: 1.5, rad: 0.2, x: LUGAR.ina240[0], y: LUGAR.ina240[1], z: LUGAR.ina240[2], color: '#151515', mat: 'plastico' }),
+    ref('C salida 1 µF (película)', 'caja', { w: 18, d: 8, h: 13, rad: 1, x: LUGAR.cout[0], y: LUGAR.cout[1], z: LUGAR.cout[2] + 2.5, color: '#c43c3c', mat: 'plastico' }),
+    ref('Fusible 40 A (MIDI) en la entrada', 'caja', { w: 30, d: 12, h: 10, rad: 1.5, x: -184, y: -48, z: zP + 5, color: '#1c4fa0', mat: 'plastico' }),
+    ref('Termostato NC 70 °C', 'cilindro', { r: 6, h: 4, x: LUGAR.termostato[0], y: LUGAR.termostato[1], z: LUGAR.termostato[2] - 2, color: '#b8bec6', mat: 'acero' }),
+    // NTC 10 k (GP45/GP46 del RP2350B: con el B hay 8 ADC) — gota de epóxico + par de hilos al plano J_PWR
+    ref('NTC 10 k · disipador (GP45)', 'cilindro', { r: 1.6, h: 3.2, x: LUGAR.termostato[0] + 14, y: LUGAR.termostato[1], z: LUGAR.termostato[2] - 1.6, color: '#2b2b2b', mat: 'plastico', aristas: false }),
+    ref('NTC · hilos', 'tubo', { ...P, r: 0.35, path: [[LUGAR.termostato[0] + 14, LUGAR.termostato[1], LUGAR.termostato[2] - 3], [-132, -84, -80], [-122, -48, zP + 6]], color: '#d8d8d8', mat: 'plastico' }),
+    ref('NTC 10 k · choque (GP46)', 'cilindro', { r: 1.6, h: 3.2, x: LUGAR.choque.x0 + 25, y: LUGAR.choque.y, z: LUGAR.choque.z + LUGAR.choque.r + 1.8, color: '#2b2b2b', mat: 'plastico', aristas: false }),
+    ref('NTC · hilos', 'tubo', { ...P, r: 0.35, path: [[LUGAR.choque.x0 + 25, LUGAR.choque.y, LUGAR.choque.z + LUGAR.choque.r + 3], [-60, -66, -50], [-118, -48, zP + 6]], color: '#d8d8d8', mat: 'plastico' }),
+    ref('J_CTRL (IDC 2×5)', 'caja', { w: 20, d: 9, h: 9, rad: 0.6, x: -120, y: -42, z: zP + 4.5, color: '#151515', mat: 'plastico' }),
+    ref('J_TS', 'caja', { w: 9, d: 5, h: 6, rad: 0.5, x: -173, y: -106, z: zP + 3, color: '#efefef', mat: 'plastico' }),
+    ...borne('Borne BUS+ (M5)', pinPos('PB.BUS+'), 2.5), ...borne('Borne BUS− (M5)', pinPos('PB.BUS-'), 2.5),
+    ...borne('Borne OUT+ (M6)', pinPos('PB.OUT+'), 3), ...borne('Borne OUT− (M6)', pinPos('PB.OUT-'), 3),
+  ]);
+  const ch = LUGAR.choque;
+  const choque = grupo('Choque 15 µH · 18 vueltas cal 10 · Ø60×50', {}, [
+    ref('Devanado', 'tubo', { x: ch.x0, y: ch.y, z: ch.z, ry: 90, r: 1.3, path: helice(ch.r, ch.paso, ch.vueltas, 28), color: COBRE, mat: 'cobre' }),
+    ref('Terminal de entrada (SW)', 'tubo', { ...P, r: 1.3, path: [[ch.x0, ch.y, ch.z - ch.r], [-70, -86, -96], [-90, -88, zP]], color: COBRE, mat: 'cobre' }),
+    ref('Terminal de salida (OUT+)', 'tubo', { ...P, r: 1.3, path: [[ch.x0 + ch.paso * ch.vueltas, ch.y, ch.z - ch.r], [-20, -70, -97], [-60, -52, zP], [-70, -50, zP]], color: COBRE, mat: 'cobre' }),
+  ]);
+  // ── LA PCB DE CONTROL (110 × 75, negra, convenciones NOVA OMNI: RP2350 + buck de 60 V + 3V3 + puente H)
+  const zC = CB.z, c = (x: number, y: number) => ({ x, y });
+  const control = grupo('PCB de control · RP2350 (estilo NOVA OMNI)', {}, [
+    ref('PCB de control (negra)', 'caja', { w: CB.w, d: CB.d, h: 1.6, rad: 1.5, x: CB.x0 + CB.w / 2, y: CB.y0 + CB.d / 2, z: zC - 0.8, color: '#121619', mat: 'pcb' }),
+    ...[[5, 5], [CB.w - 5, 5], [5, CB.d - 5], [CB.w - 5, CB.d - 5]].map(([dx, dy]) =>
+      ref('Separador M3', 'cilindro', { r: 3, h: 9, lados: 6, x: CB.x0 + dx, y: CB.y0 + dy, z: zC - 6.1, color: LATON, mat: 'laton' })),
+    ref('RP2350B (QFN-80)', 'caja', { w: 10, d: 10, h: 0.9, rad: 0.2, ...c(60, 70), z: zC + 0.45, color: '#1a1a1a', mat: 'plastico' }),
+    ref('Flash W25Q128 (SOIC-8)', 'caja', { w: 5, d: 4, h: 1.5, rad: 0.2, ...c(75, 70), z: zC + 0.75, color: '#1a1a1a', mat: 'plastico' }),
+    ref('Cristal 12 MHz', 'caja', { w: 3.2, d: 2.5, h: 0.8, rad: 0.2, ...c(52, 82), z: zC + 0.4, color: '#c0c4ca', mat: 'acero' }),
+    ref('TPS54360 (48 → 12 V)', 'caja', { w: 5, d: 4, h: 1.7, rad: 0.2, ...c(32, 50), z: zC + 0.85, color: '#1a1a1a', mat: 'plastico' }),
+    ref('Inductor 10 µH blindado', 'caja', { w: 12, d: 12, h: 8, rad: 1, ...c(32, 66), z: zC + 4, color: '#2a2a2a', mat: 'goma' }),
+    ref('C entrada 100 V', 'cilindro', { r: 4, h: 9, ...c(44, 62), z: zC + 4.5, color: '#1d3f8a', mat: 'plastico' }),
+    ref('TPS62933 (12 → 3.3 V)', 'caja', { w: 2, d: 2, h: 0.8, rad: 0.1, ...c(48, 50), z: zC + 0.4, color: '#1a1a1a', mat: 'plastico' }),
+    ref('Inductor 4.7 µH', 'caja', { w: 4, d: 4, h: 3, rad: 0.4, ...c(54, 56), z: zC + 1.5, color: '#2a2a2a', mat: 'goma' }),
+    ref('DRV8874 (puente H del motor)', 'caja', { w: 5, d: 4.4, h: 1.2, rad: 0.2, ...c(98, 56), z: zC + 0.6, color: '#1a1a1a', mat: 'plastico' }),
+    ref('J_PWR (IDC 2×5, a la potencia)', 'caja', { w: 20, d: 9, h: 9, rad: 0.6, ...c(24, 96), z: zC + 4.5, color: '#151515', mat: 'plastico' }),
+    ref('J_48 (bornera)', 'caja', { w: 10, d: 8, h: 10, rad: 0.6, ...c(22, 43), z: zC + 5, color: '#2e7d32', mat: 'plastico' }),
+    ref('J_MOT (bornera)', 'caja', { w: 10, d: 8, h: 10, rad: 0.6, ...c(108, 100), z: zC + 5, color: '#2e7d32', mat: 'plastico' }),
+    ...[[118, 41, 'J_FAN'], [61, 102, 'J_GAT'], [81, 102, 'J_PARO'], [41, 102, 'J_RC']].map(([x, y, n]) =>
+      ref(`${n} (JST-XH)`, 'caja', { w: 7.5, d: 5.8, h: 7, rad: 0.5, x: x as number, y: y as number, z: zC + 3.5, color: '#efefef', mat: 'plastico' })),
+    ref('USB-C', 'caja', { w: 7.5, d: 9, h: 3.2, rad: 1, ...c(121, 60), z: zC + 1.6, color: '#c0c4ca', mat: 'acero' }),
+    ref('Zumbador', 'cilindro', { r: 6, h: 9, ...c(100, 82), z: zC + 4.5, color: '#151515', mat: 'plastico' }),
+    ref('LED verde', 'caja', { w: 2, d: 1.2, h: 0.8, ...c(110, 74), z: zC + 0.4, color: '#2bd65a', mat: 'plastico', aristas: false }),
+    ref('LED rojo', 'caja', { w: 2, d: 1.2, h: 0.8, ...c(114, 74), z: zC + 0.4, color: '#e33', mat: 'plastico', aristas: false }),
+  ]);
+  const ventilador = grupo('Ventilador 80 mm (sopla sobre el disipador y el choque)', { x: LUGAR.ventilador[0], y: LUGAR.ventilador[1], z: LUGAR.ventilador[2], ry: -90 }, [
+    ref('Marco', 'torno', { ...P, perfil: [[34, 0], [40, 0], [40, 20], [34, 20], [34, 0]], color: '#262626', mat: 'plastico' }),
+    ref('Cubo', 'torno', { ...P, perfil: [[0, 0], [14, 0], [14, 20], [0, 20]], color: '#303030', mat: 'plastico' }),
+    ...Array.from({ length: 7 }, (_, k) => {
+      const th = (k * 360) / 7, a = (th * Math.PI) / 180;
+      return ref('Aspa', 'caja', { w: 22, d: 10, h: 1.6, rad: 0.5, x: 25 * Math.cos(a), y: 25 * Math.sin(a), z: 10, rz: th, rx: 28, orden: 'ZYX', color: '#2c2c2c', mat: 'plastico' });
+    }),
+  ]);
+  const fuente = ref('Fuente Mean Well LRS-1200-48', 'malla', { url: BANCO + 'lrs-1200.bin', x: -233, y: 72, z: -104, rx: 90, color: '#c3c8ce', mat: 'aluminio' });
+  // ── EL ARNÉS: los 23 cables de plumaSistema.ts, con su ruta, calibre y color; etiqueta termocontráctil en cada punta
+  const arnes = grupo(`Arnés · ${CABLES.length} cables (revisados)`, {}, CABLES.flatMap((cab) => {
+    const cal = CALIBRES[cab.calibre], r = cab.calibre === 'barra-20x3' ? 3.2 : cab.calibre === 'plano-10' ? 1.2 : cal.od / 2;
+    const etiqueta = (a: V3, b: V3): RefPart => {
+      const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(d[0], d[1], d[2]) || 1, k = Math.min(10, l * 0.5) / l;
+      return ref(`${cab.id} · etiqueta`, 'tubo', { ...P, r: r + 0.45, path: [[a[0] + d[0] * k * 0.3, a[1] + d[1] * k * 0.3, a[2] + d[2] * k * 0.3], [a[0] + d[0] * k * 1.3, a[1] + d[1] * k * 1.3, a[2] + d[2] * k * 1.3]], color: '#f2f2f2', mat: 'plastico' });
+    };
+    const ru = cab.ruta, n = ru.length;
+    return [
+      ref(`${cab.id} · ${cab.nombre} (${cal.nombre})`, 'tubo', { ...P, r, path: ru, color: cab.color, mat: cab.calibre === 'barra-20x3' ? 'cobre' : 'goma' }, `cab-${cab.id}`),
+      etiqueta(ru[0], ru[1]), etiqueta(ru[n - 1], ru[n - 2]),
+    ];
+  }));
+  // TODO el banco sube Z0 para que la base PISE el suelo del visor; la placa del kernel sube con planeOffset.
+  const Z0 = Z0_BANCO;
+  const refParts: RefPart[] = [mesa, antorcha, garra, alimentador, soporte, carrete, carcasa, fuente, potencia, choque, control, ventilador, arnes]
+    .map((r) => ({ ...r, z: r.z + Z0 }));
+  // el lazo en el sentido CONVENCIONAL (DCEN): OUT+ → barra → marco → placa → arco (sube) → alambre → antorcha → cable →
+  // alimentador → terminal − → cable − → shunt → OUT−… y la placa de potencia lo cierra
+  const arco: ArcoDoc = {
+    punta: [0, 0, 6],
+    // la burbuja a la DERECHA del banco (fuera de la base: x1 = 135 + R 184) y a media altura: cabe en la vista de abrir
+    detalle: { centro: [350, -70, 230], escala: 16 },
+    vista: [30, 26, 1560, 50, -60, -98],   // el objetivo bajo la cubierta (doc sin subir): el banco queda en la mitad de arriba
+    lazo: [
+      { id: 'cab-C08' },
+      { puntos: [[-104, 0, 1.5], [-80, 0, 3], [-53.5, 0, 4.5], [-20, 0, 3.2], [0, 0, 4.2]] },
+      { puntos: [[0, 0, 4.2], [0, 0, 8.1], [0, 0, 14], [0, 0, 31], [0, 0, 50]] },
+      { id: 'cuello' },
+      { puntos: [[-62, 0, 133], [-252.6, 0, 225.9]] },
+      { id: 'cable-antorcha', invertir: true },
+      { puntos: [[-100, 38, 64], [-112, 40, 60], [-120, 52, 34]] },
+      { id: 'cab-C09', invertir: true },
+      { puntos: [[-72, -66, -92], [-84, -60, -93], [-72, -50, -92]] },
+    ],
+    anillos: [{ id: 'cab-C08' }, { id: 'cab-C09' }, { id: 'cable-antorcha' }, { id: 'cuello' }],
+  };
+  const sube = (p: V3): V3 => [p[0], p[1], p[2] + Z0];
+  arco.punta = sube(arco.punta); arco.detalle.centro = sube(arco.detalle.centro);
+  if (arco.vista) { const [a, e, r, x, y, z] = arco.vista; arco.vista = [a, e, r, x, y, z + Z0]; }
+  arco.lazo = arco.lazo.map((t) => (t.puntos ? { ...t, puntos: t.puntos.map(sube) } : t));
+  arco.anillos = arco.anillos.map((t) => (t.puntos ? { ...t, puntos: t.puntos.map(sube) } : t));
+  return {
+    ...base, name: 'BANCO DEL ARCO v3 · La Pluma real',
+    sketch: { ...DEFAULT_SKETCH, kind: 'rect', width: 100, height: 50, plane: 'xy', planeOffset: Z0, gear: { ...GEAR_DEFAULTS } },
+    ops: [{ id: newId('extrude'), type: 'extrude', depth: 3, symmetric: false }],
+    material: 'steel',
+    refParts,
+    arco,
+  };
+}
+
+/** EL BRAZO VIVO (orden J): mesa + pedestal + electrónica como piezas de referencia; el brazo, sus motores, los reductores
+ *  y el campo B los dibuja <BrazoVivoEscena> (brazoVivo.ts: dinámica + motores DC + cicloidales, probado). Sin sólido del kernel. */
+/** EL LABORATORIO · GENERADO (órdenes 2026-11-05-laboratorio-contrato y 2026-11-06-laboratorio-ronda2): tres agentes, un contrato
+ *  (src/forja/lab/laboratorio-contrato.ts). Nada de esto se teclea aquí: cuerpo.ts (B), placa.ts (C) y alambre.ts (A)
+ *  generan las piezas y sus jueces; scripts/laboratorio/laboratorio-precalculo.cjs los corre UNA vez (el ruteo A* de
+ *  los canales tarda minutos) y deja public/modelos/laboratorio/laboratorio.json. El estudio solo lo lee. */
+interface LabHallazgo { nivel: string; regla: string; texto: string; donde?: string }
+interface LabJuez { errores: number; avisos: number; hallazgos: LabHallazgo[] }
+interface LabCambio { id: string; pidio: string; que: string; porque: string }
+interface LabDecision { id: string; tema: string; decision: string; porque: string }
+interface LabJueces { cuerpo: LabJuez; placa: LabJuez; alambre: LabJuez; generado: string; ronda?: number; cambios?: LabCambio[]; decisiones?: LabDecision[] }
+interface LabDatos { generado: string; piezas: RefPart[]; jueces: Pick<LabJueces, 'cuerpo' | 'placa' | 'alambre'>; ronda?: number; cambios?: LabCambio[]; decisiones?: LabDecision[] }
+const LAB_URL = '/modelos/laboratorio/laboratorio.json';
+const Z0_LAB = 125;   // el piso de la base está en z −125 (contrato): sube para que pise el suelo del visor
+function laboratorioDoc(d: LabDatos): DocState {
+  const nombre = `LABORATORIO v${d.ronda ?? 1} · generado`;
+  const base = makeDefaultDoc(nombre);
+  return {
+    ...base, name: nombre, ops: [],
+    refParts: d.piezas.map((r) => ({ ...r, z: r.z + Z0_LAB })),
+    vista: [32, 20, 1450, -230, 20, 190],   // v2 (base de 340 de fondo, columna a z 360): todo el laboratorio a la derecha del panel de los jueces
+    lab: { ...d.jueces, generado: d.generado, ronda: d.ronda, cambios: d.cambios, decisiones: d.decisiones },
+  };
+}
+
+function brazoVivoDoc(): DocState {
+  const base = makeDefaultDoc('BRAZO VIVO · 3 ejes cicloidales');
+  return { ...base, name: 'BRAZO VIVO · 3 ejes cicloidales', ops: [], refParts: piezasBancoBrazo(BRAZO_CFG) as unknown as RefPart[], brazo: BRAZO_CFG };
 }
 
 function makeExamples(): Array<{ name: string; doc: () => DocState }> {
@@ -4008,6 +4548,54 @@ export default function ForgeBRepStudio() {
   // sólido importado (step.parts u otra fuente open). El texto STEP se guarda en
   // el DocState → se persiste en la biblioteca como cualquier pieza. ──
   const [importedStep, setImportedStep] = useState<string | null>(null);
+  // PIEZAS DE REFERENCIA: viven fuera del kernel (no disparan rebuild). Las mallas se bajan una vez
+  // (refMeshCache) y las primitivas se arman con THREE; refGeos = las que ya están listas para dibujar.
+  const [refParts, setRefParts] = useState<RefPart[]>([]);
+  const [refGeos, setRefGeos] = useState<Array<RefHoja & { geo: PartGeo }>>([]);
+  const refHojas = useMemo(() => aplanarRefs(refParts), [refParts]);
+  // EL ARCO EN VIVO: la física corre en el visor (useFrame); el estado vive en un ref (no re-renderiza el estudio)
+  const [arcoDoc, setArcoDoc] = useState<ArcoDoc | null>(null);
+  const [arcoOn, setArcoOn] = useState(true);
+  const arcoSim = useRef<ArcoSim>(crearArcoSim());
+  const [brazoDoc, setBrazoDoc] = useState<BrazoConfig | null>(null);
+  const [docVista, setDocVista] = useState<DocState['vista'] | null>(null);
+  const [labJueces, setLabJueces] = useState<LabJueces | null>(null);
+  const [brazoOn, setBrazoOn] = useState(true);
+  const brazoSim = useRef<BrazoSim | null>(null);   // perezoso: crearBrazoSim arma las fuentes de B, no en cada render
+  if (!brazoSim.current) brazoSim.current = crearBrazoSim();
+  const arcoTrazas = useMemo<ArcoTrazas | null>(() => {
+    if (!arcoDoc) return null;
+    const resolver = (t: ArcoTramo): V3[] => {
+      let pts: V3[] = t.puntos ?? [];
+      if (t.id) {
+        const h = refHojas.find((x) => x.r.id === t.id && x.r.kind === 'tubo' && x.r.path);
+        if (h) {
+          const curva = new THREE.CatmullRomCurve3(h.r.path!.map((q) => new THREE.Vector3(q[0], q[1], q[2])), false, 'centripetal');
+          pts = curva.getSpacedPoints(Math.max(8, Math.round(curva.getLength() / 6))).map((v) => { v.applyMatrix4(h.m); return [v.x, v.y, v.z] as V3; });
+        }
+      }
+      return t.invertir ? [...pts].reverse() : pts;
+    };
+    return { lazo: arcoDoc.lazo.map(resolver).filter((p) => p.length > 1), anillos: arcoDoc.anillos.map(resolver).filter((p) => p.length > 1) };
+  }, [arcoDoc, refHojas]);
+  const [refErr, setRefErr] = useState<string | null>(null);
+  const [refHidden, setRefHidden] = useState<Set<string>>(() => new Set());   // clic en la lista = ocultar/mostrar
+  const [refRayos, setRefRayos] = useState(true);   // RAYOS X: las piezas con `rayos` (cubierta, paredes) se vuelven fantasma
+  const toggleRef = useCallback((id: string) => setRefHidden((h) => { const n = new Set(h); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
+  useEffect(() => {
+    let vivo = true;
+    setRefHidden(new Set());
+    if (!refHojas.length) { setRefGeos([]); setRefErr(null); return; }
+    Promise.allSettled(refHojas.map((h) => (h.r.kind === 'malla' && h.r.url ? loadRefMesh(h.r.url) : Promise.resolve(primRefGeo(h.r)))))
+      .then((rs) => {
+        if (!vivo) return;
+        const ok: Array<RefHoja & { geo: PartGeo }> = []; const mal: string[] = [];
+        rs.forEach((x, i) => { if (x.status === 'fulfilled') ok.push({ ...refHojas[i], geo: x.value }); else mal.push(`${refHojas[i].r.name}: ${String(x.reason).slice(0, 80)}`); });
+        setRefGeos(ok); setRefErr(mal.length ? mal.join(' · ') : null);
+        if (mal.length) console.warn('piezas de referencia que no cargaron:', mal);
+      });
+    return () => { vivo = false; };
+  }, [refHojas]);
   // LA ENTRADA (orden 2026-09-18-la-entrada): 15 de 20 STEP reales son ENSAMBLES y el molde se hacía sobre el ladrillo
   // fundido, acostado o de cabeza. La DECISIÓN (qué sólido, qué giro) se mide UNA vez por archivo; en cada
   // reconstrucción se reaplica a la importación fresca (como siempre se reimportó). Una pieza ya parada pasa intacta.
@@ -4794,7 +5382,9 @@ export default function ForgeBRepStudio() {
   // ── GUARDAR / CARGAR: serializa TODO el documento y lo restaura ──
   const serializeDoc = useCallback((): DocState => ({
     version: 1, name: docName, sketch, ops, material, assembly, params, bindings, components, importedStep,
-  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep]);
+    ...(refParts.length ? { refParts } : {}),
+    ...(arcoDoc ? { arco: arcoDoc } : {}),
+  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep, refParts, arcoDoc]);
   const loadDoc = useCallback((d: Partial<DocState>) => {
     // IDs ÚNICOS tras cargar: opCounter vive en memoria y se reinicia con la
     // página — sin este bump, los componentes NUEVOS colisionan con los ids
@@ -4815,6 +5405,11 @@ export default function ForgeBRepStudio() {
     setAssembly(d.assembly ?? { ...ASSEMBLY_DEFAULTS });
     setParams(d.params ?? []); setBindings(d.bindings ?? {}); setComponents(d.components ?? []);
     setImportedStep(d.importedStep ?? null);
+    setRefParts(d.refParts ?? []);
+    setArcoDoc(d.arco ?? null); arcoSim.current = crearArcoSim(); setArcoOn(true); setRefRayos(true);
+    setBrazoDoc(d.brazo ?? null); if (d.brazo) { brazoSim.current = crearBrazoSim(); setBrazoOn(true); }
+    setDocVista(d.vista ?? null); setLabJueces(d.lab ?? null);
+    if (d.arco) setCollapsed((c) => ({ ...c, params: true, analysis: true }));   // el banco: lo que se mira es el circuito, no la placa de 3 mm
     setActiveOp(nops[0]?.id ?? null); setActiveComp(null); setRollbackIdx(null);
     if (d.name) setDocName(d.name);
     setHistVer((v) => v + 1);
@@ -4858,7 +5453,7 @@ export default function ForgeBRepStudio() {
       };
     });
   }, [libNames, docName, loadFromLibrary]);   // libNames refresca al guardar/borrar
-  const switcherStarters = useMemo<ProjItem[]>(() => [
+  const switcherStarters = useMemo<ProjItem[]>(() => ([
     // LECCIÓN 1 (v1·6) — el recorrido de la v1 empacado: lienzo VACÍO (la tarjeta
     // guiada de v1·2 es el paso 1-3) y el ciclo E1→E3→💰 es el resto. El final
     // (abrir LA COTIZACIÓN de tu pieza) marca `leccion.completa` en telemetría.
@@ -4874,6 +5469,12 @@ export default function ForgeBRepStudio() {
     { key: 'st-vaso', name: 'EL VASO · ⌀80×20 (botadores)', type: 'molde', meta: 'pared 3 · shell tapa abierta · pin §11.2.5', status: 'plantilla', action: () => loadDoc(vasoDoc()) },
     // PRODUCTO #3 del ciclo — la jabonera del libro: rect + costillas §2.3.2 + bosses §2.3.3.
     { key: 'st-jabonera', name: 'LA JABONERA · 120×80×30', type: 'molde', meta: 'pared 2 · costillas §2.3.2 · bosses §2.3.3', status: 'plantilla', action: () => loadDoc(jaboneraDoc()) },
+    // LA FORJA → METAL (orden 2026-11-04-banco-arco-ensamble): el banco mínimo de la impresora de metal,
+    // con la fuente de fabricante y las piezas reales como referencia (docs/PLAN-MVP-LA-PLUMA.md §11–14).
+    { key: 'st-laboratorio', name: 'LABORATORIO v2 · generado', type: 'robot', meta: 'tres agentes, un contrato (ronda 2): cuerpo impreso con canales y campana de humo (13 tejas + 65 piezas, 0 tornillos) · placa soldada (50 piezas, 0 conectores, 4 termostatos en la cadena de apagado) · módulo del alambre (NEMA directo) · los jueces en 0 errores', status: 'plantilla',
+      action: () => { fetch(LAB_URL).then((r) => { if (!r.ok) throw new Error(`laboratorio.json: ${r.status}`); return r.json(); }).then((d: LabDatos) => loadDoc(laboratorioDoc(d))).catch((e) => setRefErr(String(e))); } },
+    { key: 'st-brazo-vivo', name: 'BRAZO VIVO · 3 ejes cicloidales', type: 'robot', meta: 'dinámica de cuerpo rígido · motores DC + planetaria + cicloidal · control · campo B real con gaussímetro', status: 'plantilla', action: () => loadDoc(brazoVivoDoc()) },
+    { key: 'st-banco-arco', name: 'BANCO DEL ARCO v3 · La Pluma real', type: 'robot', meta: 'circuito vivo (MNA 100 kHz) · 23 cables revisados · placas de potencia y control · temperatura · campos B y E', status: 'plantilla', action: () => loadDoc(bancoArcoDoc()) },
     { key: 'st-percha', name: 'Percha (curso Alwis)', type: 'molde', meta: 'gancho · partición curva', status: 'plantilla', action: cursoInsertar },
     { key: 'st-cicloidal', name: 'Reductor cicloidal 10:1', type: 'mecanismo', meta: 'print-in-place · holgura 0.30', status: 'plantilla', action: () => loadDoc(cycloidalReducerDoc()) },
     // HIGIENE (v1·2): el BANCO DE PRUEBAS — los demos de validación del solver que
@@ -4887,7 +5488,9 @@ export default function ForgeBRepStudio() {
     { key: 'st-red-6-14', name: 'Red RAMIFICADA · Fig 6.14', type: 'molde', section: 'banco', meta: 'sprue → 2 → 4 → 8 gates · Eq 6.1', status: 'banco', action: () => mold.loadFeedDemo('ramificada') },
     { key: 'st-red-6-15', name: 'Red RADIAL · Fig 6.15', type: 'molde', section: 'banco', meta: 'N brazos desde el diafragma', status: 'banco', action: () => mold.loadFeedDemo('radial') },
     { key: 'st-red-6-16', name: 'Red HÍBRIDA · Fig 6.16', type: 'molde', section: 'banco', meta: 'ramificada → 4 clusters radiales = 16 cav', status: 'banco', action: () => mold.loadFeedDemo('hibrida') },
-  ], [mold, loadFlaneraMold, cursoInsertar, loadDoc]);
+  // abrir CUALQUIER plantilla limpia las piezas de referencia del proyecto anterior (los moldes no pasan
+  // por loadDoc); la del banco las vuelve a poner con su propio loadDoc
+  ] as ProjItem[]).map((it) => ({ ...it, action: () => { setRefParts([]); setArcoDoc(null); setBrazoDoc(null); setLabJueces(null); setDocVista(null); it.action(); } })), [mold, loadFlaneraMold, cursoInsertar, loadDoc]);
   // API para arneses: `__forgeBrep.demo('dado')` = abrir el starter por su llave sin
   // adivinar pixeles (los scripts viejos clickeaban botones del ribbon que ya no existen).
   const startersRef = useRef<ProjItem[]>([]);
@@ -5990,21 +6593,43 @@ export default function ForgeBRepStudio() {
     }
     return dims.length ? [{ role: 'insp-cruz', dims }] : [];
   }, [cotaInsp]);
+  const refBoxes = useMemo(() => {
+    const cajas = refGeos.map(({ geo, m }) => refPartBox(geo, m));
+    if (arcoDoc && arcoOn) {   // la burbuja del DETALLE A también se encuadra (si no, la cámara la corta)
+      const c = new THREE.Vector3(...arcoDoc.detalle.centro), R = 12 * arcoDoc.detalle.escala;
+      cajas.push(new THREE.Box3(c.clone().subScalar(R), c.clone().addScalar(R)));
+      // el DOCK del circuito vive abajo (~1/4 de la pantalla): una caja vacía bajo el banco sube el encuadre
+      const u = new THREE.Box3(); for (const b of cajas) u.union(b);
+      const zr = u.min.z - 0.3 * (u.max.z - u.min.z), cx = (u.min.x + u.max.x) / 2, cy = (u.min.y + u.max.y) / 2;
+      cajas.push(new THREE.Box3(new THREE.Vector3(cx, cy, zr), new THREE.Vector3(cx, cy, zr)));
+    }
+    if (brazoDoc && brazoOn) {   // lo que se mueve no está en refParts: el ALCANCE del brazo (~1.2 m) también se encuadra
+      const [X, Y, Z] = brazoDoc.origen;
+      cajas.push(new THREE.Box3(new THREE.Vector3(X - 600, Y - 600, Z), new THREE.Vector3(X + 600, Y + 600, Z + 900)));
+    }
+    return cajas;
+  }, [refGeos, arcoDoc, arcoOn, brazoDoc, brazoOn]);
   const meshBBox = useMemo(() => {
     // fuente: la pieza del doc, o (si el doc está vacío) el MOLDE en vivo — SOLO los
     // componentes VISIBLES (si aíslas el anillo, Encuadrar debe llenar con el anillo).
     const vis = moldParts.filter((p) => !moldHidden[p.role]);
     const buffers: ArrayLike<number>[] = result ? [result.mesh.positions] : (vis.length ? vis : moldParts).map((p) => p.positions);
-    if (!buffers.length) return null;
+    if (!buffers.length && !refBoxes.length) return null;
     let mnx = Infinity, mny = Infinity, mnz = Infinity, mxx = -Infinity, mxy = -Infinity, mxz = -Infinity;
     for (const p of buffers) for (let i = 0; i < p.length; i += 3) {
       mnx = Math.min(mnx, p[i]); mxx = Math.max(mxx, p[i]);
       mny = Math.min(mny, p[i + 1]); mxy = Math.max(mxy, p[i + 1]);
       mnz = Math.min(mnz, p[i + 2]); mxz = Math.max(mxz, p[i + 2]);
     }
+    // las piezas de referencia también se encuadran (y la sección las corta): el banco se ve COMPLETO
+    for (const b of refBoxes) {
+      mnx = Math.min(mnx, b.min.x); mxx = Math.max(mxx, b.max.x);
+      mny = Math.min(mny, b.min.y); mxy = Math.max(mxy, b.max.y);
+      mnz = Math.min(mnz, b.min.z); mxz = Math.max(mxz, b.max.z);
+    }
     if (!Number.isFinite(mnx)) return null;
     return { center: [(mnx + mxx) / 2, (mny + mxy) / 2, (mnz + mxz) / 2], half: [(mxx - mnx) / 2 || 1, (mxy - mny) / 2 || 1, (mxz - mnz) / 2 || 1] };
-  }, [result, moldParts, moldHidden]);
+  }, [result, moldParts, moldHidden, refBoxes]);
 
   // ── ESTUDIO VIENTO: mide el semiángulo δ de la pieza y corre la física real ──
   // δ = atan( (menor span / 2) / (mayor span) ): para la cuña dibujada (cuerda ≫
@@ -6790,6 +7415,31 @@ export default function ForgeBRepStudio() {
         } : null;
       },
       get error() { return opErr; },
+      // piezas de referencia: lo pedido (refParts), lo ya dibujado (refDrawn) y lo que no cargó (refError)
+      get refParts() { return refParts; },
+      get refDrawn() { return refGeos.map(({ r, geo, key }) => ({ id: r.id, key, name: r.name, tris: geo.indices.length / 3 })); },
+      get refHojas() { return refHojas.length; },
+      // EL ARCO EN VIVO: lectura cruda y perillas (para arneses y capturas)
+      get brazo() {
+        const S = brazoSim.current;
+        return brazoDoc && S ? { on: brazoOn, t: S.s.t, q: Array.from(S.s.q), i: Array.from(S.s.i), V: Array.from(S.s.V), fps: S.fps, infoB: S.infoB,
+          sonda: S.sonda, B: S.lectura.mod, porMotor: S.lectura.porMotor.slice(), pegada: S.s.pegada, pasos: S.s.pasos } : null;
+      },
+      get arco() {
+        const S = arcoSim.current, s = S.s;
+        return arcoDoc ? { on: arcoOn, t: s.t, I: s.I, V: s.V, L: s.L, a_mm: s.a * 1e3, q: s.q, gotas: s.gotas, cortos: s.cortos,
+          tamanos: s.tamanos.slice(-10), vuelan: s.vuelan.length, Epunta: S.campo?.Epunta ?? null, fps: S.fps, p: S.p, lenta: S.lenta, pausa: S.pausa,
+          Iref: s.Iref, circuitoOn: S.circuitoOn, lentaEfectiva: S.lentaEfectiva,
+          pluma: S.pluma ? { Iout: S.pluma.Iout, D: S.pluma.D, Vbus: S.pluma.Vbus, lrsCarga: S.pluma.lrsCarga, lrsApagada: S.pluma.lrsApagada, lrsLimitando: S.pluma.lrsLimitando,
+            P: { ...S.pluma.P }, T: { ...S.pluma.T }, IrmsBus: S.pluma.IrmsBus, pasos: S.pluma.pasos } : null } : null;
+      },
+      arcoSet: (p: Record<string, unknown>) => { const S = arcoSim.current; const { lenta, pausa, verE, verB, verFlujo, circuitoOn, ventilador, ...rest } = p as Record<string, never>;
+        if (circuitoOn !== undefined) S.circuitoOn = circuitoOn; if (ventilador !== undefined) S.ventilador = ventilador;
+        S.p = { ...S.p, ...rest }; if (lenta !== undefined) S.lenta = lenta; if (pausa !== undefined) S.pausa = pausa;
+        if (verE !== undefined) S.verE = verE; if (verB !== undefined) S.verB = verB; if (verFlujo !== undefined) S.verFlujo = verFlujo; return true; },
+      arcoVista: (on: boolean) => setArcoOn(on),
+      get refError() { return refErr; },
+      setRefParts,
       get selectedFaceId() { return selectedFaceId; },
       get selectedEdgeId() { return selectedEdgeId; },
       addOp,
@@ -7527,7 +8177,7 @@ export default function ForgeBRepStudio() {
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
   }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct, gbMotion, gbParts, gbBodyGeos, gbHidden, gbColors,
-   vientoResult, vientoShowP, vientoShowTau, vientoShowShock, vientoCalidad, vientoTier, vientoColors]);
+   vientoResult, vientoShowP, vientoShowTau, vientoShowShock, vientoCalidad, vientoTier, vientoColors, refParts, refGeos, refErr, refHojas, arcoDoc, arcoOn, brazoDoc, brazoOn]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -7562,9 +8212,13 @@ export default function ForgeBRepStudio() {
     if (!meshBBox) return;
     const span = 2 * Math.max(meshBBox.half[0], meshBBox.half[1], meshBBox.half[2]);
     if (Math.abs(span - lastFitSpan.current) > lastFitSpan.current * 0.2 + 8) {
-      lastFitSpan.current = span; setView('iso');
+      lastFitSpan.current = span;
+      if (arcoDoc?.vista && arcoOn) orbitTo(...arcoDoc.vista);
+      else if (brazoDoc && brazoOn) orbitTo(35, 22, 2500, brazoDoc.origen[0] + 250, brazoDoc.origen[1], brazoDoc.origen[2] + 300);   // el brazo, no la mesa
+      else if (docVista) orbitTo(...docVista);
+      else setView('iso');
     }
-  }, [meshBBox, setView]);
+  }, [meshBBox, setView, arcoDoc, arcoOn, brazoDoc, brazoOn, docVista, orbitTo]);
 
   // El <canvas> lo crea R3F dentro del viewport; le ponemos data-testid para
   // que Playwright pueda clicar por COORDENADAS del viewport de forma estable.
@@ -7710,7 +8364,7 @@ export default function ForgeBRepStudio() {
       >
         {/* HIGIENE (v1·2): el LIENZO VACÍO guía en vez de gritar "Error". DOM sobre el
             viewport, sin Canvas nuevo. Desaparece con el primer sólido o al bocetar. */}
-        {vacio && !building && !sketchOpen && !moldParts.length && !result && !piezaMalla && (
+        {vacio && !building && !sketchOpen && !moldParts.length && !result && !piezaMalla && !refParts.length && (
           /* X4 · SE MURIÓ EL CUADRADO. ian: «se sigue viendo el cuadrado, no me termina
              de gustar». Tenía razón dos veces: era una caja (fondo + borde + radio) en
              un lienzo que debería estar vacío, y además enseñaba el camino LARGO —
@@ -8111,6 +8765,19 @@ export default function ForgeBRepStudio() {
                 clip={sectionPlanes}
               />
             )}
+            {/* PIEZAS DE REFERENCIA: fuera del kernel, cada una con su giro XYZ, color y opacidad */}
+            {refGeos.filter(({ top }) => !refHidden.has(top)).map(({ r, geo, m, key }) => {
+              const pos = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(); m.decompose(pos, q, sc);
+              return (
+                <group key={key} position={pos} quaternion={q} scale={sc}>
+                  <RefMesh geo={geo} r={r} clip={sectionPlanes} rayos={refRayos} />
+                </group>
+              );
+            })}
+            {/* EL ARCO EN VIVO: la corriente en el lazo, los anillos de B, la luz del arco y el DETALLE A */}
+            {arcoDoc && arcoOn && arcoTrazas && <ArcoVivoEscena sim={arcoSim} cfg={arcoDoc} trazas={arcoTrazas} />}
+            {/* EL BRAZO VIVO: cuerpos, motores, reductores, la carga en los cables y su campo B */}
+            {brazoDoc && brazoOn && <BrazoVivoEscena sim={brazoSim as React.MutableRefObject<BrazoSim>} cfg={brazoDoc} />}
             {/* SECCIÓN: flecha arrastrable (Fusion-style) — mueve el corte con el mouse */}
             {sectionOn && meshBBox && !genResult && !(gbMotion && gbParts) && (
               <SectionGizmo bbox={meshBBox} axis={sectionAxis} flip={sectionFlip}
@@ -8124,6 +8791,11 @@ export default function ForgeBRepStudio() {
             )}
           </group>
         </CadViewport>
+
+        {arcoDoc && arcoOn && <ArcoVivoHUD sim={arcoSim} onCerrar={() => setArcoOn(false)} />}
+        {brazoDoc && brazoOn && <BrazoVivoHUD sim={brazoSim as React.MutableRefObject<BrazoSim>} onCerrar={() => setBrazoOn(false)} />}
+        {labJueces && <LabJuecesPanel j={labJueces} onCerrar={() => setLabJueces(null)} />}
+        {arcoDoc && arcoOn && <PlumaPanel sim={arcoSim} />}
 
         {/* COTAS 3D — las etiquetas van FUERA del Canvas (divs HUD): drei <Text> dentro
             del Canvas es el gotcha conocido, y el texto DOM sale nítido a cualquier zoom.
@@ -9180,6 +9852,40 @@ export default function ForgeBRepStudio() {
                 </button>
               ))}
             </div>
+          </aside>)}
+          {/* PIEZAS DE REFERENCIA en el RIEL (orden 2026-11-05-la-pluma-circuito-cableado): antes flotaba ENCIMA del visor y
+              tapaba la pieza; ian: «hay basura en la UI». Ahora es un panel más del riel, colapsable como los demás. */}
+          {refParts.length > 0 && (
+          <aside className={`fb-refs-panel ${collapsed.refs ? 'collapsed' : ''}`} data-testid="ref-legend">
+            <CollapseHead id="refs" title="Piezas de referencia" collapsed={!!collapsed.refs} onToggle={() => toggleCollapse('refs')}
+              right={<span className="fb-count">{refGeos.length}/{refHojas.length}</span>} />
+            {!collapsed.refs && (
+              <div className="fb-refs-list">
+                {refParts.map((r) => (
+                  <button key={r.id} className={`fb-ref ${refHidden.has(r.id) ? 'off' : ''}`} onClick={() => toggleRef(r.id)}
+                    title={refHidden.has(r.id) ? 'clic: mostrar' : 'clic: ocultar'} data-testid={`ref-${r.id}`}>
+                    <i style={{ background: r.color }} />{r.name}{r.kind === 'grupo' ? <em> · {contarHojas(r)}</em> : null}
+                  </button>
+                ))}
+                {refHojas.some((h) => h.r.rayos !== undefined) && (
+                  <button className={`fb-ref fb-ref-vivo ${refRayos ? '' : 'off'}`} onClick={() => setRefRayos((o) => !o)} data-testid="ref-rayos">
+                    <i style={{ background: '#9fd8ff' }} />{refRayos ? 'rayos X: cubierta y paredes fantasma' : 'rayos X: apagado (base cerrada)'}
+                  </button>
+                )}
+                {brazoDoc && (
+                  <button className={`fb-ref fb-ref-vivo ${brazoOn ? '' : 'off'}`} onClick={() => setBrazoOn((o) => !o)} data-testid="ref-brazo-vivo">
+                    <i style={{ background: '#4fd6ff' }} />{brazoOn ? 'brazo en vivo: prendido' : 'brazo en vivo: apagado'}
+                  </button>
+                )}
+                {arcoDoc && (
+                  <button className={`fb-ref fb-ref-vivo ${arcoOn ? '' : 'off'}`} onClick={() => setArcoOn((o) => !o)} data-testid="ref-arco-vivo">
+                    <i style={{ background: '#4fd6ff' }} />{arcoOn ? 'simulación en vivo: prendida' : 'simulación en vivo: apagada'}
+                  </button>
+                )}
+                <div className="fb-refs-pie">{result ? 'sólido de la Forja: la placa de prueba · ' : ''}las piezas de referencia no entran a masa ni STEP · clic = ocultar (ver adentro)</div>
+                {refErr && <div className="fb-refs-err">no cargó: {refErr}</div>}
+              </div>
+            )}
           </aside>)}
           {/* X5 · MUERE LA BARRA LATERAL. ian: «esa barra lateral rompe con todo». Medido
               en producción: 230 px = 14.4 % del ancho, permanente, Y AUN ASÍ solo cabía el
@@ -11689,6 +12395,17 @@ const CSS = `
 .fb-fea-legend{position:absolute;left:50%;transform:translateX(-50%);bottom:84px;width:284px;z-index:7;pointer-events:none;
   background:rgba(13,18,28,0.82);border:1px solid ${GOLD}44;border-radius:12px;padding:9px 11px;
   backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+.fb-refs-panel{font:11px/1.35 'JetBrains Mono',ui-monospace,monospace;color:#cfd8e3;}
+.fb-refs-list{overflow:auto;padding:0 6px 6px;display:flex;flex-direction:column;gap:1px;}
+.fb-ref{all:unset;cursor:pointer;display:flex;align-items:center;gap:7px;padding:3px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fb-ref:hover{background:rgba(159,179,200,0.10);}
+.fb-ref i{flex:0 0 10px;height:10px;border-radius:2px;border:1px solid rgba(255,255,255,0.25);}
+.fb-ref.off{opacity:.38;text-decoration:line-through;}
+.fb-ref em{font-style:normal;color:#6f8196;}
+.fb-ref-vivo{margin-top:4px;color:#9fe7ff;}
+.fb-refs-pie{margin-top:5px;padding:5px 5px 0;border-top:1px solid rgba(159,179,200,0.14);color:#8193a8;font-size:10px;white-space:normal;}
+.fb-refs-err{padding:5px 10px 7px;color:#ff8a80;font-size:10px;}
+
 .fb-fea-amp{margin-top:7px;padding-top:7px;border-top:1px solid rgba(159,179,200,0.14);
   font-size:10.5px;color:#aeb9c7;text-align:center;line-height:1.4;}
 .fb-fea-amp b{color:${GOLD};font-weight:700;}
@@ -11825,6 +12542,13 @@ const CSS = `
 .fb-collapse-head{cursor:grab;}
 .fb-collapse-head:active{cursor:grabbing;}
 .fb-rail>aside.fb-features{flex:1 1 auto;min-height:180px;overflow:auto;}
+/* (orden 2026-11-05-la-pluma-circuito-cableado) Documento COLAPSADO no se estira: era un panel vacío de toda la altura
+   del riel. Y el riel termina ARRIBA de la HISTORIA (34 + 42 px): «HISTORIA» se encimaba sobre «CARAS». */
+.fb-rail>aside.fb-features.collapsed{flex:0 0 auto;min-height:0;}
+.fb-rail{bottom:82px;}
+/* la cinta completa mide 44 + 89 px: el riel empezaba en 106 y la cinta TAPABA el primer panel (cazado en el banco v3) */
+.fb-root:not(.fb-ribbon-min) .fb-rail{top:138px;}
+.fb-rail>aside.fb-refs-panel{flex:0 1 auto;min-height:0;overflow:auto;padding:8px 10px;}
 .fb-rail>aside.fb-params{flex:0 1 auto;overflow:auto;}
 /* La lista de componentes del MOLDE no anida su propio scroll: crece y el panel
    (docked, flex) hace UN solo scroll → nada de triple barra amontonada. */

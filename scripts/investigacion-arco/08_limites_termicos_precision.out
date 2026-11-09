@@ -1,0 +1,422 @@
+08 · LIMITES TERMICOS Y DE PRECISION · E71T-GS 0.030" sin gas a 40-60 A · La Forja 2026-11-05
+numpy 2.4.4
+==============================================================================================================
+A. EL ALAMBRE REAL: Truper MICRO-1 E71T-GS 0.030" (fichas de alambres equivalentes)
+==============================================================================================================
+  diametro real 0.030" = 0.762 mm (el canon usa 0.800); area geometrica 0.456 mm2 (0.8 mm: 0.503)
+  masa lineal (McMaster 450 ft/lb) = 3.307 g/m ; macizo de ese diametro = 3.580 g/m
+  eficiencia 0.75: metal depositado = 0.316 mm3 por mm de alambre  (= 69 % del area geometrica)
+  eficiencia 0.80: metal depositado = 0.337 mm3 por mm de alambre  (= 74 % del area geometrica)
+  eficiencia 0.82: metal depositado = 0.345 mm3 por mm de alambre  (= 76 % del area geometrica)
+  -> se usa 0.337 mm3/mm. El canon (TS) usa 0.503 mm2: sobreestima el metal x1.49
+
+  fichas  (P = V*I, q_neto = 0.8 P, J = q_neto / caudal de metal = calor a la pieza por mm3 depositado)
+  fuente                                   I A     V wfs m/min  Qm mm3/s   kg/h    P W  J J/mm3
+  Lincoln NR-211-MP 0.030in (E71T-11)       30  13.5      1.27      7.22   0.20    405     44.9
+  Lincoln NR-211-MP 0.030in (E71T-11)       60  14.0      2.54     13.38   0.38    840     50.2
+  Blue Demon 0.030in (E71T-GS)              50  15.0      2.03     11.41   0.32    750     52.6
+  Blue Demon 0.030in (E71T-GS)             100  16.0      5.71     32.10   0.91   1600     39.9
+  Blue Demon 0.030in (E71T-GS)             150  17.0      9.53     53.50   1.51   2550     38.1
+  Lincoln NR-211-MP EU 0.9mm                30  14.0      1.25     10.04   0.28    420     33.5
+  Lincoln NR-211-MP EU 0.9mm                90  16.0      2.30     18.47   0.52   1440     62.4
+  Lincoln NR-211-MP EU 0.9mm               120  16.5      2.80     22.49   0.64   1980     70.4
+  (J del metal solo: fundir 10.3 J/mm3; gota a 2100-2400 C: 14.0-15.9 J/mm3; ver B)
+
+  LEY DEL OPERADOR I ~ v_f^n  (Joule puro en el stickout -> n = 0.5)
+    Lincoln 0.030 30->60 A     n =  1.00
+    Blue Demon 50->100 A       n =  0.67
+    Blue Demon 100->150 A      n =  0.79
+    Lincoln 0.9 30->90 A       n =  1.80
+    Lincoln 0.9 90->120 A      n =  1.46
+  ajuste de quemada (0.030", 30-60 A): v_f = 0.0417 m/min por A  (n = 1)
+
+  Fraccion de la fusion que pone el Joule del stickout (adiabatico, K = 1.483e16 A2s/m4, funda de A_s, +15 % por el fundente)
+  caso                                L mm   I A v_f m/min | A_s=0.25   0.28   0.32 mm2
+  ficha 30 A (CTWD 1/2")                13    30      1.27 |      52%    41%    32%
+  ficha 60 A (CTWD 1/2")                13    60      2.54 |     104%    83%    63%
+  40 A, stickout 13                     13    40      1.67 |      70%    56%    43%
+  40 A, stickout 25                     25    40      1.67 |     135%   108%    82%
+  stickout para fundir TODO por Joule (A_s = 0.28 mm2):
+    I =  40.0 A rms, v_f = 1.67 m/min -> L =  23.2 mm
+    I =  50.0 A rms, v_f = 2.09 m/min -> L =  18.6 mm
+    I =  60.0 A rms, v_f = 2.50 m/min -> L =  15.5 mm
+    I =  45.3 A rms, v_f = 3.00 m/min -> L =  32.6 mm
+  CANON: campanazo 40 A + 30 A AC (I_rms 45.3 A) a 3 m/min; las fichas dan 1.89 m/min a esa corriente (x1.59)
+         con el metal real: 3 m/min -> 16.9 mm3/s -> 41 gotas/s de r=0.46 (el TS reporta 75)
+==============================================================================================================
+B. CALOR POR GOTA Y POR MM  (eta = 0.80; V de fichas; gota r = 0.46 mm = 0.408 mm3 = 3.20 mg)
+==============================================================================================================
+  gota: V = 0.4077 mm3, masa 3.20 mg; entalpia propia a 2100 C = 5.71 J, a 2400 C = 6.50 J
+  gota globular CC 60 A (r 1.63): V = 18.1 mm3 = 44 gotas chicas
+
+   I A   wfs Qm mm3/s  kg/h     V   P W q_neto  J/mm3 gotas/s J/gota en gota t_forma ms
+    40  1.67     9.38  0.26  14.5   580    464   49.5    23.0   20.2    6.10       43.5
+    50  2.09    11.72  0.33  15.0   750    600   51.2    28.7   20.9    6.10       34.8
+    60  2.50    14.06  0.40  15.5   930    744   52.9    34.5   21.6    6.10       29.0
+  (sensibilidad V = 14 + 10 V/mm * L de ian con L = 0.3 mm: 17 V -> q_neto x1.17 a 40 A)
+
+  calor por mm de avance (J/mm) = q_neto / v
+  I A        2.8      5.0     10.0     16.0     32.0     40.0   mm/s
+   40      165.7     92.8     46.4     29.0     14.5     11.6
+   50      214.3    120.0     60.0     37.5     18.8     15.0
+   60      265.7    148.8     74.4     46.5     23.2     18.6
+==============================================================================================================
+C. ROSENTHAL EN LA PLACA DE 3 MM  (k = 30.0 W/mK, alfa = 5.88 mm2/s, isoterma 1490 C; base adiabatica = loseta)
+==============================================================================================================
+  espesor relativo de Adams tau = d*sqrt(rho c (Tc-T0) v / q), Tc = 550 C: grueso > 0.9, delgado < 0.6
+   I A   q W  v mm/s   tau |   ancho/largo mm  prof mm   (punto, placa 3mm) |        grueso |  delgado (linea) |  t8/5 s grueso/delgado
+    40   464     2.8  0.38 |    2.92 /   3.26     1.55                      |  2.56 /  2.70 |   1.72 /   1.98 |      0.72 /      4.39
+    40   464     5.0  0.51 |    2.32 /   2.66     1.19                      |  2.24 /  2.50 |   0.96 /   1.10 |      0.40 /      1.38
+    40   464    10.0  0.72 |    1.84 /   2.28     0.92                      |  1.84 /  2.28 |   0.48 /   0.54 |      0.20 /      0.34
+    40   464    20.0  1.02 |    1.44 /   2.08     0.72                      |  1.44 /  2.08 |   0.24 /   0.26 |      0.10 /      0.09
+    40   464    40.0  1.44 |    1.08 /   1.94     0.54                      |  1.08 /  1.94 |   0.12 /   0.12 |      0.05 /      0.02
+    50   600     2.8  0.34 |    3.76 /   4.50     2.22                      |  3.12 /  3.36 |   2.80 /   3.56 |      0.93 /      7.34
+    50   600     5.0  0.45 |    2.84 /   3.46     1.48                      |  2.72 /  3.12 |   1.56 /   1.98 |      0.52 /      2.30
+    50   600    10.0  0.63 |    2.20 /   2.88     1.10                      |  2.16 /  2.84 |   0.76 /   0.98 |      0.26 /      0.58
+    50   600    20.0  0.90 |    1.68 /   2.60     0.84                      |  1.68 /  2.60 |   0.36 /   0.48 |      0.13 /      0.14
+    50   600    40.0  1.27 |    1.24 /   2.44     0.63                      |  1.24 /  2.44 |   0.16 /   0.24 |      0.06 /      0.04
+    60   744     2.8  0.30 |    4.64 /   6.20     3.00                      |  3.68 /  4.06 |   4.00 /   5.60 |      1.15 /     11.29
+    60   744     5.0  0.40 |    3.36 /   4.38     1.82                      |  3.16 /  3.74 |   2.24 /   3.14 |      0.64 /      3.54
+    60   744    10.0  0.57 |    2.52 /   3.52     1.28                      |  2.52 /  3.42 |   1.12 /   1.56 |      0.32 /      0.88
+    60   744    20.0  0.81 |    1.92 /   3.16     0.96                      |  1.92 /  3.16 |   0.56 /   0.78 |      0.16 /      0.22
+    60   744    40.0  1.14 |    1.40 /   2.98     0.71                      |  1.40 /  2.98 |   0.28 /   0.38 |      0.08 /      0.06
+
+  potencia a la pieza para que el charco en placa 3 mm mida 1.2 mm de ancho (= mancha de una gota):
+    v =    4 mm/s -> q <=   193 W   (a 40 A hay 464 W)
+    v =   10 mm/s -> q <=   251 W   (a 40 A hay 464 W)
+    v =   20 mm/s -> q <=   344 W   (a 40 A hay 464 W)
+    v =   40 mm/s -> q <=   542 W   (a 40 A hay 464 W)
+==============================================================================================================
+D. ROSENTHAL EN LA PARED DELGADA (linea movil en el borde de la pared de espesor w; sin perdidas laterales)
+==============================================================================================================
+  largo del charco sobre la pared / profundidad de fusion bajo la superficie (mm). Liquido mas largo que ~pi*w = pared que se escurre
+   w mm   q W | v= 2.8 | v= 8.0 | v=16.0 | v=32.0 | v=64.0   mm/s
+    1.2   464 |  53.5/ 8.5 |  18.7/ 3.0 |   9.3/ 1.5 |   4.7/ 0.7 |   2.3/ 0.4
+    1.2   600 |   >80/11.2 |  31.0/ 3.9 |  15.5/ 2.0 |   7.7/ 1.0 |   3.9/ 0.5
+    1.2   744 |   >80/12.0 |  47.4/ 4.9 |  23.7/ 2.4 |  11.8/ 1.2 |   5.9/ 0.6
+    3.5   464 |   6.4/ 2.2 |   2.2/ 0.8 |   1.1/ 0.4 |   0.5/ 0.2 |   0.3/ 0.1
+    3.5   600 |  10.8/ 3.2 |   3.8/ 1.1 |   1.9/ 0.6 |   0.9/ 0.3 |   0.5/ 0.1
+    3.5   744 |  16.5/ 4.2 |   5.8/ 1.5 |   2.9/ 0.7 |   1.4/ 0.4 |   0.7/ 0.2
+
+  potencia maxima para que el charco en pared de 1.2 mm sea <= 3.8 mm de largo (pi*w):
+    v =    4 mm/s -> q <=   146 W
+    v =    8 mm/s -> q <=   206 W
+    v =   16 mm/s -> q <=   293 W
+    v =   32 mm/s -> q <=   418 W
+    v =   64 mm/s -> q <=   594 W
+==============================================================================================================
+E. EL PUNTO DE GOTA: el arco quieto mientras se forma una gota (radio fundido al terminar)
+==============================================================================================================
+  placa gruesa: T = q/(2 pi k r) erfc(r / 2 sqrt(a t)) ;  borde de pared w: T = q/(2 pi k w) E1(r^2 / 4 a t)
+   I A   q W t_forma ms | radio fundido placa mm | pared 1.2: radio mm
+    40   464       43.5 |                   0.63 |                0.63
+    50   600       34.8 |                   0.66 |                0.64
+    60   744       29.0 |                   0.67 |                0.64
+  -> UNA gota sola funde una mancha de ~1.3 mm en placa y en pared (en 30-45 ms el calor viaja sqrt(a t) ~ 0.5 mm,
+     menos que la media pared): el punto de gota SI es posible localmente. Lo que lo rompe es la SUMA de gotas (seccion D y G).
+==============================================================================================================
+F. LA PLACA DE PRUEBA 100x50x3 mm SOBRE LA LOSETA (concentrada; eps 0.7, h 10 W/m2K, loseta ~10 W/m2K)
+==============================================================================================================
+  masa 118 g; area que irradia 59 cm2; conductancia a la loseta 0.05 W/K
+   40 A ( 464 W) arco continuo: 200 C en  22.2 s, 400 C en  53.3 s, 600 C en  97.0 s; estacionario   852 C
+   50 A ( 600 W) arco continuo: 200 C en  17.1 s, 400 C en  40.4 s, 600 C en  71.0 s; estacionario   937 C
+   60 A ( 744 W) arco continuo: 200 C en  13.7 s, 400 C en  32.2 s, 600 C en  55.5 s; estacionario  1012 C
+  potencia que la placa sola tira a 250 C:  40.2 W  -> ciclo de arco a 40 A <=  8.7 %
+  potencia que la placa sola tira a 400 C:  87.1 W  -> ciclo de arco a 40 A <= 18.8 %
+==============================================================================================================
+G. PARED 50x50 POR DIFERENCIAS FINITAS (2D x-z, espesor fuera del plano; placa 100x50x3 abajo; k(T), c(T) con latente, liquido k x3 (Marangoni), radiacion eps 0.7; capa nueva nace a 2100 C; tope 2700 C; espera = hasta que la cara de arriba baje de T_obj; la geometria NO se escurre: charcos largos = pared que en la realidad se cae)
+==============================================================================================================
+--- G1 gota  w1.2 h0.5 40A loseta      T<=400   (v = 15.63 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 10.0 h_conv 10.0; dt 1.51 ms; 151 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.06        25 /      25      0.5       1.0      0.25         0.00 /    0.00      52   2479
+       2    0.12        97 /      74      0.5       3.0      0.75         0.25 /    0.25      77   2700
+       3    0.19       247 /     123      1.0       5.0      1.00         0.50 /    0.50     102   2700
+       5    0.34       326 /     204      1.5       8.0      1.25         1.00 /    0.75     147   2700
+      10    0.90       383 /     332      5.5      14.0      1.50         1.25 /    1.25     237   2700
+      20    2.98       387 /     375     11.5      16.0      1.50         1.25 /    1.25     306   2700
+      30    5.97       387 /     380     15.5      16.0      1.50         1.25 /    1.25     285   2700
+      40    9.32       381 /     376     17.5      16.0      1.50         1.25 /    1.25     249   2700
+      50   12.77       394 /     389     17.5      16.0      1.50         1.25 /    1.25     219   2700
+      60   16.28       380 /     377     17.5      16.0      1.50         1.25 /    1.25     194   2700
+      75   21.83       380 /     377     19.5      16.0      1.50         1.25 /    1.25     162   2700
+      90   27.50       384 /     381     19.5      16.0      1.50         1.25 /    1.25     137   2700
+      99   30.91       386 /     383     19.5      16.0      1.50         1.25 /    1.25     125   2700
+     100   30.96       386 /     383      0.0      16.0      1.50         1.25 /    1.25     125   2700
+    TOTAL: 100 capas = 50.0 mm de alto, 3000 mm3 (23.5 g) en 31.0 min (arco 5.3 min = 17 %); promedio 1.61 mm3/s = 46 g/h; energia recortada en 2700 C = 0.5 % del arco; ok
+    espera entre capas: min 0 s, mediana 18 s, max 20 s; charco mediano 16.0 mm; refusion mediana 1.25 mm, peor columna 0.25 mm
+--- G2 gota  w1.2 h0.5 40A disipador   T<=400   (v = 15.63 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 3000.0 h_conv 10.0; dt 1.51 ms; 147 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.06        25 /      25      0.5       1.0      0.25         0.00 /    0.00      42   2479
+       2    0.12        91 /      57      0.5       2.0      0.50         0.00 /    0.00      48   2700
+       3    0.19       223 /      76      1.0       5.0      1.00         0.50 /    0.50      48   2700
+       5    0.34       218 /      86      1.5       8.0      1.25         0.75 /    0.75      46   2700
+      10    0.78       299 /     142      2.5      11.0      1.25         1.00 /    1.00      41   2700
+      20    2.10       331 /     268      5.5      13.0      1.25         1.00 /    1.00      35   2700
+      30    3.88       394 /     364      9.5      15.0      1.50         1.25 /    1.25      31   2700
+      40    6.07       395 /     378     11.5      16.0      1.50         1.25 /    1.25      30   2700
+      50    8.58       396 /     385     13.5      16.0      1.50         1.25 /    1.25      29   2700
+      60   11.40       397 /     390     15.5      16.0      1.50         1.25 /    1.25      28   2700
+      75   16.01       393 /     388     15.5      16.0      1.50         1.25 /    1.25      27   2700
+      90   21.05       381 /     376     17.5      16.0      1.50         1.25 /    1.25      27   2700
+      99   24.16       391 /     387     17.5      16.0      1.50         1.25 /    1.25      27   2700
+     100   24.21       392 /     388      0.0      16.0      1.50         1.25 /    1.25      27   2700
+    TOTAL: 100 capas = 50.0 mm de alto, 3000 mm3 (23.5 g) en 24.2 min (arco 5.3 min = 22 %); promedio 2.07 mm3/s = 58 g/h; energia recortada en 2700 C = 0.5 % del arco; ok
+    espera entre capas: min 0 s, mediana 14 s, max 18 s; charco mediano 16.0 mm; refusion mediana 1.25 mm, peor columna 0.00 mm
+--- G3 gota  w1.2 h0.5 40A disip+aire  T<=400   (v = 15.63 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 3000.0 h_conv 80.0; dt 1.51 ms; 145 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.06        25 /      25      0.5       1.0      0.25         0.00 /    0.00      42   2478
+       2    0.12        91 /      56      0.5       2.0      0.50         0.00 /    0.00      47   2700
+       3    0.19       180 /      73      0.5       5.0      1.00         0.50 /    0.50      50   2700
+       5    0.33       221 /      87      1.5       7.0      1.25         0.75 /    0.75      45   2700
+      10    0.78       276 /     130      2.5      11.0      1.25         1.00 /    1.00      40   2700
+      20    2.03       286 /     222      5.5      12.0      1.25         1.00 /    1.00      33   2700
+      30    3.58       317 /     289      7.5      13.0      1.25         1.12 /    1.00      31   2700
+      40    5.36       376 /     352      7.5      14.0      1.50         1.25 /    1.25      29   2700
+      50    7.28       399 /     374      9.5      15.0      1.50         1.25 /    1.25      28   2700
+      60    9.39       347 /     331      9.5      14.0      1.25         1.25 /    1.25      27   2700
+      75   12.57       364 /     348      9.5      15.0      1.25         1.25 /    1.25      26   2700
+      90   15.74       371 /     355      9.5      15.0      1.50         1.25 /    1.25      26   2700
+      99   17.65       372 /     357      9.5      15.0      1.50         1.25 /    1.25      26   2700
+     100   17.70       373 /     357      0.0      15.0      1.50         1.25 /    1.25      26   2700
+    TOTAL: 100 capas = 50.0 mm de alto, 3000 mm3 (23.5 g) en 17.7 min (arco 5.3 min = 30 %); promedio 2.82 mm3/s = 80 g/h; energia recortada en 2700 C = 0.4 % del arco; ok
+    espera entre capas: min 0 s, mediana 10 s, max 10 s; charco mediano 14.0 mm; refusion mediana 1.25 mm, peor columna 0.00 mm
+--- G4 gota  w1.2 h0.5 40A disip+aire  T<=250   (v = 15.63 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 3000.0 h_conv 80.0; dt 1.51 ms; 145 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.06        25 /      25      0.5       1.0      0.25         0.00 /    0.00      42   2478
+       2    0.12        91 /      56      0.5       2.0      0.50         0.00 /    0.00      47   2700
+       3    0.19       180 /      73      1.0       5.0      1.00         0.50 /    0.50      47   2700
+       5    0.34       220 /      85      1.5       7.0      1.25         0.75 /    0.75      45   2700
+      10    0.85       136 /      79      3.5      11.0      1.25         1.00 /    1.00      37   2700
+      20    2.37       175 /     138      7.5      12.0      1.25         1.00 /    1.00      31   2700
+      30    4.35       218 /     197      9.5      12.0      1.25         1.00 /    1.00      29   2700
+      40    6.70       224 /     210     11.5      13.0      1.25         1.00 /    1.00      28   2700
+      50    9.25       212 /     203     11.5      13.0      1.25         1.00 /    1.00      27   2700
+      60   12.03       230 /     221     13.5      13.0      1.25         1.00 /    1.00      27   2700
+      75   16.21       245 /     236     13.5      13.0      1.25         1.00 /    1.00      26   2700
+      90   20.45       249 /     240     15.5      13.0      1.25         1.25 /    1.00      26   2700
+      99   23.06       221 /     215     13.5      13.0      1.25         1.00 /    1.00      26   2700
+     100   23.11       245 /     237      0.0      13.0      1.25         1.00 /    1.00      26   2700
+    TOTAL: 100 capas = 50.0 mm de alto, 3000 mm3 (23.5 g) en 23.1 min (arco 5.3 min = 23 %); promedio 2.16 mm3/s = 61 g/h; energia recortada en 2700 C = 0.4 % del arco; ok
+    espera entre capas: min 0 s, mediana 14 s, max 16 s; charco mediano 13.0 mm; refusion mediana 1.00 mm, peor columna 0.00 mm
+--- G5 gota  w1.2 h0.5 40A loseta  SIN espera   (v = 15.63 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 10.0 h_conv 10.0; dt 1.51 ms; 26 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.05        25 /      25      0.0       1.0      0.25         0.00 /    0.00      52   2479
+       2    0.11      2381 /     137      0.0       3.0      0.75         0.25 /    0.25      77   2700
+       3    0.16      2700 /     244      0.0       5.0      1.00         0.50 /    0.50     100   2700
+       5    0.27      2700 /     472      0.0       8.0      1.25         1.00 /    0.75     143   2700
+      10    0.53      2700 /    1045      0.0      21.0      1.50         1.50 /    1.25     229   2700
+      12    0.64      2700 /    1203      0.0      26.0      1.75         1.50 /    1.25     257   2700
+      13    0.69      2700 /    1265      0.0      26.0      1.75         1.75 /    1.25     269   2700
+    TOTAL: 13 capas = 6.5 mm de alto, 390 mm3 (3.1 g) en 0.7 min (arco 0.7 min = 100 %); promedio 9.37 mm3/s = 265 g/h; energia recortada en 2700 C = 2.3 % del arco; se detiene antes de la capa 14: la capa anterior sigue en 1317 C de promedio (pared blanda)
+    espera entre capas: min 0 s, mediana 0 s, max 0 s; charco mediano 12.0 mm; refusion mediana 1.25 mm, peor columna 0.25 mm
+--- G6 gota  w1.2 h0.25 40A disipador  T<=400   (v = 31.25 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 3000.0 h_conv 10.0; dt 1.51 ms; 7 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.03        25 /      25      0.2       1.0      0.25         0.00 /    0.00      35   1730
+       2    0.07        96 /      47      0.5       2.0      0.25         0.00 /    0.00      41   2223
+       3    0.10        79 /      56      0.5       3.0      0.25         0.00 /    0.00      44   2347
+       5    0.17       174 /      72      0.5       5.0      0.25         0.25 /    0.25      48   2671
+      10    0.38       242 /      96      1.0       7.0      0.25         0.50 /    0.50      45   2629
+      19    0.83       367 /     211      1.5       7.0      0.25         0.50 /    0.50      41   2643
+      20    0.85       390 /     235      0.0       8.0      0.25         0.50 /    0.50      41   2656
+    TOTAL: 20 capas = 5.0 mm de alto, 300 mm3 (2.4 g) en 0.9 min (arco 0.5 min = 62 %); promedio 5.85 mm3/s = 165 g/h; energia recortada en 2700 C = 0.0 % del arco; ok
+    espera entre capas: min 0 s, mediana 1 s, max 2 s; charco mediano 7.0 mm; refusion mediana 0.50 mm, peor columna 0.00 mm
+--- C1 cont. w3.5 h1.0 40A loseta      T<=400   (v = 2.68 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 10.0 h_conv 10.0; dt 5.12 ms; 86 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.32        25 /      25      0.5       1.0      1.00         0.00 /    0.00     165   2233
+       2    0.72       349 /     243      5.5       3.0      1.00         0.00 /    0.00     281   2372
+       3    1.53       398 /     358     29.5       4.0      1.50         0.50 /    0.50     349   2385
+       5    3.78       394 /     387     51.5       7.0      2.00         1.00 /    1.00     381   2585
+      10    9.46       396 /     391     46.5       9.0      2.00         1.50 /    1.50     380   2664
+      20   20.16       386 /     381     46.5       9.0      2.00         1.50 /    1.50     343   2669
+      30   31.18       399 /     392     51.5       9.0      2.00         1.50 /    1.50     296   2668
+      40   42.88       387 /     381     51.5       9.0      2.00         1.50 /    1.50     254   2668
+      49   53.40       393 /     387     51.5       9.0      2.00         1.50 /    1.50     226   2668
+      50   53.71       393 /     387      0.0       9.0      2.00         1.50 /    1.50     223   2669
+    TOTAL: 50 capas = 50.0 mm de alto, 8750 mm3 (68.7 g) en 53.7 min (arco 15.6 min = 29 %); promedio 2.71 mm3/s = 77 g/h; energia recortada en 2700 C = 0.0 % del arco; ok
+    espera entre capas: min 0 s, mediana 52 s, max 52 s; charco mediano 9.0 mm; refusion mediana 1.50 mm, peor columna 0.00 mm
+--- C2 cont. w3.5 h1.0 40A disipador   T<=400   (v = 2.68 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 3000.0 h_conv 10.0; dt 5.12 ms; 84 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.32        25 /      25      0.5       1.0      1.00         0.00 /    0.00      53   2233
+       2    0.65       224 /      74      1.0       3.0      1.00         0.00 /    0.00      52   2295
+       3    0.98       305 /      81      1.5       3.0      1.00         0.00 /    0.00      50   2356
+       5    1.71       268 /      87      3.5       5.0      1.50         0.50 /    0.50      45   2471
+      10    3.82       320 /     137      7.5       6.0      1.50         1.00 /    1.00      42   2593
+      20    9.05       372 /     278     15.5       8.0      1.50         1.50 /    1.00      38   2629
+      30   15.61       381 /     340     23.5       8.0      2.00         1.50 /    1.50      34   2643
+      40   23.37       397 /     374     31.5       9.0      2.00         1.50 /    1.50      32   2653
+      49   31.39       382 /     367     36.5       9.0      2.00         1.50 /    1.50      31   2656
+      50   31.71       386 /     372      0.0       9.0      2.00         1.50 /    1.50      30   2657
+    TOTAL: 50 capas = 50.0 mm de alto, 8750 mm3 (68.7 g) en 31.7 min (arco 15.6 min = 49 %); promedio 4.60 mm3/s = 130 g/h; energia recortada en 2700 C = 0.0 % del arco; ok
+    espera entre capas: min 0 s, mediana 20 s, max 36 s; charco mediano 8.0 mm; refusion mediana 1.50 mm, peor columna 0.00 mm
+--- C3 cont. w3.5 h1.0 40A disip+aire  T<=400   (v = 2.68 mm/s, Qm = 9.38 mm3/s, q_neto 464 W = metal a 2100 C 116 W + arco a la superficie 348 W; h_bot 3000.0 h_conv 80.0; dt 5.12 ms; 84 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.32        25 /      25      0.5       1.0      1.00         0.00 /    0.00      52   2232
+       2    0.65       220 /      72      1.0       3.0      1.00         0.00 /    0.00      51   2280
+       3    0.98       297 /      79      1.5       3.0      1.00         0.00 /    0.00      49   2346
+       5    1.71       271 /      85      3.5       4.0      1.50         0.50 /    0.50      44   2462
+      10    3.75       282 /     121      7.5       6.0      1.50         1.00 /    1.00      40   2575
+      20    8.75       351 /     248     13.5       7.0      1.50         1.00 /    1.00      36   2606
+      30   14.48       367 /     307     17.5       8.0      2.00         1.50 /    1.00      33   2619
+      40   20.70       378 /     334     19.5       8.0      2.00         1.50 /    1.50      31   2625
+      49   26.49       398 /     355     21.5       8.0      2.00         1.50 /    1.50      29   2629
+      50   26.81       374 /     339      0.0       8.0      2.00         1.50 /    1.50      28   2629
+    TOTAL: 50 capas = 50.0 mm de alto, 8750 mm3 (68.7 g) en 26.8 min (arco 15.6 min = 58 %); promedio 5.44 mm3/s = 154 g/h; energia recortada en 2700 C = 0.0 % del arco; ok
+    espera entre capas: min 0 s, mediana 16 s, max 22 s; charco mediano 7.0 mm; refusion mediana 1.50 mm, peor columna 0.00 mm
+--- C4 cont. w4.0 h1.0 60A disip+aire  T<=400   (v = 3.52 mm/s, Qm = 14.06 mm3/s, q_neto 744 W = metal a 2100 C 173 W + arco a la superficie 571 W; h_bot 3000.0 h_conv 80.0; dt 5.12 ms; 63 s de CPU)
+    capa   t min T entre max/medio C espera s charco mm fusion mm refunde mediana/min mm T placa   Tmax
+       1    0.25        25 /      25      0.5       2.0      1.00         0.00 /    0.00      69   2428
+       2    0.50       317 /     105      1.0       3.0      1.00         0.00 /    0.00      66   2678
+       3    0.78       360 /     111      2.5       5.0      1.50         0.50 /    0.50      57   2700
+       5    1.35       385 /     124      3.5       7.0      1.50         1.00 /    1.00      55   2700
+      10    3.13       362 /     174      9.5       9.0      2.00         1.50 /    1.50      44   2700
+      20    7.62       357 /     285     15.5      11.0      2.00         1.50 /    1.50      39   2700
+      30   13.04       390 /     349     19.5      12.0      2.00         2.00 /    2.00      35   2700
+      40   19.13       379 /     354     23.5      12.0      2.00         2.00 /    2.00      32   2700
+      49   24.92       378 /     357     25.5      12.0      2.00         2.00 /    2.00      30   2700
+      50   25.15       379 /     359      0.0      12.0      2.00         2.00 /    2.00      30   2700
+    TOTAL: 50 capas = 50.0 mm de alto, 10000 mm3 (78.5 g) en 25.2 min (arco 11.9 min = 47 %); promedio 6.63 mm3/s = 187 g/h; energia recortada en 2700 C = 0.2 % del arco; ok
+    espera entre capas: min 0 s, mediana 18 s, max 26 s; charco mediano 12.0 mm; refusion mediana 2.00 mm, peor columna 0.00 mm
+==============================================================================================================
+H. GEOMETRIA: seccion por pasada A = Qm / v; pared de ancho w -> capa h = A / w; ondulacion lateral ~ (0.13-0.30) h
+==============================================================================================================
+  40 A, Qm = 9.38 mm3/s
+   v mm/s  A mm2 | h si w=1.2 h si w=2.5 h si w=3.5 | gotas por mm paso entre gotas mm
+      2.0   4.69 |       3.91       1.88       1.34 |        11.50                0.09
+      2.8   3.35 |       2.79       1.34       0.96 |         8.21                0.12
+      4.0   2.34 |       1.95       0.94       0.67 |         5.75                0.17
+      8.0   1.17 |       0.98       0.47       0.33 |         2.87                0.35
+     16.0   0.59 |       0.49       0.23       0.17 |         1.44                0.70
+     32.0   0.29 |       0.24       0.12       0.08 |         0.72                1.39
+     40.0   0.23 |       0.20       0.09       0.07 |         0.57                1.74
+
+  referencia medida (Prado-Cerqueira 2018, CMT, ER70S-6 0.8 mm, 2.5 m/min, 6.67 mm/s): A = 3.14 mm2 -> pared 3.1-3.8 mm, capa 0.90-1.02 mm (A/(w h) = 0.99-0.92)
+
+  RESOLUCION (lo que pone cada limite)
+  modo                                   gota mm   pared min mm   capa mm   ondulacion por lado um
+  gota r=0.46 (campanazo) en placa          0.92        1.2-1.4  0.25-0.5         32 -  150
+  gota r=0.46 en pared, arco continuo       0.92 2.5-4 (charco)   0.5-1.0         65 -  300
+  cortocircuito / charco 40-60 A            0.92          3-4.5   0.8-1.2        104 -  360
+  globular CC 60 A r=1.63                   3.26         >= 4-5   1.5-2.0        195 -  600
+  cuantizacion de volumen: 1 gota chica = 0.408 mm3 = 0.68 mm de pared de 1.2x0.5; 1 gota globular = 18.1 mm3
+  altura por el voltaje del arco (10 V/mm de ian, ruido 0.3 V): +-30 um por lectura; tamano de gota con oido: +-1.5 um (canon)
+  apuntar la gota (canon, apuntar2): 80-90 um a 0.5 mm, sin arc blow modelado
+==============================================================================================================
+I. TASA DE DEPOSITO Y TIEMPOS DE CONSTRUCCION
+==============================================================================================================
+  tasa con el arco prendido (fichas, eficiencia 0.80):
+     40 A:  9.38 mm3/s =  33.8 cm3/h = 0.265 kg/h  (J = 49 J/mm3 a la pieza)
+     50 A: 11.72 mm3/s =  42.2 cm3/h = 0.331 kg/h  (J = 51 J/mm3 a la pieza)
+     60 A: 14.06 mm3/s =  50.6 cm3/h = 0.397 kg/h  (J = 53 J/mm3 a la pieza)
+
+  modelo concentrado por rebanadas: a la altura z la cima tolera P(z) con R(z) = z/(k A), k = 35; placa 100x50x3; eps 0.7;
+  los costados de la pieza irradian a la temperatura de la placa (pesimista para paredes; ver G para la pared real)
+  pieza                                    V mm3     g         montaje T_obj P_perm W  ciclo t 40 A min t 60 A min
+  cubo 20 mm macizo                         8000  62.8          loseta   250       36     8%      174.1      186.1
+  cubo 20 mm macizo                         8000  62.8          loseta   400       68    15%       86.6       92.6
+  cubo 20 mm macizo                         8000  62.8       disipador   250      152    33%       24.7       25.1
+  cubo 20 mm macizo                         8000  62.8       disipador   400      253    55%       17.1       15.9
+  cubo 20 mm macizo                         8000  62.8  disipador+aire   250      152    33%       24.6       25.0
+  cubo 20 mm macizo                         8000  62.8  disipador+aire   400      254    55%       17.1       15.9
+  engrane m1.5 z16 cara 6 (barreno 6)       2545  20.0          loseta   250       40     9%       52.0       55.6
+  engrane m1.5 z16 cara 6 (barreno 6)       2545  20.0          loseta   400       83    18%       24.6       26.3
+  engrane m1.5 z16 cara 6 (barreno 6)       2545  20.0       disipador   250      482   100%        4.5        3.4
+  engrane m1.5 z16 cara 6 (barreno 6)       2545  20.0       disipador   400      804   100%        4.5        3.0
+  engrane m1.5 z16 cara 6 (barreno 6)       2545  20.0  disipador+aire   250      485   100%        4.5        3.4
+  engrane m1.5 z16 cara 6 (barreno 6)       2545  20.0  disipador+aire   400      808   100%        4.5        3.0
+  pared 50x50x1.2 (concentrado)             3000  23.5          loseta   250        8     2%      190.1      203.2
+  pared 50x50x1.2 (concentrado)             3000  23.5          loseta   400       13     3%      111.4      119.1
+  pared 50x50x1.2 (concentrado)             3000  23.5       disipador   250       10     2%      131.7      140.7
+  pared 50x50x1.2 (concentrado)             3000  23.5       disipador   400       16     3%       79.1       84.5
+  pared 50x50x1.2 (concentrado)             3000  23.5  disipador+aire   250       10     2%      131.7      140.7
+  pared 50x50x1.2 (concentrado)             3000  23.5  disipador+aire   400       16     3%       79.0       84.5
+  pared 50x50x3.5 (concentrado)             8750  68.7          loseta   250       18     4%      292.5      312.6
+  pared 50x50x3.5 (concentrado)             8750  68.7          loseta   400       31     7%      163.6      174.9
+  pared 50x50x3.5 (concentrado)             8750  68.7       disipador   250       28     6%      133.4      142.3
+  pared 50x50x3.5 (concentrado)             8750  68.7       disipador   400       46    10%       80.5       85.6
+  pared 50x50x3.5 (concentrado)             8750  68.7  disipador+aire   250       28     6%      133.3      142.2
+  pared 50x50x3.5 (concentrado)             8750  68.7  disipador+aire   400       46    10%       80.4       85.5
+  (P_perm y ciclo: los de la ultima rebanada, la pieza ya completa)
+
+  pared 50x50 por diferencias finitas (seccion G):
+    G1 gota  w1.2 h0.5 40A loseta      T<=400: 50.0 mm en   31.0 min, promedio 1.61 mm3/s
+    G2 gota  w1.2 h0.5 40A disipador   T<=400: 50.0 mm en   24.2 min, promedio 2.07 mm3/s
+    G3 gota  w1.2 h0.5 40A disip+aire  T<=400: 50.0 mm en   17.7 min, promedio 2.82 mm3/s
+    G4 gota  w1.2 h0.5 40A disip+aire  T<=250: 50.0 mm en   23.1 min, promedio 2.16 mm3/s
+    G5 gota  w1.2 h0.5 40A loseta  SIN espera: 6.5 mm en    0.7 min, promedio 9.37 mm3/s
+    G6 gota  w1.2 h0.25 40A disipador  T<=400: 5.0 mm en    0.9 min, promedio 5.85 mm3/s
+    C1 cont. w3.5 h1.0 40A loseta      T<=400: 50.0 mm en   53.7 min, promedio 2.71 mm3/s
+    C2 cont. w3.5 h1.0 40A disipador   T<=400: 50.0 mm en   31.7 min, promedio 4.60 mm3/s
+    C3 cont. w3.5 h1.0 40A disip+aire  T<=400: 50.0 mm en   26.8 min, promedio 5.44 mm3/s
+    C4 cont. w4.0 h1.0 60A disip+aire  T<=400: 50.0 mm en   25.2 min, promedio 6.63 mm3/s
+==============================================================================================================
+J. LA ESCORIA (E71T-GS autoprotegido: el fundente ES la proteccion)
+==============================================================================================================
+  fundente ~20.75 % del alambre (patente US11648630, FCAW-S): fluoruros 9.5-10 % + oxidos 4.5 % + Al 2.0 % + Mg 1.8 % del alambre
+  metal que no llega al deposito: 18-25 % (Lincoln: 1.22 kg alambre/kg metal; 75-81 %); de eso, humo ~1-2 % y chisporroteo ~2-4 %
+   escoria % alambre rho escoria | V_esc/V_metal | por gota mm3 pelicula en gota um | por capa h=0.5 um  h=1.0 um
+                  10         3.0 |          0.33 |        0.133                  50 |               164       327
+                  10         3.6 |          0.27 |        0.111                  42 |               136       273
+                  10         4.2 |          0.23 |        0.095                  36 |               117       234
+                  14         3.0 |          0.46 |        0.187                  70 |               229       458
+                  14         3.6 |          0.38 |        0.156                  59 |               191       382
+                  14         4.2 |          0.33 |        0.133                  50 |               164       327
+                  17         3.0 |          0.56 |        0.227                  85 |               278       556
+                  17         3.6 |          0.46 |        0.189                  71 |               232       463
+                  17         4.2 |          0.40 |        0.162                  61 |               199       397
+  central: V_escoria = 0.38 x V_metal  -> 191 um de costra por capa de 0.5 mm; 382 um por capa de 1 mm
+
+  FLOTACION: velocidad de Stokes v = 2 (rho_m - rho_e) g r^2 / (9 mu), mu = 6e-3 Pa s, drho = 4000 kg/m3
+   radio de la particula   v mm/s | gota sola en vuelo/aterr |   punto de gota en placa | charco continuo 40 A en 
+                    5 um     0.04 |                     0 um |                     3 um |                   109 um
+                   20 um     0.58 |                     1 um |                    41 um |                  1736 um
+                   50 um     3.63 |                     5 um |                   254 um |                 10851 um
+                  100 um    14.53 |                    20 um |                  1017 um |                 43403 um
+  (vida del charco continuo = largo mediano / v = 3.0 s)
+  Marangoni en charcos de arco: 0.1-0.5 m/s -> en 1-10 ms arrastra la escoria 0.1-5 mm hacia la superficie libre:
+  la escoria SIEMPRE termina en la cara libre... y en impresion cada cara libre se vuelve la interfaz de la siguiente capa.
+
+  capas entre cepillados si la escoria flota y se acumula arriba (N = refusion / (2 x costra por capa)):
+    G1 gota  w1.2 h0.5 40A loseta      T<=400: refusion mediana 1.25 mm, costra 191 um/capa -> N = 3.3
+    G2 gota  w1.2 h0.5 40A disipador   T<=400: refusion mediana 1.25 mm, costra 191 um/capa -> N = 3.3
+    G3 gota  w1.2 h0.5 40A disip+aire  T<=400: refusion mediana 1.25 mm, costra 191 um/capa -> N = 3.3
+    G4 gota  w1.2 h0.5 40A disip+aire  T<=250: refusion mediana 1.00 mm, costra 191 um/capa -> N = 2.6
+    G5 gota  w1.2 h0.5 40A loseta  SIN espera: refusion mediana 1.25 mm, costra 191 um/capa -> N = 3.3
+    G6 gota  w1.2 h0.25 40A disipador  T<=400: refusion mediana 0.50 mm, costra 95 um/capa -> N = 2.6
+    C1 cont. w3.5 h1.0 40A loseta      T<=400: refusion mediana 1.50 mm, costra 382 um/capa -> N = 2.0
+    C2 cont. w3.5 h1.0 40A disipador   T<=400: refusion mediana 1.50 mm, costra 382 um/capa -> N = 2.0
+    C3 cont. w3.5 h1.0 40A disip+aire  T<=400: refusion mediana 1.50 mm, costra 382 um/capa -> N = 2.0
+    C4 cont. w4.0 h1.0 60A disip+aire  T<=400: refusion mediana 2.00 mm, costra 382 um/capa -> N = 2.6
+
+  cepillo rotativo en la cabeza: una pasada de 50 mm a 25 mm/s = 2 s; la espera termica por capa (seccion G) es mayor:
+    G1 gota  w1.2 h0.5 40A loseta      T<=400: espera mediana    18 s, ultimas 10 capas    20 s vs cepillo 2 s -> el cepillo cabe en la espera
+    G2 gota  w1.2 h0.5 40A disipador   T<=400: espera mediana    14 s, ultimas 10 capas    18 s vs cepillo 2 s -> el cepillo cabe en la espera
+    G3 gota  w1.2 h0.5 40A disip+aire  T<=400: espera mediana    10 s, ultimas 10 capas    10 s vs cepillo 2 s -> el cepillo cabe en la espera
+    G4 gota  w1.2 h0.5 40A disip+aire  T<=250: espera mediana    14 s, ultimas 10 capas    14 s vs cepillo 2 s -> el cepillo cabe en la espera
+    G6 gota  w1.2 h0.25 40A disipador  T<=400: espera mediana     1 s, ultimas 10 capas     2 s vs cepillo 2 s -> el cepillo AGREGA tiempo en las capas bajas
+    C1 cont. w3.5 h1.0 40A loseta      T<=400: espera mediana    52 s, ultimas 10 capas    52 s vs cepillo 2 s -> el cepillo cabe en la espera
+    C2 cont. w3.5 h1.0 40A disipador   T<=400: espera mediana    20 s, ultimas 10 capas    36 s vs cepillo 2 s -> el cepillo cabe en la espera
+    C3 cont. w3.5 h1.0 40A disip+aire  T<=400: espera mediana    16 s, ultimas 10 capas    20 s vs cepillo 2 s -> el cepillo cabe en la espera
+    C4 cont. w4.0 h1.0 60A disip+aire  T<=400: espera mediana    18 s, ultimas 10 capas    24 s vs cepillo 2 s -> el cepillo cabe en la espera
+==============================================================================================================
+K. ESFUERZOS Y DEFORMACION (fuerza de tendon F_T = 0.2 Q_neto, F en kN con Q en J/mm; tope sigma_y * A)
+==============================================================================================================
+   40 A, v  2.8 mm/s: Q =  165.7 J/mm -> F_T =  33.1 kN; placa 50x3 libre: curvatura 2.21 1/m, flecha en 100 mm = 2.76 mm (una pasada)
+   40 A, v 16.0 mm/s: Q =   29.0 J/mm -> F_T =   5.8 kN; placa 50x3 libre: curvatura 0.39 1/m, flecha en 100 mm = 0.48 mm (una pasada)
+   50 A, v  2.8 mm/s: Q =  214.3 J/mm -> F_T =  35.2 kN; placa 50x3 libre: curvatura 2.35 1/m, flecha en 100 mm = 2.94 mm (una pasada)
+   50 A, v 16.0 mm/s: Q =   37.5 J/mm -> F_T =   7.5 kN; placa 50x3 libre: curvatura 0.50 1/m, flecha en 100 mm = 0.62 mm (una pasada)
+   60 A, v  2.8 mm/s: Q =  265.7 J/mm -> F_T =  35.2 kN; placa 50x3 libre: curvatura 2.35 1/m, flecha en 100 mm = 2.94 mm (una pasada)
+   60 A, v 16.0 mm/s: Q =   46.5 J/mm -> F_T =   9.3 kN; placa 50x3 libre: curvatura 0.62 1/m, flecha en 100 mm = 0.78 mm (una pasada)
+  tope fisico de la placa: sigma_y 235 MPa x 150 mm2 = 35 kN; esfuerzo longitudinal residual en la pared ~ sigma_y del deposito (~450 MPa)
+==============================================================================================================
+L. COMPARACION (numeros de las fuentes; J = 0.80 P / Qm para todos)
+==============================================================================================================
+  proceso                                                                    Qm mm3/s   kg/h  J J/mm3         pared mm   capa mm  v mm/s
+  CMT ER70S-6 0.8, 85Ar/15CO2, 50 A 9.2 V (Prado-Cerqueira 2018)                20.95   0.59     17.6          3.1-3.8   0.9-1.0     6.7
+  MOST v2 (Pearce) ER70S-6 0.030, C25, wfs 25 mm/s, 7 mm/s, >=60 s/capa         11.40   0.32        -      ~1 (slicer) 2 (slicer)       7
+  u-WAAM (Oliveira 2022) alambre 0.25 mm, 16 A, ~35 W                            4.42   0.12      6.3                ?         ?    7-10
+  CMT industrial (Tabernero 2018): hasta 5 kg/h inox; WAAM tipico 1-4 kg/h     176.93   5.00        -                -         -       -
+  ESTE: E71T-GS 0.030 sin gas 40 A (fichas)                                      9.38   0.26     49.5 1.2 (gota) / 3.5  0.25-1.0  2.8-32
+  ESTE: E71T-GS 0.030 sin gas 60 A (fichas)                                     14.06   0.40     52.9                4       1.0     3.6
+  (CMT con su propia eta = 0.52: 35.9 J/mm a 6.67 mm/s = 239 W -> 11.4 J/mm3; u-WAAM: 35 W / 4.4 mm3/s = 8 J/mm3 < entalpia: el 35 W no es toda la potencia)
+
+[fin en 168 s]

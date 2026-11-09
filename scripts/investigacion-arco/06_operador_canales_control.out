@@ -1,0 +1,244 @@
+================================================================================================================
+06 · CONTROL ABSOLUTO: el proceso completo como canales (Operador Ian + teoria de control)
+================================================================================================================
+  calibracion: Veq = 7.64 V (calor del arco que entra al alambre por amper), alfa = 1.210 mm/(A s); Hv = 12.56 J/mm^3
+  charco R = 2.0 mm, prof 0.6 mm: f_p = 177 Hz (modo (0,1), capilar), masa modal 17.6 mg, Qp = 5 [S]; fuerza del arco 1.60e-7 N/A^2 [S]
+
+================================================================================================================
+B. PUNTOS DE OPERACION 40-60 A: potencia, largo de arco permitido, alimentacion, temperatura del alambre
+================================================================================================================
+   I0 A  vf mm/s vf m/min T punta C R_st mOhm  V@La=1mm    P W  La max mm @1200W f2(0.40) Hz     s0
+     40     49.6     2.97        83       4.6     24.99    999              1.50         806  0.043
+     50     62.4     3.75       103       4.9     25.25   1262              0.88         796  0.066
+     60     75.6     4.53       125       5.2     25.51   1531              0.45         783  0.096
+  gota libre de 0.46 mm al soltarse (q=1, estirada x1.5) ocupa 2a*1.5 = 1.38 mm bajo la punta del alambre:
+  -> con 10 V/mm y 1200 W el arco medio puede ser 1.50 mm a 40 A, 0.88 mm a 50 A, 0.45 mm a 60 A. A 60 A no cabe la gota libre (corto); la ventana real es 40-45 A.
+  stickout    5 mm a 40 A: T de la punta del alambre    49 C  (Joule   3.3 W, R_st   2.1 mOhm, vf  48.9 mm/s)
+  stickout   10 mm a 40 A: T de la punta del alambre    83 C  (Joule   7.4 W, R_st   4.6 mOhm, vf  49.6 mm/s)
+  stickout   20 mm a 40 A: T de la punta del alambre   175 C  (Joule  18.9 W, R_st  11.8 mOhm, vf  51.4 mm/s)
+  stickout   30 mm a 40 A: T de la punta del alambre   309 C  (Joule  37.1 W, R_st  23.2 mOhm, vf  54.3 mm/s)
+
+================================================================================================================
+C. LOS CANALES = VALORES PROPIOS del modelo linealizado (40 A, gota a = 0.40 mm, stickout 10 mm, arco 1.0 mm)
+================================================================================================================
+  canal                            lambda (1/s)     f Hz        Q o tau
+  l=0 vol + H              -0.000         +0.0j      0.0     integrador   multiplicidad 2
+  alambre ls,h (ls)        -0.154         +0.0j      0.0  tau = 6.500 s   multiplicidad 1
+  alambre ls,h (h)         -3.875         +0.0j      0.0  tau = 0.258 s   multiplicidad 1
+  charco                 -110.996      +1104.4j    175.8        Q = 5.0   multiplicidad 1
+  l=1                     -43.129      +2587.4j    411.8       Q = 30.0   multiplicidad 2
+  l=2                     -86.258      +5063.6j    805.9       Q = 29.4   multiplicidad 1
+  l=3                    -167.038      +9805.5j   1560.6       Q = 29.4   multiplicidad 1
+  l=1: x e y comparten valor propio (multiplicidad geometrica 2) -> con UN actuador o UN sensor, uno queda fuera (PBH).
+  lambda = 0 doble: volumen de la gota y altura H -> con UNA salida una combinacion queda ciega (PBH).
+  los dos modos lentos del alambre (ls, h) son la autorregulacion en corriente constante: tau de segundos.
+
+================================================================================================================
+D. PBH POR CANAL. NC = modos NO controlables en ese lambda; NO = no observables; margen = sigma vivo mas chico de
+   [A-lI, B] o [A-lI; C] en unidades de resolucion (ls 0.1 mm, Vd 1 %, h 5 K, q 0.01, l=1 10 um, charco 1 um, H 0.1 mm;
+   I 1 A, vf 1 mm/s, B 0.1 mT; V 10 mV/muestra, R sonda 3 A a 5 kHz). En lambda=0 se descuenta H (perturbacion).
+================================================================================================================
+  A1 I:  rango de Kalman (sin H) = 8 de 13
+     l=0 vol + H 0 Hz: NC 1(M) m=4.3 | alambre ls,h (ls) 0 Hz: ok m=0.152 | alambre ls,h (h) 0 Hz: ok m=0.397 | charco 176 Hz: ok m=429 | l=1 412 Hz: NC 2 m=1.54e+03 | l=2 806 Hz: ok m=809 | l=3 1561 Hz: ok m=468
+  A2 I+vf:  rango de Kalman (sin H) = 9 de 13
+     l=0 vol + H 0 Hz: ok m=4.26 | alambre ls,h (ls) 0 Hz: ok m=0.154 | alambre ls,h (h) 0 Hz: ok m=1.11 | charco 176 Hz: ok m=429 | l=1 412 Hz: NC 2 m=1.54e+03 | l=2 806 Hz: ok m=809 | l=3 1561 Hz: ok m=468
+  A3 I+vf+By:  rango de Kalman (sin H) = 11 de 13
+     l=0 vol + H 0 Hz: ok m=4.26 | alambre ls,h (ls) 0 Hz: ok m=0.154 | alambre ls,h (h) 0 Hz: ok m=1.11 | charco 176 Hz: ok m=429 | l=1 412 Hz: NC 1 m=46.6 | l=2 806 Hz: ok m=809 | l=3 1561 Hz: ok m=468
+  A4 I+vf+Bx+By:  rango de Kalman (sin H) = 13 de 13
+     l=0 vol + H 0 Hz: ok m=4.26 | alambre ls,h (ls) 0 Hz: ok m=0.154 | alambre ls,h (h) 0 Hz: ok m=1.11 | charco 176 Hz: ok m=429 | l=1 412 Hz: ok m=46.6 | l=2 806 Hz: ok m=809 | l=3 1561 Hz: ok m=468
+  A5 I+vf, By0=0.8 mT fijo (pinza):  rango de Kalman (sin H) = 11 de 13
+     l=0 vol + H 0 Hz: ok m=4.26 | alambre ls,h (ls) 0 Hz: ok m=0.154 | alambre ls,h (h) 0 Hz: ok m=1.11 | charco 176 Hz: ok m=429 | l=1 412 Hz: NC 1 m=8.33 | l=2 806 Hz: ok m=809 | l=3 1561 Hz: ok m=468
+
+  OBSERVABILIDAD (rango de 14, H incluida):
+   S1 V                  con A2: rango obs =  9/14 | l=0 vol + H:CIEGO1(0.43)  alambre ls,h (ls):ok(0.0038)  alambre ls,h (h):ok(0.067)  charco:ok(0.7)  l=1:CIEGO2(1.5e+03)  l=2:ok(2.9)  l=3:ok(2.9)
+   S1 V                  con A5: rango obs = 11/14 | l=0 vol + H:CIEGO1(0.43)  alambre ls,h (ls):ok(0.0038)  alambre ls,h (h):ok(0.067)  charco:ok(0.7)  l=1:CIEGO1(0.036)  l=2:ok(2.9)  l=3:ok(2.9)
+   S2 V+R(sonda)         con A2: rango obs =  9/14 | l=0 vol + H:CIEGO1(0.43)  alambre ls,h (ls):ok(0.0039)  alambre ls,h (h):ok(0.067)  charco:ok(0.7)  l=1:CIEGO2(1.5e+03)  l=2:ok(2.9)  l=3:ok(2.9)
+   S2 V+R(sonda)         con A5: rango obs = 11/14 | l=0 vol + H:CIEGO1(0.43)  alambre ls,h (ls):ok(0.0039)  alambre ls,h (h):ok(0.067)  charco:ok(0.7)  l=1:CIEGO1(0.036)  l=2:ok(2.9)  l=3:ok(2.9)
+   S3 V+R+homodino x,y   con A2: rango obs = 13/14 | l=0 vol + H:CIEGO1(0.43)  alambre ls,h (ls):ok(0.0039)  alambre ls,h (h):ok(0.067)  charco:ok(0.7)  l=1:ok(0.44)  l=2:ok(2.9)  l=3:ok(2.9)
+   S3 V+R+homodino x,y   con A5: rango obs = 14/14 | l=0 vol + H:ok(0.00042)  alambre ls,h (ls):ok(0.0039)  alambre ls,h (h):ok(0.067)  charco:ok(0.7)  l=1:ok(0.44)  l=2:ok(2.9)  l=3:ok(2.9)
+  sensibilidad: si el pellizco NO proyecta sobre l=3 (g3 = 0):
+     A1 I: l=3 NC = 1  -> l=3 NO se controla con nada de lo que hay
+     A4 I+vf+Bx+By: l=3 NC = 1  -> l=3 NO se controla con nada de lo que hay
+
+================================================================================================================
+E. GRAMIANOS (escalados). rango = autovalores > 1e-10 max; cond y direccion mas dificil SOBRE LA PARTE VIVA
+================================================================================================================
+  ctrl T=   12 ms A1 I           : rango  8/13  lam_max 3.53e+03  lam_min_vivo 5.23e-05  cond  6.8e+07  mas dificil: T alambre h 100% + l=0 volumen 0%
+  ctrl T=   12 ms A2 I+vf        : rango  9/13  lam_max 3.53e+03  lam_min_vivo 6.99e-05  cond  5.1e+07  mas dificil: T alambre h 99% + alambre ls 1%
+  ctrl T=   12 ms A3 I+vf+By     : rango 11/13  lam_max 3.53e+03  lam_min_vivo 6.99e-05  cond  5.1e+07  mas dificil: T alambre h 99% + alambre ls 1%
+  ctrl T=   12 ms A4 I+vf+Bx+By  : rango 13/13  lam_max 3.53e+03  lam_min_vivo 6.99e-05  cond  5.1e+07  mas dificil: T alambre h 99% + alambre ls 1%
+  obs  T=   12 ms S1 V                 : rango  8/14  lam_max      240  lam_min_vivo 0.000227  cond  1.1e+06  mas ciega viva: T alambre h 98% + charco 2%
+  obs  T=   12 ms S2 V+R(sonda)        : rango  9/14  lam_max      240  lam_min_vivo 5.68e-07  cond  4.2e+08  mas ciega viva: alambre ls 50% + altura H 50%
+  obs  T=   12 ms S3 V+R+homodino x,y  : rango 13/14  lam_max      240  lam_min_vivo 5.68e-07  cond  4.2e+08  mas ciega viva: alambre ls 50% + altura H 50%
+  ctrl T= 1000 ms A1 I           : rango  8/13  lam_max  5.4e+04  lam_min_vivo     1.66  cond  3.2e+04  mas dificil: T alambre h 100% + l=0 volumen 0%
+  ctrl T= 1000 ms A2 I+vf        : rango  9/13  lam_max  5.4e+04  lam_min_vivo     2.15  cond  2.5e+04  mas dificil: T alambre h 99% + alambre ls 1%
+  ctrl T= 1000 ms A3 I+vf+By     : rango 11/13  lam_max  5.4e+04  lam_min_vivo     2.15  cond  2.5e+04  mas dificil: T alambre h 99% + alambre ls 1%
+  ctrl T= 1000 ms A4 I+vf+Bx+By  : rango 13/13  lam_max  5.4e+04  lam_min_vivo     2.15  cond  2.5e+04  mas dificil: T alambre h 99% + alambre ls 1%
+  obs  T= 1000 ms S1 V                 : rango  9/14  lam_max 1.96e+04  lam_min_vivo  0.00183  cond  1.1e+07  mas ciega viva: charco 100% + l=2 0%
+  obs  T= 1000 ms S2 V+R(sonda)        : rango  9/14  lam_max 1.96e+04  lam_min_vivo  0.00183  cond  1.1e+07  mas ciega viva: charco 100% + l=2 0%
+  obs  T= 1000 ms S3 V+R+homodino x,y  : rango 13/14  lam_max 1.96e+04  lam_min_vivo  0.00183  cond  1.1e+07  mas ciega viva: charco 100% + l=2 0%
+  (no se da CRB lineal a 1 s: el integrador de la gota sin desprendimiento lo infla; ver K para lo que da V en 4 ms)
+
+================================================================================================================
+F. EL MAPA VISTO POR EL CABLE: impedancia incremental Z(f) = dV/dI del proceso completo (40 A)
+================================================================================================================
+  (1) baja frecuencia, promedio por gota (sin la rampa de crecimiento de cada gota): la corriente quema el alambre
+     f =   0.01 Hz: |Z| =   81.672 V/A  fase  -22.3 grados
+     f =   0.03 Hz: |Z| =   55.774 V/A  fase  -51.0 grados
+     f =   0.10 Hz: |Z| =   20.936 V/A  fase  -77.0 grados
+     f =   0.30 Hz: |Z| =    7.056 V/A  fase  -87.3 grados
+     f =   1.00 Hz: |Z| =    2.018 V/A  fase  -90.6 grados
+     f =   3.00 Hz: |Z| =    0.657 V/A  fase  -89.1 grados
+     f =  10.00 Hz: |Z| =    0.197 V/A  fase  -84.8 grados
+     -> 1 A de mas acorta el stickout 1.21 mm/s: en CC con avance fijo el largo de arco DERIVA (tau 6.5 s): necesita lazo V -> I o V -> vf
+  (2) dentro de una gota (lo que oye el oido):
+  gota a = 0.30 mm (modos: 176, 634, 1241, 2403 Hz):
+     f Hz :      100    150    200    300    400    500    600    700    800   1000   1300   1600   2000   3000
+   |Z| mV/A:   24.2   32.6   11.3   12.1   13.3   13.3   12.8   11.7   10.1    2.6   87.7   31.3   22.2   29.8
+   picos con modo: 168 Hz 38 mV/A | 1243 Hz 206 mV/A | 2418 Hz 71 mV/A   | piso resistivo D = 24.6 mV/A
+  gota a = 0.40 mm (modos: 176, 412, 806, 1561 Hz):
+     f Hz :      100    150    200    300    400    500    600    700    800   1000   1300   1600   2000   3000
+   |Z| mV/A:   23.5   31.7   14.9    8.6    8.2    5.7    0.4   16.9  243.8   36.9   21.3   69.6   30.7   26.4
+   picos con modo: 170 Hz 39 mV/A | 807 Hz 274 mV/A | 1568 Hz 89 mV/A   | piso resistivo D = 24.6 mV/A
+  gota a = 0.46 mm (modos: 176, 334, 653, 1265 Hz):
+     f Hz :      100    150    200    300    400    500    600    700    800   1000   1300   1600   2000   3000
+   |Z| mV/A:   23.0   30.8   16.3    6.2    3.5    5.8   47.1   89.8   40.4   24.0   74.1   32.0   28.0   25.8
+   picos con modo: 171 Hz 39 mV/A | 654 Hz 315 mV/A | 1272 Hz 101 mV/A   | piso resistivo D = 24.6 mV/A
+  pico l=2 analitico |Z2| = EA a Q 2 I0/Icrit^2 = 255 mV/A (a 0.40 mm, Q 30; Q 10: 85)
+  l=1 en V con campo fijo By0 = 0.0 mT (pinza de tierra / soplo): aporte de l=1 a Z(f1) =    0.000 uV/A  (desvio estatico 0.00 um)
+  l=1 en V con campo fijo By0 = 0.8 mT (pinza de tierra / soplo): aporte de l=1 a Z(f1) =   77.820 uV/A  (desvio estatico 2.04 um)
+  l=1 en V con campo fijo By0 = 3.0 mT (pinza de tierra / soplo): aporte de l=1 a Z(f1) = 1094.346 uV/A  (desvio estatico 7.64 um)
+
+================================================================================================================
+G. NO LINEAL: corchetes de Lie (F es CUADRATICA en I: F = F0 + I F1 + I^2 F2) e invariantes exactos
+================================================================================================================
+  campo             |campo|    comp. M  comp. l=1   dominante (unidades de resolucion)
+  g1 = dF/dI        1.5e+03    1.9e-14          0   l=2 59% + l=3 20%
+  g2 = d2F/dI2         37.1          0          0   l=2 60% + l=3 20%
+  [F,g1]              9e+06    5.1e-16          0   l=3 55% + l=2 44%
+  [F,g2]           2.25e+05    1.6e-17          0   l=3 55% + l=2 44%
+  [g1,g2]              77.5    3.6e-16          0   l=2 75% + l=3 25%
+  angulo g1 vs g2: 8.9 grados en todo el estado (ambos los domina el pellizco sobre l=2); 75.8 grados en el plano lento (ls, h)
+  rango a profundidad 1: lineal span(b, Ab) = 2;  no lineal span(g1, g2, [F,g1], [F,g2], [g1,g2]) = 5
+  simulacion 10 ms (RK4 2 us) con dos I(t) aleatorias 10-70 A, B = 0, semilla lateral lineal a 30 grados:
+    I(t) #1: (M_final - M_inicial - Aw vf t)/M = +7.5e-15 | angulo del plano de mecerse 30.000000..30.000000 grados | |r| max 5.00 um
+    I(t) #2: (M_final - M_inicial - Aw vf t)/M = +1.5e-15 | angulo del plano de mecerse 30.000000..30.000000 grados | |r| max 5.00 um
+    giro lateral: L_z(5 ms)/L_z(0) = +0.6770 con I(t) #3  (dLz/dt = -(w1/Q1) Lz: el signo nunca cambia)
+    giro lateral: L_z(5 ms)/L_z(0) = +0.6792 con I(t) #4  (dLz/dt = -(w1/Q1) Lz: el signo nunca cambia)
+
+================================================================================================================
+H. BALANCE ARMONICO: sostener consignas lentas. <I> funde (arco), <I^2> calienta (Joule) y pellizca; vf pone el metal
+================================================================================================================
+  promedio: vf = Veq<I>/(Aw(Hv-h)) ;  h = rho(h)<I^2> ls/(Ac Aw vf).  Factible: <I>^2 <= <I^2> <= (Imin+Imax)<I> - Imin Imax  (Imin 10, Imax 70 A)
+  vf = 50 mm/s fijo: temperatura de punta SOSTENIBLE a cada stickout
+   ls mm   <I> A T solo DC   senoide (I1 <= <I>-10)      pulso 10/70    <I^2> DC..pulso
+       5    40.9        49           49 ..    59 C      49 ..    68 C      1670.. 2547
+      10    40.3        84           84 ..   106 C      84 ..   130 C      1627.. 2470
+      15    39.7       124          124 ..   161 C     124 ..   212 C      1578.. 2368
+      20    39.0       170          170 ..   226 C     170 ..   316 C      1522.. 2239
+      25    38.2       221          221 ..   298 C     221 ..   440 C      1460.. 2086
+  (sobre ~770 C la resistividad satura (Curie) y el modelo lineal rho(T) sobrestima)
+  ganancia estacionaria (ls [0.1 mm], T punta [5 K], flujo de metal [1 %]) <- (<I> [1 A], <I^2> [100 A^2], vf [1 mm/s]):
+     ls    :     -63.1      -4.83      +44.9
+     T     :     -12.9         +0      +10.2
+     flujo :        +0         +0         +2
+  valores singulares [79.372  1.914  0.821] -> rango 3, cond 96.7: (ls, T, flujo) se sostienen a la vez.
+  solo DC (<I^2> = <I>^2): 2 mandos para 3 consignas -> rango 2: una queda esclava de las otras.
+  verificacion: subsistema lento (ls, h) simulado 40 s con la I(t) real vs la prediccion promedio (vf 50 mm/s):
+    I = 40 + 0 cos(668 Hz): simulado ls  12.81 mm, T 105.6 C | promedio ls  12.81 mm, T 105.6 C
+    I = 40 + 30 cos(668 Hz): simulado ls  10.00 mm, T 105.6 C | promedio ls  10.00 mm, T 105.6 C
+  -> misma <I> (misma T de punta), distinta <I^2>: el stickout se mueve ~2.8 mm. <I^2> es el mando del largo a T fija.
+
+================================================================================================================
+I. MEZCLA DE FRECUENCIAS: I^2 pone lineas en 0, f, 2f, f+-g; coincidencias estructurales de Rayleigh
+================================================================================================================
+  f3/f2 = 1.9365 -> 2 f2 = 1.0328 f3 (a 3.3 % de l=3, para CUALQUIER tamano de gota; Q=30 -> ancho +-1.7 %)
+  f4/f2 = 3.0000 EXACTO -> f2 + 2f2 = 3 f2 = f4 exacto; y el 3er armonico de un pulso cuadrado a f2 cae EXACTO en l=4
+  f5/f2 = 4.1833; si f1 = 0.5 f2 (supuesto del canon) -> 2 f1 = f2 exacto
+  gota 0.46 mm: f1 334 [S], f2 668, f3 1293, f4 2004, charco 177 Hz; g3 0.3, g4 0.2 [S]
+  forma de onda                      <I>  <I^2>      q2      q3      q4  charco   lineas de I^2 en k f2 (A^2): k=0..5
+  W1 canon 40+30cos(f2)             40.0   2050   1.917  0.0739  0.0186   1.39um     2050   2400    450      0      0      0
+  W2 raiz: I=sqrt(2050+1950cos)     41.6   2050   1.554  0.0212  0.0117   1.08um     2050   1950      0      0      0      0
+  W3 40+18cos(f2)+12cos(2f2)        40.0   1834   1.331  0.1386  0.0555   1.08um     1834   1656   1122    216     72      0
+  W4 pulso cuadrado 10/70 A a f2    40.0   2500   2.440  0.0401  0.1830   1.77um     2500   3056      0   1019      0    611
+  (amplitud estacionaria, cota: suma de lineas; q en unidades del canon, q2 >= 1 suelta; la gota se suelta antes)
+  APUNTAR l=1 (necesita B): fuerza lateral = 2a I B / m_d. Dos maneras de poner fuerza en f1:
+    B 1 mT a f1, I = 40 A fija        : l=1 en resonancia   87.9 um | l=2 de rebote q2 = 0.000 (I^2 en f1: 0 A^2, en 2f1 = f2: 0 A^2)
+    B 1 mT fijo, I = 40 + 10 cos(f1)  : l=1 en resonancia   22.0 um | l=2 de rebote q2 = 0.068 (I^2 en f1: 800 A^2, en 2f1 = f2: 50 A^2)
+    B 1 mT fijo, I = 40 + 30 cos(f1)  : l=1 en resonancia   65.9 um | l=2 de rebote q2 = 0.444 (I^2 en f1: 2400 A^2, en 2f1 = f2: 450 A^2)
+  gotas de 0.46 mm a vf 30 mm/s: 43 gotas/s; armonicos de los impactos 43, 86, 129, 172*, 216 Hz (* = a <15 % del charco 177 Hz)
+  gotas de 0.46 mm a vf 50 mm/s: 72 gotas/s; armonicos de los impactos 72, 144, 216, 287, 359 Hz (* = a <15 % del charco 177 Hz)
+  charco R 1.5 mm (prof 0.6 mm): (0,1) =  287 Hz; chapoteo (1,1) =   79 Hz
+  charco R 2.0 mm (prof 0.6 mm): (0,1) =  177 Hz; chapoteo (1,1) =   46 Hz
+  charco R 3.0 mm (prof 0.6 mm): (0,1) =   85 Hz; chapoteo (1,1) =   21 Hz
+  campanazo en el tiempo (gota 0.46 mm congelada, Q 30, beta 1) hasta q2 >= 1: cuanto se lleva l=3
+    W1 canon 40+30cos                       : suelta en   7.3 ciclos; |q3| max 0.0652 (g3 = 0.3)
+    W2 raiz (sin linea en 2f2)              : suelta en  10.4 ciclos; |q3| max 0.0443 (g3 = 0.3)
+    W1' canon - 5.6 A a 2f2 (cancela 2f2)   : suelta en   8.3 ciclos; |q3| max 0.0526 (g3 = 0.3)
+
+================================================================================================================
+J. RIESGO PARAMETRICO l=2 -> l=1 (f1 ~ f2/2): semilla lateral de 5 um durante el campanazo canonico (40+30 A a f2)
+   x1'' + (w1/Q1) x1' + w1^2 (1 + eps (q2 - q2s)) x1 = 0 ;  eps ~ 0.5 si la gota es un pendulo que se alarga [S]
+================================================================================================================
+   amplificacion de la semilla al soltar (max |x1| / 5 um)
+   f1/f2 :    0.40   0.45   0.48   0.50   0.52   0.55   0.60
+   eps 0.25:   1.00   1.00   1.36   1.51   1.14   1.00   1.00   (suelta en 7.3 ciclos de f2)
+   eps 0.50:   1.00   1.05   2.97   3.35   2.70   1.00   1.00   (suelta en 7.3 ciclos de f2)
+   eps 1.00:   1.19   6.41  13.69  16.15  15.28   8.71   1.92   (suelta en 7.3 ciclos de f2)
+   crece la AMPLITUD; la DIRECCION la pone la semilla (ruido, soplo del arco): bombeo sin brujula.
+
+================================================================================================================
+K. OBSERVABILIDAD NO LINEAL
+================================================================================================================
+  (1) l=1 en V: la gota (esfera colgada del cuello a distancia a) sube al mecerse: dLa = (x^2 + y^2)/(2a) [S]
+      mecerse LINEAL   10 um: linea en 2 f1 de    0.54 mV | en CIRCULO radio   10 um: 0 en AC (  1.09 mV de DC, revueltos con el largo)
+      mecerse LINEAL   30 um: linea en 2 f1 de    4.89 mV | en CIRCULO radio   30 um: 0 en AC (  9.78 mV de DC, revueltos con el largo)
+      mecerse LINEAL   88 um: linea en 2 f1 de   42.09 mV | en CIRCULO radio   88 um: 0 en AC ( 84.17 mV de DC, revueltos con el largo)
+      homodino: referencia  50 um x desconocido  10 um -> linea cruzada en 2f1 de  5.43 mV, LINEAL y con signo; SNR 3 en   0.122 ms (ruido 10 mV) /   109.7 ms (0.3 V)
+      homodino: referencia  50 um x desconocido   3 um -> linea cruzada en 2f1 de  1.63 mV, LINEAL y con signo; SNR 3 en   1.354 ms (ruido 10 mV) /  1218.8 ms (0.3 V)
+      homodino: referencia  88 um x desconocido  10 um -> linea cruzada en 2f1 de  9.57 mV, LINEAL y con signo; SNR 3 en   0.039 ms (ruido 10 mV) /    35.4 ms (0.3 V)
+      lo perpendicular a la referencia no da termino cruzado: hace falta referencia en x Y en y (2 bobinas).
+  (2) INFORMACION DE FISHER de V(t) a 500 kS/s, ventana 4 ms, gota 0.36 mm, 40 A, segun lo que se inyecta en el MISMO cable
+    a) DC 40 A                         ruido  300 mV: La 5844.027 um | H ciega | ls ciega | a 67.7 um | T 1.02e+03 K | q2 0.0033 | l=1 ciega
+    a) DC 40 A                         ruido   10 mV: La 194.801 um | H ciega | ls ciega | a 2.26 um | T 33.9 K | q2 0.00011 | l=1 ciega
+    b) + sonda 3 A a 5 kHz             ruido  300 mV: La  13.056 um | H 20 mm | ls 19.9 mm | a 62.8 um | T 625 K | q2 0.0033 | l=1 ciega
+    b) + sonda 3 A a 5 kHz             ruido   10 mV: La   0.435 um | H 0.666 mm | ls 0.662 mm | a 2.09 um | T 20.8 K | q2 0.00011 | l=1 ciega
+    c) + golpecito 10 A x 0.8 ms a f2  ruido  300 mV: La  13.509 um | H 8.54 mm | ls 8.55 mm | a 3.33 um | T 143 K | q2 0.0061 | l=1 ciega
+    c) + golpecito 10 A x 0.8 ms a f2  ruido   10 mV: La   0.450 um | H 0.285 mm | ls 0.285 mm | a 0.111 um | T 4.77 K | q2 0.0002 | l=1 ciega
+    d) sonda + golpecito               ruido  300 mV: La   9.891 um | H 6.81 mm | ls 6.81 mm | a 3.16 um | T 142 K | q2 0.0054 | l=1 ciega
+    d) sonda + golpecito               ruido   10 mV: La   0.330 um | H 0.227 mm | ls 0.227 mm | a 0.105 um | T 4.73 K | q2 0.00018 | l=1 ciega
+    (cota de Cramer-Rao: lo mejor que cualquier estimador puede hacer con ese diseno; supone el modelo correcto)
+
+================================================================================================================
+L. EL EXPERIMENTO MAS BARATO: golpecitos de 10 A x 0.8 ms sobre 40 A y escuchar V 3 ms (lo que ya hace el canon)
+================================================================================================================
+  invariante de Rayleigh f2 a^1.5 = 208.4 Hz mm^1.5 (sin corriente); a 40 A con beta = 1: 203.9. Despejando sigma de lo medido: sigma = rho (2 pi f2 a^1.5)^2 / 8
+   a mm  f2 Hz  f3 Hz f1 [S] q2 golpe V ring mV  |Z2| Q30  |Z2| Q10   piso sig_f 0.3V sig_f 10mV
+   0.30   1241   2403    634    0.061       183     206mV      64mV  24.6     13.2Hz     0.44Hz
+   0.36    944   1828    482    0.048       171     246mV      77mV  24.6     13.5Hz     0.45Hz
+   0.40    806   1561    412    0.045       181     273mV      85mV  24.6     12.6Hz     0.42Hz
+   0.46    654   1266    334    0.035       159     314mV      98mV  24.6     14.0Hz     0.47Hz
+  SI el mapa es cierto: linea que BAJA con la gota con f2 a^1.5 = 204 +- 20 % Hz mm^1.5, caida con Q >= 25,
+  linea en 1.94 f2 si g3 != 0, NADA en ~f2/2 (l=1 ciego; < 1 mV) y un bulto fijo del charco (~100-300 Hz).
+
+================================================================================================================
+M. TABLA DE CANALES (40 A, gota 0.40 mm) Y CONJUNTO MINIMO
+================================================================================================================
+  canal             frecuencia      actuador y ganancia                              sensor y ganancia                        controlable            observable
+  l=0 volumen       DC/rampa        I: 0.62 mm3/s por A; soltar (hibrido)            V: -20 mV/um (DC) | oido: 3.0 Hz/um      si (I)                 si; separa de H solo con oido
+  metal M=Aw ls+Vd  integrador      vf: 0.50 mm3/s por mm/s. I: NADA                 V (via La)                               SOLO vf                si
+  alambre ls        tau 0.26 y 6.5 s I: -1.24 mm/s por A; vf: +1; <I^2>               V -10 mV/um (=H); R +0.5 mOhm/mm         si                     si; ls vs H solo con R
+  T alambre h       tau 0.26 y 6.5 s <I^2> Joule (a <I> fijo), <I>/vf                 R: 13.7 uOhm/K                           si                     si, lento (1 s)
+  l=2 soltar        806 Hz Q30      I@f2: 0.064 q/A                                  V: 40 mV por 0.01 q                      si                     si
+  l=3               1561 Hz         I@f3 (g3 0.3 [S]) y 2f2 (a 3.3 %)                V: 40 mV por 0.01 q                      si si g3!=0            si
+  l=1 apuntar       403 Hz [S]      B (88 um/mT en resonancia); B0*I                 V: solo |r|^2 en 2f1; homodino con B     NO con I; 1 eje por bobina NO lineal; si con homodino
+  charco (0,1)      177 Hz Q5 [S]   I: 3.0 um/A en resonancia; impactos              V: 10 mV/um                              si                     si
+  altura H          cte             eje Z (no hay)                                   V (=ls); separa con R                    NO (perturbacion)      si con R
+
+  rangos lineales (sin H): A1 I: 8/13 | A2 I+vf: 9/13 | A3 I+vf+By: 11/13 | A4 I+vf+Bx+By: 13/13 | A5 I+vf, By0=0.8 mT fijo (pinza): 11/13
+  observabilidad: S1 V+A2: 9/14 | S1 V+A5: 11/14 | S2 V+R(sonda)+A2: 9/14 | S2 V+R(sonda)+A5: 11/14 | S3 V+R+homodino x,y+A2: 13/14 | S3 V+R+homodino x,y+A5: 14/14
+  CONJUNTO MINIMO para que todo canal sea controlable y observable (lineal + oido + homodino):
+     actuadores: I(t) con forma de onda libre (<I>, <I^2>, tonos) + motor vf + 2 bobinas (Bx, By)
+     sensores:   V(t) e I(t) rapidos (>= 250 kS/s) con demoduladores: nada mas (las bobinas son la referencia del homodino)
+     sin apuntar: I(t) + vf con V, I basta para l=0, l=2, l=3 (si g3 != 0), alambre, T, charco, M
+FIN

@@ -1,0 +1,38 @@
+EL ARMADO DE LA PLACA DE LA PLUMA (D3 del contrato v2): el orden de soldadura
+
+1. Mecánica antes de soldar [mecánica]
+   HS1 MEC1 MEC2 MEC3
+   Q1 y D1 al disipador (Sil-Pad + buje + M3 × 10) y medir > 20 MΩ de cada aleta al disipador; TS1 con 2 M3 × 6 a la cara de arriba de la base; TH1 con epóxico; las tiras de pines a los módulos (WeAct, TMC2209). Antes de soldar el TMC2209: medir su Rsense y poner VREF del potenciómetro en 1.20 V (respaldo).
+2. Cara de abajo: SMD [abajo] · cautín 40 W, punta 1 mm, 330 °C
+   U2 C2 C3 C4 D3 R5 R6 R7 R8
+   La placa volteada sobre una cama plana. U2 primero (alinear las 16 patas con una esquina, flux, arrastre), luego los pasivos 1206 y D3. Revisar puentes con lupa antes de voltear.
+3. Cara de arriba: SMD [arriba] · cautín 40 W, punta 1 mm, 330 °C
+   U3
+   U3 (INA240) antes de cualquier THT: después no entra la punta.
+4. Arriba, THT bajas (≤ 10 mm) [arriba] · cautín 40 W, punta 1 mm, 330 °C
+   Q2 D4 U1 F1 C1 R1 R2 R3 R4 R9 R10 R11 R12 R13 C5 R14 R15 C8 R16
+   De lo más bajo a lo más alto: la placa se apoya en ellas al voltear. Aquí van las que quedan BAJO el choque (R1–R4): después no hay acceso. Sus patas a los vaciados llevan alivio térmico.
+5. Arriba, THT medianas (≤ 25 mm) [arriba] · cautín 40 W, punta 1 mm, 330 °C
+   PS1 PS2 C6 C7 Q3 U4
+   Módulos por sus tiras (TEN 40, R-78E, TMC2209), Q3, radiales.
+6. La potencia baja (vaciados de 2 oz, patas sólidas) [arriba] · cautín 80 W, punta 3.2 mm, 380 °C
+   D2 R30 C16
+   D2 (queda bajo el choque), el shunt y Cout: cautín de 80 W, sostener 3–4 s por pata; el shunt con sus 4 patas a escuadra (Kelvin).
+7. Q1 y D1 con el disipador ya atornillado [arriba] · cautín 80 W, punta 3.2 mm, 380 °C
+   Q1 D1
+   El disipador en su lugar sobre la placa (FR4 sin cobre debajo), las patas por sus agujeros: soldar con el disipador sostenido, no colgando de las patas. D a BUS+, S y K a SW: vaciados sin alivio.
+8. Arriba, THT altas (> 25 mm) [arriba] · cautín 80 W, punta 3.2 mm, 380 °C
+   C13 C14 C15 C10 C11 C12
+   Películas y electrolíticos (snap-in: vaciados de 2 oz, sostener la punta 4–5 s). Sin precalentar: las MKS4 son de 100 °C.
+9. El choque, encima de lo ya soldado [arriba] · cautín 80 W, punta 5 mm, 400 °C, placa precalentada a ~100 °C
+   L1
+   Sus patas de cal 10 a los vaciados de SW y OUT+: cautín grueso, precalentar como las islas de potencia.
+10. Los sensores de fuera [arriba] · cautín 40 W, punta 1 mm, 330 °C
+   TS1 TH1 TH2
+   Los hilos de TS1 y TH1 (en el disipador) y de TH2 (sobre el choque) a sus dos islas; dejar 20 mm de holgura.
+11. Islas de señal (cal 22–26) [islas] · cautín 40 W, punta 1 mm, 330 °C
+   J5 J6 J7 J8 J9 J10 J11 J22 J23 J12 J13 J14 J15 J20 J21 J16 J17 J18 J19 H1 MEC4
+   Estañar la punta del hilo, meterla, soldar por abajo. K09: los hilos de fábrica del ventilador a J12/J13 y el cincho de 2.5 mm por H1.
+12. Islas de potencia (cal 10 y cal 8) AL FINAL [islas] · cautín 80 W, punta 5 mm, 400 °C, placa precalentada a ~100 °C
+   J1 J2 J3 J4
+   Precalentar la placa a ~100 °C con aire por abajo (no derrite lo ya soldado: SAC305 funde a 217 °C). Cautín ≥ 80 W, punta cincel de 5 mm: 2 oz sin alivio térmico. Luego la abrazadera de B a ≤ 15 mm.

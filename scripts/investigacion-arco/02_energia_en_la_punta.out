@@ -1,0 +1,274 @@
+
+====================================================================================================
+A. LA HF EN EL ARCO: <I^2>, LO QUE REPORTA LA LITERATURA Y LO QUE NUESTRO BUCK PUEDE DAR
+====================================================================================================
+  A1. Rizo del buck (triangulo) con arco a I_media = 40 A:  dI_pp = (Vbus - Vo) * D / (L f),  D = Vo/Vbus
+      Vo = V_arco + 40 A * 71 mOhm (choque+cable+stickout+arco)
+   V_arco  Vo     D     |  dI_pp @20k  @40k  @50k  @100k [A] |  I_ac_rms@20k  <I^2>/<I>^2-1 @20k   @100k
+    14.0 16.84  0.351  |      13.33  6.67  5.33   2.67      |      3.85           0.93 %         0.037 %
+    16.0 18.84  0.393  |      13.96  6.98  5.58   2.79      |      4.03           1.01 %         0.041 %
+    19.0 21.84  0.455  |      14.52  7.26  5.81   2.90      |      4.19           1.10 %         0.044 %
+    24.0 26.84  0.559  |      14.43  7.21  5.77   2.89      |      4.17           1.08 %         0.043 %
+  maximo rizo posible (D=0.5, Vo=24 V): 14.6 A_pp @20 kHz, 5.9 @50 kHz, 2.9 @100 kHz
+
+  A2. Pendientes (el buck es un integrador: di/dt = V_L / L)
+   V_arco 16.0 V: subida  0.78 A/us   bajada (por D1)  0.40 A/us   escalon 40->80 A sube en  51.3 us
+   V_arco 19.0 V: subida  0.71 A/us   bajada (por D1)  0.48 A/us   escalon 40->80 A sube en  56.6 us
+   V_arco 24.0 V: subida  0.59 A/us   bajada (por D1)  0.60 A/us   escalon 40->80 A sube en  68.3 us
+  Literatura UHFP (Li 2020, Qi/Yang): flancos de 50 A/us -> con nuestro bus necesitarias L = (48-19)/50e6 = 0.58 uH
+  Nuestro 41 uH: 0.71 A/us -> 71x mas lento que esos flancos
+
+  A3. La forma de onda de la literatura contra el promedio cuadratico (la fuerza magnetica va con I^2)
+   Li et al. 2020 (Ti-6Al-4V, UHFP-GTAW): Ib=40 A, Ip=80 A, 50 %, Im=60 A, flancos 50 A/us
+     <I^2>/Im^2 = 1.111  -> si la fuerza siguiera solo a <I^2>: +11.1 %
+     medido: fuerza de arco +30 % (20 kHz) ... +80.6 % (40 kHz);  presion calculada 193.4 -> 253.1 -> 277.2 Pa (+30.9 %, +43.3 %)
+     nucleo del arco / area total: 38.9 -> 39.8 -> 40.6 %  (60 A) ; D_I 4.24 -> 4.69 -> 4.76 mm (el nucleo CRECE)
+     area fundida del cordon (80 A medios): 6.01 -> 7.89 -> 9.68 mm^2 ; penetracion 1.87 -> 2.13 -> 2.40 mm
+   => el efecto medido (30-81 %) es 3-7x mayor que el de <I^2> (11 %): no es solo pellizco promedio;
+      la literatura lo atribuye al chorro de plasma con flancos rapidos. Mecanismo no cerrado -> lo tratamos como INCIERTO.
+   Nuestro buck a 20 kHz, arco 19 V: triangulo de 14.2 A_pp -> <I^2>/<I>^2 - 1 = 1.05 %
+
+  A4. Escala del pellizco y de la presion de Maecker a 40 A (p_eje ~ mu0 I^2 / (4 pi^2 R^2), columna uniforme)
+   I=   40 A: mu0 I^2/4pi =  0.160 mN  (  4.2 % de 2 pi r_w sigma = 3.77 mN)  p_Maecker R=0.5/1/1.5 mm:    204     51     23 Pa
+   I=   60 A: mu0 I^2/4pi =  0.360 mN  (  9.5 % de 2 pi r_w sigma = 3.77 mN)  p_Maecker R=0.5/1/1.5 mm:    458    115     51 Pa
+   I=   80 A: mu0 I^2/4pi =  0.640 mN  ( 17.0 % de 2 pi r_w sigma = 3.77 mN)  p_Maecker R=0.5/1/1.5 mm:    815    204     91 Pa
+   I=  194 A: mu0 I^2/4pi =  3.764 mN  ( 99.8 % de 2 pi r_w sigma = 3.77 mN)  p_Maecker R=0.5/1/1.5 mm:   4792   1198    532 Pa
+
+====================================================================================================
+B. NGSPICE: EL BUCK CON ARCO (18 V + 20 mOhm, stickout 25 mOhm) A 20 / 50 / 100 kHz, LAZO ABIERTO, I_media ~ 40 A
+====================================================================================================
+  f[kHz]   D      I_media  I_max  I_min  rizo_pp | P_Q1   P_D1   P_choque P_snub | P_arco  P_entrada  efic  | Vds_max
+     20  0.4554   39.71   46.73  32.65   14.07  |  24.0   16.0    35.1    0.32 |  786.8    884.0   0.890 |   79.9
+     50  0.4471   39.61   42.39  36.75    5.64  |  27.9   15.8    34.6    0.82 |  784.0    886.7   0.884 |   79.8
+    100  0.4322   39.75   41.18  38.26    2.92  |  34.9   15.7    34.8    1.65 |  786.6    897.3   0.877 |   79.5
+  costo de pasar de 20 a 100 kHz (Q1 + snubber): +12.2 W  (de una potencia de arco de ~787 W)
+  nota: P_Q1 incluye conduccion (Rd+Rs+Rb del modelo) + conmutacion con Rg_on 17 ohm / Rg_off 38 ohm del IR2110.
+
+====================================================================================================
+C. EFECTO PIEL EN EL ALAMBRE DE 0.8 mm: mu INCREMENTAL, delta Y R_ac/R_dc (frio vs caliente)
+====================================================================================================
+  C1. Curva B-H de acero bajo carbono (ajuste 1010) y permeabilidad INCREMENTAL (la que ve el rizo montado en la DC)
+     H [kA/m]   B [T]   mu_amplitud   mu_incremental
+         0.2    0.63        2501        2218.6
+         1.0    1.36        1086         171.8
+         2.0    1.50         597          74.6
+         5.0    1.67         265          28.0
+        10.0    1.79         142          13.8
+        15.9    1.87          93           8.7
+        25.0    1.95          62           5.5
+   I_dc=  10 A -> H en la superficie =   4.0 kA/m -> mu_incremental ~   35.5
+   I_dc=  20 A -> H en la superficie =   8.0 kA/m -> mu_incremental ~   17.4
+   I_dc=  40 A -> H en la superficie =  15.9 kA/m -> mu_incremental ~    8.7
+   I_dc=  70 A -> H en la superficie =  27.9 kA/m -> mu_incremental ~    5.0
+   costura del tubo (entrehierro SUPUESTO 10 um en camino de 2.07 mm): mu=  100 -> mu_efectiva    67
+   costura del tubo (entrehierro SUPUESTO 10 um en camino de 2.07 mm): mu= 1000 -> mu_efectiva   172
+
+  C2. Geometria SUPUESTA del 0.8 mm tubular: pared 0.15 mm, acero 0.306 mm^2 (61 % del area), fundente 0.196 mm^2 -> llenado en masa 19.7 %
+     masa por metro: acero 2.40 g/m + fundente 0.59 g/m = 2.99 g/m  (macizo 0.8 mm: 3.95 g/m)
+     chequeo DC del Bessel: tubo 20 C a 1 Hz: R = 0.46 mOhm/mm  vs  rho/A = 0.46 mOhm/mm
+
+  C3. delta y R_ac/R_dc.  frio = 20 C (rho 0.142 uOhm m), tibio = 600 C (0.688), caliente = 900 C (1.10, mu=1 arriba de Curie 770 C)
+   estado      mu_r   f[kHz] | delta[mm]  | R_ac/R_dc solido 0.8 | R_ac/R_dc tubo pared 0.15 | R_ac [mOhm/mm] tubo
+   frio          1       1 |    5.997  |      1.00            |      1.00                 |   0.464
+   frio          1      20 |    1.341  |      1.00            |      1.00                 |   0.464
+   frio          1     100 |    0.600  |      1.00            |      1.00                 |   0.464
+   frio          7       1 |    2.267  |      1.00            |      1.00                 |   0.464
+   frio          7      20 |    0.507  |      1.01            |      1.00                 |   0.464
+   frio          7     100 |    0.227  |      1.17            |      1.01                 |   0.470
+   frio         30       1 |    1.095  |      1.00            |      1.00                 |   0.464
+   frio         30      20 |    0.245  |      1.13            |      1.01                 |   0.468
+   frio         30     100 |    0.109  |      2.10            |      1.22                 |   0.564
+   frio        100       1 |    0.600  |      1.00            |      1.00                 |   0.464
+   frio        100      20 |    0.134  |      1.76            |      1.10                 |   0.511
+   frio        100     100 |    0.060  |      3.60            |      2.17                 |   1.008
+   frio        300       1 |    0.346  |      1.04            |      1.00                 |   0.465
+   frio        300      20 |    0.077  |      2.85            |      1.65                 |   0.765
+   frio        300     100 |    0.035  |      6.03            |      3.68                 |   1.705
+   tibio         7       1 |    4.990  |      1.00            |      1.00                 |   2.246
+   tibio         7      20 |    1.116  |      1.00            |      1.00                 |   2.246
+   tibio         7     100 |    0.499  |      1.01            |      1.00                 |   2.247
+   tibio       100       1 |    1.320  |      1.00            |      1.00                 |   2.246
+   tibio       100      20 |    0.295  |      1.07            |      1.00                 |   2.256
+   tibio       100     100 |    0.132  |      1.78            |      1.11                 |   2.490
+   caliente      1       1 |   16.692  |      1.00            |      1.00                 |   3.591
+   caliente      1      20 |    3.733  |      1.00            |      1.00                 |   3.591
+   caliente      1     100 |    1.669  |      1.00            |      1.00                 |   3.591
+   R_dc tubo: frio 0.464, 600 C 2.246, 900 C 3.591 mOhm/mm  (caliente/frio = 7.7x)
+
+  C4. Calentamiento por INDUCCION (bobina alrededor del alambre libre) -- regla d/delta >= 2.5 para acoplar bien
+   frio mu=100           : necesita delta <= 0.32 mm -> f >=       3.5 kHz
+   tibio mu=50           : necesita delta <= 0.32 mm -> f >=      34.0 kHz
+   arriba de Curie mu=1  : necesita delta <= 0.32 mm -> f >=    2721.0 kHz
+
+====================================================================================================
+D. EL ALAMBRE LIBRE COMO PRECALENTADOR (transito en la coordenada del alambre; acero conduce, fundente solo absorbe)
+====================================================================================================
+  enthalpias: acero 20->2400 C = 2030 kJ/kg  (solido a 770 C: 496 kJ/kg = 24 %; a 1200 C: 820 kJ/kg = 40 %);  fundente 1880 kJ/kg (SUPUESTO)
+
+  D1. Calibracion de V_e (calor por amper en la punta) con Lincoln Innershield NR-211-MP 0.9 mm, DC-, stick-out electrico 10 mm
+    I[A]  v_f[mm/s]  V_arco | T_punta[C]  P_stickout[W]  P_punta=I*V_e [W]  V_e[V]   P_gota/P_arco
+      30     20.8     14.0  |      106        3.9          154.0           5.13     0.37
+      65     30.0     15.0  |      425       28.6          198.8           3.06     0.23
+      90     38.3     16.0  |      820       87.2          203.5           2.26     0.19
+     120     46.7     16.5  |     1480 (FUNDE)      195.7          159.4           1.33     0.16
+    V_e(DC-, autoprotegido) usado = promedio de los 2 puntos bajos = 4.10 V  (rango de los 4 puntos 1.33-5.13 V)
+    referencia: Watkins 1990 (resumen OSTI), GMAW 0.89 mm acero Ar-2%O2: componente de la gota = 40 % del calor del arco; total 85 %
+
+  D2. Prediccion para el 0.8 mm E71T-GS a corriente fija: velocidad de alambre que se quema (v_f de equilibrio)
+    I[A]  stickout | v_f[mm/s] (m/min) | T_punta[C]  P_stick[W]  P_punta[W] | caudal acero [mm^3/s]
+      30    10 mm  |    21.4 (1.29)      |     165         5.4       122.9   |   6.56
+      30    15 mm  |    22.1 (1.32)      |     256         9.3       122.9   |   6.76
+      30    20 mm  |    22.9 (1.37)      |     358        14.2       122.9   |   7.01
+      40    10 mm  |    29.1 (1.75)      |     224        10.5       163.9   |   8.92
+      40    15 mm  |    30.5 (1.83)      |     359        19.0       163.9   |   9.35
+      40    20 mm  |    32.4 (1.94)      |     509        30.3       163.9   |   9.93
+      50    10 mm  |    37.2 (2.23)      |     289        18.0       204.8   |  11.40
+      50    15 mm  |    39.9 (2.39)      |     472        34.0       204.8   |  12.21
+      50    20 mm  |    43.5 (2.61)      |     657        56.0       204.8   |  13.33
+      70    10 mm  |    55.0 (3.30)      |     434        42.5       286.8   |  16.84
+      70    15 mm  |    62.2 (3.73)      |     691        85.6       286.8   |  19.04
+      70    20 mm  |    71.4 (4.29)      |     891       141.5       286.8   |  21.88
+
+  D3. Polaridad: DCEN funde +29 % (Ar+18CO2, Souza/Scotti) a +40-50 % (Puhl, 100-400 A) sobre DCEP -> V_e(DCEP) = V_e/1.29 .. /1.5
+    40 A, stickout 15 mm, DCEP (V_e=3.18 V): v_f = 24.9 mm/s  vs DCEN 30.5 mm/s
+    40 A, stickout 15 mm, DCEP (V_e=2.73 V): v_f = 22.4 mm/s  vs DCEN 30.5 mm/s
+
+  D4. El rizo de 20 kHz como precalentador: Joule extra en el stickout (40 A, 15 mm, DCEN)
+    20 kHz  rizo 14.52 A_pp (I_ac,rms 4.19 A) mu_frio=    7: P_stick =  19.33 W de los cuales rizo 0.210 W ( 1.09 %)
+    20 kHz  rizo 14.52 A_pp (I_ac,rms 4.19 A) mu_frio=  100: P_stick =  19.35 W de los cuales rizo 0.218 W ( 1.13 %)
+    100 kHz rizo  2.90 A_pp (I_ac,rms 0.84 A) mu_frio=    7: P_stick =  19.00 W de los cuales rizo 0.008 W ( 0.04 %)
+    100 kHz rizo  2.90 A_pp (I_ac,rms 0.84 A) mu_frio=  100: P_stick =  19.01 W de los cuales rizo 0.014 W ( 0.07 %)
+
+  D5. Precalentar EN SERIO: cuanto cuesta llevar el alambre a 700 C antes de la punta (40 A, v_f de 15 mm)
+    potencia para 20->700 C a 30.5 mm/s:  42.7 W ; recorta 23.4 % de la energia que pide la punta -> +30 % de deposito a la misma I
+    por induccion (bobina sobre el alambre libre, 100-300 kHz): se auto-limita en Curie 770 C (mu->1, f_necesaria salta a ~2.7 MHz)
+    con la MISMA corriente de 40 A (Joule DC, gratis): T_punta = 700 C con stickout = 22.8 mm (hoy 15 mm -> 359 C)
+
+====================================================================================================
+E. BALANCE DE ENERGIA A 40 A: A DONDE SE VA LA POTENCIA Y QUE PERILLA SUBE LA FRACCION A LA GOTA
+====================================================================================================
+  V_arco = 14 + 10 V/mm * L_arco (medido por ian).  P_punta = I*V_e (calibrado DC-).  P_stick = Joule del transito (D).
+  La columna + caida de la pieza = I*(V_arco - V_e) -> placa + radiacion; NO a la gota.
+  stickout L_arco | V_arco  P_arco | P_stick  P_punta  P_gota | %gota de lo electrico | columna+pieza [W]
+     10 mm   0.5 mm |  19.0     760 |   10.5    163.9   174.4 |    22.6 %              |    596
+     10 mm   1.0 mm |  24.0     960 |   10.5    163.9   174.4 |    18.0 %              |    796
+     10 mm   2.0 mm |  34.0    1360 |   10.5    163.9   174.4 |    12.7 %              |   1196
+     10 mm   3.0 mm |  44.0    1760 |   10.5    163.9   174.4 |     9.8 %              |   1596
+     20 mm   0.5 mm |  19.0     760 |   30.3    163.9   194.2 |    24.6 %              |    596
+     20 mm   1.0 mm |  24.0     960 |   30.3    163.9   194.2 |    19.6 %              |    796
+     20 mm   2.0 mm |  34.0    1360 |   30.3    163.9   194.2 |    14.0 %              |   1196
+     20 mm   3.0 mm |  44.0    1760 |   30.3    163.9   194.2 |    10.8 %              |   1596
+  perillas (derivadas a 40 A, stickout 15 mm, L_arco 1 mm):
+   base: 18.7 % a la gota
+   L_arco 1 -> 0.5 mm: 23.5 %   (cada mm de arco = 10 V x 40 A = 400 W a la columna)
+   stickout 10 -> 20 mm: v_f 29.1 -> 32.4 mm/s (+11 % de deposito a la misma corriente)
+   DCEN vs DCEP: +29..50 % de fusion (fuente, no calculo)
+   rizo 20 kHz vs 100 kHz: +1.0 % en el termino Joule = <0.3 % de la potencia a la gota
+
+====================================================================================================
+F. CAMPO AXIAL: BOBINA ALREDEDOR DE LA BOQUILLA vs EL CAMPO PROPIO
+====================================================================================================
+  campo propio B_theta = mu0 I/(2 pi r) a I=40 A, r=0.4 mm:  20.0 mT
+  campo propio B_theta = mu0 I/(2 pi r) a I=40 A, r=1.0 mm:   8.0 mT
+  campo propio B_theta = mu0 I/(2 pi r) a I=40 A, r=2.0 mm:   4.0 mT
+  bobina: Ø int 24 mm, Ø ext 40 mm, largo 20 mm, llenado 0.6, cobre a ~60 C; arco a z bajo la cara
+   z=   5 mm (17.00 uT/A-v) |   2 mT: NI=   118 A-v P=   0.3 W |   5 mT: NI=   294 A-v P=   1.8 W |  10 mT: NI=   588 A-v P=   7.2 W
+   z=  10 mm (10.97 uT/A-v) |   2 mT: NI=   182 A-v P=   0.7 W |   5 mT: NI=   456 A-v P=   4.3 W |  10 mT: NI=   911 A-v P=  17.4 W
+   z=  15 mm ( 7.04 uT/A-v) |   2 mT: NI=   284 A-v P=   1.7 W |   5 mT: NI=   711 A-v P=  10.6 W |  10 mT: NI=  1421 A-v P=  42.3 W
+  gratis: 5 vueltas del cable de la antorcha (R=20 mm) a 40 A -> B_z(z=0 mm) =  6.28 mT (proporcional a I, sin perilla propia)
+  gratis: 5 vueltas del cable de la antorcha (R=20 mm) a 40 A -> B_z(z=15 mm) =  3.22 mT (proporcional a I, sin perilla propia)
+  gratis: 10 vueltas del cable de la antorcha (R=20 mm) a 40 A -> B_z(z=0 mm) = 12.57 mT (proporcional a I, sin perilla propia)
+  gratis: 10 vueltas del cable de la antorcha (R=20 mm) a 40 A -> B_z(z=15 mm) =  6.43 mT (proporcional a I, sin perilla propia)
+  literatura: CO2 2 mT -> transferencia globular suave; 3-4 mT -> repelida rotatoria (Materials 2025);
+              metal-cored 320 A con 6 mT: frecuencia de gotas casi igual, penetracion 3.7 -> 4.2 mm (IJAMT 2025);
+              TIG axial (modelo): arco hueco, presion central NEGATIVA (de +97 Pa a -3038 Pa a 150 mT) (Micromachines 2025)
+
+====================================================================================================
+G. TANQUE LC / DESCARGA DE CAPACITOR CONTRA EL BUCK; PRESUPUESTO DE LA LRS-1200-48
+====================================================================================================
+  LRS-1200-48 (hoja Mean Well): 25 A nominal; PICO 37.5 A / 1800 W por <= 5 s con ciclo <= 35 % y promedio <= 1200 W;
+  sobrecarga >105 % por >5 s -> APAGA y hay que re-energizar. Bulk 2x2200 uF (La Pluma).
+  tanque serie a f2=668 Hz con L=41 uH: C = 1.38 mF; R_lazo 50 mOhm -> Q_tanque = 3.4  (la gota: Q supuesto 30)
+  tanque serie a f2=668 Hz con L=41 uH: C = 1.38 mF; R_lazo 100 mOhm -> Q_tanque = 1.7  (la gota: Q supuesto 30)
+  la gota crece de a=0.40 a 0.46 mm: f2 baja 19 % (f ~ a^-1.5) -> un tanque fijo no la sigue; el buck (100 kHz, PI+anticipada) ya da 30 A a 668-1268 Hz con -1.7 grados (canon)
+  energia en el tanque a 30 A de amplitud: 1/2 L I^2 = 18.5 mJ por ciclo; en la bobina del buck a 40 A: 32.8 mJ
+
+  Pulso de desprendimiento con el MISMO buck (subida por (48-V)/L, bajada por D1 a V/L):
+   I_pico | t_subida  t_bajada | E_pulso 1 ms @25 V | I_entrada pico | caida bulk/pulso | P_media (40 A base + 75 pulsos/s) | D1 prom
+      70  |   53.5 us   48.1 us |    1.75 J           |   39.2 A       |  0.39 V          |   1136 W (ok)            | 20.2 A
+     100  |  107.0 us   96.3 us |    2.50 J           |   56.0 A       |  4.21 V          |   1196 W (ok)            | 21.3 A
+     150  |  196.1 us  176.5 us |    3.75 J           |   84.0 A       | 10.57 V          |   1297 W (> 1200 W NOMINAL)            | 23.1 A
+     200  |  285.2 us  256.8 us |    5.00 J           |  112.0 A       | 16.93 V          |   1398 W (> 1200 W NOMINAL)            | 24.9 A
+   limites: IRFB4227 65 A cont / 260 A pulsado; MBR40100CT 2x20 A prom, IFSM 250-300 A (8.3 ms); ACS758: depende de la variante (50/100/150/200 A)
+  Descarga de capacitor (CD) directa a la punta: C a 48 V por lazo de 1 uH / 30 mOhm contra arco de 20 V
+   C=   100 uF: E= 0.12 J, I_pico ~    226 A a t= 14.4 us (pellizco al pico   5.1 mN =  1.4x tension); impulso ~  73.2 nN s -> dv gota 0.46 mm (m=3.20 mg) ~  0.02 m/s; espectro plano hasta ~35 kHz: golpea TODOS los modos
+   C=  1000 uF: E= 1.15 J, I_pico ~    496 A a t= 38.7 us (pellizco al pico  24.6 mN =  6.5x tension); impulso ~ 950.3 nN s -> dv gota 0.46 mm (m=3.20 mg) ~  0.30 m/s; espectro plano hasta ~13 kHz: golpea TODOS los modos
+
+====================================================================================================
+H. 'RESONANCIA DE CAMPOS': LONGITUDES DE ONDA Y DONDE SI HAY RESONANCIA
+====================================================================================================
+  f =    0.668 kHz -> lambda =      448.8 km   (la pluma mide 0.02-0.5 m: todo es cuasi-estatico)
+  f =   20.000 kHz -> lambda =       15.0 km   (la pluma mide 0.02-0.5 m: todo es cuasi-estatico)
+  f =  100.000 kHz -> lambda =        3.0 km   (la pluma mide 0.02-0.5 m: todo es cuasi-estatico)
+  resonancia electromagnetica de media onda en stickout 20 mm: f =      7.5 GHz
+  resonancia electromagnetica de media onda en arco 2 mm     : f =     75.0 GHz
+  resonancia electromagnetica de media onda en gota 0.46 mm  : f =    325.9 GHz
+  frecuencia de plasma del arco n_e=1e+22 m^-3:  0.90 THz
+  frecuencia de plasma del arco n_e=1e+23 m^-3:  2.84 THz
+  resonancias REALES al alcance: (1) mecanica de la gota l=2 a 668 Hz (Q~30 supuesto);
+  (2) termica-magnetica: Curie 770 C (mu 100->1) cambia R_ac del rizo y corta la induccion; (3) LC concentrado (choque+C).
+
+====================================================================================================
+I. AUTORREGULACION Y PREDICCION DEL EXPERIMENTO DECISIVO: QUEMADO LIBRE (alimentador parado, 40 A fijos)
+====================================================================================================
+  I1. CC + alimentacion fija: el arco casi no se autorregula (el canal Joule es debil a 40 A en 0.8 mm tubular)
+    dMR/dL_stickout = 0.330 1/s  -> constante de tiempo del stickout tau = 3.0 s
+    1 % de error de alimentacion (0.31 mm/s) mueve el arco 0.93 mm = 9.3 V  -> el firmware DEBE cerrar el largo de arco (CV o servo de alimentacion)
+    en cambio dMR/dI = 0.89 mm/s por A: con CV, 1 % de alimentacion se corrige con 0.34 A
+
+  I2. Quemado libre: arco a 40 A con alimentacion corriendo; se PARA el alimentador; el alambre se quema hacia atras;
+      V = 14 + 10*L_arco sube a la velocidad de fusion: dV/dt = 10 V/mm * MR. Se corta a 38 V (L_arco 2.4 mm).
+    caso                    | dV/dt [V/s]  MR [mm/s]  | t de 24 a 38 V [ms]
+    DCEN, PWM 100 kHz       |    305.3      30.53     |   45.9
+    DCEN, PWM 20 kHz        |    305.3      30.53     |   45.9
+    DCEP (-29 %), 100 kHz   |    237.3      23.73     |   59.0
+    DCEP (-50 %), 100 kHz   |    204.4      20.44     |   68.5
+    DCEN V_e=3.0 V          |    224.3      22.43     |   62.4
+    DCEN V_e=5.1 V          |    381.6      38.16     |   36.7
+    => 20 kHz vs 100 kHz: +0.01 %   DCEP/DCEN: 0.78 .. 0.67
+    traza cruda (DCEN, 100 kHz): t[ms]  V[V]  stickout[mm]
+         0.0   24.00   15.00
+         3.8   25.17   14.88
+         7.6   26.33   14.77
+        11.5   27.50   14.65
+        15.3   28.66   14.53
+        19.1   29.83   14.42
+        22.9   31.00   14.30
+        26.7   32.16   14.18
+        30.6   33.33   14.07
+        34.4   34.49   13.95
+        38.2   35.66   13.83
+        42.0   36.83   13.72
+        45.8   37.99   13.60
+        45.9   38.01   13.60
+  Lectura: V media por ciclo de trabajo (D*Vbus - I*R); ruido ~0.93 mOhm/periodo * 40 A = 37 mV; las gotas (~75/s) meten escalones de ~1-3 V:
+  con 10 tiros por caso y ajuste lineal en 26-36 V se espera +-3-5 % por caso (estimado, no medido).
+
+====================================================================================================
+J. CHEQUEO DEL CANON: 'campanazo 40 A base + 30 A a f2, alambre a 3 m/min, 75 gotas/s de 0.4526 mm'
+====================================================================================================
+  canon: v_f = 50 mm/s; 75 gotas/s x 0.388 mm^3 = 29.1 mm^3/s de gota
+  alambre 0.8 a 50 mm/s: volumen total 25.1 mm^3/s (acero 15.3 + fundente 9.8)
+  la onda de 30 A (media cero, I nunca < 10 A) NO agrega calor a la punta (canal lineal); Joule sube por I_rms^2 = 40^2 + 30^2/2:
+    I_rms = 45.3 A -> Joule x1.28
+    V_e=3.00 V: 40 A DC funde  23.9 mm/s (1.43 m/min) -> acero  7.32 mm^3/s =  18.8 gotas/s de 0.4526 mm;  para 3 m/min hace falta I_media =  67.4 A
+    V_e=4.10 V: 40 A DC funde  30.5 mm/s (1.83 m/min) -> acero  9.35 mm^3/s =  24.1 gotas/s de 0.4526 mm;  para 3 m/min hace falta I_media =  59.7 A
+    V_e=5.13 V: 40 A DC funde  37.1 mm/s (2.23 m/min) -> acero 11.36 mm^3/s =  29.3 gotas/s de 0.4526 mm;  para 3 m/min hace falta I_media =  52.0 A
+  Lincoln NR-211-MP 0.9 mm DC- (stick-out 10 mm) escalado a 0.8 mm por area (x 1/0.79), misma corriente:
+      30 A: 0.9 mm 1.25 m/min -> 0.8 mm ~1.58 m/min
+      65 A: 0.9 mm 1.80 m/min -> 0.8 mm ~2.28 m/min
+      90 A: 0.9 mm 2.30 m/min -> 0.8 mm ~2.91 m/min
+     120 A: 0.9 mm 2.80 m/min -> 0.8 mm ~3.54 m/min
+    interpolado: 40 A -> 1.78 m/min ; 3 m/min ->  94.2 A
+
+FIN

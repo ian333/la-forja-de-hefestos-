@@ -1,0 +1,1059 @@
+##############################################################################################################
+# 01 · MILLONES DE ONDAS: forma de fuerza óptima y control con retroalimentación (oído)   N = 300 gotas por caso
+##############################################################################################################
+  gota: semilla 0.30 mm -> pedida 0.46 mm; f2(0.46) = 668 Hz (sin carga), 645 Hz con beta = 1 y 10/70 A
+  vida de la gota: 58.6 ms a 0.6 m/min, 11.7 ms a 3 m/min (alambre 0.8 mm)
+  pendiente: sube 0.42 A/us, baja 0.47 A/us; ADC: 29.8 mV rms por muestra cruda (ENOB 9, /16)
+  mundos: nom = todo nominal | cal = f2 real con 1 % de jitter por gota, avance ±10 %, residuo q0 hasta 0.3, dR 1 mOhm | sin = igual pero f2 ±5 % por gota
+  actuador (modelo de primer orden + pendiente) contra scripts/canon/canon_corriente.out, referencia 40 + 30 cos(2 pi f t):
+     lazo 20k  f =  668 Hz: modelo  25.4 A, retraso  32.1° | ngspice (canon)  26.2 A,  31.8°
+     lazo 20k  f = 1268 Hz: modelo  19.3 A, retraso  49.9° | ngspice (canon)  20.3 A,  51.7°
+     lazo 100k f =  668 Hz: modelo  30.0 A, retraso   1.1° | ngspice (canon)  30.7 A,  -1.7°
+     lazo 100k f = 1268 Hz: modelo  30.0 A, retraso   2.1° | ngspice (canon)  32.0 A,  -1.7°
+
+==============================================================================================================
+PARTE 1b · LA FORMA DE LA FUERZA (gota fija de 0.46 mm, la onda va en fase con la velocidad de la gota, actuador ideal, beta = 1)
+  Como s = I^2/Icrit^2, la energia int I^2 dt = Icrit^2 int s dt es LINEAL en s: el optimo (Pontryagin) es bang-bang en s.
+  F1 = componente de s a la frecuencia de la gota (lo unico que la gota oye). ⟨I⟩ = lo que derrite (canal de volumen).
+==============================================================================================================
+    Q  Imax | forma                              |     F1 | ciclos |  <I> A | <I2>/40^2 | int(I2-40^2) A2ms
+   10    70 | tono en I (Imid ± A, senoidal)     | 0.0638 |  nunca |   40.1 |      1.29 |   (no se suelta en 60 ciclos)
+   10    70 | seno en s  (I = Icrit*sqrt(s))     | 0.0638 |  nunca |   46.1 |      1.58 |   (no se suelta en 60 ciclos)
+   10    70 | ventana  60° en Imax (resto Imin)  | 0.0406 |  nunca |   20.0 |      0.56 |   (no se suelta en 60 ciclos)
+   10    70 | ventana  90° en Imax (resto Imin)  | 0.0574 |  nunca |   25.3 |      0.83 |   (no se suelta en 60 ciclos)
+   10    70 | ventana 120° en Imax (resto Imin)  | 0.0703 |  nunca |   30.6 |      1.09 |   (no se suelta en 60 ciclos)
+   10    70 | ventana 180° en Imax (resto Imin)  | 0.0812 |  nunca |   40.9 |      1.61 |   (no se suelta en 60 ciclos)
+   10    70 | ventana 240° en Imax (resto Imin)  | 0.0703 |  nunca |   51.0 |      2.11 |   (no se suelta en 60 ciclos)
+  --------------------------------------------------------------------------------------------------------
+   10   100 | tono en I (Imid ± A, senoidal)     | 0.1315 |   3.01 |   55.7 |      2.60 |             11517
+   10   100 | seno en s  (I = Icrit*sqrt(s))     | 0.1315 |   3.03 |   65.1 |      3.21 |             16047
+   10   100 | ventana  60° en Imax (resto Imin)  | 0.0837 |  15.31 |   25.3 |      1.12 |              4229
+   10   100 | ventana  90° en Imax (resto Imin)  | 0.1184 |   4.14 |   33.3 |      1.67 |              6605
+   10   100 | ventana 120° en Imax (resto Imin)  | 0.1450 |   3.08 |   41.4 |      2.22 |              9043
+   10   100 | ventana 180° en Imax (resto Imin)  | 0.1675 |   2.04 |   55.7 |      3.20 |             10760
+   10   100 | ventana 240° en Imax (resto Imin)  | 0.1450 |   2.87 |   78.2 |      4.75 |             25767
+  --------------------------------------------------------------------------------------------------------
+   30    70 | tono en I (Imid ± A, senoidal)     | 0.0638 |   6.05 |   40.3 |      1.30 |              4323
+   30    70 | seno en s  (I = Icrit*sqrt(s))     | 0.0638 |   6.08 |   46.0 |      1.58 |              8396
+   30    70 | ventana  60° en Imax (resto Imin)  | 0.0406 |  14.12 |   20.1 |      0.57 |            -14600
+   30    70 | ventana  90° en Imax (resto Imin)  | 0.0574 |   7.12 |   25.3 |      0.83 |             -2953
+   30    70 | ventana 120° en Imax (resto Imin)  | 0.0703 |   5.11 |   30.6 |      1.09 |              1118
+   30    70 | ventana 180° en Imax (resto Imin)  | 0.0812 |   4.10 |   40.7 |      1.60 |              5891
+   30    70 | ventana 240° en Imax (resto Imin)  | 0.0703 |   5.87 |   52.6 |      2.19 |             16760
+  --------------------------------------------------------------------------------------------------------
+   30   100 | tono en I (Imid ± A, senoidal)     | 0.1315 |   1.99 |   55.8 |      2.61 |              7677
+   30   100 | seno en s  (I = Icrit*sqrt(s))     | 0.1315 |   1.98 |   65.1 |      3.22 |             10522
+   30   100 | ventana  60° en Imax (resto Imin)  | 0.0837 |   4.13 |   25.1 |      1.10 |               989
+   30   100 | ventana  90° en Imax (resto Imin)  | 0.1184 |   3.06 |   33.7 |      1.69 |              5071
+   30   100 | ventana 120° en Imax (resto Imin)  | 0.1450 |   2.05 |   41.9 |      2.26 |              6179
+   30   100 | ventana 180° en Imax (resto Imin)  | 0.1675 |   2.00 |   54.8 |      3.14 |             10262
+   30   100 | ventana 240° en Imax (resto Imin)  | 0.1450 |   1.75 |   82.2 |      5.02 |             16921
+  --------------------------------------------------------------------------------------------------------
+  [1 s]
+
+==============================================================================================================
+GEMELO (lazo abierto): instante de arranque que suelta la gota NOMINAL en 0.460 mm
+==============================================================================================================
+  tono único (campanazo f fija) Q=   5 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=   5 0.6 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=   5 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=   5 3.0 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=  10 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=  10 0.6 m/min Imax 100 lazo 20k : arranca  53.92 ms, suelta  59.20 ms en 0.4611 mm tras  3.55 ciclos
+  tono único (campanazo f fija) Q=  10 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=  10 3.0 m/min Imax 100 lazo 20k : arranca   6.68 ms, suelta  11.89 ms en 0.4615 mm tras  3.78 ciclos
+  tono único (campanazo f fija) Q=  30 0.6 m/min Imax  70 lazo 20k : arranca  48.94 ms, suelta  60.21 ms en 0.4630 mm tras  7.72 ciclos
+  tono único (campanazo f fija) Q=  30 0.6 m/min Imax 100 lazo 20k : arranca  55.68 ms, suelta  59.38 ms en 0.4614 mm tras  2.48 ciclos
+  tono único (campanazo f fija) Q=  30 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=  30 3.0 m/min Imax 100 lazo 20k : arranca   8.26 ms, suelta  11.88 ms en 0.4614 mm tras  2.53 ciclos
+  multitono 3 (±5 %)           Q=   5 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 3 (±5 %)           Q=   5 0.6 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  multitono 3 (±5 %)           Q=   5 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 3 (±5 %)           Q=   5 3.0 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  multitono 3 (±5 %)           Q=  10 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 3 (±5 %)           Q=  10 0.6 m/min Imax 100 lazo 20k : arranca  52.46 ms, suelta  59.44 ms en 0.4615 mm tras  4.71 ciclos
+  multitono 3 (±5 %)           Q=  10 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 3 (±5 %)           Q=  10 3.0 m/min Imax 100 lazo 20k : arranca   6.04 ms, suelta  13.06 ms en 0.4724 mm tras  5.08 ciclos
+  multitono 3 (±5 %)           Q=  30 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 3 (±5 %)           Q=  30 0.6 m/min Imax 100 lazo 20k : arranca  53.92 ms, suelta  59.23 ms en 0.4612 mm tras  3.58 ciclos
+  multitono 3 (±5 %)           Q=  30 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 3 (±5 %)           Q=  30 3.0 m/min Imax 100 lazo 20k : arranca   6.62 ms, suelta  11.86 ms en 0.4613 mm tras  3.80 ciclos
+  multitono 5 (±5 %)           Q=   5 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 5 (±5 %)           Q=   5 0.6 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  multitono 5 (±5 %)           Q=   5 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 5 (±5 %)           Q=   5 3.0 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  multitono 5 (±5 %)           Q=  10 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 5 (±5 %)           Q=  10 0.6 m/min Imax 100 lazo 20k : arranca  53.92 ms, suelta  59.41 ms en 0.4615 mm tras  3.70 ciclos
+  multitono 5 (±5 %)           Q=  10 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 5 (±5 %)           Q=  10 3.0 m/min Imax 100 lazo 20k : arranca   7.50 ms, suelta  13.00 ms en 0.4717 mm tras  3.83 ciclos
+  multitono 5 (±5 %)           Q=  30 0.6 m/min Imax  70 lazo 20k : arranca  25.50 ms, suelta  60.24 ms en 0.4631 mm tras 26.09 ciclos
+  multitono 5 (±5 %)           Q=  30 0.6 m/min Imax 100 lazo 20k : arranca  55.39 ms, suelta  59.26 ms en 0.4612 mm tras  2.60 ciclos
+  multitono 5 (±5 %)           Q=  30 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  multitono 5 (±5 %)           Q=  30 3.0 m/min Imax 100 lazo 20k : arranca   8.09 ms, suelta  11.89 ms en 0.4615 mm tras  2.68 ciclos
+  chirp a ciegas (canon)       Q=   5 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  chirp a ciegas (canon)       Q=   5 0.6 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  chirp a ciegas (canon)       Q=   5 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  chirp a ciegas (canon)       Q=   5 3.0 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  chirp a ciegas (canon)       Q=  10 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  chirp a ciegas (canon)       Q=  10 0.6 m/min Imax 100 lazo 20k : arranca  54.22 ms, suelta  59.46 ms en 0.4616 mm tras  3.52 ciclos
+  chirp a ciegas (canon)       Q=  10 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  chirp a ciegas (canon)       Q=  10 3.0 m/min Imax 100 lazo 20k : arranca   6.97 ms, suelta  11.87 ms en 0.4613 mm tras  3.52 ciclos
+  chirp a ciegas (canon)       Q=  30 0.6 m/min Imax  70 lazo 20k : arranca  48.36 ms, suelta  59.30 ms en 0.4613 mm tras  7.51 ciclos
+  chirp a ciegas (canon)       Q=  30 0.6 m/min Imax 100 lazo 20k : arranca  55.68 ms, suelta  59.38 ms en 0.4614 mm tras  2.47 ciclos
+  chirp a ciegas (canon)       Q=  30 3.0 m/min Imax  70 lazo 20k : arranca   2.46 ms, suelta  11.83 ms en 0.4610 mm tras  7.51 ciclos
+  chirp a ciegas (canon)       Q=  30 3.0 m/min Imax 100 lazo 20k : arranca   8.38 ms, suelta  11.91 ms en 0.4618 mm tras  2.47 ciclos
+  chirp, seno en s (raíz)      Q=   5 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  chirp, seno en s (raíz)      Q=   5 0.6 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  chirp, seno en s (raíz)      Q=   5 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  chirp, seno en s (raíz)      Q=   5 3.0 m/min Imax 100 lazo 20k : NINGÚN arranque la suelta
+  chirp, seno en s (raíz)      Q=  10 0.6 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  chirp, seno en s (raíz)      Q=  10 0.6 m/min Imax 100 lazo 20k : arranca  54.22 ms, suelta  59.44 ms en 0.4616 mm tras  3.51 ciclos
+  chirp, seno en s (raíz)      Q=  10 3.0 m/min Imax  70 lazo 20k : NINGÚN arranque la suelta
+  chirp, seno en s (raíz)      Q=  10 3.0 m/min Imax 100 lazo 20k : arranca   6.97 ms, suelta  11.85 ms en 0.4612 mm tras  3.51 ciclos
+  chirp, seno en s (raíz)      Q=  30 0.6 m/min Imax  70 lazo 20k : arranca  48.36 ms, suelta  59.31 ms en 0.4613 mm tras  7.52 ciclos
+  chirp, seno en s (raíz)      Q=  30 0.6 m/min Imax 100 lazo 20k : arranca  55.68 ms, suelta  59.34 ms en 0.4614 mm tras  2.45 ciclos
+  chirp, seno en s (raíz)      Q=  30 3.0 m/min Imax  70 lazo 20k : arranca   3.40 ms, suelta  11.75 ms en 0.4603 mm tras  6.57 ciclos
+  chirp, seno en s (raíz)      Q=  30 3.0 m/min Imax 100 lazo 20k : arranca   8.38 ms, suelta  11.88 ms en 0.4615 mm tras  2.45 ciclos
+  tono único (campanazo f fija) Q=  10 0.6 m/min Imax  70 lazo 100k: NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=  10 3.0 m/min Imax  70 lazo 100k: NINGÚN arranque la suelta
+  tono único (campanazo f fija) Q=  30 0.6 m/min Imax  70 lazo 100k: arranca  49.82 ms, suelta  59.32 ms en 0.4613 mm tras  6.51 ciclos
+  tono único (campanazo f fija) Q=  30 3.0 m/min Imax  70 lazo 100k: arranca   6.04 ms, suelta  15.75 ms en 0.4952 mm tras  6.74 ciclos
+  chirp a ciegas (canon)       Q=  10 0.6 m/min Imax  70 lazo 100k: NINGÚN arranque la suelta
+  chirp a ciegas (canon)       Q=  10 3.0 m/min Imax  70 lazo 100k: NINGÚN arranque la suelta
+  chirp a ciegas (canon)       Q=  30 0.6 m/min Imax  70 lazo 100k: arranca  50.11 ms, suelta  59.43 ms en 0.4615 mm tras  6.38 ciclos
+  chirp a ciegas (canon)       Q=  30 3.0 m/min Imax  70 lazo 100k: arranca   4.75 ms, suelta  11.85 ms en 0.4612 mm tras  5.39 ciclos
+
+  corriendo 332 casos x 300 gotas en 16 procesos ... [10 s]
+  listo [143 s]
+
+==============================================================================================================
+PARTE 1 · SOLTAR UNA GOTA DE 0.460 mm: Monte Carlo por estrategia (lazo de corriente de HOY: 20 kHz, PI lento)
+  err/sig/P95 = error del tamaño al soltarse (um); ciclos = ciclos de la gota desde que arranca la onda hasta que se suelta;
+  ∫(I²-40²) = energía de pellizco EXTRA sobre 40 A fijos en toda la vida de la gota (A²·ms); sig_t = dispersión del instante de soltar
+  contra lo planeado (us; lo que importa para apuntar). '*' = el controlador ve la gota real (cota: oído perfecto)
+==============================================================================================================
+
+  >> 0.6 m/min | Imax 70 A | Q = 5 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 0.6 m/min | Imax 70 A | Q = 5 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang v, oído perfecto     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang+fase, oído perf.     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 0.6 m/min | Imax 70 A | Q = 5 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang v, oído perfecto     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang+fase, oído perf.     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 0.6 m/min | Imax 70 A | Q = 10 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 0.6 m/min | Imax 70 A | Q = 10 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang v, oído perfecto     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang+fase, oído perf.     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 0.6 m/min | Imax 70 A | Q = 10 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang v, oído perfecto     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang+fase, oído perf.     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 0.6 m/min | Imax 70 A | Q = 30 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   7.72 |   +3.0 |    0.0 |    3.0 |     4147 |  40.1 |      0
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |  100.0 |  26.09 |   +3.1 |    0.0 |    3.1 |     9399 |  40.2 |      0
+  chirp a ciegas (canon)         |  100.0 |   7.51 |   +1.3 |    0.0 |    1.3 |     3889 |  40.1 |      0
+  chirp, seno en s (raíz)        |  100.0 |   7.52 |   +1.3 |    0.0 |    1.3 |     8829 |  41.1 |      0
+  chirp + oído (canon)           |  100.0 |   7.86 |   +0.8 |    1.2 |    2.8 |     4539 |  40.1 |    656
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   4.82 |   -0.2 |    0.8 |    1.4 |     9680 |  40.5 |    410
+  bang-bang + fase (lente A)     |  100.0 |   5.07 |   -0.4 |    0.1 |    0.5 |     9558 |  39.9 |     47
+
+  >> 0.6 m/min | Imax 70 A | Q = 30 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |   90.7 |   9.87 |   +6.8 |    5.5 |   17.7 |     5135 |  40.1 |   4501
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |   67.7 |  26.86 |   +6.4 |    6.8 |   14.9 |     9549 |  40.2 |   6555
+  chirp a ciegas (canon)         |   70.3 |   8.09 |   +3.3 |    8.1 |   18.9 |     4145 |  40.1 |   1408
+  chirp, seno en s (raíz)        |   73.7 |   7.79 |   +1.7 |    7.9 |   16.0 |     9117 |  41.2 |   1003
+  chirp + oído (canon)           |  100.0 |   7.72 |   +0.1 |    3.6 |    6.9 |     4193 |  40.1 |    825
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   4.82 |   -0.6 |    3.2 |    6.0 |     9566 |  40.5 |    440
+  bang-bang + fase (lente A)     |  100.0 |   5.07 |   -0.8 |    3.2 |    6.0 |     9784 |  40.0 |    251
+  bang-bang v, oído perfecto     |  100.0 |   4.84 |   -0.1 |    0.8 |    1.4 |     9778 |  40.5 |    408
+  bang-bang+fase, oído perf.     |  100.0 |   5.06 |   -0.4 |    0.3 |    0.4 |    12922 |  40.0 |    116
+
+  >> 0.6 m/min | Imax 70 A | Q = 30 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |   86.0 |  11.06 |   +8.5 |    8.6 |   21.2 |     5668 |  40.1 |   6330
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |   55.3 |  27.16 |   +6.6 |   11.7 |   33.4 |     9599 |  40.2 |   8064
+  chirp a ciegas (canon)         |   59.7 |   8.29 |   +4.2 |   10.0 |   23.1 |     4253 |  40.1 |   1562
+  chirp, seno en s (raíz)        |   66.3 |   7.92 |   +2.0 |    9.5 |   20.3 |     9257 |  41.2 |   1148
+  chirp + oído (canon)           |  100.0 |   7.73 |   +0.2 |    9.3 |   15.1 |     4372 |  40.1 |    835
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   4.83 |   -0.4 |    9.1 |   14.7 |     9554 |  40.4 |    512
+  bang-bang + fase (lente A)     |  100.0 |   5.08 |   -0.5 |    9.0 |   14.6 |     9553 |  40.0 |    525
+  bang-bang v, oído perfecto     |  100.0 |   4.82 |   -0.2 |    0.8 |    1.4 |    10023 |  40.5 |    425
+  bang-bang+fase, oído perf.     |  100.0 |   5.05 |   -0.4 |    0.3 |    0.5 |    12464 |  39.9 |    165
+
+  >> 0.6 m/min | Imax 100 A | Q = 5 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   6.33 |  -16.5 |    2.2 |   20.0 |    31858 |  43.7 |   1088
+  bang-bang + fase (lente A)     |  100.0 |   5.81 |  -18.9 |    0.2 |   19.2 |    26996 |  42.8 |    112
+
+  >> 0.6 m/min | Imax 100 A | Q = 5 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   6.35 |  -16.8 |    4.3 |   23.7 |    32008 |  43.8 |   1200
+  bang-bang + fase (lente A)     |  100.0 |   6.31 |  -17.7 |    4.4 |   23.9 |    28609 |  43.1 |   1175
+  bang-bang v, oído perfecto     |  100.0 |   6.42 |  -16.4 |    2.5 |   20.5 |    32326 |  43.8 |   1175
+  bang-bang+fase, oído perf.     |  100.0 |   6.29 |  -17.5 |    2.3 |   21.2 |    28230 |  42.7 |   1113
+
+  >> 0.6 m/min | Imax 100 A | Q = 5 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   6.40 |  -16.0 |    9.5 |   31.0 |    32402 |  43.7 |   1267
+  bang-bang + fase (lente A)     |  100.0 |   6.32 |  -16.9 |    9.2 |   31.4 |    28255 |  42.9 |   1174
+  bang-bang v, oído perfecto     |  100.0 |   6.36 |  -16.4 |    2.8 |   20.8 |    31869 |  43.7 |   1363
+  bang-bang+fase, oído perf.     |  100.0 |   6.28 |  -17.4 |    2.7 |   21.6 |    28029 |  42.7 |   1393
+
+  >> 0.6 m/min | Imax 100 A | Q = 10 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   3.55 |   +1.1 |    0.0 |    1.1 |    12008 |  41.4 |      0
+  multitono 3 (±5 %)             |  100.0 |   4.71 |   +1.5 |    0.0 |    1.5 |    15057 |  41.9 |      0
+  multitono 5 (±5 %)             |  100.0 |   3.70 |   +1.5 |    0.0 |    1.5 |    12606 |  41.6 |      0
+  chirp a ciegas (canon)         |  100.0 |   3.52 |   +1.6 |    0.0 |    1.6 |    11914 |  41.4 |      0
+  chirp, seno en s (raíz)        |  100.0 |   3.51 |   +1.6 |    0.0 |    1.6 |    17021 |  42.2 |      0
+  chirp + oído (canon)           |  100.0 |   3.54 |   +0.0 |    0.1 |    0.3 |    12149 |  41.4 |     76
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   2.31 |   -0.3 |    0.8 |    1.6 |    18008 |  41.8 |    428
+  bang-bang + fase (lente A)     |  100.0 |   2.56 |   -0.5 |    0.1 |    0.6 |    18021 |  41.3 |     45
+
+  >> 0.6 m/min | Imax 100 A | Q = 10 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |   98.0 |   3.95 |   +0.0 |   10.2 |   18.7 |    13155 |  41.6 |   1441
+  multitono 3 (±5 %)             |   98.0 |   6.44 |   +3.3 |   10.7 |   23.3 |    19515 |  42.3 |   8444
+  multitono 5 (±5 %)             |   99.3 |   4.97 |   +2.7 |    8.5 |   17.4 |    16224 |  41.9 |   4788
+  chirp a ciegas (canon)         |   96.7 |   3.89 |   +1.1 |   10.9 |   20.2 |    13035 |  41.5 |    860
+  chirp, seno en s (raíz)        |   98.3 |   3.56 |   -0.3 |   10.6 |   20.6 |    17100 |  42.2 |    352
+  chirp + oído (canon)           |  100.0 |   3.54 |   -0.1 |    3.1 |    5.9 |    12130 |  41.4 |    155
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   2.30 |   -0.4 |    3.2 |    6.0 |    18365 |  41.8 |    479
+  bang-bang + fase (lente A)     |  100.0 |   2.55 |   -0.6 |    3.2 |    6.3 |    18604 |  41.4 |    262
+  bang-bang v, oído perfecto     |  100.0 |   2.32 |   -0.2 |    0.9 |    1.8 |    18335 |  41.8 |    482
+  bang-bang+fase, oído perf.     |  100.0 |   2.48 |   -0.7 |    0.8 |    3.0 |    21514 |  41.5 |    405
+
+  >> 0.6 m/min | Imax 100 A | Q = 10 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |   90.3 |   4.36 |   +1.9 |    9.5 |   19.9 |    14380 |  41.7 |   2877
+  multitono 3 (±5 %)             |   90.7 |   7.01 |   +5.8 |   13.2 |   34.3 |    20958 |  42.4 |   9571
+  multitono 5 (±5 %)             |   94.0 |   5.52 |   +5.3 |    9.5 |   21.5 |    17844 |  42.0 |   5734
+  chirp a ciegas (canon)         |   87.7 |   4.00 |   +3.2 |   10.3 |   21.2 |    13451 |  41.6 |   1033
+  chirp, seno en s (raíz)        |   92.7 |   3.67 |   +1.4 |   10.7 |   21.3 |    17674 |  42.3 |    695
+  chirp + oído (canon)           |  100.0 |   3.54 |   -0.1 |    8.9 |   14.5 |    12375 |  41.5 |    786
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   2.33 |   -0.4 |    8.7 |   14.2 |    18295 |  41.8 |   1079
+  bang-bang + fase (lente A)     |  100.0 |   2.56 |   -0.6 |    8.9 |   14.5 |    18061 |  41.3 |    999
+  bang-bang v, oído perfecto     |  100.0 |   2.28 |   -0.4 |    1.0 |    1.8 |    18266 |  41.9 |    557
+  bang-bang+fase, oído perf.     |  100.0 |   2.48 |   -0.7 |    0.9 |    3.1 |    21033 |  41.4 |    516
+
+  >> 0.6 m/min | Imax 100 A | Q = 30 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   2.48 |   +1.4 |    0.0 |    1.4 |     8686 |  41.1 |      0
+  multitono 3 (±5 %)             |  100.0 |   3.58 |   +1.2 |    0.0 |    1.2 |    11364 |  41.5 |      0
+  multitono 5 (±5 %)             |  100.0 |   2.60 |   +1.2 |    0.0 |    1.2 |     9179 |  41.2 |      0
+  chirp a ciegas (canon)         |  100.0 |   2.47 |   +1.4 |    0.0 |    1.4 |     8682 |  41.1 |      0
+  chirp, seno en s (raíz)        |  100.0 |   2.45 |   +1.4 |    0.0 |    1.4 |    12162 |  41.6 |      0
+  chirp + oído (canon)           |  100.0 |   3.34 |   +2.4 |    0.9 |    2.9 |    11457 |  41.3 |    469
+  bombeo 2w CON retroalim.       |  100.0 |   7.83 |  +17.1 |    2.1 |   20.9 |    31275 |  42.9 |   1186
+  bang-bang en fase con v        |  100.0 |   1.80 |   +0.1 |    0.8 |    1.7 |    13635 |  41.2 |    438
+  bang-bang + fase (lente A)     |  100.0 |   1.91 |   -0.4 |    0.1 |    0.6 |    13600 |  40.6 |     58
+
+  >> 0.6 m/min | Imax 100 A | Q = 30 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   2.76 |   +1.8 |   12.8 |   25.1 |     9554 |  41.1 |    748
+  multitono 3 (±5 %)             |  100.0 |   3.59 |   +0.6 |   11.8 |   22.7 |    11342 |  41.5 |     90
+  multitono 5 (±5 %)             |  100.0 |   2.76 |   +1.1 |   12.2 |   24.8 |     9631 |  41.2 |    580
+  chirp a ciegas (canon)         |  100.0 |   2.81 |   +1.9 |   12.9 |   25.1 |     9712 |  41.2 |    778
+  chirp, seno en s (raíz)        |  100.0 |   2.54 |   +1.1 |   12.3 |   25.2 |    12499 |  41.6 |    478
+  chirp + oído (canon)           |  100.0 |   2.80 |   +1.0 |    3.4 |    6.8 |     9763 |  41.1 |    723
+  bombeo 2w CON retroalim.       |  100.0 |   7.92 |  +17.4 |    4.3 |   24.2 |    31501 |  42.9 |   1269
+  bang-bang en fase con v        |  100.0 |   1.79 |   +0.3 |    3.2 |    6.4 |    13689 |  41.2 |    504
+  bang-bang + fase (lente A)     |  100.0 |   1.92 |   -0.2 |    3.1 |    6.4 |    13840 |  40.7 |    395
+  bang-bang v, oído perfecto     |  100.0 |   1.82 |   +0.2 |    0.8 |    1.7 |    13680 |  41.2 |    428
+  bang-bang+fase, oído perf.     |  100.0 |   1.91 |   -0.4 |    0.1 |    0.5 |    17063 |  40.7 |     35
+
+  >> 0.6 m/min | Imax 100 A | Q = 30 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |   99.7 |   2.86 |   +2.7 |   11.8 |   24.3 |     9895 |  41.2 |   1340
+  multitono 3 (±5 %)             |  100.0 |   3.75 |   +1.8 |   10.8 |   21.4 |    11790 |  41.5 |   2243
+  multitono 5 (±5 %)             |  100.0 |   2.95 |   +2.4 |   11.2 |   23.7 |    10192 |  41.3 |   1824
+  chirp a ciegas (canon)         |   99.3 |   2.86 |   +2.9 |   11.8 |   24.4 |     9932 |  41.2 |    831
+  chirp, seno en s (raíz)        |   99.7 |   2.58 |   +1.9 |   11.7 |   24.7 |    12725 |  41.7 |    584
+  chirp + oído (canon)           |  100.0 |   2.86 |   +0.9 |    9.0 |   15.1 |    10102 |  41.2 |   1086
+  bombeo 2w CON retroalim.       |  100.0 |   7.97 |  +17.4 |    9.0 |   31.1 |    31863 |  43.0 |   1492
+  bang-bang en fase con v        |  100.0 |   1.84 |   +0.1 |    9.0 |   14.9 |    13726 |  41.2 |   1015
+  bang-bang + fase (lente A)     |  100.0 |   1.92 |   -0.5 |    8.9 |   14.7 |    13905 |  40.7 |    849
+  bang-bang v, oído perfecto     |  100.0 |   1.80 |   +0.1 |    0.9 |    1.8 |    13895 |  41.2 |    533
+  bang-bang+fase, oído perf.     |  100.0 |   1.91 |   -0.5 |    0.4 |    0.5 |    16898 |  40.7 |    323
+
+  >> 3.0 m/min | Imax 70 A | Q = 5 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 3.0 m/min | Imax 70 A | Q = 5 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang v, oído perfecto     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang+fase, oído perf.     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 3.0 m/min | Imax 70 A | Q = 5 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang v, oído perfecto     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang+fase, oído perf.     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 3.0 m/min | Imax 70 A | Q = 10 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 3.0 m/min | Imax 70 A | Q = 10 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang v, oído perfecto     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang+fase, oído perf.     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 3.0 m/min | Imax 70 A | Q = 10 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente A)     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang v, oído perfecto     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang+fase, oído perf.     |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 3.0 m/min | Imax 70 A | Q = 30 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |  100.0 |   7.51 |   +1.0 |    0.0 |    1.0 |     3129 |  40.5 |      0
+  chirp, seno en s (raíz)        |  100.0 |   6.57 |   +0.3 |    0.0 |    0.3 |     6788 |  44.6 |      0
+  chirp + oído (canon)           |  100.0 |   7.36 |  +45.8 |    9.1 |   54.0 |     4195 |  40.5 |   1152
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   4.79 |   +0.3 |    4.6 |    7.7 |     4502 |  40.9 |    491
+  bang-bang + fase (lente A)     |  100.0 |   5.00 |   -2.1 |    4.3 |    9.5 |     4590 |  40.9 |    447
+
+  >> 3.0 m/min | Imax 70 A | Q = 30 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |   77.7 |   7.92 |   +5.3 |   17.3 |   40.6 |     3290 |  40.4 |   1418
+  chirp, seno en s (raíz)        |   82.0 |   7.27 |   +7.8 |   16.7 |   40.5 |     7561 |  44.7 |   1336
+  chirp + oído (canon)           |  100.0 |   7.41 |   +4.0 |   16.5 |   34.4 |     3218 |  40.5 |   1806
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   4.79 |   +0.6 |    5.4 |    9.8 |     4554 |  40.9 |    451
+  bang-bang + fase (lente A)     |  100.0 |   5.00 |   -0.8 |    6.3 |   13.2 |     4463 |  40.7 |    581
+  bang-bang v, oído perfecto     |  100.0 |   4.80 |   -0.7 |    3.8 |    6.8 |     4528 |  40.9 |    409
+  bang-bang+fase, oído perf.     |  100.0 |   4.98 |   -1.9 |    1.2 |    2.5 |     4894 |  40.9 |    115
+
+  >> 3.0 m/min | Imax 70 A | Q = 30 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |   61.3 |   8.02 |   +7.1 |   17.7 |   41.0 |     3328 |  40.4 |   1734
+  chirp, seno en s (raíz)        |   67.7 |   7.32 |   +9.0 |   16.1 |   41.3 |     7576 |  44.7 |   1514
+  chirp + oído (canon)           |  100.0 |   7.42 |   +7.5 |   18.3 |   44.7 |     3271 |  40.5 |   2028
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   4.77 |   +1.5 |    9.2 |   16.9 |     4512 |  40.9 |    485
+  bang-bang + fase (lente A)     |  100.0 |   5.02 |   +1.0 |    9.4 |   16.7 |     4581 |  40.8 |    642
+  bang-bang v, oído perfecto     |  100.0 |   4.83 |   -0.2 |    4.1 |    6.8 |     4464 |  40.9 |    426
+  bang-bang+fase, oído perf.     |  100.0 |   4.99 |   -1.9 |    0.9 |    2.5 |     4907 |  40.9 |     89
+
+  >> 3.0 m/min | Imax 100 A | Q = 5 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   7.03 |  -13.7 |    7.6 |   27.2 |    21782 |  52.8 |    748
+  bang-bang + fase (lente A)     |  100.0 |   5.86 |   -1.0 |    7.6 |   17.2 |    20741 |  50.6 |    808
+
+  >> 3.0 m/min | Imax 100 A | Q = 5 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   7.46 |  -16.9 |    8.8 |   30.6 |    22260 |  53.7 |    917
+  bang-bang + fase (lente A)     |  100.0 |   5.97 |   +0.7 |   12.6 |   24.2 |    21347 |  51.0 |   1314
+  bang-bang v, oído perfecto     |  100.0 |   7.96 |  -19.1 |    8.1 |   32.3 |    22798 |  54.4 |    851
+  bang-bang+fase, oído perf.     |  100.0 |   8.08 |  -19.4 |    7.6 |   32.3 |    22880 |  54.5 |    807
+
+  >> 3.0 m/min | Imax 100 A | Q = 5 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 3 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  multitono 5 (±5 %)             |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon)         |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp, seno en s (raíz)        |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon)           |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   7.38 |  -17.6 |    9.8 |   33.1 |    22109 |  53.6 |   1122
+  bang-bang + fase (lente A)     |  100.0 |   5.89 |   -0.2 |   14.5 |   28.6 |    21076 |  50.9 |   1668
+  bang-bang v, oído perfecto     |  100.0 |   7.93 |  -19.4 |    9.5 |   34.4 |    22758 |  54.4 |   1029
+  bang-bang+fase, oído perf.     |  100.0 |   8.04 |  -19.8 |    9.4 |   34.9 |    22767 |  54.4 |   1003
+
+  >> 3.0 m/min | Imax 100 A | Q = 10 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   3.78 |   +1.5 |    0.0 |    1.5 |    11779 |  47.0 |      0
+  multitono 3 (±5 %)             |  100.0 |   5.08 |  +12.4 |    0.0 |   12.4 |    15434 |  48.8 |      0
+  multitono 5 (±5 %)             |  100.0 |   3.83 |  +11.7 |    0.0 |   11.7 |    12516 |  47.1 |      0
+  chirp a ciegas (canon)         |  100.0 |   3.52 |   +1.3 |    0.0 |    1.3 |    11074 |  46.8 |      0
+  chirp, seno en s (raíz)        |  100.0 |   3.51 |   +1.2 |    0.0 |    1.2 |    15857 |  50.5 |      0
+  chirp + oído (canon)           |  100.0 |   3.52 |   +6.3 |    2.6 |   11.3 |    11501 |  46.7 |    279
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   2.39 |   -0.0 |    3.7 |    6.6 |    10874 |  45.4 |    386
+  bang-bang + fase (lente A)     |  100.0 |   2.56 |   -1.9 |    0.9 |    3.4 |    12103 |  46.2 |     98
+
+  >> 3.0 m/min | Imax 100 A | Q = 10 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   4.44 |   +9.1 |    6.8 |   20.1 |    13881 |  47.6 |   1316
+  multitono 3 (±5 %)             |   90.7 |   5.54 |  +20.3 |    6.9 |   31.4 |    16947 |  49.1 |    984
+  multitono 5 (±5 %)             |   99.0 |   4.53 |  +19.2 |    7.3 |   31.8 |    14669 |  47.6 |   1558
+  chirp a ciegas (canon)         |   96.3 |   3.87 |   +5.6 |   17.3 |   35.2 |    12194 |  47.0 |    880
+  chirp, seno en s (raíz)        |   98.3 |   3.60 |   +1.4 |   14.7 |   34.7 |    16186 |  50.6 |    540
+  chirp + oído (canon)           |  100.0 |   3.54 |   +2.1 |    8.2 |   14.8 |    11270 |  46.8 |    766
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   2.38 |   -0.1 |    5.4 |   10.7 |    11033 |  45.6 |    437
+  bang-bang + fase (lente A)     |  100.0 |   2.56 |   -1.8 |    3.7 |    8.4 |    11922 |  46.0 |    235
+  bang-bang v, oído perfecto     |  100.0 |   2.36 |   -0.6 |    4.5 |    8.0 |    10995 |  45.7 |    475
+  bang-bang+fase, oído perf.     |  100.0 |   2.55 |   -2.1 |    0.3 |    2.6 |    13063 |  46.8 |     25
+
+  >> 3.0 m/min | Imax 100 A | Q = 10 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |   99.3 |   4.49 |   +9.7 |   10.1 |   25.2 |    14072 |  47.6 |   1537
+  multitono 3 (±5 %)             |   85.7 |   5.41 |  +19.4 |    9.7 |   35.4 |    16676 |  49.1 |   1013
+  multitono 5 (±5 %)             |   97.0 |   4.62 |  +20.2 |   11.5 |   38.2 |    14962 |  47.7 |   1924
+  chirp a ciegas (canon)         |   92.7 |   3.96 |   +7.0 |   17.2 |   38.0 |    12540 |  47.1 |   1036
+  chirp, seno en s (raíz)        |   96.3 |   3.67 |   +2.4 |   15.3 |   29.9 |    16560 |  50.7 |    725
+  chirp + oído (canon)           |  100.0 |   3.54 |   +1.6 |   10.6 |   18.1 |    11260 |  46.8 |    794
+  bombeo 2w CON retroalim.       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v        |  100.0 |   2.41 |   -0.4 |   10.1 |   17.9 |    11244 |  45.8 |    458
+  bang-bang + fase (lente A)     |  100.0 |   2.57 |   -1.9 |    8.6 |   15.1 |    12104 |  46.2 |    279
+  bang-bang v, oído perfecto     |  100.0 |   2.35 |   -0.7 |    4.5 |    8.3 |    11047 |  45.7 |    471
+  bang-bang+fase, oído perf.     |  100.0 |   2.55 |   -2.1 |    0.4 |    2.8 |    12833 |  46.6 |     35
+
+  >> 3.0 m/min | Imax 100 A | Q = 30 | mundo nom
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   2.53 |   +1.4 |    0.0 |    1.4 |     8221 |  45.0 |      0
+  multitono 3 (±5 %)             |  100.0 |   3.80 |   +1.3 |    0.0 |    1.3 |    10873 |  46.9 |      0
+  multitono 5 (±5 %)             |  100.0 |   2.68 |   +1.5 |    0.0 |    1.5 |     8860 |  45.7 |      0
+  chirp a ciegas (canon)         |  100.0 |   2.47 |   +1.8 |    0.0 |    1.8 |     8255 |  45.1 |      0
+  chirp, seno en s (raíz)        |  100.0 |   2.45 |   +1.5 |    0.0 |    1.5 |    11575 |  47.6 |      0
+  chirp + oído (canon)           |  100.0 |   3.02 |   +7.6 |    6.1 |   13.9 |    10039 |  45.7 |    654
+  bombeo 2w CON retroalim.       |  100.0 |   6.33 |  +63.9 |    6.8 |   75.8 |    24289 |  48.4 |    951
+  bang-bang en fase con v        |  100.0 |   1.80 |   +2.0 |    4.2 |    9.7 |     8794 |  44.3 |    455
+  bang-bang + fase (lente A)     |  100.0 |   1.88 |   -1.8 |    0.7 |    3.1 |     8601 |  44.0 |     77
+
+  >> 3.0 m/min | Imax 100 A | Q = 30 | mundo cal
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   2.72 |   +3.8 |   12.9 |   25.4 |     8788 |  45.1 |    744
+  multitono 3 (±5 %)             |  100.0 |   3.96 |   +2.6 |    8.3 |   17.4 |    11449 |  47.1 |   1064
+  multitono 5 (±5 %)             |  100.0 |   3.02 |   +5.5 |   10.3 |   23.9 |     9784 |  45.9 |    854
+  chirp a ciegas (canon)         |   99.7 |   2.89 |   +7.7 |   15.8 |   33.9 |     9554 |  45.5 |    800
+  chirp, seno en s (raíz)        |  100.0 |   2.57 |   +2.8 |   14.0 |   29.9 |    12075 |  47.8 |    527
+  chirp + oído (canon)           |  100.0 |   2.80 |   +5.0 |    7.8 |   17.9 |     9331 |  45.5 |    781
+  bombeo 2w CON retroalim.       |   99.7 |   6.40 |  +64.7 |    8.8 |   79.4 |    24175 |  48.2 |   1058
+  bang-bang en fase con v        |  100.0 |   1.79 |   +1.8 |    5.0 |   10.3 |     8523 |  44.0 |    475
+  bang-bang + fase (lente A)     |  100.0 |   1.88 |   -1.7 |    3.5 |    7.9 |     8659 |  44.0 |    255
+  bang-bang v, oído perfecto     |  100.0 |   1.82 |   +1.5 |    4.1 |    8.6 |     8698 |  44.2 |    443
+  bang-bang+fase, oído perf.     |  100.0 |   1.88 |   -2.0 |    0.6 |    2.8 |     8985 |  43.9 |     92
+
+  >> 3.0 m/min | Imax 100 A | Q = 30 | mundo sin
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f fija)  |  100.0 |   2.79 |   +4.5 |   13.3 |   28.7 |     9014 |  45.2 |    877
+  multitono 3 (±5 %)             |  100.0 |   4.04 |   +3.1 |    9.8 |   20.5 |    11721 |  47.2 |   1341
+  multitono 5 (±5 %)             |  100.0 |   3.12 |   +6.5 |   10.9 |   24.4 |    10115 |  46.0 |   1125
+  chirp a ciegas (canon)         |  100.0 |   2.88 |   +7.1 |   16.2 |   35.2 |     9527 |  45.4 |    850
+  chirp, seno en s (raíz)        |  100.0 |   2.61 |   +3.3 |   14.5 |   29.4 |    12324 |  47.9 |    644
+  chirp + oído (canon)           |  100.0 |   2.80 |   +4.3 |   10.9 |   22.6 |     9271 |  45.4 |    746
+  bombeo 2w CON retroalim.       |   99.3 |   6.46 |  +65.1 |   12.3 |   85.2 |    24561 |  48.4 |   1137
+  bang-bang en fase con v        |  100.0 |   1.83 |   +2.2 |    9.3 |   16.6 |     8719 |  44.2 |    451
+  bang-bang + fase (lente A)     |  100.0 |   1.88 |   -2.2 |    8.9 |   16.2 |     8709 |  44.1 |    258
+  bang-bang v, oído perfecto     |  100.0 |   1.80 |   +1.2 |    3.9 |    8.4 |     8787 |  44.3 |    416
+  bang-bang+fase, oído perf.     |  100.0 |   1.88 |   -2.0 |    0.4 |    2.7 |     9054 |  43.9 |     40
+
+==============================================================================================================
+RESUMEN · % que se suelta / sigma del tamaño (um), lazo 20 kHz
+==============================================================================================================
+
+  0.6 m/min, Imax 70 A         Q5 nom       Q5 cal       Q5 sin      Q10 nom      Q10 cal      Q10 sin      Q30 nom      Q30 cal      Q30 sin
+  tono único (campanazo f fija)           0 %          0 %          0 %          0 %          0 %          0 %   100%/  0.0    91%/  5.5    86%/  8.6
+  multitono 3 (±5 %)                      0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %
+  multitono 5 (±5 %)                      0 %          0 %          0 %          0 %          0 %          0 %   100%/  0.0    68%/  6.8    55%/ 11.7
+  chirp a ciegas (canon)                  0 %          0 %          0 %          0 %          0 %          0 %   100%/  0.0    70%/  8.1    60%/ 10.0
+  chirp, seno en s (raíz)                 0 %          0 %          0 %          0 %          0 %          0 %   100%/  0.0    74%/  7.9    66%/  9.5
+  chirp + oído (canon)                    0 %          0 %          0 %          0 %          0 %          0 %   100%/  1.2   100%/  3.6   100%/  9.3
+  bombeo 2w CON retroalim.                0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %
+  bang-bang en fase con v                 0 %          0 %          0 %          0 %          0 %          0 %   100%/  0.8   100%/  3.2   100%/  9.1
+  bang-bang + fase (lente A)              0 %          0 %          0 %          0 %          0 %          0 %   100%/  0.1   100%/  3.2   100%/  9.0
+  bang-bang v, oído perfecto                           0 %          0 %                       0 %          0 %                100%/  0.8   100%/  0.8
+  bang-bang+fase, oído perf.                           0 %          0 %                       0 %          0 %                100%/  0.3   100%/  0.3
+
+  0.6 m/min, Imax 100 A         Q5 nom       Q5 cal       Q5 sin      Q10 nom      Q10 cal      Q10 sin      Q30 nom      Q30 cal      Q30 sin
+  tono único (campanazo f fija)           0 %          0 %          0 %   100%/  0.0    98%/ 10.2    90%/  9.5   100%/  0.0   100%/ 12.8   100%/ 11.8
+  multitono 3 (±5 %)                      0 %          0 %          0 %   100%/  0.0    98%/ 10.7    91%/ 13.2   100%/  0.0   100%/ 11.8   100%/ 10.8
+  multitono 5 (±5 %)                      0 %          0 %          0 %   100%/  0.0    99%/  8.5    94%/  9.5   100%/  0.0   100%/ 12.2   100%/ 11.2
+  chirp a ciegas (canon)                  0 %          0 %          0 %   100%/  0.0    97%/ 10.9    88%/ 10.3   100%/  0.0   100%/ 12.9    99%/ 11.8
+  chirp, seno en s (raíz)                 0 %          0 %          0 %   100%/  0.0    98%/ 10.6    93%/ 10.7   100%/  0.0   100%/ 12.3   100%/ 11.7
+  chirp + oído (canon)                    0 %          0 %          0 %   100%/  0.1   100%/  3.1   100%/  8.9   100%/  0.9   100%/  3.4   100%/  9.0
+  bombeo 2w CON retroalim.                0 %          0 %          0 %          0 %          0 %          0 %   100%/  2.1   100%/  4.3   100%/  9.0
+  bang-bang en fase con v          100%/  2.2   100%/  4.3   100%/  9.5   100%/  0.8   100%/  3.2   100%/  8.7   100%/  0.8   100%/  3.2   100%/  9.0
+  bang-bang + fase (lente A)       100%/  0.2   100%/  4.4   100%/  9.2   100%/  0.1   100%/  3.2   100%/  8.9   100%/  0.1   100%/  3.1   100%/  8.9
+  bang-bang v, oído perfecto                    100%/  2.5   100%/  2.8                100%/  0.9   100%/  1.0                100%/  0.8   100%/  0.9
+  bang-bang+fase, oído perf.                    100%/  2.3   100%/  2.7                100%/  0.8   100%/  0.9                100%/  0.1   100%/  0.4
+
+  3.0 m/min, Imax 70 A         Q5 nom       Q5 cal       Q5 sin      Q10 nom      Q10 cal      Q10 sin      Q30 nom      Q30 cal      Q30 sin
+  tono único (campanazo f fija)           0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %
+  multitono 3 (±5 %)                      0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %
+  multitono 5 (±5 %)                      0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %
+  chirp a ciegas (canon)                  0 %          0 %          0 %          0 %          0 %          0 %   100%/  0.0    78%/ 17.3    61%/ 17.7
+  chirp, seno en s (raíz)                 0 %          0 %          0 %          0 %          0 %          0 %   100%/  0.0    82%/ 16.7    68%/ 16.1
+  chirp + oído (canon)                    0 %          0 %          0 %          0 %          0 %          0 %   100%/  9.1   100%/ 16.5   100%/ 18.3
+  bombeo 2w CON retroalim.                0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %          0 %
+  bang-bang en fase con v                 0 %          0 %          0 %          0 %          0 %          0 %   100%/  4.6   100%/  5.4   100%/  9.2
+  bang-bang + fase (lente A)              0 %          0 %          0 %          0 %          0 %          0 %   100%/  4.3   100%/  6.3   100%/  9.4
+  bang-bang v, oído perfecto                           0 %          0 %                       0 %          0 %                100%/  3.8   100%/  4.1
+  bang-bang+fase, oído perf.                           0 %          0 %                       0 %          0 %                100%/  1.2   100%/  0.9
+
+  3.0 m/min, Imax 100 A         Q5 nom       Q5 cal       Q5 sin      Q10 nom      Q10 cal      Q10 sin      Q30 nom      Q30 cal      Q30 sin
+  tono único (campanazo f fija)           0 %          0 %          0 %   100%/  0.0   100%/  6.8    99%/ 10.1   100%/  0.0   100%/ 12.9   100%/ 13.3
+  multitono 3 (±5 %)                      0 %          0 %          0 %   100%/  0.0    91%/  6.9    86%/  9.7   100%/  0.0   100%/  8.3   100%/  9.8
+  multitono 5 (±5 %)                      0 %          0 %          0 %   100%/  0.0    99%/  7.3    97%/ 11.5   100%/  0.0   100%/ 10.3   100%/ 10.9
+  chirp a ciegas (canon)                  0 %          0 %          0 %   100%/  0.0    96%/ 17.3    93%/ 17.2   100%/  0.0   100%/ 15.8   100%/ 16.2
+  chirp, seno en s (raíz)                 0 %          0 %          0 %   100%/  0.0    98%/ 14.7    96%/ 15.3   100%/  0.0   100%/ 14.0   100%/ 14.5
+  chirp + oído (canon)                    0 %          0 %          0 %   100%/  2.6   100%/  8.2   100%/ 10.6   100%/  6.1   100%/  7.8   100%/ 10.9
+  bombeo 2w CON retroalim.                0 %          0 %          0 %          0 %          0 %          0 %   100%/  6.8   100%/  8.8    99%/ 12.3
+  bang-bang en fase con v          100%/  7.6   100%/  8.8   100%/  9.8   100%/  3.7   100%/  5.4   100%/ 10.1   100%/  4.2   100%/  5.0   100%/  9.3
+  bang-bang + fase (lente A)       100%/  7.6   100%/ 12.6   100%/ 14.5   100%/  0.9   100%/  3.7   100%/  8.6   100%/  0.7   100%/  3.5   100%/  8.9
+  bang-bang v, oído perfecto                    100%/  8.1   100%/  9.5                100%/  4.5   100%/  4.5                100%/  4.1   100%/  3.9
+  bang-bang+fase, oído perf.                    100%/  7.6   100%/  9.4                100%/  0.3   100%/  0.4                100%/  0.6   100%/  0.4
+
+==============================================================================================================
+PARTE 1c · LAZO DE 100 kHz (meta) contra 20 kHz (hoy), mundo cal, Imax 70 A
+==============================================================================================================
+
+  >> 0.6 m/min | Q = 10
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f 20k    |      — | nunca se suelta (o el gemelo no halla arranque)
+  tono único (campanazo f 100k   |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon) 20k     |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon) 100k    |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon) 20k       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon) 100k      |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v 20k    |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v 100k   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente 20k    |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente 100k   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 0.6 m/min | Q = 30
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f 20k    |   90.7 |   9.87 |   +6.8 |    5.5 |   17.7 |     5135 |  40.1 |   4501
+  tono único (campanazo f 100k   |   96.3 |   7.81 |   +3.2 |    8.0 |   17.4 |     5425 |  40.1 |   3949
+  chirp a ciegas (canon) 20k     |   70.3 |   8.09 |   +3.3 |    8.1 |   18.9 |     4145 |  40.1 |   1408
+  chirp a ciegas (canon) 100k    |   83.7 |   6.60 |   +1.3 |    9.5 |   18.4 |     4693 |  40.1 |    839
+  chirp + oído (canon) 20k       |  100.0 |   7.72 |   +0.1 |    3.6 |    6.9 |     4193 |  40.1 |    825
+  chirp + oído (canon) 100k      |  100.0 |   5.98 |   -0.9 |    3.4 |    6.7 |     4730 |  40.1 |    754
+  bang-bang en fase con v 20k    |  100.0 |   4.82 |   -0.6 |    3.2 |    6.0 |     9566 |  40.5 |    440
+  bang-bang en fase con v 100k   |  100.0 |   3.87 |   +0.3 |    3.3 |    6.2 |    12207 |  40.3 |    424
+  bang-bang + fase (lente 20k    |  100.0 |   5.07 |   -0.8 |    3.2 |    6.0 |     9784 |  40.0 |    251
+  bang-bang + fase (lente 100k   |  100.0 |   4.07 |   +0.2 |    3.3 |    6.1 |    12814 |  39.8 |    621
+
+  >> 3.0 m/min | Q = 10
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f 20k    |      — | nunca se suelta (o el gemelo no halla arranque)
+  tono único (campanazo f 100k   |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon) 20k     |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp a ciegas (canon) 100k    |      — | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon) 20k       |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  chirp + oído (canon) 100k      |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v 20k    |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase con v 100k   |  100.0 |  11.64 |  +39.0 |    8.8 |   54.5 |    13256 |  41.1 |    855
+  bang-bang + fase (lente 20k    |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lente 100k   |   92.0 |  12.28 |  +71.2 |   20.7 |  106.5 |    16056 |  41.0 |   2617
+
+  >> 3.0 m/min | Q = 30
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  tono único (campanazo f 20k    |      — | nunca se suelta (o el gemelo no halla arranque)
+  tono único (campanazo f 100k   |   74.3 |   7.18 |  +39.4 |    7.6 |   51.1 |     5102 |  40.4 |   1430
+  chirp a ciegas (canon) 20k     |   77.7 |   7.92 |   +5.3 |   17.3 |   40.6 |     3290 |  40.4 |   1418
+  chirp a ciegas (canon) 100k    |   87.3 |   6.01 |  +10.0 |   16.4 |   38.9 |     4054 |  40.4 |   1118
+  chirp + oído (canon) 20k       |  100.0 |   7.41 |   +4.0 |   16.5 |   34.4 |     3218 |  40.5 |   1806
+  chirp + oído (canon) 100k      |  100.0 |   5.65 |   +5.5 |   12.4 |   25.2 |     3831 |  40.4 |   1261
+  bang-bang en fase con v 20k    |  100.0 |   4.79 |   +0.6 |    5.4 |    9.8 |     4554 |  40.9 |    451
+  bang-bang en fase con v 100k   |  100.0 |   3.79 |   +2.6 |    5.3 |   11.7 |     5773 |  40.9 |    428
+  bang-bang + fase (lente 20k    |  100.0 |   5.00 |   -0.8 |    6.3 |   13.2 |     4463 |  40.7 |    581
+  bang-bang + fase (lente 100k   |  100.0 |   3.81 |   +0.2 |    5.3 |   11.4 |     5964 |  40.8 |    448
+
+==============================================================================================================
+PARTE 1d · RUIDO DEL OÍDO (rms a 20 kS/s): 10 mV, 0.1, 0.3, 1 V; Q = 30, mundo cal, Imax 70 A, lazo 20 kHz
+==============================================================================================================
+
+  >> 0.6 m/min
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  chirp + oído (canon)   10 mV   |  100.0 |   7.72 |   +0.1 |    3.6 |    6.9 |     4193 |  40.1 |    825
+  chirp + oído (canon)  100 mV   |  100.0 |   7.72 |   +0.3 |    3.6 |    7.3 |     4201 |  40.1 |    880
+  chirp + oído (canon)  300 mV   |  100.0 |   7.74 |   +0.2 |    3.7 |    7.1 |     4203 |  40.1 |    895
+  chirp + oído (canon) 1000 mV   |   99.0 |   7.80 |   +0.7 |    6.2 |    9.7 |     4189 |  40.1 |   2547
+  bang-bang en fase con    10 mV |  100.0 |   4.82 |   -0.6 |    3.2 |    6.0 |     9566 |  40.5 |    440
+  bang-bang en fase con   100 mV |  100.0 |   4.80 |   -0.4 |    3.2 |    6.2 |     9900 |  40.5 |    661
+  bang-bang en fase con   300 mV |  100.0 |   4.83 |   -0.3 |    3.2 |    6.4 |     9499 |  40.4 |    693
+  bang-bang en fase con  1000 mV |  100.0 |   4.82 |   -0.6 |    4.0 |    8.1 |     8385 |  40.2 |   1204
+  bang-bang + fase (lent   10 mV |  100.0 |   5.07 |   -0.8 |    3.2 |    6.0 |     9784 |  40.0 |    251
+  bang-bang + fase (lent  100 mV |  100.0 |   5.07 |   -0.5 |    3.2 |    6.6 |     9082 |  40.0 |    484
+  bang-bang + fase (lent  300 mV |  100.0 |   5.10 |   -0.3 |    3.4 |    6.5 |     9095 |  40.1 |    850
+  bang-bang + fase (lent 1000 mV |  100.0 |   4.91 |  +28.4 |   15.4 |   54.7 |    11604 |  40.2 |   7998
+  (referencia sin oído: chirp a ciegas)
+  chirp a ciegas (canon)         |   70.3 |   8.09 |   +3.3 |    8.1 |   18.9 |     4145 |  40.1 |   1408
+
+  >> 3.0 m/min
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  chirp + oído (canon)   10 mV   |  100.0 |   7.41 |   +4.0 |   16.5 |   34.4 |     3218 |  40.5 |   1806
+  chirp + oído (canon)  100 mV   |   96.7 |   7.06 |  +46.5 |   29.3 |   99.3 |     4058 |  40.4 |   3633
+  chirp + oído (canon)  300 mV   |   41.7 |   6.93 |  +80.7 |   19.8 |  114.8 |     4824 |  40.4 |   2362
+  chirp + oído (canon) 1000 mV   |    3.7 |   5.46 | +109.6 |    4.8 |  116.1 |     4568 |  40.4 |    278
+  bang-bang en fase con    10 mV |  100.0 |   4.79 |   +0.6 |    5.4 |    9.8 |     4554 |  40.9 |    451
+  bang-bang en fase con   100 mV |  100.0 |   4.74 |   +3.5 |    8.3 |   18.5 |     4456 |  40.8 |    806
+  bang-bang en fase con   300 mV |  100.0 |   4.41 |  +48.1 |   12.8 |   68.8 |     5460 |  40.5 |   1233
+  bang-bang en fase con  1000 mV |  100.0 |   4.25 |  +85.6 |   15.5 |  110.8 |     6174 |  40.3 |   1427
+  bang-bang + fase (lent   10 mV |  100.0 |   5.00 |   -0.8 |    6.3 |   13.2 |     4463 |  40.7 |    581
+  bang-bang + fase (lent  100 mV |  100.0 |   4.77 |  +31.3 |   16.0 |   57.3 |     5797 |  40.9 |   1803
+  bang-bang + fase (lent  300 mV |  100.0 |   4.40 |  +78.2 |   15.7 |  105.0 |     7230 |  40.6 |   1681
+  bang-bang + fase (lent 1000 mV |  100.0 |   4.46 |  +88.3 |   15.3 |  111.9 |     7611 |  40.5 |   1420
+  (referencia sin oído: chirp a ciegas)
+  chirp a ciegas (canon)         |   77.7 |   7.92 |   +5.3 |   17.3 |   40.6 |     3290 |  40.4 |   1418
+
+==============================================================================================================
+PARTE 1e · Q MAL CALIBRADO en el controlador (Q real 30, el Pico cree 20 o 45), mundo cal, 70 A
+==============================================================================================================
+
+  >> 0.6 m/min
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  bang-bang en fase con  Q̂=20   |  100.0 |   4.81 |   -3.8 |    3.3 |    9.5 |     9538 |  40.4 |    431
+  bang-bang en fase con  Q̂=30   |  100.0 |   4.82 |   -0.6 |    3.2 |    6.0 |     9566 |  40.5 |    440
+  bang-bang en fase con  Q̂=45   |  100.0 |   4.82 |   +1.8 |    3.4 |    7.6 |    10218 |  40.6 |    421
+  bang-bang + fase (lent Q̂=20   |  100.0 |   4.65 |   -5.6 |    3.4 |   11.5 |     8525 |  40.2 |    611
+  bang-bang + fase (lent Q̂=30   |  100.0 |   5.07 |   -0.8 |    3.2 |    6.0 |     9784 |  40.0 |    251
+  bang-bang + fase (lent Q̂=45   |  100.0 |   4.55 |   +0.2 |    3.3 |    6.8 |     9445 |  40.1 |    256
+
+  >> 3.0 m/min
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  bang-bang en fase con  Q̂=20   |  100.0 |   4.87 |  -23.1 |   12.4 |   46.6 |     3883 |  41.0 |   1080
+  bang-bang en fase con  Q̂=30   |  100.0 |   4.79 |   +0.6 |    5.4 |    9.8 |     4554 |  40.9 |    451
+  bang-bang en fase con  Q̂=45   |  100.0 |   4.78 |   +7.8 |    4.9 |   15.4 |     4685 |  40.8 |    437
+  bang-bang + fase (lent Q̂=20   |  100.0 |   5.17 |  -19.7 |   14.4 |   43.2 |     4087 |  41.0 |   1422
+  bang-bang + fase (lent Q̂=30   |  100.0 |   5.00 |   -0.8 |    6.3 |   13.2 |     4463 |  40.7 |    581
+  bang-bang + fase (lent Q̂=45   |  100.0 |   4.72 |   +3.5 |    6.6 |   15.5 |     4709 |  40.9 |    625
+
+==============================================================================================================
+PARTE 1f · BOMBEO 2w CON RETROALIMENTACIÓN si la gota se afloja más (beta = 2), mundo cal, 70 A
+==============================================================================================================
+
+  >> 0.6 m/min
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  bombeo 2w CON retroa Q10 b=1   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroa Q10 b=2   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroa Q30 b=1   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroa Q30 b=2   |   96.7 |  17.95 |  +37.0 |    6.3 |   46.8 |    13459 |  40.0 |   2880
+  bang-bang en fase co Q10 b=1   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase co Q10 b=2   |   86.0 |  27.87 |  +44.2 |    8.1 |   59.9 |    34074 |  41.0 |   5026
+  bang-bang en fase co Q30 b=1   |  100.0 |   4.82 |   -0.6 |    3.2 |    6.0 |     9566 |  40.5 |    440
+  bang-bang en fase co Q30 b=2   |  100.0 |   4.07 |   -1.8 |    3.3 |    6.8 |     9157 |  40.4 |   1068
+
+  >> 3.0 m/min
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  bombeo 2w CON retroa Q10 b=1   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroa Q10 b=2   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroa Q30 b=1   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bombeo 2w CON retroa Q30 b=2   |    3.7 |  12.27 | +114.6 |    9.1 |  129.5 |     7834 |  40.3 |    888
+  bang-bang en fase co Q10 b=1   |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang en fase co Q10 b=2   |  100.0 |  12.97 |  +56.2 |    8.5 |   71.1 |    11102 |  41.3 |    859
+  bang-bang en fase co Q30 b=1   |  100.0 |   4.79 |   +0.6 |    5.4 |    9.8 |     4554 |  40.9 |    451
+  bang-bang en fase co Q30 b=2   |  100.0 |   4.10 |   -6.5 |    5.2 |   15.6 |     4276 |  41.2 |    433
+
+==============================================================================================================
+PARTE 1g · FASE DEL OÍDO MAL CALIBRADA (el voltaje no sigue a q en fase: error de 30, 60, 90 grados), Q = 30, mundo cal, 70 A
+==============================================================================================================
+
+  >> 0.6 m/min
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  bang-bang en fase con    0°    |  100.0 |   4.82 |   -0.6 |    3.2 |    6.0 |     9566 |  40.5 |    440
+  bang-bang en fase con   30°    |  100.0 |   6.45 |   +4.0 |    3.2 |    9.2 |     9522 |  39.7 |    620
+  bang-bang en fase con   60°    |   96.0 |  19.63 |  +40.5 |    5.7 |   49.3 |    27981 |  40.6 |   2485
+  bang-bang en fase con   90°    |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lent   0°    |  100.0 |   5.07 |   -0.8 |    3.2 |    6.0 |     9784 |  40.0 |    251
+  bang-bang + fase (lent  30°    |  100.0 |   6.52 |   +3.3 |    3.4 |    8.8 |    12133 |  40.1 |    763
+  bang-bang + fase (lent  60°    |   95.7 |  19.81 |  +40.1 |    5.3 |   48.7 |    26044 |  40.4 |   2580
+  bang-bang + fase (lent  90°    |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  >> 3.0 m/min
+  estrategia                     |  %suel | ciclos | err um | sig um | P95 um | ∫(I²-40²) | <I> A | sig_t us
+  bang-bang en fase con    0°    |  100.0 |   4.79 |   +0.6 |    5.4 |    9.8 |     4554 |  40.9 |    451
+  bang-bang en fase con   30°    |  100.0 |   6.12 |  +18.7 |    5.6 |   28.0 |     6042 |  41.1 |    525
+  bang-bang en fase con   60°    |    5.0 |  13.11 | +123.3 |   10.1 |  138.9 |    14696 |  41.2 |    744
+  bang-bang en fase con   90°    |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+  bang-bang + fase (lent   0°    |  100.0 |   5.00 |   -0.8 |    6.3 |   13.2 |     4463 |  40.7 |    581
+  bang-bang + fase (lent  30°    |  100.0 |   6.49 |  +21.3 |    7.2 |   33.2 |     5855 |  40.8 |    763
+  bang-bang + fase (lent  60°    |    1.7 |  12.91 | +109.6 |    6.1 |  118.2 |    13966 |  41.1 |    330
+  bang-bang + fase (lent  90°    |    0.0 | nunca se suelta (o el gemelo no halla arranque)
+
+  [143 s]
+
+==============================================================================================================
+PARTE 2a · CANALES QUE SE MEZCLAN: armónicos de s = I^2/Icrit^2 y cuánto se llevan los modos l=3 (1.94 f2) y l=4 (3.00 f2)
+  supuestos: acople c_l = 1 para todos los modos (cota alta), Q_l escalado con Lamb desde Q2 = 30 (Q3 = 0.69 Q2, Q4 = 0.56 Q2)
+==============================================================================================================
+  f2 efectiva 645 Hz; f3 = 1.936 f2 (el 2º armónico cae a +3.3 % de f3); f4 = 3.000 f2 (el 3º armónico cae EXACTO)
+  forma                      |   <I>   <I2> |     s1 |  s2/s1  s3/s1  s4/s1  s5/s1 | q3/q2 (2w) q4/q2 (3w)
+  tono en I 40±30            |  40.0   2050 | 0.0638 |  0.188  0.000  0.000  0.000 |      0.075      0.000
+  seno en s (raiz)           |  45.9   2500 | 0.0638 |  0.000  0.000  0.000  0.000 |      0.000      0.000
+  cuadrada ideal 10/70       |  40.0   2500 | 0.0812 |  0.000  0.333  0.000  0.200 |      0.000      0.185
+  ventana 120° 10/70         |  30.0   1701 | 0.0703 |  0.500  0.001  0.250  0.200 |      0.200      0.000
+  cuadrada real lazo 20k     |  40.0   2155 | 0.0694 |  0.143  0.187  0.064  0.073 |      0.057      0.104
+  cuadrada real lazo 100k    |  39.7   2370 | 0.0801 |  0.084  0.297  0.075  0.140 |      0.033      0.165
+  q_l/q2 = respuesta estacionaria del modo l al armónico que le cae cerca, relativa a la de l=2 en resonancia (c_l = 1).
+
+==============================================================================================================
+PARTE 2b · APUNTAR (l=1, campo B transversal x corriente) MIENTRAS se suelta (l=2): la corriente que hace sonar l=2 multiplica al campo
+  modelo de scripts/canon/apuntar2.py: f1 = 0.5 f2 (SUPUESTO), Q1 = 30, 12.9 m/s^2 por mT a 40 A, vuelo 2.9 ms, blanco a 0.5 mm, patada de 3 ciclos de f1
+==============================================================================================================
+  plan con I = 40 A fija: B0 = 3.47 mT; con la patada al final cae en 0.500 mm
+  (i)  SIMULTÁNEO sin compensar (l=2 suena 10/70 A durante los últimos 5 ciclos de f2 = 7.7 ms): error medio   185 um, 90 % <   216 um
+  (ii) SIMULTÁNEO compensado B(t) = B_plan(t)*40/I(t): error de cruce 0 um por construcción; pide B pico 13.87 mT (x4) y bobina que siga ~1.9 kHz
+  (iii) SECUENCIAL (patada antes de disparar l=2, B = 0 mientras suena): B0 = 4.59 mT, error de cruce medio 0.0 um (la corriente no toca a l=1 si B = 0)
+  sensibilidad: soltar 1 us tarde mueve la caída 0.99 um  ->  para errar < 100 um a 0.5 mm, el instante de soltar debe saberse a < 101 us
+  incertidumbre del instante de soltar (sigma de t_suelta - t* del controlador) en el Monte Carlo, Q = 30, mundo calibrado, Imax 70 A:
+     tono único (campanazo f fi 0.6 m/min 20k:   4501 us  -> error de apuntar ~ 4444 um
+     tono único (campanazo f fi 0.6 m/min 100k:   3949 us  -> error de apuntar ~ 3899 um
+     tono único (campanazo f fi 3.0 m/min 100k:   1430 us  -> error de apuntar ~ 1412 um
+     chirp a ciegas (canon) 0.6 m/min 20k    :   1408 us  -> error de apuntar ~ 1391 um
+     chirp a ciegas (canon) 0.6 m/min 100k   :    839 us  -> error de apuntar ~  829 um
+     chirp a ciegas (canon) 3.0 m/min 20k    :   1418 us  -> error de apuntar ~ 1400 um
+     chirp a ciegas (canon) 3.0 m/min 100k   :   1118 us  -> error de apuntar ~ 1104 um
+     chirp + oído (canon) 0.6 m/min 20k      :    825 us  -> error de apuntar ~  815 um
+     chirp + oído (canon) 0.6 m/min 100k     :    754 us  -> error de apuntar ~  744 um
+     chirp + oído (canon) 3.0 m/min 20k      :   1806 us  -> error de apuntar ~ 1783 um
+     chirp + oído (canon) 3.0 m/min 100k     :   1261 us  -> error de apuntar ~ 1245 um
+     bang-bang en fase con v 0.6 m/min 20k   :    440 us  -> error de apuntar ~  435 um
+     bang-bang en fase con v 0.6 m/min 100k  :    424 us  -> error de apuntar ~  419 um
+     bang-bang en fase con v 3.0 m/min 20k   :    451 us  -> error de apuntar ~  445 um
+     bang-bang en fase con v 3.0 m/min 100k  :    428 us  -> error de apuntar ~  422 um
+     bang-bang + fase (lente A) 0.6 m/min 20k:    251 us  -> error de apuntar ~  248 um
+     bang-bang + fase (lente A) 0.6 m/min 100k:    621 us  -> error de apuntar ~  613 um
+     bang-bang + fase (lente A) 3.0 m/min 20k:    581 us  -> error de apuntar ~  574 um
+     bang-bang + fase (lente A) 3.0 m/min 100k:    448 us  -> error de apuntar ~  442 um
+     bang-bang+fase, oído perf. 0.6 m/min 20k:    116 us  -> error de apuntar ~  115 um
+     bang-bang+fase, oído perf. 3.0 m/min 20k:    115 us  -> error de apuntar ~  113 um
+
+==============================================================================================================
+PARTE 2c · ¿EL MODO l=3 (estrangular el cuello) ayuda a soltar?  QUÉ PASARÍA SI el desprendimiento fuera q2 + kappa*q3 >= 1
+  (kappa y el acople c3 NO se conocen: el modelo del canon solo tiene q2 >= 1. Gota fija 0.46 mm, Q2 = 30, Q3 = 0.69 Q2, 10/70 A, actuador ideal)
+  ley A: bang-bang en fase con v2 (solo l=2).  ley B: bang-bang en el signo de sum_l kappa_l c_l w_l p_l/A_l (Pontryagin miope, los dos modos).
+  ley C: tono 40±30 A a la frecuencia de l=3 (lengua en f3) en lazo abierto.  Ciclos contados en periodos de l=2.
+==============================================================================================================
+    c3 kappa | ley A ciclos | ley B ciclos | ley C (tono en f3)
+   0.5  0.00 |         4.12 |         4.12 |              nunca
+   0.5  0.25 |         4.11 |         4.12 |              nunca
+   0.5  0.50 |         4.11 |         4.11 |              nunca
+   0.5  1.00 |         4.10 |         3.77 |              nunca
+   1.0  0.00 |         4.12 |         4.12 |              nunca
+   1.0  0.25 |         4.11 |         4.11 |              nunca
+   1.0  0.50 |         4.10 |         3.77 |              nunca
+   1.0  1.00 |         4.09 |         2.63 |               4.23
+
+==============================================================================================================
+PARTE 3 · CUÁNTOS GRADOS DE LIBERTAD DE LA ONDA LLEGAN A LA GOTA (gota de 0.46 mm, base 40 A, beta = 1)
+  amplitud máx. de corriente a f: min(30 A, pendiente/(2 pi f)) x |H_lazo(f)|;  q_l,max = c_l Q_l (2*40*dI/Icrit^2)(1 - e^{-T/tau_l})
+  ruido del oído por modo: sigma_q = sigma_y/(10 V/mm * a) * sqrt(2/(fs*min(tau_l, T))), fs = 20 kS/s
+==============================================================================================================
+  -- Q2 = 10, vida de la gota T = 11.7 ms (3 m/min); c_l = 1 (cota alta) --
+    l  f_l Hz   Q_l tau ms | dI 20k  q 20k | dI 100k q 100k | sig_q 10mV sig_q 0.3V  sig_q 1V
+    2     668  10.0   4.77 |   25.4  0.494 |    30.0  0.583 |    0.00037    0.00945   0.03149
+    3    1293   6.9   1.70 |   19.0  0.279 |    30.0  0.440 |    0.00061    0.01581   0.05269
+    4    2004   5.6   0.88 |   14.0  0.166 |    29.9  0.354 |    0.00085    0.02196   0.07318
+    5    2794   4.8   0.54 |    8.5  0.086 |    23.8  0.241 |    0.00109    0.02803   0.09342
+    6    3658   4.2   0.37 |    5.1  0.046 |    18.1  0.162 |    0.00132    0.03407   0.11354
+    7    4591   3.8   0.26 |    3.3  0.027 |    14.4  0.117 |    0.00155    0.04009   0.13361
+    8    5588   3.5   0.20 |    2.2  0.017 |    11.8  0.088 |    0.00179    0.04610   0.15363
+    9    6646   3.3   0.16 |    1.6  0.011 |     9.8  0.068 |    0.00202    0.05210   0.17363
+   10    7761   3.1   0.13 |    1.2  0.008 |     8.4  0.055 |    0.00225    0.05809   0.19361
+   15   14110   2.4   0.05 |    0.4  0.002 |     4.3  0.022 |    0.00341    0.08803   0.29339
+   20   21592   2.1   0.03 |    0.2  0.001 |     2.6  0.011 |    0.00457    0.11794   0.39307
+   30   39402   1.7   0.01 |    0.0  0.000 |     1.1  0.004 |    0.00689    0.17773   0.59233
+  modos útiles (q_max >= 0.1 y señal/ruido >= 10): 20k/10mV: 3, 20k/0.3V: 2, 20k/1V: 1, 100k/10mV: 6, 100k/0.3V: 3, 100k/1V: 1
+  -- Q2 = 10, vida de la gota T = 58.6 ms (0.6 m/min); c_l = 1 (cota alta) --
+    l  f_l Hz   Q_l tau ms | dI 20k  q 20k | dI 100k q 100k | sig_q 10mV sig_q 0.3V  sig_q 1V
+    2     668  10.0   4.77 |   25.4  0.540 |    30.0  0.638 |    0.00037    0.00945   0.03149
+    3    1293   6.9   1.70 |   19.0  0.280 |    30.0  0.441 |    0.00061    0.01581   0.05269
+    4    2004   5.6   0.88 |   14.0  0.166 |    29.9  0.354 |    0.00085    0.02196   0.07318
+    5    2794   4.8   0.54 |    8.5  0.086 |    23.8  0.241 |    0.00109    0.02803   0.09342
+    6    3658   4.2   0.37 |    5.1  0.046 |    18.1  0.162 |    0.00132    0.03407   0.11354
+    7    4591   3.8   0.26 |    3.3  0.027 |    14.4  0.117 |    0.00155    0.04009   0.13361
+    8    5588   3.5   0.20 |    2.2  0.017 |    11.8  0.088 |    0.00179    0.04610   0.15363
+    9    6646   3.3   0.16 |    1.6  0.011 |     9.8  0.068 |    0.00202    0.05210   0.17363
+   10    7761   3.1   0.13 |    1.2  0.008 |     8.4  0.055 |    0.00225    0.05809   0.19361
+   15   14110   2.4   0.05 |    0.4  0.002 |     4.3  0.022 |    0.00341    0.08803   0.29339
+   20   21592   2.1   0.03 |    0.2  0.001 |     2.6  0.011 |    0.00457    0.11794   0.39307
+   30   39402   1.7   0.01 |    0.0  0.000 |     1.1  0.004 |    0.00689    0.17773   0.59233
+  modos útiles (q_max >= 0.1 y señal/ruido >= 10): 20k/10mV: 3, 20k/0.3V: 2, 20k/1V: 1, 100k/10mV: 6, 100k/0.3V: 3, 100k/1V: 1
+  -- Q2 = 30, vida de la gota T = 11.7 ms (3 m/min); c_l = 1 (cota alta) --
+    l  f_l Hz   Q_l tau ms | dI 20k  q 20k | dI 100k q 100k | sig_q 10mV sig_q 0.3V  sig_q 1V
+    2     668  30.0  14.30 |   25.4  0.906 |    30.0  1.070 |    0.00023    0.00602   0.02008
+    3    1293  20.7   5.11 |   19.0  0.755 |    30.0  1.189 |    0.00035    0.00913   0.03042
+    4    2004  16.7   2.65 |   14.0  0.491 |    29.9  1.048 |    0.00049    0.01268   0.04225
+    5    2794  14.3   1.62 |    8.5  0.257 |    23.8  0.721 |    0.00063    0.01618   0.05393
+    6    3658  12.6   1.10 |    5.1  0.137 |    18.1  0.487 |    0.00076    0.01967   0.06555
+    7    4591  11.5   0.79 |    3.3  0.080 |    14.4  0.351 |    0.00090    0.02315   0.07714
+    8    5588  10.5   0.60 |    2.2  0.050 |    11.8  0.264 |    0.00103    0.02661   0.08870
+    9    6646   9.8   0.47 |    1.6  0.033 |     9.8  0.205 |    0.00117    0.03008   0.10025
+   10    7761   9.2   0.38 |    1.2  0.023 |     8.4  0.164 |    0.00130    0.03354   0.11178
+   15   14110   7.3   0.16 |    0.4  0.006 |     4.3  0.067 |    0.00197    0.05083   0.16939
+   20   21592   6.2   0.09 |    0.2  0.002 |     2.6  0.034 |    0.00264    0.06809   0.22694
+   30   39402   5.0   0.04 |    0.0  0.000 |     1.1  0.011 |    0.00398    0.10261   0.34198
+  modos útiles (q_max >= 0.1 y señal/ruido >= 10): 20k/10mV: 5, 20k/0.3V: 4, 20k/1V: 3, 100k/10mV: 11, 100k/0.3V: 6, 100k/1V: 4
+  -- Q2 = 30, vida de la gota T = 58.6 ms (0.6 m/min); c_l = 1 (cota alta) --
+    l  f_l Hz   Q_l tau ms | dI 20k  q 20k | dI 100k q 100k | sig_q 10mV sig_q 0.3V  sig_q 1V
+    2     668  30.0  14.30 |   25.4  1.592 |    30.0  1.881 |    0.00021    0.00546   0.01818
+    3    1293  20.7   5.11 |   19.0  0.839 |    30.0  1.322 |    0.00035    0.00913   0.03042
+    4    2004  16.7   2.65 |   14.0  0.497 |    29.9  1.061 |    0.00049    0.01268   0.04225
+    5    2794  14.3   1.62 |    8.5  0.257 |    23.8  0.722 |    0.00063    0.01618   0.05393
+    6    3658  12.6   1.10 |    5.1  0.137 |    18.1  0.487 |    0.00076    0.01967   0.06555
+    7    4591  11.5   0.79 |    3.3  0.080 |    14.4  0.351 |    0.00090    0.02315   0.07714
+    8    5588  10.5   0.60 |    2.2  0.050 |    11.8  0.264 |    0.00103    0.02661   0.08870
+    9    6646   9.8   0.47 |    1.6  0.033 |     9.8  0.205 |    0.00117    0.03008   0.10025
+   10    7761   9.2   0.38 |    1.2  0.023 |     8.4  0.164 |    0.00130    0.03354   0.11178
+   15   14110   7.3   0.16 |    0.4  0.006 |     4.3  0.067 |    0.00197    0.05083   0.16939
+   20   21592   6.2   0.09 |    0.2  0.002 |     2.6  0.034 |    0.00264    0.06809   0.22694
+   30   39402   5.0   0.04 |    0.0  0.000 |     1.1  0.011 |    0.00398    0.10261   0.34198
+  modos útiles (q_max >= 0.1 y señal/ruido >= 10): 20k/10mV: 5, 20k/0.3V: 4, 20k/1V: 3, 100k/10mV: 11, 100k/0.3V: 6, 100k/1V: 4
+
+  ALCANZABILIDAD (SVD): estado final de los modos l=2..30 contra la forma de onda (rms <= 21 A, = tono de 30 A), lazo lineal
+   Q2= 10 lazo 20k  c_l = 1            T= 11.7 ms: semiejes >= 0.1: 17, >= 0.3: 10, >= 1:  1  (mayores: 1.49, 0.65, 0.62, 0.58, 0.53, 0.48)
+   Q2= 10 lazo 20k  c_l = 1            T= 58.6 ms: semiejes >= 0.1: 21, >= 0.3: 15, >= 1:  6  (mayores: 3.34, 1.46, 1.38, 1.29, 1.18, 1.08)
+   Q2= 10 lazo 20k  c_l = e^{-(l-2)/2} T= 11.7 ms: semiejes >= 0.1:  6, >= 0.3:  4, >= 1:  0  (mayores: 0.60, 0.59, 0.33, 0.31, 0.16, 0.15)
+   Q2= 10 lazo 20k  c_l = e^{-(l-2)/2} T= 58.6 ms: semiejes >= 0.1:  8, >= 0.3:  6, >= 1:  2  (mayores: 1.36, 1.33, 0.73, 0.69, 0.36, 0.33)
+   Q2= 10 lazo 100k c_l = 1            T= 11.7 ms: semiejes >= 0.1: 27, >= 0.3: 22, >= 1: 10  (mayores: 5.74, 4.60, 3.14, 2.70, 2.09, 1.81)
+   Q2= 10 lazo 100k c_l = 1            T= 58.6 ms: semiejes >= 0.1: 30, >= 0.3: 26, >= 1: 19  (mayores: 12.82, 10.28, 7.02, 6.04, 4.67, 4.05)
+   Q2= 10 lazo 100k c_l = e^{-(l-2)/2} T= 11.7 ms: semiejes >= 0.1: 10, >= 0.3:  6, >= 1:  0  (mayores: 0.73, 0.71, 0.52, 0.49, 0.35, 0.31)
+   Q2= 10 lazo 100k c_l = e^{-(l-2)/2} T= 58.6 ms: semiejes >= 0.1: 12, >= 0.3:  8, >= 1:  4  (mayores: 1.63, 1.59, 1.17, 1.09, 0.77, 0.69)
+   Q2= 30 lazo 20k  c_l = 1            T= 11.7 ms: semiejes >= 0.1: 30, >= 0.3: 18, >= 1:  1  (mayores: 1.53, 0.95, 0.93, 0.88, 0.87, 0.75)
+   Q2= 30 lazo 20k  c_l = 1            T= 58.6 ms: semiejes >= 0.1: 36, >= 0.3: 28, >= 1: 13  (mayores: 3.43, 2.33, 2.29, 2.02, 1.98, 1.69)
+   Q2= 30 lazo 20k  c_l = e^{-(l-2)/2} T= 11.7 ms: semiejes >= 0.1:  8, >= 0.3:  4, >= 1:  0  (mayores: 0.93, 0.92, 0.55, 0.54, 0.28, 0.27)
+   Q2= 30 lazo 20k  c_l = e^{-(l-2)/2} T= 58.6 ms: semiejes >= 0.1: 10, >= 0.3:  8, >= 1:  4  (mayores: 2.32, 2.30, 1.24, 1.21, 0.63, 0.60)
+   Q2= 30 lazo 100k c_l = 1            T= 11.7 ms: semiejes >= 0.1: 47, >= 0.3: 41, >= 1: 31  (mayores: 7.19, 6.41, 5.13, 4.78, 4.04, 3.81)
+   Q2= 30 lazo 100k c_l = 1            T= 58.6 ms: semiejes >= 0.1: 50, >= 0.3: 46, >= 1: 38  (mayores: 16.07, 14.34, 11.46, 10.70, 9.04, 8.52)
+   Q2= 30 lazo 100k c_l = e^{-(l-2)/2} T= 11.7 ms: semiejes >= 0.1: 12, >= 0.3:  8, >= 1:  2  (mayores: 1.11, 1.10, 0.86, 0.85, 0.59, 0.57)
+   Q2= 30 lazo 100k c_l = e^{-(l-2)/2} T= 58.6 ms: semiejes >= 0.1: 16, >= 0.3: 12, >= 1:  6  (mayores: 2.74, 2.74, 1.93, 1.92, 1.31, 1.28)
+
+  GRADOS DE LIBERTAD DE LA ONDA: 2*B*T muestras independientes por gota
+   20k (tau 150 us)                               B =   1.06 kHz, 3 m/min  : 2BT =      25 números por gota
+   20k (tau 150 us)                               B =   1.06 kHz, 0.6 m/min: 2BT =     124 números por gota
+   100k chica señal (tau 5 us, Nyquist 50 kHz)    B =  31.83 kHz, 3 m/min  : 2BT =     746 números por gota
+   100k chica señal (tau 5 us, Nyquist 50 kHz)    B =  31.83 kHz, 0.6 m/min: 2BT =    3731 números por gota
+   100k a plena escala (pendiente/(2 pi 30 A))    B =   2.23 kHz, 3 m/min  : 2BT =      52 números por gota
+   100k a plena escala (pendiente/(2 pi 30 A))    B =   2.23 kHz, 0.6 m/min: 2BT =     261 números por gota
+   PWM a 100 kHz = 1e5 ciclos de trabajo por segundo; a 75 gotas/s = 1333 por gota.
+
+==============================================================================================================
+TELEMETRÍA CRUDA: una gota, paso a paso (cada 0.5 ms). a real | a que oye el Pico | q | |z| estimado | I | disparó | t* estimado
+==============================================================================================================
+
+  bang-bang + fase (lente A), 3.0 m/min, Q 30, lazo 20k: suelta en 11.49 ms con 0.4566 mm (eps +0.47 %, avance x0.989)
+   t   0.00 ms | a 0.3000 | oye 0.3000 | q +0.002 | |z| 0.032 | I  39.5 A | -- | t*  11.72
+   t   0.50 ms | a 0.3106 | oye 0.3106 | q +0.085 | |z| 0.065 | I  47.9 A | -- | t*  11.74
+   t   1.00 ms | a 0.3205 | oye 0.3215 | q -0.011 | |z| 0.076 | I  45.9 A | -- | t*  11.67
+   t   1.50 ms | a 0.3299 | oye 0.3310 | q +0.136 | |z| 0.097 | I  50.5 A | -- | t*  11.96
+   t   2.00 ms | a 0.3388 | oye 0.3375 | q +0.029 | |z| 0.034 | I  54.8 A | -- | t*  12.78
+   t   2.50 ms | a 0.3472 | oye 0.3456 | q +0.087 | |z| 0.036 | I  29.9 A | -- | t*  12.69
+   t   3.00 ms | a 0.3552 | oye 0.3523 | q -0.023 | |z| 0.070 | I  32.8 A | -- | t*  12.95
+   t   3.50 ms | a 0.3629 | oye 0.3614 | q +0.109 | |z| 0.060 | I  37.0 A | -- | t*  12.26
+   t   4.00 ms | a 0.3702 | oye 0.3688 | q +0.038 | |z| 0.011 | I  53.4 A | -- | t*  12.16
+   t   4.50 ms | a 0.3773 | oye 0.3779 | q +0.061 | |z| 0.016 | I  52.1 A | -- | t*  11.66
+   t   5.00 ms | a 0.3841 | oye 0.3844 | q +0.094 | |z| 0.054 | I  32.1 A | SI | t*  11.75
+   t   5.50 ms | a 0.3907 | oye 0.3889 | q -0.075 | |z| 0.123 | I  49.4 A | SI | t*  12.20
+   t   6.00 ms | a 0.3971 | oye 0.3937 | q +0.279 | |z| 0.248 | I  50.8 A | SI | t*  12.52
+   t   6.50 ms | a 0.4033 | oye 0.4000 | q -0.134 | |z| 0.312 | I  11.5 A | SI | t*  12.44
+   t   7.00 ms | a 0.4093 | oye 0.4060 | q +0.054 | |z| 0.360 | I  67.2 A | SI | t*  12.41
+   t   7.50 ms | a 0.4151 | oye 0.4126 | q +0.375 | |z| 0.452 | I  17.8 A | SI | t*  12.24
+   t   8.00 ms | a 0.4208 | oye 0.4189 | q -0.475 | |z| 0.517 | I  48.9 A | SI | t*  12.10
+   t   8.50 ms | a 0.4263 | oye 0.4246 | q +0.502 | |z| 0.607 | I  69.2 A | SI | t*  12.06
+   t   9.00 ms | a 0.4316 | oye 0.4299 | q +0.084 | |z| 0.664 | I  12.9 A | SI | t*  12.08
+   t   9.50 ms | a 0.4369 | oye 0.4355 | q -0.536 | |z| 0.694 | I  59.1 A | SI | t*  12.01
+   t  10.00 ms | a 0.4420 | oye 0.4410 | q +0.823 | |z| 0.805 | I  51.2 A | SI | t*  11.95
+   t  10.50 ms | a 0.4470 | oye 0.4454 | q -0.179 | |z| 0.846 | I  11.5 A | SI | t*  12.05
+   t  11.00 ms | a 0.4519 | oye 0.4503 | q -0.558 | |z| 0.854 | I  62.2 A | SI | t*  12.04
+
+  tono único (campanazo f fija), 0.6 m/min, Q 30, lazo 20k: suelta en 61.69 ms con 0.4645 mm (eps +0.47 %, avance x0.989)
+   t   0.00 ms | a 0.3000 | oye nan | q +0.002 | |z| nan | I  40.0 A | -- | t*    nan
+   t   2.00 ms | a 0.3085 | oye nan | q +0.060 | |z| nan | I  40.0 A | -- | t*    nan
+   t   4.00 ms | a 0.3166 | oye nan | q +0.073 | |z| nan | I  40.0 A | -- | t*    nan
+   t   6.00 ms | a 0.3244 | oye nan | q +0.016 | |z| nan | I  40.0 A | -- | t*    nan
+   t   8.00 ms | a 0.3317 | oye nan | q +0.019 | |z| nan | I  40.0 A | -- | t*    nan
+   t  10.00 ms | a 0.3388 | oye nan | q +0.036 | |z| nan | I  40.0 A | -- | t*    nan
+   t  12.00 ms | a 0.3455 | oye nan | q +0.043 | |z| nan | I  40.0 A | -- | t*    nan
+   t  14.00 ms | a 0.3520 | oye nan | q +0.042 | |z| nan | I  40.0 A | -- | t*    nan
+   t  16.00 ms | a 0.3583 | oye nan | q +0.038 | |z| nan | I  40.0 A | -- | t*    nan
+   t  18.00 ms | a 0.3644 | oye nan | q +0.034 | |z| nan | I  40.0 A | -- | t*    nan
+   t  20.00 ms | a 0.3702 | oye nan | q +0.038 | |z| nan | I  40.0 A | -- | t*    nan
+   t  22.00 ms | a 0.3759 | oye nan | q +0.047 | |z| nan | I  40.0 A | -- | t*    nan
+   t  24.00 ms | a 0.3814 | oye nan | q +0.050 | |z| nan | I  40.0 A | -- | t*    nan
+   t  26.00 ms | a 0.3868 | oye nan | q +0.042 | |z| nan | I  40.0 A | -- | t*    nan
+   t  28.00 ms | a 0.3920 | oye nan | q +0.042 | |z| nan | I  40.0 A | -- | t*    nan
+   t  30.00 ms | a 0.3971 | oye nan | q +0.048 | |z| nan | I  40.0 A | -- | t*    nan
+   t  32.00 ms | a 0.4021 | oye nan | q +0.042 | |z| nan | I  40.0 A | -- | t*    nan
+   t  34.00 ms | a 0.4069 | oye nan | q +0.045 | |z| nan | I  40.0 A | -- | t*    nan
+   t  36.00 ms | a 0.4116 | oye nan | q +0.045 | |z| nan | I  40.0 A | -- | t*    nan
+   t  38.00 ms | a 0.4162 | oye nan | q +0.044 | |z| nan | I  40.0 A | -- | t*    nan
+   t  40.00 ms | a 0.4208 | oye nan | q +0.045 | |z| nan | I  40.0 A | -- | t*    nan
+   t  42.00 ms | a 0.4252 | oye nan | q +0.044 | |z| nan | I  40.0 A | -- | t*    nan
+   t  44.00 ms | a 0.4295 | oye nan | q +0.045 | |z| nan | I  40.0 A | -- | t*    nan
+   t  46.00 ms | a 0.4338 | oye nan | q +0.044 | |z| nan | I  40.0 A | -- | t*    nan
+   t  48.00 ms | a 0.4379 | oye nan | q +0.044 | |z| nan | I  40.0 A | -- | t*    nan
+   t  50.00 ms | a 0.4420 | oye nan | q -0.031 | |z| nan | I  17.7 A | SI | t*    nan
+   t  52.00 ms | a 0.4460 | oye nan | q -0.064 | |z| nan | I  57.9 A | SI | t*    nan
+   t  54.00 ms | a 0.4500 | oye nan | q +0.589 | |z| nan | I  53.2 A | SI | t*    nan
+   t  56.00 ms | a 0.4539 | oye nan | q -0.186 | |z| nan | I  15.4 A | SI | t*    nan
+   t  58.00 ms | a 0.4577 | oye nan | q -0.554 | |z| nan | I  39.2 A | SI | t*    nan
+   t  60.00 ms | a 0.4614 | oye nan | q +0.722 | |z| nan | I  65.0 A | SI | t*    nan
+
+  [total 147 s]

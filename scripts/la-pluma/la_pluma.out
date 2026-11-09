@@ -1,0 +1,205 @@
+/tmp/claude-1000/-home-ian-neuron-asm-RIAN/cfc903cc-a179-4f90-826c-2fc0f81542b2/scratchpad/sim/la_pluma.py:176: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return np.trapz(y, t)
+  ok A_48V_sin_tope: 313532 puntos
+  ok B_tope_0.22: 315244 puntos
+  ok C_tope_y_deteccion: 310425 puntos
+  ok D_tope_det_Q3: 310323 puntos
+  ok E_continuo_lazo30nH: 209106 puntos
+  ok F_continuo_lazo150nH: 210285 puntos
+
+====================================================================================================
+RESUMEN (gota a mano: toque 1.0 ms, la mano levanta 4.0 ms, revienta 4.4 ms)
+====================================================================================================
+
+  A_48V_sin_tope
+     OCV V              6.64
+     Ipico toque        45.2
+     I prom             40.5
+     rizo pp            3.4
+     duty               0.042
+     Vds max            77.6
+     SW min             -13.6
+     toque ms           1.125
+     kill ms            nan
+     I puente@ruptura   37.1
+     E gota mJ          34.9
+     E arco mJ          42.6
+     arco us            196
+     P_Q1 W             5.1
+     P_D1 W             29.0
+     P_pluma W          9.9
+     P_entrada W        94.5
+     I_Q3 max           23.9
+
+  B_tope_0.22
+     OCV V              6.64
+     Ipico toque        45.2
+     I prom             40.5
+     rizo pp            3.4
+     duty               0.042
+     Vds max            77.6
+     SW min             -13.6
+     toque ms           1.125
+     kill ms            nan
+     I puente@ruptura   37.1
+     E gota mJ          34.9
+     E arco mJ          42.6
+     arco us            196
+     P_Q1 W             5.1
+     P_D1 W             29.0
+     P_pluma W          9.9
+     P_entrada W        94.5
+     I_Q3 max           23.9
+
+  C_tope_y_deteccion
+     OCV V              6.64
+     Ipico toque        45.2
+     I prom             40.5
+     rizo pp            3.4
+     duty               0.042
+     Vds max            77.6
+     SW min             -13.6
+     toque ms           1.125
+     kill ms            4.206
+     I puente@ruptura   29.4
+     E gota mJ          33.5
+     E arco mJ          15.3
+     arco us            75
+     P_Q1 W             5.1
+     P_D1 W             29.0
+     P_pluma W          9.9
+     P_entrada W        94.5
+     I_Q3 max           23.9
+
+  D_tope_det_Q3
+     OCV V              6.64
+     Ipico toque        45.2
+     I prom             40.5
+     rizo pp            3.4
+     duty               0.042
+     Vds max            77.6
+     SW min             -13.6
+     toque ms           1.125
+     kill ms            4.206
+     I puente@ruptura   14.2
+     E gota mJ          30.2
+     E arco mJ          0.1
+     arco us            1
+     P_Q1 W             5.1
+     P_D1 W             29.0
+     P_pluma W          9.9
+     P_entrada W        94.5
+     I_Q3 max           31.2
+
+  E_continuo_lazo30nH
+     OCV V              6.64
+     Ipico toque        48.5
+     I prom             46.0
+     rizo pp            4.8
+     duty               0.087
+     Vds max            79.4
+     SW min             -13.8
+     toque ms           1.126
+     kill ms            nan
+     I puente@ruptura   43.9
+     E gota mJ          260.7
+     E arco mJ          0.0
+     arco us            0
+     P_Q1 W             9.6
+     P_D1 W             32.4
+     P_pluma W          106.0
+     P_entrada W        209.5
+     I_Q3 max           23.4
+
+  F_continuo_lazo150nH
+     OCV V              6.65
+     Ipico toque        48.5
+     I prom             46.0
+     rizo pp            4.8
+     duty               0.088
+     Vds max            102.0
+     SW min             -28.4
+     toque ms           1.126
+     kill ms            nan
+     I puente@ruptura   43.9
+     E gota mJ          260.3
+     E arco mJ          0.0
+     arco us            0
+     P_Q1 W             14.1
+     P_D1 W             32.3
+     P_pluma W          105.8
+     P_entrada W        213.6
+     I_Q3 max           23.5
+
+  traza cruda B_tope_0.22  (3.95-4.75 ms)
+      t ms  I_choke  V_pluma R_contacto  I_arco   duty   R_est   R_min  kill
+     3.950    38.73    0.293       7.4m    0.00  0.044   11.3m    8.9m   0.0
+     4.000    38.74    0.296       7.5m    0.00  0.044   11.4m    8.9m   0.0
+     4.050    38.73    0.326       8.3m    0.00  0.044   11.8m    8.9m   0.0
+     4.100    38.67    0.354       9.0m    0.00  0.045   12.4m    9.0m   0.0
+     4.150    38.57    0.441      11.3m    0.00  0.045   13.8m    9.0m   0.0
+     4.200    38.38    0.526      13.5m    0.00  0.046   15.9m    9.1m   0.0
+     4.250    38.09    0.666      17.3m    0.00  0.047   18.8m    9.2m   0.0
+     4.300    37.72    0.802      21.0m    0.00  0.049   22.3m    9.3m   0.0
+     4.350    37.28    0.989      26.3m    0.00  0.051   26.6m    9.4m   0.0
+     4.400    36.74    1.168      31.5m    0.00  0.054   31.6m    9.6m   0.0
+     4.450    21.83   13.522    abierto   24.87  0.089  347.2m   11.6m   0.0
+     4.500    10.07   13.236    abierto    9.31  0.150  624.5m   16.1m   0.0
+     4.550     2.63   13.134    abierto    2.95  0.204 1109.3m   24.0m   0.0
+     4.600     0.11   12.704    abierto    0.00  0.220 2024.5m   38.0m   0.0
+     4.650    -0.12   25.582    abierto    0.00  0.220 7636.3m   74.5m   0.0
+     4.700    -0.12   30.792    abierto    0.00  0.220 24803.3m  201.8m   0.0
+     4.750     0.09   34.146    abierto    0.00  0.220 32783.1m  474.6m   0.0
+
+  traza cruda C_tope_y_deteccion  (3.95-4.75 ms)
+      t ms  I_choke  V_pluma R_contacto  I_arco   duty   R_est   R_min  kill
+     3.950    38.73    0.293       7.4m    0.00  0.044   11.3m    8.9m   0.0
+     4.000    38.74    0.296       7.5m    0.00  0.044   11.4m    8.9m   0.0
+     4.050    38.73    0.326       8.3m    0.00  0.044   11.8m    8.9m   0.0
+     4.100    38.67    0.354       9.0m    0.00  0.045   12.4m    9.0m   0.0
+     4.150    38.57    0.441      11.3m    0.00  0.045   13.8m    9.0m   0.0
+     4.200    38.38    0.526      13.5m    0.00  0.046   15.9m    9.1m   0.0
+     4.250    38.09    0.666      17.3m    0.00  0.000   18.8m    9.2m   1.0
+     4.300    35.23    0.737      21.0m    0.00  0.000   21.7m    9.3m   1.0
+     4.350    32.34    0.849      26.3m    0.00  0.000   26.0m    9.4m   1.0
+     4.400    29.45    0.927      31.5m    0.00  0.000   30.9m    9.6m   1.0
+     4.450    12.32   13.256    abierto   11.54  0.000  471.4m   12.0m   1.0
+     4.500    -0.11   15.104    abierto    0.00  0.000 1778.9m   20.9m   1.0
+     4.550    -0.03   15.033    abierto    0.00  0.000 8987.5m   65.5m   1.0
+     4.600    -0.00   14.958    abierto    0.00  0.000 14935.4m  202.9m   1.0
+     4.650     0.00   14.883    abierto    0.00  0.000 14915.8m  349.4m   1.0
+     4.700     0.00   14.809    abierto    0.00  0.000 14853.0m  494.1m   1.0
+     4.750     0.00   14.735    abierto    0.00  0.000 14781.5m  636.6m   1.0
+
+  traza cruda D_tope_det_Q3  (3.95-4.75 ms)
+      t ms  I_choke  V_pluma R_contacto  I_arco   duty   R_est   R_min  kill
+     3.950    38.73    0.293       7.4m    0.00  0.044   11.3m    8.9m   0.0
+     4.000    38.74    0.296       7.5m    0.00  0.044   11.4m    8.9m   0.0
+     4.050    38.73    0.326       8.3m    0.00  0.044   11.8m    8.9m   0.0
+     4.100    38.67    0.354       9.0m    0.00  0.045   12.4m    9.0m   0.0
+     4.150    38.57    0.441      11.3m    0.00  0.045   13.8m    9.0m   0.0
+     4.200    38.38    0.526      13.5m    0.00  0.046   15.9m    9.1m   0.0
+     4.250    38.52    0.394      17.3m    0.00  0.000   11.3m    9.1m   1.0
+     4.300    36.07    0.412      21.0m    0.00  0.000   12.1m    9.1m   1.0
+     4.350    33.68    0.438      26.3m    0.00  0.000   13.3m    9.2m   1.0
+     4.400    31.35    0.448      31.5m    0.00  0.000   14.5m    9.2m   1.0
+     4.450    28.66    0.808    abierto    0.00  0.000   24.9m    9.3m   1.0
+     4.500    26.15    0.737    abierto    0.00  0.000   27.3m    9.5m   1.0
+     4.550    23.80    0.671    abierto    0.00  0.000   27.8m    9.7m   1.0
+     4.600    21.60    0.609    abierto    0.00  0.000   27.9m    9.9m   1.0
+     4.650    19.55    0.551    abierto    0.00  0.000   27.9m   10.0m   1.0
+     4.700    17.63    0.497    abierto    0.00  0.000   27.9m   10.2m   1.0
+     4.750    15.83    0.446    abierto    0.00  0.000   27.9m   10.4m   1.0
+
+  traza cruda D_tope_det_Q3 (toque)  (0.90-1.80 ms)
+      t ms  I_choke  V_pluma R_contacto  I_arco   duty   R_est   R_min  kill
+     0.900     0.00    6.526    abierto    0.00  0.000 6547.1m 6560.1m   0.0
+     1.000     0.00    0.002      17.0m    0.00  0.000 6482.2m 6495.1m   0.0
+     1.100     1.97    0.037      13.5m    0.00  0.040  190.1m  609.7m   0.0
+     1.200     5.21    0.058      10.0m    0.00  0.052   19.5m   29.1m   0.0
+     1.300    10.62    0.101       8.6m    0.00  0.081   15.4m   15.9m   0.0
+     1.400    18.39    0.141       7.2m    0.00  0.101   13.2m   13.7m   0.0
+     1.500    27.41    0.166       5.9m    0.00  0.115   11.2m   11.5m   0.0
+     1.600    36.21    0.167       4.5m    0.00  0.090    9.6m    9.8m   0.0
+     1.700    40.81    0.193       4.6m    0.00  0.063    8.9m    8.7m   0.0
+     1.800    42.38    0.204       4.7m    0.00  0.051    8.7m    8.4m   0.0
