@@ -414,6 +414,9 @@ cat > "$EXPECTED_CONF_FILE" <<'NGINX_CONF'
 server {
     listen 80;
     server_name university.gaiaprime.com.mx;
+    # Ctrl+S del CAD sube el documento entero a /api/disenos/ (rhea); con un STEP importado pasa de 1 MB,
+    # el default de nginx → 413. El servicio corta en 40 MB. (2026-11-09)
+    client_max_body_size 45m;
 
     # DATOS PRECOMPUTADOS — la física ya calculada (nubes ab initio de los 118 átomos,
     # campos, moléculas). Medido el 2026-07-31: salían con `no-cache, no-store` y

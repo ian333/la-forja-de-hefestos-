@@ -61,6 +61,7 @@ import { flanera } from '../mold/flanera';   // el VASO de la flanera (producto 
 import { splitMold, shapeBBox, scaleForShrinkage } from '../mold/mold';    // core/cavidad genérico (probado en el banco: cup/lid/…)
 import { analyzeAssembly, meshesInterfere, meshPenetration, meshContact } from '../mold/collision';   // solver de colisiones (fits + térmico + sólidos)
 import ProjectSwitcher, { inferType, type ProjItem } from './ProjectSwitcher';   // el LOBBY integrado
+import { guardarVersion, versionesDe, abrirVersion, listarDisenos, fechaCorta, type VersionNube, type DisenoNube } from './disenosNube';   // VERSIONES en rhea (Ctrl+S)
 import { mallaDesdeArchivo, mallaParaElVisor, bboxDeMalla, armarPuerta, confirmarSolido, type MallaVisor, type OpcionesCarga, type PuertaDeLaPieza, type RegionDeLaPuerta } from '../mold/stl';   // + LA PUERTA (orden C)
 import type { MeshLike } from '../mold/flowlen-mesh';
 import { fastenerPlan } from '../mold/mold-fasteners';
@@ -5384,7 +5385,11 @@ export default function ForgeBRepStudio() {
     version: 1, name: docName, sketch, ops, material, assembly, params, bindings, components, importedStep,
     ...(refParts.length ? { refParts } : {}),
     ...(arcoDoc ? { arco: arcoDoc } : {}),
-  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep, refParts, arcoDoc]);
+    // sin estos tres, una versión del LABORATORIO o del BRAZO volvía sin sus jueces, sin su brazo y sin su vista
+    ...(brazoDoc ? { brazo: brazoDoc } : {}),
+    ...(docVista ? { vista: docVista } : {}),
+    ...(labJueces ? { lab: labJueces } : {}),
+  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep, refParts, arcoDoc, brazoDoc, docVista, labJueces]);
   const loadDoc = useCallback((d: Partial<DocState>) => {
     // IDs ÚNICOS tras cargar: opCounter vive en memoria y se reinicia con la
     // página — sin este bump, los componentes NUEVOS colisionan con los ids
@@ -5421,6 +5426,66 @@ export default function ForgeBRepStudio() {
   const loadFromLibrary = useCallback((name: string) => {
     const d = readLib()[name]; if (d) loadDoc(d);
   }, [loadDoc]);
+  // ── VERSIONES EN RHEA (como Fusion): Ctrl+S = versión NUEVA (nada se sobrescribe); el dropdown junto al
+  // nombre abre cualquiera. El diseño es su NOMBRE: renombrar = diseño nuevo. Servidor: disenos-service/. ──
+  const [versiones, setVersiones] = useState<VersionNube[]>([]);
+  const [verAbierta, setVerAbierta] = useState<number | null>(null);
+  const [disenosNube, setDisenosNube] = useState<DisenoNube[]>([]);
+  const [avisoNube, setAvisoNube] = useState<{ txt: string; ok: boolean } | null>(null);
+  const avisoT = useRef<number | undefined>(undefined);
+  const avisar = useCallback((txt: string, ok: boolean, ms = 4000) => {
+    window.clearTimeout(avisoT.current); setAvisoNube({ txt, ok });
+    if (ms) avisoT.current = window.setTimeout(() => setAvisoNube(null), ms);
+  }, []);
+  const refrescarNube = useCallback((nombre: string) => {
+    versionesDe(nombre).then(setVersiones).catch(() => setVersiones([]));
+    listarDisenos().then(setDisenosNube).catch(() => { /* rhea apagada o sin clave: el lobby sigue con lo local */ });
+  }, []);
+  // el nombre manda: al abrir otro documento (o renombrarlo) se piden SUS versiones
+  useEffect(() => {
+    setVerAbierta(null);
+    const t = window.setTimeout(() => refrescarNube(docName), 400);
+    return () => window.clearTimeout(t);
+  }, [docName, refrescarNube]);
+  const guardarNube = useCallback(async () => {
+    const d = serializeDoc();
+    saveToLibrary();   // la copia del navegador: el lobby la lista aunque rhea esté apagada
+    avisar('guardando en rhea…', true, 0);
+    try {
+      const r = await guardarVersion(d);
+      setVerAbierta(r.v);
+      refrescarNube(d.name);
+      avisar(`✓ v${r.v} guardada en rhea`, true);
+      mark('op', 0, { op: 'guardar-version' });
+    } catch (e) {
+      avisar(`✗ no se guardó en rhea (${(e as Error).message}) — quedó en este navegador`, false, 7000);
+    }
+  }, [serializeDoc, saveToLibrary, avisar, refrescarNube]);
+  const guardarRef = useRef(guardarNube);
+  guardarRef.current = guardarNube;
+  // Ctrl+S / Cmd+S: también dentro de un input (como Fusion) — y nunca el «guardar página» del navegador
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
+        e.preventDefault(); void guardarRef.current();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  /** Abre la versión v del diseño `nombre` desde rhea. false si no se pudo (el lobby cae a la copia local). */
+  const abrirVersionNube = useCallback(async (nombre: string, v: number): Promise<boolean> => {
+    avisar(`abriendo v${v}…`, true, 0);
+    try {
+      const d = await abrirVersion<DocState>(nombre, v);
+      loadDoc(d); setVerAbierta(v);
+      avisar(`v${v} abierta`, true, 2500);
+      return true;
+    } catch (e) {
+      avisar(`✗ no abrió la v${v} (${(e as Error).message})`, false, 7000);
+      return false;
+    }
+  }, [loadDoc, avisar]);
   // ── ENSAMBLE GENÉRICO: insertar una pieza guardada COMO COMPONENTE (snapshot).
   // La pieza llega al origen como compound ('none') y se posiciona con X/Y/Z/Giro
   // del panel — el primer ladrillo de los robots (mates vendrán encima de esto). ──
@@ -5441,18 +5506,32 @@ export default function ForgeBRepStudio() {
   // ── LOBBY: proyectos guardados (biblioteca) + plantillas para arrancar ──
   const switcherProjects = useMemo<ProjItem[]>(() => {
     const lib = readLib();
-    return Object.keys(lib).sort().map((name) => {
+    const nube = new Map(disenosNube.map((n) => [n.nombre, n]));
+    const locales: ProjItem[] = Object.keys(lib).sort().map((name) => {
       const d = lib[name];
       const nf = d?.ops?.length ?? 0, nc = d?.components?.length ?? 0;
       const cur = name === docName;
+      const nb = nube.get(name);
       return {
         key: 'lib-' + name, name, type: inferType(name),
-        meta: `${nf} feature${nf === 1 ? '' : 's'}${nc ? ` · ${nc} comp` : ''}`,
+        meta: `${nf} feature${nf === 1 ? '' : 's'}${nc ? ` · ${nc} comp` : ''}${nb ? ` · ☁ v${nb.n}` : ''}`,
         status: cur ? 'abierto ahora' : 'guardado', statusColor: cur ? '#34d399' : undefined,
-        current: cur, action: () => loadFromLibrary(name),
+        // si está en rhea se abre su ÚLTIMA versión; si rhea no contesta, la copia de este navegador
+        current: cur, action: nb ? () => { void abrirVersionNube(name, nb.n).then((ok) => { if (!ok) loadFromLibrary(name); }); } : () => loadFromLibrary(name),
       };
     });
-  }, [libNames, docName, loadFromLibrary]);   // libNames refresca al guardar/borrar
+    // lo guardado desde OTRO navegador (otra compu): solo existe en rhea
+    const soloNube: ProjItem[] = disenosNube.filter((n) => !lib[n.nombre]).map((n) => {
+      const cur = n.nombre === docName;
+      return {
+        key: 'nube-' + n.slug, name: n.nombre, type: inferType(n.nombre),
+        meta: `☁ v${n.n} en rhea · ${fechaCorta(n.fecha)}`,
+        status: cur ? 'abierto ahora' : 'en rhea', statusColor: cur ? '#34d399' : undefined,
+        current: cur, action: () => { void abrirVersionNube(n.nombre, n.n); },
+      };
+    });
+    return [...locales, ...soloNube];
+  }, [libNames, docName, loadFromLibrary, disenosNube, abrirVersionNube]);   // libNames refresca al guardar/borrar
   const switcherStarters = useMemo<ProjItem[]>(() => ([
     // LECCIÓN 1 (v1·6) — el recorrido de la v1 empacado: lienzo VACÍO (la tarjeta
     // guiada de v1·2 es el paso 1-3) y el ciclo E1→E3→💰 es el resto. El final
@@ -9392,12 +9471,22 @@ export default function ForgeBRepStudio() {
           <header className="fb-header">
             <div className="fb-mark">⚒</div>
             <button className={`fb-titles fb-doc-trigger ${switcherOpen ? 'on' : ''}`} data-testid="doc-switcher"
-              onClick={() => { refreshLib(); setSwitcherOpen((v) => !v); }}
+              onClick={() => { refreshLib(); refrescarNube(docName); setSwitcherOpen((v) => !v); }}
               title="Cambiar de proyecto — tus moldes, robots y mecanismos">
               <h1 data-testid="doc-title">{modoCamino ? docName.split(' · ')[0] : docName} <span className="fb-doc-studio">· {modoCamino ? tituloDelPaso(pasoActual) : moldParts.length ? 'Ensamble de molde' : 'Estudio de pieza'}</span>
                 {importedStep && <span className="fb-imported-tag" data-testid="imported-tag">STEP importado</span>}</h1>
               <span className="fb-doc-chev">▾</span>
             </button>
+            {/* VERSIONES (como Fusion): Ctrl+S guarda una nueva en rhea; aquí se abre cualquiera */}
+            <select className="fb-ver" data-testid="sel-version" value={verAbierta ?? ''}
+              title="Versiones en rhea — Ctrl+S guarda una nueva"
+              onChange={(e) => { const v = parseInt(e.target.value, 10); if (v) void abrirVersionNube(docName, v); }}>
+              {verAbierta == null && <option value="">{versiones.length ? `${versiones.length === 1 ? '1 versión' : `${versiones.length} versiones`} ▾` : 'Ctrl+S = v1'}</option>}
+              {[...versiones].reverse().map((x) => (
+                <option key={x.v} value={x.v}>v{x.v} · {fechaCorta(x.fecha)}</option>
+              ))}
+            </select>
+            {avisoNube && <div className={`fb-aviso-nube${avisoNube.ok ? '' : ' mal'}`} data-testid="aviso-nube" role="status">{avisoNube.txt}</div>}
             <ProjectSwitcher open={switcherOpen} onClose={() => setSwitcherOpen(false)}
               projects={switcherProjects} starters={switcherStarters}
               onNew={newDoc} onPick={(p) => p.action()}
@@ -9443,7 +9532,7 @@ export default function ForgeBRepStudio() {
                         onClick={() => { loadDoc(ex.doc()); setOptionsOpen(false); }}>{ex.name}</button>
                     ))}
                     <button data-testid="menu-save" role="menuitem"
-                      onClick={() => { saveToLibrary(); refreshLib(); }}>Guardar <em>en biblioteca</em></button>
+                      onClick={() => { void guardarNube(); refreshLib(); }}>Guardar versión <em>Ctrl+S · rhea</em></button>
                     <label className="fb-menu-link" role="menuitem" style={{ cursor: 'pointer' }}>
                       Importar .json
                       <input type="file" accept=".json,application/json" data-testid="input-import" style={{ display: 'none' }}
@@ -12059,6 +12148,14 @@ const CSS = `
 .fb-doc-name{width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(159,179,200,0.18);
   border-radius:7px;color:#eef3f9;font-size:12px;font-weight:600;padding:7px 9px;outline:none;margin:2px 0 4px;}
 .fb-doc-name:focus{border-color:${GOLD}88;}
+.fb-ver{margin-left:6px;align-self:center;background:rgba(0,0,0,0.35);border:1px solid rgba(159,179,200,0.18);border-radius:6px;
+  color:#cfd8e3;font-size:11px;font-weight:600;padding:3px 6px;outline:none;cursor:pointer;max-width:170px;}
+.fb-ver:hover,.fb-ver:focus{border-color:${GOLD}77;color:${GOLD};}
+.fb-ver option{background:#0d131b;color:#eef3f9;}
+.fb-aviso-nube{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9999;background:rgba(10,16,24,0.94);
+  border:1px solid #34d39966;color:#bff5dc;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;pointer-events:none;
+  box-shadow:0 6px 24px rgba(0,0,0,0.45);}
+.fb-aviso-nube.mal{border-color:#ff8a8066;color:#ffc9c3;}
 .fb-lib-list{display:flex;flex-direction:column;gap:2px;max-height:160px;overflow:auto;}
 .fb-lib-row{display:flex;align-items:center;gap:2px;}
 .fb-lib-open{flex:1;text-align:left;border:0;background:transparent;color:#e9eef5;font-size:11px;
