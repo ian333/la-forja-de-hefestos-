@@ -1,0 +1,39 @@
+{
+  "id": "fogata-01-no-eramos-los-unicos",
+  "titulo": "La otra fogata · Hubo otros humanos. ¿Qué les pasó? | La Fogata, capítulo 1",
+  "familia": "fogata",
+  "nota": "La Fogata (serie de GAIA hecha con el motor lia): el episodio del capítulo 1, 16:9. El master, el texto y las revisiones -autor, auditores, privacidad, ley de calidad- salen de lia, projects/historia/la-fogata/01-no-eramos-los-unicos (out/short.mp4 y publicar.json); `./lia encolar 01-no-eramos-los-unicos` las corre antes de armar.",
+  "formato": {
+    "w": 3840,
+    "h": 2160,
+    "fps": 30,
+    "dur": 253.4
+  },
+  "salida": {
+    "dir": "/home/suecr/projects/lia-video-engine/projects/historia/la-fogata/01-no-eramos-los-unicos/out",
+    "master": "short.mp4",
+    "h264": "short.mp4"
+  },
+  "publicar": {
+    "copy": {
+      "titulo": "La otra fogata · Hubo otros humanos. ¿Qué les pasó? | La Fogata, capítulo 1",
+      "descripcion": "Hace cien mil años había por lo menos cinco o seis clases de humanos. Hoy queda una sola. 🔥\n\nJunto a la lumbre, una narradora sigue a Ayana, una madre de nuestra especie que sale de África con su bebé en brazos, hasta la noche en que ve otra fogata al otro lado del valle. Es la fogata de unos humanos que desaparecieron y que, aun así, siguen dentro de nosotros.\n\nAyana es una reconstrucción: no existió con ese nombre. Los datos sí, y donde la ciencia todavía discute, el episodio lo dice. Las fuentes, en el primer comentario.\n\nAnimación, música y sonido hechos con código. Voz sintética.",
+      "hashtags": [
+        "#lafogata",
+        "#historia",
+        "#prehistoria",
+        "#evoluciónhumana",
+        "#neandertales",
+        "#denisovanos",
+        "#adn",
+        "#ciencia",
+        "#gaia",
+        "#aprendeaverloinvisible"
+      ]
+    },
+    "autorizado": "2026-10-21 yt,ig — Sinué, con la delegación de Ian para La Fogata: «Quiero ver el EP1 de LA FOGATA short y el video largo publicados hoy 21/10/26 a las 20 hrs CDMX»",
+    "programar": "2026-10-21T20:00:00-06:00",
+    "nota_programar": "20:00 CDMX, la hora que pidió el dueño para el estreno del EP1.",
+    "primer_comentario": "Fuentes principales 👇\n· La mano de Maltravieso: Hoffmann et al., Science 2018. doi:10.1126/science.aap7778\n· Los últimos erectus de Java: Rizal et al., Nature 2020. doi:10.1038/s41586-019-1863-2\n· Homo luzonensis: Détroit et al., Nature 2019. doi:10.1038/s41586-019-1067-9\n· Homo floresiensis: Sutikna et al., Nature 2016. doi:10.1038/nature17179\n· El fuego como costumbre: Roebroeks y Villa, PNAS 2011. doi:10.1073/pnas.1018116108\n· Encender fuego hace 400 mil años: Davis et al., Nature 2026. doi:10.1038/s41586-025-09855-6\n· Bebés indefensos, causa en debate: Dunsworth et al., PNAS 2012. doi:10.1073/pnas.1205282109\n· El cerebro de un niño y su energía: Kuzawa et al., PNAS 2014. doi:10.1073/pnas.1323099111\n· La salida de África: Bergström et al., Nature 2021. doi:10.1038/s41586-021-03244-5\n· Salidas anteriores (Misliya): Hershkovitz et al., Science 2018. doi:10.1126/science.aap8369\n· Los denisovanos: Reich et al., Nature 2010. doi:10.1038/nature09710\n· El cráneo de Harbin es denisovano: Fu et al., Science 2025. doi:10.1126/science.adu9677\n· La niña de Cova Negra: Conde-Valverde et al., Science Advances 2024. doi:10.1126/sciadv.adn9310\n· Madre neandertal, padre denisovano: Slon et al., Nature 2018. doi:10.1038/s41586-018-0455-x\n· El final de los neandertales: Higham et al., Nature 2014. doi:10.1038/nature13621\n· Por qué desaparecieron (debate): Vaesen et al., PLoS ONE 2019. doi:10.1371/journal.pone.0225117\n· ADN neandertal en todas las poblaciones: Chen et al., Cell 2020. doi:10.1016/j.cell.2020.01.012\n· El gen MUC19 en América: Villanea et al., Science 2025. doi:10.1126/science.adl0882\n· El cerebro neandertal: Smithsonian Human Origins Program."
+  }
+}
