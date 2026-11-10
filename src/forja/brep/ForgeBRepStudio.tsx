@@ -3467,6 +3467,82 @@ function SketchPlane({ plane }: { plane: SketchPlane3D }) {
 }
 
 /**
+ * NAVEGACIÓN CON TOUCHPAD (orden 2026-11-09-touchpad-y-radial). ian: «con el mouse está cool», pero en el touchpad
+ * dos dedos solo hacían zoom y no había forma cómoda de girar ni mover. Ahora, cuando la rueda viene de un touchpad:
+ *   dos dedos = GIRAR · Shift + dos dedos = MOVER · pellizco (ctrl + rueda) = ZOOM (ese ya lo entiende OrbitControls).
+ * Mouse o touchpad se distingue por cómo llega la rueda: el mouse brinca de a ≥100 y sin deltaX; el touchpad manda
+ * deltas finos y en los dos ejes. El chip `nav-modo` lo fuerza si la detección se equivoca. Store fuera de React.
+ */
+type NavModo = 'auto' | 'mouse' | 'touchpad';
+const navStore = (() => {
+  let modo: NavModo = 'auto';
+  try { const m = localStorage.getItem('forja-nav'); if (m === 'mouse' || m === 'touchpad') modo = m; } catch { /* sin storage */ }
+  let visto: 'mouse' | 'touchpad' = 'mouse';
+  const subs = new Set<() => void>();
+  const avisa = () => subs.forEach((f) => f());
+  return {
+    get modo() { return modo; }, get visto() { return visto; },
+    snap: () => `${modo}:${visto}`,
+    setModo(m: NavModo) { modo = m; try { localStorage.setItem('forja-nav', m); } catch { /* sin storage */ } avisa(); },
+    ve(v: 'mouse' | 'touchpad') { if (v !== visto) { visto = v; avisa(); } },
+    sub(f: () => void) { subs.add(f); return () => { subs.delete(f); }; },
+  };
+})();
+const navQa: { camera: THREE.Camera | null; controls: { target: THREE.Vector3 } | null } = { camera: null, controls: null };
+function ruedaEsTouchpad(e: WheelEvent): boolean {
+  if (e.deltaMode !== 0) return false;                      // líneas/páginas = rueda de mouse
+  if (e.deltaX !== 0 && !e.shiftKey) return true;           // (Shift + rueda de mouse también llega como deltaX)
+  const a = Math.max(Math.abs(e.deltaX), Math.abs(e.deltaY));
+  return a > 0 && a < 40;                                   // el mouse brinca de a ≥100 por muesca
+}
+function NavegacionTouchpad() {
+  const gl = useThree((s) => s.gl); const camera = useThree((s) => s.camera); const invalidate = useThree((s) => s.invalidate);
+  const controls = useThree((s) => s.controls) as { target: THREE.Vector3; update: () => void; enabled: boolean } | null;
+  useEffect(() => {
+    navQa.camera = camera; navQa.controls = controls;
+    const el = gl.domElement.parentElement ?? gl.domElement;
+    let ultimoTp = -1e9;
+    const sph = new THREE.Spherical(); const off = new THREE.Vector3(); const d = new THREE.Vector3(); const eje = new THREE.Vector3();
+    const onWheel = (e: WheelEvent) => {
+      if (!controls || !controls.enabled) return;            // boceto / vuelo de cámara: no es nuestro
+      const ahora = performance.now();
+      // un deslizón rápido de touchpad puede dar un delta grande suelto: se queda «touchpad» mientras siga el gesto
+      const tp = ruedaEsTouchpad(e) || (e.deltaMode === 0 && ahora - ultimoTp < 350);
+      if (tp) ultimoTp = ahora;
+      navStore.ve(tp ? 'touchpad' : 'mouse');
+      const modo = navStore.modo === 'auto' ? (tp ? 'touchpad' : 'mouse') : navStore.modo;
+      if (modo !== 'touchpad' || e.ctrlKey || e.metaKey) return;   // zoom (rueda de mouse o pellizco) → OrbitControls
+      e.preventDefault(); e.stopPropagation();
+      const h = el.clientHeight || 800;
+      const t = controls.target;
+      off.copy(camera.position).sub(t);
+      if (e.shiftKey) {
+        // MOVER: la escena sigue a los dedos; un px de dedo = un px de pantalla a la distancia del blanco
+        const fov = (camera as THREE.PerspectiveCamera).fov ?? 35;
+        const porPx = (2 * off.length() * Math.tan((fov * Math.PI) / 360)) / h;
+        d.set(0, 0, 0);
+        d.addScaledVector(eje.setFromMatrixColumn(camera.matrix, 0), e.deltaX * porPx);
+        d.addScaledVector(eje.setFromMatrixColumn(camera.matrix, 1), -e.deltaY * porPx);
+        camera.position.add(d); t.add(d);
+      } else {
+        // GIRAR alrededor del blanco (misma cuenta que el arrastre de OrbitControls: 2π por alto de pantalla)
+        sph.setFromVector3(off);
+        sph.theta += (2 * Math.PI * e.deltaX) / h;
+        sph.phi = Math.min(Math.PI - 0.01, Math.max(0.01, sph.phi + (2 * Math.PI * e.deltaY) / h));
+        off.setFromSpherical(sph);
+        camera.position.copy(t).add(off);
+        camera.lookAt(t);
+      }
+      controls.update();
+      invalidate();
+    };
+    el.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    return () => el.removeEventListener('wheel', onWheel, { capture: true });
+  }, [gl, camera, controls, invalidate]);
+  return null;
+}
+
+/**
  * PLANO CERCANO DINÁMICO (orden 2026-11-05-campos-reales-banco-v2). Con near fijo de 0.01 mm y far de 20 m, la
  * precisión del buffer de profundidad a la distancia d es ≈ d²/(near·2²⁴): a 0.5 m (un molde) ~1.5 mm, pero a 1.9 m
  * (el banco del arco entero) ~21 mm → todo lo que está a menos de 2 cm se PELEA (rayas, piezas de abajo que se cuelan).
@@ -3697,6 +3773,7 @@ function CadViewport({
           makeDefault
           enablePan={enablePan}
           enableDamping
+          zoomToCursor
           dampingFactor={0.08}
           autoRotate={autoRotate}
           autoRotateSpeed={0.45}
@@ -3725,6 +3802,7 @@ function CadViewport({
 
         {children}
         <PlanoCercanoDinamico />
+        <NavegacionTouchpad />
 
         {/* PISO de referencia espacial — grid infinito sutil + sombra de contacto
             suave bajo la pieza. Anclan la geometría en el espacio (como Onshape)
@@ -5299,8 +5377,12 @@ export default function ForgeBRepStudio() {
   // Barrenos (círculos del croquis base) esperando a que exista el sólido: se
   // materializan al crear el extrude (ya SIN auto-extrude, el usuario decide cuándo).
   const pendingHolesRef = useRef<Op[]>([]);
-  // MENÚ RADIAL (clic derecho en el viewport): las ops en un gesto, estilo videojuego.
+  // MENÚ RADIAL (DOS clics derechos en el viewport): las ops en un gesto, estilo videojuego.
   const [radial, setRadial] = useState<{ x: number; y: number } | null>(null);
+  const rcRef = useRef({ dx: 0, dy: 0, lx: 0, ly: 0, lt: -1e9 });
+  const navSnap = useSyncExternalStore(navStore.sub, navStore.snap);
+  const navModo = navSnap.split(':')[0] as NavModo; const navVisto = navSnap.split(':')[1];
+  const navEsTouchpad = navModo === 'touchpad' || (navModo === 'auto' && navVisto === 'touchpad');
   // COLOR DE LA PIEZA (paleta mate — el metálico murió por orden del user).
   const [partColor, setPartColor] = useState<string>(PART_PALETTE[0]);
   const cyclePartColor = useCallback(() => {
@@ -7939,6 +8021,11 @@ export default function ForgeBRepStudio() {
       get stepText() { return stepTextRef.current; },
       // EL TALLER — driver de QA (scripts/taller-verify.cjs): la tenaza, lo que el mouse tiene encima y lo agarrado
       get taller() { return tallerQaRef.current; },
+      /** NAVEGACIÓN (QA): modo del chip, lo último que se vio en la rueda, y la cámara con su blanco */
+      get nav() {
+        const c = navQa.camera, t = navQa.controls?.target;
+        return { modo: navStore.modo, visto: navStore.visto, pos: c ? c.position.toArray() : null, target: t ? t.toArray() : null };
+      },
       setSketch,
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
@@ -8698,11 +8785,19 @@ export default function ForgeBRepStudio() {
           setSketchZoom((z) => Math.min(6, Math.max(0.22, z * (e.deltaY < 0 ? 1.12 : 1 / 1.12))));
         }}
         onContextMenu={(e) => {
-          // Clic derecho = menú radial de operaciones (no durante el croquis: ahí
-          // el botón derecho es del editor). preventDefault mata el menú del browser.
+          // preventDefault mata el menú del browser (no durante el croquis: ahí el botón derecho es del editor).
           if (sketchOpen) return;
           e.preventDefault();
-          setRadial({ x: e.clientX, y: e.clientY });
+        }}
+        // MENÚ RADIAL = DOS clics derechos QUIETOS (ian 11-10). Antes era uno, pero el derecho arrastrado MUEVE la
+        // vista y en Windows `contextmenu` llega al SOLTAR: el radial salía cada vez que terminabas de mover.
+        onPointerDownCapture={(e) => { if (e.button === 2) { rcRef.current.dx = e.clientX; rcRef.current.dy = e.clientY; } }}
+        onPointerUpCapture={(e) => {
+          if (e.button !== 2 || sketchOpen) return;
+          const rc = rcRef.current; const ahora = performance.now();
+          if (Math.hypot(e.clientX - rc.dx, e.clientY - rc.dy) > 5) { rc.lt = -1e9; return; }   // fue un arrastre: mover
+          if (ahora - rc.lt < 450 && Math.hypot(e.clientX - rc.lx, e.clientY - rc.ly) < 14) { rc.lt = -1e9; setRadial({ x: e.clientX, y: e.clientY }); }
+          else { rc.lt = ahora; rc.lx = e.clientX; rc.ly = e.clientY; }
         }}
       >
         {/* HIGIENE (v1·2): el LIENZO VACÍO guía en vez de gritar "Error". DOM sobre el
@@ -9534,7 +9629,7 @@ export default function ForgeBRepStudio() {
           </div>
         )}
 
-        {/* MENÚ RADIAL dorado (clic derecho): las operaciones del taller en un gesto */}
+        {/* MENÚ RADIAL dorado (dos clics derechos): las operaciones del taller en un gesto */}
         {radial && (
           <RadialMenu
             x={radial.x} y={radial.y} onClose={() => setRadial(null)}
@@ -9616,6 +9711,23 @@ export default function ForgeBRepStudio() {
         >
           <span style={{ color: GOLD, fontWeight: 700, border: `1px solid ${GOLD}88`, borderRadius: 4, padding: '0 6px' }}>S</span>
           <span>atajos del taller</span>
+        </button>
+
+        {/* MOUSE / TOUCHPAD: se detecta solo por la rueda; el chip lo fuerza si se equivoca */}
+        <button
+          data-testid="nav-modo" data-modo={navModo} data-activo={navEsTouchpad ? 'touchpad' : 'mouse'}
+          onClick={() => navStore.setModo(navModo === 'auto' ? 'mouse' : navModo === 'mouse' ? 'touchpad' : 'auto')}
+          title={navEsTouchpad
+            ? 'TOUCHPAD — dos dedos: girar · Shift + dos dedos: mover · pellizco: zoom · doble toque con dos dedos: menú radial. Clic para cambiar (Auto → Mouse → Touchpad).'
+            : 'MOUSE — izquierdo: girar · derecho: mover · rueda: zoom · dos clics derechos: menú radial. Clic para cambiar (Auto → Mouse → Touchpad).'}
+          style={{
+            position: 'absolute', left: 'calc(50% + 104px)', bottom: piezaMalla ? 92 : 48, zIndex: 6, cursor: 'pointer',
+            background: 'rgba(13,18,28,0.88)', border: `1px solid ${navModo === 'auto' ? '#2c3a50' : GOLD + '88'}`, borderRadius: 9,
+            padding: '7px 11px', fontSize: 12.5, color: '#e9eef5', fontFamily: "'JetBrains Mono', monospace", whiteSpace: 'nowrap',
+            boxShadow: '0 4px 14px rgba(0,0,0,.4)',
+          }}
+        >
+          {navEsTouchpad ? '▭ touchpad' : '🖱 mouse'}{navModo === 'auto' && <span style={{ color: '#7E90A9' }}> · auto</span>}
         </button>
 
         {pickMode !== 'none' && (
