@@ -2215,7 +2215,10 @@ const tenazaHover = (() => {
   };
 })();
 const ORO = '#FDB813';
-const sinRayo = () => null;   // las piezas fantasma (rayos X) y los resaltes no atajan el clic: se agarra lo de adentro
+const sinRayo = () => null;
+// el rayo de fábrica, EXPLÍCITO: con `raycast={undefined}` una malla que pasó por `sinRayo` (boceto abierto, rayos X) se
+// quedaba sorda para siempre — R3F le escribe el undefined encima y ya nada la agarra (cazado en yunque-verify)
+const rayoDeMalla = THREE.Mesh.prototype.raycast;   // las piezas fantasma (rayos X) y los resaltes no atajan el clic: se agarra lo de adentro
 /** El FOCO del árbol (en Fusion es literal un foco): prendido = se ve, apagado = oculto. */
 function FocoIcono({ on }: { on: boolean }) {
   return (
@@ -2230,9 +2233,81 @@ function FocoIcono({ on }: { on: boolean }) {
 /** Una pieza de referencia con la receta de calidad del kernel sólido: PBR físico + aristas CAD nítidas.
  *  Con `tenaza` la pieza se deja agarrar: el mouse encima la ilumina (la cara, el cuerpo o el módulo) y el clic la
  *  manda a `onAgarre`. `sel` = lo agarrado de ESTA pieza: −1 entera, ≥ 0 una cara, null nada. */
-function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre }: {
+// ── EL YUNQUE (orden 2026-11-10-el-yunque): donde una pieza del laboratorio deja de ser solo para ver. Un GOLPE = un
+// perfil bocetado sobre una cara + una profundidad: sale un CUERPO NUEVO, o se UNE / CORTA la pieza impresa (que para
+// eso llega como sólido: su STEP junto a su FMSH). Todo en el marco del DOC; lo que no se toca sigue siendo malla ligera. ──
+type ModoGolpe = 'nuevo' | 'unir' | 'cortar';
+interface Golpe {
+  id: string; nombre: string; modo: ModoGolpe;
+  sobre: string;                 // llave (aplanarRefs) del cuerpo dueño de la cara
+  plano: SketchPlane3D;          // la cara, en el marco del doc (u × v = normal hacia AFUERA)
+  profile: Pt2[]; holes?: Pt2[][]; circle?: { x: number; y: number; r: number };
+  depth: number;                 // mm: hacia afuera (nuevo, unir) o hacia adentro (cortar)
+}
+/** El STEP de una pieza IMPRESA del laboratorio vive junto a su FMSH; las de fábrica no tienen (quedan encadenadas). */
+const solidoDeRef = (r: RefPart): string | null =>
+  (r.kind === 'malla' && r.url && r.url.startsWith('/modelos/laboratorio/') && r.url.endsWith('.bin') ? r.url.replace(/\.bin$/, '.step') : null);
+const solidoRefCache = new Map<string, Promise<string>>();
+function cargarSolidoRef(url: string): Promise<string> {
+  let p = solidoRefCache.get(url);
+  if (!p) {
+    p = fetch(url).then((r) => { if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`); return r.text(); })
+      .then((t) => { if (!t.startsWith('ISO-10303')) throw new Error('esta pieza no tiene sólido publicado'); return t; });
+    p.catch(() => solidoRefCache.delete(url));
+    solidoRefCache.set(url, p);
+  }
+  return p;
+}
+/** El PLANO de una cara plana de una malla de referencia, en el marco del doc: origen = centro de la cara, u × v = su
+ *  normal, v «hacia arriba» (o +Y/−Y si la cara mira a ±Z) para que el boceto no salga de cabeza. `diag` = su tamaño. */
+function planoDeCaraRef(geo: PartGeo, caras: CarasRef, c: number, m: THREE.Matrix4): { plano: SketchPlane3D; diag: number } | null {
+  if (c < 0 || c >= caras.n) return null;
+  const n = new THREE.Vector3(caras.normal[3 * c], caras.normal[3 * c + 1], caras.normal[3 * c + 2]).transformDirection(m);
+  if (n.lengthSq() < 0.5) return null;
+  const u = Math.abs(n.z) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1).cross(n);
+  u.addScaledVector(n, -u.dot(n)).normalize();
+  const v = new THREE.Vector3().crossVectors(n, u).normalize();
+  let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity, d = 0, k = 0;
+  const q = new THREE.Vector3(), P = geo.positions, I = geo.indices;
+  for (let t = 0; t < caras.caraDeTri.length; t++) {
+    if (caras.caraDeTri[t] !== c) continue;
+    for (let j = 0; j < 3; j++) {
+      const i = I[3 * t + j] * 3; q.set(P[i], P[i + 1], P[i + 2]).applyMatrix4(m);
+      const a = q.dot(u), b = q.dot(v);
+      if (a < u0) u0 = a; if (a > u1) u1 = a; if (b < v0) v0 = b; if (b > v1) v1 = b;
+      d += q.dot(n); k++;
+    }
+  }
+  if (!k) return null;
+  const o = new THREE.Vector3().addScaledVector(u, (u0 + u1) / 2).addScaledVector(v, (v0 + v1) / 2).addScaledVector(n, d / k);
+  return { plano: { origin: [o.x, o.y, o.z], uDir: [u.x, u.y, u.z], vDir: [v.x, v.y, v.z] }, diag: Math.hypot(u1 - u0, v1 - v0) };
+}
+/** Volumen de una malla cerrada (suma de tetraedros con signo), mm³. */
+function volumenDeMalla(geo: PartGeo): number {
+  const P = geo.positions, I = geo.indices; let v = 0;
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+    v += P[a] * (P[b + 1] * P[c + 2] - P[b + 2] * P[c + 1]) - P[a + 1] * (P[b] * P[c + 2] - P[b + 2] * P[c]) + P[a + 2] * (P[b] * P[c + 1] - P[b + 1] * P[c]);
+  }
+  return Math.abs(v) / 6;
+}
+/** Un golpe se extruye con el MISMO motor que un componente de croquis (buildComponent: 'subtract' entra a la pieza). */
+const compDeGolpe = (g: Golpe): Component => ({
+  id: g.id, name: g.nombre, kind: 'sketch', w: 0, d: 0, h: 0, r: 0, x: 0, y: 0, z: 0,
+  bool: g.modo === 'cortar' ? 'subtract' : 'union',
+  profile: g.profile, holes: g.holes ?? [], circle: g.circle, plane3d: g.plano, depth: g.depth,
+});
+/** Dónde cuelga en el Taller un cuerpo nuevo: junto al cuerpo sobre el que se golpeó (mismo grupo, mismo módulo). */
+const padreDeGolpe = (g: Golpe) => (g.sobre.includes('/') ? g.sobre.slice(0, g.sobre.lastIndexOf('/')) : '');
+const keyDeGolpe = (g: Golpe) => { const pk = padreDeGolpe(g); return pk ? `${pk}/${g.id}` : g.id; };
+const refDeGolpe = (g: Golpe): RefPart => ({ id: g.id, name: g.nombre, kind: 'malla', x: 0, y: 0, z: 0, color: '#e2742b', mat: 'filamento' });
+const MATRIZ_I = new THREE.Matrix4();
+
+function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre, onFrente }: {
   geo: PartGeo; r: RefPart; clip?: THREE.Plane[] | null; rayos?: boolean;
   hoja?: { key: string; top: string }; tenaza?: Tenaza | null; sel?: number | null; onAgarre?: (a: Agarre) => void;
+  /** doble clic = ver esa cara DE FRENTE: la normal y el punto del clic van en coordenadas del visor (three) */
+  onFrente?: (a: Agarre & { n: [number, number, number]; p: [number, number, number] }) => void;
 }) {
   const g = useMemo(() => {
     const b = new THREE.BufferGeometry();
@@ -2273,10 +2348,16 @@ function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre }: {
       {/* sin sombras direccionales: el mapa del CAD está hecho para piezas de 100 mm; en un banco de 1.4 m las caras
           grandes salían con «acné» a rayas (cazado en la SOMI). El piso conserva su sombra de contacto. */}
       <mesh geometry={g} renderOrder={transp ? 3 : 0}
-        raycast={agarrable ? undefined : sinRayo}
+        raycast={agarrable ? rayoDeMalla : sinRayo}
         onPointerMove={agarrable ? (e) => { e.stopPropagation(); tenazaHover.set({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}
         onPointerOut={agarrable ? () => { const a = tenazaHover.get(); if (a && a.key === hoja!.key) tenazaHover.set(null); } : undefined}
-        onClick={agarrable ? (e) => { if (e.delta > 4) return; e.stopPropagation(); onAgarre!({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}>
+        onClick={agarrable ? (e) => { if (e.delta > 4) return; e.stopPropagation(); onAgarre!({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}
+        onDoubleClick={agarrable && onFrente ? (e) => {
+          e.stopPropagation();
+          const n = (e.face?.normal ?? new THREE.Vector3(0, 0, 1)).clone().transformDirection(e.object.matrixWorld);
+          if (n.dot(e.ray.direction) > 0) n.negate();   // la cara se ve por los dos lados: de frente = hacia quien la mira
+          onFrente({ key: hoja!.key, top: hoja!.top, cara: caraDe(e), n: [n.x, n.y, n.z], p: [e.point.x, e.point.y, e.point.z] });
+        } : undefined}>
         <meshPhysicalMaterial color={r.color} metalness={r.metalness ?? m.metalness} roughness={m.roughness}
           clearcoat={m.clearcoat} clearcoatRoughness={0.35} envMapIntensity={m.env}
           emissive={brillo ? ORO : '#000000'} emissiveIntensity={brillo}
@@ -4007,6 +4088,7 @@ interface DocState {
   brazo?: BrazoConfig;            // EL BRAZO VIVO: dónde va su base (mm del doc); lo que se mueve lo dibuja <BrazoVivoEscena>
   vista?: [number, number, number, number, number, number];   // vista al abrir [az, el, r, x, y, z] (doc ya subido)
   lab?: LabJueces;                // EL LABORATORIO GENERADO: lo que dicen sus jueces (cuerpo B · placa C · alambre A)
+  golpes?: Golpe[];               // EL YUNQUE: lo que la mano le hizo a las piezas de referencia (cuerpo nuevo / unir / cortar)
 }
 /** El lazo se describe con los ids de los TUBOS de las piezas de referencia (cables, cuello) o con puntos sueltos,
  *  en el sentido CONVENCIONAL de la corriente; `invertir` cuando el tubo se dibujó al revés. */
@@ -4791,8 +4873,28 @@ export default function ForgeBRepStudio() {
   // PIEZAS DE REFERENCIA: viven fuera del kernel (no disparan rebuild). Las mallas se bajan una vez
   // (refMeshCache) y las primitivas se arman con THREE; refGeos = las que ya están listas para dibujar.
   const [refParts, setRefParts] = useState<RefPart[]>([]);
-  const [refGeos, setRefGeos] = useState<Array<RefHoja & { geo: PartGeo }>>([]);
+  const [refGeosBase, setRefGeos] = useState<Array<RefHoja & { geo: PartGeo }>>([]);
   const refHojas = useMemo(() => aplanarRefs(refParts), [refParts]);
+  // EL YUNQUE: los golpes del doc, lo que ya salió forjado (llave del cuerpo golpeado, o id del cuerpo nuevo → malla en
+  // el marco del doc) y lo que falló. `refGeos` = lo que SE VE: la malla de fábrica, o la forjada si la pieza tiene golpes.
+  const [golpes, setGolpes] = useState<Golpe[]>([]);
+  const [forjadas, setForjadas] = useState<Record<string, PartGeo>>({});
+  const [golpeErr, setGolpeErr] = useState<Record<string, string>>({});
+  const [forjando, setForjando] = useState(false);
+  const yunqueBase = useRef(new Map<string, Shape>());                                    // sólido importado, ya en el marco del doc
+  const yunqueHecho = useRef(new Map<string, { firma: string; geo: PartGeo | null; errs: Record<string, string> }>());
+  const yunquePend = useRef<{ sobre: string; modo: ModoGolpe; plano: SketchPlane3D } | null>(null);   // el boceto abierto es de un golpe
+  const yunqueVista = useRef<{ plano: SketchPlane3D; diag: number } | null>(null);                      // …y al cerrarlo la cámara se queda viendo ESA cara
+  const refGeos = useMemo(() => {
+    if (!golpes.length) return refGeosBase;
+    const out = refGeosBase.map((h) => (forjadas[h.key] ? { ...h, geo: forjadas[h.key], m: MATRIZ_I } : h));
+    for (const g of golpes) {
+      if (g.modo !== 'nuevo' || !forjadas[g.id]) continue;
+      out.push({ r: refDeGolpe(g), m: MATRIZ_I, top: g.sobre.includes('/') ? g.sobre.split('/')[0] : g.id, key: keyDeGolpe(g), geo: forjadas[g.id] });
+    }
+    return out;
+  }, [refGeosBase, forjadas, golpes]);
+  const nCuerposNuevos = useMemo(() => golpes.filter((g) => g.modo === 'nuevo' && forjadas[g.id]).length, [golpes, forjadas]);
   // EL ARCO EN VIVO: la física corre en el visor (useFrame); el estado vive en un ref (no re-renderiza el estudio)
   const [arcoDoc, setArcoDoc] = useState<ArcoDoc | null>(null);
   const [arcoOn, setArcoOn] = useState(true);
@@ -4865,6 +4967,7 @@ export default function ForgeBRepStudio() {
   useEffect(() => {
     let vivo = true;
     setRefHidden(new Set()); setRefAislado(null); setTallerSel(null); setTallerAbiertos(new Set()); tenazaHover.set(null);
+    yunqueBase.current.forEach((sh) => sh.delete?.()); yunqueBase.current.clear(); yunqueHecho.current.clear();
     if (!refHojas.length) { setRefGeos([]); setRefErr(null); return; }
     Promise.allSettled(refHojas.map((h) => (h.r.kind === 'malla' && h.r.url ? loadRefMesh(h.r.url) : Promise.resolve(primRefGeo(h.r)))))
       .then((rs) => {
@@ -4879,13 +4982,20 @@ export default function ForgeBRepStudio() {
   // EL ÁRBOL DEL TALLER: las piezas de referencia con su jerarquía (grupo = pieza con piezas adentro, hoja = cuerpo),
   // con las MISMAS llaves que aplanarRefs para que el visor y el árbol hablen de lo mismo.
   const tallerArbol = useMemo(() => {
+    // los CUERPOS NUEVOS del yunque cuelgan junto al cuerpo sobre el que se golpeó
+    const nuevos = new Map<string, NodoTaller[]>();
+    for (const g of golpes) {
+      if (g.modo !== 'nuevo' || !forjadas[g.id]) continue;
+      const pk = padreDeGolpe(g);
+      nuevos.set(pk, [...(nuevos.get(pk) ?? []), { key: keyDeGolpe(g), r: refDeGolpe(g), nivel: pk ? pk.split('/').length : 0, hijos: [], hojas: 1 }]);
+    }
     const mk = (r: RefPart, pre: string, nivel: number): NodoTaller => {
       const key = pre + r.id;
-      const hijos = r.kind === 'grupo' ? (r.hijos ?? []).map((h) => mk(h, key + '/', nivel + 1)) : [];
+      const hijos = r.kind === 'grupo' ? [...(r.hijos ?? []).map((h) => mk(h, key + '/', nivel + 1)), ...(nuevos.get(key) ?? [])] : [];
       return { key, r, nivel, hijos, hojas: r.kind === 'grupo' ? hijos.reduce((a, h) => a + h.hojas, 0) : 1 };
     };
-    return refParts.map((r) => mk(r, '', 0));
-  }, [refParts]);
+    return [...refParts.map((r) => mk(r, '', 0)), ...(nuevos.get('') ?? [])];
+  }, [refParts, golpes, forjadas]);
   const nodoPorKey = useMemo(() => {
     const m = new Map<string, NodoTaller>();
     const w = (n: NodoTaller) => { m.set(n.key, n); n.hijos.forEach(w); };
@@ -4920,7 +5030,7 @@ export default function ForgeBRepStudio() {
   tallerQaRef.current = {
     tenaza, sel: tallerSel, agarre: agarreInfo, aislado: refAislado,
     get hover() { return tenazaHover.get(); },
-    visibles: refGeos.filter(({ key }) => !refOculta(key)).length, total: refHojas.length,
+    visibles: refGeos.filter(({ key }) => !refOculta(key)).length, total: refHojas.length + nCuerposNuevos,
     fantasmas: refRayos ? refGeos.filter(({ r }) => r.rayos !== undefined && r.rayos < 0.35).map(({ key }) => key) : [],
     cara: (key: string, i: number) => {
       const h = refPorKey.get(key); if (!h) return null;
@@ -5500,6 +5610,83 @@ export default function ForgeBRepStudio() {
     try { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); } catch { return false; }
   }, []);
 
+  // ── EL YUNQUE · LA FORJA: cada pieza con golpes se rehace en el kernel (su STEP + sus golpes en orden) y se vuelve a
+  // mallar; cada cuerpo nuevo se extruye solo. Solo se rehace lo que cambió (firma por pieza); el sólido importado se
+  // guarda para que mover una profundidad no vuelva a leer el STEP. El hilo se suelta entre piezas (el aviso se pinta). ──
+  useEffect(() => {
+    if (!golpes.length) {
+      setForjadas((f) => (Object.keys(f).length ? {} : f)); setGolpeErr((e) => (Object.keys(e).length ? {} : e)); setForjando(false);
+      return;
+    }
+    if (!oc || !refGeosBase.length) return;
+    let vivo = true;
+    const porPieza = new Map<string, Golpe[]>();
+    for (const g of golpes) if (g.modo !== 'nuevo') porPieza.set(g.sobre, [...(porPieza.get(g.sobre) ?? []), g]);
+    const tareas: Array<{ key: string; firma: string; gs: Golpe[]; nuevo: boolean }> = [];
+    for (const [key, gs] of porPieza) tareas.push({ key, firma: JSON.stringify(gs), gs, nuevo: false });
+    for (const g of golpes) if (g.modo === 'nuevo') tareas.push({ key: g.id, firma: JSON.stringify(g), gs: [g], nuevo: true });
+    const publicar = () => {
+      const f: Record<string, PartGeo> = {}, errs: Record<string, string> = {};
+      for (const t of tareas) {
+        const h = yunqueHecho.current.get(t.key);
+        if (!h || h.firma !== t.firma) continue;
+        if (h.geo) f[t.key] = h.geo;
+        Object.assign(errs, h.errs);
+      }
+      setForjadas(f); setGolpeErr(errs);
+    };
+    const pendientes = tareas.filter((t) => yunqueHecho.current.get(t.key)?.firma !== t.firma);
+    if (!pendientes.length) { publicar(); setForjando(false); return; }
+    const respiro = () => new Promise<void>((r) => setTimeout(r, 30));
+    const aMalla = (sh: Shape): PartGeo => { const m = tessellate(oc, sh, 0.2, 0.4); return { positions: m.positions, normals: m.normals, indices: m.indices }; };
+    const dicho = (e: unknown) => String((e as Error)?.message ?? e).slice(0, 120);
+    (async () => {
+      setForjando(true);
+      await respiro();
+      for (const t of pendientes) {
+        if (!vivo) return;
+        const errs: Record<string, string> = {};
+        let geo: PartGeo | null = null;
+        try {
+          if (t.nuevo) {
+            const sh = buildComponent(oc, compDeGolpe(t.gs[0]));
+            geo = aMalla(sh); sh.delete?.();
+          } else {
+            const hoja = refGeosBase.find((h) => h.key === t.key);
+            const url = hoja ? solidoDeRef(hoja.r) : null;
+            if (!hoja || !url) throw new Error('pieza de fábrica: no se une ni se corta (sí acepta un cuerpo nuevo)');
+            let base = yunqueBase.current.get(t.key);
+            if (!base) {
+              const txt = await cargarSolidoRef(url);
+              if (!vivo) return;
+              const e = hoja.m.elements;
+              if (Math.abs(e[0] - 1) > 1e-9 || Math.abs(e[5] - 1) > 1e-9 || Math.abs(e[10] - 1) > 1e-9) throw new Error('pieza girada en el doc: todavía no se forja');
+              const crudo = importSTEP(oc, txt);
+              base = e[12] || e[13] || e[14] ? transformShape(oc, crudo, { translate: [e[12], e[13], e[14]] }) : crudo;
+              yunqueBase.current.set(t.key, base);
+            }
+            let acc: Shape = base;
+            for (const g of t.gs) {
+              try {
+                const herr = buildComponent(oc, compDeGolpe(g));
+                const sig = g.modo === 'cortar' ? cut(oc, acc, herr) : fuse(oc, acc, herr);
+                herr.delete?.();
+                if (acc !== base) acc.delete?.();
+                acc = sig;
+              } catch (e) { errs[g.id] = dicho(e); }
+            }
+            geo = aMalla(acc);
+            if (acc !== base) acc.delete?.();
+          }
+        } catch (e) { for (const g of t.gs) errs[g.id] = dicho(e); geo = null; }
+        yunqueHecho.current.set(t.key, { firma: t.firma, geo, errs });
+        await respiro();
+      }
+      if (vivo) { publicar(); setForjando(false); }
+    })();
+    return () => { vivo = false; };
+  }, [oc, golpes, refGeosBase]);
+
   // ── Replay del grafo → malla + invariantes + análisis de masa ──
   const rebuild = useCallback(() => {
     if (!oc) return;
@@ -5733,7 +5920,8 @@ export default function ForgeBRepStudio() {
     ...(brazoDoc ? { brazo: brazoDoc } : {}),
     ...(docVista ? { vista: docVista } : {}),
     ...(labJueces ? { lab: labJueces } : {}),
-  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep, refParts, arcoDoc, brazoDoc, docVista, labJueces]);
+    ...(golpes.length ? { golpes } : {}),
+  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep, refParts, arcoDoc, brazoDoc, docVista, labJueces, golpes]);
   const loadDoc = useCallback((d: Partial<DocState>) => {
     // IDs ÚNICOS tras cargar: opCounter vive en memoria y se reinicia con la
     // página — sin este bump, los componentes NUEVOS colisionan con los ids
@@ -5742,6 +5930,7 @@ export default function ForgeBRepStudio() {
     const bump = (id?: string) => { const m = /-(\d+)$/.exec(id ?? ''); if (m) opCounter = Math.max(opCounter, parseInt(m[1], 10)); };
     (d.ops ?? []).forEach((o) => bump(o.id));
     (d.components ?? []).forEach((c) => bump(c.id));
+    (d.golpes ?? []).forEach((g) => bump(g.id));
     // Restaura el estado y REINICIA el historial (no se deshace hacia otra pieza).
     histRef.current = { past: [], future: [], last: null };
     applyingRef.current = true;
@@ -5755,6 +5944,7 @@ export default function ForgeBRepStudio() {
     setParams(d.params ?? []); setBindings(d.bindings ?? {}); setComponents(d.components ?? []);
     setImportedStep(d.importedStep ?? null);
     setRefParts(d.refParts ?? []);
+    setGolpes(d.golpes ?? []); yunquePend.current = null;
     setArcoDoc(d.arco ?? null); arcoSim.current = crearArcoSim(); setArcoOn(true); setRefRayos(true);
     setBrazoDoc(d.brazo ?? null); if (d.brazo) { brazoSim.current = crearBrazoSim(); setBrazoOn(true); }
     setDocVista(d.vista ?? null); setLabJueces(d.lab ?? null);
@@ -6091,6 +6281,25 @@ export default function ForgeBRepStudio() {
   // Editor de croquis: al Terminar, el perfil dibujado (resuelto por el solver) pasa
   // a kind 'custom' y se garantiza un extrude que lo solidifica.
   const onSketchFinish = useCallback((result: { profile: Pt2[]; holes: { x: number; y: number; d: number }[]; polyHoles: Pt2[][]; path?: Pt2[]; circle?: { x: number; y: number; r: number } }) => {
+    // EL YUNQUE: el boceto se abrió sobre una cara del laboratorio → el perfil es un GOLPE (no toca el sólido del kernel).
+    // Los círculos sueltos del boceto son golpes aparte, con su círculo exacto (como «varios perfiles» en Fusion).
+    const y = yunquePend.current;
+    if (y) {
+      yunquePend.current = null;
+      const prof = 10;   // mm de arranque; se cambia en LOS GOLPES
+      const nom = (i: number) => `${y.modo === 'nuevo' ? 'Cuerpo nuevo' : y.modo === 'unir' ? 'Saliente' : 'Corte'} ${i}`;
+      const nuevos: Golpe[] = [];
+      if (result.profile.length >= 3) nuevos.push({ id: newId('golpe'), nombre: '', modo: y.modo, sobre: y.sobre, plano: y.plano, profile: result.profile, holes: result.polyHoles, circle: result.circle, depth: prof });
+      for (const h of result.holes) {
+        const r = h.d / 2, N = 40;
+        nuevos.push({ id: newId('golpe'), nombre: '', modo: y.modo, sobre: y.sobre, plano: y.plano, depth: prof, circle: { x: h.x, y: h.y, r },
+          profile: Array.from({ length: N }, (_, k) => ({ x: h.x + r * Math.cos((2 * Math.PI * k) / N), y: h.y + r * Math.sin((2 * Math.PI * k) / N) })) });
+      }
+      setGolpes((cur) => { let n = cur.filter((g) => g.modo === y.modo).length; return [...cur, ...nuevos.map((g) => ({ ...g, nombre: nom(++n) }))]; });
+      setSketch((s) => ({ ...s, plane3d: undefined }));
+      setTallerSel(null); setSketchOpen(false);
+      return;
+    }
     // MULTI-FEATURE: si la op del croquis es unir/cortar, se agrega como COMPONENTE de
     // croquis con booleana (saliente=union, corte=subtract) sobre el cuerpo base.
     if (sketchOp === 'join' || sketchOp === 'cut') {
@@ -6459,7 +6668,19 @@ export default function ForgeBRepStudio() {
   // vista cenital al restaurar up=(0,1,0) (lookAt con up casi paralelo).
   const wasSketchingRef = useRef(false);
   useEffect(() => {
-    if (wasSketchingRef.current && !sketchOpen) setView('iso');
+    if (wasSketchingRef.current && !sketchOpen) {
+      const yv = yunqueVista.current; yunqueVista.current = null;
+      if (yv) {
+        // EL YUNQUE: el boceto fue sobre una cara del laboratorio → no se va al ISO de todo el banco (la pieza quedaría
+        // de 40 px): se queda en tres cuartos sobre ESA cara, para ver salir el golpe.
+        const { uDir: u, vDir: v, origin: o } = yv.plano;
+        const n = [u[1] * v[2] - u[2] * v[1], u[0] * v[1] - u[1] * v[0], -(u[2] * v[0] - u[0] * v[2])];   // normal, en el marco del visor
+        const el0 = (Math.asin(Math.max(-1, Math.min(1, n[1]))) * 180) / Math.PI;
+        const el = Math.max(-80, Math.min(80, el0 + (el0 > 45 ? -35 : 22)));
+        const az = (Math.atan2(n[0], n[2]) * 180) / Math.PI + 32;
+        setOrbitReq((q) => ({ az, el, r: Math.max(110, yv.diag * 2.3), nonce: (q?.nonce ?? 0) + 1, target: [o[0], o[2], -o[1]] }));
+      } else setView('iso');
+    }
     wasSketchingRef.current = sketchOpen;
   }, [sketchOpen, setView]);
   const [orbitReq, setOrbitReq] = useState<{ az: number; el: number; r: number; nonce: number; dur?: number; target?: [number, number, number] } | null>(null);
@@ -6469,6 +6690,64 @@ export default function ForgeBRepStudio() {
   const orbitTo = useCallback((az: number, el: number, r: number, tx?: number, ty?: number, tz?: number, dur?: number) =>
     setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1, ...(dur !== undefined ? { dur } : {}),
       ...(tx !== undefined && ty !== undefined && tz !== undefined ? { target: [tx, tz, -ty] as [number, number, number] } : {}) })), []);
+  // ── EL YUNQUE · LAS MANOS: la cara agarrada (con su plano si es plana), verla de frente y abrirle un boceto ──
+  const caraAgarrada = useMemo(() => {
+    const s = tallerSel; if (!s || s.nivel !== 'cara' || s.cara == null) return null;
+    const h = refPorKey.get(s.key); if (!h) return null;
+    const c = carasDeMalla(h.geo);
+    const pl = c.plana[s.cara] ? planoDeCaraRef(h.geo, c, s.cara, h.m) : null;
+    return { key: s.key, nombre: h.r.name, plano: pl?.plano ?? null, diag: pl?.diag ?? 0, forjable: !!solidoDeRef(h.r) && !golpes.some((g) => g.modo === 'nuevo' && keyDeGolpe(g) === s.key) };
+  }, [tallerSel, refPorKey, golpes]);
+  /** La cámara vuela y deja la cara DE FRENTE. `n` en coordenadas del visor; el blanco en las del doc. */
+  const verDeFrente = useCallback((n: [number, number, number], blanco: [number, number, number], diag: number) => {
+    const L = Math.hypot(n[0], n[1], n[2]) || 1;
+    const el = Math.max(-89.5, Math.min(89.5, (Math.asin(Math.max(-1, Math.min(1, n[1] / L))) * 180) / Math.PI));
+    const az = (Math.atan2(n[0], n[2]) * 180) / Math.PI;
+    orbitTo(az, el, Math.max(90, diag * 2), blanco[0], blanco[1], blanco[2]);
+  }, [orbitTo]);
+  const onFrente = useCallback((a: Agarre & { n: [number, number, number]; p: [number, number, number] }) => {
+    const h = refPorKey.get(a.key); if (!h) return;
+    const c = carasDeMalla(h.geo);
+    const pl = a.cara != null && c.plana[a.cara] ? planoDeCaraRef(h.geo, c, a.cara, h.m) : null;
+    if (a.cara != null) { setTallerSel({ key: a.key, top: a.top, cara: a.cara, nivel: 'cara' }); abrirHasta(a.key); }
+    if (pl) {
+      const { uDir: u, vDir: v, origin: o } = pl.plano;
+      const nd = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+      verDeFrente([nd[0], nd[2], -nd[1]], o, pl.diag);
+    } else {
+      // cara curva: de frente al PUNTO del doble clic (no hay un «de frente» único)
+      const s = refPartBox(h.geo, h.m).getSize(new THREE.Vector3());
+      verDeFrente(a.n, [a.p[0], -a.p[2], a.p[1]], Math.max(s.x, s.y, s.z) * 0.6);
+    }
+  }, [refPorKey, verDeFrente, abrirHasta]);
+  const frenteAgarrada = useCallback(() => {
+    if (!caraAgarrada?.plano) return;
+    const { uDir: u, vDir: v, origin: o } = caraAgarrada.plano;
+    verDeFrente([u[1] * v[2] - u[2] * v[1], u[0] * v[1] - u[1] * v[0], -(u[2] * v[0] - u[0] * v[2])], o, caraAgarrada.diag);
+  }, [caraAgarrada, verDeFrente]);
+  /** «Boceto aquí»: abre el croquis SOBRE la cara agarrada; al terminar, el perfil se vuelve un golpe de ese modo. */
+  const bocetoEnCara = useCallback((modo: ModoGolpe) => {
+    if (!caraAgarrada?.plano) return;
+    if (modo !== 'nuevo' && !caraAgarrada.forjable) return;
+    yunquePend.current = { sobre: caraAgarrada.key, modo, plano: caraAgarrada.plano };
+    yunqueVista.current = { plano: caraAgarrada.plano, diag: caraAgarrada.diag };
+    setSketch((s) => ({ ...s, plane3d: caraAgarrada.plano! }));
+    setSketchOpen(true);
+  }, [caraAgarrada]);
+  // boceto de un golpe CANCELADO: el plano de la cara no se le queda pegado al croquis siguiente
+  useEffect(() => {
+    if (sketchOpen || !yunquePend.current) return;
+    yunquePend.current = null;
+    setSketch((s) => (s.plane3d ? { ...s, plane3d: undefined } : s));
+  }, [sketchOpen]);
+  const yunqueQaRef = useRef<unknown>(null);
+  yunqueQaRef.current = {
+    golpes, forjando, errores: golpeErr, forjadas: Object.keys(forjadas),
+    cara: caraAgarrada ? { key: caraAgarrada.key, plana: !!caraAgarrada.plano, forjable: caraAgarrada.forjable, plano: caraAgarrada.plano, diag: caraAgarrada.diag } : null,
+    /** volumen (mm³) de lo que SE VE de un cuerpo: la malla de fábrica o la forjada */
+    volumen: (key: string) => { const h = refPorKey.get(key); return h ? volumenDeMalla(h.geo) : null; },
+    caras: (key: string) => { const h = refPorKey.get(key); return h ? carasDeMalla(h.geo).n : null; },
+  };
   // PASO 6 · REENCUADRE AL MOLDE (va DESPUÉS de `orbitTo`: referenciarlo antes es TDZ, la cuarta vez en
   // este archivo). El acero vive en coordenadas de la BASE (§4.3.2), no donde cayó el STEP; la cámara del
   // drop apuntaba a la pieza y quedaba dentro del bloque de 246 mm → visor «vacío». `setView('iso')`
@@ -8021,6 +8300,8 @@ export default function ForgeBRepStudio() {
       get stepText() { return stepTextRef.current; },
       // EL TALLER — driver de QA (scripts/taller-verify.cjs): la tenaza, lo que el mouse tiene encima y lo agarrado
       get taller() { return tallerQaRef.current; },
+      /** EL YUNQUE (QA): golpes, lo forjado, la cara agarrada con su plano, y volumen/caras de un cuerpo */
+      get yunque() { return yunqueQaRef.current; },
       /** NAVEGACIÓN (QA): modo del chip, lo último que se vio en la rueda, y la cámara con su blanco */
       get nav() {
         const c = navQa.camera, t = navQa.controls?.target;
@@ -9214,7 +9495,7 @@ export default function ForgeBRepStudio() {
               return (
                 <group key={key} position={pos} quaternion={q} scale={sc}>
                   <RefMesh geo={geo} r={r} clip={sectionPlanes} rayos={refRayos}
-                    hoja={{ key, top }} tenaza={sketchOpen ? null : tenaza} sel={sel} onAgarre={onAgarre} />
+                    hoja={{ key, top }} tenaza={sketchOpen ? null : tenaza} sel={sel} onAgarre={onAgarre} onFrente={onFrente} />
                 </group>
               );
             })}
@@ -9729,6 +10010,29 @@ export default function ForgeBRepStudio() {
         >
           {navEsTouchpad ? '▭ touchpad' : '🖱 mouse'}{navModo === 'auto' && <span style={{ color: '#7E90A9' }}> · auto</span>}
         </button>
+
+        {/* EL YUNQUE: con una cara agarrada, verla de frente y bocetarle encima (cuerpo nuevo / unir / cortar) */}
+        {caraAgarrada && !sketchOpen && (
+          <div className="fb-yunque" data-testid="yunque-bar">
+            <span className="t">⚒ EL YUNQUE</span>
+            {caraAgarrada.plano ? (
+              <>
+                <button data-testid="yunque-frente" onClick={frenteAgarrada} title="Ver esta cara de frente (también con doble clic sobre la cara)">◉ De frente</button>
+                <i />
+                <span className="l">Boceto aquí →</span>
+                <button data-testid="yunque-nuevo" className="oro" onClick={() => bocetoEnCara('nuevo')} title="Dibuja sobre esta cara y sale un cuerpo NUEVO pegado a ella">Cuerpo nuevo</button>
+                <button data-testid="yunque-unir" disabled={!caraAgarrada.forjable} onClick={() => bocetoEnCara('unir')}
+                  title={caraAgarrada.forjable ? 'Dibuja sobre esta cara y el perfil se le SUMA a la pieza' : 'Pieza de fábrica: no se le agrega material (sí acepta un cuerpo nuevo)'}>Unir</button>
+                <button data-testid="yunque-cortar" disabled={!caraAgarrada.forjable} onClick={() => bocetoEnCara('cortar')}
+                  title={caraAgarrada.forjable ? 'Dibuja sobre esta cara y el perfil se le QUITA a la pieza' : 'Pieza de fábrica: no se corta (sí acepta un cuerpo nuevo)'}>Cortar</button>
+                {!caraAgarrada.forjable && <span className="n" data-testid="yunque-encadenada">de fábrica: encadenada</span>}
+              </>
+            ) : (
+              <span className="n">cara curva · doble clic para verla de frente · el boceto va en caras planas</span>
+            )}
+          </div>
+        )}
+        {forjando && <div className="fb-forjando" data-testid="yunque-forjando">⚒ forjando…</div>}
 
         {pickMode !== 'none' && (
           <div className="fb-pick-hint" data-testid="pick-hint">
@@ -10332,7 +10636,7 @@ export default function ForgeBRepStudio() {
           {refParts.length > 0 && (
           <aside className={`fb-refs-panel fb-taller ${collapsed.refs ? 'collapsed' : ''}`} data-testid="ref-legend">
             <CollapseHead id="refs" title="El Taller" collapsed={!!collapsed.refs} onToggle={() => toggleCollapse('refs')}
-              right={<span className="fb-count">{refGeos.length}/{refHojas.length}</span>} />
+              right={<span className="fb-count">{refGeos.length}/{refHojas.length + nCuerposNuevos}</span>} />
             {!collapsed.refs && (
               <div className="fb-refs-list">
                 <div className="fb-tenazas" role="group" aria-label="Tenazas: qué agarra el clic en el visor" data-testid="tenazas">
@@ -10392,6 +10696,24 @@ export default function ForgeBRepStudio() {
                     return out;
                   })()}
                 </div>
+                {golpes.length > 0 && (
+                  <div className="fb-golpes" data-testid="taller-golpes">
+                    <div className="fb-golpes-t">LOS GOLPES <em>{golpes.length}</em>{forjando ? ' · forjando…' : ''}</div>
+                    {golpes.map((g, i) => (
+                      <div key={g.id} className={`fb-golpe${golpeErr[g.id] ? ' mal' : ''}`} data-testid={`golpe-${i}`} data-modo={g.modo}
+                        title={golpeErr[g.id] ? `no entró: ${golpeErr[g.id]}` : `${g.nombre} · sobre ${refPorKey.get(g.sobre)?.r.name ?? g.sobre}`}>
+                        <span className="g">{g.modo === 'nuevo' ? '＋' : g.modo === 'unir' ? '∪' : '−'}</span>
+                        <span className="n">{g.nombre}{golpeErr[g.id] ? ' ⚠' : ''}</span>
+                        <input key={`${g.id}:${g.depth}`} data-testid={`golpe-prof-${i}`} type="number" min={0.2} step={0.5} defaultValue={g.depth}
+                          title="Profundidad en mm (Enter aplica)"
+                          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                          onBlur={(e) => { const v = parseFloat(e.target.value); if (v > 0 && v !== g.depth) setGolpes((cur) => cur.map((x) => (x.id === g.id ? { ...x, depth: v } : x))); }} />
+                        <span className="u">mm</span>
+                        <button data-testid={`golpe-borrar-${i}`} onClick={() => setGolpes((cur) => cur.filter((x) => x.id !== g.id))} title="Quitar este golpe">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {refHojas.some((h) => h.r.rayos !== undefined) && (
                   <button className={`fb-ref fb-ref-vivo ${refRayos ? '' : 'off'}`} onClick={() => setRefRayos((o) => !o)} data-testid="ref-rayos">
                     <i style={{ background: '#9fd8ff' }} />{refRayos ? 'rayos X: cubierta y paredes fantasma' : 'rayos X: apagado (base cerrada)'}
@@ -10407,7 +10729,7 @@ export default function ForgeBRepStudio() {
                     <i style={{ background: '#4fd6ff' }} />{arcoOn ? 'simulación en vivo: prendida' : 'simulación en vivo: apagada'}
                   </button>
                 )}
-                <div className="fb-refs-pie">{result ? 'sólido de la Forja: la placa de prueba · ' : ''}las piezas de referencia no entran a masa ni STEP · foco = ocultar · ◎ = aislar</div>
+                <div className="fb-refs-pie">{result ? 'sólido de la Forja: la placa de prueba · ' : ''}las piezas de referencia no entran a masa ni STEP · foco = ocultar · ◎ = aislar · doble clic en una cara = verla de frente</div>
                 {refErr && <div className="fb-refs-err">no cargó: {refErr}</div>}
               </div>
             )}
@@ -12938,6 +13260,30 @@ const CSS = `
 .fb-ref-vivo{margin-top:4px;color:#9fe7ff;}
 .fb-refs-pie{margin-top:5px;padding:5px 5px 0;border-top:1px solid rgba(159,179,200,0.14);color:#8193a8;font-size:10px;white-space:normal;}
 .fb-refs-err{padding:5px 10px 7px;color:#ff8a80;font-size:10px;}
+.fb-yunque{position:absolute;left:50%;top:104px;transform:translateX(-50%);z-index:7;display:flex;align-items:center;gap:8px;padding:7px 12px;
+  background:rgba(13,18,28,.93);border:1px solid #FDB81377;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.45);
+  font:12px 'JetBrains Mono',monospace;color:#dbe4f0;white-space:nowrap;}
+.fb-yunque .t{color:#FDB813;font-weight:700;letter-spacing:1.2px;margin-right:4px;}
+.fb-yunque .l{color:#8fa3ba;}
+.fb-yunque .n{color:#8fa3ba;font-size:11px;}
+.fb-yunque i{width:1px;height:18px;background:#2c3a50;}
+.fb-yunque button{cursor:pointer;font:inherit;color:#e9eef5;background:#16202f;border:1px solid #2c3a50;border-radius:7px;padding:5px 10px;}
+.fb-yunque button:hover:not(:disabled){border-color:#FDB813;color:#FDB813;}
+.fb-yunque button.oro{border-color:#FDB81399;color:#FDB813;}
+.fb-yunque button:disabled{opacity:.38;cursor:not-allowed;}
+.fb-forjando{position:absolute;left:50%;top:150px;transform:translateX(-50%);z-index:7;padding:6px 14px;border-radius:9px;
+  background:rgba(13,18,28,.93);border:1px solid #e2742b;color:#ffb27a;font:12px 'JetBrains Mono',monospace;letter-spacing:1px;}
+.fb-golpes{margin:6px 8px 4px;padding:6px 6px 4px;border:1px solid #2a3547;border-radius:8px;background:rgba(226,116,43,.05);}
+.fb-golpes-t{font-size:9.5px;letter-spacing:1.6px;color:#e2a06a;margin:0 2px 4px;}
+.fb-golpes-t em{font-style:normal;color:#8fa3ba;margin-left:4px;}
+.fb-golpe{display:flex;align-items:center;gap:5px;padding:2px 2px;font-size:11px;color:#dbe4f0;}
+.fb-golpe.mal{color:#ff8a80;}
+.fb-golpe .g{width:14px;text-align:center;color:#e2742b;font-weight:700;}
+.fb-golpe .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fb-golpe input{width:46px;background:#0c131e;border:1px solid #2c3a50;border-radius:5px;color:#e9eef5;font:inherit;padding:2px 4px;text-align:right;}
+.fb-golpe .u{color:#7E90A9;font-size:10px;}
+.fb-golpe button{cursor:pointer;background:transparent;border:0;color:#7E90A9;font-size:11px;padding:0 3px;}
+.fb-golpe button:hover{color:#ff8a80;}
 /* EL TALLER (orden 2026-11-09-el-taller-tenazas) */
 .fb-tenazas{display:flex;align-items:center;gap:3px;margin:2px 0 6px;}
 .fb-tenazas-lbl{color:#6f8196;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}

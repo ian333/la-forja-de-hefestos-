@@ -8,6 +8,8 @@
  * y se escriben:
  *   · <salida>/stl/<teja>.stl   en su ORIENTACIÓN DE IMPRESIÓN (cubierta boca abajo; mínimo en z = 0)
  *   · <salida>/fmsh/<teja>.bin  en el marco del doc (FMSH, como scripts/precompute-banco-arco.cjs)
+ *   · <salida>/step/<teja>.step el MISMO sólido en el marco del doc: lo que EL YUNQUE del estudio une y corta (orden
+ *     2026-11-10-el-yunque); una cama = un compuesto con sus piezas en su lugar
  * Antes mide la LRS en su STEP (bornera y ventiladores) y lo compara con lo que cuerpo.ts supone.
  * Al final revisa los voladizos de cada STL con dfm.classifyOverhangs (la K1, PETG) y estima el tiempo.
  * RONDA 2 (REGLAS.todoImprimible): también las PIEZAS SUELTAS por cama (d.camas): tapas de canal, grapas, remaches, tapa
@@ -67,6 +69,7 @@ function stlBinario(pos, idx, nombre) {
   occt._setActiveOCCT(oc);
   mkdirSync(path.join(OUT, 'stl'), { recursive: true });
   mkdirSync(path.join(OUT, 'fmsh'), { recursive: true });
+  mkdirSync(path.join(OUT, 'step'), { recursive: true });
 
   // ── 1. la LRS en su STEP: dónde están de verdad la bornera y los ventiladores ─────────────────
   {
@@ -172,6 +175,7 @@ function stlBinario(pos, idx, nombre) {
     }
     if (!m) throw new Error(`${t.id}: no se pudo teselar`);
     writeFileSync(path.join(OUT, 'fmsh', `${t.id}.bin`), fmsh(m));
+    writeFileSync(path.join(OUT, 'step', `${t.id}.step`), occt.exportSTEP(oc, shape));
     // orientación de impresión
     const P = new Float32Array(m.positions.length);
     const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
@@ -219,7 +223,7 @@ function stlBinario(pos, idx, nombre) {
     if (!quiere(cm.id, 'piezas')) continue;
     const t1 = Date.now(), malas = [];
     const mk = (o) => { try { const f = forma(o); const v = occt.volume(oc, f); if (!(v > 1e-6)) throw new Error(v < 0 ? `al revés (${v.toFixed(0)} mm³)` : 'vacío'); return f; } catch (e) { malas.push(`${o.nota || o.t}: ${String(e && e.message || e).slice(0, 60)}`); return null; } };
-    const F = { pos: [], nor: [], idx: [] }, S = { pos: [], idx: [] };
+    const F = { pos: [], nor: [], idx: [] }, S = { pos: [], idx: [] }, solidos = [];
     let vol = 0, area = 0, sinCorte = 0;
     for (const a of cm.acomodo) {
       const pz = porId.get(a.id);
@@ -231,6 +235,7 @@ function stlBinario(pos, idx, nombre) {
       let m = null;
       for (const [lin, ang] of [[0.3, 0.5], [0.6, 0.8]]) { try { m = occt.tessellate(oc, sh, lin, ang); break; } catch (e) { etapa(`${pz.id}: teselar ${lin} falló`); } }
       if (!m) { malas.push(`${pz.id}: no se pudo teselar`); continue; }
+      solidos.push(sh);
       // FMSH: en su lugar
       const b0 = F.pos.length / 3;
       for (let i = 0; i < m.positions.length; i++) { F.pos.push(m.positions[i]); F.nor.push(m.normals[i]); }
@@ -250,6 +255,7 @@ function stlBinario(pos, idx, nombre) {
     if (!F.idx.length) { console.log(`${cm.id}: vacía (${malas.join(' / ')})`); continue; }
     const mF = { positions: new Float32Array(F.pos), normals: new Float32Array(F.nor), indices: new Uint32Array(F.idx) };
     writeFileSync(path.join(OUT, 'fmsh', `${cm.id}.bin`), fmsh(mF));
+    writeFileSync(path.join(OUT, 'step', `${cm.id}.step`), occt.exportSTEP(oc, solidos.length === 1 ? solidos[0] : occt.makeCompound(oc, solidos)));
     const SP = new Float32Array(S.pos), SI = new Uint32Array(S.idx);
     writeFileSync(path.join(OUT, 'stl', `${cm.id}.stl`), stlBinario(SP, SI, `${cm.id} (${cm.piezas.length} piezas)`));
     const rep = dfm.printabilityReport({ positions: SP, indices: SI }, perfil);

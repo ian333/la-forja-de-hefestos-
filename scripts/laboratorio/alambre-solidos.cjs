@@ -8,6 +8,7 @@
  * scripts/precompute-banco-arco.cjs), y por cada pieza impresa escribe:
  *   · <salida>/stl/<pieza>.stl   en mm, YA en su orientación de impresión, apoyada en z = 0 y centrada en la cama;
  *   · <salida>/fmsh/<pieza>.bin  FMSH en el marco del doc (la vista la pone en x = y = z = 0).
+ *   · <salida>/step/<pieza>.step el MISMO sólido en el marco del doc: lo que EL YUNQUE del estudio une y corta.
  * Y revisa cada STL con dfm.ts (printabilityReport con el perfil K1/PETG): caja, ¿cabe?, triángulos que piden soporte.
  *
  *   node --import tsx scripts/laboratorio/alambre-solidos.cjs [carpeta_salida] [raíz_forja]
@@ -106,6 +107,7 @@ function fmsh(m) {
   occt._setActiveOCCT(oc);
   mkdirSync(path.join(OUT, 'stl'), { recursive: true });
   mkdirSync(path.join(OUT, 'fmsh'), { recursive: true });
+  mkdirSync(path.join(OUT, 'step'), { recursive: true });
   const d = al.disenarAlambre();
   const resumen = [];
   for (const pz of d.impresas) {
@@ -119,6 +121,7 @@ function fmsh(m) {
     const vol = occt.volume(oc, s), solidos = occt.solidsOf(oc, s).length;
     const m = occt.tessellate(oc, s, 0.08, 0.3);
     writeFileSync(path.join(OUT, 'fmsh', `${pz.id}.bin`), fmsh(m));
+    writeFileSync(path.join(OUT, 'step', `${pz.id}.step`), occt.exportSTEP(oc, s));
     // STL: girar a la orientación de impresión, apoyar en z = 0 y centrar en la cama
     const g = girar(m.positions, pz.giro), { mn, mx } = caja(g);
     const cx = (mn[0] + mx[0]) / 2, cy = (mn[1] + mx[1]) / 2;
