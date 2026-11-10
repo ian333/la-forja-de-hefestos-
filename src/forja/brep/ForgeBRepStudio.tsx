@@ -19,7 +19,7 @@
  * Playwright haga clic de forma estable (btn-extrude, input-altura, …).
  */
 
-import { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, lazy, Suspense, Component, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, useSyncExternalStore, createContext, useContext, lazy, Suspense, Component, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
@@ -2103,15 +2103,137 @@ function aplanarRefs(parts: RefPart[], padre?: THREE.Matrix4, top?: string, pre 
   }
   return out;
 }
-const contarHojas = (r: RefPart): number => r.kind === 'grupo' ? (r.hijos ?? []).reduce((a, h) => a + contarHojas(h), 0) : 1;
 /** Caja en el marco del doc (Z arriba) de una hoja ya cargada. */
 function refPartBox(geo: PartGeo, m: THREE.Matrix4): THREE.Box3 {
   const p = geo.positions, b = new THREE.Box3(), v = new THREE.Vector3();
   for (let i = 0; i < p.length; i += 3) b.expandByPoint(v.set(p[i], p[i + 1], p[i + 2]));
   return b.applyMatrix4(m);
 }
-/** Una pieza de referencia con la receta de calidad del kernel sólido: PBR físico + aristas CAD nítidas. */
-function RefMesh({ geo, r, clip, rayos }: { geo: PartGeo; r: RefPart; clip?: THREE.Plane[] | null; rayos?: boolean }) {
+// ── LAS TENAZAS (orden 2026-11-09-el-taller-tenazas): con qué agarra el clic en el visor — una CARA, un CUERPO (una hoja
+// del Taller) o la PIEZA entera (el módulo de arriba). Como el filtro de selección de Fusion, uno a la vez. ──
+type Tenaza = 'cara' | 'cuerpo' | 'pieza';
+/** Lo que la tenaza tiene agarrado (o el mouse encima): la hoja (`key` de aplanarRefs), su módulo (`top`) y la cara. */
+interface Agarre { key: string; top: string; cara: number | null }
+/** Un renglón del árbol del Taller: grupo = pieza con piezas adentro; hoja = un cuerpo. `hojas` = cuerpos debajo. */
+interface NodoTaller { key: string; r: RefPart; nivel: number; hijos: NodoTaller[]; hojas: number }
+/** Las caras de una malla de referencia: `caraDeTri[t]` = la cara del triángulo t; por cara su área (mm²), su normal
+ *  (promedio por área, en el marco de la malla), si es PLANA y el desfase de su plano. */
+interface CarasRef { caraDeTri: Int32Array; n: number; area: Float64Array; normal: Float64Array; plana: Uint8Array; d: Float64Array }
+const carasCache = new WeakMap<PartGeo, CarasRef>();
+function unionFind(n: number) {
+  const p = new Int32Array(n); for (let i = 0; i < n; i++) p[i] = i;
+  const f = (a: number) => { while (p[a] !== a) { p[a] = p[p[a]]; a = p[a]; } return a; };
+  return { f, u: (a: number, b: number) => { a = f(a); b = f(b); if (a !== b) p[b] = a; } };
+}
+/** LAS CARAS DE UNA MALLA. Las FMSH salen de `occt.tessellate` cara por cara y cada cara B-Rep trae SUS vértices (no se
+ *  comparten entre caras) → las componentes conexas por ÍNDICE son las caras del sólido (medido 11-09: tapa del imán 7,
+ *  carro de la loca 13, base del frente 601). Las primitivas de THREE sin índice (prismas, placas extruidas) parten un
+ *  plano en triángulos sueltos: ahí se juntan los vecinos COPLANARES que comparten arista (soldada por posición). */
+function carasDeMalla(geo: PartGeo): CarasRef {
+  const hit = carasCache.get(geo); if (hit) return hit;
+  const P = geo.positions, I = geo.indices, nt = Math.floor(I.length / 3), nv = P.length / 3;
+  const tn = new Float64Array(nt * 3), ta = new Float64Array(nt);
+  for (let t = 0; t < nt; t++) {
+    const a = I[3 * t] * 3, b = I[3 * t + 1] * 3, c = I[3 * t + 2] * 3;
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+    const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, L = Math.hypot(nx, ny, nz);
+    ta[t] = L / 2;
+    if (L > 0) { tn[3 * t] = nx / L; tn[3 * t + 1] = ny / L; tn[3 * t + 2] = nz / L; }
+  }
+  const etiquetar = (raw: Int32Array) => {
+    const map = new Map<number, number>(), out = new Int32Array(nt);
+    for (let t = 0; t < nt; t++) { let k = map.get(raw[t]); if (k === undefined) { k = map.size; map.set(raw[t], k); } out[t] = k; }
+    return { cara: out, n: map.size };
+  };
+  const estad = (cara: Int32Array, n: number) => {
+    const area = new Float64Array(n), normal = new Float64Array(3 * n), plana = new Uint8Array(n).fill(1), d = new Float64Array(n);
+    for (let t = 0; t < nt; t++) { const c = cara[t]; area[c] += ta[t]; for (let k = 0; k < 3; k++) normal[3 * c + k] += tn[3 * t + k] * ta[t]; }
+    for (let c = 0; c < n; c++) { const L = Math.hypot(normal[3 * c], normal[3 * c + 1], normal[3 * c + 2]) || 1; for (let k = 0; k < 3; k++) normal[3 * c + k] /= L; }
+    // plana = todos sus triángulos miran a donde mira la cara (≤ ~1.8°); el cilindro teselado no pasa
+    for (let t = 0; t < nt; t++) {
+      if (ta[t] <= 1e-9) continue;
+      const c = cara[t], dot = tn[3 * t] * normal[3 * c] + tn[3 * t + 1] * normal[3 * c + 1] + tn[3 * t + 2] * normal[3 * c + 2];
+      if (dot < 0.9995) plana[c] = 0;
+    }
+    for (let t = 0; t < nt; t++) { const c = cara[t], a = I[3 * t] * 3; d[c] = normal[3 * c] * P[a] + normal[3 * c + 1] * P[a + 1] + normal[3 * c + 2] * P[a + 2]; }
+    return { area, normal, plana, d };
+  };
+  const V = unionFind(nv);
+  for (let t = 0; t < nt; t++) { V.u(I[3 * t], I[3 * t + 1]); V.u(I[3 * t], I[3 * t + 2]); }
+  const raw0 = new Int32Array(nt); for (let t = 0; t < nt; t++) raw0[t] = V.f(I[3 * t]);
+  let { cara, n } = etiquetar(raw0);
+  let st = estad(cara, n);
+  if (n > nt * 0.3 && nt > 1) {
+    const q = 1000, sold = new Int32Array(nv), pos = new Map<string, number>();
+    for (let i = 0; i < nv; i++) {
+      const k = `${Math.round(P[3 * i] * q)},${Math.round(P[3 * i + 1] * q)},${Math.round(P[3 * i + 2] * q)}`;
+      let s = pos.get(k); if (s === undefined) { s = pos.size; pos.set(k, s); } sold[i] = s;
+    }
+    const W = pos.size, F = unionFind(n), aristas = new Map<number, number>();
+    for (let t = 0; t < nt; t++) for (let e = 0; e < 3; e++) {
+      const a = sold[I[3 * t + e]], b = sold[I[3 * t + ((e + 1) % 3)]]; if (a === b) continue;
+      const k = a < b ? a * W + b : b * W + a, o = aristas.get(k), c2 = cara[t];
+      if (o === undefined) { aristas.set(k, c2); continue; }
+      if (o === c2 || !st.plana[o] || !st.plana[c2]) continue;
+      const dot = st.normal[3 * o] * st.normal[3 * c2] + st.normal[3 * o + 1] * st.normal[3 * c2 + 1] + st.normal[3 * o + 2] * st.normal[3 * c2 + 2];
+      if (dot > 0.9999 && Math.abs(st.d[o] - st.d[c2]) < 1e-3) F.u(o, c2);
+    }
+    const raw1 = new Int32Array(nt); for (let t = 0; t < nt; t++) raw1[t] = F.f(cara[t]);
+    ({ cara, n } = etiquetar(raw1));
+    st = estad(cara, n);
+  }
+  const out: CarasRef = { caraDeTri: cara, n, ...st };
+  carasCache.set(geo, out);
+  return out;
+}
+/** Los triángulos de UNA cara como geometría propia (posiciones copiadas: compartir el atributo con la pieza y luego
+ *  liberarlo le borraría el búfer a la pieza también). */
+function geoDeCara(geo: PartGeo, caras: CarasRef, c: number): THREE.BufferGeometry {
+  const P = geo.positions, I = geo.indices, out: number[] = [];
+  for (let t = 0; t < caras.caraDeTri.length; t++) {
+    if (caras.caraDeTri[t] !== c) continue;
+    for (let k = 0; k < 3; k++) { const v = I[3 * t + k] * 3; out.push(P[v], P[v + 1], P[v + 2]); }
+  }
+  const b = new THREE.BufferGeometry();
+  b.setAttribute('position', new THREE.Float32BufferAttribute(out, 3));
+  b.computeBoundingSphere();
+  return b;
+}
+/** Lo que el mouse tiene ENCIMA. Vive fuera de React: cada malla se suscribe y solo se repinta la que cambia de
+ *  estado (re-renderizar el estudio entero en cada movimiento del mouse lo trabaría). */
+const tenazaHover = (() => {
+  let v: Agarre | null = null;
+  const subs = new Set<() => void>();
+  return {
+    get: () => v,
+    set(n: Agarre | null) {
+      if (n === v || (n && v && n.key === v.key && n.cara === v.cara && n.top === v.top)) return;
+      v = n; subs.forEach((f) => f());
+    },
+    sub(f: () => void) { subs.add(f); return () => { subs.delete(f); }; },
+  };
+})();
+const ORO = '#FDB813';
+const sinRayo = () => null;   // las piezas fantasma (rayos X) y los resaltes no atajan el clic: se agarra lo de adentro
+/** El FOCO del árbol (en Fusion es literal un foco): prendido = se ve, apagado = oculto. */
+function FocoIcono({ on }: { on: boolean }) {
+  return (
+    <svg viewBox="0 0 12 14" width="10" height="12" aria-hidden="true">
+      <path d="M6 1a4 4 0 0 0-2.4 7.2c.5.4.9 1 .9 1.6V10h3v-.2c0-.6.4-1.2.9-1.6A4 4 0 0 0 6 1z"
+        fill={on ? ORO : 'none'} stroke="currentColor" strokeWidth="1" />
+      <path d="M4.5 11.6h3M5 13h2" stroke="currentColor" strokeWidth="1" />
+    </svg>
+  );
+}
+
+/** Una pieza de referencia con la receta de calidad del kernel sólido: PBR físico + aristas CAD nítidas.
+ *  Con `tenaza` la pieza se deja agarrar: el mouse encima la ilumina (la cara, el cuerpo o el módulo) y el clic la
+ *  manda a `onAgarre`. `sel` = lo agarrado de ESTA pieza: −1 entera, ≥ 0 una cara, null nada. */
+function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre }: {
+  geo: PartGeo; r: RefPart; clip?: THREE.Plane[] | null; rayos?: boolean;
+  hoja?: { key: string; top: string }; tenaza?: Tenaza | null; sel?: number | null; onAgarre?: (a: Agarre) => void;
+}) {
   const g = useMemo(() => {
     const b = new THREE.BufferGeometry();
     b.setAttribute('position', new THREE.BufferAttribute(geo.positions, 3));
@@ -2125,13 +2247,39 @@ function RefMesh({ geo, r, clip, rayos }: { geo: PartGeo; r: RefPart; clip?: THR
   useEffect(() => () => { g.dispose(); aristas?.dispose(); }, [g, aristas]);
   const m = REF_MAT[r.mat ?? 'pintura'];
   const op = rayos && r.rayos !== undefined ? r.rayos : (r.opacity ?? 1), transp = op < 1;
+  // EL MOUSE ENCIMA: −1 = toda la pieza, ≥ 0 = una cara, null = nada (primitivo → la suscripción no repinta de más)
+  const hov = useSyncExternalStore(tenazaHover.sub, () => {
+    const a = tenazaHover.get();
+    if (!a || !tenaza || !hoja) return null;
+    if (tenaza === 'pieza') return a.top === hoja.top ? -1 : null;
+    if (a.key !== hoja.key) return null;
+    return tenaza === 'cara' ? (a.cara ?? -1) : -1;
+  });
+  const agarrable = !!(tenaza && hoja && onAgarre) && op >= 0.35;
+  const caraDe = (e: { faceIndex?: number | null }): number | null => {
+    if (tenaza !== 'cara' || e.faceIndex == null) return null;
+    const c = carasDeMalla(geo);
+    return e.faceIndex < c.caraDeTri.length ? c.caraDeTri[e.faceIndex] : null;
+  };
+  const hovCara = hov != null && hov >= 0 && hov !== sel ? hov : null;
+  const selCara = sel != null && sel >= 0 ? sel : null;
+  const geoHov = useMemo(() => (hovCara != null ? geoDeCara(geo, carasDeMalla(geo), hovCara) : null), [geo, hovCara]);
+  const geoSel = useMemo(() => (selCara != null ? geoDeCara(geo, carasDeMalla(geo), selCara) : null), [geo, selCara]);
+  useEffect(() => () => geoHov?.dispose(), [geoHov]);
+  useEffect(() => () => geoSel?.dispose(), [geoSel]);
+  const brillo = sel === -1 ? 0.42 : hov === -1 ? 0.2 : 0;
   return (
     <>
       {/* sin sombras direccionales: el mapa del CAD está hecho para piezas de 100 mm; en un banco de 1.4 m las caras
           grandes salían con «acné» a rayas (cazado en la SOMI). El piso conserva su sombra de contacto. */}
-      <mesh geometry={g} renderOrder={transp ? 3 : 0}>
+      <mesh geometry={g} renderOrder={transp ? 3 : 0}
+        raycast={agarrable ? undefined : sinRayo}
+        onPointerMove={agarrable ? (e) => { e.stopPropagation(); tenazaHover.set({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}
+        onPointerOut={agarrable ? () => { const a = tenazaHover.get(); if (a && a.key === hoja!.key) tenazaHover.set(null); } : undefined}
+        onClick={agarrable ? (e) => { if (e.delta > 4) return; e.stopPropagation(); onAgarre!({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}>
         <meshPhysicalMaterial color={r.color} metalness={r.metalness ?? m.metalness} roughness={m.roughness}
           clearcoat={m.clearcoat} clearcoatRoughness={0.35} envMapIntensity={m.env}
+          emissive={brillo ? ORO : '#000000'} emissiveIntensity={brillo}
           transparent={transp} opacity={op} depthWrite={!transp} side={THREE.DoubleSide}
           /* encima: a 2 m de la cámara el buffer de profundidad no separa ~5 mm → la lámina pegada a otra cara
              (la pared negra del compartimento sobre el gabinete) gana el empate con polygonOffset, como winDepth */
@@ -2139,10 +2287,23 @@ function RefMesh({ geo, r, clip, rayos }: { geo: PartGeo; r: RefPart; clip?: THR
           clippingPlanes={clip ?? undefined} />
       </mesh>
       {aristas && (
-        <lineSegments geometry={aristas} renderOrder={transp ? 3 : 1}>
-          <lineBasicMaterial color={CAD_EDGE} transparent opacity={transp ? 0.35 : 0.8} depthWrite={false}
+        <lineSegments geometry={aristas} renderOrder={transp ? 3 : 1} raycast={sinRayo}>
+          <lineBasicMaterial color={sel === -1 ? ORO : CAD_EDGE} transparent opacity={transp ? 0.35 : 0.8} depthWrite={false}
             polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} clippingPlanes={clip ?? undefined} />
         </lineSegments>
+      )}
+      {/* LA CARA: encima de la pieza, oro translúcido (mouse) u oro firme (agarrada) */}
+      {geoHov && (
+        <mesh geometry={geoHov} renderOrder={6} raycast={sinRayo}>
+          <meshBasicMaterial color={ORO} transparent opacity={0.32} depthWrite={false} side={THREE.DoubleSide}
+            polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} clippingPlanes={clip ?? undefined} />
+        </mesh>
+      )}
+      {geoSel && (
+        <mesh geometry={geoSel} renderOrder={6} raycast={sinRayo}>
+          <meshBasicMaterial color={ORO} transparent opacity={0.62} depthWrite={false} side={THREE.DoubleSide}
+            polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} clippingPlanes={clip ?? undefined} />
+        </mesh>
       )}
     </>
   );
@@ -4580,12 +4741,52 @@ export default function ForgeBRepStudio() {
     return { lazo: arcoDoc.lazo.map(resolver).filter((p) => p.length > 1), anillos: arcoDoc.anillos.map(resolver).filter((p) => p.length > 1) };
   }, [arcoDoc, refHojas]);
   const [refErr, setRefErr] = useState<string | null>(null);
-  const [refHidden, setRefHidden] = useState<Set<string>>(() => new Set());   // clic en la lista = ocultar/mostrar
+  // EL TALLER (orden 2026-11-09-el-taller-tenazas): el foco de CUALQUIER nodo (la llave de aplanarRefs: 'lab-cuerpo/
+  // bloque/bloque-base'), aislar un subárbol, la tenaza con la que agarra el clic y lo agarrado.
+  const [refHidden, setRefHidden] = useState<Set<string>>(() => new Set());   // foco apagado = oculto (con todo lo de abajo)
   const [refRayos, setRefRayos] = useState(true);   // RAYOS X: las piezas con `rayos` (cubierta, paredes) se vuelven fantasma
-  const toggleRef = useCallback((id: string) => setRefHidden((h) => { const n = new Set(h); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
+  const toggleRef = useCallback((key: string) => setRefHidden((h) => { const n = new Set(h); if (n.has(key)) n.delete(key); else n.add(key); return n; }), []);
+  const [refAislado, setRefAislado] = useState<string | null>(null);
+  const [tenaza, setTenaza] = useState<Tenaza>('cara');
+  const [tallerSel, setTallerSel] = useState<(Agarre & { nivel: Tenaza }) | null>(null);
+  const [tallerAbiertos, setTallerAbiertos] = useState<Set<string>>(() => new Set());
+  /** ¿Se ve esta llave? No, si ella o un ancestro tiene el foco apagado, o si hay algo aislado y ella no está debajo. */
+  const refOculta = useCallback((key: string) => {
+    if (refAislado && key !== refAislado && !key.startsWith(refAislado + '/') && !refAislado.startsWith(key + '/')) return true;
+    if (!refHidden.size) return false;
+    let k = '';
+    for (const s of key.split('/')) { k = k ? `${k}/${s}` : s; if (refHidden.has(k)) return true; }
+    return false;
+  }, [refHidden, refAislado]);
+  /** Desplegar en el árbol todo lo que está ARRIBA de una llave (para que se vea lo agarrado desde el visor). */
+  const abrirHasta = useCallback((key: string) => setTallerAbiertos((s) => {
+    const partes = key.split('/'); if (partes.length < 2) return s;
+    const n = new Set(s); let k = '';
+    for (let i = 0; i < partes.length - 1; i++) { k = k ? `${k}/${partes[i]}` : partes[i]; n.add(k); }
+    return n;
+  }), []);
+  const onAgarre = useCallback((a: Agarre) => {
+    setTallerSel((prev) => {
+      const sig = tenaza === 'pieza' ? { key: a.top, top: a.top, cara: null, nivel: 'pieza' as const }
+        : tenaza === 'cuerpo' ? { key: a.key, top: a.top, cara: null, nivel: 'cuerpo' as const }
+        : { ...a, nivel: 'cara' as const };
+      // el mismo clic otra vez suelta (como en Fusion)
+      return prev && prev.key === sig.key && prev.cara === sig.cara && prev.nivel === sig.nivel ? null : sig;
+    });
+    if (tenaza !== 'pieza') abrirHasta(a.key);
+  }, [tenaza, abrirHasta]);
+  useEffect(() => {
+    if (!tallerSel) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.key === 'Escape' && !(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'))) setTallerSel(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [tallerSel]);
   useEffect(() => {
     let vivo = true;
-    setRefHidden(new Set());
+    setRefHidden(new Set()); setRefAislado(null); setTallerSel(null); setTallerAbiertos(new Set()); tenazaHover.set(null);
     if (!refHojas.length) { setRefGeos([]); setRefErr(null); return; }
     Promise.allSettled(refHojas.map((h) => (h.r.kind === 'malla' && h.r.url ? loadRefMesh(h.r.url) : Promise.resolve(primRefGeo(h.r)))))
       .then((rs) => {
@@ -4597,6 +4798,67 @@ export default function ForgeBRepStudio() {
       });
     return () => { vivo = false; };
   }, [refHojas]);
+  // EL ÁRBOL DEL TALLER: las piezas de referencia con su jerarquía (grupo = pieza con piezas adentro, hoja = cuerpo),
+  // con las MISMAS llaves que aplanarRefs para que el visor y el árbol hablen de lo mismo.
+  const tallerArbol = useMemo(() => {
+    const mk = (r: RefPart, pre: string, nivel: number): NodoTaller => {
+      const key = pre + r.id;
+      const hijos = r.kind === 'grupo' ? (r.hijos ?? []).map((h) => mk(h, key + '/', nivel + 1)) : [];
+      return { key, r, nivel, hijos, hojas: r.kind === 'grupo' ? hijos.reduce((a, h) => a + h.hojas, 0) : 1 };
+    };
+    return refParts.map((r) => mk(r, '', 0));
+  }, [refParts]);
+  const nodoPorKey = useMemo(() => {
+    const m = new Map<string, NodoTaller>();
+    const w = (n: NodoTaller) => { m.set(n.key, n); n.hijos.forEach(w); };
+    tallerArbol.forEach(w);
+    return m;
+  }, [tallerArbol]);
+  const refPorKey = useMemo(() => new Map(refGeos.map((h) => [h.key, h])), [refGeos]);
+  /** Lo que la tenaza tiene agarrado, dicho en una línea: qué es, cuánto mide y de quién es. */
+  const agarreInfo = useMemo(() => {
+    const s = tallerSel; if (!s) return null;
+    const medidas = (b: THREE.Box3) => { const v = b.getSize(new THREE.Vector3()); return `${v.x.toFixed(0)} × ${v.y.toFixed(0)} × ${v.z.toFixed(0)} mm`; };
+    if (s.nivel === 'cara' && s.cara != null) {
+      const h = refPorKey.get(s.key); if (!h) return null;
+      const c = carasDeMalla(h.geo), i = s.cara;
+      const nrm = new THREE.Vector3(c.normal[3 * i], c.normal[3 * i + 1], c.normal[3 * i + 2]).transformDirection(h.m);
+      const ejes: [number, string][] = [[nrm.x, 'X'], [nrm.y, 'Y'], [nrm.z, 'Z']];
+      const eje = c.plana[i] ? ejes.find(([v]) => Math.abs(v) > 0.999) : undefined;
+      return { que: `Cara ${c.plana[i] ? 'plana' : 'curva'}`, dato: `${c.area[i] < 10 ? c.area[i].toFixed(1) : Math.round(c.area[i]).toLocaleString('es-MX')} mm²${eje ? ` · mira a ${eje[0] > 0 ? '+' : '−'}${eje[1]}` : ''}`,
+        de: h.r.name, extra: `cara ${i + 1} de ${c.n}` };
+    }
+    const nodo = nodoPorKey.get(s.key); if (!nodo) return null;
+    if (!nodo.hijos.length) {
+      const h = refPorKey.get(s.key);
+      return { que: 'Cuerpo', dato: h ? medidas(refPartBox(h.geo, h.m)) : '', de: nodo.r.name, extra: h ? `${carasDeMalla(h.geo).n} caras` : '' };
+    }
+    const b = new THREE.Box3();
+    for (const [k, h] of refPorKey) if (k.startsWith(s.key + '/')) b.union(refPartBox(h.geo, h.m));
+    return { que: 'Pieza', dato: b.isEmpty() ? '' : medidas(b), de: nodo.r.name, extra: `${nodo.hojas} cuerpos` };
+  }, [tallerSel, refPorKey, nodoPorKey]);
+  // QA (window.__forgeBrep.taller): lee el estado VIVO por un ref — sin dependencias en el objeto del API
+  const tallerQaRef = useRef<unknown>(null);
+  tallerQaRef.current = {
+    tenaza, sel: tallerSel, agarre: agarreInfo, aislado: refAislado,
+    get hover() { return tenazaHover.get(); },
+    visibles: refGeos.filter(({ key }) => !refOculta(key)).length, total: refHojas.length,
+    fantasmas: refRayos ? refGeos.filter(({ r }) => r.rayos !== undefined && r.rayos < 0.35).map(({ key }) => key) : [],
+    cara: (key: string, i: number) => {
+      const h = refPorKey.get(key); if (!h) return null;
+      const c = carasDeMalla(h.geo);
+      return { plana: !!c.plana[i], area: c.area[i], caras: c.n, nombre: h.r.name };
+    },
+  };
+  // lo agarrado desde el visor aparece en el árbol: se despliega hasta ahí y se trae a la vista
+  useEffect(() => {
+    if (!tallerSel) return;
+    const id = requestAnimationFrame(() => {
+      // globalThis: en este archivo `CSS` es la hoja de estilos del estudio (tapa al CSS del navegador)
+      document.querySelector(`[data-taller-key="${globalThis.CSS.escape(tallerSel.key)}"]`)?.scrollIntoView({ block: 'nearest' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [tallerSel, tallerAbiertos]);
   // LA ENTRADA (orden 2026-09-18-la-entrada): 15 de 20 STEP reales son ENSAMBLES y el molde se hacía sobre el ladrillo
   // fundido, acostado o de cabeza. La DECISIÓN (qué sólido, qué giro) se mide UNA vez por archivo; en cada
   // reconstrucción se reaplica a la importación fresca (como siempre se reimportó). Una pieza ya parada pasa intacta.
@@ -7675,6 +7937,8 @@ export default function ForgeBRepStudio() {
       importStepText, clearImportedStep,
       get importedStep() { return importedStep != null; },
       get stepText() { return stepTextRef.current; },
+      // EL TALLER — driver de QA (scripts/taller-verify.cjs): la tenaza, lo que el mouse tiene encima y lo agarrado
+      get taller() { return tallerQaRef.current; },
       setSketch,
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
@@ -8487,7 +8751,8 @@ export default function ForgeBRepStudio() {
           viewTarget={meshBBox ? [meshBBox.center[0], meshBBox.center[2], -meshBBox.center[1]] : [0, 0, 0]}
           sketchCam={sketchCam}
         >
-          <group rotation={[-Math.PI / 2, 0, 0]}>
+          {/* clic al vacío = la tenaza suelta lo agarrado (R3F solo lo llama si el mouse casi no se movió: girar no suelta) */}
+          <group rotation={[-Math.PI / 2, 0, 0]} onPointerMissed={() => setTallerSel(null)}>
             {/* CAM vivo: stock + toolpath 3D solo en workspace MANUFACTURA */}
             {workspace === 'manufactura' && meshBBox && result && !building && (
               <CamStock3D center={meshBBox.center as [number, number, number]} half={meshBBox.half as [number, number, number]} />
@@ -8845,11 +9110,16 @@ export default function ForgeBRepStudio() {
               />
             )}
             {/* PIEZAS DE REFERENCIA: fuera del kernel, cada una con su giro XYZ, color y opacidad */}
-            {refGeos.filter(({ top }) => !refHidden.has(top)).map(({ r, geo, m, key }) => {
+            {/* …y EL TALLER: la tenaza agarra cara / cuerpo / pieza con el clic (no mientras se boceta) */}
+            {refGeos.filter(({ key }) => !refOculta(key)).map(({ r, geo, m, key, top }) => {
               const pos = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(); m.decompose(pos, q, sc);
+              const s = tallerSel;
+              const sel = !s ? null : s.nivel === 'cara' ? (s.key === key ? s.cara ?? -1 : null)
+                : (key === s.key || key.startsWith(s.key + '/') ? -1 : null);
               return (
                 <group key={key} position={pos} quaternion={q} scale={sc}>
-                  <RefMesh geo={geo} r={r} clip={sectionPlanes} rayos={refRayos} />
+                  <RefMesh geo={geo} r={r} clip={sectionPlanes} rayos={refRayos}
+                    hoja={{ key, top }} tenaza={sketchOpen ? null : tenaza} sel={sel} onAgarre={onAgarre} />
                 </group>
               );
             })}
@@ -9944,18 +10214,72 @@ export default function ForgeBRepStudio() {
           </aside>)}
           {/* PIEZAS DE REFERENCIA en el RIEL (orden 2026-11-05-la-pluma-circuito-cableado): antes flotaba ENCIMA del visor y
               tapaba la pieza; ian: «hay basura en la UI». Ahora es un panel más del riel, colapsable como los demás. */}
+          {/* EL TALLER (orden 2026-11-09-el-taller-tenazas; ian: «lo que necesito son las mismas herramientas de Fusion»):
+              el navegador de Fusion con el nombre de la casa. Árbol de piezas → cuerpos, foco (ocultar), ◎ (aislar), y
+              LAS TENAZAS: con qué agarra el clic en el visor. Lo agarrado se dice en una línea y se marca aquí. */}
           {refParts.length > 0 && (
-          <aside className={`fb-refs-panel ${collapsed.refs ? 'collapsed' : ''}`} data-testid="ref-legend">
-            <CollapseHead id="refs" title="Piezas de referencia" collapsed={!!collapsed.refs} onToggle={() => toggleCollapse('refs')}
+          <aside className={`fb-refs-panel fb-taller ${collapsed.refs ? 'collapsed' : ''}`} data-testid="ref-legend">
+            <CollapseHead id="refs" title="El Taller" collapsed={!!collapsed.refs} onToggle={() => toggleCollapse('refs')}
               right={<span className="fb-count">{refGeos.length}/{refHojas.length}</span>} />
             {!collapsed.refs && (
               <div className="fb-refs-list">
-                {refParts.map((r) => (
-                  <button key={r.id} className={`fb-ref ${refHidden.has(r.id) ? 'off' : ''}`} onClick={() => toggleRef(r.id)}
-                    title={refHidden.has(r.id) ? 'clic: mostrar' : 'clic: ocultar'} data-testid={`ref-${r.id}`}>
-                    <i style={{ background: r.color }} />{r.name}{r.kind === 'grupo' ? <em> · {contarHojas(r)}</em> : null}
+                <div className="fb-tenazas" role="group" aria-label="Tenazas: qué agarra el clic en el visor" data-testid="tenazas">
+                  <span className="fb-tenazas-lbl">tenazas</span>
+                  {(['cara', 'cuerpo', 'pieza'] as const).map((t) => (
+                    <button key={t} data-testid={`tenaza-${t}`} className={tenaza === t ? 'on' : ''}
+                      onClick={() => { setTenaza(t); tenazaHover.set(null); }}
+                      title={t === 'cara' ? 'Agarrar UNA cara (pasa el mouse: se ilumina; clic: la agarras)'
+                        : t === 'cuerpo' ? 'Agarrar un cuerpo entero (una hoja del árbol)' : 'Agarrar la pieza completa (el módulo de arriba)'}>
+                      {t === 'cara' ? 'Cara' : t === 'cuerpo' ? 'Cuerpo' : 'Pieza'}
+                    </button>
+                  ))}
+                </div>
+                {agarreInfo ? (
+                  <div className="fb-agarre" data-testid="taller-agarre">
+                    <b>{agarreInfo.que}</b> · {agarreInfo.dato}
+                    <div className="fb-agarre-de">{agarreInfo.de}{agarreInfo.extra ? <em> · {agarreInfo.extra}</em> : null}</div>
+                  </div>
+                ) : (
+                  <div className="fb-agarre vacio">pasa el mouse sobre el visor y haz clic para agarrar · Esc suelta</div>
+                )}
+                {refAislado && (
+                  <button className="fb-aislado" data-testid="taller-desaislar" onClick={() => setRefAislado(null)}>
+                    ◎ aislado: {nodoPorKey.get(refAislado)?.r.name ?? refAislado} · <u>mostrar todo</u>
                   </button>
-                ))}
+                )}
+                <div className="fb-taller-arbol" role="tree" data-testid="taller-arbol">
+                  <div className="fb-taller-raiz"><span className="fb-tchev">▾</span><b>{docName}</b></div>
+                  {(() => {
+                    const out: ReactNode[] = [];
+                    const w = (n: NodoTaller) => {
+                      const abierto = tallerAbiertos.has(n.key), esSel = tallerSel?.key === n.key, apagado = refHidden.has(n.key);
+                      out.push(
+                        <div key={n.key} role="treeitem" aria-expanded={n.hijos.length ? abierto : undefined} aria-selected={esSel}
+                          className={`fb-tfila ${esSel ? 'sel' : ''} ${refOculta(n.key) ? 'off' : ''}`}
+                          style={{ paddingLeft: 2 + n.nivel * 13 }} data-taller-key={n.key}>
+                          {n.hijos.length ? (
+                            <button className="fb-tchev" data-testid={`taller-abrir-${n.key}`} title={abierto ? 'cerrar' : 'abrir'}
+                              onClick={() => setTallerAbiertos((s) => { const x = new Set(s); if (x.has(n.key)) x.delete(n.key); else x.add(n.key); return x; })}>
+                              {abierto ? '▾' : '▸'}</button>
+                          ) : <span className="fb-tchev" />}
+                          <i style={{ background: n.r.color }} />
+                          <button className="fb-tnom" data-testid={`taller-${n.key}`} title={n.r.name}
+                            onClick={() => setTallerSel((p) => (p && p.key === n.key && p.nivel !== 'cara' ? null
+                              : { key: n.key, top: n.key.split('/')[0], cara: null, nivel: n.hijos.length ? 'pieza' : 'cuerpo' }))}>
+                            {n.r.name}{n.hijos.length ? <em> · {n.hojas}</em> : null}</button>
+                          <button className={`fb-tfoco ${apagado ? 'off' : ''}`} data-testid={n.nivel === 0 ? `ref-${n.r.id}` : `taller-foco-${n.key}`}
+                            onClick={() => toggleRef(n.key)} title={apagado ? 'Foco apagado: clic para mostrar' : 'Foco: clic para ocultar'}>
+                            <FocoIcono on={!apagado} /></button>
+                          <button className={`fb-taislar ${refAislado === n.key ? 'on' : ''}`} data-testid={`taller-aislar-${n.key}`}
+                            onClick={() => setRefAislado((a) => (a === n.key ? null : n.key))} title="Aislar: solo esto en el visor">◎</button>
+                        </div>,
+                      );
+                      if (abierto) n.hijos.forEach(w);
+                    };
+                    tallerArbol.forEach(w);
+                    return out;
+                  })()}
+                </div>
                 {refHojas.some((h) => h.r.rayos !== undefined) && (
                   <button className={`fb-ref fb-ref-vivo ${refRayos ? '' : 'off'}`} onClick={() => setRefRayos((o) => !o)} data-testid="ref-rayos">
                     <i style={{ background: '#9fd8ff' }} />{refRayos ? 'rayos X: cubierta y paredes fantasma' : 'rayos X: apagado (base cerrada)'}
@@ -9971,7 +10295,7 @@ export default function ForgeBRepStudio() {
                     <i style={{ background: '#4fd6ff' }} />{arcoOn ? 'simulación en vivo: prendida' : 'simulación en vivo: apagada'}
                   </button>
                 )}
-                <div className="fb-refs-pie">{result ? 'sólido de la Forja: la placa de prueba · ' : ''}las piezas de referencia no entran a masa ni STEP · clic = ocultar (ver adentro)</div>
+                <div className="fb-refs-pie">{result ? 'sólido de la Forja: la placa de prueba · ' : ''}las piezas de referencia no entran a masa ni STEP · foco = ocultar · ◎ = aislar</div>
                 {refErr && <div className="fb-refs-err">no cargó: {refErr}</div>}
               </div>
             )}
@@ -12502,6 +12826,33 @@ const CSS = `
 .fb-ref-vivo{margin-top:4px;color:#9fe7ff;}
 .fb-refs-pie{margin-top:5px;padding:5px 5px 0;border-top:1px solid rgba(159,179,200,0.14);color:#8193a8;font-size:10px;white-space:normal;}
 .fb-refs-err{padding:5px 10px 7px;color:#ff8a80;font-size:10px;}
+/* EL TALLER (orden 2026-11-09-el-taller-tenazas) */
+.fb-tenazas{display:flex;align-items:center;gap:3px;margin:2px 0 6px;}
+.fb-tenazas-lbl{color:#6f8196;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
+.fb-tenazas button{all:unset;cursor:pointer;padding:3px 9px;border-radius:999px;border:1px solid rgba(159,179,200,0.22);color:#a9b8c8;font-size:11px;}
+.fb-tenazas button:hover{border-color:rgba(253,184,19,0.6);color:#ffe9ad;}
+.fb-tenazas button.on{background:rgba(253,184,19,0.16);border-color:#FDB813;color:#ffe9ad;}
+.fb-agarre{margin:0 0 6px;padding:6px 8px;border-radius:6px;background:rgba(253,184,19,0.08);border:1px solid rgba(253,184,19,0.35);color:#ffe9ad;white-space:normal;}
+.fb-agarre b{color:#FDB813;font-weight:600;}
+.fb-agarre-de{color:#cfd8e3;margin-top:2px;}
+.fb-agarre-de em{font-style:normal;color:#8193a8;}
+.fb-agarre.vacio{background:none;border:1px dashed rgba(159,179,200,0.2);color:#6f8196;font-size:10px;}
+.fb-aislado{all:unset;cursor:pointer;display:block;margin:0 0 6px;padding:4px 8px;border-radius:6px;background:rgba(79,214,255,0.08);border:1px solid rgba(79,214,255,0.35);color:#bfefff;font-size:10px;white-space:normal;}
+.fb-taller-arbol{max-height:46vh;overflow:auto;margin:0 -4px;padding:0 2px;}
+.fb-taller-raiz{display:flex;align-items:center;gap:4px;padding:3px 2px;color:#e8eef5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fb-tfila{display:flex;align-items:center;gap:4px;padding:1px 2px;border-radius:4px;white-space:nowrap;}
+.fb-tfila:hover{background:rgba(159,179,200,0.10);}
+.fb-tfila.sel{background:rgba(253,184,19,0.16);box-shadow:inset 2px 0 0 #FDB813;}
+.fb-tfila.off .fb-tnom{opacity:.38;}
+.fb-tfila i{flex:0 0 9px;height:9px;border-radius:2px;border:1px solid rgba(255,255,255,0.25);}
+.fb-tchev{all:unset;flex:0 0 12px;text-align:center;color:#8193a8;cursor:pointer;font-size:10px;}
+.fb-tnom{all:unset;cursor:pointer;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;padding:2px 0;}
+.fb-tnom em{font-style:normal;color:#6f8196;}
+.fb-tfila.sel .fb-tnom{color:#ffe9ad;}
+.fb-tfoco,.fb-taislar{all:unset;cursor:pointer;flex:0 0 16px;text-align:center;color:#8193a8;opacity:.55;font-size:11px;line-height:1;}
+.fb-tfila:hover .fb-tfoco,.fb-tfila:hover .fb-taislar,.fb-tfoco.off,.fb-taislar.on{opacity:1;}
+.fb-tfoco.off{color:#ff8a80;}
+.fb-taislar.on{color:#4fd6ff;}
 
 .fb-fea-amp{margin-top:7px;padding-top:7px;border-top:1px solid rgba(159,179,200,0.14);
   font-size:10.5px;color:#aeb9c7;text-align:center;line-height:1.4;}
