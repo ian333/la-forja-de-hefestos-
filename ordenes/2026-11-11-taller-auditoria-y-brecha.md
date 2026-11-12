@@ -1,6 +1,6 @@
 # ORDEN: EL TALLER — auditoría de uso (un «usuario» que la usa como ian) y la brecha contra Fusion/FreeCAD
 
-BASE: 9de7a86
+BASE: 8e76c45
 
 OBJETIVO: ian 11-10: «QUIERO TODAS LAS FUNCIONES QUE TIENE FUSION Y FREECAD… LA INTERFAZ DE USUARIO ESTÁ HORRIBLE… aún no
 puedo ocupar la forja, solo tú… con herramientas de código abierto para no infringir». Dos agentes de solo lectura
@@ -16,11 +16,11 @@ una PROPUESTA de barra de arriba para el laboratorio en una copia de iangpu — 
   documentos nuevos son sobre EL TALLER y citan el corpus en vez de repetirlo.
 
 ## TOCA
-- (nada)
-
-## CREA
 - docs/forja-research/TALLER-AUDITORIA-DE-USO.md
 - docs/forja-research/TALLER-BRECHA.md
+
+## CREA
+- (nada: los dos documentos se crearon en el primer commit de esta orden, d5cee74; el segundo solo les pone la nota al día)
 
 ## BORRA
 - (nada)
@@ -111,7 +111,15 @@ una PROPUESTA de barra de arriba para el laboratorio en una copia de iangpu — 
   `C:/Users/sebas/Downloads/taller-auditoria/`): TOP 10 con archivo:línea. Cazó tres cosas que las suites no veían:
   con rayos X prendido la BASE y la CUBIERTA no se agarran (las pruebas solo golpeaban piezas del alambre); teclear 20
   en una cota daba 30.920; y Esc dentro del boceto no hacía nada con algo agarrado (defecto del 11-09, en producción).
-- PROPUESTA de barra para el laboratorio (parte 2 del agente «usuario»): al escribir este cierre sigue en curso en
-  forja-dev10; NO se integra. Se anota aquí abajo cuando entregue.
+- PROPUESTA de barra para el laboratorio (parte 2 del agente «usuario», 648k tokens, 248 llamadas): ENTREGADA, NO
+  integrada (la decide ian). Cinta contextual en tres grupos (Tenazas · El Yunque · Ver), barra de estado por celdas y
+  panel El Taller de 336 px con nombres completos (54 de 61 nombres cortados → 0). 27 capturas antes/después en
+  `C:/Users/sebas/Downloads/taller-propuesta/`. El coordinador la fusionó sobre TODO lo de la noche (0 conflictos) y la
+  dejó VIVA en forja-dev10 (`http://100.65.173.85:5011/forja-brep.html`): ahí pasan `taller` 16/16, `navegacion` 15/15,
+  `yunque` 24/24, `mover` 13/13, `boceto` 17/17, `medir` 57/57 y `piezas` 10/10; `uso` no aplica tal cual (da clic al
+  HUD de vistas, que la propuesta esconde: habría que apuntarla a los botones `ct-*`). Si ian dice que sí: unificar su
+  `verTaller` con `encuadrarTaller`, quitar los duplicados (tenazas y yunque quedan en dos lugares) y corregir dos
+  textos que ya no son ciertos (rayos X «no se agarran»; la profundidad).
+- segundo commit de esta orden: las notas de los dos documentos al día con el cierre de la noche (BASE = 8e76c45).
 - gate: VERDE (solo los dos .md y esta orden). BASE se movió de a313251 a 9de7a86: los agentes leyeron a313251, pero
   los documentos se integran encima de los commits de esa noche y el juez compara contra BASE.

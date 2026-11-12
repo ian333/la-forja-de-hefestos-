@@ -1,14 +1,19 @@
 # EL TALLER — auditoría de uso (alguien que solo ve la pantalla)
 
-> **Nota del coordinador (misma noche, 2026-11-11).** Esta auditoría se hizo contra `a313251` (lo que está en
-> producción). De su TOP 10, en `main` (sin desplegar) ya quedó arreglado y probado: **#2** acotar en el boceto (cota
-> con un clic y valor preseleccionado, cambiar y quitar cotas, vista previa del rectángulo, Ctrl+Z; orden
-> `2026-11-11-boceto-acotar`), **#7** deshacer golpes (orden `2026-11-11-yunque-barrido-y-cierre`), y en la orden
-> `2026-11-11-taller-arreglos-de-uso`: **#3** las teclas del kernel ya no ensucian el documento, **#4** Encuadrar /
-> ISO / SUP / FRE / Sección prendidos y aislar encuadra, **#9** la barra de estado, **#6** el aviso de forja y la
-> profundidad ANTES de forjar. Ahí mismo van **#1** (la base no se deja agarrar con rayos X) y M10/M11. Quedan como
-> PROPUESTA para ian, sin integrar: **#5** la cinta de arriba y **#8** el panel El Taller legible. A2 (nada que hacer con
-> un cuerpo agarrado) ya ofrece «bajar STL/STEP» y «mover».
+> **Nota del coordinador (cierre de la noche del 2026-11-11).** Esta auditoría se hizo contra `a313251` (lo que está en
+> producción). De su TOP 10, en `main` (sin desplegar) ya quedó arreglado y probado:
+> **#1** la base y la cubierta ya se agarran con rayos X (lo de enfrente gana; otro clic en el mismo punto agarra lo de
+> atrás) · **#2** el boceto acota con un clic, con el valor seleccionado, cambia y quita cotas, enseña el rectángulo
+> mientras se dibuja, tiene Ctrl+Z y recibe el contorno de la cara · **#3** las teclas del kernel ya no ensucian el
+> documento (ni dentro del boceto) · **#4** Encuadrar / ISO / SUP / FRE / Sección prendidos y aislar encuadra ·
+> **#6** el aviso de forja se pinta antes de congelar y la profundidad se pide ANTES de forjar (la forja sigue
+> congelando la pantalla 1–7 s: no se movió a un worker) · **#7** Ctrl+Z deshace golpes · **#9** la barra de estado ·
+> **#10** el doble clic ya no mete la cámara entre las piezas, mover no la regresa a la vista de llegada.
+> Del resto: A2 (con un cuerpo agarrado ya hay «bajar», «mover» y el radial con Aislar/Ocultar/Mover), M11 (Esc en el
+> boceto), el radial (ahora del Taller, con letreros). Quedan como PROPUESTA para ian, sin integrar: **#5** la cinta de
+> arriba y **#8** el panel El Taller legible (`C:/Users/sebas/Downloads/taller-propuesta/`, viva en forja-dev10).
+> Siguen abiertos: L1 (el lobby dice «ROBOT · plantilla»), L3 (el panel de los jueces abre encima), L7 (el blanco de la
+> cámara de llegada), O4 (el árbol plano de 60 hijos), M5 parcial (cotas contra aristas, no solo vértices), M12, M13.
 
 Orden `ordenes/2026-11-11-taller-auditoria-y-brecha.md`, parte 1 · BASE `a313251` · 2026-11-11.
 Hecha en `forja-dev10` (vite DEV :5011, el mismo código de producción; nunca contra producción), Chrome con

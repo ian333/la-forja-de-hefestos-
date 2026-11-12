@@ -1,11 +1,17 @@
 # EL TALLER — la brecha contra Fusion 360 y FreeCAD
 
-> **Nota del coordinador (misma noche, 2026-11-11).** Este documento se escribió contra `a313251`. Lo que marca «EN
-> CURSO» ya quedó hecho y probado en `main` (sin desplegar): exportar STL/STEP del cuerpo forjado, corte pasante, deshacer
-> y rehacer golpes, golpear cuerpos nuevos (`4ab5b62`), mover piezas con número o con flechas (`065e2b5`). También se
-> barrieron las 30 piezas impresas: las 30 aceptan unir y cortar. El boceto ya acota con un clic (`0229b0a`). La #1 de
-> «Las 10 siguientes» (prender Sección, vistas y Encuadrar en el laboratorio) entró en la orden
-> `2026-11-11-taller-arreglos-de-uso`. Medir lo trae su propia orden. El resto de la tabla sigue vigente.
+> **Nota del coordinador (cierre de la noche del 2026-11-11).** Este documento se escribió contra `a313251`. Desde
+> entonces quedó hecho y probado en `main` (10 commits locales, sin desplegar):
+> - lo que aquí dice «EN CURSO»: exportar STL/STEP del cuerpo forjado, corte pasante, deshacer y rehacer golpes, golpear
+>   cuerpos nuevos (`4ab5b62`), mover piezas (`065e2b5`) y Medir (`2a44f77`); el barrido dio 30 de 30 piezas impresas;
+> - de «Las 10 siguientes»: la **#1** (Sección, vistas y Encuadrar en el laboratorio; `9de7a86`), la **#3** en su primera
+>   versión (el contorno de la cara entra al boceto como referencia y se acota contra sus vértices; `d2482db`) y la mitad
+>   de la **#2** (poner una caja o un cilindro con sus medidas; `c40232e` — falta importar un STEP como pieza del Taller);
+> - además: el boceto acota con un clic (`0229b0a`), el radial ofrece lo del Taller (`8e76c45`) y las teclas del kernel
+>   ya no ensucian el laboratorio.
+> Siguen pendientes de la lista: golpes de catálogo (barreno, cajera de tuerca), patrón y espejo de golpes, reabrir el
+> boceto de un golpe, planos de construcción, partir un cuerpo, interferencia y revisión de impresión. Y el aviso de
+> licencias de terceros (sección 4): el sitio sirve el kernel LGPL sin aviso visible; falta que ian lo decida.
 
 Fecha: 2026-11-11 · Código revisado: `main` en el commit `a313251` (lo que hoy está en producción) · Solo lectura: no se corrió nada ni se abrió el navegador.
 
