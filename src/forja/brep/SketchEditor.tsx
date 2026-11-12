@@ -44,7 +44,9 @@ function tessArc(cx: number, cy: number, x0: number, y0: number, x1: number, y1:
   return pts;
 }
 
-export default function SketchEditor({ onFinish, onCancel, projScale }: {
+export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: {
+  /** Qué se está bocetando y sobre qué (lo pone el yunque: «Cortar · Base frente izquierda»). */
+  titulo?: string;
   onFinish: (result: { profile: XY[]; holes: { x: number; y: number; d: number }[]; polyHoles: XY[][]; path?: XY[]; circle?: { x: number; y: number; r: number } }) => void;
   onCancel: () => void;
   /** MODO ESCENA (boceto DENTRO del 3D): px por mm de la cámara alineada al plano.
@@ -96,9 +98,11 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
   const [arcStart, setArcStart] = useState<number | null>(null); // 1er extremo del arco en curso
   const [arcCursor, setArcCursor] = useState<XY | null>(null);   // cursor para la previa del arco
   const [lineCursor, setLineCursor] = useState<XY | null>(null); // cursor para la previa de LÍNEA (rubber-band, sigue el mouse)
+  const [rectCursor, setRectCursor] = useState<XY | null>(null); // …y la del RECTÁNGULO entre su primer y su segundo clic
+  const histRef = useRef<Sketch[]>([]);                          // DESHACER (Ctrl+Z): el boceto antes de cada trazo
   const [sel, setSel] = useState<Sel[]>([]);
   const [dim, setDim] = useState<
-    | { kind: 'dist'; p: number; q: number; sx: number; sy: number; val: string; axis?: 'h' | 'v' }
+    | { kind: 'dist'; p: number; q: number; sx: number; sy: number; val: string; axis?: 'h' | 'v'; linea?: number }   // `linea`: la cota salió de un clic en esa línea
     | { kind: 'rad'; c: number; sx: number; sy: number; val: string }
     | { kind: 'diam'; c: number; sx: number; sy: number; val: string }
     | { kind: 'arcrad'; a: number; sx: number; sy: number; val: string }
@@ -158,6 +162,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
   // Resuelve el modelo y aplica las posiciones (mueve los puntos para satisfacer
   // las restricciones). Se llama tras cada edición.
   const commit = useCallback((next: Sketch) => {
+    histRef.current.push(clone(modelRef.current)); if (histRef.current.length > 100) histRef.current.shift();
     const copy = clone(next);
     const r = solveSketch(copy);
     setModel(copy); modelRef.current = copy;
@@ -270,6 +275,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
     if (tool !== 'select' && tool !== 'trim') setSnapHint(computeSnap(mmFromEvent(e)));
     if (tool === 'arc' && arcStart != null) { setArcCursor(mmFromEvent(e)); return; }  // previa del arco (crece con el mouse)
     if (tool === 'line' && draft != null) { setLineCursor(mmFromEvent(e)); return; }   // RUBBER-BAND: la línea sigue el mouse desde el último punto
+    if (tool === 'rect' && rectC1 != null) { setRectCursor(mmFromEvent(e)); return; }   // …y el rectángulo, de su primera esquina al mouse
     const sd = shapeDragRef.current;
     if (sd) {
       const mm = mmFromEvent(e);
@@ -287,7 +293,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
     const r = solveSketch(next);                       // los demás siguen
     next.points[d.i].fixed = wasFixed;                 // quitar el pin temporal
     modelRef.current = next; setModel(next); setRes(r);
-  }, [mmFromEvent, tool, arcStart, draft, computeSnap]);
+  }, [mmFromEvent, tool, arcStart, draft, rectC1, computeSnap]);
   const onPointerUp = useCallback((e?: ReactPointerEvent) => {
     // Cierre del ARRASTRE de dibujo (círculo/rect): si de verdad se arrastró,
     // crea la figura y suprime el clic-clic siguiente; si fue un tap, lo deja
@@ -328,9 +334,31 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
     dragRef.current = null;
   }, [commit, mmFromEvent, snapOrAdd]);
 
+  /** La cota de ÁNGULO entre dos líneas: ángulo interior en el vértice que comparten (mismo criterio que el resolvedor). */
+  const dimDeAngulo = (m: Sketch, l1: number, l2: number) => {
+    const A = m.lines[l1], B = m.lines[l2], P = m.points;
+    let sv = -1, o1 = -1, o2 = -1;
+    if (A.a === B.a) { sv = A.a; o1 = A.b; o2 = B.b; }
+    else if (A.a === B.b) { sv = A.a; o1 = A.b; o2 = B.a; }
+    else if (A.b === B.a) { sv = A.b; o1 = A.a; o2 = B.b; }
+    else if (A.b === B.b) { sv = A.b; o1 = A.a; o2 = B.a; }
+    let ux, uy, vx, vy, cx, cy;
+    if (sv >= 0) { ux = P[o1].x - P[sv].x; uy = P[o1].y - P[sv].y; vx = P[o2].x - P[sv].x; vy = P[o2].y - P[sv].y; cx = P[sv].x; cy = P[sv].y; }
+    else { ux = P[A.b].x - P[A.a].x; uy = P[A.b].y - P[A.a].y; vx = P[B.b].x - P[B.a].x; vy = P[B.b].y - P[B.a].y; cx = (P[A.a].x + P[B.b].x) / 2; cy = (P[A.a].y + P[B.b].y) / 2; }
+    const signed = Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy), mp = toPx(cx, cy);
+    return { kind: 'ang' as const, l1, l2, sx: mp.px, sy: mp.py, val: Math.abs((signed * 180) / Math.PI).toFixed(1), sign: signed >= 0 ? 1 : -1 };
+  };
   const onSvgClick = useCallback((e: ReactMouseEvent) => {
     if (suppressClick.current) { suppressClick.current = false; return; } // venía de un drag
-    if (dim) return;
+    if (dim) {
+      // con el LARGO de una línea abierto, un clic en OTRA línea lo cambia por el ÁNGULO entre las dos
+      if (tool === 'dim' && dim.kind === 'dist' && dim.linea != null) {
+        const r0 = svgRef.current!.getBoundingClientRect();
+        const lj = nearestLine(model, toMM(e.clientX - r0.left, e.clientY - r0.top), 8 / scale);
+        if (lj >= 0 && lj !== dim.linea) { setDim(dimDeAngulo(model, dim.linea, lj)); setSel([]); }
+      }
+      return;
+    }
     const rect = svgRef.current!.getBoundingClientRect();
     const mmRaw = toMM(e.clientX - rect.left, e.clientY - rect.top);
     // OBJECT SNAP (L4): si hay candidato iluminado, el clic cae EXACTO en él
@@ -361,7 +389,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
         { t: 'vertical', a: rectC1, b: p4 }, { t: 'vertical', a: p2, b: p3 },
       );
       void L;
-      setRectC1(null);
+      setRectC1(null); setRectCursor(null);
       commit(next);
       return;
     }
@@ -772,22 +800,14 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
       if (li >= 0) {
         const cur = sel.find((s) => s.kind === 'line');
         if (cur && cur.i !== li) {
-          const A = next.lines[cur.i], B = next.lines[li];
-          // ángulo INTERIOR en el vértice compartido (mismo criterio que el solver)
-          let sv = -1, o1 = -1, o2 = -1;
-          if (A.a === B.a) { sv = A.a; o1 = A.b; o2 = B.b; }
-          else if (A.a === B.b) { sv = A.a; o1 = A.b; o2 = B.a; }
-          else if (A.b === B.a) { sv = A.b; o1 = A.a; o2 = B.b; }
-          else if (A.b === B.b) { sv = A.b; o1 = A.a; o2 = B.a; }
-          let ux, uy, vx, vy, cxp, cyp;
-          if (sv >= 0) { ux = next.points[o1].x - next.points[sv].x; uy = next.points[o1].y - next.points[sv].y; vx = next.points[o2].x - next.points[sv].x; vy = next.points[o2].y - next.points[sv].y; cxp = next.points[sv].x; cyp = next.points[sv].y; }
-          else { ux = next.points[A.b].x - next.points[A.a].x; uy = next.points[A.b].y - next.points[A.a].y; vx = next.points[B.b].x - next.points[B.a].x; vy = next.points[B.b].y - next.points[B.a].y; cxp = (next.points[A.a].x + next.points[B.b].x) / 2; cyp = (next.points[A.a].y + next.points[B.b].y) / 2; }
-          const signed = Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
-          const deg = Math.abs(signed * 180 / Math.PI);
-          const mp = toPx(cxp, cyp);
-          setDim({ kind: 'ang', l1: cur.i, l2: li, sx: mp.px, sy: mp.py, val: deg.toFixed(1), sign: signed >= 0 ? 1 : -1 });
+          setDim(dimDeAngulo(next, cur.i, li));
           setSel([]);
-        } else setSel([{ kind: 'line', i: li }]);
+        } else {
+          // un clic en una LÍNEA = la cota de su LARGO (como en Fusion); un clic en OTRA línea la vuelve la del ÁNGULO
+          const Ln = next.lines[li], a = next.points[Ln.a], b = next.points[Ln.b], mid = toPx((a.x + b.x) / 2, (a.y + b.y) / 2);
+          setSel([{ kind: 'line', i: li }]);
+          setDim({ kind: 'dist', p: Ln.a, q: Ln.b, sx: mid.px, sy: mid.py, val: Math.hypot(a.x - b.x, a.y - b.y).toFixed(1), linea: li });
+        }
         return;
       }
       return;
@@ -883,17 +903,35 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
     for (const l of ls) next.lines[l.i].constr = !next.lines[l.i].constr;
     setSel([]); commit(next);
   };
+  /** ¿Esta restricción es LA MISMA cota que la caja abierta (mismo tipo sobre lo mismo)? */
+  const esLaCotaAbierta = (c: Constraint): boolean => {
+    if (!dim) return false;
+    const k = c as unknown as Record<string, unknown>;
+    if (dim.kind === 'dist') return k.t === (dim.axis === 'h' ? 'distX' : dim.axis === 'v' ? 'distY' : 'distance') && ((k.p === dim.p && k.q === dim.q) || (k.p === dim.q && k.q === dim.p));
+    if (dim.kind === 'rad') return k.t === 'radius' && k.c === dim.c;
+    if (dim.kind === 'diam') return k.t === 'diameter' && k.c === dim.c;
+    if (dim.kind === 'arcrad') return k.t === 'arcRadius' && k.a === dim.a;
+    return k.t === 'angle' && ((k.l1 === dim.l1 && k.l2 === dim.l2) || (k.l1 === dim.l2 && k.l2 === dim.l1));
+  };
+  const cotaYaPuesta = !!dim && model.constraints.some(esLaCotaAbierta);
+  const quitarCota = () => {
+    if (!dim) return;
+    const next = clone(model); next.constraints = next.constraints.filter((c) => !esLaCotaAbierta(c));
+    setDim(null); setSel([]); commit(next);
+  };
   const confirmDim = () => {
     if (!dim) return;
     const v = parseFloat(dim.val);
     if (Number.isFinite(v) && v > 0) {
       const next = clone(model);
+      // volver a acotar lo mismo CAMBIA esa cota (antes se apilaba otra encima y el resolvedor marcaba conflicto)
+      next.constraints = next.constraints.filter((c) => !esLaCotaAbierta(c));
       if (dim.kind === 'dist') next.constraints.push({ t: dim.axis === 'h' ? 'distX' : dim.axis === 'v' ? 'distY' : 'distance', p: dim.p, q: dim.q, d: v });
       else if (dim.kind === 'rad') next.constraints.push({ t: 'radius', c: dim.c, r: v });
       else if (dim.kind === 'diam') next.constraints.push({ t: 'diameter', c: dim.c, d: v });
       else if (dim.kind === 'arcrad') next.constraints.push({ t: 'arcRadius', a: dim.a, r: v });
       else if (dim.kind === 'ang') next.constraints.push({ t: 'angle', l1: dim.l1, l2: dim.l2, deg: v, sign: dim.sign ?? 1 });
-      setDim(null); commit(next);
+      setDim(null); setSel([]); commit(next);
     } else setDim(null);
   };
 
@@ -1019,6 +1057,9 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
       get nPoints() { return model.points.length; },
       get nLines() { return model.lines.length; },
       get nCircles() { return model.circles.length; },
+      get nCotas() { return model.constraints.filter((c) => ['distance', 'distX', 'distY', 'radius', 'diameter', 'arcRadius', 'angle'].includes(c.t)).length; },
+      get dim() { return dim ? { kind: dim.kind, val: dim.val } : null; },
+      get deshacer() { return histRef.current.length; },
       points() { return model.points.map((p) => ({ x: p.x, y: p.y, fixed: !!p.fixed })); },
       lines() { return model.lines.map((l) => ({ a: l.a, b: l.b })); },
       circles() { return model.circles.map((c) => ({ c: c.c, r: c.r })); },
@@ -1061,36 +1102,66 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
       },
     };
     return () => { delete (window as unknown as { __sketchEditor?: unknown }).__sketchEditor; };
-  }, [model, res, toPx]);
+  }, [model, res, toPx, dim]);
 
   // Cambiar de herramienta LIMPIANDO todo estado de dibujo en curso (un solo lugar,
   // usado por los botones Y por el teclado).
   const selectTool = useCallback((t: Tool) => {
     setTool(t); setSel([]); setDraft(null); setChainStart(null); setDynA(''); setDynB('');
-    setRectC1(null); setCircC(null); setArcC(null); setArcStart(null); setArcCursor(null); setLineCursor(null); setArc3pts([]);
+    setRectC1(null); setRectCursor(null); setCircC(null); setArcC(null); setArcStart(null); setArcCursor(null); setLineCursor(null); setArc3pts([]);
     setPolyC(null); setEllC(null); setEllRx(null);
     setCopySrc(null); setMirSrc(null); setMirP1(null);
     setOffSrc(null); setArrWin(null); setArrSel(null);
     setSclWin(null); setSclSel(null);
   }, []);
 
+  // DESHACER dentro del boceto: Ctrl+Z regresa al boceto de antes del último trazo. Se escucha en CAPTURA y se detiene
+  // ahí, para que el Ctrl+Z del documento (que está detrás) no deshaga un golpe o una operación mientras dibujas.
+  const deshacer = useCallback(() => {
+    const prev = histRef.current.pop(); if (!prev) return;
+    const r = solveSketch(prev);
+    setModel(prev); modelRef.current = prev; setRes(r);
+    setSel([]); setDim(null); setDraft(null); setChainStart(null); setRectC1(null); setRectCursor(null); setCircC(null);
+    setArcC(null); setArcStart(null); setArcCursor(null); setLineCursor(null); setArc3pts([]);
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase(); if (k !== 'z' && k !== 'y') return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+      e.preventDefault(); e.stopPropagation();
+      if (k === 'z' && !e.shiftKey) deshacer();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [deshacer]);
+
   // ATAJOS DE TECLADO como Fusion/SolidWorks (la gente que viene de CAD los espera):
   // V=seleccionar L=línea R=rectángulo C=círculo A=arco P=punto D=cota F=anclar
   // X=construcción  Esc=soltar lo que estás dibujando. NO dispara si escribes en un input.
-  useEffect(() => {
+  // El oyente se registra UNA vez y llama a lo último por un ref. Antes se quitaba y se volvía a poner en cada render, y
+  // si OTRO oyente de la misma tecla (el Esc del Taller, que suelta lo agarrado) provocaba un render a media tecla, este
+  // se registraba de nuevo y la tecla en curso ya no le llegaba: en un boceto del yunque Esc no cancelaba nada.
+  const teclasRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key.toLowerCase();
-      if (k === 'escape') { setSel([]); setDraft(null); setChainStart(null); setArcC(null); setArcStart(null); setArcCursor(null); setArc3pts([]); setRectC1(null); setCircC(null); setDim(null); setPolyC(null); setEllC(null); setEllRx(null); setCopySrc(null); setMirSrc(null); setMirP1(null); setOffSrc(null); setArrWin(null); setArrSel(null); setSclWin(null); setSclSel(null); return; }
+      if (k === 'escape') { setRectCursor(null); setLineCursor(null); setSel([]); setDraft(null); setChainStart(null); setArcC(null); setArcStart(null); setArcCursor(null); setArc3pts([]); setRectC1(null); setCircC(null); setDim(null); setPolyC(null); setEllC(null); setEllRx(null); setCopySrc(null); setMirSrc(null); setMirP1(null); setOffSrc(null); setArrWin(null); setArrSel(null); setSclWin(null); setSclSel(null); return; }
       const map: Record<string, Tool> = { v: 'select', l: 'line', r: 'rect', c: 'circle', a: 'arc', p: 'point', d: 'dim', f: 'fix', t: 'trim', g: 'poly', e: 'ellipse' };
       if (map[k]) { e.preventDefault(); selectTool(map[k]); }
       else if (k === 'x') { e.preventDefault(); toggleConstruction(); }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [selectTool, toggleConstruction]);
+    teclasRef.current = onKey;
+  }
+  useEffect(() => {
+    const oyente = (e: KeyboardEvent) => teclasRef.current(e);
+    window.addEventListener('keydown', oyente);
+    return () => window.removeEventListener('keydown', oyente);
+  }, []);
 
   const grid = useMemo(() => buildGrid(size.w, size.h, cx, cy, scale), [size.w, size.h, cx, cy, scale]);
   // Ejes constructores + origen: se dibujan SIEMPRE (también en modo escena, donde
@@ -1131,14 +1202,15 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
           overflow-x scroll + Cancelar/Terminar en cluster STICKY a la derecha → las
           acciones primarias NUNCA se cortan aunque el tool activo agregue campos. */}
       <div className="sk-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderBottom: '1px solid #1b2430', background: 'rgba(9,14,21,0.94)', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none' }}>
-        <b style={{ color: GOLD, marginRight: 6 }}>✏ Boceto</b>
+        <b style={{ color: GOLD, marginRight: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>✏ Boceto</b>
+        {titulo && <span data-testid="sk-titulo" title={titulo} style={{ color: '#ffe9ad', fontSize: 12, marginRight: 8, whiteSpace: 'nowrap', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{titulo}</span>}
         <span style={grpLbl}>Dibujar</span>
         {TOOLS.map(([t, ic, title]) => (
           <button key={t} data-testid={`sk-tool-${t}`} title={title} onClick={() => selectTool(t)} style={btn(tool === t)}>{ic}</button>
         ))}
         <span style={vsep} />
         <span style={grpLbl}>Acotar</span>
-        <button data-testid="sk-tool-dim" title="Cota (D) — clic en línea/arco/círculo, o 2 puntos; teclea el valor" onClick={() => selectTool('dim')} style={btn(tool === 'dim')}>↔</button>
+        <button data-testid="sk-tool-dim" title="Cota (D) — clic en una línea: su largo (clic en otra línea: el ángulo entre las dos) · en un círculo o arco: su diámetro o radio · en 2 puntos: su distancia. Teclea el valor y Enter; volver a acotar lo mismo lo cambia." onClick={() => selectTool('dim')} style={btn(tool === 'dim')}>↔</button>
         <div style={{ flex: 1 }} />{/* empuja RESTRINGIR a la derecha para NO chocar con las pastillas de modo del centro */}
         <span style={grpLbl}>Restringir</span>
         <button data-testid="sk-con-h" title="Horizontal — selecciona 1+ líneas" onClick={() => applyHV('horizontal')} style={btn(false)}>―</button>
@@ -1303,6 +1375,19 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
             const pts = tessArc(c.x, c.y, q0.x, q0.y, arcCursor.x, arcCursor.y).map((q) => { const pp = toPx(q.x, q.y); return `${pp.px},${pp.py}`; }).join(' ');
             return <polyline points={pts} fill="none" stroke={GOLD} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.8} />;
           })()}
+          {/* PREVIA del rectángulo: de su primera esquina al mouse, con su ancho × alto */}
+          {tool === 'rect' && rectC1 != null && rectCursor && model.points[rectC1] && (() => {
+            const c1 = model.points[rectC1], a = toPx(c1.x, c1.y), b = toPx(rectCursor.x, rectCursor.y);
+            const w = Math.abs(rectCursor.x - c1.x), h = Math.abs(rectCursor.y - c1.y);
+            return (
+              <g pointerEvents="none" data-testid="sk-rect-previa">
+                <rect x={Math.min(a.px, b.px)} y={Math.min(a.py, b.py)} width={Math.abs(b.px - a.px)} height={Math.abs(b.py - a.py)}
+                  fill="rgba(253,184,19,0.06)" stroke={GOLD} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.85} />
+                <text x={(a.px + b.px) / 2} y={Math.min(a.py, b.py) - 8} textAnchor="middle" fill={GOLD} fontSize={12}
+                  fontFamily="JetBrains Mono, monospace" stroke="#0b0f14" strokeWidth={3} paintOrder="stroke">{w.toFixed(1)} × {h.toFixed(1)}</text>
+              </g>
+            );
+          })()}
           {/* RUBBER-BAND de la línea en curso: sigue el mouse del último punto al cursor */}
           {tool === 'line' && draft != null && lineCursor && (() => {
             const a = toPx(model.points[draft].x, model.points[draft].y), b = toPx(lineCursor.x, lineCursor.y);
@@ -1331,11 +1416,15 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
         {/* input de cota */}
         {dim && (
           <div style={{ position: 'absolute', left: dim.sx - 30, top: dim.sy - 14, display: 'flex', gap: 3, alignItems: 'center' }}>
-            <input data-testid="sk-dim-input" autoFocus value={dim.val}
+            <input data-testid="sk-dim-input" autoFocus value={dim.val} onFocus={(e) => e.currentTarget.select()}
               onChange={(e) => setDim({ ...dim, val: e.target.value })}
               onKeyDown={(e) => { if (e.key === 'Enter') confirmDim(); if (e.key === 'Escape') setDim(null); }}
               style={{ width: 56, padding: '3px 6px', textAlign: 'center',
                 background: '#0A101C', color: GOLD, border: `1px solid ${GOLD}`, borderRadius: 6, fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }} />
+            {cotaYaPuesta && (
+              <button data-testid="sk-dim-quitar" title="Quitar esta cota" onMouseDown={(e) => { e.preventDefault(); quitarCota(); }}
+                style={{ ...btn(false), padding: '2px 7px', color: '#ff8a80' }}>✕</button>
+            )}
             {dim.kind === 'dist' && (<>
               <button data-testid="sk-dim-h" title="Cota horizontal (↔)" onMouseDown={(e) => { e.preventDefault(); if (dim.kind === 'dist') setDim({ ...dim, axis: dim.axis === 'h' ? undefined : 'h' }); }} style={{ ...btn(dim.axis === 'h'), height: 24, minWidth: 22, fontSize: 12 }}>↔</button>
               <button data-testid="sk-dim-v" title="Cota vertical (↕)" onMouseDown={(e) => { e.preventDefault(); if (dim.kind === 'dist') setDim({ ...dim, axis: dim.axis === 'v' ? undefined : 'v' }); }} style={{ ...btn(dim.axis === 'v'), height: 24, minWidth: 22, fontSize: 12 }}>↕</button>

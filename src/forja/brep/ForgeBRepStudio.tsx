@@ -10120,7 +10120,8 @@ export default function ForgeBRepStudio() {
 
         {/* EDITOR DE CROQUIS 2D — dibujar perfil con restricciones (solver en vivo). */}
         {sketchOpen && (
-          <SketchEditor onFinish={onSketchFinish} onCancel={() => setSketchOpen(false)} projScale={sketchCam?.pxPerMm} />
+          <SketchEditor onFinish={onSketchFinish} onCancel={() => setSketchOpen(false)} projScale={sketchCam?.pxPerMm}
+            titulo={yunquePlano && yunquePend.current ? `${yunquePend.current.modo === 'nuevo' ? 'Cuerpo nuevo sobre' : yunquePend.current.modo === 'unir' ? 'Unir a' : 'Cortar'} · ${refPorKey.get(yunquePend.current.sobre)?.r.name ?? 'la cara agarrada'}` : undefined} />
         )}
 
         {/* SELECTOR DE BOCETO — tarjeta flotante; el viewport queda VIVO para que el
