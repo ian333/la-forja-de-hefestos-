@@ -8,6 +8,8 @@
  *   D. dentro de un boceto del yunque, R y C son del boceto y no tocan el documento;
  *   E. al terminar el boceto NO se forja: se pide profundidad (10 seleccionado); Descartar no deja golpe; 5 + Enter forja
  *      UNA vez a 5 mm con el aviso «forjando» en pantalla; «pasante» sale como golpe pasante.
+ *   F. (parte 2) Esc dentro del boceto conserva la cara agarrada; el doble clic en una cara chica no mete la cámara
+ *      entre las piezas; mover una pieza lejos NO regresa la cámara a la vista de llegada.
  * Uso (iangpu, vite DEV vivo):
  *   DISPLAY=:0 GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA node scripts/uso-verify.cjs
  */
@@ -142,6 +144,11 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     ok('D. dentro del boceto, C, R, F y E no tocan el documento', (await doc()) === dAntes && !/Error/.test((await estado()) || ''), { estado: ((await estado()) || '').slice(0, 50) });
     await tecla('v');   // la herramienta Seleccionar del boceto
 
+    // ── F1. Esc dentro del boceto es del boceto: la cara sigue agarrada ──
+    await p.keyboard.press('Escape'); await espera(300);
+    const trasEsc = await p.evaluate(() => ({ sel: window.__forgeBrep.taller.sel, boceto: !!document.querySelector('[data-testid="sketch-editor"]') }));
+    ok('F. Esc dentro del boceto conserva la cara agarrada (y el boceto sigue abierto)', trasEsc.boceto && trasEsc.sel && trasEsc.sel.nivel === 'cara' && trasEsc.sel.key === key, trasEsc.sel && { key: trasEsc.sel.key.split('/').pop(), nivel: trasEsc.sel.nivel });
+
     // ── E. la profundidad se pide ANTES de forjar ──
     await p.click('[data-testid="sk-finish"]');
     await espera(1200);
@@ -178,6 +185,39 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     await espera(600);
     g = await p.evaluate(() => { const y = window.__forgeBrep.yunque; return { pasante: !!y.golpes[1].pasante, errores: y.errores }; });
     ok('E. «pasante» apaga la caja de profundidad y sale un golpe pasante', apagada && g.pasante, g);
+
+    // ── F2. doble clic en una cara CHICA: la cámara no se mete entre las piezas ──
+    await p.click('[data-testid="btn-fit"]'); await espera(1500);
+    let chica = null;
+    for (let gy = 2; gy < 16 && !chica; gy++) for (let gx = 6; gx < 28 && !chica; gx++) {
+      const x = vp.x + (vp.w * gx) / 30, yy = vp.y + (vp.h * gy) / 18;
+      await p.mouse.move(x, yy);
+      const h = await p.evaluate(() => window.__forgeBrep.taller.hover);
+      if (!h || h.cara == null) continue;
+      const c = await p.evaluate(([k, i]) => window.__forgeBrep.taller.cara(k, i), [h.key, h.cara]);
+      const cj = await p.evaluate((k) => window.__forgeBrep.mover.caja(k), h.key);
+      if (!c || !c.plana || !cj) continue;
+      const diagPieza = Math.hypot(cj.max[0] - cj.min[0], cj.max[1] - cj.min[1], cj.max[2] - cj.min[2]);
+      if (c.area < 1500 && diagPieza > 180) chica = { x, y: yy, area: c.area, diagPieza, key: h.key };
+    }
+    if (chica) {
+      await p.mouse.dblclick(chica.x, chica.y); await espera(1700);
+      const cc = await cam();
+      ok('F. doble clic en una cara chica de una pieza grande: la cámara queda a ≥ 0.75 del tamaño de la pieza', cc.d >= chica.diagPieza * 0.74, { cara_mm2: Math.round(chica.area), pieza_mm: Math.round(chica.diagPieza), camara_mm: Math.round(cc.d) });
+      await shot('07-cara-chica-de-frente.png');
+      await p.keyboard.press('Escape');
+    } else ok('F. doble clic en una cara chica de una pieza grande: la cámara queda a ≥ 0.75 del tamaño de la pieza', false, 'no se halló una cara chica bajo el mouse');
+
+    // ── F3. mover una pieza lejos no regresa la cámara a la vista de llegada ──
+    await espera(1200);   // que la cámara termine de asentarse (amortiguación) antes de medirla
+    const antesMov = await cam();
+    await p.evaluate(() => window.__forgeBrep.mover.mover('lab-alambre', [600, 0, 0]));
+    await espera(1800);
+    const trasMov = await cam();
+    const mismaDir = antesMov.dir[0] * trasMov.dir[0] + antesMov.dir[1] * trasMov.dir[1] + antesMov.dir[2] * trasMov.dir[2];
+    ok('F. mover una pieza 600 mm NO regresa la cámara a la vista de llegada (mismo blanco, misma dirección, misma distancia)', lejos(antesMov.t, trasMov.t) < 0.5 && mismaDir > 0.99999 && Math.abs(antesMov.d - trasMov.d) < 0.5,
+      { blanco_se_movio_mm: +lejos(antesMov.t, trasMov.t).toFixed(2), distancia_antes: +antesMov.d.toFixed(1), distancia_despues: +trasMov.d.toFixed(1), misma_direccion: +mismaDir.toFixed(6) });
+    await p.evaluate(() => window.__forgeBrep.mover.mover('lab-alambre', [0, 0, 0]));
   } catch (e) {
     ok('sin excepción', false, String(e).slice(0, 300));
     await shot('99-falla.png').catch(() => {});

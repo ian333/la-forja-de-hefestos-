@@ -8,7 +8,8 @@
  *   C. tenaza CUERPO y PIEZA agarran la hoja y el módulo entero;
  *   D. el foco de una hoja honda la oculta (y solo a ella);
  *   E. aislar deja solo ese subárbol; F. Esc suelta;
- *   G. con rayos X, el mouse ATRAVIESA la cubierta fantasma (nunca la agarra).
+ *   G. con rayos X, «lo que ves, lo agarras»: el primer clic agarra la cubierta fantasma y OTRO clic en el mismo punto
+ *      agarra lo que está detrás (regla del 11-11: antes el clic la atravesaba y la base no se dejaba agarrar).
  * Capturas a 1920×1080 en forja-shots/taller/ (para revisarlas A OJO, no solo «pasó»).
  *
  * Uso (iangpu, vite DEV vivo):
@@ -76,9 +77,23 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
       if (h) hits.push({ x, y, ...h });
     }
     s = await qa();
-    const fantasmasTocados = hits.filter((h) => s.fantasmas.includes(h.key));
-    ok('G. rayos X: el mouse nunca agarra la cubierta fantasma', s.fantasmas.length > 0 && fantasmasTocados.length === 0,
-      { fantasmas: s.fantasmas.length, tocados: fantasmasTocados.map((h) => h.key).slice(0, 5), puntosConPieza: hits.length });
+    // G. «lo que ves, lo agarras»: en un punto donde el mouse está sobre una fantasma, el primer clic la agarra a ELLA y
+    // otro clic (despacio: no es doble clic) en el mismo punto agarra lo que tiene detrás
+    const enFantasma = hits.filter((h) => s.fantasmas.includes(h.key));
+    let atras = null, primeros = 0;
+    for (const h of enFantasma.slice(0, 40)) {
+      await p.mouse.click(h.x, h.y); await espera(650);
+      const s1 = (await qa()).sel;
+      if (s1 && s1.key === h.key) primeros++;
+      else { await p.keyboard.press('Escape'); await espera(120); continue; }
+      await p.mouse.click(h.x, h.y); await espera(650);
+      const s2 = (await qa()).sel;
+      await p.keyboard.press('Escape'); await espera(120);
+      if (s2 && s2.key !== h.key && !s.fantasmas.includes(s2.key)) { atras = { fantasma: h.key.split('/').pop(), detras: s2.key.split('/').pop() }; break; }
+    }
+    ok('G. rayos X: el primer clic agarra la cubierta fantasma; otro clic en el mismo punto agarra lo de atrás', enFantasma.length > 0 && primeros > 0 && !!atras,
+      { fantasmas: s.fantasmas.length, puntosSobreFantasma: enFantasma.length, atras });
+    await p.mouse.move(vp.x + 5, vp.y + 5);
     const conInfo = [];
     for (const h of hits) {
       if (h.cara == null || !h.key.startsWith('lab-cuerpo/')) continue;

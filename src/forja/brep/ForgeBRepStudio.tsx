@@ -2218,7 +2218,28 @@ const ORO = '#FDB813';
 const sinRayo = () => null;
 // el rayo de fábrica, EXPLÍCITO: con `raycast={undefined}` una malla que pasó por `sinRayo` (boceto abierto, rayos X) se
 // quedaba sorda para siempre — R3F le escribe el undefined encima y ya nada la agarra (cazado en yunque-verify)
-const rayoDeMalla = THREE.Mesh.prototype.raycast;   // las piezas fantasma (rayos X) y los resaltes no atajan el clic: se agarra lo de adentro
+const rayoDeMalla = THREE.Mesh.prototype.raycast;
+/** A QUIÉN LE TOCA EL CLIC (orden 2026-11-11-taller-arreglos-de-uso, hallazgo #1 de la auditoría: con rayos X la base y
+ *  la cubierta no se dejaban agarrar). Regla: lo de ENFRENTE gana —«lo que ves, lo agarras», también las piezas fantasma—
+ *  y OTRO clic en el mismo punto (con la misma tenaza) pasa a lo que está detrás, y así hasta dar la vuelta. Un clic en
+ *  otro punto, o con otra tenaza, vuelve a empezar por enfrente. El segundo clic de un DOBLE clic no avanza (el doble
+ *  clic es «verla de frente»). R3F llama al manejador de cada pieza atravesada, de la más cercana a la más lejana. */
+const turnoDeClic = (() => {
+  let ev: unknown = null, x = 0, y = 0, ten = '', elegido: string | null = null;
+  return (e: { nativeEvent: MouseEvent; intersections: Array<{ object: THREE.Object3D }> }, tenaza: string): string | null => {
+    const ne = e.nativeEvent;
+    if (ev !== ne) {
+      const capas: string[] = [];
+      for (const i of e.intersections) { const k = (i.object.userData as { llave?: string } | undefined)?.llave; if (k && !capas.includes(k)) capas.push(k); }
+      const mismoPunto = ten === tenaza && Math.hypot(ne.clientX - x, ne.clientY - y) < 5;
+      if (!capas.length) elegido = null;
+      else if (ne.detail > 1 && mismoPunto && elegido && capas.includes(elegido)) { /* doble clic: se queda con lo mismo */ }
+      else elegido = capas[((mismoPunto && elegido ? capas.indexOf(elegido) : -1) + 1) % capas.length];
+      ev = ne; x = ne.clientX; y = ne.clientY; ten = tenaza;
+    }
+    return elegido;
+  };
+})();
 /** El FOCO del árbol (en Fusion es literal un foco): prendido = se ve, apagado = oculto. */
 function FocoIcono({ on }: { on: boolean }) {
   return (
@@ -2384,7 +2405,7 @@ function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre, onFrente }:
     if (a.key !== hoja.key) return null;
     return tenaza === 'cara' ? (a.cara ?? -1) : -1;
   });
-  const agarrable = !!(tenaza && hoja && onAgarre) && op >= 0.35;
+  const agarrable = !!(tenaza && hoja && onAgarre);   // también las fantasma de rayos X: lo de enfrente gana, otro clic pasa a lo de atrás
   const caraDe = (e: { faceIndex?: number | null }): number | null => {
     if (tenaza !== 'cara' || e.faceIndex == null) return null;
     const c = carasDeMalla(geo);
@@ -2401,11 +2422,11 @@ function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre, onFrente }:
     <>
       {/* sin sombras direccionales: el mapa del CAD está hecho para piezas de 100 mm; en un banco de 1.4 m las caras
           grandes salían con «acné» a rayas (cazado en la SOMI). El piso conserva su sombra de contacto. */}
-      <mesh geometry={g} renderOrder={transp ? 3 : 0}
+      <mesh geometry={g} renderOrder={transp ? 3 : 0} userData={{ llave: hoja?.key }}
         raycast={agarrable ? rayoDeMalla : sinRayo}
         onPointerMove={agarrable ? (e) => { e.stopPropagation(); tenazaHover.set({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}
         onPointerOut={agarrable ? () => { const a = tenazaHover.get(); if (a && a.key === hoja!.key) tenazaHover.set(null); } : undefined}
-        onClick={agarrable ? (e) => { if (e.delta > 4) return; e.stopPropagation(); onAgarre!({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}
+        onClick={agarrable ? (e) => { if (e.delta > 4 || turnoDeClic(e, tenaza!) !== hoja!.key) return; e.stopPropagation(); onAgarre!({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}
         onDoubleClick={agarrable && onFrente ? (e) => {
           e.stopPropagation();
           const n = (e.face?.normal ?? new THREE.Vector3(0, 0, 1)).clone().transformDirection(e.object.matrixWorld);
@@ -5005,6 +5026,7 @@ export default function ForgeBRepStudio() {
   const [tenaza, setTenaza] = useState<Tenaza>('cara');
   const [tallerSel, setTallerSel] = useState<(Agarre & { nivel: Tenaza }) | null>(null);
   const [tallerAbiertos, setTallerAbiertos] = useState<Set<string>>(() => new Set());
+  const bocetoAbiertoRef = useRef(false);   // (el estado `sketchOpen` se declara más abajo) Esc DENTRO del boceto es del boceto: no suelta la cara
   /** ¿Se ve esta llave? No, si ella o un ancestro tiene el foco apagado, o si hay algo aislado y ella no está debajo. */
   const refOculta = useCallback((key: string) => {
     if (refAislado && key !== refAislado && !key.startsWith(refAislado + '/') && !refAislado.startsWith(key + '/')) return true;
@@ -5034,7 +5056,7 @@ export default function ForgeBRepStudio() {
     if (!tallerSel) return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
-      if (e.key === 'Escape' && !(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'))) setTallerSel(null);
+      if (e.key === 'Escape' && !bocetoAbiertoRef.current && !(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'))) setTallerSel(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -5556,6 +5578,7 @@ export default function ForgeBRepStudio() {
   const [placingHole, setPlacingHole] = useState(false);
   // Editor de croquis 2D (dibujar perfil con restricciones, kind 'custom').
   const [sketchOpen, setSketchOpen] = useState(false);
+  bocetoAbiertoRef.current = sketchOpen;
   // Operación del croquis al Terminar: 'new'=base · 'join'=saliente (une) · 'cut'=corte (resta).
   // Esto da el MULTI-FEATURE: base + boss/cut encadenados como componentes con booleana.
   const [sketchOp, setSketchOp] = useState<'new' | 'join' | 'cut'>('new');
@@ -6845,34 +6868,36 @@ export default function ForgeBRepStudio() {
     const h = refPorKey.get(s.key); if (!h) return null;
     const c = carasDeMalla(h.geo);
     const pl = c.plana[s.cara] ? planoDeCaraRef(h.geo, c, s.cara, h.m) : null;
-    return { key: s.key, nombre: h.r.name, plano: pl?.plano ?? null, diag: pl?.diag ?? 0, forjable: tieneSolido(s.key) };
+    return { key: s.key, nombre: h.r.name, plano: pl?.plano ?? null, diag: pl?.diag ?? 0, piso: refPartBox(h.geo, h.m).getSize(new THREE.Vector3()).length() * 0.75, forjable: tieneSolido(s.key) };
   }, [tallerSel, refPorKey, tieneSolido]);
   /** La cámara vuela y deja la cara DE FRENTE. `n` en coordenadas del visor; el blanco en las del doc. */
-  const verDeFrente = useCallback((n: [number, number, number], blanco: [number, number, number], diag: number) => {
+  const verDeFrente = useCallback((n: [number, number, number], blanco: [number, number, number], diag: number, piso = 0) => {
     const L = Math.hypot(n[0], n[1], n[2]) || 1;
     const el = Math.max(-89.5, Math.min(89.5, (Math.asin(Math.max(-1, Math.min(1, n[1] / L))) * 180) / Math.PI));
     const az = (Math.atan2(n[0], n[2]) * 180) / Math.PI;
-    orbitTo(az, el, Math.max(90, diag * 2), blanco[0], blanco[1], blanco[2]);
+    // `piso`: en una cara CHICA de una pieza grande, la cámara no se acerca más que el tamaño de la pieza (a 90 mm
+    // quedaba metida entre las piezas de junto y no se veía ni la cara)
+    orbitTo(az, el, Math.max(90, diag * 2, piso), blanco[0], blanco[1], blanco[2]);
   }, [orbitTo]);
   const onFrente = useCallback((a: Agarre & { n: [number, number, number]; p: [number, number, number] }) => {
     const h = refPorKey.get(a.key); if (!h) return;
     const c = carasDeMalla(h.geo);
     const pl = a.cara != null && c.plana[a.cara] ? planoDeCaraRef(h.geo, c, a.cara, h.m) : null;
     if (a.cara != null) { setTallerSel({ key: a.key, top: a.top, cara: a.cara, nivel: 'cara' }); abrirHasta(a.key); }
+    const s = refPartBox(h.geo, h.m).getSize(new THREE.Vector3()), piso = s.length() * 0.75;
     if (pl) {
       const { uDir: u, vDir: v, origin: o } = pl.plano;
       const nd = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
-      verDeFrente([nd[0], nd[2], -nd[1]], o, pl.diag);
+      verDeFrente([nd[0], nd[2], -nd[1]], o, pl.diag, piso);
     } else {
       // cara curva: de frente al PUNTO del doble clic (no hay un «de frente» único)
-      const s = refPartBox(h.geo, h.m).getSize(new THREE.Vector3());
-      verDeFrente(a.n, [a.p[0], -a.p[2], a.p[1]], Math.max(s.x, s.y, s.z) * 0.6);
+      verDeFrente(a.n, [a.p[0], -a.p[2], a.p[1]], Math.max(s.x, s.y, s.z) * 0.6, piso);
     }
   }, [refPorKey, verDeFrente, abrirHasta]);
   const frenteAgarrada = useCallback(() => {
     if (!caraAgarrada?.plano) return;
     const { uDir: u, vDir: v, origin: o } = caraAgarrada.plano;
-    verDeFrente([u[1] * v[2] - u[2] * v[1], u[0] * v[1] - u[1] * v[0], -(u[2] * v[0] - u[0] * v[2])], o, caraAgarrada.diag);
+    verDeFrente([u[1] * v[2] - u[2] * v[1], u[0] * v[1] - u[1] * v[0], -(u[2] * v[0] - u[0] * v[2])], o, caraAgarrada.diag, caraAgarrada.piso);
   }, [caraAgarrada, verDeFrente]);
   /** «Boceto aquí»: abre el croquis SOBRE la cara agarrada; al terminar, el perfil se vuelve un golpe de ese modo. */
   const bocetoEnCara = useCallback((modo: ModoGolpe) => {
@@ -6880,7 +6905,7 @@ export default function ForgeBRepStudio() {
     if (modo !== 'nuevo' && !caraAgarrada.forjable) return;
     setYunqueListo(null);
     yunquePend.current = { sobre: caraAgarrada.key, modo, plano: caraAgarrada.plano };
-    yunqueVista.current = { plano: caraAgarrada.plano, diag: caraAgarrada.diag };
+    yunqueVista.current = { plano: caraAgarrada.plano, diag: Math.max(caraAgarrada.diag, caraAgarrada.piso / 2.3) };
     setYunquePlano(caraAgarrada.plano);
     setSketchOpen(true);
   }, [caraAgarrada]);
@@ -9201,17 +9226,24 @@ export default function ForgeBRepStudio() {
   // pared/componente/perno grande), salta a una vista iso que la abarca COMPLETA.
   // Antes la cámara se quedaba pegada y la pieza no se veía entera.
   const lastFitSpan = useRef(0);
+  const fitDeRefs = useRef<RefPart[] | null>(null);
   useEffect(() => {
     if (!meshBBox) return;
+    // Un documento de piezas de referencia se encuadra UNA vez, al abrirlo. Mover una pieza lejos o forjar un cuerpo
+    // grande cambia la caja, y la cámara regresaba sola a la vista de llegada a medio trabajo.
+    if (refParts.length && fitDeRefs.current === refParts) return;
     const span = 2 * Math.max(meshBBox.half[0], meshBBox.half[1], meshBBox.half[2]);
     if (Math.abs(span - lastFitSpan.current) > lastFitSpan.current * 0.2 + 8) {
       lastFitSpan.current = span;
+      if (refParts.length) fitDeRefs.current = refParts;
       if (arcoDoc?.vista && arcoOn) orbitTo(...arcoDoc.vista);
       else if (brazoDoc && brazoOn) orbitTo(35, 22, 2500, brazoDoc.origen[0] + 250, brazoDoc.origen[1], brazoDoc.origen[2] + 300);   // el brazo, no la mesa
-      else if (docVista) orbitTo(...docVista);
+      // la vista de llegada se PONE (dur 0), no se vuela: antes las piezas aparecían con la cámara todavía donde estaba
+      // (adentro del modelo ~2 s)
+      else if (docVista) orbitTo(docVista[0], docVista[1], docVista[2], docVista[3], docVista[4], docVista[5], 0);
       else setView('iso');
     }
-  }, [meshBBox, setView, arcoDoc, arcoOn, brazoDoc, brazoOn, docVista, orbitTo]);
+  }, [meshBBox, setView, arcoDoc, arcoOn, brazoDoc, brazoOn, docVista, orbitTo, refParts]);
 
   // El <canvas> lo crea R3F dentro del viewport; le ponemos data-testid para
   // que Playwright pueda clicar por COORDENADAS del viewport de forma estable.
@@ -9403,7 +9435,9 @@ export default function ForgeBRepStudio() {
           encuadreSink={encuadreRef}
           cameraDistance={cameraDist}
           autoRotate={false}
-          minDistance={cameraDist * 0.2}
+          // en un TALLER el piso del zoom es fijo: con 0.2 × el tamaño de la escena no se podía acercar a un barreno, y al
+          // MOVER una pieza lejos la escena crecía y la cámara retrocedía sola (medido: de 195 a 288 mm)
+          minDistance={docTaller ? 25 : cameraDist * 0.2}
           maxDistance={cameraDist * 4}
           view={viewReq}
           orbit={orbitReq}
@@ -10986,6 +11020,9 @@ export default function ForgeBRepStudio() {
                   <div className="fb-agarre" data-testid="taller-agarre">
                     <b>{agarreInfo.que}</b> · {agarreInfo.dato}
                     <div className="fb-agarre-de">{agarreInfo.de}{agarreInfo.extra ? <em> · {agarreInfo.extra}</em> : null}</div>
+                    {refRayos && tallerSel && (refPorKey.get(tallerSel.key)?.r.rayos ?? 1) < 0.35 && (
+                      <div className="fb-agarre-de" data-testid="taller-fantasma"><em>pieza fantasma (rayos X) · otro clic en el mismo punto agarra lo de atrás</em></div>
+                    )}
                     {tallerSel && tallerSel.nivel !== 'pieza' && refPorKey.has(tallerSel.key) && (
                       <div className="fb-bajar" data-testid="taller-bajar">
                         <span>bajar este cuerpo</span>

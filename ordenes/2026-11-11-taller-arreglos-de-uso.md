@@ -25,6 +25,7 @@ M11 Esc dentro del boceto no suelta la cara; M10 el doble clic en una cara chica
 
 ## TOCA
 - src/forja/brep/ForgeBRepStudio.tsx
+- src/forja/brep/SketchEditor.tsx
 - scripts/taller-verify.cjs
 - scripts/yunque-verify.cjs
 - scripts/boceto-verify.cjs
@@ -126,8 +127,23 @@ M11 Esc dentro del boceto no suelta la cara; M10 el doble clic en una cara chica
   y pide profundidad; Descartar; 5 + Enter = UNA forja a 5 mm con el aviso visto; pasante). `boceto` 14/14, `yunque`
   24/24, `mover` 13/13, `taller` 16/16, `navegacion` 15/15. tsc: 22 viejos, 0 nuevos.
 - evidencia: forja-shots/uso/01…06 (forja-dev8), revisadas a ojo (la barra de profundidad y el perfil en cian se ven).
-- PARTE 2: pendiente (tras integrar Medir): #1 rayos X y lo agarrable, M11 Esc en boceto conserva la cara, M10 piso de
-  cámara en el doble clic.
+- PARTE 2 (segundo commit; se hizo ANTES de integrar Medir, sobre las mismas líneas se resolverá la fusión):
+  · #1 «lo que ves, lo agarras»: `agarrable` ya no excluye a las fantasma; `turnoDeClic` (lo de enfrente gana; otro clic
+    en el mismo punto con la misma tenaza pasa a lo de atrás; el segundo clic de un doble clic no avanza); aviso en la
+    caja de lo agarrado cuando es fantasma. `taller-verify` G se reescribió a la regla nueva: primer clic = `cuerpo-base-fi`
+    (fantasma), otro clic en el mismo punto = `hs1` (el disipador de atrás).
+  · M11: `bocetoAbiertoRef` — Esc dentro del boceto ya no suelta la cara. M10: `verDeFrente(…, piso)` = 0.75 × el tamaño de
+    la pieza. L2: la vista de llegada se PONE (dur 0), no se vuela.
+  · hallazgos propios al probar: (a) el auto-encuadre (`lastFitSpan`) regresaba la cámara a la vista de llegada cuando la
+    caja de la escena crecía > 20 % (mover una pieza lejos): ahora un documento de piezas de referencia se encuadra UNA vez
+    (`fitDeRefs`); (b) el piso del zoom era 0.2 × el tamaño de la escena, así que mover una pieza 600 mm empujaba la
+    cámara de 195 a 288 mm, y además no dejaba acercarse a un barreno: en un taller el piso es fijo (25 mm).
+  · ENMIENDA de la orden: se agregó `SketchEditor.tsx` a TOCA por UNA línea de estilo — el título del boceto (que
+    metió la orden del boceto) se angosta en pantallas chicas (`clamp(90px, 12vw, 240px)`); a 1536×864 la barra ya no cabía (M12).
+- números parte 2: `uso-verify` PASA 17/17 (Esc conserva la cara; cara de 565 mm² en pieza de 260 mm → cámara a 195 mm;
+  mover 600 mm: blanco 0.00 mm, misma dirección, misma distancia). `taller` 16/16, `navegacion` 15/15 tras el último
+  cambio; `boceto` 14/14, `yunque` 24/24, `mover` 13/13 con todo menos el piso fijo del zoom (la regresión completa se
+  corre al integrar Medir, antes de cualquier deploy). tsc: 22 viejos, 0 nuevos.
 - lo que NO se hizo de la auditoría y queda para decisión de ian: la cinta de arriba y el panel El Taller (propuesta
   del agente, sin integrar), el panel «SUS JUECES» abierto al llegar, el blanco de la cámara corrido del modelo (L7),
   el laboratorio rotulado «ROBOT · plantilla» en el lobby (L1), el radial y la paleta S con herramientas del kernel.
