@@ -2712,6 +2712,28 @@ const padreDeGolpe = (g: Golpe) => (g.sobre.includes('/') ? g.sobre.slice(0, g.s
 const keyDeGolpe = (g: Golpe) => { const pk = padreDeGolpe(g); return pk ? `${pk}/${g.id}` : g.id; };
 const refDeGolpe = (g: Golpe): RefPart => ({ id: g.id, name: g.nombre, kind: 'malla', x: 0, y: 0, z: 0, color: '#e2742b', mat: 'filamento' });
 const MATRIZ_I = new THREE.Matrix4();
+// ── PONER UNA PIEZA COMPRADA (orden 2026-11-11-poner-pieza-comprada): una caja o un cilindro con SUS medidas (la fuente
+// real, el motor, el carrete) entra al Taller como pieza de fábrica dentro del grupo «Piezas mías». Es un `RefPart` más:
+// se agarra, se mide, se mueve y acepta un cuerpo nuevo; no se corta (es comprada). Se guarda con el documento. ──
+const GRUPO_MIAS = 'mias';
+interface PiezaMia { tipo: 'caja' | 'cilindro'; nombre: string; w: number; d: number; h: number }
+function ponerPiezaMia(parts: RefPart[], pm: PiezaMia, donde: [number, number, number]): { parts: RefPart[]; key: string } {
+  const grupo = parts.find((r) => r.id === GRUPO_MIAS && r.kind === 'grupo');
+  const usados = new Set((grupo?.hijos ?? []).map((r) => r.id));
+  let n = 1; while (usados.has(`mia-${n}`)) n++;
+  const nueva: RefPart = pm.tipo === 'caja'
+    ? { id: `mia-${n}`, name: pm.nombre, kind: 'caja', w: pm.w, d: pm.d, h: pm.h, x: donde[0], y: donde[1], z: donde[2], color: '#9aa7b6', mat: 'pintura' }
+    : { id: `mia-${n}`, name: pm.nombre, kind: 'cilindro', r: pm.w / 2, h: pm.h, x: donde[0], y: donde[1], z: donde[2], color: '#9aa7b6', mat: 'aluminio' };
+  const parts2 = grupo
+    ? parts.map((r) => (r === grupo ? { ...r, hijos: [...(r.hijos ?? []), nueva] } : r))
+    : [...parts, { id: GRUPO_MIAS, name: 'Piezas mías · compradas, con sus medidas', kind: 'grupo' as const, x: 0, y: 0, z: 0, color: '#9aa7b6', hijos: [nueva] }];
+  return { parts: parts2, key: `${GRUPO_MIAS}/${nueva.id}` };
+}
+function quitarPiezaMia(parts: RefPart[], key: string): RefPart[] {
+  const id = key.split('/')[1];
+  return parts.map((r) => (r.id === GRUPO_MIAS && r.kind === 'grupo' ? { ...r, hijos: (r.hijos ?? []).filter((h) => h.id !== id) } : r))
+    .filter((r) => !(r.id === GRUPO_MIAS && r.kind === 'grupo' && !(r.hijos ?? []).length));
+}
 /** El perfil que se acaba de bocetar, dibujado SOBRE la cara mientras se elige la profundidad (antes de forjar):
  *  relleno cian translúcido + contorno blanco, sin prueba de profundidad (el oro sobre filamento amarillo no se veía). */
 function PerfilEnCara({ plano, golpes }: { plano: SketchPlane3D; golpes: Golpe[] }) {
@@ -5343,9 +5365,13 @@ export default function ForgeBRepStudio() {
   const [forjadas, setForjadas] = useState<Record<string, PartGeo>>({});
   const [golpeErr, setGolpeErr] = useState<Record<string, string>>({});
   const [forjando, setForjando] = useState(false);
+  const fitDeRefsRef = useRef<((parts: RefPart[]) => void) | null>(null);   // «estas piezas ya están encuadradas» (lo pone el efecto de encuadre)
   const [yunqueContorno, setYunqueContorno] = useState<Pt2[][] | null>(null);    // …y su contorno, que entra al boceto como referencia
   const [yunquePlano, setYunquePlano] = useState<SketchPlane3D | null>(null);   // el boceto abierto va sobre ESTA cara (no ensucia `sketch` ni el historial)
   const [bajando, setBajando] = useState<string | null>(null);                    // se está armando un STL/STEP para bajar
+  // PONER UNA PIEZA COMPRADA: el formulario (cerrado = null) y lo que hay que agarrar cuando termine de cargar
+  const [poner, setPoner] = useState<PiezaMia | null>(null);
+  const ponerAgarra = useRef<string | null>(null);
   // lo recién bocetado ESPERA su profundidad antes de forjarse (como el diálogo de Extruir): una forja son 3–7 s
   const [yunqueListo, setYunqueListo] = useState<{ modo: ModoGolpe; planoVisto: SketchPlane3D; nuevos: Golpe[]; pasante: boolean } | null>(null);
   const yunqueProfRef = useRef<HTMLInputElement | null>(null);
@@ -5413,6 +5439,7 @@ export default function ForgeBRepStudio() {
   const [tenaza, setTenaza] = useState<Tenaza>('cara');
   const [tallerSel, setTallerSel] = useState<(Agarre & { nivel: Tenaza }) | null>(null);
   const [tallerAbiertos, setTallerAbiertos] = useState<Set<string>>(() => new Set());
+  const mismoDocRef = useRef(false);        // la lista de piezas cambió por poner/quitar una, no por abrir otro documento
   const bocetoAbiertoRef = useRef(false);   // (el estado `sketchOpen` se declara más abajo) Esc DENTRO del boceto es del boceto: no suelta la cara
   // ── MEDIR (orden 2026-11-11-medir): prendido, el clic en el visor llena A y luego B en vez de agarrar para el yunque.
   // Al prenderlo la tenaza suelta lo que tenía (sin cara agarrada no sale la barra del yunque); al apagarlo se borra la medida. ──
@@ -5456,8 +5483,15 @@ export default function ForgeBRepStudio() {
   }, [tallerSel]);
   useEffect(() => {
     let vivo = true;
-    setRefHidden(new Set()); setRefAislado(null); setTallerSel(null); setTallerAbiertos(new Set()); tenazaHover.set(null);
-    yunqueBase.current.forEach((sh) => sh.delete?.()); yunqueBase.current.clear(); yunqueHecho.current.clear();
+    // al PONER o QUITAR una pieza comprada el documento es el mismo: se conservan focos, aislado, árbol abierto y los
+    // sólidos ya leídos del yunque (releerlos son segundos de pantalla congelada)
+    const otroDoc = ponerAgarra.current === null && !mismoDocRef.current;
+    mismoDocRef.current = false;
+    if (otroDoc) {
+      setRefHidden(new Set()); setRefAislado(null); setTallerAbiertos(new Set());
+      yunqueBase.current.forEach((sh) => sh.delete?.()); yunqueBase.current.clear(); yunqueHecho.current.clear();
+    }
+    setTallerSel(null); tenazaHover.set(null);
     if (!refHojas.length) { setRefGeos([]); setRefErr(null); return; }
     Promise.allSettled(refHojas.map((h) => (h.r.kind === 'malla' && h.r.url ? loadRefMesh(h.r.url) : Promise.resolve(primRefGeo(h.r)))))
       .then((rs) => {
@@ -7438,6 +7472,32 @@ export default function ForgeBRepStudio() {
     }
     orbitTo(az, Math.max(12, Math.min(85, el)), Math.max(90, diag * 1.7), c.x, c.y, c.z);
   }, [refGeos, refOculta, orbitTo]);
+  // ── PONER / QUITAR una pieza comprada ──
+  const ponerPieza = useCallback((pm: PiezaMia) => {
+    const w = Math.max(0.5, pm.w), d = pm.tipo === 'cilindro' ? w : Math.max(0.5, pm.d), h = Math.max(0.5, pm.h);
+    // nace AL LADO de lo que hay (a 40 mm de su caja, sobre el piso), para que no quede enterrada: de ahí se mueve
+    const b = new THREE.Box3(); for (const g of refGeos) b.union(refPartBox(g.geo, g.m));
+    const donde: [number, number, number] = b.isEmpty() ? [0, 0, h / 2] : [b.max.x + 40 + w / 2, (b.min.y + b.max.y) / 2, Math.max(0, b.min.z) + h / 2];
+    const r = ponerPiezaMia(refParts, { ...pm, nombre: pm.nombre.trim() || (pm.tipo === 'caja' ? `Caja ${w} × ${d} × ${h}` : `Cilindro Ø${w} × ${h}`), w, d, h }, donde);
+    fitDeRefsRef.current?.(r.parts);     // poner una pieza no regresa la cámara a la vista de llegada
+    ponerAgarra.current = r.key;
+    setRefParts(r.parts); setPoner(null);
+    return r.key;
+  }, [refGeos, refParts]);
+  const quitarPieza = useCallback((key: string) => {
+    if (!key.startsWith(GRUPO_MIAS + '/')) return;
+    const parts = quitarPiezaMia(refParts, key);
+    fitDeRefsRef.current?.(parts); mismoDocRef.current = true;
+    setGolpes((cur) => cur.filter((g) => g.sobre !== key));
+    setMovidas((cur) => { if (!(key in cur)) return cur; const n = { ...cur }; delete n[key]; return n; });
+    setRefParts(parts);
+  }, [refParts]);
+  // cuando la pieza nueva ya cargó, queda agarrada (con «mover» a la mano) y a la vista en el árbol
+  useEffect(() => {
+    const k = ponerAgarra.current; if (!k || !refGeos.some((h) => h.key === k)) return;
+    ponerAgarra.current = null;
+    setTenaza('cuerpo'); setTallerSel({ key: k, top: GRUPO_MIAS, cara: null, nivel: 'cuerpo' }); abrirHasta(k);
+  }, [refGeos, abrirHasta]);
   // ── MOVER · LAS MANOS ──
   /** Fija el corrimiento PROPIO de una llave (redondeado a 0.01 mm; en cero se olvida). */
   const fijarMovida = useCallback((key: string, d: [number, number, number]) => setMovidas((cur) => {
@@ -7472,6 +7532,8 @@ export default function ForgeBRepStudio() {
       return { c: px(c.x, c.y, c.z), x: px(c.x + 40, c.y, c.z), y: px(c.x, c.y + 40, c.z), z: px(c.x, c.y, c.z + 40) };
     },
   };
+  const piezasQaRef = useRef<unknown>(null);
+  piezasQaRef.current = { poner: ponerPieza, quitar: quitarPieza, formulario: poner };
   const yunqueQaRef = useRef<unknown>(null);
   yunqueQaRef.current = {
     golpes, forjando, errores: golpeErr, forjadas: Object.keys(forjadas),
@@ -9091,6 +9153,8 @@ export default function ForgeBRepStudio() {
       get taller() { return tallerQaRef.current; },
       /** EL YUNQUE (QA): golpes, lo forjado, la cara agarrada con su plano, y volumen/caras de un cuerpo */
       get yunque() { return yunqueQaRef.current; },
+      /** PIEZAS MÍAS (QA): poner({ tipo, nombre, w, d, h }) → llave; quitar(llave) */
+      get piezas() { return piezasQaRef.current; },
       /** MOVER (QA): corrimientos a mano, la caja de un cuerpo donde está ahora y dónde caen sus flechas en pantalla */
       get mover() { return moverQaRef.current; },
       /** NAVEGACIÓN (QA): modo del chip, lo último que se vio en la rueda, y la cámara con su blanco */
@@ -9713,6 +9777,7 @@ export default function ForgeBRepStudio() {
   // Antes la cámara se quedaba pegada y la pieza no se veía entera.
   const lastFitSpan = useRef(0);
   const fitDeRefs = useRef<RefPart[] | null>(null);
+  fitDeRefsRef.current = (parts) => { fitDeRefs.current = parts; };
   useEffect(() => {
     if (!meshBBox) return;
     // Un documento de piezas de referencia se encuadra UNA vez, al abrirlo. Mover una pieza lejos o forjar un cuerpo
@@ -11534,6 +11599,10 @@ export default function ForgeBRepStudio() {
                     {refRayos && tallerSel && (refPorKey.get(tallerSel.key)?.r.rayos ?? 1) < 0.35 && (
                       <div className="fb-agarre-de" data-testid="taller-fantasma"><em>pieza fantasma (rayos X) · otro clic en el mismo punto agarra lo de atrás</em></div>
                     )}
+                    {tallerSel && tallerSel.nivel !== 'pieza' && tallerSel.key.startsWith(GRUPO_MIAS + '/') && (
+                      <div className="fb-bajar"><span>pieza tuya</span>
+                        <button data-testid="pieza-quitar" onClick={() => quitarPieza(tallerSel.key)} title="Quitar esta pieza del taller">quitar</button></div>
+                    )}
                     {tallerSel && tallerSel.nivel !== 'pieza' && refPorKey.has(tallerSel.key) && (
                       <div className="fb-bajar" data-testid="taller-bajar">
                         <span>bajar este cuerpo</span>
@@ -11655,6 +11724,29 @@ export default function ForgeBRepStudio() {
                         <button data-testid={`golpe-borrar-${i}`} onClick={() => setGolpes((cur) => sinGolpe(cur, g.id))} title="Quitar este golpe (Ctrl+Z lo regresa)">✕</button>
                       </div>
                     ))}
+                  </div>
+                )}
+                {/* PONER UNA PIEZA COMPRADA: caja o cilindro con sus medidas (la fuente real, el motor, el carrete) */}
+                {!poner ? (
+                  <button className="fb-poner-btn" data-testid="pieza-poner" onClick={() => setPoner({ tipo: 'caja', nombre: '', w: 100, d: 60, h: 40 })}
+                    title="Poner una pieza comprada con sus medidas: caja o cilindro. Nace junto al banco; de ahí se mueve.">＋ poner una pieza comprada</button>
+                ) : (
+                  <div className="fb-poner" data-testid="pieza-form">
+                    <div className="fb-poner-t">
+                      <button className={poner.tipo === 'caja' ? 'on' : ''} data-testid="pieza-tipo-caja" onClick={() => setPoner((q) => (q ? { ...q, tipo: 'caja' } : q))}>caja</button>
+                      <button className={poner.tipo === 'cilindro' ? 'on' : ''} data-testid="pieza-tipo-cilindro" onClick={() => setPoner((q) => (q ? { ...q, tipo: 'cilindro' } : q))}>cilindro</button>
+                    </div>
+                    <input data-testid="pieza-nombre" placeholder="nombre (p. ej. Fuente 48 V)" value={poner.nombre} onChange={(e) => setPoner((q) => (q ? { ...q, nombre: e.target.value } : q))} />
+                    <div className="fb-poner-m">
+                      <label>{poner.tipo === 'caja' ? 'ancho X' : 'Ø'}<input data-testid="pieza-w" type="number" min={0.5} step={1} value={poner.w} onChange={(e) => setPoner((q) => (q ? { ...q, w: +e.target.value } : q))} /></label>
+                      {poner.tipo === 'caja' && <label>fondo Y<input data-testid="pieza-d" type="number" min={0.5} step={1} value={poner.d} onChange={(e) => setPoner((q) => (q ? { ...q, d: +e.target.value } : q))} /></label>}
+                      <label>alto Z<input data-testid="pieza-h" type="number" min={0.5} step={1} value={poner.h} onChange={(e) => setPoner((q) => (q ? { ...q, h: +e.target.value } : q))} /></label>
+                      <span>mm</span>
+                    </div>
+                    <div className="fb-poner-a">
+                      <button data-testid="pieza-agregar" className="on" disabled={!(poner.w > 0 && poner.h > 0 && (poner.tipo === 'cilindro' || poner.d > 0))} onClick={() => ponerPieza(poner)}>Poner</button>
+                      <button data-testid="pieza-cancelar" onClick={() => setPoner(null)}>Cancelar</button>
+                    </div>
                   </div>
                 )}
                 {refHojas.some((h) => h.r.rayos !== undefined) && (
@@ -14216,6 +14308,17 @@ const CSS = `
 .fb-yunque button:disabled{opacity:.38;cursor:not-allowed;}
 .fb-yunque input{width:54px;background:#0c131e;border:1px solid #FDB81399;border-radius:6px;color:#FDB813;font:inherit;padding:4px 6px;text-align:right;}
 .fb-yunque input:disabled{opacity:.35;}
+.fb-poner-btn{all:unset;cursor:pointer;display:block;margin:6px 8px 2px;padding:5px 8px;border:1px dashed #2c3a50;border-radius:7px;color:#a9b8c8;font-size:11px;}
+.fb-poner-btn:hover{border-color:#FDB813;color:#ffe9ad;}
+.fb-poner{margin:6px 8px 4px;padding:7px;border:1px solid #2a3547;border-radius:8px;display:flex;flex-direction:column;gap:6px;font-size:11px;color:#a9b8c8;}
+.fb-poner input{background:#0c131e;border:1px solid #2c3a50;border-radius:5px;color:#e9eef5;font:inherit;padding:3px 5px;min-width:0;}
+.fb-poner-t,.fb-poner-a{display:flex;gap:5px;}
+.fb-poner-m{display:flex;flex-wrap:wrap;align-items:flex-end;gap:5px;}
+.fb-poner-m label{display:flex;flex-direction:column;gap:2px;font-size:9.5px;color:#7E90A9;}
+.fb-poner-m input{width:52px;text-align:right;}
+.fb-poner button{cursor:pointer;font:inherit;color:#e9eef5;background:#16202f;border:1px solid #2c3a50;border-radius:6px;padding:3px 9px;}
+.fb-poner button.on{border-color:#FDB813;color:#FDB813;}
+.fb-poner button:disabled{opacity:.4;cursor:not-allowed;}
 .fb-forjando{position:absolute;left:50%;top:150px;transform:translateX(-50%);z-index:7;padding:6px 14px;border-radius:9px;
   background:rgba(13,18,28,.93);border:1px solid #e2742b;color:#ffb27a;font:12px 'JetBrains Mono',monospace;letter-spacing:1px;}
 .fb-golpes{margin:6px 8px 4px;padding:6px 6px 4px;border:1px solid #2a3547;border-radius:8px;background:rgba(226,116,43,.05);}
