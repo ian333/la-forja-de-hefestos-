@@ -26,6 +26,7 @@ import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { estudioVientoSupersonico, type VientoSuperResultado } from '../sim/viento'; // Escuela AERO — Estudio Viento
 import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube, TransformControls } from '@react-three/drei';
 import { RoundedBoxGeometry } from 'three-stdlib';   // la misma copia de three que drei (sin «dos instancias»)
+import { Line as LineaGruesa } from '@react-three/drei';   // ── MEDIR (orden 2026-11-11-medir): la cota del visor, con grosor fijo en pantalla
 import { ArcoVivoEscena, ArcoVivoHUD, crearArcoSim, type ArcoConfig, type ArcoSim, type ArcoTrazas, type V3 } from './ArcoVivo';   // EL ARCO EN VIVO (orden 2026-11-04-banco-arco-vivo)
 import { PlumaPanel } from './PlumaCircuito';
 import { BrazoVivoEscena, BrazoVivoHUD, crearBrazoSim, piezasBancoBrazo, BRAZO_CFG, type BrazoSim, type BrazoConfig } from './BrazoVivo';   // EL BRAZO VIVO (órdenes 2026-11-05 H + J)   // LA PLUMA REAL: circuito vivo, cableado, temperatura (orden 2026-11-05-la-pluma-circuito-cableado)
@@ -2200,6 +2201,340 @@ function geoDeCara(geo: PartGeo, caras: CarasRef, c: number): THREE.BufferGeomet
   b.computeBoundingSphere();
   return b;
 }
+// ── MEDIR (orden 2026-11-11-medir): el Inspect › Measure de Fusion, montado ENCIMA de las tenazas. Con Medir prendido el
+// clic en el visor ya no agarra para el yunque: llena A y luego B (un tercer clic vuelve a empezar). Aquí vive la
+// geometría, toda en el marco del DOC y en mm: qué es cada cosa agarrada (cara plana, cilindro, otra curva, cuerpo,
+// pieza) y qué relación hay entre dos. La interfaz (botón, panel, cota en el visor) solo escribe lo que sale de aquí. ──
+/** Lo que RefMesh le agrega al clic: el punto tocado (en coordenadas del VISOR) y si es el 2.º clic de un doble clic. */
+interface ClicRef { p: V3; doble: boolean }
+type MedirClase = 'plana' | 'cilindro' | 'curva' | 'cuerpo' | 'pieza';
+/** Una de las dos cosas que se miden: lo agarrado (igual que la tenaza), el punto del clic ya en el marco del doc y la
+ *  malla de ese momento — si un golpe rehace la pieza sus caras cambian de número, y la medida vieja se descarta. */
+interface MedirPick extends Agarre { nivel: Tenaza; p: V3; geo: PartGeo | null }
+/** Lo propio de una cosa agarrada para medir. `tam` = su tamaño (mm), para dibujar marcas proporcionadas. */
+interface MedirDato {
+  clase: MedirClase; que: string; nombre: string; propio: string; p: V3; tam: number;
+  area?: number; n?: V3; c?: V3;                                  // cara: área y centro; plana → normal hacia AFUERA
+  eje?: V3; o?: V3; r?: number; largo?: number; arco?: number;    // cilindro: dirección del eje, su punto medio, radio, arco (°)
+  caja?: { min: V3; max: V3 };                                    // cuerpo o pieza: su caja (ejes del doc)
+}
+type MedirTipo = 'area' | 'diametro' | 'caja' | 'separacion' | 'angulo' | 'entre-ejes' | 'eje-a-cara' | 'centros' | 'punto-a-punto';
+/** Una medida: el número principal (`valor` + `unidad`), cómo se dice (`titulo`, `texto`, `notas`), la cota que se dibuja
+ *  (`linea` + `etiqueta`, y `aux` = segmentos tenues x,y,z·x,y,z) y el punto a punto de los dos clics (`pp`, B − A). */
+interface MedirRes {
+  tipo: MedirTipo; valor: number; unidad: 'mm' | '°' | 'mm²';
+  titulo: string; texto: string; etiqueta: string; notas: string[];
+  linea: [V3, V3] | null; aux: number[];
+  pp: { d: number; dx: number; dy: number; dz: number } | null;
+  caja?: V3;   // tipo 'caja': ancho (X) × fondo (Y) × alto (Z); ahí `valor` es la diagonal
+}
+const MEDIR_A = '#4fd6ff', MEDIR_B = '#ff8ad8';
+const MEDIR_NADA: { a: MedirPick | null; b: MedirPick | null } = { a: null, b: null };
+/** Dos caras son PARALELAS solo si su ángulo se escribiría 0.0°. A los ejes (que salen de un ajuste) se les da más aire. */
+const MEDIR_PARALELAS = 0.05, MEDIR_EJES_PARALELOS = 0.25;
+const mV = {
+  sub: (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  mas: (a: V3, b: V3, k = 1): V3 => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k],
+  dot: (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cruz: (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  len: (a: V3) => Math.hypot(a[0], a[1], a[2]),
+  uni: (a: V3): V3 => { const L = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / L, a[1] / L, a[2] / L]; },
+};
+/** mm con 2 decimales (sin «−0.00»), Δ con signo, grados con 1, áreas con separador de miles. */
+const medirMm = (v: number) => (Math.abs(v) < 0.005 ? 0 : v).toFixed(2);
+const medirDelta = (v: number) => (Math.abs(v) < 0.005 ? '0.00' : `${v < 0 ? '−' : '+'}${Math.abs(v).toFixed(2)}`);
+const medirGrados = (v: number) => `${(Math.abs(v) < 0.05 ? 0 : v).toFixed(1)}°`;
+const medirArea = (a: number) => a.toLocaleString('es-MX', { maximumFractionDigits: 2 });
+/** Ángulo entre dos direcciones sin importar su sentido: 0–90°. atan2 y no acos: cerca de 0° el acos pierde los decimales. */
+const medirAngulo = (u: V3, v: V3) => (Math.atan2(mV.len(mV.cruz(u, v)), Math.abs(mV.dot(u, v))) * 180) / Math.PI;
+function medirMira(n: V3): string {
+  const ejes: [number, string][] = [[n[0], 'X'], [n[1], 'Y'], [n[2], 'Z']];
+  const e = ejes.find(([v]) => Math.abs(v) > 0.9995);
+  return e ? `mira a ${e[0] > 0 ? '+' : '−'}${e[1]}` : `mira hacia (${n.map((v) => (Math.abs(v) < 0.005 ? 0 : v).toFixed(2)).join(', ')})`;
+}
+/** Valores y vectores propios de una matriz simétrica 3×3 (rotaciones de Jacobi). Los vectores quedan en las COLUMNAS. */
+function eigSim3(m: number[][]): { val: number[]; vec: number[][] } {
+  const A = m.map((r) => [...r]), V = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  for (let it = 0; it < 40; it++) {
+    let p = 0, q = 1, mx = Math.abs(A[0][1]);
+    if (Math.abs(A[0][2]) > mx) { mx = Math.abs(A[0][2]); p = 0; q = 2; }
+    if (Math.abs(A[1][2]) > mx) { mx = Math.abs(A[1][2]); p = 1; q = 2; }
+    if (mx < 1e-15) break;
+    const th = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+    const t = (th < 0 ? -1 : 1) / (Math.abs(th) + Math.sqrt(th * th + 1)), c = 1 / Math.sqrt(t * t + 1), s = t * c;
+    for (let k = 0; k < 3; k++) { const x = A[k][p], y = A[k][q]; A[k][p] = c * x - s * y; A[k][q] = s * x + c * y; }
+    for (let k = 0; k < 3; k++) { const x = A[p][k], y = A[q][k]; A[p][k] = c * x - s * y; A[q][k] = s * x + c * y; }
+    for (let k = 0; k < 3; k++) { const x = V[k][p], y = V[k][q]; V[k][p] = c * x - s * y; V[k][q] = s * x + c * y; }
+  }
+  return { val: [A[0][0], A[1][1], A[2][2]], vec: V };
+}
+/** Un cilindro ajustado a una cara curva, en el marco de la MALLA: dirección del eje, su punto medio, radio, largo sobre
+ *  el eje, arco que cubre (°) y residuo del ajuste (mm). */
+interface CilRef { eje: V3; centro: V3; r: number; largo: number; arco: number; residuo: number }
+const cilCache = new WeakMap<PartGeo, Map<number, CilRef | null>>();
+/** ¿ESTA CARA CURVA ES UN CILINDRO? `carasDeMalla` solo dice plana / no plana. Aquí:
+ *   1. el EJE es la dirección perpendicular a todas las normales de la cara: el vector propio menor de Σ área · n nᵀ con
+ *      las normales de FACETA (medido en las FMSH: las de vértice traen ruido en caras recortadas y tuercen el eje);
+ *   2. en el plano perpendicular al eje, un círculo por mínimos cuadrados (Kåsa) sobre los VÉRTICES — que están sobre la
+ *      superficie de verdad, así que el facetado no achica el radio (lo que queda adentro es el centro de cada faceta);
+ *   3. el eje se AFINA (hasta ~1.1°) buscando el que deja el círculo más redondo: en una cara recortada en diagonal las
+ *      facetas no corren a lo largo del eje y sus normales lo tuercen ~0.2° (R salía 18.892 en vez de 18.900);
+ *   4. se acepta solo si las normales caben en un plano, el residuo es chico y el arco cubre lo suficiente (≥ 20°).
+ *  Medido en las 30 mallas del laboratorio (7,281 caras, 138 curvas): ya afinado, un cilindro de verdad deja un residuo
+ *  ≤ 0.0005 mm y lo que no lo es (cono, toro, superficie libre) ≥ 0.006 mm; el corte está en 0.002 mm. */
+function cilindroDeCara(geo: PartGeo, caras: CarasRef, c: number): CilRef | null {
+  let porGeo = cilCache.get(geo);
+  if (!porGeo) { porGeo = new Map(); cilCache.set(geo, porGeo); }
+  const hit = porGeo.get(c); if (hit !== undefined) return hit;
+  const fit = ((): CilRef | null => {
+    if (c < 0 || c >= caras.n || caras.plana[c]) return null;
+    const P = geo.positions, I = geo.indices, M = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], vs = new Set<number>();
+    let nt = 0;
+    for (let t = 0; t < caras.caraDeTri.length; t++) {
+      if (caras.caraDeTri[t] !== c) continue;
+      const a = I[3 * t] * 3, b = I[3 * t + 1] * 3, d = I[3 * t + 2] * 3;
+      const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+      const vx = P[d] - P[a], vy = P[d + 1] - P[a + 1], vz = P[d + 2] - P[a + 2];
+      const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx], L = Math.hypot(n[0], n[1], n[2]);
+      if (L < 1e-12) continue;
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) M[i][j] += (n[i] * n[j]) / L;   // n̂ n̂ᵀ · área (salvo un 2)
+      vs.add(I[3 * t]); vs.add(I[3 * t + 1]); vs.add(I[3 * t + 2]); nt++;
+    }
+    const tr = M[0][0] + M[1][1] + M[2][2];
+    if (nt < 4 || vs.size < 6 || !(tr > 0)) return null;
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) M[i][j] /= tr;
+    const { val, vec } = eigSim3(M);
+    let iMin = 0, iMax = 0;
+    for (let i = 1; i < 3; i++) { if (val[i] < val[iMin]) iMin = i; if (val[i] > val[iMax]) iMax = i; }
+    if (iMin === iMax || val[iMin] > 2e-3) return null;   // las normales no caben en un plano: cono abierto, esfera, toro…
+    const eje0 = mV.uni([vec[0][iMin], vec[1][iMin], vec[2][iMin]]);
+    const pts: V3[] = [];
+    for (const i of vs) pts.push([P[3 * i], P[3 * i + 1], P[3 * i + 2]]);
+    const N = pts.length, xs = new Float64Array(N), ys = new Float64Array(N);
+    /** El círculo (Kåsa) de los vértices vistos A LO LARGO de `e`: centro en la base (u, v) ⟂ e, radio y residuo RMS.
+     *  Las coordenadas se centran en su media para que el sistema quede bien condicionado. */
+    const circulo = (e: V3) => {
+      const u = mV.uni(mV.cruz(e, Math.abs(e[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0])), v = mV.cruz(e, u);
+      let mx = 0, my = 0;
+      for (let k = 0; k < N; k++) { xs[k] = mV.dot(pts[k], u); ys[k] = mV.dot(pts[k], v); mx += xs[k]; my += ys[k]; }
+      mx /= N; my /= N;
+      let sxx = 0, sxy = 0, syy = 0, sxz = 0, syz = 0, sz = 0;
+      for (let k = 0; k < N; k++) {
+        const x = xs[k] - mx, y = ys[k] - my, w = x * x + y * y;
+        sxx += x * x; sxy += x * y; syy += y * y; sxz += x * w; syz += y * w; sz += w;
+      }
+      const det = sxx * syy - sxy * sxy;
+      if (!(Math.abs(det) > 1e-9 * Math.max(1, sxx * syy))) return null;
+      const cx = (sxz * syy - syz * sxy) / (2 * det), cy = (syz * sxx - sxz * sxy) / (2 * det), r = Math.sqrt(cx * cx + cy * cy + sz / N);
+      if (!(r > 1e-6) || !Number.isFinite(r)) return null;
+      let res = 0;
+      for (let k = 0; k < N; k++) { const q = Math.hypot(xs[k] - mx - cx, ys[k] - my - cy) - r; res += q * q; }
+      return { e, u, v, cx: mx + cx, cy: my + cy, r, res: Math.sqrt(res / N) };
+    };
+    let mejor = circulo(eje0);
+    if (!mejor) return null;
+    // AFINAR EL EJE: se inclina de a pasitos (a, b) sobre la base de arranque y se queda con lo que redondea el círculo.
+    // Solo cuenta una mejora de verdad (> 2 %): en un cilindro ya exacto no se persigue el ruido del float32.
+    const u0 = mejor.u, v0 = mejor.v;
+    for (let a = 0, b = 0, paso = 0.01, ev = 0; paso > 1e-7 && ev < 400;) {
+      let mejoro = false;
+      for (const [da, db] of [[paso, 0], [-paso, 0], [0, paso], [0, -paso]] as [number, number][]) {
+        if (Math.abs(a + da) > 0.02 || Math.abs(b + db) > 0.02) continue;
+        const cand = circulo(mV.uni(mV.mas(mV.mas(eje0, u0, a + da), v0, b + db))); ev++;
+        if (cand && cand.res < mejor.res * 0.98 - 1e-9) { mejor = cand; a += da; b += db; mejoro = true; break; }
+      }
+      if (!mejoro) paso /= 2;
+    }
+    const { e: eje, u, v, cx, cy, r, res } = mejor;
+    if (res > Math.max(2e-3, 1e-4 * r)) return null;
+    // el arco que cubren los vértices alrededor del centro, y el tramo del eje que ocupan
+    const ang: number[] = [];
+    let z0 = Infinity, z1 = -Infinity;
+    for (const q of pts) { ang.push(Math.atan2(mV.dot(q, v) - cy, mV.dot(q, u) - cx)); const z = mV.dot(q, eje); if (z < z0) z0 = z; if (z > z1) z1 = z; }
+    ang.sort((p1, p2) => p1 - p2);
+    let hueco = ang[0] + 2 * Math.PI - ang[N - 1];
+    for (let k = 1; k < N; k++) hueco = Math.max(hueco, ang[k] - ang[k - 1]);
+    const arco = 360 - (hueco * 180) / Math.PI;
+    if (arco < 20) return null;
+    const centro = mV.mas(mV.mas(mV.mas([0, 0, 0], u, cx), v, cy), eje, (z0 + z1) / 2);
+    return { eje, centro, r, largo: z1 - z0, arco, residuo: res };
+  })();
+  porGeo.set(c, fit);
+  return fit;
+}
+/** La caja JUSTA de una malla en el marco del doc (vértice por vértice: girar la caja local la infla en piezas inclinadas). */
+function cajaDocDeMalla(geo: PartGeo, m: THREE.Matrix4, b: THREE.Box3): THREE.Box3 {
+  const P = geo.positions, v = new THREE.Vector3();
+  for (let i = 0; i < P.length; i += 3) b.expandByPoint(v.set(P[i], P[i + 1], P[i + 2]).applyMatrix4(m));
+  return b;
+}
+/** Lo propio de UNA cosa agarrada para medir. null = ya no existe como se agarró (otro documento, pieza reforjada). */
+function medirDato(pk: MedirPick, hojas: Map<string, RefHoja & { geo: PartGeo }>, nombre: string): MedirDato | null {
+  if (pk.nivel === 'cara') {
+    const h = hojas.get(pk.key);
+    if (!h || h.geo !== pk.geo || pk.cara == null) return null;
+    const caras = carasDeMalla(h.geo), i = pk.cara;
+    if (i < 0 || i >= caras.n) return null;
+    const P = h.geo.positions, I = h.geo.indices, cen = new THREE.Vector3(), q = new THREE.Vector3(), caja = new THREE.Box3();
+    let at = 0;
+    for (let t = 0; t < caras.caraDeTri.length; t++) {
+      if (caras.caraDeTri[t] !== i) continue;
+      const a = I[3 * t] * 3, b = I[3 * t + 1] * 3, c = I[3 * t + 2] * 3;
+      const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+      const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+      const w = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2;
+      cen.x += (w * (P[a] + P[b] + P[c])) / 3; cen.y += (w * (P[a + 1] + P[b + 1] + P[c + 1])) / 3; cen.z += (w * (P[a + 2] + P[b + 2] + P[c + 2])) / 3;
+      at += w;
+      caja.expandByPoint(q.set(P[a], P[a + 1], P[a + 2])); caja.expandByPoint(q.set(P[b], P[b + 1], P[b + 2])); caja.expandByPoint(q.set(P[c], P[c + 1], P[c + 2]));
+    }
+    if (!(at > 0)) return null;
+    cen.multiplyScalar(1 / at).applyMatrix4(h.m);
+    const area = caras.area[i], base = { nombre: h.r.name, p: pk.p, tam: caja.getSize(q).length(), area, c: [cen.x, cen.y, cen.z] as V3 };
+    if (caras.plana[i]) {
+      const n = new THREE.Vector3(caras.normal[3 * i], caras.normal[3 * i + 1], caras.normal[3 * i + 2]).transformDirection(h.m);
+      const nn: V3 = [n.x, n.y, n.z];
+      return { ...base, clase: 'plana', que: 'Cara plana', propio: `${medirArea(area)} mm² · ${medirMira(nn)}`, n: nn };
+    }
+    const cil = cilindroDeCara(h.geo, caras, i);
+    if (cil) {
+      const e = new THREE.Vector3(...cil.eje).transformDirection(h.m), o = new THREE.Vector3(...cil.centro).applyMatrix4(h.m);
+      return { ...base, clase: 'cilindro', que: cil.arco >= 270 ? 'Cilindro' : 'Arco de cilindro', propio: `Ø ${medirMm(2 * cil.r)} mm · largo ${medirMm(cil.largo)} mm`,
+        eje: [e.x, e.y, e.z], o: [o.x, o.y, o.z], r: cil.r, largo: cil.largo, arco: cil.arco };
+    }
+    return { ...base, clase: 'curva', que: 'Cara curva', propio: `${medirArea(area)} mm²` };
+  }
+  const b = new THREE.Box3();
+  if (pk.nivel === 'cuerpo') { const h = hojas.get(pk.key); if (!h || h.geo !== pk.geo) return null; cajaDocDeMalla(h.geo, h.m, b); }
+  else for (const [k, h] of hojas) if (k === pk.key || k.startsWith(pk.key + '/')) cajaDocDeMalla(h.geo, h.m, b);
+  if (b.isEmpty()) return null;
+  const s = b.getSize(new THREE.Vector3());
+  return { clase: pk.nivel === 'cuerpo' ? 'cuerpo' : 'pieza', que: pk.nivel === 'cuerpo' ? 'Cuerpo' : 'Pieza', nombre, p: pk.p, tam: s.length(),
+    propio: `${medirMm(s.x)} × ${medirMm(s.y)} × ${medirMm(s.z)} mm`, caja: { min: b.min.toArray() as V3, max: b.max.toArray() as V3 } };
+}
+/** El tramo del eje de un cilindro que se dibuja: su largo y un poco más por cada lado. */
+function medirEje(D: MedirDato): number[] {
+  if (!D.eje || !D.o) return [];
+  const L = (D.largo ?? 0) / 2 + Math.max(1, (D.r ?? 0) * 0.4);
+  return [...mV.mas(D.o, D.eje, -L), ...mV.mas(D.o, D.eje, L)];
+}
+/** Las 12 aristas de una caja alineada a los ejes, como segmentos sueltos. */
+function medirCaja12(mn: V3, mx: V3): number[] {
+  const o: number[] = [], c = (i: number): V3 => [i & 1 ? mx[0] : mn[0], i & 2 ? mx[1] : mn[1], i & 4 ? mx[2] : mn[2]];
+  for (const [i, j] of [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]] as [number, number][]) o.push(...c(i), ...c(j));
+  return o;
+}
+/** El punto del eje de un cilindro que queda a la altura de donde se le hizo clic. */
+const medirPieEnEje = (D: MedirDato): V3 => mV.mas(D.o!, D.eje!, mV.dot(mV.sub(D.p, D.o!), D.eje!));
+/** SOLO A: lo propio de lo agarrado (área y hacia dónde mira, diámetro y largo, o su caja). */
+function medirSolo(A: MedirDato): MedirRes {
+  const base = { notas: [] as string[], linea: null as [V3, V3] | null, aux: [] as number[], pp: null };
+  if (A.clase === 'cilindro' && A.eje && A.o && A.r) {
+    const q = medirPieEnEje(A);
+    let rad = mV.sub(A.p, q);
+    if (mV.len(rad) < 1e-6) rad = mV.cruz(A.eje, Math.abs(A.eje[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0]);
+    rad = mV.uni(rad);
+    return { ...base, tipo: 'diametro', valor: 2 * A.r, unidad: 'mm', titulo: 'Diámetro', texto: `${medirMm(2 * A.r)} mm`, etiqueta: `Ø ${medirMm(2 * A.r)} mm`,
+      notas: [`Largo sobre su eje: ${medirMm(A.largo ?? 0)} mm.`, ...(A.arco !== undefined && A.arco < 270 ? [`Es un arco de ${A.arco.toFixed(0)}° · radio ${medirMm(A.r)} mm.`] : [])],
+      linea: [mV.mas(q, rad, -A.r), mV.mas(q, rad, A.r)], aux: medirEje(A) };
+  }
+  if (A.caja) {
+    const s = mV.sub(A.caja.max, A.caja.min);
+    return { ...base, tipo: 'caja', valor: mV.len(s), unidad: 'mm', titulo: 'Su caja: ancho × fondo × alto', texto: `${medirMm(s[0])} × ${medirMm(s[1])} × ${medirMm(s[2])} mm`, etiqueta: '',
+      notas: ['Ancho en X, fondo en Y, alto en Z.'], caja: s };
+  }
+  return { ...base, tipo: 'area', valor: A.area ?? 0, unidad: 'mm²', titulo: A.clase === 'plana' ? 'Área de la cara' : 'Área de la cara curva', texto: `${medirArea(A.area ?? 0)} mm²`, etiqueta: '',
+    notas: A.n ? [`La cara ${medirMira(A.n)}.`] : ['No es un cilindro: no tiene un solo diámetro.'] };
+}
+/** A y B: la relación entre los dos (separación, ángulo, entre ejes, eje a cara, entre centros) y SIEMPRE el punto a punto. */
+function medirPar(A: MedirDato, B: MedirDato, mismaCara: boolean): MedirRes {
+  const d = mV.sub(B.p, A.p), dist = mV.len(d);
+  const ptp: MedirRes = { tipo: 'punto-a-punto', valor: dist, unidad: 'mm', titulo: 'Punto a punto', texto: `${medirMm(dist)} mm`, etiqueta: `${medirMm(dist)} mm`,
+    notas: [], linea: [A.p, B.p], aux: [], pp: { d: dist, dx: d[0], dy: d[1], dz: d[2] } };
+  if (mismaCara) return { ...ptp, notas: ['Son dos puntos de la misma cara.'] };
+  const clics = [...A.p, ...B.p];
+  if (A.clase === 'plana' && B.clase === 'plana' && A.n && B.n && A.c && B.c) {
+    const a = medirAngulo(A.n, B.n);
+    if (a < MEDIR_PARALELAS) {
+      // del centro de A, por su normal, hasta el plano de B
+      // (y una línea tenue del pie de la cota al clic de B: corre sobre el plano de B y deja ver hasta dónde llega)
+      const t = mV.dot(mV.sub(B.c, A.c), B.n) / mV.dot(A.n, B.n), sep = Math.abs(t), pie = mV.mas(A.c, A.n, t);
+      return { ...ptp, tipo: 'separacion', valor: sep, titulo: 'Separación entre las dos caras', texto: `${medirMm(sep)} mm`, etiqueta: `${medirMm(sep)} mm`,
+        notas: [sep < 0.005 ? 'Están en el mismo plano.' : 'Son paralelas: se mide perpendicular a ellas.'], linea: [A.c, pie], aux: [...clics, ...pie, ...B.p] };
+    }
+    return { ...ptp, tipo: 'angulo', valor: a, unidad: '°', titulo: 'Ángulo entre las dos caras', texto: medirGrados(a), etiqueta: medirGrados(a) };
+  }
+  if (A.clase === 'cilindro' && B.clase === 'cilindro' && A.eje && B.eje && A.o && B.o) {
+    const a = medirAngulo(A.eje, B.eje), ejes = [...medirEje(A), ...medirEje(B)];
+    if (a < MEDIR_EJES_PARALELOS) {
+      // perpendicular a los ejes: lo que se aleja B de A una vez quitado lo que corre A LO LARGO del eje
+      const q = medirPieEnEje(A), w = mV.sub(B.o, q), perp = mV.mas(w, A.eje, -mV.dot(w, A.eje)), sep = mV.len(perp);
+      return { ...ptp, tipo: 'entre-ejes', valor: sep, titulo: 'Distancia entre ejes', texto: `${medirMm(sep)} mm`, etiqueta: `entre ejes ${medirMm(sep)} mm`,
+        notas: [sep < 0.005 ? 'Comparten el mismo eje.' : 'Sus ejes son paralelos.'], linea: [q, mV.mas(q, perp)], aux: [...ejes, ...clics] };
+    }
+    return { ...ptp, tipo: 'angulo', valor: a, unidad: '°', titulo: 'Ángulo entre los dos ejes', texto: medirGrados(a), etiqueta: `ejes a ${medirGrados(a)}`, aux: ejes };
+  }
+  const cil = A.clase === 'cilindro' ? A : B.clase === 'cilindro' ? B : null, pla = A.clase === 'plana' ? A : B.clase === 'plana' ? B : null;
+  if (cil && pla && cil.eje && cil.o && pla.n && pla.c) {
+    const inc = 90 - medirAngulo(cil.eje, pla.n);   // 0° = el eje corre paralelo a la cara
+    if (inc < MEDIR_EJES_PARALELOS) {
+      const q = medirPieEnEje(cil), h = mV.dot(mV.sub(q, pla.c), pla.n), sep = Math.abs(h), pared = sep - (cil.r ?? 0);
+      return { ...ptp, tipo: 'eje-a-cara', valor: sep, titulo: 'Del eje del cilindro a la cara', texto: `${medirMm(sep)} mm`, etiqueta: `eje a cara ${medirMm(sep)} mm`,
+        notas: ['El eje corre paralelo a la cara.', ...(pared > 0.005 ? [`De la pared del cilindro a la cara: ${medirMm(pared)} mm.`] : [])],
+        linea: [q, mV.mas(q, pla.n, -h)], aux: [...medirEje(cil), ...clics, ...mV.mas(q, pla.n, -h), ...pla.p] };
+    }
+    return { ...ptp, notas: [inc > 90 - MEDIR_EJES_PARALELOS ? 'El eje del cilindro es perpendicular a la cara.' : `El eje del cilindro está inclinado ${medirGrados(inc)} respecto a la cara.`], aux: medirEje(cil) };
+  }
+  if (A.caja && B.caja) {
+    const ca = mV.mas(A.caja.min, mV.sub(A.caja.max, A.caja.min), 0.5), cb = mV.mas(B.caja.min, mV.sub(B.caja.max, B.caja.min), 0.5), sep = mV.len(mV.sub(cb, ca));
+    return { ...ptp, tipo: 'centros', valor: sep, titulo: 'Distancia entre sus centros', texto: `${medirMm(sep)} mm`, etiqueta: `entre centros ${medirMm(sep)} mm`,
+      notas: ['Del centro de la caja de A al centro de la caja de B.'], linea: [ca, cb], aux: clics };
+  }
+  return ptp;
+}
+/** Lo que Medir pinta DENTRO del Canvas, en el marco del doc: una cara agarrada (A o B) teñida de su color. No ataja el
+ *  clic (`sinRayo`): se puede seguir midiendo lo que quede debajo. */
+function MedirCara({ geo, m, cara, color, clip }: { geo: PartGeo; m: THREE.Matrix4; cara: number; color: string; clip?: THREE.Plane[] | null }) {
+  const g = useMemo(() => geoDeCara(geo, carasDeMalla(geo), cara), [geo, cara]);
+  useEffect(() => () => g.dispose(), [g]);
+  const t = useMemo(() => { const pos = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(); m.decompose(pos, q, sc); return { pos, q, sc }; }, [m]);
+  return (
+    <group position={t.pos} quaternion={t.q} scale={t.sc}>
+      <mesh geometry={g} renderOrder={7} raycast={sinRayo}>
+        <meshBasicMaterial color={color} transparent opacity={0.5} depthWrite={false} side={THREE.DoubleSide}
+          polygonOffset polygonOffsetFactor={-3} polygonOffsetUnits={-3} clippingPlanes={clip ?? undefined} />
+      </mesh>
+    </group>
+  );
+}
+/** Segmentos sueltos de Medir (x,y,z · x,y,z …), siempre encima de la pieza: el patrón de `CotaLines`, pero sordos al clic.
+ *  Con `grueso` (px en pantalla) se pintan como línea gruesa: la cota tiene que leerse también sobre una pieza blanca. */
+function MedirLineas({ pts, color, opacity = 0.95, grueso, orden = 999 }: { pts: number[]; color: string; opacity?: number; grueso?: number; orden?: number }) {
+  const g = useMemo(() => { const b = new THREE.BufferGeometry(); b.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); return b; }, [pts]);
+  useEffect(() => () => g.dispose(), [g]);
+  const ternas = useMemo(() => { const o: V3[] = []; for (let i = 0; i + 2 < pts.length; i += 3) o.push([pts[i], pts[i + 1], pts[i + 2]]); return o; }, [pts]);
+  if (pts.length < 6) return null;
+  if (grueso) return <LineaGruesa points={ternas} segments color={color} lineWidth={grueso} depthTest={false} transparent opacity={opacity} renderOrder={orden} raycast={sinRayo} />;
+  return (
+    <lineSegments geometry={g} renderOrder={orden} raycast={sinRayo}>
+      <lineBasicMaterial color={color} depthTest={false} transparent opacity={opacity} />
+    </lineSegments>
+  );
+}
+/** Las etiquetas de Medir: divs FUERA del Canvas (drei <Text> truena aquí) que `CotaDriver` lleva al punto medio de cada
+ *  renglón de `sets` — la cota con su valor, y las marcas A y B en el punto exacto de cada clic. Nacen escondidas: el
+ *  driver las prende ya colocadas (si no, parpadean un cuadro en la esquina del visor). */
+function MedirEtiquetas({ sets, refs }: { sets: CotaSet[]; refs: React.MutableRefObject<Array<HTMLDivElement | null>> }) {
+  const flat = sets.flatMap((s) => s.dims);
+  return (
+    <div className="fb-medir-capa" data-testid="medir-cota">
+      {flat.map((d, i) => (
+        <div key={d.id} ref={(el) => { refs.current[i] = el; }} className={`fb-medir-etq ${d.id}`} data-testid={`medir-etq-${d.id}`} style={{ display: 'none' }}>
+          <span>{d.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 /** Lo que el mouse tiene ENCIMA. Vive fuera de React: cada malla se suscribe y solo se repinta la que cambia de
  *  estado (re-renderizar el estudio entero en cada movimiento del mouse lo trabaría). */
 const tenazaHover = (() => {
@@ -2380,7 +2715,7 @@ function sinGolpe(cur: Golpe[], id: string): Golpe[] {
 
 function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre, onFrente }: {
   geo: PartGeo; r: RefPart; clip?: THREE.Plane[] | null; rayos?: boolean;
-  hoja?: { key: string; top: string }; tenaza?: Tenaza | null; sel?: number | null; onAgarre?: (a: Agarre) => void;
+  hoja?: { key: string; top: string }; tenaza?: Tenaza | null; sel?: number | null; onAgarre?: (a: Agarre, clic?: ClicRef) => void;
   /** doble clic = ver esa cara DE FRENTE: la normal y el punto del clic van en coordenadas del visor (three) */
   onFrente?: (a: Agarre & { n: [number, number, number]; p: [number, number, number] }) => void;
 }) {
@@ -2426,7 +2761,7 @@ function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre, onFrente }:
         raycast={agarrable ? rayoDeMalla : sinRayo}
         onPointerMove={agarrable ? (e) => { e.stopPropagation(); tenazaHover.set({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}
         onPointerOut={agarrable ? () => { const a = tenazaHover.get(); if (a && a.key === hoja!.key) tenazaHover.set(null); } : undefined}
-        onClick={agarrable ? (e) => { if (e.delta > 4 || turnoDeClic(e, tenaza!) !== hoja!.key) return; e.stopPropagation(); onAgarre!({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }); } : undefined}
+        onClick={agarrable ? (e) => { if (e.delta > 4 || turnoDeClic(e, tenaza!) !== hoja!.key) return; e.stopPropagation(); onAgarre!({ key: hoja!.key, top: hoja!.top, cara: caraDe(e) }, { p: [e.point.x, e.point.y, e.point.z], doble: e.nativeEvent.detail > 1 }); } : undefined}
         onDoubleClick={agarrable && onFrente ? (e) => {
           e.stopPropagation();
           const n = (e.face?.normal ?? new THREE.Vector3(0, 0, 1)).clone().transformDirection(e.object.matrixWorld);
@@ -5027,6 +5362,12 @@ export default function ForgeBRepStudio() {
   const [tallerSel, setTallerSel] = useState<(Agarre & { nivel: Tenaza }) | null>(null);
   const [tallerAbiertos, setTallerAbiertos] = useState<Set<string>>(() => new Set());
   const bocetoAbiertoRef = useRef(false);   // (el estado `sketchOpen` se declara más abajo) Esc DENTRO del boceto es del boceto: no suelta la cara
+  // ── MEDIR (orden 2026-11-11-medir): prendido, el clic en el visor llena A y luego B en vez de agarrar para el yunque.
+  // Al prenderlo la tenaza suelta lo que tenía (sin cara agarrada no sale la barra del yunque); al apagarlo se borra la medida. ──
+  const [medirOn, setMedirOn] = useState(false);
+  const [medirSel, setMedirSel] = useState(MEDIR_NADA);
+  const medirRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const alternarMedir = useCallback(() => { setMedirOn((v) => !v); setMedirSel(MEDIR_NADA); setTallerSel(null); tenazaHover.set(null); }, []);
   /** ¿Se ve esta llave? No, si ella o un ancestro tiene el foco apagado, o si hay algo aislado y ella no está debajo. */
   const refOculta = useCallback((key: string) => {
     if (refAislado && key !== refAislado && !key.startsWith(refAislado + '/') && !refAislado.startsWith(key + '/')) return true;
@@ -5100,6 +5441,92 @@ export default function ForgeBRepStudio() {
     return m;
   }, [tallerArbol]);
   const refPorKey = useMemo(() => new Map(refGeos.map((h) => [h.key, h])), [refGeos]);
+  // ── MEDIR (orden 2026-11-11-medir) · el clic, la cuenta y lo que se dibuja (va DESPUÉS de refPorKey: lo usa) ──
+  /** Un clic en el visor con Medir prendido. Respeta la tenaza: una cara, un cuerpo o la pieza entera (el módulo, por su caja). */
+  const medirClic = useCallback((a: Agarre, clic?: ClicRef) => {
+    if (!clic || (tenaza === 'cara' && a.cara == null)) return;
+    const p: V3 = [clic.p[0], -clic.p[2], clic.p[1]];   // del visor al doc: (x, y, z) → (x, −z, y)
+    const pk: MedirPick = tenaza === 'pieza' ? { key: a.top, top: a.top, cara: null, nivel: 'pieza', p, geo: null }
+      : tenaza === 'cuerpo' ? { key: a.key, top: a.top, cara: null, nivel: 'cuerpo', p, geo: refPorKey.get(a.key)?.geo ?? null }
+      : { key: a.key, top: a.top, cara: a.cara, nivel: 'cara', p, geo: refPorKey.get(a.key)?.geo ?? null };
+    setMedirSel((s) => {
+      const ult = s.b ?? s.a;
+      if (ult && ult.key === pk.key && ult.cara === pk.cara && ult.nivel === pk.nivel) {
+        // un doble clic son dos clics sobre lo mismo: el segundo se ignora (y la cámara no vuela). En una CARA sí se vale
+        // otro clic si cae en OTRO punto: mide de punto a punto dentro de esa misma cara.
+        const cerca = Math.hypot(pk.p[0] - ult.p[0], pk.p[1] - ult.p[1], pk.p[2] - ult.p[2]) < 0.05;
+        if (pk.nivel !== 'cara' || clic.doble || cerca) return s;
+      }
+      return s.a && !s.b ? { a: s.a, b: pk } : { a: pk, b: null };   // A, luego B; el tercer clic vuelve a empezar en A
+    });
+  }, [tenaza, refPorKey]);
+  /** LA MEDIDA: lo propio de A (y de B), la relación entre los dos y lo que se pinta en el visor. Nunca truena: si lo
+   *  agarrado ya no existe como se agarró (otro documento, una pieza reforjada), no hay medida y un efecto la limpia. */
+  const medir = useMemo(() => {
+    const nada = { a: null as MedirDato | null, b: null as MedirDato | null, res: null as MedirRes | null, etq: [] as CotaSet[],
+      caras: [] as Array<{ id: string; geo: PartGeo; m: THREE.Matrix4; cara: number; color: string }>,
+      blanco: [] as number[], tenue: [] as number[], deA: [] as number[], deB: [] as number[] };
+    const sa = medirSel.a, sb = medirSel.b;
+    if (!medirOn || !sa) return nada;
+    try {
+      const dato = (pk: MedirPick) => medirDato(pk, refPorKey, nodoPorKey.get(pk.key)?.r.name ?? pk.key);
+      const A = dato(sa), B = sb ? dato(sb) : null;
+      if (!A || (sb && !B)) return nada;
+      const mismaCara = !!sb && sa.nivel === 'cara' && sb.nivel === 'cara' && sa.key === sb.key && sa.cara === sb.cara;
+      const res = B ? medirPar(A, B, mismaCara) : medirSolo(A);
+      const out = { ...nada, a: A, b: B, res, caras: [...nada.caras], blanco: [] as number[], tenue: [...res.aux], deA: [] as number[], deB: [] as number[] };
+      // cada cosa agarrada con su color: la cara teñida (o la caja del cuerpo) y, en una cara plana, hacia dónde mira
+      const pinta = (pk: MedirPick, D: MedirDato, id: 'a' | 'b', color: string, lineas: number[]) => {
+        const h = pk.nivel === 'cara' && pk.cara != null ? refPorKey.get(pk.key) : null;
+        if (h && !(mismaCara && id === 'b')) out.caras.push({ id, geo: h.geo, m: h.m, cara: pk.cara!, color });
+        if (D.caja) lineas.push(...medirCaja12(D.caja.min, D.caja.max));
+        // «hacia dónde mira» solo donde dice algo: una cara sola o el ángulo entre dos (en la separación se encimaba con la cota)
+        else if (D.n && (res.tipo === 'area' || res.tipo === 'angulo')) lineas.push(...D.p, ...mV.mas(D.p, D.n, Math.min(30, Math.max(2, D.tam * 0.2))));
+      };
+      pinta(sa, A, 'a', MEDIR_A, out.deA);
+      if (sb && B) pinta(sb, B, 'b', MEDIR_B, out.deB);
+      // la cota: su línea y una crucecita en cada punta (se ve de dónde a dónde desde cualquier lado)
+      if (res.linea) {
+        const [p, q] = res.linea, L = Math.min(6, Math.max(0.3, 0.05 * mV.len(mV.sub(q, p))));
+        out.blanco.push(...p, ...q);
+        for (const e of [p, q]) for (let k = 0; k < 3; k++) { const e1: V3 = [e[0], e[1], e[2]], e2: V3 = [e[0], e[1], e[2]]; e1[k] -= L; e2[k] += L; out.blanco.push(...e1, ...e2); }
+      }
+      const dims: CotaSet['dims'] = [];
+      if (res.linea && res.etiqueta) dims.push({ id: 'cota', label: res.etiqueta, kind: 'lineal', a: res.linea[0], b: res.linea[1], value: res.valor });
+      dims.push({ id: 'a', label: 'A', kind: 'coordenada', a: A.p, b: A.p, value: 0 });
+      if (B) dims.push({ id: 'b', label: 'B', kind: 'coordenada', a: B.p, b: B.p, value: 0 });
+      out.etq = [{ role: 'medir', dims }];
+      return out;
+    } catch (e) { console.warn('MEDIR_ERR', e); return nada; }
+  }, [medirOn, medirSel, refPorKey, nodoPorKey]);
+  // lo agarrado dejó de existir (un golpe rehízo la pieza): la medida vieja se borra, no se reinterpreta
+  useEffect(() => { if (medirOn && medirSel.a && !medir.a) setMedirSel(MEDIR_NADA); }, [medirOn, medirSel, medir]);
+  // otro documento: Medir se apaga y no arrastra una medida de piezas que ya no están
+  useEffect(() => { setMedirOn(false); setMedirSel(MEDIR_NADA); }, [refHojas]);
+  // Esc: el primero borra la medida; el segundo (ya sin nada medido) apaga Medir
+  useEffect(() => {
+    if (!medirOn) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.key !== 'Escape' || (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'))) return;
+      if (document.querySelector('[data-testid="sketch-editor"]')) return;   // con un boceto abierto, Esc es del boceto
+      if (medirSel.a || medirSel.b) setMedirSel(MEDIR_NADA); else setMedirOn(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [medirOn, medirSel]);
+  // QA (window.__forgeBrep.medir): { on, a, b, resultado } — puntos, normales, ejes y cajas en el marco del doc, en mm
+  const medirQaRef = useRef<unknown>(null);
+  const medirQaDe = (pk: MedirPick | null, D: MedirDato | null) => (pk && D ? {
+    key: pk.key, top: pk.top, cara: pk.cara, nivel: pk.nivel, punto: pk.p, clase: D.clase, que: D.que, nombre: D.nombre, propio: D.propio,
+    area: D.area ?? null, normal: D.n ?? null, centro: D.c ?? null, eje: D.eje ?? null, puntoDelEje: D.o ?? null,
+    diametro: D.r ? 2 * D.r : null, largo: D.largo ?? null, arco: D.arco ?? null, caja: D.caja ?? null } : null);
+  medirQaRef.current = {
+    on: medirOn, a: medirQaDe(medirSel.a, medir.a), b: medirQaDe(medirSel.b, medir.b),
+    /** tipo de medida, valor y unidad; `puntoAPunto` = { d, dx, dy, dz } de B − A (solo con A y B); `linea` = la cota dibujada */
+    resultado: medir.res ? { tipo: medir.res.tipo, valor: medir.res.valor, unidad: medir.res.unidad, titulo: medir.res.titulo, texto: medir.res.texto,
+      etiqueta: medir.res.etiqueta, notas: medir.res.notas, linea: medir.res.linea, caja: medir.res.caja ?? null, puntoAPunto: medir.res.pp } : null,
+  };
   /** Lo que la tenaza tiene agarrado, dicho en una línea: qué es, cuánto mide y de quién es. */
   const agarreInfo = useMemo(() => {
     const s = tallerSel; if (!s) return null;
@@ -8614,6 +9041,8 @@ export default function ForgeBRepStudio() {
         const c = navQa.camera, t = navQa.controls?.target;
         return { modo: navStore.modo, visto: navStore.visto, pos: c ? c.position.toArray() : null, target: t ? t.toArray() : null };
       },
+      // ── MEDIR (orden 2026-11-11-medir) · QA (scripts/medir-verify.cjs): { on, a, b, resultado } en el marco del doc, mm y grados
+      get medir() { return medirQaRef.current; },
       setSketch,
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
@@ -9814,7 +10243,7 @@ export default function ForgeBRepStudio() {
                 return (
                   <group key={key} position={pos} quaternion={q} scale={sc}>
                     <RefMesh geo={geo} r={r} clip={sectionPlanes} rayos={refRayos}
-                      hoja={{ key, top }} tenaza={sketchOpen ? null : tenaza} sel={sel} onAgarre={onAgarre} onFrente={onFrente} />
+                      hoja={{ key, top }} tenaza={sketchOpen ? null : tenaza} sel={sel} onAgarre={medirOn ? medirClic : onAgarre} onFrente={medirOn ? undefined : onFrente} />
                   </group>
                 );
               };
@@ -9837,6 +10266,19 @@ export default function ForgeBRepStudio() {
                 </>
               );
             })()}
+            {/* ── MEDIR (orden 2026-11-11-medir): A y B teñidas de su color, la cota y sus auxiliares. Cuelga del grupo
+                raíz (marco del doc) y nada de esto ataja el clic: se sigue midiendo lo que quede debajo. ── */}
+            {medirOn && !sketchOpen && medir.a && (
+              <>
+                {medir.caras.map((c) => <MedirCara key={c.id} geo={c.geo} m={c.m} cara={c.cara} color={c.color} clip={sectionPlanes} />)}
+                <MedirLineas pts={medir.tenue} color="#9fb3c8" opacity={0.75} />
+                <MedirLineas pts={medir.deA} color={MEDIR_A} />
+                <MedirLineas pts={medir.deB} color={MEDIR_B} />
+                <MedirLineas pts={medir.blanco} color="#05090f" opacity={0.75} grueso={5} orden={998} />
+                <MedirLineas pts={medir.blanco} color="#ffffff" opacity={1} grueso={2.2} />
+                <CotaDriver sets={medir.etq} refs={medirRefs} />
+              </>
+            )}
             {/* EL ARCO EN VIVO: la corriente en el lazo, los anillos de B, la luz del arco y el DETALLE A */}
             {arcoDoc && arcoOn && arcoTrazas && <ArcoVivoEscena sim={arcoSim} cfg={arcoDoc} trazas={arcoTrazas} />}
             {/* EL BRAZO VIVO: cuerpos, motores, reductores, la carga en los cables y su campo B */}
@@ -9876,6 +10318,8 @@ export default function ForgeBRepStudio() {
         {cotasOn && liveCotas.length > 0 && <CotaLabels sets={liveCotas} refs={cotaRefs} />}
         {cotaInsp.length > 0 && <CotaInspLabels sets={cotaInsp} refs={cotaInspRefs} />}
         {!focoMolde && !inspeccionOn && cotaPines.length > 0 && <CotaInspLabels sets={cotaPines} refs={cotaPinesRefs} testId="rotulo-pines" />}
+        {/* ── MEDIR (orden 2026-11-11-medir): la etiqueta de la cota y las marcas A / B (DOM; CotaDriver las mueve) ── */}
+        {medirOn && !sketchOpen && medir.etq.length > 0 && <MedirEtiquetas sets={medir.etq} refs={medirRefs} />}
         {/* LA INSPECCIÓN · la tarjeta del punto del recorrido */}
         {recorrido && recorrido.length > 0 && (
           <RecorridoHUD puntos={recorrido} idx={recIdx} onIdx={(i) => { setRecAuto(false); setRecIdx(i); }} auto={recAuto} onAuto={setRecAuto} onCerrar={() => setInspeccionOn(false)}
@@ -11016,6 +11460,15 @@ export default function ForgeBRepStudio() {
                     </button>
                   ))}
                 </div>
+                {/* ── MEDIR (orden 2026-11-11-medir): prendido, el clic en el visor llena A y luego B en vez de agarrar ── */}
+                <button data-testid="medir-toggle" className={`fb-medir-btn${medirOn ? ' on' : ''}`} aria-pressed={medirOn} onClick={alternarMedir}
+                  title={medirOn ? 'Medir está prendido: el clic en el visor llena A y luego B. Clic aquí (o Esc dos veces) para apagarlo.'
+                    : 'Medir: un clic da el área, el diámetro o la caja de lo que tocas; dos clics, la separación, el ángulo o la distancia entre ejes'}>
+                  <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+                    <path d="M1 5h14v6h-14z M4 5v2.5 M6.5 5v3.5 M9 5v2.5 M11.5 5v3.5" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" />
+                  </svg>
+                  <span>Medir</span><em>{medirOn ? 'prendido' : 'distancia · ángulo · Ø'}</em>
+                </button>
                 {agarreInfo ? (
                   <div className="fb-agarre" data-testid="taller-agarre">
                     <b>{agarreInfo.que}</b> · {agarreInfo.dato}
@@ -11062,6 +11515,33 @@ export default function ForgeBRepStudio() {
                   <button className="fb-aislado" data-testid="taller-desaislar" onClick={() => setRefAislado(null)}>
                     ◎ aislado: {nodoPorKey.get(refAislado)?.r.name ?? refAislado} · <u>mostrar todo</u>
                   </button>
+                )}
+                {/* ── MEDIR (orden 2026-11-11-medir): lo que se midió, dicho en corto. A = primer clic, B = segundo. ── */}
+                {medirOn && (
+                  <div className="fb-medir" data-testid="medir-panel">
+                    {!medir.a ? (
+                      <div className="fb-medir-pista">Haz clic en el visor sobre lo primero que quieres medir. La tenaza de arriba decide qué agarra el clic: una cara, un cuerpo o la pieza entera. Esc apaga Medir.</div>
+                    ) : (
+                      <>
+                        <div className="fb-medir-ab a" data-testid="medir-a"><b>A</b><span>{medir.a.que}{medir.b ? ` · ${medir.a.propio}` : ''}<em title={medir.a.nombre}>{medir.a.nombre}</em></span></div>
+                        {medir.b && <div className="fb-medir-ab b" data-testid="medir-b"><b>B</b><span>{medir.b.que} · {medir.b.propio}<em title={medir.b.nombre}>{medir.b.nombre}</em></span></div>}
+                        {medir.res && (
+                          <div className="fb-medir-res" data-testid="medir-resultado" data-tipo={medir.res.tipo}>
+                            <span>{medir.res.titulo}</span>
+                            <strong>{medir.res.texto}</strong>
+                            {medir.res.notas.map((n) => <em key={n}>{n}</em>)}
+                          </div>
+                        )}
+                        {medir.res?.pp && (
+                          <div className="fb-medir-pp" data-testid="medir-pp">
+                            <div>{medir.res.tipo === 'punto-a-punto' ? 'Lo que avanza en cada eje (mm):' : <>Punto a punto, de clic a clic: <b>{medirMm(medir.res.pp.d)} mm</b></>}</div>
+                            <div className="fb-medir-d"><span><i>ΔX</i>{medirDelta(medir.res.pp.dx)}</span><span><i>ΔY</i>{medirDelta(medir.res.pp.dy)}</span><span><i>ΔZ</i>{medirDelta(medir.res.pp.dz)}</span></div>
+                          </div>
+                        )}
+                        <div className="fb-medir-pista">{medir.b ? 'Otro clic empieza una medida nueva · Esc la borra.' : 'Ahora haz clic en lo segundo (B) para medir entre los dos · Esc borra.'}</div>
+                      </>
+                    )}
+                  </div>
                 )}
                 <div className="fb-taller-arbol" role="tree" data-testid="taller-arbol">
                   <div className="fb-taller-raiz"><span className="fb-tchev">▾</span><b>{docName}</b></div>
@@ -13707,6 +14187,38 @@ const CSS = `
 .fb-mover button:hover{border-color:#FDB813;color:#FDB813;}
 .fb-mover button.on{background:rgba(253,184,19,0.16);border-color:#FDB813;color:#ffe9ad;}
 /* EL TALLER (orden 2026-11-09-el-taller-tenazas) */
+/* ── MEDIR (orden 2026-11-11-medir): el botón, el panel de la medida y las etiquetas sobre el visor ── */
+.fb-medir-btn{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;margin:0 0 6px;padding:4px 9px;border-radius:6px;border:1px solid rgba(159,179,200,0.22);color:#a9b8c8;font-size:11px;}
+.fb-medir-btn:hover{border-color:rgba(79,214,255,0.6);color:#d9f6ff;}
+.fb-medir-btn em{font-style:normal;color:#6f8196;font-size:10px;margin-left:auto;white-space:nowrap;}
+.fb-medir-btn.on{background:rgba(79,214,255,0.14);border-color:#4fd6ff;color:#d9f6ff;}
+.fb-medir-btn.on em{color:#8fcfe6;}
+.fb-refs-list:has(.fb-medir) .fb-agarre.vacio{display:none;}
+.fb-medir{margin:0 0 6px;padding:7px 8px;border-radius:6px;background:rgba(79,214,255,0.06);border:1px solid rgba(79,214,255,0.35);color:#cfd8e3;white-space:normal;display:flex;flex-direction:column;gap:5px;}
+.fb-medir-pista{color:#8193a8;font-size:10px;}
+.fb-medir-ab{display:flex;gap:6px;align-items:flex-start;}
+.fb-medir-ab b{flex:0 0 15px;height:15px;border-radius:50%;font-size:9.5px;line-height:15px;text-align:center;color:#07101a;}
+.fb-medir-ab.a b{background:#4fd6ff;}
+.fb-medir-ab.b b{background:#ff8ad8;}
+.fb-medir-ab span{flex:1 1 auto;min-width:0;}
+.fb-medir-ab em{display:block;font-style:normal;color:#8193a8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fb-medir-res{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border-radius:5px;background:rgba(6,10,16,0.55);border:1px solid rgba(255,255,255,0.22);}
+.fb-medir-res span{color:#9fb3c8;font-size:10px;}
+.fb-medir-res strong{color:#fff;font-size:16px;font-weight:700;letter-spacing:.2px;}
+.fb-medir-res em{font-style:normal;color:#8193a8;font-size:10px;}
+.fb-medir-pp{color:#a9b8c8;font-size:10.5px;}
+.fb-medir-pp b{color:#e8eef5;font-weight:600;}
+.fb-medir-d{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:3px;}
+.fb-medir-d span{display:flex;flex-direction:column;padding:2px 5px;border-radius:4px;background:rgba(6,10,16,0.45);color:#e8eef5;}
+.fb-medir-d i{font-style:normal;color:#8193a8;font-size:9.5px;}
+.fb-medir-capa{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden;}
+.fb-medir-etq{position:absolute;left:0;top:0;white-space:nowrap;}
+.fb-medir-etq.cota{z-index:1;}
+.fb-medir-etq.cota span{display:block;transform:translateY(-17px);font:700 13px ui-monospace,Menlo,monospace;color:#fff;background:rgba(6,10,16,0.92);border:1px solid rgba(255,255,255,0.75);border-radius:4px;padding:2px 7px;letter-spacing:.2px;}
+.fb-medir-etq.a::before,.fb-medir-etq.b::before{content:'';position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(6,10,16,0.9);}
+.fb-medir-etq.a span,.fb-medir-etq.b span{position:absolute;left:6px;top:-19px;width:15px;height:15px;border-radius:50%;font:700 9.5px/15px ui-monospace,Menlo,monospace;text-align:center;color:#07101a;box-shadow:0 0 0 1.5px rgba(6,10,16,0.9);}
+.fb-medir-etq.a::before,.fb-medir-etq.a span{background:#4fd6ff;}
+.fb-medir-etq.b::before,.fb-medir-etq.b span{background:#ff8ad8;}
 .fb-tenazas{display:flex;align-items:center;gap:3px;margin:2px 0 6px;}
 .fb-tenazas-lbl{color:#6f8196;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
 .fb-tenazas button{all:unset;cursor:pointer;padding:3px 9px;border-radius:999px;border:1px solid rgba(159,179,200,0.22);color:#a9b8c8;font-size:11px;}
