@@ -44,7 +44,10 @@ function tessArc(cx: number, cy: number, x0: number, y0: number, x1: number, y1:
   return pts;
 }
 
-export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: {
+export default function SketchEditor({ onFinish, onCancel, projScale, titulo, referencia }: {
+  /** EL CONTORNO DE LA CARA sobre la que se boceta (lazos en mm del plano): entra como geometría de REFERENCIA — puntos
+   *  fijos y líneas de construcción al principio del modelo. No se extruye ni se mueve; sirve para pegarle imanes y cotas. */
+  referencia?: XY[][];
   /** Qué se está bocetando y sobre qué (lo pone el yunque: «Cortar · Base frente izquierda»). */
   titulo?: string;
   onFinish: (result: { profile: XY[]; holes: { x: number; y: number; d: number }[]; polyHoles: XY[][]; path?: XY[]; circle?: { x: number; y: number; r: number } }) => void;
@@ -55,7 +58,19 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: 
    *  Sin él, editor clásico opaco (fallback). */
   projScale?: number;
 }) {
-  const [model, setModel] = useState<Sketch>({ points: [], lines: [], circles: [], arcs: [], constraints: [] });
+  // LA REFERENCIA va PRIMERO en el modelo: sus puntos son [0, nRefPts) y sus líneas [0, nRef). Lo que dibuja la mano va después.
+  const [refInicial] = useState(() => {
+    const points: Sketch['points'] = [], lines: Sketch['lines'] = [];
+    for (const lazo of referencia ?? []) {
+      if (lazo.length < 2) continue;
+      const i0 = points.length;
+      for (const q of lazo) points.push({ x: q.x, y: q.y, fixed: true });
+      for (let k = 0; k < lazo.length; k++) lines.push({ a: i0 + k, b: i0 + ((k + 1) % lazo.length), constr: true });
+    }
+    return { points, lines };
+  });
+  const nRefPts = refInicial.points.length, nRef = refInicial.lines.length;
+  const [model, setModel] = useState<Sketch>(() => ({ points: refInicial.points.map((q) => ({ ...q })), lines: refInicial.lines.map((l) => ({ ...l })), circles: [], arcs: [], constraints: [] }));
   const [res, setRes] = useState<SolveResult | null>(null);
   const [tool, setTool] = useState<Tool>('rect');
   // POLÍGONO (Workbook L5): N lados, inscrito (clic = vértice) o circunscrito (clic = punto medio de lado)
@@ -268,7 +283,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: 
     }
     if (tool !== 'select') return;
     const i = nearestPoint(modelRef.current, mmFromEvent(e), 12 / scale);
-    if (i >= 0) { dragRef.current = { i, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }
+    if (i >= nRefPts) { dragRef.current = { i, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }   // la referencia (i < nRefPts) no se arrastra
   }, [tool, dim, mmFromEvent]);
   const onPointerMove = useCallback((e: ReactPointerEvent) => {
     // OBJECT SNAP visual: en herramientas de dibujo, el candidato se ilumina bajo el cursor
@@ -727,7 +742,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: 
       // BREAK de LÍNEA (Workbook L6): partir la línea clicada en sus intersecciones
       // (círculos y otras líneas) y QUITAR el tramo donde cayó el clic.
       const li = nearestLineIdx(next, mm, tol);
-      if (li >= 0) {
+      if (li >= nRef) {   // el contorno de la cara (referencia) no se recorta
         const l = next.lines[li];
         const A = next.points[l.a], B = next.points[l.b];
         const dx = B.x - A.x, dy = B.y - A.y;
@@ -802,6 +817,8 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: 
         if (cur && cur.i !== li) {
           setDim(dimDeAngulo(next, cur.i, li));
           setSel([]);
+        } else if (li < nRef) {
+          setSel([{ kind: 'line', i: li }]);   // línea de REFERENCIA (el contorno de la cara): está fija, no se acota; sí da ángulo contra otra
         } else {
           // un clic en una LÍNEA = la cota de su LARGO (como en Fusion); un clic en OTRA línea la vuelve la del ÁNGULO
           const Ln = next.lines[li], a = next.points[Ln.a], b = next.points[Ln.b], mid = toPx((a.x + b.x) / 2, (a.y + b.y) / 2);
@@ -1054,14 +1071,15 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: 
       get dof() { return res?.dof ?? null; },
       get status() { return res?.status ?? null; },
       free() { return res?.free ?? null; },
-      get nPoints() { return model.points.length; },
-      get nLines() { return model.lines.length; },
+      get nPoints() { return model.points.length - nRefPts; },   // lo que dibujó la mano (sin la referencia)
+      get nLines() { return model.lines.length - nRef; },
+      get nRef() { return nRef; }, get nRefPts() { return nRefPts; },
       get nCircles() { return model.circles.length; },
       get nCotas() { return model.constraints.filter((c) => ['distance', 'distX', 'distY', 'radius', 'diameter', 'arcRadius', 'angle'].includes(c.t)).length; },
       get dim() { return dim ? { kind: dim.kind, val: dim.val } : null; },
       get deshacer() { return histRef.current.length; },
       points() { return model.points.map((p) => ({ x: p.x, y: p.y, fixed: !!p.fixed })); },
-      lines() { return model.lines.map((l) => ({ a: l.a, b: l.b })); },
+      lines() { return model.lines.map((l, i) => ({ a: l.a, b: l.b, ref: i < nRef })); },
       circles() { return model.circles.map((c) => ({ c: c.c, r: c.r })); },
       // Arcos con el PUNTO MEDIO de la curva (para que el arnés clique la curva y la
       // seleccione/acote): midángulo entre p0→p1 barriendo CCW.
@@ -1398,8 +1416,8 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: 
             const seld = sel.some((s) => s.kind === 'line' && s.i === i);
             const free = !!(res?.free?.points[l.a] || res?.free?.points[l.b]);
             return <line key={`l${i}`} x1={a.px} y1={a.py} x2={b.px} y2={b.py}
-              stroke={seld ? GOLD : l.constr ? '#6b7a8d' : colFor(free)} strokeWidth={seld ? 3 : l.constr ? 1.2 : 1.8}
-              strokeDasharray={l.constr ? '7 5' : undefined} />;
+              stroke={seld ? GOLD : i < nRef ? '#4fd6ff' : l.constr ? '#6b7a8d' : colFor(free)} strokeWidth={seld ? 3 : i < nRef ? 1.3 : l.constr ? 1.2 : 1.8}
+              opacity={i < nRef && !seld ? 0.7 : undefined} strokeDasharray={l.constr && i >= nRef ? '7 5' : undefined} />;
           })}
           {/* RESTRICCIONES: badges (H/V/⊥/∥/=/⊙) que dicen QUÉ sujeta el boceto,
               como Fusion. Antes el solver las aplicaba pero eran invisibles. */}
@@ -1409,6 +1427,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: 
           <DimAnnotations model={model} toPx={toPx} scale={scale} />
           {/* puntos */}
           {model.points.map((pt, i) => { const p = toPx(pt.x, pt.y); const seld = sel.some((s) => s.kind === 'point' && s.i === i);
+            if (i < nRefPts && !seld) return null;   // los vértices de la referencia no se pintan (son cientos): el imán los enseña al acercarte
             return <circle key={`p${i}`} cx={p.px} cy={p.py} r={seld ? 5 : 3.2} fill={seld ? GOLD : pt.fixed ? '#22c55e' : colFor(res?.free?.points[i])} stroke="#0b0f14" strokeWidth={1} />;
           })}
         </svg>
@@ -1470,7 +1489,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo }: 
         <b data-testid="sk-dof" style={{ color: dofColor }}>
           {!res ? 'Dibuja el plano' : res.status === 'full' ? 'Totalmente restringido ✓' : res.status === 'over' ? 'Conflicto de restricciones' : `${res.dof} grado${res.dof === 1 ? '' : 's'} de libertad`}
         </b>
-        <span style={{ color: '#64748b', marginLeft: 12 }}>{model.points.length} pts · {model.lines.length} líneas · {model.circles.length} círculos{(model.ellipses?.length ?? 0) > 0 ? ` · ${model.ellipses!.length} elipses` : ''}</span>
+        <span style={{ color: '#64748b', marginLeft: 12 }}>{model.points.length - nRefPts} pts · {model.lines.length - nRef} líneas · {model.circles.length} círculos{(model.ellipses?.length ?? 0) > 0 ? ` · ${model.ellipses!.length} elipses` : ''}</span>
         <span style={{ flex: 1 }} />
         {/* La leyenda de colores vive en el tooltip del chip DOF, no quemada en pantalla */}
         <span style={{ color: '#3d4754', cursor: 'help', fontSize: 12 }}

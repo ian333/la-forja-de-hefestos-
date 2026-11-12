@@ -2639,6 +2639,57 @@ function planoDeCaraRef(geo: PartGeo, caras: CarasRef, c: number, m: THREE.Matri
   const o = new THREE.Vector3().addScaledVector(u, (u0 + u1) / 2).addScaledVector(v, (v0 + v1) / 2).addScaledVector(n, d / k);
   return { plano: { origin: [o.x, o.y, o.z], uDir: [u.x, u.y, u.z], vDir: [v.x, v.y, v.z] }, diag: Math.hypot(u1 - u0, v1 - v0) };
 }
+/** EL CONTORNO de una cara de una malla de referencia, en mm de su plano (x sobre u, y sobre v, origen = el del plano):
+ *  las aristas de sus triángulos que NO comparten dos triángulos de la misma cara, encadenadas en lazos (la orilla y los
+ *  huecos). Los vértices se juntan por posición (las primitivas no traen índice compartido). Los puntos alineados se
+ *  quitan; un lazo muy fino (borde curvo teselado) se adelgaza para no ahogar al boceto. */
+function contornoDeCara(geo: PartGeo, caras: CarasRef, c: number, m: THREE.Matrix4, plano: SketchPlane3D): Pt2[][] {
+  const P = geo.positions, I = geo.indices;
+  const ids = new Map<string, number>(); const xy: Pt2[] = [];
+  const o = new THREE.Vector3(...plano.origin), u = new THREE.Vector3(...plano.uDir), v = new THREE.Vector3(...plano.vDir), q = new THREE.Vector3();
+  const idDe = (vi: number) => {
+    const k = `${Math.round(P[3 * vi] * 1000)},${Math.round(P[3 * vi + 1] * 1000)},${Math.round(P[3 * vi + 2] * 1000)}`;
+    let id = ids.get(k);
+    if (id === undefined) { id = xy.length; ids.set(k, id); q.set(P[3 * vi], P[3 * vi + 1], P[3 * vi + 2]).applyMatrix4(m).sub(o); xy.push({ x: q.dot(u), y: q.dot(v) }); }
+    return id;
+  };
+  const veces = new Map<string, [number, number, number]>();   // arista (min-max) → [a, b, cuántos triángulos de la cara la usan]
+  for (let t = 0; t < caras.caraDeTri.length; t++) {
+    if (caras.caraDeTri[t] !== c) continue;
+    const a = idDe(I[3 * t]), b = idDe(I[3 * t + 1]), d = idDe(I[3 * t + 2]);
+    for (const [p0, p1] of [[a, b], [b, d], [d, a]] as const) {
+      if (p0 === p1) continue;
+      const k = p0 < p1 ? `${p0}-${p1}` : `${p1}-${p0}`, e = veces.get(k);
+      if (e) e[2]++; else veces.set(k, [p0, p1, 1]);
+    }
+  }
+  const vecinos = new Map<number, number[]>();
+  for (const [a, b, n] of veces.values()) { if (n !== 1) continue; (vecinos.get(a) ?? vecinos.set(a, []).get(a)!).push(b); (vecinos.get(b) ?? vecinos.set(b, []).get(b)!).push(a); }
+  const usados = new Set<string>(), lazos: Pt2[][] = [];
+  const ar = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+  for (const ini of vecinos.keys()) {
+    for (const sig0 of vecinos.get(ini)!) {
+      if (usados.has(ar(ini, sig0))) continue;
+      const lazo = [ini]; let prev = ini, cur = sig0; usados.add(ar(ini, sig0));
+      while (cur !== ini && lazo.length < 20000) {
+        lazo.push(cur);
+        const sig = (vecinos.get(cur) ?? []).find((w) => w !== prev && !usados.has(ar(cur, w)));
+        if (sig === undefined) break;
+        usados.add(ar(cur, sig)); prev = cur; cur = sig;
+      }
+      if (lazo.length < 3) continue;
+      // fuera los puntos alineados con sus vecinos (una orilla recta teselada trae puntos de sobra)
+      let pts = lazo.map((i) => xy[i]);
+      const recto = (a: Pt2, b: Pt2, d: Pt2) => Math.abs((b.x - a.x) * (d.y - a.y) - (b.y - a.y) * (d.x - a.x)) < 1e-4 * (Math.hypot(d.x - a.x, d.y - a.y) + 1e-9);
+      pts = pts.filter((b, i) => !recto(pts[(i + pts.length - 1) % pts.length], b, pts[(i + 1) % pts.length]));
+      if (pts.length >= 3) lazos.push(pts);
+    }
+  }
+  // tope de tamaño: una cara con miles de vértices de orilla (curvas teseladas) se adelgaza parejo
+  const total = lazos.reduce((a, l) => a + l.length, 0), TOPE = 1500;
+  if (total > TOPE) { const paso = Math.ceil(total / TOPE); return lazos.map((l) => (l.length > 12 ? l.filter((_, i) => i % paso === 0) : l)).filter((l) => l.length >= 3); }
+  return lazos;
+}
 /** Volumen de una malla cerrada (suma de tetraedros con signo), mm³. */
 function volumenDeMalla(geo: PartGeo): number {
   const P = geo.positions, I = geo.indices; let v = 0;
@@ -5292,6 +5343,7 @@ export default function ForgeBRepStudio() {
   const [forjadas, setForjadas] = useState<Record<string, PartGeo>>({});
   const [golpeErr, setGolpeErr] = useState<Record<string, string>>({});
   const [forjando, setForjando] = useState(false);
+  const [yunqueContorno, setYunqueContorno] = useState<Pt2[][] | null>(null);    // …y su contorno, que entra al boceto como referencia
   const [yunquePlano, setYunquePlano] = useState<SketchPlane3D | null>(null);   // el boceto abierto va sobre ESTA cara (no ensucia `sketch` ni el historial)
   const [bajando, setBajando] = useState<string | null>(null);                    // se está armando un STL/STEP para bajar
   // lo recién bocetado ESPERA su profundidad antes de forjarse (como el diálogo de Extruir): una forja son 3–7 s
@@ -7295,7 +7347,7 @@ export default function ForgeBRepStudio() {
     const h = refPorKey.get(s.key); if (!h) return null;
     const c = carasDeMalla(h.geo);
     const pl = c.plana[s.cara] ? planoDeCaraRef(h.geo, c, s.cara, h.m) : null;
-    return { key: s.key, nombre: h.r.name, plano: pl?.plano ?? null, diag: pl?.diag ?? 0, piso: refPartBox(h.geo, h.m).getSize(new THREE.Vector3()).length() * 0.75, forjable: tieneSolido(s.key) };
+    return { key: s.key, cara: s.cara, nombre: h.r.name, plano: pl?.plano ?? null, diag: pl?.diag ?? 0, piso: refPartBox(h.geo, h.m).getSize(new THREE.Vector3()).length() * 0.75, forjable: tieneSolido(s.key) };
   }, [tallerSel, refPorKey, tieneSolido]);
   /** La cámara vuela y deja la cara DE FRENTE. `n` en coordenadas del visor; el blanco en las del doc. */
   const verDeFrente = useCallback((n: [number, number, number], blanco: [number, number, number], diag: number, piso = 0) => {
@@ -7333,13 +7385,18 @@ export default function ForgeBRepStudio() {
     setYunqueListo(null);
     yunquePend.current = { sobre: caraAgarrada.key, modo, plano: caraAgarrada.plano };
     yunqueVista.current = { plano: caraAgarrada.plano, diag: Math.max(caraAgarrada.diag, caraAgarrada.piso / 2.3) };
+    // el contorno de la cara entra al boceto como referencia (imanes y cotas «desde el borde»)
+    const h = refPorKey.get(caraAgarrada.key);
+    let contorno: Pt2[][] | null = null;
+    try { contorno = h ? contornoDeCara(h.geo, carasDeMalla(h.geo), caraAgarrada.cara, h.m, caraAgarrada.plano) : null; } catch { contorno = null; }
+    setYunqueContorno(contorno && contorno.length ? contorno : null);
     setYunquePlano(caraAgarrada.plano);
     setSketchOpen(true);
-  }, [caraAgarrada]);
+  }, [caraAgarrada, refPorKey]);
   // boceto de un golpe CANCELADO: el plano de la cara no se le queda pegado al croquis siguiente
   useEffect(() => {
     if (sketchOpen) return;
-    yunquePend.current = null; setYunquePlano(null);
+    yunquePend.current = null; setYunquePlano(null); setYunqueContorno(null);
   }, [sketchOpen]);
   /** Forjar lo recién bocetado con la profundidad que diga la caja (o pasante, si es un corte). */
   const forjarListo = useCallback(() => {
@@ -10679,6 +10736,7 @@ export default function ForgeBRepStudio() {
         {/* EDITOR DE CROQUIS 2D — dibujar perfil con restricciones (solver en vivo). */}
         {sketchOpen && (
           <SketchEditor onFinish={onSketchFinish} onCancel={() => setSketchOpen(false)} projScale={sketchCam?.pxPerMm}
+            referencia={yunquePlano && yunqueContorno ? yunqueContorno : undefined}
             titulo={yunquePlano && yunquePend.current ? `${yunquePend.current.modo === 'nuevo' ? 'Cuerpo nuevo sobre' : yunquePend.current.modo === 'unir' ? 'Unir a' : 'Cortar'} · ${refPorKey.get(yunquePend.current.sobre)?.r.name ?? 'la cara agarrada'}` : undefined} />
         )}
 

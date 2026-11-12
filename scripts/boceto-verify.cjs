@@ -7,7 +7,9 @@
  *   D. volver a acotar el mismo lado lo CAMBIA (una sola cota, sin conflicto) y el botón ✕ la quita;
  *   E. clic en un lado y luego en el contiguo → la caja pasa a ser la del ÁNGULO (90°);
  *   F. Ctrl+Z dentro del boceto quita el último trazo y NO toca los golpes del documento;
- *   G. al terminar, el golpe sale de 20.00 × 12.00.
+ *   G. al terminar, el golpe sale de 20.00 × 12.00;
+ *   R. (orden 2026-11-11-boceto-contorno-de-la-cara) el contorno de la cara entra como REFERENCIA fija: mide lo que la cara,
+ *      no se arrastra ni se acota, y una cota ↔ / ↕ contra uno de sus vértices coloca el rectángulo a 12 y 8 mm exactos.
  * Uso (iangpu, vite DEV vivo):
  *   DISPLAY=:0 GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA node scripts/boceto-verify.cjs
  */
@@ -32,13 +34,13 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
   p.on('console', (m) => { if (m.type() === 'error' && !/telemetry|favicon|404/.test(m.text())) errs.push(m.text().slice(0, 200)); });
   const espera = (ms) => p.waitForTimeout(ms);
   const shot = (n) => p.screenshot({ path: path.join(OUT, n), timeout: 30000 });
-  const se = () => p.evaluate(() => { const s = window.__sketchEditor; return { pts: s.points(), lines: s.lines(), nLines: s.nLines, nCircles: s.nCircles, nCotas: s.nCotas, dim: s.dim, status: s.status, dof: s.dof, deshacer: s.deshacer }; });
+  const se = () => p.evaluate(() => { const s = window.__sketchEditor; return { pts: s.points(), lines: s.lines(), nLines: s.nLines, nCircles: s.nCircles, nCotas: s.nCotas, dim: s.dim, status: s.status, dof: s.dof, deshacer: s.deshacer, nRef: s.nRef, nRefPts: s.nRefPts }; });
   const aPx = (x, y) => p.evaluate(([mx, my]) => { const s = window.__sketchEditor; const q = s.toPx(mx, my); const r = s.svgRect(); return { x: r.left + q.px, y: r.top + q.py }; }, [x, y]);
   const clicMm = async (x, y) => { const q = await aPx(x, y); await p.mouse.move(q.x, q.y, { steps: 4 }); await p.mouse.click(q.x, q.y); await espera(280); };
   // los lados del rectángulo como están AHORA (el resolvedor los mueve al acotar)
   const lados = async () => {
     const s = await se(); const P = s.pts;
-    const L = s.lines.map((l, i) => ({ i, a: P[l.a], b: P[l.b], largo: Math.hypot(P[l.a].x - P[l.b].x, P[l.a].y - P[l.b].y), mx: (P[l.a].x + P[l.b].x) / 2, my: (P[l.a].y + P[l.b].y) / 2, horiz: Math.abs(P[l.a].y - P[l.b].y) < Math.abs(P[l.a].x - P[l.b].x) }));
+    const L = s.lines.map((l, i) => ({ ...l, i })).filter((l) => !l.ref).map((l) => ({ i: l.i, a: P[l.a], b: P[l.b], largo: Math.hypot(P[l.a].x - P[l.b].x, P[l.a].y - P[l.b].y), mx: (P[l.a].x + P[l.b].x) / 2, my: (P[l.a].y + P[l.b].y) / 2, horiz: Math.abs(P[l.a].y - P[l.b].y) < Math.abs(P[l.a].x - P[l.b].x) }));
     const abajo = L.filter((l) => l.horiz).sort((u, v) => u.my - v.my)[0], derecha = L.filter((l) => !l.horiz).sort((u, v) => v.mx - u.mx)[0];
     return { abajo, derecha, s };
   };
@@ -85,6 +87,15 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     const titulo = await p.$eval('[data-testid="sk-titulo"]', (e) => e.textContent).catch(() => null);
     ok('A. el boceto dice el modo y la pieza', !!titulo && /^Cortar · \S/.test(titulo), titulo);
 
+    // ── R1. la referencia: el contorno de la cara ──
+    const caraYq = await p.evaluate(() => window.__forgeBrep.yunque.cara);
+    const s0 = await se();
+    const refPts = s0.pts.slice(0, s0.nRefPts);
+    const rx = refPts.map((q) => q.x), ry = refPts.map((q) => q.y);
+    const diagRef = refPts.length ? Math.hypot(Math.max(...rx) - Math.min(...rx), Math.max(...ry) - Math.min(...ry)) : 0;
+    ok('R. el contorno de la cara entra al boceto como referencia fija y mide lo que la cara', s0.nRef >= 3 && s0.nRefPts >= 3 && refPts.every((q) => q.fixed) && Math.abs(diagRef - caraYq.diag) < 0.05 && s0.nLines === 0,
+      { lineas_de_referencia: s0.nRef, diagonal_ref: +diagRef.toFixed(3), diagonal_de_la_cara: +caraYq.diag.toFixed(3), lineas_de_la_mano: s0.nLines });
+
     // ── B. previa del rectángulo ──
     await p.click('[data-testid="sk-tool-rect"]');
     await clicMm(-15, -8);
@@ -112,16 +123,54 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     ok('C. el otro lado a 12: el rectángulo queda de 20.00 × 12.00 con 2 cotas', Math.abs(L.abajo.largo - 20) < 0.005 && Math.abs(L.derecha.largo - 12) < 0.005 && L.s.nCotas === 2 && L.s.status !== 'over', { ancho: +L.abajo.largo.toFixed(3), alto: +L.derecha.largo.toFixed(3), cotas: L.s.nCotas, estado: L.s.status });
     await shot('03-acotado-20x12.png');
 
+    // ── R2. colocar el rectángulo contra un vértice de la cara ──
+    {
+      const s1 = await se();
+      // el vértice de la referencia más cercano al rectángulo (y que no esté encimado con él)
+      const mano = s1.pts.slice(s1.nRefPts);
+      const esq = mano.reduce((a, q) => (q.x + q.y < a.x + a.y ? q : a));             // esquina abajo-izquierda del rectángulo
+      const iEsq = s1.nRefPts + mano.indexOf(esq);
+      const cand = s1.pts.slice(0, s1.nRefPts).map((q, i) => ({ ...q, i, d: Math.hypot(q.x - esq.x, q.y - esq.y) })).filter((q) => q.d > 6 && Math.abs(q.x - esq.x) > 3 && Math.abs(q.y - esq.y) > 3).sort((a, c) => a.d - c.d)[0];
+      const antesRef = { x: cand.x, y: cand.y };
+      const sx = Math.sign(esq.x - cand.x), sy = Math.sign(esq.y - cand.y);
+      // Cota: clic en el vértice de la referencia, clic en la esquina del rectángulo, ↔, 12
+      await clicMm(cand.x, cand.y); await clicMm(esq.x, esq.y);
+      await p.click('[data-testid="sk-dim-h"]');
+      await p.click('[data-testid="sk-dim-input"]'); await p.keyboard.press('Control+a'); await p.keyboard.type('12'); await p.keyboard.press('Enter'); await espera(450);
+      let s2 = await se(); let e2 = s2.pts[iEsq];
+      await clicMm(cand.x, cand.y); await clicMm(e2.x, e2.y);
+      await p.click('[data-testid="sk-dim-v"]');
+      await p.click('[data-testid="sk-dim-input"]'); await p.keyboard.press('Control+a'); await p.keyboard.type('8'); await p.keyboard.press('Enter'); await espera(450);
+      s2 = await se(); e2 = s2.pts[iEsq];
+      const r2 = s2.pts[cand.i];
+      ok('R. cota ↔ 12 y ↕ 8 contra un vértice de la cara: la esquina queda a 12.000 y 8.000 mm, y la referencia no se movió', Math.abs(Math.abs(e2.x - r2.x) - 12) < 0.005 && Math.abs(Math.abs(e2.y - r2.y) - 8) < 0.005 && Math.abs(r2.x - antesRef.x) < 1e-9 && Math.abs(r2.y - antesRef.y) < 1e-9 && s2.status !== 'over' && Math.sign(e2.x - r2.x) === sx && Math.sign(e2.y - r2.y) === sy,
+        { dx: +(e2.x - r2.x).toFixed(4), dy: +(e2.y - r2.y).toFixed(4), cotas: s2.nCotas, estado: s2.status });
+      await shot('03b-acotado-contra-el-borde.png');
+      // la referencia no se arrastra (herramienta Seleccionar) ni se acota (Cota sobre una de sus líneas no abre caja)
+      await p.click('[data-testid="sk-tool-select"]');
+      const q0 = await aPx(cand.x, cand.y);
+      await p.mouse.move(q0.x, q0.y); await p.mouse.down(); await p.mouse.move(q0.x + 40, q0.y + 25, { steps: 5 }); await p.mouse.up(); await espera(300);
+      const s3 = await se();
+      await p.keyboard.press('Escape');
+      await p.click('[data-testid="sk-tool-dim"]');
+      const lr = s3.lines.find((l) => l.ref && Math.hypot(s3.pts[l.a].x - s3.pts[l.b].x, s3.pts[l.a].y - s3.pts[l.b].y) > 8);
+      await clicMm((s3.pts[lr.a].x + s3.pts[lr.b].x) / 2, (s3.pts[lr.a].y + s3.pts[lr.b].y) / 2);
+      const cajaRef = await cajaDeCota();
+      await p.keyboard.press('Escape'); await espera(200);
+      ok('R. la referencia no se arrastra ni se acota', Math.abs(s3.pts[cand.i].x - antesRef.x) < 1e-9 && Math.abs(s3.pts[cand.i].y - antesRef.y) < 1e-9 && !cajaRef, { vertice_se_movio: +(Math.hypot(s3.pts[cand.i].x - antesRef.x, s3.pts[cand.i].y - antesRef.y)).toFixed(6), caja_de_cota: cajaRef });
+      L = await lados();
+    }
+
     // ── D. cambiar y quitar una cota ──
     await clicMm(L.abajo.mx, L.abajo.my);
     caja = await cajaDeCota();
     await p.keyboard.type('25'); await p.keyboard.press('Enter'); await espera(400);
     L = await lados();
-    ok('D. volver a acotar el mismo lado lo CAMBIA: 25.00, siguen 2 cotas, sin conflicto', caja && caja.quitar && Math.abs(L.abajo.largo - 25) < 0.005 && L.s.nCotas === 2 && L.s.status !== 'over', { caja, largo: +L.abajo.largo.toFixed(3), cotas: L.s.nCotas, estado: L.s.status });
+    ok('D. volver a acotar el mismo lado lo CAMBIA: 25.00, siguen 4 cotas, sin conflicto', caja && caja.quitar && Math.abs(L.abajo.largo - 25) < 0.005 && L.s.nCotas === 4 && L.s.status !== 'over', { caja, largo: +L.abajo.largo.toFixed(3), cotas: L.s.nCotas, estado: L.s.status });
     await clicMm(L.abajo.mx, L.abajo.my);
     await p.click('[data-testid="sk-dim-quitar"]'); await espera(400);
     L = await lados();
-    ok('D. el botón ✕ quita esa cota (queda 1)', L.s.nCotas === 1 && !(await cajaDeCota()), { cotas: L.s.nCotas });
+    ok('D. el botón ✕ quita esa cota (quedan 3)', L.s.nCotas === 3 && !(await cajaDeCota()), { cotas: L.s.nCotas });
     await clicMm(L.abajo.mx, L.abajo.my);
     await p.keyboard.type('20'); await p.keyboard.press('Enter'); await espera(400);
 
@@ -142,7 +191,7 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     await p.keyboard.press('Control+z'); await espera(400);
     const sinCirculo = await se();
     const golpesDoc = await p.evaluate(() => window.__forgeBrep.yunque.golpes.length);
-    ok('F. Ctrl+Z en el boceto quita el último trazo y NO toca los golpes del documento', conCirculo.nCircles === 1 && sinCirculo.nCircles === 0 && sinCirculo.nLines === 4 && sinCirculo.nCotas === 2 && golpesDoc === 1,
+    ok('F. Ctrl+Z en el boceto quita el último trazo y NO toca los golpes del documento', conCirculo.nCircles === 1 && sinCirculo.nCircles === 0 && sinCirculo.nLines === 4 && sinCirculo.nCotas === 4 && golpesDoc === 1,
       { circulos: [conCirculo.nCircles, sinCirculo.nCircles], lineas: sinCirculo.nLines, cotas: sinCirculo.nCotas, golpes_del_documento: golpesDoc });
 
     // ── G. terminar ──
