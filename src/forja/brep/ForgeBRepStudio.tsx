@@ -9996,7 +9996,7 @@ export default function ForgeBRepStudio() {
           sketchCam={sketchCam}
         >
           {/* clic al vacío = la tenaza suelta lo agarrado (R3F solo lo llama si el mouse casi no se movió: girar no suelta) */}
-          <group rotation={[-Math.PI / 2, 0, 0]} onPointerMissed={() => { if (!(moverOn && enMano)) setTallerSel(null); }}>
+          <group rotation={[-Math.PI / 2, 0, 0]} onPointerMissed={(e) => { if (e.button === 0 && !(moverOn && enMano)) setTallerSel(null); }}>   {/* solo el clic IZQUIERDO al vacío suelta: el derecho es para mover la vista y para el radial */}
             {yunqueListo && !sketchOpen && <PerfilEnCara plano={yunqueListo.planoVisto} golpes={yunqueListo.nuevos} />}
             {/* CAM vivo: stock + toolpath 3D solo en workspace MANUFACTURA */}
             {workspace === 'manufactura' && meshBBox && result && !building && (
@@ -10830,7 +10830,28 @@ export default function ForgeBRepStudio() {
         {radial && (
           <RadialMenu
             x={radial.x} y={radial.y} onClose={() => setRadial(null)}
-            items={[
+            items={docTaller ? [
+              // EL RADIAL DEL TALLER (orden 2026-11-11-radial-del-taller): lo que SÍ se puede hacer con lo agarrado.
+              // Antes ofrecía las 8 herramientas del kernel, que en un taller no sirven y ensucian el documento.
+              { id: 'encuadrar', label: 'Encuadrar', glyph: '⛶', onPick: () => encuadrarTaller(refAislado) },
+              ...(caraAgarrada?.plano ? [
+                { id: 'frente', label: 'De frente', glyph: '◉', onPick: frenteAgarrada },
+                { id: 'nuevo', label: 'Cuerpo nuevo', glyph: '＋', onPick: () => bocetoEnCara('nuevo') },
+                ...(caraAgarrada.forjable ? [
+                  { id: 'unir', label: 'Unir', glyph: '∪', onPick: () => bocetoEnCara('unir') },
+                  { id: 'cortar', label: 'Cortar', glyph: '−', onPick: () => bocetoEnCara('cortar') },
+                ] : []),
+              ] : []),
+              ...(tallerSel ? [
+                { id: 'aislar', label: refAislado === tallerSel.key ? 'Mostrar todo' : 'Aislar', glyph: '◎', onPick: () => { const k = tallerSel.key; if (refAislado === k) setRefAislado(null); else { setRefAislado(k); encuadrarTaller(k); } } },
+                { id: 'ocultar', label: 'Ocultar', glyph: '⦸', onPick: () => { toggleRef(tallerSel.key); setTallerSel(null); } },
+              ] : (refAislado || refHidden.size ? [
+                { id: 'todo', label: 'Mostrar todo', glyph: '◎', onPick: () => { setRefAislado(null); setRefHidden(new Set()); } },
+              ] : [])),
+              ...(enMano ? [{ id: 'mover', label: moverOn ? 'Quitar flechas' : 'Mover', glyph: '✥', onPick: () => setMoverOn((o) => !o) }] : []),
+              { id: 'medir', label: medirOn ? 'Dejar de medir' : 'Medir', glyph: '⟷', onPick: alternarMedir },
+              { id: 'rayos', label: refRayos ? 'Quitar rayos X' : 'Rayos X', glyph: '▧', onPick: () => setRefRayos((o) => !o) },
+            ] : [
               { id: 'sketch', label: 'Boceto', glyph: '✏', onPick: openSketchChooser },
               { id: 'extrude', label: 'Extruir', glyph: '⤒', onPick: () => addOp('extrude') },
               { id: 'revolve', label: 'Revolución', glyph: '⟳', onPick: () => addOp('revolve') },
@@ -10892,8 +10913,9 @@ export default function ForgeBRepStudio() {
         {/* ATAJOS VISIBLES (orden del user): botón real, no susurro — clic o tecla S. */}
         <button
           data-testid="shortcut-hint"
-          onClick={() => setShortcutPos({ x: 320, y: Math.max(180, window.innerHeight - 340) })}
-          title="Paleta de atajos (o presiona S): C círculo · B rect · L línea · E extruir · F redondeo…"
+          // en un documento de TALLER la paleta S (herramientas del kernel) no sirve: el chip abre el radial del Taller
+          onClick={() => { if (docTaller) { const r = viewportRef.current?.getBoundingClientRect(); setRadial({ x: r ? r.left + r.width / 2 : 800, y: r ? r.top + r.height / 2 : 500 }); } else setShortcutPos({ x: 320, y: Math.max(180, window.innerHeight - 340) }); }}
+          title={docTaller ? 'El menú del Taller: lo que se puede hacer con lo agarrado. También sale con DOS clics derechos en el visor.' : 'Paleta de atajos (o presiona S): C círculo · B rect · L línea · E extruir · F redondeo…'}
           style={{
             // bottom-CENTRO: zona libre entre los rieles (nunca los tapa) — regla anti-encimado.
             // X5: con una pieza cargada esa zona YA NO está libre — ahí vive EL PARTE DEL
@@ -10906,8 +10928,8 @@ export default function ForgeBRepStudio() {
             boxShadow: '0 4px 14px rgba(0,0,0,.4)',
           }}
         >
-          <span style={{ color: GOLD, fontWeight: 700, border: `1px solid ${GOLD}88`, borderRadius: 4, padding: '0 6px' }}>S</span>
-          <span>atajos del taller</span>
+          <span style={{ color: GOLD, fontWeight: 700, border: `1px solid ${GOLD}88`, borderRadius: 4, padding: '0 6px' }}>{docTaller ? '⚒' : 'S'}</span>
+          <span>{docTaller ? 'menú del taller' : 'atajos del taller'}</span>
         </button>
 
         {/* MOUSE / TOUCHPAD: se detecta solo por la rueda; el chip lo fuerza si se equivoca */}

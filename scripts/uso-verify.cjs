@@ -10,6 +10,7 @@
  *      UNA vez a 5 mm con el aviso «forjando» en pantalla; «pasante» sale como golpe pasante.
  *   F. (parte 2) Esc dentro del boceto conserva la cara agarrada; el doble clic en una cara chica no mete la cámara
  *      entre las piezas; mover una pieza lejos NO regresa la cámara a la vista de llegada.
+ *   R. (orden 2026-11-11-radial-del-taller) el radial de dos clics derechos ofrece lo del Taller según lo agarrado.
  * Uso (iangpu, vite DEV vivo):
  *   DISPLAY=:0 GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA node scripts/uso-verify.cjs
  */
@@ -75,6 +76,31 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     ok('B. F, E, V, X, R, C, G, D, W, B, L, P con el laboratorio abierto: el documento no cambia y no hay «Error»', malas.length === 0, malas);
     await shot('01-teclas-sin-ensuciar.png');
 
+    // ── R. el radial del Taller ──
+    const idsRadial = () => p.$$eval('[data-testid^="radial-"]', (els) => els.map((e) => e.dataset.testid).filter((t) => t !== 'radial-menu' && !t.startsWith('radial-letrero-')).map((t) => t.replace('radial-', '')));
+    const dosDerechos = async (x, y) => { await p.mouse.click(x, y, { button: 'right' }); await espera(110); await p.mouse.click(x, y, { button: 'right' }); await espera(350); };
+    const vpR = await p.$eval('.fb-viewport', (e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+    const vacioX = vpR.x + vpR.w * 0.32, vacioY = vpR.y + vpR.h * 0.3;
+    await dosDerechos(vacioX, vacioY);
+    const r0 = await idsRadial();
+    const letreros = await p.$$eval('[data-testid^="radial-letrero-"]', (els) => els.map((e) => e.textContent));
+    ok('R. dos clics derechos con nada agarrado: el radial ofrece lo del Taller (y nada del kernel), con letreros', ['encuadrar', 'medir', 'rayos'].every((k) => r0.includes(k)) && !r0.some((k) => ['extrude', 'revolve', 'fillet', 'chamfer', 'pattern', 'hole', 'sketch', 'plano'].includes(k)) && letreros.includes('Encuadrar') && letreros.includes('Medir'), { items: r0, letreros });
+    await shot('01b-radial-del-taller.png');
+    await p.click('[data-testid="radial-rayos"]'); await espera(400);
+    const rayosOff = await p.evaluate(() => window.__forgeBrep.taller.fantasmas.length);
+    await dosDerechos(vacioX, vacioY); await p.click('[data-testid="radial-rayos"]'); await espera(400);
+    const rayosOn = await p.evaluate(() => window.__forgeBrep.taller.fantasmas.length);
+    ok('R. «Rayos X» del radial lo apaga y lo prende', rayosOff === 0 && rayosOn > 0, { fantasmas: [rayosOff, rayosOn] });
+    await p.click('[data-testid="taller-lab-alambre"]'); await espera(300);
+    await dosDerechos(vacioX, vacioY);
+    const r1 = await idsRadial();
+    ok('R. con una pieza agarrada suma Aislar, Ocultar y Mover', ['aislar', 'ocultar', 'mover', 'encuadrar'].every((k) => r1.includes(k)), r1);
+    await p.keyboard.press('Escape'); await espera(200); await p.keyboard.press('Escape'); await espera(200);
+    await p.click('[data-testid="shortcut-hint"]'); await espera(350);
+    const r2 = await idsRadial();
+    ok('R. el chip de abajo abre el mismo radial (ya no la paleta del kernel)', r2.includes('encuadrar') && (await p.$('[data-testid="radial-menu"]')) !== null && (await doc()) === d0, r2);
+    await p.keyboard.press('Escape'); await espera(250);
+
     // ── C. vistas, encuadre y sección ──
     const botones = await p.evaluate(() => ['[data-testid="btn-fit"]', 'button[title="Vista isométrica"]', 'button[title="Vista superior"]', 'button[title="Vista frontal"]', '[data-testid="btn-section-tool"]'].map((s) => { const el = document.querySelector(s); return el ? !el.disabled : null; }));
     ok('C. Encuadrar, ISO, SUP, FRE y Sección están prendidos', botones.every((v) => v === true), botones);
@@ -136,6 +162,16 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     };
     let key = await agarrarCara();
     if (!key) throw new Error('no se encontró una cara plana de una pieza impresa');
+
+    // ── R. con una cara plana de una pieza impresa agarrada: el radial trae lo del yunque, y «Cortar» abre el boceto ──
+    await dosDerechos(vacioX, vacioY);
+    const r3 = await idsRadial();
+    ok('R. con una cara plana de pieza impresa agarrada suma De frente, Cuerpo nuevo, Unir y Cortar', ['frente', 'nuevo', 'unir', 'cortar'].every((k) => r3.includes(k)), r3);
+    await p.click('[data-testid="radial-cortar"]');
+    await p.waitForSelector('[data-testid="sketch-editor"]', { timeout: 20000 });
+    ok('R. «Cortar» del radial abre el boceto sobre esa cara', /^Cortar · /.test(await p.$eval('[data-testid="sk-titulo"]', (e) => e.textContent).catch(() => '')));
+    await p.click('[data-testid="sk-cancel"]'); await espera(1500);
+    key = await agarrarCara();
 
     // ── D. teclas dentro del boceto ──
     const dAntes = await doc();

@@ -28,7 +28,7 @@ export default function RadialMenu({ x, y, items, onClose }: {
   }, [onClose]);
   // Mantener el anillo COMPLETO en pantalla aunque el clic sea cerca de un borde.
   const [px, py] = useMemo(() => {
-    const m = R + 64;
+    const m = R + 96;   // el anillo MÁS sus letreros caben en pantalla
     return [
       Math.min(Math.max(x, m), (window.innerWidth || 1600) - m),
       Math.min(Math.max(y, m), (window.innerHeight || 900) - m),
@@ -85,8 +85,8 @@ export default function RadialMenu({ x, y, items, onClose }: {
         const a = -Math.PI / 2 + (i * 2 * Math.PI) / items.length;
         const ix = px + R * Math.cos(a), iy = py + R * Math.sin(a);
         return (
+          <span key={it.id} style={{ display: 'contents' }}>
           <button
-            key={it.id}
             className="fj-radial-item"
             data-testid={`radial-${it.id}`}
             title={it.label}
@@ -104,6 +104,15 @@ export default function RadialMenu({ x, y, items, onClose }: {
               animation: `fjItemIn .18s ${i * 0.022}s ease-out backwards`,
             }}
           >{it.glyph}</button>
+          {/* el LETRERO de cada ícono, hacia afuera del anillo (antes solo salía al centro al pasar el mouse: «8 íconos sin letrero») */}
+          <span data-testid={`radial-letrero-${it.id}`} style={{
+            // a los lados el texto nace PEGADO al ícono y crece hacia afuera (centrado se encimaba con el botón)
+            position: 'fixed', left: px + (R + (Math.abs(Math.cos(a)) > 0.3 ? 36 : 0)) * Math.cos(a), top: py + (R + (Math.abs(Math.cos(a)) > 0.3 ? 0 : 46)) * Math.sin(a),
+            transform: Math.cos(a) > 0.3 ? 'translate(0,-50%)' : Math.cos(a) < -0.3 ? 'translate(-100%,-50%)' : 'translate(-50%,-50%)',
+            font: '600 11px/1.1 Inter, system-ui, sans-serif', letterSpacing: '.2px', color: '#dbe3ee', whiteSpace: 'nowrap', pointerEvents: 'none',
+            textShadow: '0 1px 3px rgba(0,0,0,.9), 0 0 8px rgba(6,10,16,.9)', animation: `fjItemIn .18s ${i * 0.022}s ease-out backwards`,
+          }}>{it.label}</span>
+          </span>
         );
       })}
     </div>
