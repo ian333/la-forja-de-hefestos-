@@ -2243,6 +2243,7 @@ interface Golpe {
   plano: SketchPlane3D;          // la cara, en el marco del doc (u × v = normal hacia AFUERA)
   profile: Pt2[]; holes?: Pt2[][]; circle?: { x: number; y: number; r: number };
   depth: number;                 // mm: hacia afuera (nuevo, unir) o hacia adentro (cortar)
+  pasante?: boolean;             // cortar A TRAVÉS de toda la pieza (la profundidad no cuenta)
 }
 /** El STEP de una pieza IMPRESA del laboratorio vive junto a su FMSH; las de fábrica no tienen (quedan encadenadas). */
 const solidoDeRef = (r: RefPart): string | null =>
@@ -2292,16 +2293,28 @@ function volumenDeMalla(geo: PartGeo): number {
   return Math.abs(v) / 6;
 }
 /** Un golpe se extruye con el MISMO motor que un componente de croquis (buildComponent: 'subtract' entra a la pieza). */
+const PASANTE_MM = 3000;   // «a través de todo»: más largo que cualquier pieza del banco (el laboratorio mide ~0.5 m)
 const compDeGolpe = (g: Golpe): Component => ({
   id: g.id, name: g.nombre, kind: 'sketch', w: 0, d: 0, h: 0, r: 0, x: 0, y: 0, z: 0,
   bool: g.modo === 'cortar' ? 'subtract' : 'union',
-  profile: g.profile, holes: g.holes ?? [], circle: g.circle, plane3d: g.plano, depth: g.depth,
+  profile: g.profile, holes: g.holes ?? [], circle: g.circle, plane3d: g.plano,
+  depth: g.modo === 'cortar' && g.pasante ? PASANTE_MM : g.depth,
 });
 /** Dónde cuelga en el Taller un cuerpo nuevo: junto al cuerpo sobre el que se golpeó (mismo grupo, mismo módulo). */
 const padreDeGolpe = (g: Golpe) => (g.sobre.includes('/') ? g.sobre.slice(0, g.sobre.lastIndexOf('/')) : '');
 const keyDeGolpe = (g: Golpe) => { const pk = padreDeGolpe(g); return pk ? `${pk}/${g.id}` : g.id; };
 const refDeGolpe = (g: Golpe): RefPart => ({ id: g.id, name: g.nombre, kind: 'malla', x: 0, y: 0, z: 0, color: '#e2742b', mat: 'filamento' });
 const MATRIZ_I = new THREE.Matrix4();
+/** Quitar un golpe. Si era un cuerpo nuevo, se van con él los golpes dados SOBRE ese cuerpo (y lo que colgaba de ellos). */
+function sinGolpe(cur: Golpe[], id: string): Golpe[] {
+  const g = cur.find((x) => x.id === id); if (!g) return cur;
+  let out = cur.filter((x) => x.id !== id);
+  if (g.modo === 'nuevo') {
+    const k = keyDeGolpe(g);
+    for (const hijo of out.filter((x) => x.sobre === k)) out = sinGolpe(out, hijo.id);
+  }
+  return out;
+}
 
 function RefMesh({ geo, r, clip, rayos, hoja, tenaza, sel, onAgarre, onFrente }: {
   geo: PartGeo; r: RefPart; clip?: THREE.Plane[] | null; rayos?: boolean;
@@ -4881,8 +4894,11 @@ export default function ForgeBRepStudio() {
   const [forjadas, setForjadas] = useState<Record<string, PartGeo>>({});
   const [golpeErr, setGolpeErr] = useState<Record<string, string>>({});
   const [forjando, setForjando] = useState(false);
+  const [yunquePlano, setYunquePlano] = useState<SketchPlane3D | null>(null);   // el boceto abierto va sobre ESTA cara (no ensucia `sketch` ni el historial)
+  const [bajando, setBajando] = useState<string | null>(null);                    // se está armando un STL/STEP para bajar
   const yunqueBase = useRef(new Map<string, Shape>());                                    // sólido importado, ya en el marco del doc
-  const yunqueHecho = useRef(new Map<string, { firma: string; geo: PartGeo | null; errs: Record<string, string> }>());
+  const yunqueHecho = useRef(new Map<string, { firma: string; geo: PartGeo | null; errs: Record<string, string>; ms: number; malla: string; serie: number; vol: number; volBase: number }>());
+  const yunqueSerie = useRef(0);   // cuenta de forjas: quien maneja el yunque sin mouse sabe cuándo terminó la SUYA
   const yunquePend = useRef<{ sobre: string; modo: ModoGolpe; plano: SketchPlane3D } | null>(null);   // el boceto abierto es de un golpe
   const yunqueVista = useRef<{ plano: SketchPlane3D; diag: number } | null>(null);                      // …y al cerrarlo la cámara se queda viendo ESA cara
   const refGeos = useMemo(() => {
@@ -5611,8 +5627,43 @@ export default function ForgeBRepStudio() {
   }, []);
 
   // ── EL YUNQUE · LA FORJA: cada pieza con golpes se rehace en el kernel (su STEP + sus golpes en orden) y se vuelve a
-  // mallar; cada cuerpo nuevo se extruye solo. Solo se rehace lo que cambió (firma por pieza); el sólido importado se
-  // guarda para que mover una profundidad no vuelva a leer el STEP. El hilo se suelta entre piezas (el aviso se pinta). ──
+  // mallar; cada cuerpo nuevo se extruye solo y también recibe golpes. Solo se rehace lo que cambió (firma por pieza); el
+  // sólido importado se guarda para que mover una profundidad no vuelva a leer el STEP. El hilo se suelta entre piezas. ──
+  /** El sólido de fábrica de una pieza IMPRESA, ya en el marco del doc (se lee una vez y se guarda). */
+  const baseDePieza = useCallback(async (key: string): Promise<Shape> => {
+    const ya = yunqueBase.current.get(key); if (ya) return ya;
+    if (!oc) throw new Error('el kernel todavía no carga');
+    const hoja = refGeosBase.find((h) => h.key === key);
+    if (!hoja) throw new Error('la pieza de este golpe ya no está en el documento');
+    const url = solidoDeRef(hoja.r);
+    if (!url) throw new Error('pieza de fábrica: no se une ni se corta (sí acepta un cuerpo nuevo)');
+    const e = hoja.m.elements;
+    if (Math.abs(e[0] - 1) > 1e-9 || Math.abs(e[5] - 1) > 1e-9 || Math.abs(e[10] - 1) > 1e-9) throw new Error('pieza girada en el doc: todavía no se forja');
+    const txt = await cargarSolidoRef(url);
+    const otra = yunqueBase.current.get(key); if (otra) return otra;   // otra llamada la leyó mientras esta esperaba
+    const crudo = importSTEP(oc, txt);
+    const base = e[12] || e[13] || e[14] ? transformShape(oc, crudo, { translate: [e[12], e[13], e[14]] }) : crudo;
+    yunqueBase.current.set(key, base);
+    return base;
+  }, [oc, refGeosBase]);
+  /** Los golpes de unir/cortar, en orden, sobre un sólido. `base` no se borra; lo que regresa es de quien llama si no es
+   *  `base`. Un golpe que no mueve el volumen no tocó la pieza: se avisa en `errs` (y se sigue). */
+  const golpearSolido = useCallback((base: Shape, vBase: number, gs: Golpe[], errs: Record<string, string>): { shape: Shape; vol: number } => {
+    let acc = base, vAcc = vBase;
+    for (const g of gs) {
+      try {
+        const herr = buildComponent(oc!, compDeGolpe(g));
+        const sig = g.modo === 'cortar' ? cut(oc!, acc, herr) : fuse(oc!, acc, herr);
+        herr.delete?.();
+        const vSig = volume(oc!, sig), dv = vSig - vAcc;
+        if (!(Math.abs(dv) > 1e-3)) errs[g.id] = g.modo === 'cortar' ? 'el corte no tocó material' : 'el saliente no agregó material';
+        else if ((g.modo === 'cortar') !== (dv < 0)) errs[g.id] = 'el kernel regresó un sólido raro (el volumen se movió al revés)';
+        if (acc !== base) acc.delete?.();
+        acc = sig; vAcc = vSig;
+      } catch (e) { errs[g.id] = String((e as Error)?.message ?? e).slice(0, 120); }
+    }
+    return { shape: acc, vol: vAcc };
+  }, [oc]);
   useEffect(() => {
     if (!golpes.length) {
       setForjadas((f) => (Object.keys(f).length ? {} : f)); setGolpeErr((e) => (Object.keys(e).length ? {} : e)); setForjando(false);
@@ -5620,11 +5671,14 @@ export default function ForgeBRepStudio() {
     }
     if (!oc || !refGeosBase.length) return;
     let vivo = true;
-    const porPieza = new Map<string, Golpe[]>();
-    for (const g of golpes) if (g.modo !== 'nuevo') porPieza.set(g.sobre, [...(porPieza.get(g.sobre) ?? []), g]);
-    const tareas: Array<{ key: string; firma: string; gs: Golpe[]; nuevo: boolean }> = [];
-    for (const [key, gs] of porPieza) tareas.push({ key, firma: JSON.stringify(gs), gs, nuevo: false });
-    for (const g of golpes) if (g.modo === 'nuevo') tareas.push({ key: g.id, firma: JSON.stringify(g), gs: [g], nuevo: true });
+    // a quién le toca cada golpe: a una pieza impresa (su llave) o a un cuerpo nuevo (la llave de ese golpe)
+    const nuevos = golpes.filter((g) => g.modo === 'nuevo');
+    const llavesNuevas = new Set(nuevos.map(keyDeGolpe));
+    const porSobre = new Map<string, Golpe[]>();
+    for (const g of golpes) if (g.modo !== 'nuevo') porSobre.set(g.sobre, [...(porSobre.get(g.sobre) ?? []), g]);
+    const tareas: Array<{ key: string; firma: string; gs: Golpe[]; nuevo: Golpe | null }> = [];
+    for (const [key, gs] of porSobre) if (!llavesNuevas.has(key)) tareas.push({ key, firma: JSON.stringify(gs), gs, nuevo: null });
+    for (const g of nuevos) { const gs = porSobre.get(keyDeGolpe(g)) ?? []; tareas.push({ key: g.id, firma: JSON.stringify([g, gs]), gs, nuevo: g }); }
     const publicar = () => {
       const f: Record<string, PartGeo> = {}, errs: Record<string, string> = {};
       for (const t of tareas) {
@@ -5638,54 +5692,83 @@ export default function ForgeBRepStudio() {
     const pendientes = tareas.filter((t) => yunqueHecho.current.get(t.key)?.firma !== t.firma);
     if (!pendientes.length) { publicar(); setForjando(false); return; }
     const respiro = () => new Promise<void>((r) => setTimeout(r, 30));
-    const aMalla = (sh: Shape): PartGeo => { const m = tessellate(oc, sh, 0.2, 0.4); return { positions: m.positions, normals: m.normals, indices: m.indices }; };
-    const dicho = (e: unknown) => String((e as Error)?.message ?? e).slice(0, 120);
+    // el mallador truena con caras degeneradas que dejan las booleanas (ya pasó en el generador del laboratorio): se
+    // prueba con deflexiones cada vez más gruesas antes de rendirse
+    let mallaUsada = '';
+    const aMalla = (sh: Shape): PartGeo => {
+      let ultimo: unknown = null;
+      for (const [lin, ang] of [[0.2, 0.4], [0.3, 0.5], [0.6, 0.8]] as const) {
+        try { const m = tessellate(oc, sh, lin, ang); mallaUsada = String(lin); return { positions: m.positions, normals: m.normals, indices: m.indices }; } catch (e) { ultimo = e; }
+      }
+      throw ultimo;
+    };
     (async () => {
       setForjando(true);
       await respiro();
       for (const t of pendientes) {
         if (!vivo) return;
         const errs: Record<string, string> = {};
-        let geo: PartGeo | null = null;
+        let geo: PartGeo | null = null, vol = 0, volBase = 0;
+        const t0 = performance.now(); mallaUsada = '';
         try {
-          if (t.nuevo) {
-            const sh = buildComponent(oc, compDeGolpe(t.gs[0]));
-            geo = aMalla(sh); sh.delete?.();
-          } else {
-            const hoja = refGeosBase.find((h) => h.key === t.key);
-            const url = hoja ? solidoDeRef(hoja.r) : null;
-            if (!hoja || !url) throw new Error('pieza de fábrica: no se une ni se corta (sí acepta un cuerpo nuevo)');
-            let base = yunqueBase.current.get(t.key);
-            if (!base) {
-              const txt = await cargarSolidoRef(url);
-              if (!vivo) return;
-              const e = hoja.m.elements;
-              if (Math.abs(e[0] - 1) > 1e-9 || Math.abs(e[5] - 1) > 1e-9 || Math.abs(e[10] - 1) > 1e-9) throw new Error('pieza girada en el doc: todavía no se forja');
-              const crudo = importSTEP(oc, txt);
-              base = e[12] || e[13] || e[14] ? transformShape(oc, crudo, { translate: [e[12], e[13], e[14]] }) : crudo;
-              yunqueBase.current.set(t.key, base);
-            }
-            let acc: Shape = base;
-            for (const g of t.gs) {
-              try {
-                const herr = buildComponent(oc, compDeGolpe(g));
-                const sig = g.modo === 'cortar' ? cut(oc, acc, herr) : fuse(oc, acc, herr);
-                herr.delete?.();
-                if (acc !== base) acc.delete?.();
-                acc = sig;
-              } catch (e) { errs[g.id] = dicho(e); }
-            }
-            geo = aMalla(acc);
-            if (acc !== base) acc.delete?.();
-          }
-        } catch (e) { for (const g of t.gs) errs[g.id] = dicho(e); geo = null; }
-        yunqueHecho.current.set(t.key, { firma: t.firma, geo, errs });
+          const base = t.nuevo ? buildComponent(oc, compDeGolpe(t.nuevo)) : await baseDePieza(t.key);
+          if (!vivo) { if (t.nuevo) base.delete?.(); return; }
+          volBase = volume(oc, base);
+          const r = golpearSolido(base, volBase, t.gs, errs);
+          vol = r.vol;
+          geo = aMalla(r.shape);
+          if (r.shape !== base) r.shape.delete?.();
+          if (t.nuevo) base.delete?.();
+        } catch (e) {
+          const dicho = String((e as Error)?.message ?? e).slice(0, 120);
+          for (const g of t.nuevo ? [t.nuevo, ...t.gs] : t.gs) errs[g.id] ??= dicho;
+          geo = null;
+        }
+        yunqueHecho.current.set(t.key, { firma: t.firma, geo, errs, ms: Math.round(performance.now() - t0), malla: mallaUsada, serie: ++yunqueSerie.current, vol, volBase });
         await respiro();
       }
       if (vivo) { publicar(); setForjando(false); }
     })();
     return () => { vivo = false; };
-  }, [oc, golpes, refGeosBase]);
+  }, [oc, golpes, refGeosBase, baseDePieza, golpearSolido]);
+  // ── EL YUNQUE · BAJAR un cuerpo para imprimirlo o llevárselo a otro CAD: STL = la malla que se ve (con sus golpes);
+  // STEP = el sólido del kernel (pieza impresa o cuerpo nuevo, con sus golpes). Siempre en el marco del doc. ──
+  const tieneSolido = useCallback((key: string) => {
+    if (golpes.some((g) => g.modo === 'nuevo' && keyDeGolpe(g) === key)) return true;
+    const h = refGeosBase.find((x) => x.key === key);
+    return !!h && !!solidoDeRef(h.r);
+  }, [golpes, refGeosBase]);
+  const armarBajada = useCallback(async (key: string, fmt: 'stl' | 'step'): Promise<{ blob: Blob; nombre: string; texto?: string } | null> => {
+    const h = refGeos.find((x) => x.key === key); if (!h) return null;
+    const conGolpes = golpes.some((g) => g.modo !== 'nuevo' && g.sobre === key);
+    const nombre = `${h.r.id}${conGolpes ? '-forjada' : ''}.${fmt}`;
+    if (fmt === 'stl') {
+      let P = h.geo.positions;
+      if (!h.m.equals(MATRIZ_I)) {
+        P = new Float32Array(P.length); const v = new THREE.Vector3();
+        for (let i = 0; i < P.length; i += 3) { v.set(h.geo.positions[i], h.geo.positions[i + 1], h.geo.positions[i + 2]).applyMatrix4(h.m); P[i] = v.x; P[i + 1] = v.y; P[i + 2] = v.z; }
+      }
+      return { blob: meshToStlBlob(P, h.geo.indices), nombre };
+    }
+    if (!oc || !tieneSolido(key)) return null;
+    const nv = golpes.find((g) => g.modo === 'nuevo' && keyDeGolpe(g) === key);
+    const gs = golpes.filter((g) => g.modo !== 'nuevo' && g.sobre === key);
+    const base = nv ? buildComponent(oc, compDeGolpe(nv)) : await baseDePieza(key);
+    const r = golpearSolido(base, 0, gs, {});
+    const texto = exportSTEP(oc, r.shape, nombre);
+    if (r.shape !== base) r.shape.delete?.();
+    if (nv) base.delete?.();
+    return { blob: new Blob([texto], { type: 'model/step' }), nombre, texto };
+  }, [oc, refGeos, golpes, tieneSolido, baseDePieza, golpearSolido]);
+  const bajarCuerpo = useCallback((key: string, fmt: 'stl' | 'step') => {
+    if (bajando) return;
+    setBajando(`${key}:${fmt}`);
+    setTimeout(() => {   // un tick: que se pinte «armando…» antes de los segundos de kernel
+      armarBajada(key, fmt).then((r) => { if (r) triggerDownload(r.blob, r.nombre); })
+        .catch((e) => { console.warn('YUNQUE_BAJAR_ERR', e); setRefErr(`no se pudo bajar: ${String((e as Error)?.message ?? e).slice(0, 100)}`); })
+        .finally(() => setBajando(null));
+    }, 30);
+  }, [bajando, armarBajada]);
 
   // ── Replay del grafo → malla + invariantes + análisis de masa ──
   const rebuild = useCallback(() => {
@@ -5860,12 +5943,12 @@ export default function ForgeBRepStudio() {
   // las 4 refs. Un efecto observa los cambios y empuja el estado ANTERIOR a
   // `past`; undo/redo restauran un snapshot marcando applyingRef para no
   // re-capturar el propio salto.
-  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState; params: Param[]; bindings: Record<string, string>; components: Component[] };
+  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState; params: Param[]; bindings: Record<string, string>; components: Component[]; golpes: Golpe[] };
   const histRef = useRef<{ past: DocSnap[]; future: DocSnap[]; last: DocSnap | null }>({ past: [], future: [], last: null });
   const applyingRef = useRef(false);
   const [histVer, setHistVer] = useState(0);
   useEffect(() => {
-    const snap: DocSnap = { sketch, ops, material, assembly, params, bindings, components };
+    const snap: DocSnap = { sketch, ops, material, assembly, params, bindings, components, golpes };
     const h = histRef.current;
     if (applyingRef.current) { applyingRef.current = false; h.last = snap; return; }
     if (h.last === null) { h.last = snap; return; } // montaje inicial: no es un cambio
@@ -5874,11 +5957,11 @@ export default function ForgeBRepStudio() {
     h.future = [];
     h.last = snap;
     setHistVer((v) => v + 1);
-  }, [sketch, ops, material, assembly, params, bindings, components]);
+  }, [sketch, ops, material, assembly, params, bindings, components, golpes]);
   const applySnap = useCallback((s: DocSnap) => {
     applyingRef.current = true;
     setSketch(s.sketch); setOps(s.ops); setMaterial(s.material); setAssembly(s.assembly);
-    setParams(s.params); setBindings(s.bindings); setComponents(s.components);
+    setParams(s.params); setBindings(s.bindings); setComponents(s.components); setGolpes(s.golpes);
     setActiveOp((a) => (a && s.ops.some((o) => o.id === a)) ? a : (s.ops[0]?.id ?? null));
     setHistVer((v) => v + 1);
   }, []);
@@ -6296,7 +6379,6 @@ export default function ForgeBRepStudio() {
           profile: Array.from({ length: N }, (_, k) => ({ x: h.x + r * Math.cos((2 * Math.PI * k) / N), y: h.y + r * Math.sin((2 * Math.PI * k) / N) })) });
       }
       setGolpes((cur) => { let n = cur.filter((g) => g.modo === y.modo).length; return [...cur, ...nuevos.map((g) => ({ ...g, nombre: nom(++n) }))]; });
-      setSketch((s) => ({ ...s, plane3d: undefined }));
       setTallerSel(null); setSketchOpen(false);
       return;
     }
@@ -6696,8 +6778,8 @@ export default function ForgeBRepStudio() {
     const h = refPorKey.get(s.key); if (!h) return null;
     const c = carasDeMalla(h.geo);
     const pl = c.plana[s.cara] ? planoDeCaraRef(h.geo, c, s.cara, h.m) : null;
-    return { key: s.key, nombre: h.r.name, plano: pl?.plano ?? null, diag: pl?.diag ?? 0, forjable: !!solidoDeRef(h.r) && !golpes.some((g) => g.modo === 'nuevo' && keyDeGolpe(g) === s.key) };
-  }, [tallerSel, refPorKey, golpes]);
+    return { key: s.key, nombre: h.r.name, plano: pl?.plano ?? null, diag: pl?.diag ?? 0, forjable: tieneSolido(s.key) };
+  }, [tallerSel, refPorKey, tieneSolido]);
   /** La cámara vuela y deja la cara DE FRENTE. `n` en coordenadas del visor; el blanco en las del doc. */
   const verDeFrente = useCallback((n: [number, number, number], blanco: [number, number, number], diag: number) => {
     const L = Math.hypot(n[0], n[1], n[2]) || 1;
@@ -6731,14 +6813,13 @@ export default function ForgeBRepStudio() {
     if (modo !== 'nuevo' && !caraAgarrada.forjable) return;
     yunquePend.current = { sobre: caraAgarrada.key, modo, plano: caraAgarrada.plano };
     yunqueVista.current = { plano: caraAgarrada.plano, diag: caraAgarrada.diag };
-    setSketch((s) => ({ ...s, plane3d: caraAgarrada.plano! }));
+    setYunquePlano(caraAgarrada.plano);
     setSketchOpen(true);
   }, [caraAgarrada]);
   // boceto de un golpe CANCELADO: el plano de la cara no se le queda pegado al croquis siguiente
   useEffect(() => {
-    if (sketchOpen || !yunquePend.current) return;
-    yunquePend.current = null;
-    setSketch((s) => (s.plane3d ? { ...s, plane3d: undefined } : s));
+    if (sketchOpen) return;
+    yunquePend.current = null; setYunquePlano(null);
   }, [sketchOpen]);
   const yunqueQaRef = useRef<unknown>(null);
   yunqueQaRef.current = {
@@ -6747,6 +6828,56 @@ export default function ForgeBRepStudio() {
     /** volumen (mm³) de lo que SE VE de un cuerpo: la malla de fábrica o la forjada */
     volumen: (key: string) => { const h = refPorKey.get(key); return h ? volumenDeMalla(h.geo) : null; },
     caras: (key: string) => { const h = refPorKey.get(key); return h ? carasDeMalla(h.geo).n : null; },
+    /** cuánto tardó la última forja de cada pieza (ms) y con qué deflexión salió su malla */
+    tiempos: () => Object.fromEntries([...yunqueHecho.current].map(([k, v]) => [k, { ms: v.ms, malla: v.malla, serie: v.serie, vol: v.vol, volBase: v.volBase }])),
+    /** las llaves de los cuerpos que se dejan unir y cortar (piezas impresas con su STEP + cuerpos nuevos) */
+    forjables: () => refGeos.filter((h) => tieneSolido(h.key)).map((h) => h.key),
+    /** lo mismo que bajan los botones «Bajar STL / STEP», sin el diálogo: para medir lo que sale */
+    bajada: async (key: string, fmt: 'stl' | 'step') => { const r = await armarBajada(key, fmt); return r ? { nombre: r.nombre, bytes: r.blob.size, texto: r.texto ?? null } : null; },
+    /** volumen (mm³, del kernel) de un STEP: para comprobar que lo bajado es el sólido forjado */
+    volumenDeStep: (texto: string) => { if (!oc) return null; const sh = importSTEP(oc, texto); const v = volume(oc, sh); sh.delete?.(); return v; },
+    pasante: (id: string, on: boolean) => setGolpes((cur) => cur.map((g) => (g.id === id ? { ...g, pasante: on } : g))),
+    /** La cara PLANA más grande de un cuerpo, con su plano y un ANCLA (u, v en mm del plano) que cae sobre material:
+     *  el centroide de su triángulo mayor. Para golpear sin mouse (barridos, agentes). */
+    caraMayor: (key: string) => {
+      const h = refPorKey.get(key); if (!h) return null;
+      const c = carasDeMalla(h.geo); let mejor = -1;
+      for (let i = 0; i < c.n; i++) if (c.plana[i] && (mejor < 0 || c.area[i] > c.area[mejor])) mejor = i;
+      if (mejor < 0) return null;
+      const pl = planoDeCaraRef(h.geo, c, mejor, h.m); if (!pl) return null;
+      const P = h.geo.positions, I = h.geo.indices, q = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+      let aMax = -1; const ctr = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+      for (let t = 0; t < c.caraDeTri.length; t++) {
+        if (c.caraDeTri[t] !== mejor) continue;
+        for (let j = 0; j < 3; j++) { const i = I[3 * t + j] * 3; q[j].set(P[i], P[i + 1], P[i + 2]).applyMatrix4(h.m); }
+        const a = e1.subVectors(q[1], q[0]).cross(e2.subVectors(q[2], q[0])).length() / 2;
+        if (a > aMax) { aMax = a; ctr.copy(q[0]).add(q[1]).add(q[2]).multiplyScalar(1 / 3); }
+      }
+      const o = new THREE.Vector3(...pl.plano.origin), d = ctr.sub(o);
+      return { cara: mejor, area: c.area[mejor], plano: pl.plano, diag: pl.diag, forjable: tieneSolido(key),
+        ancla: [d.dot(new THREE.Vector3(...pl.plano.uDir)), d.dot(new THREE.Vector3(...pl.plano.vDir))] as [number, number] };
+    },
+    /** Un golpe SIN mouse sobre la cara `cara` de `sobre`: rectángulo [x0, y0, x1, y1] o círculo, en mm del plano de la
+     *  cara (origen = su centro). Regresa el id del golpe, o null si la cara no es plana / la pieza no se deja. */
+    golpear: (o: { sobre: string; cara: number; modo: ModoGolpe; depth: number; rect?: [number, number, number, number]; circulo?: { x: number; y: number; r: number }; nombre?: string }) => {
+      const h = refPorKey.get(o.sobre); if (!h) return null;
+      const c = carasDeMalla(h.geo); if (!c.plana[o.cara]) return null;
+      const pl = planoDeCaraRef(h.geo, c, o.cara, h.m); if (!pl) return null;
+      if (o.modo !== 'nuevo' && !tieneSolido(o.sobre)) return null;
+      let profile: Pt2[]; let circle: Golpe['circle'];
+      if (o.circulo) {
+        const { x, y, r } = o.circulo, N = 40; circle = { x, y, r };
+        profile = Array.from({ length: N }, (_, k) => ({ x: x + r * Math.cos((2 * Math.PI * k) / N), y: y + r * Math.sin((2 * Math.PI * k) / N) }));
+      } else if (o.rect) {
+        const [x0, y0, x1, y1] = o.rect; profile = [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+      } else return null;
+      const id = newId('golpe');
+      setGolpes((cur) => [...cur, { id, nombre: o.nombre ?? `${o.modo === 'nuevo' ? 'Cuerpo nuevo' : o.modo === 'unir' ? 'Saliente' : 'Corte'} ${cur.filter((g) => g.modo === o.modo).length + 1}`,
+        modo: o.modo, sobre: o.sobre, plano: pl.plano, profile, circle, depth: o.depth }]);
+      return id;
+    },
+    /** quita todos los golpes (o los de un cuerpo) */
+    limpiar: (sobre?: string) => setGolpes((cur) => (sobre ? cur.filter((g) => g.sobre !== sobre) : [])),
   };
   // PASO 6 · REENCUADRE AL MOLDE (va DESPUÉS de `orbitTo`: referenciarlo antes es TDZ, la cuarta vez en
   // este archivo). El acero vive en coordenadas de la BASE (§4.3.2), no donde cayó el STEP; la cámara del
@@ -8946,10 +9077,11 @@ export default function ForgeBRepStudio() {
   // El plano ACTIVO del croquis, resuelto en coordenadas del kernel: plane3d manda
   // (croquis-en-cara); si no, el plano base XY/YZ/XZ con su offset.
   const sketchPlaneK = useMemo<SketchPlane3D>(() => {
+    if (yunquePlano) return yunquePlano;   // EL YUNQUE: el boceto va sobre la cara agarrada del laboratorio
     if (sketch.plane3d) return sketch.plane3d;
     const base = (sketch.plane ?? 'xy') === 'yz' ? PLANE_YZ : (sketch.plane ?? 'xy') === 'xz' ? PLANE_XZ : PLANE_XY;
     return (sketch.planeOffset ?? 0) !== 0 ? offsetPlane(base, sketch.planeOffset ?? 0) : base;
-  }, [sketch.plane, sketch.planeOffset, sketch.plane3d]);
+  }, [sketch.plane, sketch.planeOffset, sketch.plane3d, yunquePlano]);
   // Cámara PERPENDICULAR al plano: con Z constante, la proyección en perspectiva del
   // plano es una SIMILITUD exacta ⇒ px/mm uniforme ⇒ el SVG del editor (escala fija)
   // cae SOBRE el plano 3D real. El nudge 0.002·d evita el gimbal de OrbitControls al
@@ -10654,6 +10786,16 @@ export default function ForgeBRepStudio() {
                   <div className="fb-agarre" data-testid="taller-agarre">
                     <b>{agarreInfo.que}</b> · {agarreInfo.dato}
                     <div className="fb-agarre-de">{agarreInfo.de}{agarreInfo.extra ? <em> · {agarreInfo.extra}</em> : null}</div>
+                    {tallerSel && tallerSel.nivel !== 'pieza' && refPorKey.has(tallerSel.key) && (
+                      <div className="fb-bajar" data-testid="taller-bajar">
+                        <span>bajar este cuerpo</span>
+                        <button data-testid="bajar-stl" disabled={!!bajando} onClick={() => bajarCuerpo(tallerSel.key, 'stl')}
+                          title="STL: la malla de este cuerpo tal como se ve (con sus golpes), para el laminador">STL</button>
+                        <button data-testid="bajar-step" disabled={!!bajando || !tieneSolido(tallerSel.key)} onClick={() => bajarCuerpo(tallerSel.key, 'step')}
+                          title={tieneSolido(tallerSel.key) ? 'STEP: el sólido de este cuerpo con sus golpes, para otro CAD' : 'Pieza de fábrica: aquí no hay sólido que bajar (el STL sí)'}>STEP</button>
+                        {bajando && <em>armando…</em>}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="fb-agarre vacio">pasa el mouse sobre el visor y haz clic para agarrar · Esc suelta</div>
@@ -10704,12 +10846,17 @@ export default function ForgeBRepStudio() {
                         title={golpeErr[g.id] ? `no entró: ${golpeErr[g.id]}` : `${g.nombre} · sobre ${refPorKey.get(g.sobre)?.r.name ?? g.sobre}`}>
                         <span className="g">{g.modo === 'nuevo' ? '＋' : g.modo === 'unir' ? '∪' : '−'}</span>
                         <span className="n">{g.nombre}{golpeErr[g.id] ? ' ⚠' : ''}</span>
-                        <input key={`${g.id}:${g.depth}`} data-testid={`golpe-prof-${i}`} type="number" min={0.2} step={0.5} defaultValue={g.depth}
-                          title="Profundidad en mm (Enter aplica)"
+                        {g.modo === 'cortar' && (
+                          <button className={`p${g.pasante ? ' on' : ''}`} data-testid={`golpe-pasante-${i}`} aria-pressed={!!g.pasante}
+                            onClick={() => setGolpes((cur) => cur.map((x) => (x.id === g.id ? { ...x, pasante: !x.pasante } : x)))}
+                            title={g.pasante ? 'Corte PASANTE: atraviesa toda la pieza. Clic para volver a la profundidad' : 'Hacerlo PASANTE: que atraviese toda la pieza'}>⇥</button>
+                        )}
+                        <input key={`${g.id}:${g.depth}`} data-testid={`golpe-prof-${i}`} type="number" min={0.2} step={0.5} defaultValue={g.depth} disabled={!!g.pasante}
+                          title={g.pasante ? 'Pasante: la profundidad no cuenta' : 'Profundidad en mm (Enter aplica)'}
                           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                           onBlur={(e) => { const v = parseFloat(e.target.value); if (v > 0 && v !== g.depth) setGolpes((cur) => cur.map((x) => (x.id === g.id ? { ...x, depth: v } : x))); }} />
                         <span className="u">mm</span>
-                        <button data-testid={`golpe-borrar-${i}`} onClick={() => setGolpes((cur) => cur.filter((x) => x.id !== g.id))} title="Quitar este golpe">✕</button>
+                        <button data-testid={`golpe-borrar-${i}`} onClick={() => setGolpes((cur) => sinGolpe(cur, g.id))} title="Quitar este golpe (Ctrl+Z lo regresa)">✕</button>
                       </div>
                     ))}
                   </div>
@@ -13284,6 +13431,15 @@ const CSS = `
 .fb-golpe .u{color:#7E90A9;font-size:10px;}
 .fb-golpe button{cursor:pointer;background:transparent;border:0;color:#7E90A9;font-size:11px;padding:0 3px;}
 .fb-golpe button:hover{color:#ff8a80;}
+.fb-golpe button.p{font-size:12px;}
+.fb-golpe button.p:hover{color:#FDB813;}
+.fb-golpe button.p.on{color:#FDB813;}
+.fb-golpe input:disabled{opacity:.35;}
+.fb-bajar{display:flex;align-items:center;gap:5px;margin-top:6px;font-size:10px;color:#8fa3ba;}
+.fb-bajar button{cursor:pointer;font:inherit;color:#e9eef5;background:#16202f;border:1px solid #2c3a50;border-radius:5px;padding:2px 8px;}
+.fb-bajar button:hover:not(:disabled){border-color:#FDB813;color:#FDB813;}
+.fb-bajar button:disabled{opacity:.38;cursor:not-allowed;}
+.fb-bajar em{color:#ffb27a;font-style:normal;}
 /* EL TALLER (orden 2026-11-09-el-taller-tenazas) */
 .fb-tenazas{display:flex;align-items:center;gap:3px;margin:2px 0 6px;}
 .fb-tenazas-lbl{color:#6f8196;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}

@@ -7,7 +7,11 @@
  *   C. «Cuerpo nuevo» con un rectángulo → un cuerpo en el Taller con volumen = área × 10 mm;
  *   D. «Unir» → el volumen de la pieza SUBE área × 10; E. «Cortar» → BAJA (> 0, ≤ área × 10);
  *   F. cambiar la profundidad de un golpe rehace la pieza; G. borrar un golpe la regresa;
- *   H. guardar (serializeDoc) → abrir el laboratorio limpio (volumen original) → cargar lo guardado → vuelve forjada.
+ *   I. «Bajar STL / STEP» del cuerpo forjado: el STL trae los triángulos y el volumen de lo que se ve; el STEP reimportado
+ *      mide lo que el kernel dice del sólido forjado;  J. corte PASANTE quita más que el ciego;  K. Ctrl+Z / Ctrl+Y;
+ *   L. unir sobre un CUERPO NUEVO;
+ *   H. guardar (serializeDoc) → abrir el laboratorio limpio (volumen original) → cargar lo guardado → vuelve forjada;
+ *   M. borrar un cuerpo nuevo se lleva los golpes dados sobre él.
  * Uso (iangpu, vite DEV vivo):
  *   DISPLAY=:0 GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA node scripts/yunque-verify.cjs
  */
@@ -219,6 +223,90 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     ok('G. borrar el corte regresa su material', Math.abs((v4 - v3) - (v1 - v2)) < Math.max(5, (v1 - v2) * 0.02), { regreso: Math.round(v4 - v3), habia_quitado: Math.round(v1 - v2) });
     await shot('07-golpes-editados.png');
 
+    // ── utilería sin mouse (API del yunque) para lo que sigue ──
+    const kv = (k) => p.evaluate((key) => window.__forgeBrep.yunque.tiempos()[key] || null, k);   // { ms, vol, volBase, serie } del kernel
+    const trasForja = async (k, s0) => {
+      await p.waitForFunction(([key, s]) => { const yy = window.__forgeBrep.yunque; const t = yy.tiempos()[key]; return !yy.forjando && t && t.serie > s; }, [k, s0], { timeout: 240000 });
+      await espera(300);
+    };
+    const golpearApi = async (sobre, entrada, modo, depth, lado) => {
+      const cm = await p.evaluate((k) => window.__forgeBrep.yunque.caraMayor(k), sobre);
+      const s0 = ((await kv(entrada)) || { serie: 0 }).serie;
+      const [ax, ay] = cm.ancla, h = lado / 2;
+      const id = await p.evaluate((o) => window.__forgeBrep.yunque.golpear(o), { sobre, cara: cm.cara, modo, depth, rect: [ax - h, ay - h, ax + h, ay + h] });
+      await trasForja(entrada, s0);
+      return id;
+    };
+    const tecla = async (t) => { await p.evaluate(() => document.activeElement && document.activeElement.blur && document.activeElement.blur()); await p.keyboard.press(t); await espera(250); };
+
+    // ── I. bajar el cuerpo forjado ──
+    await p.evaluate((k) => { const abre = (id) => document.querySelector(`[data-testid="taller-abrir-${id}"]`); const top = k.split('/')[0]; if (!document.querySelector(`[data-testid="taller-${CSS.escape(k)}"]`)) abre(top)?.click(); }, key);
+    await espera(300);
+    await p.keyboard.press('Escape');
+    await p.click(`[data-testid="taller-${key}"]`);
+    await espera(300);
+    const dl1 = p.waitForEvent('download', { timeout: 60000 });
+    await p.click('[data-testid="bajar-stl"]');
+    const stl = await (await dl1).path().then((f) => fs.readFileSync(f));
+    const nT = stl.readUInt32LE(80); let vStl = 0;
+    for (let t = 0; t < nT; t++) {
+      const o = 84 + t * 50 + 12, f = (i) => stl.readFloatLE(o + 4 * i);
+      vStl += f(0) * (f(4) * f(8) - f(5) * f(7)) - f(1) * (f(3) * f(8) - f(5) * f(6)) + f(2) * (f(3) * f(7) - f(4) * f(6));
+    }
+    vStl = Math.abs(vStl) / 6;
+    const trisVisor = await p.evaluate((k) => window.__forgeBrep.refDrawn.find((r) => r.key === k).tris, key);
+    ok('I. «Bajar STL»: los triángulos y el volumen de la pieza forjada que se ve', nT === trisVisor && stl.length === 84 + nT * 50 && Math.abs(vStl - v4) < 1,
+      { triangulos: nT, en_el_visor: trisVisor, volumen: Math.round(vStl), en_el_visor_mm3: Math.round(v4) });
+    const dl2 = p.waitForEvent('download', { timeout: 120000 });
+    await p.click('[data-testid="bajar-step"]');
+    const dStep = await dl2; const step = fs.readFileSync(await dStep.path(), 'utf8');
+    const vStep = await p.evaluate((t) => window.__forgeBrep.yunque.volumenDeStep(t), step);
+    const kForj = await kv(key);
+    ok('I. «Bajar STEP»: un STEP que reimportado mide lo que el kernel dice del sólido forjado (±0.5 %)', step.startsWith('ISO-10303-21') && /-forjada\.step$/.test(dStep.suggestedFilename()) && Math.abs(vStep / kForj.vol - 1) < 0.005,
+      { archivo: dStep.suggestedFilename(), KB: Math.round(step.length / 1024), volumen: Math.round(vStep), kernel: Math.round(kForj.vol) });
+    await p.keyboard.press('Escape');
+
+    // ── J. corte pasante ──
+    const antesJ = (await kv(key)).vol;
+    await golpearApi(key, key, 'cortar', 1, 6);
+    const ciego = (await kv(key)).vol;
+    const sJ = (await kv(key)).serie;
+    await p.click('[data-testid="golpe-pasante-2"]');
+    await trasForja(key, sJ);
+    const pasante = (await kv(key)).vol;
+    y = await yq();
+    ok('J. corte PASANTE: quita más que el ciego de 1 mm (6 × 6 = 36 mm³)', Math.abs((antesJ - ciego) - 36) < 0.5 && antesJ - pasante > 36 * 1.4 && !Object.keys(y.errores).length,
+      { ciego_mm3: +(antesJ - ciego).toFixed(1), pasante_mm3: +(antesJ - pasante).toFixed(1), errores: y.errores });
+    await shot('07b-pasante.png');
+
+    // ── K. Ctrl+Z / Ctrl+Y ──
+    let sK = (await kv(key)).serie;
+    await tecla('Control+z'); await trasForja(key, sK);
+    const trasZ1 = (await kv(key)).vol; y = await yq();
+    ok('K. Ctrl+Z deshace lo último (el pasante vuelve a ciego)', y.golpes.length === 3 && Math.abs(trasZ1 - ciego) < 0.01, { golpes: y.golpes.length, volumen: Math.round(trasZ1), ciego: Math.round(ciego) });
+    sK = (await kv(key)).serie;
+    await tecla('Control+z'); await trasForja(key, sK);
+    const trasZ2 = (await kv(key)).vol; y = await yq();
+    ok('K. otro Ctrl+Z quita el corte', y.golpes.length === 2 && Math.abs(trasZ2 - antesJ) < 0.01, { golpes: y.golpes.length });
+    sK = (await kv(key)).serie;
+    await tecla('Control+y'); await trasForja(key, sK);
+    y = await yq();
+    ok('K. Ctrl+Y lo regresa', y.golpes.length === 3 && Math.abs((await kv(key)).vol - ciego) < 0.01, { golpes: y.golpes.length });
+    sK = (await kv(key)).serie;
+    await tecla('Control+z'); await trasForja(key, sK);
+
+    // ── L. unir sobre un cuerpo nuevo ──
+    const forjables = await p.evaluate(() => window.__forgeBrep.yunque.forjables());
+    await golpearApi(keyNuevo, g0.id, 'unir', 5, 4);
+    const kN = await kv(g0.id); y = await yq();
+    ok('L. un cuerpo nuevo también se deja golpear: unir 4 × 4 × 5 le sube 80 mm³', forjables.includes(keyNuevo) && Math.abs((kN.vol - kN.volBase) - 80) < 0.1 && !Object.keys(y.errores).length,
+      { subio: +(kN.vol - kN.volBase).toFixed(2), errores: y.errores });
+    await shot('07c-golpe-sobre-cuerpo-nuevo.png');
+    const sL = kN.serie;
+    await tecla('Control+z'); await trasForja(g0.id, sL);
+    y = await yq();
+    ok('…y Ctrl+Z deja los 2 golpes de antes', y.golpes.length === 2, y.golpes.map((g) => g.nombre));
+
     // ── H. guardar → laboratorio limpio → cargar ──
     const guardado = await p.evaluate(() => JSON.stringify(window.__forgeBrep.serializeDoc()));
     const nG = JSON.parse(guardado).golpes?.length;
@@ -233,6 +321,17 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     const vCargado = await vol(key), vNC = await vol(keyNuevo);
     ok('H. lo guardado trae sus 2 golpes y la pieza vuelve FORJADA', nG === 2 && Math.abs(vCargado - v4) < 1 && vNC && Math.abs(vNC - vN) < 1, { guardados: nG, volumen: Math.round(vCargado), esperado: Math.round(v4), cuerpo_nuevo: vNC && Math.round(vNC) });
     await shot('08-recargado.png');
+
+    // ── M. borrar un cuerpo nuevo se lleva lo que se le golpeó encima ──
+    await golpearApi(keyNuevo, g0.id, 'cortar', 2, 4);
+    y = await yq();
+    const antesM = y.golpes.length;
+    const iNuevo = y.golpes.findIndex((g) => g.id === g0.id);
+    await p.click(`[data-testid="golpe-borrar-${iNuevo}"]`);
+    await espera(1500);
+    await p.waitForFunction(() => !window.__forgeBrep.yunque.forjando, null, { timeout: 120000 });
+    y = await yq();
+    ok('M. borrar el cuerpo nuevo se lleva su corte (quedan solo los golpes de la pieza)', antesM === 3 && y.golpes.length === 1 && y.golpes[0].modo === 'unir' && !Object.keys(y.errores).length, { antes: antesM, despues: y.golpes.map((g) => g.nombre) });
   } catch (e) {
     ok('sin excepción', false, String(e).slice(0, 300));
     await shot('99-falla.png').catch(() => {});
