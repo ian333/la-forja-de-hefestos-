@@ -2305,6 +2305,21 @@ const padreDeGolpe = (g: Golpe) => (g.sobre.includes('/') ? g.sobre.slice(0, g.s
 const keyDeGolpe = (g: Golpe) => { const pk = padreDeGolpe(g); return pk ? `${pk}/${g.id}` : g.id; };
 const refDeGolpe = (g: Golpe): RefPart => ({ id: g.id, name: g.nombre, kind: 'malla', x: 0, y: 0, z: 0, color: '#e2742b', mat: 'filamento' });
 const MATRIZ_I = new THREE.Matrix4();
+// ── MOVER (orden 2026-11-11-mover-piezas): lo que la mano corre de su sitio va ENCIMA del dato generado, por llave del
+// Taller (cuerpo o pieza): `movidas[llave] = [ΔX, ΔY, ΔZ]` en mm del doc. Mover una pieza mueve todo lo de abajo, así que
+// el corrimiento de un cuerpo es la SUMA de los de su cadena. Solo traslación (conmuta: no importa el orden). ──
+type Movidas = Record<string, [number, number, number]>;
+function corrimientoDe(mov: Movidas, key: string): [number, number, number] {
+  const o: [number, number, number] = [0, 0, 0]; let k = '';
+  for (const parte of key.split('/')) { k = k ? `${k}/${parte}` : parte; const d = mov[k]; if (d) { o[0] += d[0]; o[1] += d[1]; o[2] += d[2]; } }
+  return o;
+}
+/** El mismo plano, corrido `signo` veces el vector d (para pasar del marco que se VE al marco SIN mover de una pieza). */
+const planoCorrido = (pl: SketchPlane3D, d: [number, number, number], signo = 1): SketchPlane3D =>
+  (d[0] || d[1] || d[2] ? { ...pl, origin: [pl.origin[0] + signo * d[0], pl.origin[1] + signo * d[1], pl.origin[2] + signo * d[2]] } : pl);
+/** El marco en el que se GUARDA el plano de un golpe: el del cuerpo golpeado (unir/cortar) o el del cuerpo nuevo, que
+ *  cuelga junto al golpeado (su pieza de arriba). Así el golpe viaja con su pieza cuando se mueve. */
+const marcoDeGolpe = (modo: ModoGolpe, sobre: string) => (modo === 'nuevo' ? (sobre.includes('/') ? sobre.slice(0, sobre.lastIndexOf('/')) : '') : sobre);
 /** Quitar un golpe. Si era un cuerpo nuevo, se van con él los golpes dados SOBRE ese cuerpo (y lo que colgaba de ellos). */
 function sinGolpe(cur: Golpe[], id: string): Golpe[] {
   const g = cur.find((x) => x.id === id); if (!g) return cur;
@@ -4102,6 +4117,7 @@ interface DocState {
   vista?: [number, number, number, number, number, number];   // vista al abrir [az, el, r, x, y, z] (doc ya subido)
   lab?: LabJueces;                // EL LABORATORIO GENERADO: lo que dicen sus jueces (cuerpo B · placa C · alambre A)
   golpes?: Golpe[];               // EL YUNQUE: lo que la mano le hizo a las piezas de referencia (cuerpo nuevo / unir / cortar)
+  movidas?: Movidas;              // MOVER: lo que la mano corrió de su sitio, por llave del Taller ([ΔX, ΔY, ΔZ] mm)
 }
 /** El lazo se describe con los ids de los TUBOS de las piezas de referencia (cables, cuello) o con puntos sueltos,
  *  en el sentido CONVENCIONAL de la corriente; `invertir` cuando el tubo se dibujó al revés. */
@@ -4896,20 +4912,34 @@ export default function ForgeBRepStudio() {
   const [forjando, setForjando] = useState(false);
   const [yunquePlano, setYunquePlano] = useState<SketchPlane3D | null>(null);   // el boceto abierto va sobre ESTA cara (no ensucia `sketch` ni el historial)
   const [bajando, setBajando] = useState<string | null>(null);                    // se está armando un STL/STEP para bajar
+  // MOVER: los corrimientos a mano (por llave), si las flechas están en el visor, y el grupo que arrastra el gizmo
+  const [movidas, setMovidas] = useState<Movidas>({});
+  const [moverOn, setMoverOn] = useState(false);
+  const moverRef = useRef<THREE.Group | null>(null);
+  const moverCentro = useRef<{ k: string; c: [number, number, number] } | null>(null);   // de dónde salen las flechas (centro de lo agarrado)
+  const movidasRef = useRef<Movidas>(movidas); movidasRef.current = movidas;
   const yunqueBase = useRef(new Map<string, Shape>());                                    // sólido importado, ya en el marco del doc
   const yunqueHecho = useRef(new Map<string, { firma: string; geo: PartGeo | null; errs: Record<string, string>; ms: number; malla: string; serie: number; vol: number; volBase: number }>());
   const yunqueSerie = useRef(0);   // cuenta de forjas: quien maneja el yunque sin mouse sabe cuándo terminó la SUYA
   const yunquePend = useRef<{ sobre: string; modo: ModoGolpe; plano: SketchPlane3D } | null>(null);   // el boceto abierto es de un golpe
   const yunqueVista = useRef<{ plano: SketchPlane3D; diag: number } | null>(null);                      // …y al cerrarlo la cámara se queda viendo ESA cara
   const refGeos = useMemo(() => {
-    if (!golpes.length) return refGeosBase;
-    const out = refGeosBase.map((h) => (forjadas[h.key] ? { ...h, geo: forjadas[h.key], m: MATRIZ_I } : h));
+    const hayMov = Object.keys(movidas).length > 0;
+    if (!golpes.length && !hayMov) return refGeosBase;
+    // lo forjado se construye en el marco SIN mover de su pieza; el corrimiento a mano se le pone al dibujarla
+    const conMov = (key: string, m: THREE.Matrix4) => {
+      if (!hayMov) return m;
+      const o = corrimientoDe(movidas, key);
+      return o[0] || o[1] || o[2] ? new THREE.Matrix4().makeTranslation(o[0], o[1], o[2]).multiply(m) : m;
+    };
+    const out = refGeosBase.map((h) => (forjadas[h.key] ? { ...h, geo: forjadas[h.key], m: conMov(h.key, MATRIZ_I) } : hayMov ? { ...h, m: conMov(h.key, h.m) } : h));
     for (const g of golpes) {
       if (g.modo !== 'nuevo' || !forjadas[g.id]) continue;
-      out.push({ r: refDeGolpe(g), m: MATRIZ_I, top: g.sobre.includes('/') ? g.sobre.split('/')[0] : g.id, key: keyDeGolpe(g), geo: forjadas[g.id] });
+      const key = keyDeGolpe(g);
+      out.push({ r: refDeGolpe(g), m: conMov(key, MATRIZ_I), top: g.sobre.includes('/') ? g.sobre.split('/')[0] : g.id, key, geo: forjadas[g.id] });
     }
     return out;
-  }, [refGeosBase, forjadas, golpes]);
+  }, [refGeosBase, forjadas, golpes, movidas]);
   const nCuerposNuevos = useMemo(() => golpes.filter((g) => g.modo === 'nuevo' && forjadas[g.id]).length, [golpes, forjadas]);
   // EL ARCO EN VIVO: la física corre en el visor (useFrame); el estado vive en un ref (no re-renderiza el estudio)
   const [arcoDoc, setArcoDoc] = useState<ArcoDoc | null>(null);
@@ -5755,11 +5785,14 @@ export default function ForgeBRepStudio() {
     const gs = golpes.filter((g) => g.modo !== 'nuevo' && g.sobre === key);
     const base = nv ? buildComponent(oc, compDeGolpe(nv)) : await baseDePieza(key);
     const r = golpearSolido(base, 0, gs, {});
-    const texto = exportSTEP(oc, r.shape, nombre);
+    const off = corrimientoDe(movidas, key);
+    const enSuSitio = off[0] || off[1] || off[2] ? transformShape(oc, r.shape, { translate: off }) : r.shape;
+    const texto = exportSTEP(oc, enSuSitio, nombre);
+    if (enSuSitio !== r.shape) enSuSitio.delete?.();
     if (r.shape !== base) r.shape.delete?.();
     if (nv) base.delete?.();
     return { blob: new Blob([texto], { type: 'model/step' }), nombre, texto };
-  }, [oc, refGeos, golpes, tieneSolido, baseDePieza, golpearSolido]);
+  }, [oc, refGeos, golpes, movidas, tieneSolido, baseDePieza, golpearSolido]);
   const bajarCuerpo = useCallback((key: string, fmt: 'stl' | 'step') => {
     if (bajando) return;
     setBajando(`${key}:${fmt}`);
@@ -5943,12 +5976,12 @@ export default function ForgeBRepStudio() {
   // las 4 refs. Un efecto observa los cambios y empuja el estado ANTERIOR a
   // `past`; undo/redo restauran un snapshot marcando applyingRef para no
   // re-capturar el propio salto.
-  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState; params: Param[]; bindings: Record<string, string>; components: Component[]; golpes: Golpe[] };
+  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState; params: Param[]; bindings: Record<string, string>; components: Component[]; golpes: Golpe[]; movidas: Movidas };
   const histRef = useRef<{ past: DocSnap[]; future: DocSnap[]; last: DocSnap | null }>({ past: [], future: [], last: null });
   const applyingRef = useRef(false);
   const [histVer, setHistVer] = useState(0);
   useEffect(() => {
-    const snap: DocSnap = { sketch, ops, material, assembly, params, bindings, components, golpes };
+    const snap: DocSnap = { sketch, ops, material, assembly, params, bindings, components, golpes, movidas };
     const h = histRef.current;
     if (applyingRef.current) { applyingRef.current = false; h.last = snap; return; }
     if (h.last === null) { h.last = snap; return; } // montaje inicial: no es un cambio
@@ -5957,11 +5990,11 @@ export default function ForgeBRepStudio() {
     h.future = [];
     h.last = snap;
     setHistVer((v) => v + 1);
-  }, [sketch, ops, material, assembly, params, bindings, components, golpes]);
+  }, [sketch, ops, material, assembly, params, bindings, components, golpes, movidas]);
   const applySnap = useCallback((s: DocSnap) => {
     applyingRef.current = true;
     setSketch(s.sketch); setOps(s.ops); setMaterial(s.material); setAssembly(s.assembly);
-    setParams(s.params); setBindings(s.bindings); setComponents(s.components); setGolpes(s.golpes);
+    setParams(s.params); setBindings(s.bindings); setComponents(s.components); setGolpes(s.golpes); setMovidas(s.movidas);
     setActiveOp((a) => (a && s.ops.some((o) => o.id === a)) ? a : (s.ops[0]?.id ?? null));
     setHistVer((v) => v + 1);
   }, []);
@@ -6004,7 +6037,8 @@ export default function ForgeBRepStudio() {
     ...(docVista ? { vista: docVista } : {}),
     ...(labJueces ? { lab: labJueces } : {}),
     ...(golpes.length ? { golpes } : {}),
-  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep, refParts, arcoDoc, brazoDoc, docVista, labJueces, golpes]);
+    ...(Object.keys(movidas).length ? { movidas } : {}),
+  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep, refParts, arcoDoc, brazoDoc, docVista, labJueces, golpes, movidas]);
   const loadDoc = useCallback((d: Partial<DocState>) => {
     // IDs ÚNICOS tras cargar: opCounter vive en memoria y se reinicia con la
     // página — sin este bump, los componentes NUEVOS colisionan con los ids
@@ -6028,6 +6062,7 @@ export default function ForgeBRepStudio() {
     setImportedStep(d.importedStep ?? null);
     setRefParts(d.refParts ?? []);
     setGolpes(d.golpes ?? []); yunquePend.current = null;
+    setMovidas(d.movidas ?? {}); setMoverOn(false);
     setArcoDoc(d.arco ?? null); arcoSim.current = crearArcoSim(); setArcoOn(true); setRefRayos(true);
     setBrazoDoc(d.brazo ?? null); if (d.brazo) { brazoSim.current = crearBrazoSim(); setBrazoOn(true); }
     setDocVista(d.vista ?? null); setLabJueces(d.lab ?? null);
@@ -6372,10 +6407,11 @@ export default function ForgeBRepStudio() {
       const prof = 10;   // mm de arranque; se cambia en LOS GOLPES
       const nom = (i: number) => `${y.modo === 'nuevo' ? 'Cuerpo nuevo' : y.modo === 'unir' ? 'Saliente' : 'Corte'} ${i}`;
       const nuevos: Golpe[] = [];
-      if (result.profile.length >= 3) nuevos.push({ id: newId('golpe'), nombre: '', modo: y.modo, sobre: y.sobre, plano: y.plano, profile: result.profile, holes: result.polyHoles, circle: result.circle, depth: prof });
+      const plano = planoCorrido(y.plano, corrimientoDe(movidasRef.current, marcoDeGolpe(y.modo, y.sobre)), -1);   // del marco que se ve al de la pieza sin mover
+      if (result.profile.length >= 3) nuevos.push({ id: newId('golpe'), nombre: '', modo: y.modo, sobre: y.sobre, plano, profile: result.profile, holes: result.polyHoles, circle: result.circle, depth: prof });
       for (const h of result.holes) {
         const r = h.d / 2, N = 40;
-        nuevos.push({ id: newId('golpe'), nombre: '', modo: y.modo, sobre: y.sobre, plano: y.plano, depth: prof, circle: { x: h.x, y: h.y, r },
+        nuevos.push({ id: newId('golpe'), nombre: '', modo: y.modo, sobre: y.sobre, plano, depth: prof, circle: { x: h.x, y: h.y, r },
           profile: Array.from({ length: N }, (_, k) => ({ x: h.x + r * Math.cos((2 * Math.PI * k) / N), y: h.y + r * Math.sin((2 * Math.PI * k) / N) })) });
       }
       setGolpes((cur) => { let n = cur.filter((g) => g.modo === y.modo).length; return [...cur, ...nuevos.map((g) => ({ ...g, nombre: nom(++n) }))]; });
@@ -6821,6 +6857,40 @@ export default function ForgeBRepStudio() {
     if (sketchOpen) return;
     yunquePend.current = null; setYunquePlano(null);
   }, [sketchOpen]);
+  // ── MOVER · LAS MANOS ──
+  /** Fija el corrimiento PROPIO de una llave (redondeado a 0.01 mm; en cero se olvida). */
+  const fijarMovida = useCallback((key: string, d: [number, number, number]) => setMovidas((cur) => {
+    const r = d.map((v) => Math.round(v * 100) / 100) as [number, number, number];
+    const n = { ...cur };
+    if (r[0] || r[1] || r[2]) n[key] = r; else delete n[key];
+    return n;
+  }), []);
+  /** Lo que se mueve: el cuerpo o la pieza agarrados (con una CARA agarrada no hay qué mover). */
+  const enMano = tallerSel && tallerSel.nivel !== 'cara' ? tallerSel.key : null;
+  const moverHay = useMemo(() => !!enMano && moverOn && refGeos.some((h) => (h.key === enMano || h.key.startsWith(enMano + '/')) && !refOculta(h.key)),
+    [enMano, moverOn, refGeos, refOculta]);
+  const moverQaRef = useRef<unknown>(null);
+  moverQaRef.current = {
+    on: moverOn, movidas, enMano,
+    de: (key: string) => corrimientoDe(movidas, key),
+    mover: (key: string, d: [number, number, number]) => fijarMovida(key, d),
+    /** caja (mm del doc) de un cuerpo o de una pieza con todo lo de abajo, donde está AHORA */
+    caja: (key: string) => {
+      const b = new THREE.Box3();
+      for (const h of refGeos) if (h.key === key || h.key.startsWith(key + '/')) b.union(refPartBox(h.geo, h.m));
+      return b.isEmpty() ? null : { min: b.min.toArray(), max: b.max.toArray() };
+    },
+    /** dónde caen en la pantalla el centro de lo agarrado y un punto 40 mm más allá sobre cada eje del doc (para tomar una flecha con el mouse) */
+    pantalla: (key: string) => {
+      const cam = navQa.camera, el = viewportRef.current?.querySelector('canvas'); if (!cam || !el) return null;
+      const b = new THREE.Box3();
+      for (const h of refGeos) if (h.key === key || h.key.startsWith(key + '/')) b.union(refPartBox(h.geo, h.m));
+      if (b.isEmpty()) return null;
+      const c = b.getCenter(new THREE.Vector3()), r = el.getBoundingClientRect();
+      const px = (x: number, y: number, z: number) => { const v = new THREE.Vector3(x, z, -y).project(cam); return [r.left + ((v.x + 1) / 2) * r.width, r.top + ((1 - v.y) / 2) * r.height]; };
+      return { c: px(c.x, c.y, c.z), x: px(c.x + 40, c.y, c.z), y: px(c.x, c.y + 40, c.z), z: px(c.x, c.y, c.z + 40) };
+    },
+  };
   const yunqueQaRef = useRef<unknown>(null);
   yunqueQaRef.current = {
     golpes, forjando, errores: golpeErr, forjadas: Object.keys(forjadas),
@@ -6873,7 +6943,7 @@ export default function ForgeBRepStudio() {
       } else return null;
       const id = newId('golpe');
       setGolpes((cur) => [...cur, { id, nombre: o.nombre ?? `${o.modo === 'nuevo' ? 'Cuerpo nuevo' : o.modo === 'unir' ? 'Saliente' : 'Corte'} ${cur.filter((g) => g.modo === o.modo).length + 1}`,
-        modo: o.modo, sobre: o.sobre, plano: pl.plano, profile, circle, depth: o.depth }]);
+        modo: o.modo, sobre: o.sobre, plano: planoCorrido(pl.plano, corrimientoDe(movidasRef.current, marcoDeGolpe(o.modo, o.sobre)), -1), profile, circle, depth: o.depth }]);
       return id;
     },
     /** quita todos los golpes (o los de un cuerpo) */
@@ -8433,6 +8503,8 @@ export default function ForgeBRepStudio() {
       get taller() { return tallerQaRef.current; },
       /** EL YUNQUE (QA): golpes, lo forjado, la cara agarrada con su plano, y volumen/caras de un cuerpo */
       get yunque() { return yunqueQaRef.current; },
+      /** MOVER (QA): corrimientos a mano, la caja de un cuerpo donde está ahora y dónde caen sus flechas en pantalla */
+      get mover() { return moverQaRef.current; },
       /** NAVEGACIÓN (QA): modo del chip, lo último que se vio en la rueda, y la cámara con su blanco */
       get nav() {
         const c = navQa.camera, t = navQa.controls?.target;
@@ -9260,7 +9332,7 @@ export default function ForgeBRepStudio() {
           sketchCam={sketchCam}
         >
           {/* clic al vacío = la tenaza suelta lo agarrado (R3F solo lo llama si el mouse casi no se movió: girar no suelta) */}
-          <group rotation={[-Math.PI / 2, 0, 0]} onPointerMissed={() => setTallerSel(null)}>
+          <group rotation={[-Math.PI / 2, 0, 0]} onPointerMissed={() => { if (!(moverOn && enMano)) setTallerSel(null); }}>
             {/* CAM vivo: stock + toolpath 3D solo en workspace MANUFACTURA */}
             {workspace === 'manufactura' && meshBBox && result && !building && (
               <CamStock3D center={meshBBox.center as [number, number, number]} half={meshBBox.half as [number, number, number]} />
@@ -9619,18 +9691,38 @@ export default function ForgeBRepStudio() {
             )}
             {/* PIEZAS DE REFERENCIA: fuera del kernel, cada una con su giro XYZ, color y opacidad */}
             {/* …y EL TALLER: la tenaza agarra cara / cuerpo / pieza con el clic (no mientras se boceta) */}
-            {refGeos.filter(({ key }) => !refOculta(key)).map(({ r, geo, m, key, top }) => {
-              const pos = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(); m.decompose(pos, q, sc);
-              const s = tallerSel;
-              const sel = !s ? null : s.nivel === 'cara' ? (s.key === key ? s.cara ?? -1 : null)
-                : (key === s.key || key.startsWith(s.key + '/') ? -1 : null);
+            {(() => {
+              const hoja = ({ r, geo, m, key, top }: RefHoja & { geo: PartGeo }) => {
+                const pos = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(); m.decompose(pos, q, sc);
+                const s = tallerSel;
+                const sel = !s ? null : s.nivel === 'cara' ? (s.key === key ? s.cara ?? -1 : null)
+                  : (key === s.key || key.startsWith(s.key + '/') ? -1 : null);
+                return (
+                  <group key={key} position={pos} quaternion={q} scale={sc}>
+                    <RefMesh geo={geo} r={r} clip={sectionPlanes} rayos={refRayos}
+                      hoja={{ key, top }} tenaza={sketchOpen ? null : tenaza} sel={sel} onAgarre={onAgarre} onFrente={onFrente} />
+                  </group>
+                );
+              };
+              const visibles = refGeos.filter(({ key }) => !refOculta(key));
+              const k = moverOn && !sketchOpen ? enMano : null;
+              const deK = (key: string) => !!k && (key === k || key.startsWith(k + '/'));
+              const enElGizmo = k ? visibles.filter((h) => deK(h.key)) : [];
+              if (!k || !enElGizmo.length) { moverCentro.current = null; return visibles.map(hoja); }
+              // MOVER: lo agarrado va en UN grupo plantado en su centro; las flechas (más abajo, fuera del grupo girado de
+              // la escena) se cuelgan de él y lo arrastran sin pasar por React; al SOLTAR se guarda el corrimiento.
+              const caja = new THREE.Box3(); for (const h of enElGizmo) caja.union(refPartBox(h.geo, h.m));
+              const c = caja.getCenter(new THREE.Vector3());
+              moverCentro.current = { k, c: [c.x, c.y, c.z] };
               return (
-                <group key={key} position={pos} quaternion={q} scale={sc}>
-                  <RefMesh geo={geo} r={r} clip={sectionPlanes} rayos={refRayos}
-                    hoja={{ key, top }} tenaza={sketchOpen ? null : tenaza} sel={sel} onAgarre={onAgarre} onFrente={onFrente} />
-                </group>
+                <>
+                  {visibles.filter((h) => !deK(h.key)).map(hoja)}
+                  <group ref={moverRef} position={[c.x, c.y, c.z]}>
+                    <group position={[-c.x, -c.y, -c.z]}>{enElGizmo.map(hoja)}</group>
+                  </group>
+                </>
               );
-            })}
+            })()}
             {/* EL ARCO EN VIVO: la corriente en el lazo, los anillos de B, la luz del arco y el DETALLE A */}
             {arcoDoc && arcoOn && arcoTrazas && <ArcoVivoEscena sim={arcoSim} cfg={arcoDoc} trazas={arcoTrazas} />}
             {/* EL BRAZO VIVO: cuerpos, motores, reductores, la carga en los cables y su campo B */}
@@ -9647,6 +9739,16 @@ export default function ForgeBRepStudio() {
                 calidad={vientoCalidad} onTier={setVientoTier} />
             )}
           </group>
+          {/* MOVER: las flechas. El gizmo de drei va FUERA del grupo girado de la escena (adentro sale torcido) y se
+              cuelga del grupo de lo agarrado; con `space="local"` sus ejes son los del doc (Z azul hacia arriba). */}
+          {moverHay && !sketchOpen && (
+            <TransformControls key={`mover-${enMano}`} object={moverRef as React.MutableRefObject<THREE.Object3D>} mode="translate" space="local" size={0.8}
+              onMouseUp={() => {
+                const p = moverRef.current?.position, mc = moverCentro.current; if (!p || !mc) return;
+                const propio = movidasRef.current[mc.k] ?? [0, 0, 0], medio = (v: number) => Math.round(v * 2) / 2;   // al medio milímetro
+                fijarMovida(mc.k, [propio[0] + medio(p.x - mc.c[0]), propio[1] + medio(p.y - mc.c[1]), propio[2] + medio(p.z - mc.c[2])]);
+              }} />
+          )}
         </CadViewport>
 
         {arcoDoc && arcoOn && <ArcoVivoHUD sim={arcoSim} onCerrar={() => setArcoOn(false)} />}
@@ -10796,6 +10898,27 @@ export default function ForgeBRepStudio() {
                         {bajando && <em>armando…</em>}
                       </div>
                     )}
+                    {enMano && (() => {
+                      const mv = movidas[enMano] ?? [0, 0, 0];
+                      return (
+                        <div className="fb-mover" data-testid="taller-mover">
+                          <span>mover</span>
+                          {(['x', 'y', 'z'] as const).map((eje, i) => (
+                            <label key={eje}>{eje.toUpperCase()}
+                              <input key={`${enMano}:${eje}:${mv[i]}`} data-testid={`mover-${eje}`} type="number" step={1} defaultValue={mv[i]}
+                                title={`Cuánto está corrido en ${eje.toUpperCase()}, en mm (Enter aplica)`}
+                                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                onBlur={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && v !== mv[i]) { const d = [...mv] as [number, number, number]; d[i] = v; fijarMovida(enMano, d); } }} />
+                            </label>
+                          ))}
+                          <button data-testid="mover-flechas" className={moverOn ? 'on' : ''} aria-pressed={moverOn}
+                            onClick={() => setMoverOn((o) => !o)} title={moverOn ? 'Quitar las flechas del visor' : 'Flechas en el visor: arrastra una para mover'}>✥</button>
+                          {(mv[0] || mv[1] || mv[2]) ? (
+                            <button data-testid="mover-regresar" onClick={() => fijarMovida(enMano, [0, 0, 0])} title="Regresar a su sitio">↺</button>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div className="fb-agarre vacio">pasa el mouse sobre el visor y haz clic para agarrar · Esc suelta</div>
@@ -13440,6 +13563,12 @@ const CSS = `
 .fb-bajar button:hover:not(:disabled){border-color:#FDB813;color:#FDB813;}
 .fb-bajar button:disabled{opacity:.38;cursor:not-allowed;}
 .fb-bajar em{color:#ffb27a;font-style:normal;}
+.fb-mover{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:10px;color:#8fa3ba;}
+.fb-mover label{display:flex;align-items:center;gap:2px;color:#7E90A9;}
+.fb-mover input{width:40px;background:#0c131e;border:1px solid #2c3a50;border-radius:5px;color:#e9eef5;font:inherit;padding:2px 3px;text-align:right;}
+.fb-mover button{cursor:pointer;font:inherit;color:#e9eef5;background:#16202f;border:1px solid #2c3a50;border-radius:5px;padding:1px 6px;}
+.fb-mover button:hover{border-color:#FDB813;color:#FDB813;}
+.fb-mover button.on{background:rgba(253,184,19,0.16);border-color:#FDB813;color:#ffe9ad;}
 /* EL TALLER (orden 2026-11-09-el-taller-tenazas) */
 .fb-tenazas{display:flex;align-items:center;gap:3px;margin:2px 0 6px;}
 .fb-tenazas-lbl{color:#6f8196;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
