@@ -166,6 +166,7 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     const rc = await rectangulo(-10, 18, 10, 30);
     await shot('03-boceto-en-la-cara.png');
     await p.click('[data-testid="sk-finish"]');
+    await p.click('[data-testid="yunque-forjar"]');   // al terminar el boceto se pide la profundidad (10 mm por omisión) y ENTONCES se forja
     await forjado(1);
     y = await yq();
     const g0 = y.golpes[0];
@@ -181,6 +182,7 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     await p.click('[data-testid="yunque-unir"]');
     const ru = await rectangulo(18, -8, 34, 8);
     await p.click('[data-testid="sk-finish"]');
+    await p.click('[data-testid="yunque-forjar"]');   // al terminar el boceto se pide la profundidad (10 mm por omisión) y ENTONCES se forja
     await forjado(2);
     y = await yq();
     const v1 = await vol(key);
@@ -193,6 +195,7 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     await p.click('[data-testid="yunque-cortar"]');
     const rk = await rectangulo(-34, -8, -18, 8);
     await p.click('[data-testid="sk-finish"]');
+    await p.click('[data-testid="yunque-forjar"]');   // al terminar el boceto se pide la profundidad (10 mm por omisión) y ENTONCES se forja
     await forjado(3);
     y = await yq();
     const v2 = await vol(key);

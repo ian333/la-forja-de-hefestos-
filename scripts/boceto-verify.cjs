@@ -147,6 +147,7 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
 
     // ── G. terminar ──
     await p.click('[data-testid="sk-finish"]');
+    await p.click('[data-testid="yunque-forjar"]');   // al terminar el boceto se pide la profundidad (10 mm por omisión) y ENTONCES se forja
     await p.waitForFunction(() => { const y = window.__forgeBrep.yunque; return y.golpes.length === 2 && !y.forjando; }, null, { timeout: 240000 });
     await espera(900);
     await p.waitForFunction(() => !window.__forgeBrep.yunque.forjando, null, { timeout: 240000 });
