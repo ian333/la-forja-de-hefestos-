@@ -1,0 +1,524 @@
+{
+ "metodo": "TD-DFT (RPA) camb3lyp/def2-SVP // B3LYP-D3(BJ)/def2-SVP, vacío",
+ "lambda_brillante_nm": {
+  "beta": 483.1,
+  "licopeno": 503.4,
+  "plano": 501.7
+ },
+ "f_brillante": {
+  "beta": 4.1648,
+  "licopeno": 4.6521,
+  "plano": 4.556
+ },
+ "estado_brillante": {
+  "beta": 1,
+  "licopeno": 1,
+  "plano": 1
+ },
+ "medido_nm_hexano": {
+  "beta": 450.0,
+  "licopeno": 470.0
+ },
+ "GATE_orden_beta_lt_plano_lt_licopeno": true,
+ "corrimiento": {
+  "calc_nm": 20.3,
+  "medido_nm": 20.0,
+  "calc_rel": 0.042,
+  "medido_rel": 0.0444,
+  "calc_eV": 0.1039,
+  "medido_eV": 0.1172,
+  "razon_calc_sobre_medido_eV": 0.886,
+  "plano_menos_beta_nm": 18.6,
+  "fraccion_del_hueco_beta_licopeno_que_cierra_aplanar": 0.918
+ },
+ "calibracion_un_punto": {
+  "desplazamiento_eV": 0.1886,
+  "prediccion_nm": {
+   "beta": 450.0,
+   "licopeno": 467.6,
+   "plano": 466.1
+  },
+  "licopeno_predicho_vs_medido_nm": -2.4
+ },
+ "color_D65": {
+  "beta": {
+   "crudo_A1": {
+    "XYZ": [
+     0.6464,
+     0.5223,
+     0.2747
+    ],
+    "srgb_lineal": [
+     1.0,
+     0.3649,
+     0.2198
+    ],
+    "srgb": [
+     255,
+     163,
+     129
+    ],
+    "hex": "#ffa381",
+    "fuera_de_gama": true
+   },
+   "calibrado_A1": {
+    "XYZ": [
+     0.7613,
+     0.8008,
+     0.1773
+    ],
+    "srgb_lineal": [
+     1.0,
+     0.7719,
+     0.0665
+    ],
+    "srgb": [
+     255,
+     227,
+     73
+    ],
+    "hex": "#ffe349",
+    "fuera_de_gama": true
+   },
+   "calibrado_por_concentracion": {
+    "A0.3": "#fff7bd",
+    "A1.0": "#ffe349",
+    "A3.0": "#ffbc00"
+   },
+   "forma_medida": {
+    "dE_vs_beta_eV": 0.0,
+    "lambda_max_nm": 450.0,
+    "por_A": {
+     "A0.3": {
+      "XYZ": [
+       0.8707,
+       0.9652,
+       0.6354
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.9932,
+       0.5232
+      ],
+      "srgb": [
+       255,
+       254,
+       191
+      ],
+      "hex": "#fffebf",
+      "fuera_de_gama": true,
+      "matiz_deg": 59.1
+     },
+     "A1": {
+      "XYZ": [
+       0.7951,
+       0.9184,
+       0.2024
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.9608,
+       0.0709
+      ],
+      "srgb": [
+       255,
+       251,
+       75
+      ],
+      "hex": "#fffb4b",
+      "fuera_de_gama": true,
+      "matiz_deg": 58.7
+     },
+     "A3": {
+      "XYZ": [
+       0.7646,
+       0.8626,
+       0.0341
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.8787,
+       0.0
+      ],
+      "srgb": [
+       255,
+       241,
+       0
+      ],
+      "hex": "#fff100",
+      "fuera_de_gama": true,
+      "matiz_deg": 56.7
+     },
+     "A10": {
+      "XYZ": [
+       0.7508,
+       0.7786,
+       0.0138
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.7335,
+       0.0
+      ],
+      "srgb": [
+       255,
+       222,
+       0
+      ],
+      "hex": "#ffde00",
+      "fuera_de_gama": true,
+      "matiz_deg": 52.2
+     }
+    }
+   }
+  },
+  "licopeno": {
+   "crudo_A1": {
+    "XYZ": [
+     0.5378,
+     0.3626,
+     0.4377
+    ],
+    "srgb_lineal": [
+     0.9673,
+     0.1771,
+     0.4186
+    ],
+    "srgb": [
+     251,
+     117,
+     173
+    ],
+    "hex": "#fb75ad",
+    "fuera_de_gama": false
+   },
+   "calibrado_A1": {
+    "XYZ": [
+     0.7116,
+     0.6581,
+     0.1968
+    ],
+    "srgb_lineal": [
+     1.0,
+     0.5532,
+     0.1134
+    ],
+    "srgb": [
+     255,
+     196,
+     95
+    ],
+    "hex": "#ffc45f",
+    "fuera_de_gama": true
+   },
+   "calibrado_por_concentracion": {
+    "A0.3": "#ffeac2",
+    "A1.0": "#ffc45f",
+    "A3.0": "#ff8700"
+   },
+   "forma_medida": {
+    "dE_vs_beta_eV": -0.1039,
+    "lambda_max_nm": 470.0,
+    "por_A": {
+     "A0.3": {
+      "XYZ": [
+       0.871,
+       0.9181,
+       0.6366
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.9048,
+       0.534
+      ],
+      "srgb": [
+       255,
+       244,
+       193
+      ],
+      "hex": "#fff4c1",
+      "fuera_de_gama": true,
+      "matiz_deg": 49.4
+     },
+     "A1": {
+      "XYZ": [
+       0.7878,
+       0.8135,
+       0.1945
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.7708,
+       0.0835
+      ],
+      "srgb": [
+       255,
+       227,
+       82
+      ],
+      "hex": "#ffe352",
+      "fuera_de_gama": true,
+      "matiz_deg": 50.3
+     },
+     "A3": {
+      "XYZ": [
+       0.7369,
+       0.7063,
+       0.0154
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.6115,
+       0.0
+      ],
+      "srgb": [
+       255,
+       205,
+       0
+      ],
+      "hex": "#ffcd00",
+      "fuera_de_gama": true,
+      "matiz_deg": 48.2
+     },
+     "A10": {
+      "XYZ": [
+       0.6893,
+       0.5816,
+       0.0027
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.4232,
+       0.0
+      ],
+      "srgb": [
+       255,
+       174,
+       0
+      ],
+      "hex": "#ffae00",
+      "fuera_de_gama": true,
+      "matiz_deg": 40.9
+     }
+    }
+   }
+  },
+  "plano": {
+   "crudo_A1": {
+    "XYZ": [
+     0.5474,
+     0.3744,
+     0.4221
+    ],
+    "srgb_lineal": [
+     0.988,
+     0.1895,
+     0.4003
+    ],
+    "srgb": [
+     254,
+     120,
+     170
+    ],
+    "hex": "#fe78aa",
+    "fuera_de_gama": false
+   },
+   "calibrado_A1": {
+    "XYZ": [
+     0.717,
+     0.6714,
+     0.1925
+    ],
+    "srgb_lineal": [
+     1.0,
+     0.5728,
+     0.1064
+    ],
+    "srgb": [
+     255,
+     199,
+     92
+    ],
+    "hex": "#ffc75c",
+    "fuera_de_gama": true
+   },
+   "calibrado_por_concentracion": {
+    "A0.3": "#ffebc1",
+    "A1.0": "#ffc75c",
+    "A3.0": "#ff8c00"
+   },
+   "forma_medida": {
+    "dE_vs_beta_eV": -0.0954,
+    "lambda_max_nm": 465.0,
+    "por_A": {
+     "A0.3": {
+      "XYZ": [
+       0.871,
+       0.9232,
+       0.6344
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.9142,
+       0.5307
+      ],
+      "srgb": [
+       255,
+       245,
+       193
+      ],
+      "hex": "#fff5c1",
+      "fuera_de_gama": true,
+      "matiz_deg": 50.3
+     },
+     "A1": {
+      "XYZ": [
+       0.7891,
+       0.8246,
+       0.1924
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.7902,
+       0.0791
+      ],
+      "srgb": [
+       255,
+       230,
+       79
+      ],
+      "hex": "#ffe64f",
+      "fuera_de_gama": true,
+      "matiz_deg": 51.5
+     },
+     "A3": {
+      "XYZ": [
+       0.7411,
+       0.7216,
+       0.0156
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.6363,
+       0.0
+      ],
+      "srgb": [
+       255,
+       209,
+       0
+      ],
+      "hex": "#ffd100",
+      "fuera_de_gama": true,
+      "matiz_deg": 49.2
+     },
+     "A10": {
+      "XYZ": [
+       0.6979,
+       0.5998,
+       0.0031
+      ],
+      "srgb_lineal": [
+       1.0,
+       0.449,
+       0.0
+      ],
+      "srgb": [
+       255,
+       179,
+       0
+      ],
+      "hex": "#ffb300",
+      "fuera_de_gama": true,
+      "matiz_deg": 42.1
+     }
+    }
+   }
+  }
+ },
+ "color_D65_referencia_medida": {
+  "beta": {
+   "XYZ": [
+    0.7613,
+    0.8008,
+    0.1773
+   ],
+   "srgb_lineal": [
+    1.0,
+    0.7719,
+    0.0665
+   ],
+   "srgb": [
+    255,
+    227,
+    73
+   ],
+   "hex": "#ffe349",
+   "fuera_de_gama": true
+  },
+  "licopeno": {
+   "XYZ": [
+    0.7032,
+    0.6378,
+    0.206
+   ],
+   "srgb_lineal": [
+    1.0,
+    0.5236,
+    0.1268
+   ],
+   "srgb": [
+    255,
+    191,
+    100
+   ],
+   "hex": "#ffbf64",
+   "fuera_de_gama": true
+  },
+  "beta_espectro_medido_A1": {
+   "XYZ": [
+    0.7951,
+    0.9184,
+    0.2024
+   ],
+   "srgb_lineal": [
+    1.0,
+    0.9608,
+    0.0709
+   ],
+   "srgb": [
+    255,
+    251,
+    75
+   ],
+   "hex": "#fffb4b",
+   "fuera_de_gama": true
+  }
+ },
+ "blanco_D65_sin_absorber": {
+  "XYZ": [
+   0.9504,
+   1.0,
+   1.0888
+  ],
+  "srgb_lineal": [
+   0.9999,
+   1.0,
+   0.9998
+  ],
+  "srgb": [
+   255,
+   255,
+   255
+  ],
+  "hex": "#ffffff",
+  "fuera_de_gama": false
+ },
+ "notas": [
+  "forma_medida (LA PRINCIPAL) = espectro MEDIDO del β en hexano (PhotochemCAD #041) movido el ΔE calculado de cada molécula; por_A = absorbancia en el pico (0.3 diluido … 10 denso)",
+  "el color de una SOLUCIÓN depende de la concentración; el de la zanahoria/jitomate además lleva agregados/cristales en los cromoplastos y la geometría de la reflexión difusa: NO modelados",
+  "crudo = espectro calculado tal cual (vertical, vacío): sale corrido al rojo",
+  "calibrado = TODAS las bandas corridas el mismo δ para que el β caiga en 450 nm; el licopeno y el plano son predicción",
+  "fwhm 0.50 eV y A=1 en el pico (10 % de transmitancia) son elecciones declaradas, no cálculo",
+  "sRGB con primarios y blanco D65: sin adaptación cromática; el blanco sale (255,255,255)"
+ ]
+}

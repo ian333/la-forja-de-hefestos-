@@ -1,0 +1,597 @@
+{
+ "generado": "2026-10-13, scripts/precompute-caroteno-gemelos.py en iangpu (gpu4pyscf 1.8.0 / PySCF 2.13.0, RTX 4070 Ti)",
+ "geometria": "B3LYP-D3(BJ)/def2-SVP (DF), geomeTRIC criterios GAU; arranque PubChem 5280489 (β) / SMILES 446925+RDKit (licopeno) → GFN2-xTB",
+ "excitacion": "TD-DFT (RPA, sin TDA) CAM-B3LYP/def2-SVP, J/K directos, 10 estados singlete, vacío",
+ "marco_bins": "X = eje largo de la cadena, Z = normal al plano π, origen = centroide de los C, bohr",
+ "medido_nm_hexano": {
+  "beta": 450,
+  "licopeno": 470
+ },
+ "moleculas": {
+  "beta": {
+   "nombre": "β-caroteno (anillos torcidos, como en la zanahoria)",
+   "E_B3LYP_D3BJ_Ha": -1556.9768985703608,
+   "diedros_C5C6C7C8_deg": [
+    -45.06,
+    46.59
+   ],
+   "BLA_A": 0.0792,
+   "BLA_centro_A": 0.061,
+   "largo_C5_C5p_A": 23.813,
+   "gap_HOMO_LUMO_camb3lyp_eV": 4.216,
+   "brillante_camb3lyp": {
+    "n": 1,
+    "E_eV": 2.5666,
+    "lambda_nm": 483.1,
+    "f": 4.1648,
+    "mu_au": [
+     -8.088,
+     -0.714,
+     0.552
+    ],
+    "excitaciones": [
+     {
+      "de": "HOMO",
+      "a": "LUMO",
+      "peso": 0.924
+     },
+     {
+      "de": "HOMO-1",
+      "a": "LUMO+1",
+      "peso": 0.058
+     },
+     {
+      "de": "HOMO-2",
+      "a": "LUMO+2",
+      "peso": 0.01
+     }
+    ]
+   },
+   "brillante_wb97xd": {
+    "n": 1,
+    "E_eV": 2.6132,
+    "lambda_nm": 474.5,
+    "f": 4.2154
+   },
+   "brillante_camb3lyp_en_geom_xtb": {
+    "n": 1,
+    "E_eV": 2.5565,
+    "lambda_nm": 485.0,
+    "f": 4.145
+   },
+   "estados_camb3lyp": [
+    {
+     "n": 1,
+     "E_eV": 2.5666,
+     "lambda_nm": 483.1,
+     "f": 4.1648
+    },
+    {
+     "n": 2,
+     "E_eV": 3.5961,
+     "lambda_nm": 344.8,
+     "f": 0.0003
+    },
+    {
+     "n": 3,
+     "E_eV": 3.8387,
+     "lambda_nm": 323.0,
+     "f": 0.0003
+    },
+    {
+     "n": 4,
+     "E_eV": 4.2795,
+     "lambda_nm": 289.7,
+     "f": 0.1419
+    },
+    {
+     "n": 5,
+     "E_eV": 4.6162,
+     "lambda_nm": 268.6,
+     "f": 0.3201
+    },
+    {
+     "n": 6,
+     "E_eV": 4.7926,
+     "lambda_nm": 258.7,
+     "f": 0.0014
+    },
+    {
+     "n": 7,
+     "E_eV": 5.1015,
+     "lambda_nm": 243.0,
+     "f": 0.1314
+    },
+    {
+     "n": 8,
+     "E_eV": 5.1706,
+     "lambda_nm": 239.8,
+     "f": 0.037
+    },
+    {
+     "n": 9,
+     "E_eV": 5.3298,
+     "lambda_nm": 232.6,
+     "f": 0.0004
+    },
+    {
+     "n": 10,
+     "E_eV": 5.6477,
+     "lambda_nm": 219.5,
+     "f": 0.0001
+    }
+   ],
+   "nubes": {
+    "mos_pi_ocupados": 11,
+    "fraccion_pi_HOMO_LUMO": [
+     0.898,
+     0.898
+    ],
+    "fraccion_en_puntas": {
+     "pi": 0.2659,
+     "homo": 0.0658,
+     "lumo": 0.0414,
+     "att": 0.0481,
+     "det": 0.066,
+     "exc_movida": 0.0509
+    },
+    "atomos_en_puntas": 48,
+    "puntas_x_bohr": [
+     -22.04,
+     22.0
+    ],
+    "extension_bohr": [
+     28.26,
+     6.8,
+     6.15
+    ],
+    "posq": {
+     "main": 967.8829778302463,
+     "orb": 1011.5164093190751
+    },
+    "N": {
+     "main": [
+      160000,
+      60000,
+      120000
+     ],
+     "orb": [
+      100000,
+      100000,
+      80000
+     ]
+    },
+    "canales_main": {
+     "acc": "Δρ>0",
+     "dep": "Δρ<0",
+     "spin": "ρ_π (MOs π ocupados)"
+    },
+    "canales_orb": {
+     "acc": "|HOMO|²",
+     "dep": "|LUMO|²",
+     "spin": "Δρ_exc>0 (transición brillante)"
+    },
+    "carga_de_enlace_dRho_bolas": 9.807
+   }
+  },
+  "licopeno": {
+   "nombre": "licopeno (cadena abierta, como en el jitomate)",
+   "E_B3LYP_D3BJ_Ha": -1556.9281404275812,
+   "diedros_C5C6C7C8_deg": [
+    178.76,
+    -179.06
+   ],
+   "BLA_A": 0.0706,
+   "BLA_centro_A": 0.0592,
+   "largo_C5_C5p_A": 25.832,
+   "gap_HOMO_LUMO_camb3lyp_eV": 4.066,
+   "brillante_camb3lyp": {
+    "n": 1,
+    "E_eV": 2.4627,
+    "lambda_nm": 503.4,
+    "f": 4.6521,
+    "mu_au": [
+     8.576,
+     1.601,
+     -1.0
+    ],
+    "excitaciones": [
+     {
+      "de": "HOMO",
+      "a": "LUMO",
+      "peso": 0.917
+     },
+     {
+      "de": "HOMO-1",
+      "a": "LUMO+1",
+      "peso": 0.063
+     },
+     {
+      "de": "HOMO-2",
+      "a": "LUMO+2",
+      "peso": 0.011
+     }
+    ]
+   },
+   "brillante_wb97xd": {
+    "n": 1,
+    "E_eV": 2.5139,
+    "lambda_nm": 493.2,
+    "f": 4.7174
+   },
+   "brillante_camb3lyp_en_geom_xtb": {
+    "n": 1,
+    "E_eV": 2.4111,
+    "lambda_nm": 514.2,
+    "f": 4.6555
+   },
+   "estados_camb3lyp": [
+    {
+     "n": 1,
+     "E_eV": 2.4627,
+     "lambda_nm": 503.4,
+     "f": 4.6521
+    },
+    {
+     "n": 2,
+     "E_eV": 3.4566,
+     "lambda_nm": 358.7,
+     "f": 0.0003
+    },
+    {
+     "n": 3,
+     "E_eV": 3.6817,
+     "lambda_nm": 336.8,
+     "f": 0.0003
+    },
+    {
+     "n": 4,
+     "E_eV": 4.1805,
+     "lambda_nm": 296.6,
+     "f": 0.0769
+    },
+    {
+     "n": 5,
+     "E_eV": 4.469,
+     "lambda_nm": 277.4,
+     "f": 0.5992
+    },
+    {
+     "n": 6,
+     "E_eV": 4.8666,
+     "lambda_nm": 254.8,
+     "f": 0.0945
+    },
+    {
+     "n": 7,
+     "E_eV": 4.8734,
+     "lambda_nm": 254.4,
+     "f": 0.0
+    },
+    {
+     "n": 8,
+     "E_eV": 5.2401,
+     "lambda_nm": 236.6,
+     "f": 0.0001
+    },
+    {
+     "n": 9,
+     "E_eV": 5.3121,
+     "lambda_nm": 233.4,
+     "f": 0.0042
+    },
+    {
+     "n": 10,
+     "E_eV": 5.3631,
+     "lambda_nm": 231.2,
+     "f": 0.0
+    }
+   ],
+   "nubes": {
+    "mos_pi_ocupados": 13,
+    "fraccion_pi_HOMO_LUMO": [
+     0.901,
+     0.9
+    ],
+    "fraccion_en_puntas": {
+     "pi": 0.3421,
+     "homo": 0.0992,
+     "lumo": 0.0691,
+     "att": 0.0736,
+     "det": 0.0929,
+     "exc_movida": 0.0601
+    },
+    "atomos_en_puntas": 48,
+    "puntas_x_bohr": [
+     -21.89,
+     21.86
+    ],
+    "extension_bohr": [
+     29.16,
+     9.95,
+     10.28
+    ],
+    "posq": {
+     "main": 937.980967574585,
+     "orb": 959.3329312391966
+    },
+    "N": {
+     "main": [
+      160000,
+      60000,
+      120000
+     ],
+     "orb": [
+      100000,
+      100000,
+      80000
+     ]
+    },
+    "canales_main": {
+     "acc": "Δρ>0",
+     "dep": "Δρ<0",
+     "spin": "ρ_π (MOs π ocupados)"
+    },
+    "canales_orb": {
+     "acc": "|HOMO|²",
+     "dep": "|LUMO|²",
+     "spin": "Δρ_exc>0 (transición brillante)"
+    },
+    "carga_de_enlace_dRho_bolas": 9.838
+   }
+  },
+  "plano": {
+   "nombre": "β-caroteno con los anillos APLANADOS (control: diedro C5=C6–C7=C8 = 180°)",
+   "E_B3LYP_D3BJ_Ha": -1556.9733901760426,
+   "diedros_C5C6C7C8_deg": [
+    -180.0,
+    -180.0
+   ],
+   "BLA_A": 0.0727,
+   "BLA_centro_A": 0.0593,
+   "largo_C5_C5p_A": 25.796,
+   "gap_HOMO_LUMO_camb3lyp_eV": 4.0792,
+   "brillante_camb3lyp": {
+    "n": 1,
+    "E_eV": 2.4712,
+    "lambda_nm": 501.7,
+    "f": 4.556,
+    "mu_au": [
+     -8.566,
+     -0.728,
+     1.163
+    ],
+    "excitaciones": [
+     {
+      "de": "HOMO",
+      "a": "LUMO",
+      "peso": 0.918
+     },
+     {
+      "de": "HOMO-1",
+      "a": "LUMO+1",
+      "peso": 0.062
+     },
+     {
+      "de": "HOMO-2",
+      "a": "LUMO+2",
+      "peso": 0.011
+     }
+    ]
+   },
+   "brillante_wb97xd": {
+    "n": 1,
+    "E_eV": 2.523,
+    "lambda_nm": 491.4,
+    "f": 4.6183
+   },
+   "brillante_camb3lyp_en_geom_xtb": {
+    "n": 1,
+    "E_eV": 2.436,
+    "lambda_nm": 509.0,
+    "f": 4.5598
+   },
+   "estados_camb3lyp": [
+    {
+     "n": 1,
+     "E_eV": 2.4712,
+     "lambda_nm": 501.7,
+     "f": 4.556
+    },
+    {
+     "n": 2,
+     "E_eV": 3.4563,
+     "lambda_nm": 358.7,
+     "f": 0.0002
+    },
+    {
+     "n": 3,
+     "E_eV": 3.6866,
+     "lambda_nm": 336.3,
+     "f": 0.0002
+    },
+    {
+     "n": 4,
+     "E_eV": 4.167,
+     "lambda_nm": 297.5,
+     "f": 0.0481
+    },
+    {
+     "n": 5,
+     "E_eV": 4.4285,
+     "lambda_nm": 280.0,
+     "f": 0.3674
+    },
+    {
+     "n": 6,
+     "E_eV": 4.8164,
+     "lambda_nm": 257.4,
+     "f": 0.0
+    },
+    {
+     "n": 7,
+     "E_eV": 4.8672,
+     "lambda_nm": 254.7,
+     "f": 0.1047
+    },
+    {
+     "n": 8,
+     "E_eV": 5.1586,
+     "lambda_nm": 240.3,
+     "f": 0.0
+    },
+    {
+     "n": 9,
+     "E_eV": 5.2828,
+     "lambda_nm": 234.7,
+     "f": 0.0104
+    },
+    {
+     "n": 10,
+     "E_eV": 5.5052,
+     "lambda_nm": 225.2,
+     "f": 0.0
+    }
+   ],
+   "nubes": {
+    "mos_pi_ocupados": 11,
+    "fraccion_pi_HOMO_LUMO": [
+     0.9,
+     0.898
+    ],
+    "fraccion_en_puntas": {
+     "pi": 0.239,
+     "homo": 0.1001,
+     "lumo": 0.0699,
+     "att": 0.0719,
+     "det": 0.0921,
+     "exc_movida": 0.0631
+    },
+    "atomos_en_puntas": 48,
+    "puntas_x_bohr": [
+     -22.11,
+     22.11
+    ],
+    "extension_bohr": [
+     28.5,
+     7.57,
+     4.22
+    ],
+    "posq": {
+     "main": 967.6548575839277,
+     "orb": 979.6539772626053
+    },
+    "N": {
+     "main": [
+      160000,
+      60000,
+      120000
+     ],
+     "orb": [
+      100000,
+      100000,
+      80000
+     ]
+    },
+    "canales_main": {
+     "acc": "Δρ>0",
+     "dep": "Δρ<0",
+     "spin": "ρ_π (MOs π ocupados)"
+    },
+    "canales_orb": {
+     "acc": "|HOMO|²",
+     "dep": "|LUMO|²",
+     "spin": "Δρ_exc>0 (transición brillante)"
+    },
+    "carga_de_enlace_dRho_bolas": 9.851
+   }
+  }
+ },
+ "plano_menos_beta_kcal_mol": 2.2,
+ "gate": {
+  "CAM-B3LYP // B3LYP-D3(BJ) (PRINCIPAL)": {
+   "lambda_nm": {
+    "beta": 483.1,
+    "licopeno": 503.4,
+    "plano": 501.7
+   },
+   "orden_beta_lt_plano_lt_licopeno": true,
+   "corrimiento": {
+    "calc_nm": 20.3,
+    "medido_nm": 20.0,
+    "calc_rel": 0.042,
+    "medido_rel": 0.0444,
+    "calc_eV": 0.1039,
+    "medido_eV": 0.1172,
+    "razon_calc_sobre_medido_eV": 0.886,
+    "plano_menos_beta_nm": 18.6,
+    "fraccion_del_hueco_beta_licopeno_que_cierra_aplanar": 0.918
+   },
+   "calibracion_un_punto": {
+    "desplazamiento_eV": 0.1886,
+    "prediccion_nm": {
+     "beta": 450.0,
+     "licopeno": 467.6,
+     "plano": 466.1
+    },
+    "licopeno_predicho_vs_medido_nm": -2.4
+   }
+  },
+  "ωB97X-D // B3LYP-D3(BJ)": {
+   "lambda_nm": {
+    "beta": 474.5,
+    "licopeno": 493.2,
+    "plano": 491.4
+   },
+   "orden_beta_lt_plano_lt_licopeno": true,
+   "corrimiento": {
+    "calc_nm": 18.7,
+    "medido_nm": 20.0,
+    "calc_rel": 0.0394,
+    "medido_rel": 0.0444,
+    "calc_eV": 0.0993,
+    "medido_eV": 0.1172,
+    "razon_calc_sobre_medido_eV": 0.847,
+    "plano_menos_beta_nm": 16.9,
+    "fraccion_del_hueco_beta_licopeno_que_cierra_aplanar": 0.908
+   },
+   "calibracion_un_punto": {
+    "desplazamiento_eV": 0.142,
+    "prediccion_nm": {
+     "beta": 450.0,
+     "licopeno": 466.8,
+     "plano": 465.2
+    },
+    "licopeno_predicho_vs_medido_nm": -3.2
+   }
+  },
+  "CAM-B3LYP // GFN2-xTB": {
+   "lambda_nm": {
+    "beta": 485.0,
+    "licopeno": 514.2,
+    "plano": 509.0
+   },
+   "orden_beta_lt_plano_lt_licopeno": true,
+   "corrimiento": {
+    "calc_nm": 29.2,
+    "medido_nm": 20.0,
+    "calc_rel": 0.0602,
+    "medido_rel": 0.0444,
+    "calc_eV": 0.1454,
+    "medido_eV": 0.1172,
+    "razon_calc_sobre_medido_eV": 1.24,
+    "plano_menos_beta_nm": 24.0,
+    "fraccion_del_hueco_beta_licopeno_que_cierra_aplanar": 0.829
+   },
+   "calibracion_un_punto": {
+    "desplazamiento_eV": 0.1987,
+    "prediccion_nm": {
+     "beta": 450.0,
+     "licopeno": 475.1,
+     "plano": 470.6
+    },
+    "licopeno_predicho_vs_medido_nm": 5.1
+   }
+  }
+ }
+}
