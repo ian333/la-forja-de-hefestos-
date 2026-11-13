@@ -5,7 +5,7 @@
  * centro (hub) muestra la operación bajo el cursor; clic fuera o Esc cierra.
  * Cada botón lleva data-testid="radial-<id>" → los tutoriales lo pueden manejar.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const GOLD = '#FDB813';
 
@@ -21,11 +21,15 @@ export default function RadialMenu({ x, y, items, onClose }: {
 }) {
   const [hover, setHover] = useState<RadialItem | null>(null);
   const R = 104;                                   // radio del anillo (px)
+  // El oyente de Esc se registra UNA vez y llama al `onClose` vigente por un ref. Antes dependía de `onClose` (una flecha
+  // nueva en cada render del estudio): si OTRO oyente de Esc provocaba un render a media tecla, este se volvía a registrar
+  // y esa tecla ya no le llegaba — el radial se quedaba abierto tapando la pantalla (cazado en fuera-del-taller-verify).
+  const cerrarRef = useRef(onClose); cerrarRef.current = onClose;
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') cerrarRef.current(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, []);
   // Mantener el anillo COMPLETO en pantalla aunque el clic sea cerca de un borde.
   const [px, py] = useMemo(() => {
     const m = R + 96;   // el anillo MÁS sus letreros caben en pantalla

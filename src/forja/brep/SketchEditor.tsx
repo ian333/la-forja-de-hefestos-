@@ -1221,7 +1221,6 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo, re
           acciones primarias NUNCA se cortan aunque el tool activo agregue campos. */}
       <div className="sk-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderBottom: '1px solid #1b2430', background: 'rgba(9,14,21,0.94)', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none' }}>
         <b style={{ color: GOLD, marginRight: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>✏ Boceto</b>
-        {titulo && <span data-testid="sk-titulo" title={titulo} style={{ color: '#ffe9ad', fontSize: 12, marginRight: 8, whiteSpace: 'nowrap', maxWidth: 'clamp(90px, 12vw, 240px)', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{titulo}</span>}
         <span style={grpLbl}>Dibujar</span>
         {TOOLS.map(([t, ic, title]) => (
           <button key={t} data-testid={`sk-tool-${t}`} title={title} onClick={() => selectTool(t)} style={btn(tool === t)}>{ic}</button>
@@ -1490,6 +1489,9 @@ export default function SketchEditor({ onFinish, onCancel, projScale, titulo, re
           {!res ? 'Dibuja el plano' : res.status === 'full' ? 'Totalmente restringido ✓' : res.status === 'over' ? 'Conflicto de restricciones' : `${res.dof} grado${res.dof === 1 ? '' : 's'} de libertad`}
         </b>
         <span style={{ color: '#64748b', marginLeft: 12 }}>{model.points.length - nRefPts} pts · {model.lines.length - nRef} líneas · {model.circles.length} círculos{(model.ellipses?.length ?? 0) > 0 ? ` · ${model.ellipses!.length} elipses` : ''}</span>
+        {/* Para qué es este boceto («Cortar · <pieza>»): va AQUÍ y entero; en la barra de arriba le quitaba el lugar a las
+            herramientas (en una laptop de 1536 px escondía cinco restricciones bajo Cancelar/Terminar). */}
+        {titulo && <span data-testid="sk-titulo" title={titulo} style={{ color: '#ffe9ad', marginLeft: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{titulo}</span>}
         <span style={{ flex: 1 }} />
         {/* La leyenda de colores vive en el tooltip del chip DOF, no quemada en pantalla */}
         <span style={{ color: '#3d4754', cursor: 'help', fontSize: 12 }}

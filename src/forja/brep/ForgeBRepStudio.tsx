@@ -2716,6 +2716,9 @@ const MATRIZ_I = new THREE.Matrix4();
 // real, el motor, el carrete) entra al Taller como pieza de fábrica dentro del grupo «Piezas mías». Es un `RefPart` más:
 // se agarra, se mide, se mueve y acepta un cuerpo nuevo; no se corta (es comprada). Se guarda con el documento. ──
 const GRUPO_MIAS = 'mias';
+/** Ref ESTABLE (identidad fija → React lo llama solo al montar): lo que nace al fondo del riel se trae a la vista.
+ *  Con el árbol abierto, el formulario de «poner una pieza» nacía abajo del borde y parecía que el botón no hacía nada. */
+const aLaVista = (el: HTMLElement | null) => { el?.scrollIntoView({ block: 'nearest' }); };
 interface PiezaMia { tipo: 'caja' | 'cilindro'; nombre: string; w: number; d: number; h: number }
 function ponerPiezaMia(parts: RefPart[], pm: PiezaMia, donde: [number, number, number]): { parts: RefPart[]; key: string } {
   const grupo = parts.find((r) => r.id === GRUPO_MIAS && r.kind === 'grupo');
@@ -11639,20 +11642,25 @@ export default function ForgeBRepStudio() {
                       const mv = movidas[enMano] ?? [0, 0, 0];
                       return (
                         <div className="fb-mover" data-testid="taller-mover">
-                          <span>mover</span>
-                          {(['x', 'y', 'z'] as const).map((eje, i) => (
-                            <label key={eje}>{eje.toUpperCase()}
-                              <input key={`${enMano}:${eje}:${mv[i]}`} data-testid={`mover-${eje}`} type="number" step={1} defaultValue={mv[i]}
-                                title={`Cuánto está corrido en ${eje.toUpperCase()}, en mm (Enter aplica)`}
-                                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                                onBlur={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && v !== mv[i]) { const d = [...mv] as [number, number, number]; d[i] = v; fijarMovida(enMano, d); } }} />
-                            </label>
-                          ))}
-                          <button data-testid="mover-flechas" className={moverOn ? 'on' : ''} aria-pressed={moverOn}
-                            onClick={() => setMoverOn((o) => !o)} title={moverOn ? 'Quitar las flechas del visor' : 'Flechas en el visor: arrastra una para mover'}>✥</button>
-                          {(mv[0] || mv[1] || mv[2]) ? (
-                            <button data-testid="mover-regresar" onClick={() => fijarMovida(enMano, [0, 0, 0])} title="Regresar a su sitio">↺</button>
-                          ) : null}
+                          {/* dos renglones: en uno solo, las flechas y «regresar» se salían de la caja en una laptop (riel de 244 px) */}
+                          <div className="fb-mover-t">
+                            <span>mover</span>
+                            <button data-testid="mover-flechas" className={moverOn ? 'on' : ''} aria-pressed={moverOn}
+                              onClick={() => setMoverOn((o) => !o)} title={moverOn ? 'Quitar las flechas del visor' : 'Flechas en el visor: arrastra una para mover'}>✥ flechas</button>
+                            {(mv[0] || mv[1] || mv[2]) ? (
+                              <button data-testid="mover-regresar" onClick={() => fijarMovida(enMano, [0, 0, 0])} title="Regresar a su sitio">↺ regresar</button>
+                            ) : null}
+                          </div>
+                          <div className="fb-mover-ejes">
+                            {(['x', 'y', 'z'] as const).map((eje, i) => (
+                              <label key={eje}>{eje.toUpperCase()}
+                                <input key={`${enMano}:${eje}:${mv[i]}`} data-testid={`mover-${eje}`} type="number" step={1} defaultValue={mv[i]}
+                                  title={`Cuánto está corrido en ${eje.toUpperCase()}, en mm (Enter aplica)`}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                  onBlur={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && v !== mv[i]) { const d = [...mv] as [number, number, number]; d[i] = v; fijarMovida(enMano, d); } }} />
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       );
                     })()}
@@ -11753,7 +11761,7 @@ export default function ForgeBRepStudio() {
                   <button className="fb-poner-btn" data-testid="pieza-poner" onClick={() => setPoner({ tipo: 'caja', nombre: '', w: 100, d: 60, h: 40 })}
                     title="Poner una pieza comprada con sus medidas: caja o cilindro. Nace junto al banco; de ahí se mueve.">＋ poner una pieza comprada</button>
                 ) : (
-                  <div className="fb-poner" data-testid="pieza-form">
+                  <div className="fb-poner" data-testid="pieza-form" ref={aLaVista}>
                     <div className="fb-poner-t">
                       <button className={poner.tipo === 'caja' ? 'on' : ''} data-testid="pieza-tipo-caja" onClick={() => setPoner((q) => (q ? { ...q, tipo: 'caja' } : q))}>caja</button>
                       <button className={poner.tipo === 'cilindro' ? 'on' : ''} data-testid="pieza-tipo-cilindro" onClick={() => setPoner((q) => (q ? { ...q, tipo: 'cilindro' } : q))}>cilindro</button>
@@ -14363,9 +14371,13 @@ const CSS = `
 .fb-bajar button:hover:not(:disabled){border-color:#FDB813;color:#FDB813;}
 .fb-bajar button:disabled{opacity:.38;cursor:not-allowed;}
 .fb-bajar em{color:#ffb27a;font-style:normal;}
-.fb-mover{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:10px;color:#8fa3ba;}
-.fb-mover label{display:flex;align-items:center;gap:2px;color:#7E90A9;}
-.fb-mover input{width:40px;background:#0c131e;border:1px solid #2c3a50;border-radius:5px;color:#e9eef5;font:inherit;padding:2px 3px;text-align:right;}
+.fb-mover{display:flex;flex-direction:column;gap:4px;margin-top:6px;font-size:10px;color:#8fa3ba;}
+.fb-mover-t{display:flex;align-items:center;gap:5px;}
+.fb-mover-t span{flex:1;}
+.fb-mover-ejes{display:flex;gap:4px;}
+.fb-mover label{flex:1;min-width:0;display:flex;align-items:center;gap:2px;color:#7E90A9;}
+.fb-mover input{width:100%;min-width:0;background:#0c131e;border:1px solid #2c3a50;border-radius:5px;color:#e9eef5;font:inherit;padding:2px 3px;text-align:right;-moz-appearance:textfield;appearance:textfield;}
+.fb-mover input::-webkit-outer-spin-button,.fb-mover input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .fb-mover button{cursor:pointer;font:inherit;color:#e9eef5;background:#16202f;border:1px solid #2c3a50;border-radius:5px;padding:1px 6px;}
 .fb-mover button:hover{border-color:#FDB813;color:#FDB813;}
 .fb-mover button.on{background:rgba(253,184,19,0.16);border-color:#FDB813;color:#ffe9ad;}
