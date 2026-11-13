@@ -1,0 +1,21 @@
+====================================================================================================
+DOS ONDAS SOBRE EL ARCO: referencia 40 A + 30 A cos(2 pi f t); arco 18 V + 20 mOhm; choke 41 uH; bus 48 V
+====================================================================================================
+  f =    668 Hz | hoy (20 kHz, PI lento)                     | DC  40.0 A (pedido 40) | onda  26.2 A (pedido 30) | retraso   31.8 grados | rizo +- 6.7 A | Vds max  85.5 V
+  f =    668 Hz | perfecto (100 kHz, PI rapido + anticipada) | DC  40.0 A (pedido 40) | onda  30.7 A (pedido 30) | retraso   -1.7 grados | rizo +- 1.3 A | Vds max  95.8 V
+     traza cruda (perfecto, 668 Hz): t ms | pedida | real | duty
+        1.497 |   70.0 |   71.1 | 0.455
+        1.997 |   24.9 |   23.6 | 0.286
+        2.495 |   25.0 |   26.8 | 0.491
+        2.994 |   70.0 |   71.7 | 0.458
+        3.494 |   24.9 |   24.8 | 0.300
+        3.992 |   25.0 |   25.1 | 0.473
+        4.491 |   70.0 |   70.0 | 0.439
+        4.991 |   24.9 |   23.5 | 0.284
+        5.489 |   25.0 |   24.7 | 0.471
+        5.988 |   70.0 |   70.7 | 0.450
+        6.488 |   24.9 |   23.3 | 0.282
+        6.986 |   25.0 |   26.6 | 0.491
+        7.485 |   70.0 |   72.1 | 0.461
+  f =   1268 Hz | hoy (20 kHz, PI lento)                     | DC  40.0 A (pedido 40) | onda  20.3 A (pedido 30) | retraso   51.7 grados | rizo +- 6.6 A | Vds max  82.9 V
+  f =   1268 Hz | perfecto (100 kHz, PI rapido + anticipada) | DC  40.0 A (pedido 40) | onda  32.0 A (pedido 30) | retraso   -1.7 grados | rizo +- 1.3 A | Vds max  95.5 V

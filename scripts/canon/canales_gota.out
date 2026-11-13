@@ -1,0 +1,45 @@
+================================================================================================
+(A) LENGUAS: con que frecuencias de onda se suelta la gota (0.46 mm, f2 = 668 Hz), base 40 A + onda 30 A, max 40 ciclos
+================================================================================================
+  Q= 30 beta=0.0 | lengua en w: 0.96–1.03  (mín 7 ciclos)        | lengua en 2w: —
+  Q= 30 beta=1.0 | lengua en w: 0.92–1.01  (mín 6 ciclos)        | lengua en 2w: —
+  Q= 30 beta=2.0 | lengua en w: 0.88–0.98  (mín 5 ciclos)        | lengua en 2w: 1.87–1.91  (mín 34 ciclos)
+  Q=100 beta=0.0 | lengua en w: 0.94–1.05  (mín 5 ciclos)        | lengua en 2w: —
+  Q=100 beta=1.0 | lengua en w: 0.90–1.03  (mín 5 ciclos)        | lengua en 2w: —
+  Q=100 beta=2.0 | lengua en w: 0.86–0.99  (mín 4 ciclos)        | lengua en 2w: 1.84–1.94  (mín 20 ciclos)
+  ancho de la lengua = cuanto puede desafinarse la onda (la gota que crece) sin dejar de soltarla
+
+================================================================================================
+(B) DOS TONOS w + 2w con el mismo pico de corriente (40 A de base, picos <= 70 A), Q = 30
+================================================================================================
+  beta=0.0: un tono (30 A @ w) suelta en   7.2 ciclos | dos tonos (18 A @ w + 12 A @ 2w): 12.2 13.2 14.2 17.2 21.2 30.2 39.2 29.3 21.2 16.3 14.2 12.2   (psi 0..330 cada 30)  mejor psi=0
+  beta=1.0: un tono (30 A @ w) suelta en   7.3 ciclos | dos tonos (18 A @ w + 12 A @ 2w): — — — — — — — — — — — —   (psi 0..330 cada 30)  mejor psi=None
+  beta=2.0: un tono (30 A @ w) suelta en   nan ciclos | dos tonos (18 A @ w + 12 A @ 2w): — — — — — — — — — — — —   (psi 0..330 cada 30)  mejor psi=None
+  tolerancia a desafinar (rango de f/f2 que suelta en <= 40 ciclos), beta = 1, Q = 30:
+     un tono : 0.92–1.01  (mín 6 ciclos)
+     dos tonos (psi 0): 0.94–0.99  (mín 9 ciclos)
+
+================================================================================================
+(C) APUNTAR LA GOTA: modo l=1 (mecerse) con dos bobinas en cuadratura
+================================================================================================
+  gota 0.46 mm: masa 2854.04 mg; fuerza por mT = 36.8 uN -> aceleracion 12.9 m/s^2 por mT
+  mecerse a f1 = 334 Hz (supuesto 0.5 f2), Q1 = 30: desplazamiento estatico 2.93 um/mT, en resonancia 88 um/mT; carga en 29 ms
+  vuelo: separacion 2.0 mm, bajada 0.7 m/s -> 2.9 ms; w1*t_f = 6.00
+  si se suelta girando en un circulo de radio R, cae a R*sqrt(1+(w1 t_f)^2) = 6.08 R del centro
+
+  19 blancos en un hexagono de 1 mm, cabeza QUIETA, 25 gotas por blanco:
+   error de caida: mediana 232 um, 90 % < 499 um; campo maximo usado 1.13 mT
+   blanco (+0.00, +0.00) mm -> cae en (+0.002, -0.004) mm  dispersion   41 um  campo 0.00 mT
+   blanco (+0.25, +0.00) mm -> cae en (+0.126, +0.011) mm  dispersion   88 um  campo 0.57 mT
+   blanco (-0.12, +0.22) mm -> cae en (-0.105, +0.093) mm  dispersion   76 um  campo 0.57 mT
+   blanco (-0.13, -0.22) mm -> cae en (-0.082, -0.168) mm  dispersion   80 um  campo 0.57 mT
+   blanco (+0.50, +0.00) mm -> cae en (+0.353, +0.038) mm  dispersion  178 um  campo 1.13 mT
+   blanco (-0.25, +0.43) mm -> cae en (-0.082, +0.267) mm  dispersion  149 um  campo 1.13 mT
+   blanco (-0.25, -0.43) mm -> cae en (-0.130, -0.325) mm  dispersion  139 um  campo 1.13 mT
+
+  presupuesto de error (una fuente a la vez, blanco a 0.5 mm):
+   solo fase de soltar (20 us)         : error medio    20 um
+   solo bajada +-10 %                  : error medio    43 um
+   solo empujones del arco 0.02 m/s    : error medio    73 um
+   solo f1 mal calibrada 3 %           : error medio   310 um
+   todo junto                          : error medio   344 um

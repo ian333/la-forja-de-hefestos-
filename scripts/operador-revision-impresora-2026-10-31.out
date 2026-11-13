@@ -1,0 +1,140 @@
+==============================================================================
+A. ACERO: entalpia y accion (tablas aprox, +-15%)
+==============================================================================
+  h(20->1480 C solido) =    1010 kJ/kg   h(liquido 1520 C) =    1308 kJ/kg
+  energia para fundir por volumen        =  10.27 J/mm^3
+  K(solidus) = 1.304e+16 A^2 s/m^4    K(liquido) = 1.483e+16 A^2 s/m^4
+  alambre 0.6 mm: A = 0.2827 mm^2,  I^2 t para fundir (adiabatico) = 1186 A^2 s
+     a  20 A el alambre funde en    2964 ms (sin importar el largo)
+     a  30 A el alambre funde en    1317 ms (sin importar el largo)
+     a  40 A el alambre funde en     741 ms (sin importar el largo)
+     a  50 A el alambre funde en     474 ms (sin importar el largo)
+     a  70 A el alambre funde en     242 ms (sin importar el largo)
+
+==============================================================================
+B. EL ALAMBRE EN TRANSITO: corriente para que funda justo al llegar a la pieza
+   (coordenada del alambre; incluye radiacion eps=0.5)
+==============================================================================
+   Q mm3/s  v_f mm/s  stickout   I [A]  R_st mOhm   V_st  P_st W  P_rad W  P_teor W
+         2       7.1      10mm    29.5       25.1   0.74    21.9     1.33      20.5
+         2       7.1      20mm    21.3       51.7   1.10    23.5     2.86      20.5
+         2       7.1      30mm    17.8       79.7   1.42    25.2     4.65      20.5
+         5      17.7      10mm    46.2       24.8   1.14    52.8     1.27      51.4
+         5      17.7      20mm    32.9       50.0   1.65    54.1     2.62      51.4
+         5      17.7      30mm    27.1       75.8   2.05    55.6     4.04      51.4
+        10      35.4      10mm    65.1       24.6   1.60   104.3     1.25     102.7
+        10      35.4      20mm    46.2       49.5   2.29   105.6     2.54     102.7
+        10      35.4      30mm    37.8       74.7   2.83   106.9     3.87     102.7
+        15      53.1      10mm    79.6       24.6   1.96   155.9     1.25     154.1
+        15      53.1      20mm    56.4       49.4   2.79   157.1     2.52     154.1
+        15      53.1      30mm    46.2       74.3   3.43   158.4     3.82     154.1
+
+  LEY DEL OPERADOR (cambio de variable t -> x): si I^2 sigue a v_f, cada pedazo de alambre
+  recibe la misma integral j^2 dt = (j^2/v_f) dx  -> el punto de fusion NO se mueve.
+  base: v_f=35.4 mm/s, I=46.2 A, funde en x=19.96 mm
+   v_f x0.5 : I fija  46.2 A -> funde en 10.00 mm          | I = I0*sqrt(v/v0) =  32.6 A -> funde en 20.29 mm
+   v_f x0.25: I fija  46.2 A -> funde en  5.01 mm          | I = I0*sqrt(v/v0) =  23.1 A -> funde en 21.00 mm
+   v_f x1.5 : I fija  46.2 A -> funde en 29.95 mm          | I = I0*sqrt(v/v0) =  56.5 A -> funde en 19.88 mm
+
+==============================================================================
+C. ESCALERA DE TIEMPOS (eigenvalores del proceso)  -- separados = control diagonal
+==============================================================================
+           4.0 us   retardo del ACS758
+          35.3 us   periodo bang-bang +-2A, bus 48 V
+          53.4 us   periodo bang-bang +-2A, bus 12 V
+         150.0 us   punto a de Holm (a^2/alpha)
+         315.4 us   decaimiento de la bobina por el diodo (L*I/V)
+         343.1 us   cuello capilar (Rayleigh-Plateau) r=0.3mm
+         410.0 us   tau electrica L/R (R~0.1 Ohm)
+         762.3 us   oscilacion l=2 de la gota (periodo)
+        1413.0 us   solidificacion de gota/cordon 0.4mm
+       26666.7 us   enfriamiento local de un punto 0.4mm (r^2/alpha)
+      565486.7 us   transito del alambre por stickout 20mm @35mm/s
+      741035.6 us   calentar alambre a fundir @40A (I^2t/I^2)
+   224285714.3 us   modo termico global pieza 20mm cubo
+  CHOQUES: cuello capilar ~343 us vs decaimiento de la bobina ~315 us -> no puedes
+           bajar la corriente antes de que reviente el puente (sin camino rapido).
+
+==============================================================================
+D. EL CICLO DE TRABAJO ES EL SENSOR (balance volt-segundo: integral de L di/dt = 0)
+   sim: dt=10ns, ACS758 retardo 4us, banda 38-42A, Vbus ruido 1%, reloj PIO 6.67ns
+==============================================================================
+
+  BUS 48 V: 30 periodos en 2.6 ms, f = 11.6 kHz, D = 0.094
+     t [us]  T [us]      D  I_avg  R_est mOhm  R_real
+        0.0   79.20  0.075  41.84       35.95   65.31
+      160.4   80.76  0.102  41.75       66.85   66.50
+      321.4   81.49  0.101  41.73       66.05   65.33
+      486.6   85.43  0.096  41.76       59.80   59.38
+      658.9   87.68  0.093  41.78       56.21   56.21
+      835.0   88.84  0.092  41.79       54.66   54.72
+     1012.9   89.31  0.091  41.80       53.26   54.17
+     1191.6   89.27  0.091  41.80       54.51   54.12
+     1370.2   89.20  0.091  41.80       56.78   54.31
+     1548.5   88.95  0.092  41.80       53.24   54.62
+     1726.2   88.66  0.092  41.79       54.83   54.96
+     1903.4   88.38  0.092  41.79       55.63   55.31
+     2080.0   88.20  0.093  41.79       56.63   55.63
+     2256.3   86.79  0.094  41.80       56.80   57.40
+     2427.2   80.50  0.102  41.78       66.51   66.91
+   error por periodo (sin arranque): sesgo +0.04 mOhm, ruido 0.93 mOhm, peor 2.47
+   corriente media real 41.78 A con banda pedida 38-42 (centro 40): sesgo +1.78 A -> I^2 +9.1% -> la fusion se corre +1.8 mm
+   senal del cuello: +24 mOhm  ->  26 sigmas por periodo
+   sobrepaso por retardo ACS (4us): subida 4.24 A, bajada 0.51 A
+
+  BUS 12 V: 34 periodos en 2.6 ms, f = 13.2 kHz, D = 0.368
+     t [us]  T [us]      D  I_avg  R_est mOhm  R_real
+        0.0   60.81  0.259  40.40       24.97   65.24
+      135.2   74.29  0.399  40.10       65.64   66.30
+      283.7   74.31  0.402  40.09       68.17   67.47
+      433.2   75.86  0.382  40.11       62.38   61.04
+      585.5   76.78  0.369  40.13       55.96   57.38
+      739.4   77.30  0.362  40.14       55.42   55.42
+      894.1   77.58  0.359  40.14       54.93   54.48
+     1049.3   77.67  0.358  40.14       54.51   54.14
+     1204.7   77.66  0.358  40.14       53.91   54.12
+     1359.9   77.60  0.358  40.14       54.40   54.29
+     1515.1   77.49  0.359  40.14       55.72   54.55
+     1670.0   77.42  0.360  40.14       54.84   54.84
+     1824.8   77.31  0.361  40.14       54.42   55.14
+     1979.4   77.21  0.362  40.14       56.45   55.44
+     2133.7   77.12  0.363  40.14       56.51   55.72
+     2287.7   76.03  0.372  40.13       56.02   58.33
+     2438.5   73.38  0.402  40.11       65.09   67.56
+   error por periodo (sin arranque): sesgo -0.02 mOhm, ruido 1.09 mOhm, peor 2.75
+   corriente media real 40.13 A con banda pedida 38-42 (centro 40): sesgo +0.13 A -> I^2 +0.6% -> la fusion se corre +0.1 mm
+   senal del cuello: +24 mOhm  ->  22 sigmas por periodo
+   sobrepaso por retardo ACS (4us): subida 0.73 A, bajada 0.51 A
+
+==============================================================================
+E. LA RUPTURA: energia guardada en la bobina y si el bus puede sostener un arco
+==============================================================================
+  Holm, voltaje de fusion (Wiedemann-Franz): U_m = 0.541 V
+  Holm, voltaje minimo de arco del hierro: ~13 V (arco que se apaga solo por debajo)
+  1/2 L I^2 a 40 A =   32.8 mJ   (gota/cordon de 0.4mm pide ~344 mJ)
+  1/2 L I^2 a 70 A =  100.5 mJ   (gota/cordon de 0.4mm pide ~344 mJ)
+  1/2 L I^2 a  5 A =    0.5 mJ   (gota/cordon de 0.4mm pide ~344 mJ)
+  bus 48 V: compliancia libre a 40A ~  43.4 V -> SI sostiene arco de ~15-20V a 40A (= una soldadora MIG)
+  bus 24 V: compliancia libre a 40A ~  19.4 V -> SI sostiene arco de ~15-20V a 40A (= una soldadora MIG)
+  bus 12 V: compliancia libre a 40A ~   7.4 V -> NO puede sostener arco (< ~13 V)
+  bus 48 V con lazo de corriente: si el puente revienta, el lazo empuja 40 A por el arco: 680 W de arco
+  hasta que el firmware lo note. Cada 100 us de retraso = 68 mJ de arco extra.
+
+==============================================================================
+F. LA VELOCIDAD MAXIMA LA PONE LA PIEZA (calor que entra = Q * h_liq * rho)
+==============================================================================
+  energia que deja cada mm^3 en la pieza ~ 10.3 J;  sobre-temperatura permitida 400 K
+  cubo macizo 20mm sobre placa gruesa            R_th=   1.97 K/W  P_max=  203.4 W  Q_max= 19.80 mm^3/s (   560 g/h)
+  pared 0.6mm x 20mm, aire quieto (h~40)         R_th=  41.67 K/W  P_max=    9.6 W  Q_max=  0.93 mm^3/s (    26 g/h)
+  pared 0.6mm x 20mm, chorro de gas (h~400)      R_th=  13.18 K/W  P_max=   30.4 W  Q_max=  2.96 mm^3/s (    84 g/h)
+  pared 0.6mm x 20mm, casi-inmersion (h~5000)    R_th=   3.73 K/W  P_max=  107.3 W  Q_max= 10.45 mm^3/s (   295 g/h)
+  perno 1mm diametro, aire quieto                R_th= 581.15 K/W  P_max=    0.7 W  Q_max=  0.07 mm^3/s (     2 g/h)
+
+==============================================================================
+G. PRECISION: masa = conteo de pasos, altura = el toque
+==============================================================================
+  avance por micropaso (rodillo r=5mm, 3200 upasos) = 9.8 um de alambre = 0.0028 mm^3
+  sin chispas (sin masa que sale), volumen depositado = volumen alimentado: error = error del rodillo (~0.5-1%)
+  altura por el toque a v=   35 mm/s y periodo de lectura 50 us: resolucion   1.8 um
+  altura por el toque a v=  100 mm/s y periodo de lectura 50 us: resolucion   5.0 um
+  altura por el toque a v=  380 mm/s y periodo de lectura 50 us: resolucion  19.0 um

@@ -1,0 +1,45 @@
+============================================================================================
+(1) LA GOTA COMO CAMPANA: frecuencia, Q, tiempo de carga y onda AC para soltarla (base I0 = 30 A)
+============================================================================================
+   a mm   f2 Hz  Q Lamb  carga ms |  I_AC para soltar en 10 ciclos |   en 20 ciclos
+                        (Q ideal) |   Q ideal      Q=30      Q=10 | Q ideal   Q=30
+   0.30    1268      84      21.0 |    24.6 A    32.3 A    60.5 A |  14.2 A  23.3 A
+   0.38     890      94      33.7 |    24.2 A    32.3 A    60.5 A |  13.7 A  23.3 A
+   0.46     668     104      49.4 |    23.9 A    32.3 A    60.5 A |  13.3 A  23.3 A
+   0.55     511     113      70.6 |    23.6 A    32.3 A    60.5 A |  13.0 A  23.3 A
+  pinch estatico (sin resonancia): 194 A. La resonancia cambia 194 A por ~10-25 A de onda.
+
+============================================================================================
+(2) EL OIDO: el voltaje del arco escucha la gota
+============================================================================================
+  gota 0.30 mm oscilando a q=0.05 (punta se mueve   15 um): el arco cambia   150 mV =   12 cuentas del ADC (divisor /16)
+  gota 0.30 mm oscilando a q=0.10 (punta se mueve   30 um): el arco cambia   300 mV =   23 cuentas del ADC (divisor /16)
+  gota 0.30 mm oscilando a q=0.20 (punta se mueve   60 um): el arco cambia   600 mV =   47 cuentas del ADC (divisor /16)
+  gota 0.46 mm oscilando a q=0.05 (punta se mueve   23 um): el arco cambia   230 mV =   18 cuentas del ADC (divisor /16)
+  gota 0.46 mm oscilando a q=0.10 (punta se mueve   46 um): el arco cambia   460 mV =   36 cuentas del ADC (divisor /16)
+  gota 0.46 mm oscilando a q=0.20 (punta se mueve   92 um): el arco cambia   920 mV =   71 cuentas del ADC (divisor /16)
+  la frecuencia que se oye da el tamano: a = (8 sigma / (rho w^2))^(1/3)  ->  error de tamano = (2/3) error de frecuencia
+  oir  5 ms de campana con resolucion 5 Hz a 668 Hz -> tamano a +-0.50 % (+-2.3 um)
+  oir 10 ms de campana con resolucion 2 Hz a 668 Hz -> tamano a +-0.20 % (+-0.9 um)
+  oir 20 ms de campana con resolucion 1 Hz a 668 Hz -> tamano a +-0.10 % (+-0.5 um)
+
+============================================================================================
+(3) UNA GOTA COMPLETA, CON OIDO vs A CIEGAS (Monte Carlo 60 gotas por caso, avance +-10 %, ruido 10 mV en el voltaje; base 40 A + onda 30 A: nunca baja de 10 A)
+============================================================================================
+  Q ideal  ciegas : sueltan  93.3 %   tamano 0.462 mm   dispersion   8.7 um ( 1.9 %)   error vs 0.460:  +1.5 um
+  Q ideal  oido   : sueltan 100.0 %   tamano 0.459 mm   dispersion   1.3 um ( 0.3 %)   error vs 0.460:  -1.4 um
+  Q=30     ciegas : sueltan  65.0 %   tamano 0.468 mm   dispersion   7.0 um ( 1.5 %)   error vs 0.460:  +8.4 um
+  Q=30     oido   : sueltan 100.0 %   tamano 0.465 mm   dispersion   1.5 um ( 0.3 %)   error vs 0.460:  +5.4 um
+
+  traza cruda de UNA gota con oido (Q=30): t ms | tamano real | tamano que oye el modelo | q | corriente | disparando
+     2.00 | 0.308 mm | 0.309 mm | +0.000 |  40.0 A | --
+     8.00 | 0.330 mm | 0.332 mm | +0.057 |  40.0 A | --
+    14.00 | 0.350 mm | 0.352 mm | -0.072 |  40.0 A | --
+    20.00 | 0.367 mm | 0.368 mm | +0.034 |  40.0 A | --
+    26.00 | 0.384 mm | 0.384 mm | -0.072 |  40.0 A | --
+    32.00 | 0.398 mm | 0.398 mm | -0.028 |  48.9 A | --
+    38.00 | 0.412 mm | 0.412 mm | -0.131 |  40.0 A | --
+    44.00 | 0.425 mm | 0.425 mm | +0.058 |  40.0 A | --
+    50.00 | 0.437 mm | 0.437 mm | -0.127 |  40.0 A | --
+    56.00 | 0.449 mm | 0.448 mm | +0.051 |  67.9 A | SI
+    62.00 | 0.460 mm | 0.459 mm | +0.640 |  56.3 A | SI

@@ -1,0 +1,15 @@
+APUNTAR con gemelo digital (el Pico simula la gota con f1/Q1 nominales antes de soltar)
+ blanco a 0.5 mm | errores: soltar 20 us, bajada +-10 %, empujones 0.02 m/s, f1 real vs nominal
+  giro    f1 calibrada a  3.0 %: error medio   346 um, 90 % <   525 um, campo 1.12 mT
+  giro    f1 calibrada a  1.0 %: error medio   179 um, 90 % <   294 um, campo 1.12 mT
+  giro    f1 calibrada a  0.5 %: error medio   139 um, 90 % <   234 um, campo 1.12 mT
+  giro    f1 calibrada a  0.0 %: error medio    82 um, 90 % <   169 um, campo 1.12 mT
+  patada  f1 calibrada a  3.0 %: error medio   150 um, 90 % <   286 um, campo 3.19 mT
+  patada  f1 calibrada a  1.0 %: error medio    90 um, 90 % <   171 um, campo 3.19 mT
+  patada  f1 calibrada a  0.5 %: error medio    95 um, 90 % <   168 um, campo 3.19 mT
+  patada  f1 calibrada a  0.0 %: error medio    81 um, 90 % <   154 um, campo 3.19 mT
+
+PATRON: 19 blancos (hexagono 1 mm, paso 0.25 mm), cabeza quieta, f1 calibrada a 1 %, patada de 3 ciclos
+  error de caida: mediana 82 um, 90 % < 158 um (paso entre blancos 250 um)
+
+SIN APUNTAR (campo apagado): dispersion por empujones del arco y bajada: mediana 70 um
