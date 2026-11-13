@@ -1,92 +1,94 @@
 {
- "generado": "2026-09-08T15:40",
+ "generado": "2026-09-28T15:22",
  "ventana_dias": 30,
- "eventos_totales": 49811,
- "sesiones_totales": 4002,
+ "eventos_totales": 54175,
+ "sesiones_totales": 4073,
  "llegada": {
   "sesiones_ultimos_dias": {
-   "2026-08-26": 12,
-   "2026-08-27": 11,
-   "2026-08-28": 10,
-   "2026-08-29": 1,
-   "2026-08-30": 3,
-   "2026-08-31": 6,
-   "2026-09-01": 8,
-   "2026-09-02": 8,
-   "2026-09-03": 4,
-   "2026-09-04": 13,
-   "2026-09-05": 2,
-   "2026-09-06": 7,
-   "2026-09-07": 4,
-   "2026-09-08": 5
+   "2026-09-14": 1,
+   "2026-09-15": 4,
+   "2026-09-16": 2,
+   "2026-09-17": 1,
+   "2026-09-18": 1,
+   "2026-09-19": 13,
+   "2026-09-20": 3,
+   "2026-09-21": 4,
+   "2026-09-22": 12,
+   "2026-09-23": 3,
+   "2026-09-24": 5,
+   "2026-09-25": 4,
+   "2026-09-27": 3,
+   "2026-09-28": 1
   },
   "fuentes": {
-   "paid": 2387,
-   "sin-marcar": 1460,
-   "directo": 149,
-   "organico": 6
+   "paid": 2422,
+   "sin-marcar": 1466,
+   "directo": 173,
+   "organico": 12
   },
-  "movil_pct": 92.5,
-  "sesiones_ventana": 2246
+  "movil_pct": 41.7,
+  "sesiones_ventana": 132
  },
  "atrio": {
-  "sesiones_que_vieron_reels": 1,
-  "llegaron_a_puertas": 1,
-  "eligieron_puerta": 1,
-  "pct_puertas": 100.0,
-  "pct_eligieron": 100.0,
+  "sesiones_que_vieron_reels": 36,
+  "llegaron_a_puertas": 17,
+  "eligieron_puerta": 13,
+  "pct_puertas": 47.2,
+  "pct_eligieron": 76.5,
   "motivo_puertas": {
-   "completo": 145,
-   "saltar": 104,
-   "toque": 87
+   "completo": 151,
+   "saltar": 150,
+   "toque": 96
   },
   "puerta_elegida": {
-   "mas": 36,
-   "aprender": 33,
-   "taller": 10
+   "mas": 45,
+   "aprender": 42,
+   "taller": 11
   },
-  "segundos_hasta_puertas_mediana": 29,
+  "segundos_hasta_puertas_mediana": 23,
   "reels_mas_vistos": {
    "mol-grasa-butirico": 2694,
-   "mol-h2o-el-hexamero": 485,
-   "mol-h2o-el-puente": 324,
-   "mol-h2o-el-sudor": 29
+   "mol-h2o-el-hexamero": 502,
+   "mol-h2o-el-puente": 374,
+   "mol-h2o-el-sudor": 52
   }
  },
  "quedarse": {
-  "sesiones_con_salida": 2234,
+  "sesiones_con_salida": 2289,
   "segundos_mediana": 5,
-  "segundos_p90": 39,
-  "rebote_menos_10s_pct": 65.9,
+  "segundos_p90": 40,
+  "rebote_menos_10s_pct": 65.3,
   "interacciones_mediana": 0,
   "paginas_mas_vistas": {
-   "/": 3782,
-   "/forja-brep.html": 535,
+   "/": 3828,
+   "/forja-brep.html": 543,
    "/masterclass.html": 160,
-   "/escuela.html": 74,
-   "/lab.html": 46,
-   "/precios.html": 9,
-   "/ig-oauth/": 1
+   "/escuela.html": 94,
+   "/lab.html": 59,
+   "/precios.html": 10,
+   "/chuy.html": 5,
+   "/ig-oauth/": 3,
+   "/escuela.html#clases": 1
   }
  },
  "roto": {
-  "sesiones_con_webgl_roto": 15,
-  "pct_sesiones_sin_3d": 0.4,
+  "sesiones_con_webgl_roto": 20,
+  "pct_sesiones_sin_3d": 0.5,
   "errores_top": {
-   "THREE.WebGLRenderer: A WebGL context could not be created. Reason: ": 7622,
+   "THREE.WebGLRenderer: A WebGL context could not be created. Reason: ": 10136,
    "REBUILD_ERR:": 382,
-   "THREE.WebGLRenderer: Error creating WebGL context.": 151,
+   "THREE.WebGLRenderer: Error creating WebGL context.": 229,
    "THREE.GLTFLoader: Couldn't load texture": 39,
-   "bond abinitio load failed": 21,
+   "bond abinitio load failed": 26,
    "[ModuleErrorBoundary:La Forja · Part Studio B-Rep]": 14
   },
   "http_404_top": {
-   "/models/library/food/Textures/colormap.png": 24,
-   "/precomputed/h2o-efield.bin": 24,
-   "/precomputed/h2o-attraction.bin": 24,
-   "/precomputed/h2o-pisplit.bin": 24,
-   "/precomputed/h2o-atomcloud.bin": 24
+   "/precomputed/h2o-efield.bin": 29,
+   "/precomputed/h2o-attraction.bin": 29,
+   "/precomputed/h2o-pisplit.bin": 29,
+   "/precomputed/h2o-atomcloud.bin": 29,
+   "/precomputed/atoms/z006-v3.bin": 29
   },
-  "lcp_mediana_ms": 1724
+  "lcp_mediana_ms": 1712
  }
 }
