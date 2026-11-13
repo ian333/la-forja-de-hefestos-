@@ -27,6 +27,26 @@ que falta (revisar el molde DEL MOLDISTA). Se lanzan cuando la orden M esté fus
 
 ## PREEXISTENTE
 (sucios de otras sesiones en el árbol principal al crear el reparto; los worktrees nacen limpios)
+- docs/investigacion-arco/01-ondas-control-optimo.md
+- docs/investigacion-arco/02-energia-en-la-punta.md
+- docs/investigacion-arco/04-sensado-sin-sensores.md
+- docs/investigacion-arco/05-componentes-minimos.md
+- docs/investigacion-arco/06-operador-canales-control.md
+- docs/investigacion-arco/07-charco-resonante.md
+- docs/investigacion-arco/08-limites-termicos-precision.md
+- docs/investigacion-arco/09-campo-real-arc-blow.md
+- docs/investigacion-arco/10-estado-del-arte-seguridad.md
+- scripts/investigacion-arco/01_ondas_control_optimo.out
+- scripts/investigacion-arco/04_sensado_sin_sensores.out
+- scripts/investigacion-arco/04_sensado_sin_sensores.py
+- scripts/investigacion-arco/05_componentes_minimos.out
+- scripts/investigacion-arco/05_componentes_minimos.py
+- scripts/investigacion-arco/06_operador_canales_control.out
+- scripts/investigacion-arco/07_charco_resonante.out
+- scripts/investigacion-arco/08_limites_termicos_precision.out
+- scripts/investigacion-arco/08_limites_termicos_precision.py
+- scripts/investigacion-arco/09_campo_real_arc_blow.out
+- scripts/investigacion-arco/__pycache__/05_componentes_minimos.cpython-310.pyc
 - public/comando/analisis-ig.json
 - public/comando/comentarios-analisis.json
 - public/comando/comentarios.json
