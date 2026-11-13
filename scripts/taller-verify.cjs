@@ -119,14 +119,14 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     await shot('03-cara-agarrada.png');
 
     // ── C. tenaza CUERPO y PIEZA ──
-    await p.click('[data-testid="tenaza-cuerpo"]');
+    await p.click('[data-testid="tenaza-cuerpo"]'); await espera(150);   // el visor confirma la tenaza nueva unas decenas de ms después que el botón (a mano no se alcanza)
     await p.mouse.click(blanco.x, blanco.y);
     await espera(400);
     s = await qa();
     const txtCuerpo = await p.$eval('[data-testid="taller-agarre"]', (e) => e.textContent).catch(() => '');
     ok('C. tenaza CUERPO agarra la hoja entera', s.sel && s.sel.nivel === 'cuerpo' && s.sel.key === blanco.key && /^Cuerpo · \d+ × \d+ × \d+ mm/.test(txtCuerpo), txtCuerpo);
     await shot('04-cuerpo.png');
-    await p.click('[data-testid="tenaza-pieza"]');
+    await p.click('[data-testid="tenaza-pieza"]'); await espera(150);   // el visor confirma la tenaza nueva unas decenas de ms después que el botón (a mano no se alcanza)
     await p.mouse.click(blanco.x, blanco.y);
     await espera(400);
     s = await qa();
@@ -141,7 +141,7 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     ok('F. Esc suelta lo agarrado', !s.sel && (await p.$('.fb-agarre.vacio')) !== null);
 
     // ── D. foco de una hoja honda ──
-    await p.click('[data-testid="tenaza-cara"]');
+    await p.click('[data-testid="tenaza-cara"]'); await espera(150);   // el visor confirma la tenaza nueva unas decenas de ms después que el botón (a mano no se alcanza)
     const total = s.total;
     const focoSel = `[data-testid="taller-foco-${blanco.key}"]`;
     if (!(await p.$(focoSel))) { await p.click('[data-testid="taller-abrir-lab-cuerpo"]').catch(() => {}); }

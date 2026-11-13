@@ -2018,10 +2018,24 @@ function parseFmsh(buf: ArrayBuffer): PartGeo {
   const normals = new Float32Array(buf, off, nv * 3); off += nv * 12;
   return { positions, normals, indices: new Uint32Array(buf, off, ni) };
 }
+/** EL SELLO DE LO PUBLICADO. nginx y Cloudflare guardan todo `.bin` 30 días como «inmutable» (regla hecha para archivos con
+ *  hash en el nombre), pero las mallas de /modelos/ NO llevan hash: al regenerar el laboratorio, producción siguió
+ *  sirviendo 16 mallas de una semana atrás junto a los STEP nuevos — lo que se veía no era lo que se forjaba (cazado el
+ *  2026-11-12 corriendo las suites CONTRA producción). Cada despliegue estampa /temis-deploy.json, que nunca se guarda en
+ *  caché: su sello va en la dirección de la malla, así cada despliegue estrena dirección y ningún caché viejo la alcanza.
+ *  Va al PEDIR, no en el documento: los guardados traen la dirección pelona. Sin sello (falla de red) se pide sin él. */
+let selloPublicado: Promise<string> | null = null;
+const selloDeModelos = (): Promise<string> => (selloPublicado ??= fetch('/temis-deploy.json', { cache: 'no-store' })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((j: { commit?: string; fecha?: string } | null) => (j ? `${j.commit ?? ''}-${j.fecha ?? ''}`.replace(/[^\w.-]+/g, '') : ''))
+  .catch(() => ''));
+const conSello = (url: string, sello: string): string =>
+  (sello && url.startsWith('/modelos/') ? `${url}${url.includes('?') ? '&' : '?'}v=${sello}` : url);
 function loadRefMesh(url: string): Promise<PartGeo> {
   let p = refMeshCache.get(url);
   if (!p) {
-    p = fetch(url).then((r) => { if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`); return r.arrayBuffer(); }).then(parseFmsh);
+    p = selloDeModelos().then((sello) => fetch(conSello(url, sello)))
+      .then((r) => { if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`); return r.arrayBuffer(); }).then(parseFmsh);
     p.catch(() => refMeshCache.delete(url));   // un fallo de red no queda cacheado
     refMeshCache.set(url, p);
   }
@@ -2716,9 +2730,16 @@ const MATRIZ_I = new THREE.Matrix4();
 // real, el motor, el carrete) entra al Taller como pieza de fábrica dentro del grupo «Piezas mías». Es un `RefPart` más:
 // se agarra, se mide, se mueve y acepta un cuerpo nuevo; no se corta (es comprada). Se guarda con el documento. ──
 const GRUPO_MIAS = 'mias';
-/** Ref ESTABLE (identidad fija → React lo llama solo al montar): lo que nace al fondo del riel se trae a la vista.
- *  Con el árbol abierto, el formulario de «poner una pieza» nacía abajo del borde y parecía que el botón no hacía nada. */
-const aLaVista = (el: HTMLElement | null) => { el?.scrollIntoView({ block: 'nearest' }); };
+/** Ref ESTABLE (identidad fija → React lo llama solo al montar y al desmontar): lo que nace al fondo del riel se trae a la
+ *  vista. Con el árbol abierto, el formulario de «poner una pieza» nacía abajo del borde y parecía que el botón no hacía
+ *  nada. Al cerrarse, cada contenedor REGRESA a donde estaba: si no, el riel se quedaba recorrido y las tenazas escondidas. */
+const rielAntes: [HTMLElement, number][] = [];
+const aLaVista = (el: HTMLElement | null) => {
+  if (!el) { for (const [c, top] of rielAntes) c.scrollTop = top; rielAntes.length = 0; return; }
+  rielAntes.length = 0;
+  for (let c = el.parentElement; c && c !== document.body; c = c.parentElement) rielAntes.push([c, c.scrollTop]);
+  el.scrollIntoView({ block: 'nearest' });
+};
 interface PiezaMia { tipo: 'caja' | 'cilindro'; nombre: string; w: number; d: number; h: number }
 function ponerPiezaMia(parts: RefPart[], pm: PiezaMia, donde: [number, number, number]): { parts: RefPart[]; key: string } {
   const grupo = parts.find((r) => r.id === GRUPO_MIAS && r.kind === 'grupo');

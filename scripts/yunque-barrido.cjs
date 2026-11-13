@@ -19,7 +19,7 @@ const path = require('path');
 
 const URL = process.env.URL || 'http://localhost:5009/forja-brep.html';
 const OUT = process.env.OUT || path.resolve(__dirname, '..', 'forja-shots', 'yunque');
-const FILTRO = process.argv[2] || '';
+const FILTRO = process.argv[2] || process.env.FILTRO || '';
 
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });

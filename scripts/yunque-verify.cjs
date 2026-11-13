@@ -47,6 +47,11 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
     await p.evaluate(() => document.querySelector('.lj-x')?.click());   // el panel de los jueces tapa media pieza en las capturas
     await espera(300);
   };
+  const recargar = async () => {
+    await p.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+    await p.waitForFunction('!!(window.__forgeBrep && window.__forgeBrep.curso && document.querySelector("canvas"))', null, { timeout: 180000 });
+    await abrirLab();
+  };
   const forjado = async (n) => {   // espera a que haya n golpes y la forja termine
     await p.waitForFunction((k) => { const y = window.__forgeBrep.yunque; return y.golpes.length === k && !y.forjando; }, n, { timeout: 180000 });
     await espera(700);
@@ -109,7 +114,7 @@ const ok = (nombre, pasa, dato) => { checks.push({ nombre, pasa: !!pasa, dato })
       const c = candidatas[i];
       if (vistos.includes(`${c.key}#${c.cara}`)) continue;
       vistos.push(`${c.key}#${c.cara}`);
-      if (i > 0) await abrirLab();
+      if (i > 0) await recargar();   // página nueva: la cámara vuelve a la vista de llegada (reabrir el MISMO documento la deja donde estaba)
       await p.mouse.move(c.x, c.y);
       await p.mouse.dblclick(c.x, c.y);
       await espera(1700);
