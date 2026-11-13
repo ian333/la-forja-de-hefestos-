@@ -41,10 +41,12 @@
       "yt": {
         "id": "xHnbFlGusts",
         "url": "https://youtu.be/xHnbFlGusts",
-        "privacidad": "private",
-        "publishAt": "2026-09-10T18:45:00-06:00",
+        "privacidad": "public",
+        "publishAt": "2026-09-09T18:45:00-06:00",
         "captions": "AUieDaaO4AVrScYxKRrVCNOVsn-DF68sSVCdCcP5ejXF8YU3wijKsXLzjw",
-        "fecha": "2026-09-07T13:51"
+        "fecha": "2026-09-07T13:51",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "publico_desde": "2026-09-09T18:45:00-06:00"
       }
     }
   }

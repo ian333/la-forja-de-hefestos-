@@ -42,10 +42,12 @@
       "yt": {
         "id": "Sm4c_Dwejbg",
         "url": "https://youtu.be/Sm4c_Dwejbg",
-        "privacidad": "private",
+        "privacidad": "public",
         "publishAt": "2026-09-08T18:45:00-06:00",
         "captions": "AUieDaYNnv7Q0lUbAln4iSJ2o2DFA46ExH7J4UjBcyZcVODj-y0_ByQA_g",
-        "fecha": "2026-09-07T13:49"
+        "fecha": "2026-09-07T13:49",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "publico_desde": "2026-09-08T18:45:00-06:00"
       }
     }
   }

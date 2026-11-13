@@ -42,10 +42,12 @@
       "yt": {
         "id": "QypcBIVMpYM",
         "url": "https://youtu.be/QypcBIVMpYM",
-        "privacidad": "private",
-        "publishAt": "2026-09-13T18:45:00-06:00",
+        "privacidad": "public",
+        "publishAt": "2026-09-10T18:45:00-06:00",
         "captions": "AUieDabXgaVUOQVHlkIPCdaPw85pj8qsyo2XiEM-v-RrUw-N6wPvIZTcmg",
-        "fecha": "2026-09-07T15:11"
+        "fecha": "2026-09-07T15:11",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "publico_desde": "2026-09-10T18:45:00-06:00"
       }
     }
   }

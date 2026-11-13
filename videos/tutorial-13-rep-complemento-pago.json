@@ -42,10 +42,12 @@
       "yt": {
         "id": "boKiTRS786k",
         "url": "https://youtu.be/boKiTRS786k",
-        "privacidad": "private",
-        "publishAt": "2026-09-14T18:45:00-06:00",
+        "privacidad": "public",
+        "publishAt": "2026-09-10T18:45:00-06:00",
         "captions": "AUieDaa3N8HoY91mOw38arCyJVC0Ygoxhzbvjbueh5Mx64-0-tp6-kRK-g",
-        "fecha": "2026-09-07T15:12"
+        "fecha": "2026-09-07T15:12",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "publico_desde": "2026-09-10T18:45:00-06:00"
       }
     }
   }

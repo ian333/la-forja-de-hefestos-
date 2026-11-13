@@ -39,13 +39,28 @@
     "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 5 por día desde 2026-09-08",
     "subidas": {
       "yt": {
+        "id": "schnwcUcdAU",
+        "url": "https://youtu.be/schnwcUcdAU",
+        "privacidad": "public",
+        "publishAt": "2026-09-11T18:45:00-06:00",
+        "captions": "AUieDabKLijHwwXzsY8wdnxMDm3qnp8IzokacGtquoPWUSD1YDv0k0zfng",
+        "fecha": "2026-09-11T11:08",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "publico_desde": "2026-09-11T18:45:00-06:00"
+      }
+    },
+    "reemplazos": [
+      {
         "id": "rLhoagZiwwA",
         "url": "https://youtu.be/rLhoagZiwwA",
         "privacidad": "private",
-        "publishAt": "2026-09-16T18:45:00-06:00",
+        "publishAt": "2026-09-11T18:45:00-06:00",
         "captions": "AUieDaayFcPk8S-Fqh8D1t0f7QsFmRsE98pw04dcBj6JUMUA3jHXLSYtbw",
-        "fecha": "2026-09-07T13:53"
+        "fecha": "2026-09-07T13:53",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "borrado": "2026-09-11T10:54",
+        "motivo": "zoom mal centrado (postzoom fix 2026-09-10); master re-rendido"
       }
-    }
+    ]
   }
 }

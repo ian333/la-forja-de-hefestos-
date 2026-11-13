@@ -41,9 +41,12 @@
       "yt": {
         "id": "uIreBIKsOKg",
         "url": "https://youtu.be/uIreBIKsOKg",
-        "privacidad": "private",
-        "publishAt": "2026-09-14T18:45:00-06:00",
-        "fecha": "2026-09-07T15:15"
+        "privacidad": "public",
+        "publishAt": "2026-09-10T18:45:00-06:00",
+        "fecha": "2026-09-07T15:15",
+        "captions": "AUieDaavfW1Tq2-k3s2Owz94Igi5_Bi4n1EpujgXYOaJP1zn2h4LncnhZQ",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "publico_desde": "2026-09-10T18:45:00-06:00"
       }
     }
   }

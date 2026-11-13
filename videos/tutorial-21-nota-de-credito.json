@@ -39,12 +39,39 @@
     "nota_programar": "hora canon 18:45 CDMX (public/comando/horarios.json); 5 por día desde 2026-09-08",
     "subidas": {
       "yt": {
+        "id": "eQfX5RklANU",
+        "url": "https://youtu.be/eQfX5RklANU",
+        "privacidad": "public",
+        "publishAt": "2026-09-11T18:45:00-06:00",
+        "captions": "AUieDaa5FIFmC1NnASnfohGKK8hs0YaShNMCR6T2RudicWsEdDo4UX1u8w",
+        "fecha": "2026-09-11T11:09",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "publico_desde": "2026-09-11T18:45:00-06:00"
+      }
+    },
+    "reemplazos": [
+      {
         "id": "TD1auR1dXWA",
         "url": "https://youtu.be/TD1auR1dXWA",
         "privacidad": "private",
-        "publishAt": "2026-09-17T18:45:00-06:00",
-        "fecha": "2026-09-07T15:21"
+        "publishAt": "2026-09-11T18:45:00-06:00",
+        "fecha": "2026-09-07T15:21",
+        "captions": "AUieDaaxZo_j-PB1j_0lg86y57vi52tok0GphY1KoxdELuzXQ2vDCqj9Qg",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "borrado": "2026-09-10T15:03",
+        "motivo": "la receta clickeaba Crear NC con Devolver=0: no se creaba nada; corregida con expect (2026-09-10)"
+      },
+      {
+        "id": "tAPNoLolqWU",
+        "url": "https://youtu.be/tAPNoLolqWU",
+        "privacidad": "private",
+        "publishAt": "2026-09-11T18:45:00-06:00",
+        "captions": "AUieDaYvqog_ofJln86lTwoGkQtcQmjKJFclrrBrlt1LvXN7v-IKNXKhvQ",
+        "fecha": "2026-09-10T15:07",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "borrado": "2026-09-11T10:54",
+        "motivo": "zoom mal centrado (postzoom fix 2026-09-10); master re-rendido"
       }
-    }
+    ]
   }
 }

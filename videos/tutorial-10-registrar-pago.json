@@ -41,10 +41,12 @@
       "yt": {
         "id": "nSVDTyecNNE",
         "url": "https://youtu.be/nSVDTyecNNE",
-        "privacidad": "private",
-        "publishAt": "2026-09-12T18:45:00-06:00",
+        "privacidad": "public",
+        "publishAt": "2026-09-09T18:45:00-06:00",
         "captions": "AUieDaY23Z0pAuq4vzK8sHq8F50o-I1C_vX18hIPwsqL7Ola0-m3KM-MrQ",
-        "fecha": "2026-09-07T15:11"
+        "fecha": "2026-09-07T15:11",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "publico_desde": "2026-09-09T18:45:00-06:00"
       }
     }
   }

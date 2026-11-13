@@ -42,8 +42,12 @@
         "id": "kCBmgMP7xc0",
         "url": "https://youtu.be/kCBmgMP7xc0",
         "privacidad": "private",
-        "publishAt": "2026-09-19T18:45:00-06:00",
-        "fecha": "2026-09-07T15:22"
+        "publishAt": null,
+        "fecha": "2026-09-07T15:22",
+        "publicar_cuando": "2026-09-12T18:45:00-06:00",
+        "nota": "subió público por su cuenta el 07-sep (5 vistas); escondido el 08-sep. YouTube ya no acepta publishAt en un video publicado → lo suelta reprogramar-yt.py el día que le toca.",
+        "playlist": "https://www.youtube.com/playlist?list=PLd43xp9nw54I",
+        "captions": "ya-existia"
       }
     }
   }
